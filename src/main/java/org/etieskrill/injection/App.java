@@ -13,11 +13,11 @@ public class App extends Application {
 
     @Override
     public void start(Stage stage) throws Exception {
-        Canvas canvas = new Canvas(1280, 720);
+        Canvas canvas = new Canvas(800, 500);
         BorderPane root = new BorderPane(canvas);
         Label labelFPS = new Label();
         root.setTop(labelFPS);
-        stage.setScene(new Scene(root, 1280, 720));
+        stage.setScene(new Scene(root, 800, 500));
         Renderer renderer = new Renderer(canvas, new PhysicsContainer(500));
         renderer.start();
 

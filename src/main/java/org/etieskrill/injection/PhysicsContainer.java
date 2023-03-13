@@ -12,7 +12,7 @@ public class PhysicsContainer {
 
     private static final float minSize = 7f, maxSize = 7f;
     private static final Vector2 initPosPrev = new Vector2(150f, 100f);
-    private static final Vector2 initPos = new Vector2(initPosPrev.getX() + 2/* + 6*/, initPosPrev.getY());
+    private static final Vector2 initPos = new Vector2(initPosPrev.getX() + 4/* + 6*/, initPosPrev.getY());
     private static final Vector2 gravity = new Vector2(0f, 400f);
 
     private final Queue<Particle> particles;
@@ -37,11 +37,12 @@ public class PhysicsContainer {
         for (Particle particle : particles) {
             //Apply all forces, regardless of delta time
             //applyGlobalGravity(particle);
-            applyPointGravity(particle);
+            //applyPointGravity(particle);
+            applyAttraction(particle);
 
             //Apply all constraints after particle acted on its own accord
             //applyCircleConstraint(particle);
-            //applyContainerConstraint(particle);
+            applyContainerConstraint(particle);
 
             //Prompt particle to update, taking delta time into account
             particle.update(delta);
@@ -66,15 +67,15 @@ public class PhysicsContainer {
 
         if (dist > circleRadius - particle.getRadius()) {
             Vector2 n = toParticle.scl(1f / dist);
-            Vector2 newPos = circlePos.add(n.scl(dist - particle.getRadius()));
+            Vector2 newPos = circlePos.add(n.scl(dist - particle.getRadius() / 5f));
             System.out.println("Correction vector: " + newPos.sub(particle.getPos()));
             particle.setPos(newPos);
         }
     }
 
     private void applyContainerConstraint(Particle particle) {
-        final float width = 700f;
-        final float height = 700f;
+        final float width = 800f;
+        final float height = 500f;
 
         float x = particle.getPos().getX();
         float y = particle.getPos().getY();
@@ -96,14 +97,21 @@ public class PhysicsContainer {
     }
 
     private void applyPointGravity(Particle particle) {
-        final Vector2 centreOfGravity = new Vector2(500f, 500f);
+        final Vector2 centreOfGravity = new Vector2(250f, 250f);
         Vector2 toParticle = centreOfGravity.sub(particle.getPos());
         float mag = toParticle.length();
-        float scl = Math.min(50000000 / (mag * mag), 2000f);
+        float scl = Math.min(50000000 / (mag * mag), 1000f);
         particle.accelerate(toParticle.normal().scl(scl));
     }
 
-    private void applyAttraction(Particle particle) {
+    private void applyAttraction(Particle particle1) {
+        for (Particle particle2 : particles) {
+            if (particle1.equals(particle2)) continue;
+            Vector2 toParticle = particle2.getPos().sub(particle1.getPos());
+            float mag = toParticle.length();
+            float scl = Math.min(5000000 / (mag * mag), 2000f);
+            particle1.accelerate(toParticle.normal().scl(scl));
+        }
     }
 
     /**

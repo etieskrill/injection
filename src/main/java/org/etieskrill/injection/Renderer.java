@@ -36,8 +36,9 @@ public class Renderer extends Thread {
             physicsContainer.update(updateTime / 1f);
 
             GraphicsContext g2d = canvas.getGraphicsContext2D();
-            g2d.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
-            g2d.setFill(Color.RED);
+            g2d.setFill(Color.DIMGRAY);
+            g2d.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
+            g2d.setFill(Color.LIGHTGRAY);
             final Vector2 circlePos = new Vector2(200f, 200f);
             final float circleRadius = 200f;
             g2d.strokeOval(circlePos.getX() - (circleRadius), circlePos.getY() - (circleRadius), 2f * circleRadius, 2f * circleRadius);
