@@ -1,4 +1,6 @@
-package org.etieskrill.injection;
+package org.etieskrill.injection.particle;
+
+import org.etieskrill.injection.math.Vector2;
 
 public class Particle {
 
@@ -6,6 +8,8 @@ public class Particle {
     private final Vector2 pos;
     private final Vector2 posPrev;
     private final Vector2 acc;
+
+    private float temp;
 
     public Particle(float radius, Vector2 pos) {
         this(radius, pos, pos);

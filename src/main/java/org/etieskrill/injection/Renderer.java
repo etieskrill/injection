@@ -3,8 +3,9 @@ package org.etieskrill.injection;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.control.Label;
 import javafx.scene.paint.Color;
+import org.etieskrill.injection.math.Vector2;
+import org.etieskrill.injection.particle.Particle;
 
 public class Renderer extends Thread {
 

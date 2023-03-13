@@ -1,4 +1,4 @@
-package org.etieskrill.injection;
+package org.etieskrill.injection.math;
 
 public class Vector2 {
 
@@ -46,6 +46,11 @@ public class Vector2 {
 
     public Vector2 normal() {
         return scl(1 / length());
+    }
+
+    public Vector2 interpolate(Vector2 vec, float f) {
+        if (f < 0f || f > 1f) throw new IllegalArgumentException("Supplied value must be normalised");
+        return new Vector2(getX() + (vec.getX() - getX()) * f, getY() + (vec.getY() - getY()) * f);
     }
 
     public Vector2 set(Vector2 vec) {

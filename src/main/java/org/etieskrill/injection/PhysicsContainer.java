@@ -1,7 +1,11 @@
 package org.etieskrill.injection;
 
+import org.etieskrill.injection.math.Interpolator;
+import org.etieskrill.injection.math.Vector2;
+import org.etieskrill.injection.particle.Particle;
+import org.etieskrill.injection.particle.generation.*;
+
 import java.util.Queue;
-import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
@@ -10,35 +14,28 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 public class PhysicsContainer {
 
-    private static final float minSize = 7f, maxSize = 7f;
-    private static final Vector2 initPosPrev = new Vector2(150f, 100f);
-    private static final Vector2 initPos = new Vector2(initPosPrev.getX() + 4/* + 6*/, initPosPrev.getY());
     private static final Vector2 gravity = new Vector2(0f, 400f);
 
     private final Queue<Particle> particles;
 
     public PhysicsContainer(int particleAmount) {
         this.particles = new ConcurrentLinkedQueue<>();
-        Thread spawnerThread = new Thread(() -> {
-            final Random random = new Random();
-            for (int i = 0; i < particleAmount; i++) {
-                particles.add(new Particle(minSize < maxSize ? random.nextFloat(minSize, maxSize) : minSize, initPosPrev, initPos));
-                try {
-                    Thread.sleep(250);
-                } catch (InterruptedException e) {
-                    System.err.println("SpawnerThread could not sleep: " + e.getMessage());
-                }
-            }
-        });
-        spawnerThread.start();
+        ParticleSupplier supplier = new ParticleSupplier(
+                new ConstantSizeStrategy(5f),
+                new ConstantPositionStrategy(new Vector2(150f, 100f)),
+                //new ConstantVelocityStrategy(new Vector2(4f, 0f))
+                new SwivelingVelocityStrategy(new Vector2(8f, 0f), new Vector2(0f, 8f),
+                        50, Interpolator.Interpolation.LINEAR, true)
+        );
+        new ParticleSpawner(particleAmount, supplier, particles, 33).start();
     }
 
     public void update(float delta) {
         for (Particle particle : particles) {
             //Apply all forces, regardless of delta time
-            //applyGlobalGravity(particle);
+            applyGlobalGravity(particle);
             //applyPointGravity(particle);
-            applyAttraction(particle);
+            //applyAttraction(particle);
 
             //Apply all constraints after particle acted on its own accord
             //applyCircleConstraint(particle);
@@ -74,8 +71,8 @@ public class PhysicsContainer {
     }
 
     private void applyContainerConstraint(Particle particle) {
-        final float width = 800f;
-        final float height = 500f;
+        final float width = App.windowSize.getX();
+        final float height = App.windowSize.getY();
 
         float x = particle.getPos().getX();
         float y = particle.getPos().getY();
@@ -97,10 +94,10 @@ public class PhysicsContainer {
     }
 
     private void applyPointGravity(Particle particle) {
-        final Vector2 centreOfGravity = new Vector2(250f, 250f);
+        final Vector2 centreOfGravity = new Vector2(App.windowSize.getX() / 2f, App.windowSize.getY() / 2f);
         Vector2 toParticle = centreOfGravity.sub(particle.getPos());
         float mag = toParticle.length();
-        float scl = Math.min(50000000 / (mag * mag), 1000f);
+        float scl = Math.min(50000000 / (mag * mag), 2000f);
         particle.accelerate(toParticle.normal().scl(scl));
     }
 
@@ -109,7 +106,7 @@ public class PhysicsContainer {
             if (particle1.equals(particle2)) continue;
             Vector2 toParticle = particle2.getPos().sub(particle1.getPos());
             float mag = toParticle.length();
-            float scl = Math.min(5000000 / (mag * mag), 2000f);
+            float scl = Math.min(5000000 / (mag * mag), 5f);
             particle1.accelerate(toParticle.normal().scl(scl));
         }
     }
@@ -126,7 +123,7 @@ public class PhysicsContainer {
             float desiredDist = particle1.getRadius() + particle2.getRadius();
             if (dist < desiredDist) {
                 Vector2 normalPos = pos.normal();
-                float correct = desiredDist - dist;
+                float correct = (desiredDist - dist) / 2f;
                 particle1.setPos(particle1.getPos().add(normalPos.scl(correct)));
                 particle2.setPos(particle2.getPos().add(normalPos.scl(-correct)));
             }
