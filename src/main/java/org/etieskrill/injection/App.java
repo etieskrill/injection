@@ -11,7 +11,7 @@ import org.etieskrill.injection.math.Vector2;
 
 public class App extends Application {
 
-    protected static final Vector2 windowSize = new Vector2(1000f, 800f);
+    protected static final Vector2 windowSize = new Vector2(1200f, 800f);
 
     @Override
     public void start(Stage stage) throws Exception {
@@ -20,7 +20,7 @@ public class App extends Application {
         //Label labelFPS = new Label();
         //root.setTop(labelFPS);
         stage.setScene(new Scene(root, windowSize.getX(), windowSize.getY()));
-        Renderer renderer = new Renderer(canvas, new PhysicsContainer(1000));
+        Renderer renderer = new Renderer(canvas, new PhysicsContainer());
         renderer.start();
 
         //labelFPS.textProperty().bindBidirectional(renderer.getLabelFPSTextProperty());

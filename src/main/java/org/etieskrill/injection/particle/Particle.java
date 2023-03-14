@@ -31,12 +31,21 @@ public class Particle {
         posPrev.set(pos);
         pos.set(pos.add(vel).add(acc.scl(delta * delta)));
         acc.setZero();
+        temp *= Math.max(1f - (0.3f * delta), 0f);
     }
 
     public void accelerate(Vector2 vec) {
         this.acc.set(this.acc.add(vec));
     }
-
+    
+    public void heat(float h) {
+        temp = Math.max(Math.min(1f, temp + h), 0f);
+    }
+    
+    public float getTemp() {
+        return temp;
+    }
+    
     public float getRadius() {
         return radius;
     }
@@ -56,5 +65,9 @@ public class Particle {
     public Vector2 getVel() {
         return vel;
     }*/
-
+    
+    public Vector2 getAcc() {
+        return acc;
+    }
+    
 }

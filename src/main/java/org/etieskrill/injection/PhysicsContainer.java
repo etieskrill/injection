@@ -14,45 +14,88 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 public class PhysicsContainer {
 
-    private static final Vector2 gravity = new Vector2(0f, 400f);
-
+    private static final Vector2 gravity = new Vector2(0f, 1000f);
+    
+    private final int particleAmount = 1000;
     private final Queue<Particle> particles;
 
-    public PhysicsContainer(int particleAmount) {
+    public PhysicsContainer() {
         this.particles = new ConcurrentLinkedQueue<>();
         ParticleSupplier supplier = new ParticleSupplier(
-                new ConstantSizeStrategy(5f),
+                new ConstantSizeStrategy(2f),
                 new ConstantPositionStrategy(new Vector2(150f, 100f)),
-                //new ConstantVelocityStrategy(new Vector2(4f, 0f))
-                new SwivelingVelocityStrategy(new Vector2(8f, 0f), new Vector2(0f, 8f),
-                        50, Interpolator.Interpolation.LINEAR, true)
+                new ConstantVelocityStrategy(new Vector2(7f / subSteps, 0f))
+                /*new SwivelingVelocityStrategy(new Vector2(10f, 0f), new Vector2(0f, 10f),
+                        50, Interpolator.Interpolation.LINEAR, true)*/
         );
         new ParticleSpawner(particleAmount, supplier, particles, 33).start();
     }
-
-    public void update(float delta) {
-        for (Particle particle : particles) {
-            //Apply all forces, regardless of delta time
-            applyGlobalGravity(particle);
-            //applyPointGravity(particle);
-            //applyAttraction(particle);
-
-            //Apply all constraints after particle acted on its own accord
-            //applyCircleConstraint(particle);
-            applyContainerConstraint(particle);
-
-            //Prompt particle to update, taking delta time into account
-            particle.update(delta);
-        }
-        for (int i = 0; i < 4; i++) {
+    
+    private final float subSteps = 4;
+    
+    protected void update(float delta) {
+        float subDelta = delta / subSteps;
+        
+        for (int i = 0; i < subSteps; i++) {
             for (Particle particle : particles) {
+                //Apply all forces, regardless of delta time
+                applyGlobalGravity(particle);
+                //applyPointGravity(particle);
+                //applyAttraction(particle);
+                applyHeating(particle);
+                applyHeatSpread(particle);
+                applyHeatForce(particle);
+    
+                //Apply all constraints after particle acted on its own accord
+                //applyCircleConstraint(particle);
+                applyContainerConstraint(particle);
                 solveCollisions(particle);
+    
+                //Prompt particle to update, taking delta time into account
+                particle.update(subDelta);
             }
         }
     }
 
     private void applyGlobalGravity(Particle particle) {
         particle.accelerate(gravity);
+    }
+    
+    private void applyHeating(Particle particle) {
+        final float height = App.windowSize.getY();
+    
+        float x = particle.getPos().getX();
+        float y = particle.getPos().getY();
+        float radius = particle.getRadius();
+        float tolerance = 2 * radius;
+        float center = 600f;
+        float size = 600;
+        
+        float dist = Math.abs(x - center);
+    
+        if (y > height - radius - tolerance && dist < size) {
+            particle.heat(0.5f / subSteps);
+        }
+    }
+    
+    private void applyHeatSpread(Particle particle1) {
+        for (Particle particle2 : particles) {
+            if (particle1.equals(particle2)) continue;
+            float dist = particle1.getPos().sub(particle2.getPos()).length();
+            /*if (dist > 2 * (particle1.getRadius() + particle2.getRadius())) {
+                particle1.heat(particle2.getTemp() / (3f * dist * dist));
+            }*/
+            float transfer = particle1.getTemp() / (4f * dist * dist);
+            particle1.heat(-transfer);
+            particle2.heat(transfer);
+        }
+    }
+    
+    private final Vector2 heatForce = new Vector2(0f, -2000f);
+    
+    private void applyHeatForce(Particle particle) {
+        float temp = particle.getTemp();
+        particle.accelerate(heatForce.scl(temp));
     }
 
     private final Vector2 circlePos = new Vector2(200f, 200f);
@@ -64,8 +107,7 @@ public class PhysicsContainer {
 
         if (dist > circleRadius - particle.getRadius()) {
             Vector2 n = toParticle.scl(1f / dist);
-            Vector2 newPos = circlePos.add(n.scl(dist - particle.getRadius() / 5f));
-            System.out.println("Correction vector: " + newPos.sub(particle.getPos()));
+            Vector2 newPos = circlePos.add(n.scl(dist - particle.getRadius() / 10f));
             particle.setPos(newPos);
         }
     }

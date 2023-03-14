@@ -37,15 +37,18 @@ public class Renderer extends Thread {
             physicsContainer.update(updateTime / 1f);
 
             GraphicsContext g2d = canvas.getGraphicsContext2D();
-            g2d.setFill(Color.DIMGRAY);
+            g2d.setFill(Color.BLACK);
             g2d.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
-            g2d.setFill(Color.LIGHTGRAY);
             final Vector2 circlePos = new Vector2(200f, 200f);
             final float circleRadius = 200f;
-            g2d.strokeOval(circlePos.getX() - (circleRadius), circlePos.getY() - (circleRadius), 2f * circleRadius, 2f * circleRadius);
+            g2d.setStroke(Color.DIMGRAY);
+            //g2d.strokeOval(circlePos.getX() - (circleRadius), circlePos.getY() - (circleRadius), 2f * circleRadius, 2f * circleRadius);
+            g2d.setFill(Color.LIGHTGRAY);
             for (Particle particle : physicsContainer.getParticles()) {
                 Vector2 pos = particle.getPos();
                 float radius = particle.getRadius();
+                //g2d.setFill(new Color(particle.getTemp(), 0.1f, 0.1f, 1f));
+                g2d.setFill(new Color(Math.max(particle.getTemp() * 1.2f - 0.2f, 0f), 0f, 0f, 1f));
                 g2d.fillOval(pos.getX() - radius, pos.getY() - radius, 2 * radius, 2 * radius);
             }
 

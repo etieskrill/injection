@@ -2,6 +2,21 @@ package org.etieskrill.injection.math;
 
 import java.util.Objects;
 
+/**
+ * This is a class which provides an assortment of interpolation functions, which can be expanded upon.
+ *
+ * <p>At it's core lies the private {@code _get} function, which maps a normalised {0;1} input domain to an equal
+ * normalised {0;1} output range. The range of the input domain can be manually defined should the need arise and is
+ * normalised in the public {@code get} function.
+ *
+ * <p>An interpolator is instantiated via the {@code getFor} factory method, which returns a subclass of
+ * {@code Interpolator} as specified by the {@code interpolation} argument.
+ *
+ * <p>Alternatively, custom interpolation implementations can be created by extending the {@code ExternalInterpolator}
+ * class.
+ *
+ * @author etieskrill
+ */
 public abstract class Interpolator {
 
     private final float rangeStart;
@@ -22,6 +37,15 @@ public abstract class Interpolator {
         this.rangeStart = rangeStart;
         this.rangeEnd = rangeEnd;
         this.bounce = bounce;
+    }
+
+    /**
+     * This class provides external access for custom interpolation implementations.
+     */
+    public static abstract class ExternalInterpolator extends Interpolator {
+        public ExternalInterpolator(float rangeStart, float rangeEnd, boolean bounce) {
+            super(rangeStart, rangeEnd, bounce);
+        }
     }
 
     public static Interpolator getFor(Interpolation interpolation) {
