@@ -1,18 +1,15 @@
-/*package org.etieskrill.injection;
+package org.etieskrill.injection;
 
 import org.lwjgl.system.MemoryStack;
 
 import java.nio.IntBuffer;
 
-import static org.lwjgl.glfw.Callbacks.*;
-import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.system.MemoryStack.*;
 import static org.lwjgl.system.MemoryUtil.*;
 
 public class LWJGLApp {
 
-    private long window;
+    /*private long window;
 
     public void run() {
 
@@ -113,7 +110,6 @@ public class LWJGLApp {
 
     public static void main(String[] args) {
         new LWJGLApp().run();
-    }
+    }*/
 
 }
-*/
