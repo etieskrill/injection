@@ -1,4 +1,4 @@
-package org.etieskrill.injection;
+package org.etieskrill.lwjgl.opencl.demo;
 
 import org.lwjgl.system.MemoryStack;
 

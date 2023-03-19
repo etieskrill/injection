@@ -2,7 +2,7 @@
  * Copyright LWJGL. All rights reserved.
  * License terms: https://www.lwjgl.org/license
  */
-package org.etieskrill.injection;
+package org.etieskrill.lwjgl.opencl.demo;
 
 import org.lwjgl.*;
 import org.lwjgl.system.*;
@@ -14,12 +14,12 @@ import static org.lwjgl.system.MemoryStack.*;
 import static org.lwjgl.system.MemoryUtil.*;
 
 /** OpenCL object info utilities. */
-final class InfoUtil {
+public final class InfoUtil {
     
     private InfoUtil() {
     }
     
-    static String getPlatformInfoStringASCII(long cl_platform_id, int param_name) {
+    public static String getPlatformInfoStringASCII(long cl_platform_id, int param_name) {
         try (MemoryStack stack = stackPush()) {
             PointerBuffer pp = stack.mallocPointer(1);
             checkCLError(clGetPlatformInfo(cl_platform_id, param_name, (ByteBuffer)null, pp));
@@ -32,7 +32,7 @@ final class InfoUtil {
         }
     }
     
-    static String getPlatformInfoStringUTF8(long cl_platform_id, int param_name) {
+    public static String getPlatformInfoStringUTF8(long cl_platform_id, int param_name) {
         try (MemoryStack stack = stackPush()) {
             PointerBuffer pp = stack.mallocPointer(1);
             checkCLError(clGetPlatformInfo(cl_platform_id, param_name, (ByteBuffer)null, pp));
@@ -82,7 +82,7 @@ final class InfoUtil {
         }
     }
     
-    static int getProgramBuildInfoInt(long cl_program_id, long cl_device_id, int param_name) {
+    public static int getProgramBuildInfoInt(long cl_program_id, long cl_device_id, int param_name) {
         try (MemoryStack stack = stackPush()) {
             IntBuffer pl = stack.mallocInt(1);
             checkCLError(clGetProgramBuildInfo(cl_program_id, cl_device_id, param_name, pl, null));
@@ -90,7 +90,7 @@ final class InfoUtil {
         }
     }
     
-    static String getProgramBuildInfoStringASCII(long cl_program_id, long cl_device_id, int param_name) {
+    public static String getProgramBuildInfoStringASCII(long cl_program_id, long cl_device_id, int param_name) {
         try (MemoryStack stack = stackPush()) {
             PointerBuffer pp = stack.mallocPointer(1);
             checkCLError(clGetProgramBuildInfo(cl_program_id, cl_device_id, param_name, (ByteBuffer)null, pp));

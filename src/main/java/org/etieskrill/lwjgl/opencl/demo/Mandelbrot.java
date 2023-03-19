@@ -2,7 +2,7 @@
  * Copyright LWJGL. All rights reserved.
  * License terms: https://www.lwjgl.org/license
  */
-package org.etieskrill.injection;
+package org.etieskrill.lwjgl.opencl.demo;
 
 import org.lwjgl.*;
 import org.lwjgl.opencl.*;
@@ -14,9 +14,9 @@ import java.nio.*;
 import java.util.*;
 import java.util.concurrent.*;
 
-import static org.etieskrill.injection.CLGLInteropDemo.*;
-import static org.etieskrill.injection.InfoUtil.*;
-import static org.etieskrill.injection.IOUtil.*;
+import static org.etieskrill.lwjgl.opencl.demo.CLGLInteropDemo.*;
+import static org.etieskrill.lwjgl.opencl.demo.InfoUtil.*;
+import static org.etieskrill.lwjgl.opencl.demo.IOUtil.*;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.glfw.GLFWNativeGLX.*;
 import static org.lwjgl.glfw.GLFWNativeWGL.*;
@@ -489,7 +489,7 @@ public class Mandelbrot {
         
         while (!glfwWindowShouldClose(window.handle)) {
             Runnable event;
-            while ((event = events.poll()) != null) {
+            while ((event =  events.poll()) != null) {
                 event.run();
             }
             
@@ -619,7 +619,7 @@ public class Mandelbrot {
         }
         
         // acquire GL objects, and enqueue a kernel with a probe from the list
-        int errcode = clEnqueueAcquireGLObjects(clQueue, clTexture, null, null);
+        int errcode = clEnqueueAcquireGLObjects(clQueue,  clTexture, null, null);
         checkCLError(errcode);
         
         errcode = clEnqueueNDRangeKernel(clQueue, clKernel, 2,

@@ -2,7 +2,7 @@
  * Copyright LWJGL. All rights reserved.
  * License terms: https://www.lwjgl.org/license
  */
-package org.etieskrill.injection;
+package org.etieskrill.lwjgl.opencl.demo;
 
 import org.lwjgl.*;
 import org.lwjgl.glfw.*;
@@ -13,7 +13,7 @@ import java.nio.*;
 import java.util.*;
 import java.util.concurrent.*;
 
-import static org.etieskrill.injection.InfoUtil.*;
+import static org.etieskrill.lwjgl.opencl.demo.InfoUtil.*;
 import static org.lwjgl.glfw.Callbacks.*;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opencl.CL10.*;
@@ -270,7 +270,7 @@ public final class CLGLInteropDemo {
         }
     }
     
-    private static List<Long> getDevices(long platform, int deviceType) {
+    public static List<Long> getDevices(long platform, int deviceType) {
         List<Long> devices;
         try (MemoryStack stack = stackPush()) {
             IntBuffer pi      = stack.mallocInt(1);

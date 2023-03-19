@@ -1,4 +1,4 @@
-package org.etieskrill.injection;
+package org.etieskrill.lwjgl.opencl.demo;
 
 import org.lwjgl.*;
 import org.lwjgl.opencl.*;
@@ -7,7 +7,7 @@ import org.lwjgl.system.*;
 import java.nio.*;
 import java.util.concurrent.*;
 
-import static org.etieskrill.injection.InfoUtil.*;
+import static org.etieskrill.lwjgl.opencl.demo.InfoUtil.*;
 import static org.lwjgl.opencl.CL11.*;
 import static org.lwjgl.opencl.KHRICD.*;
 import static org.lwjgl.system.MemoryStack.*;
