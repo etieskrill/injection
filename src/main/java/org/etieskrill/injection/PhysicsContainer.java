@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 public class PhysicsContainer {
 
-    private static final Vector2 gravity = new Vector2(0f, 1000f);
+    private static final Vector2 gravity = new Vector2(0f, 400f);
     
     private final int particleAmount = 1000;
     private final Queue<Particle> particles;
@@ -42,9 +42,9 @@ public class PhysicsContainer {
                 applyGlobalGravity(particle);
                 //applyPointGravity(particle);
                 //applyAttraction(particle);
-                applyHeating(particle);
-                applyHeatSpread(particle);
-                applyHeatForce(particle);
+                //applyHeating(particle);
+                //applyHeatSpread(particle);
+                //applyHeatForce(particle);
     
                 //Apply all constraints after particle acted on its own accord
                 //applyCircleConstraint(particle);

@@ -9,6 +9,7 @@ import org.lwjgl.PointerBuffer;
 import org.lwjgl.opencl.*;
 import org.lwjgl.system.MemoryStack;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
@@ -20,6 +21,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static org.etieskrill.lwjgl.opencl.demo.InfoUtil.getProgramBuildInfoInt;
 import static org.etieskrill.lwjgl.opencl.demo.InfoUtil.getProgramBuildInfoStringASCII;
+import static org.jocl.Sizeof.cl_float2;
 import static org.lwjgl.opencl.CL10.*;
 import static org.lwjgl.system.MemoryUtil.*;
 
@@ -45,7 +47,7 @@ public class OpenCLApp {
             
             platform = platforms.get(0);
             platformCapabilities = CL.createPlatformCapabilities(platform);
-            
+
             checkCLError(clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, null, pi));
             PointerBuffer devices = stack.mallocPointer(pi.get(0));
             checkCLError(clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, devices, (IntBuffer) null));
@@ -71,6 +73,9 @@ public class OpenCLApp {
         
         IntBuffer errorno = BufferUtils.createIntBuffer(1);
         long context = clCreateContext(properties, device, callback, NULL, errorno);
+        checkCLError(errorno.get(0));
+
+        long clPosBuffer = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, posBuffer, errorno);
         checkCLError(errorno.get(0));
         
         //long pPosCLMem = CL10.clCreateBuffer(context, (long) CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR, posArr, errorno);
@@ -105,18 +110,23 @@ public class OpenCLApp {
         checkCLError(errorno.get(0));
         
         //clSetKernelArg2f(kernel, 0, posArr[0][0], posArr[0][1]);
-        clSetKernelArg(kernel, 0, posBuffer);
+        clSetKernelArg1p(kernel, 0, clPosBuffer);
         clSetKernelArg1i(kernel, 1, 69);
         clSetKernelArg1f(kernel, 2, 4.20f);
+
+
         
         //clEnqueueWriteBuffer(queue, pPosCLMem, CL_FALSE, 0, DATA_SIZE, pos, 0, NULL, NULL);
         //clEnqueueWriteBuffer(queue, pPosCLMem, false, 0L, pos.getNativePointer(), NULL, NULL);
         
         PointerBuffer workSize = BufferUtils.createPointerBuffer(1);
+        PointerBuffer event = BufferUtils.createPointerBuffer(1);
         workSize.put(0, 1);
         checkCLError(clEnqueueNDRangeKernel(queue, kernel, 1, null, workSize,
                 null, null, null));
-        
+        checkCLError(clEnqueueReadBuffer(queue, clPosBuffer, false, 0, posBuffer, null, event));
+        checkCLError(clWaitForEvents(event));
+
         System.out.println(posBuffer.get(0) + " " + posBuffer.get(1));
     }
     

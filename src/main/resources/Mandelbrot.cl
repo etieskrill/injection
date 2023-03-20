@@ -43,7 +43,7 @@ kernel void mandelbrot(
     varfloat magnitudeSquared = 0;
     int iteration = 0;
 
-    while ( magnitudeSquared < 4 && iteration < maxIterations ) {
+    while (magnitudeSquared < 4 && iteration < maxIterations) {
         varfloat x2 = x*x;
         varfloat y2 = y*y;
         y = 2 * x * y + i;
@@ -52,7 +52,7 @@ kernel void mandelbrot(
         iteration++;
     }
 
-    if ( iteration == maxIterations )  {
+    if (iteration == maxIterations)  {
         #ifdef USE_TEXTURE
             write_imagef(output, (int2)(ix, iy), (float4)0);
         #else

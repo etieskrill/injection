@@ -11,7 +11,7 @@ import org.etieskrill.injection.math.Vector2;
 
 public class App extends Application {
 
-    protected static final Vector2 windowSize = new Vector2(1200f, 800f);
+    protected static final Vector2 windowSize = new Vector2(800f, 600f);
 
     @Override
     public void start(Stage stage) throws Exception {

@@ -36,6 +36,9 @@ public class Renderer extends Thread {
             //labelFPSText.setValue("FPS: " + 1f / updateTime);
             physicsContainer.update(updateTime / 1f);
 
+            long systemPhysicsTime = System.nanoTime();
+            double physicsTime = (systemPhysicsTime - start) / 1000000000d;
+
             GraphicsContext g2d = canvas.getGraphicsContext2D();
             g2d.setFill(Color.BLACK);
             g2d.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
@@ -48,9 +51,14 @@ public class Renderer extends Thread {
                 Vector2 pos = particle.getPos();
                 float radius = particle.getRadius();
                 //g2d.setFill(new Color(particle.getTemp(), 0.1f, 0.1f, 1f));
-                g2d.setFill(new Color(Math.max(particle.getTemp() * 1.2f - 0.2f, 0f), 0f, 0f, 1f));
+                //g2d.setFill(new Color(Math.max(particle.getTemp() * 1.2f - 0.2f, 0f), 0f, 0f, 1f));
                 g2d.fillOval(pos.getX() - radius, pos.getY() - radius, 2 * radius, 2 * radius);
             }
+
+            long systemRenderTime = System.nanoTime();
+            double renderTime = (systemRenderTime - physicsTime) / 1000000000d;
+
+            System.out.printf("Delta: %f, physics: %f, render: %f\n", delta, physicsTime, renderTime);
 
             try {
                 Thread.sleep((long) Math.max(((double) 2 * fpsMS) - Math.max((delta * 1000d), fpsMS), 0f)); //Sleep period dependent on last render cycle
