@@ -1,7 +1,5 @@
-package org.etieskrill.lwjgl.opencl;
+package org.etieskrill.injection;
 
-import com.sun.javafx.application.ParametersImpl;
-import org.etieskrill.injection.App;
 import org.etieskrill.injection.math.Vector2;
 import org.etieskrill.injection.particle.Particle;
 import org.lwjgl.BufferUtils;
@@ -13,10 +11,8 @@ import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.util.Objects;
 import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static org.etieskrill.lwjgl.opencl.demo.InfoUtil.getProgramBuildInfoInt;
 import static org.etieskrill.lwjgl.opencl.demo.InfoUtil.getProgramBuildInfoStringASCII;
@@ -24,7 +20,7 @@ import static org.lwjgl.opencl.CL10.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 import static org.lwjgl.system.MemoryUtil.memUTF8;
 
-public class OpenCLApp {
+public class CLPhysicsContainer {
     
     private static final int vectorDimension = 8;
     
@@ -43,7 +39,7 @@ public class OpenCLApp {
     
     private final Queue<Particle> particles;
     
-    public OpenCLApp(Queue<Particle> particles, int maxNumParticles) {
+    public CLPhysicsContainer(Queue<Particle> particles, int maxNumParticles) {
         this.particles = particles;
         
         initPlatformDeviceContextQueue();
@@ -109,7 +105,7 @@ public class OpenCLApp {
     private void buildProgram(String name) {
         String source;
         try {
-            byte[] bytes = Objects.requireNonNull(OpenCLApp.class.getClassLoader().getResourceAsStream(name)).readAllBytes();
+            byte[] bytes = Objects.requireNonNull(CLPhysicsContainer.class.getClassLoader().getResourceAsStream(name)).readAllBytes();
             source = new String(bytes, StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -144,12 +140,11 @@ public class OpenCLApp {
         checkCLError(clWaitForEvents(event));
     }
     
-    public PointerBuffer pollPosBuffer(Queue<Particle> particles) {
+    public PointerBuffer pollPosBuffer(Queue<Particle> particles, int size) {
         PointerBuffer event = BufferUtils.createPointerBuffer(1);
         checkCLError(clEnqueueReadBuffer(queue, clPosBuffer, true, 0, posBuffer, null, event));
         
         int i = 0;
-        int size = particles.size();
         
         for (Particle particle : particles) {
             if (i >= size) break;
@@ -167,6 +162,10 @@ public class OpenCLApp {
         
         posBuffer.rewind();
         return event;
+    }
+    
+    public PointerBuffer pollPosBuffer(Queue<Particle> particles) {
+        return pollPosBuffer(particles, particles.size());
     }
     
     public void setPosBuffer() {

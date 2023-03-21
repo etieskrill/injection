@@ -12,21 +12,18 @@ public class Renderer extends Thread {
     private final int fps = 60;
     private final long fpsMS = 1000 / fps;
     private final Canvas canvas;
-    private final SimpleStringProperty labelFPSText;
 
     private final PhysicsContainer physicsContainer;
 
     public Renderer(Canvas canvas, PhysicsContainer physicsContainer) {
         this.canvas = canvas;
         this.physicsContainer = physicsContainer;
-        this.labelFPSText = new SimpleStringProperty();
     }
 
     @Override
     public void run() {
         long start = System.nanoTime();
         double delta;
-        long now;
         long sleepTime = 0;
         int printInfo = 0;
 
@@ -35,7 +32,6 @@ public class Renderer extends Thread {
             start = System.nanoTime();
 
             float updateTime = Math.max((float) delta, 0);
-            //labelFPSText.setValue("FPS: " + 1f / updateTime);
             physicsContainer.update(updateTime);
 
             long systemPhysicsTime = System.nanoTime();
@@ -44,10 +40,7 @@ public class Renderer extends Thread {
             GraphicsContext g2d = canvas.getGraphicsContext2D();
             g2d.setFill(Color.BLACK);
             g2d.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
-            final Vector2 circlePos = new Vector2(200f, 200f);
-            final float circleRadius = 200f;
             g2d.setStroke(Color.DIMGRAY);
-            //g2d.strokeOval(circlePos.getX() - (circleRadius), circlePos.getY() - (circleRadius), 2f * circleRadius, 2f * circleRadius);
             g2d.setFill(Color.LIGHTGRAY);
             for (Particle particle : physicsContainer.getParticles()) {
                 Vector2 pos = particle.getPos();
@@ -75,10 +68,6 @@ public class Renderer extends Thread {
                         ex.getMessage());
             }
         }
-    }
-
-    public SimpleStringProperty getLabelFPSTextProperty() {
-        return labelFPSText;
     }
 
 }
