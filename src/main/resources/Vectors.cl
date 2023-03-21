@@ -62,12 +62,16 @@ float2 solveCollisions(float8* pos, const int num, const int gid, float2 parPos,
 
 //Single kernel array traversal and insertion
 kernel void sort(global float8* particles, const int num, global float8** sorted, const bool forX) {
-    int new = 0;
     for (int i = 0; i < num; i++) {
         if (sorted[i] == NULL) sorted[i] = particles + i;
         for (int j = i; j > 0; j--) {
             float v1 = forX ? *sorted[j].x : *sorted[j].y;
-            float v2 =
+            float v2 = forX ? *sorted[j - 1].x : *sorted[j - 1].y;
+            if (v1 > v2) {
+                float8* tmp = sorted[j];
+                sorted[j] = sorted[j - 1];
+                sorted[j - 1] = tmp;
+            }
             //eod im bloody tired, i clogged the toilet and i am going to bed
         }
     }
@@ -75,4 +79,4 @@ kernel void sort(global float8* particles, const int num, global float8** sorted
 
 //Multi-kernel integrity traversal
 
-//Single kernel array insertion
+//Single kernel array insertion //TODO maybe rough lookup table?
