@@ -53,11 +53,19 @@ public class Particle {
     public Vector2 getPos() {
         return pos;
     }
+    
+    public Vector2 getPosPrev() {
+        return posPrev;
+    }
 
     public void setPos(Vector2 vec) {
         this.pos.set(vec);
     }
-
+    
+    public void setPosPrev(Vector2 vec) {
+        this.posPrev.set(vec);
+    }
+    
     /*public void setVelZero() {
         this.vel.setZero();
     }

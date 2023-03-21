@@ -1,5 +1,61 @@
-kernel void print(global float2* pos, const int test1, const float test2) {
+float2 applyContainerConstraint(float2 pos, float rad, float2 ws);
+float2 solveCollisions(float8* pos, const int num, const int gid, float2 parPos, float rad);
+
+kernel void integrate(global float8* pos, const int num, const float delta, const float2 ws) {
     const int gid = get_global_id(0);
-    pos[0] = (float2)(10, 20);
-    printf("Hullo %d %v2hlf ", gid, pos[0]);
+    float8 par = pos[gid];
+
+    float2 parPos = (float2)(par.x, par.y);
+    float2 parPosPrev = (float2)(par.z, par.w);
+    float2 acc = (float2)(0, 0);//(par.hi, par.lo);
+    float rad = 2; //= par.even.z; //TODO replace with actual value (why tf do these specs return float4s)
+
+    float2 grav = (float2)(0, 400);
+
+    acc += grav;
+
+    parPos = applyContainerConstraint(parPos, rad, ws);
+    parPos = solveCollisions(pos, num, gid, parPos, rad);
+
+    float2 vel = parPos - parPosPrev;
+    parPosPrev = parPos;
+    parPos = parPos + vel + acc * delta * delta;
+
+    pos[gid] = (float8)(parPos, parPosPrev, acc, 0, 0);
+}
+
+float2 applyContainerConstraint(float2 pos, float rad, float2 ws) {
+    if (pos.x > ws.x - rad) {
+        pos.x = ws.x - rad;
+    } else if (pos.x < rad) {
+        pos.x = rad;
+    }
+
+    if (pos.y > ws.y - rad) {
+        pos.y = ws.y - rad;
+    } else if (pos.y < rad) {
+        pos.y = rad;
+    }
+
+    return pos;
+}
+
+float2 solveCollisions(float8* pos, const int num, const int gid, float2 parPos, float rad) {
+    for (int i = 0; i < num; i++) {
+        if (i == gid) continue;
+        float8 par2 = pos[i];
+        float2 relPos = parPos - (float2)(par2.x, par2.y);
+        float dist = length(relPos);
+        float desiredDist = 2 + rad; //TODO fill in radius
+        if (dist < desiredDist) {
+            float2 normalPos = normalize(relPos);
+            float correct = (desiredDist - dist) / 2;
+            normalPos *= correct;
+            parPos += normalPos;
+            pos[i].x -= normalPos.x;
+            pos[i].y -= normalPos.y;
+        }
+    }
+
+    return parPos;
 }

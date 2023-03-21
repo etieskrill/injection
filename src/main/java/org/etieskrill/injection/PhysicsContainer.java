@@ -1,12 +1,17 @@
 package org.etieskrill.injection;
 
+import javafx.application.Platform;
 import org.etieskrill.injection.math.Interpolator;
 import org.etieskrill.injection.math.Vector2;
 import org.etieskrill.injection.particle.Particle;
 import org.etieskrill.injection.particle.generation.*;
+import org.etieskrill.lwjgl.opencl.OpenCLApp;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+
+import static org.etieskrill.lwjgl.opencl.OpenCLApp.checkCLError;
+import static org.lwjgl.opencl.CL10.clWaitForEvents;
 
 /**
  * This is both a particle container and a physics solver engine as of now, and further abstraction will be introduced
@@ -16,24 +21,27 @@ public class PhysicsContainer {
 
     private static final Vector2 gravity = new Vector2(0f, 400f);
     
-    private final int particleAmount = 1000;
+    private final int particleAmount = 4000;
     private final Queue<Particle> particles;
+    
+    private final OpenCLApp openCL;
 
     public PhysicsContainer() {
         this.particles = new ConcurrentLinkedQueue<>();
         ParticleSupplier supplier = new ParticleSupplier(
                 new ConstantSizeStrategy(2f),
                 new ConstantPositionStrategy(new Vector2(150f, 100f)),
-                new ConstantVelocityStrategy(new Vector2(7f / subSteps, 0f))
-                /*new SwivelingVelocityStrategy(new Vector2(10f, 0f), new Vector2(0f, 10f),
-                        50, Interpolator.Interpolation.LINEAR, true)*/
+                new ConstantVelocityStrategy(new Vector2(10f / subSteps, 0f))
+                /*new SwivelingVelocityStrategy(new Vector2(2f, 0f), new Vector2(0f, 2f),
+                        70, Interpolator.Interpolation.LINEAR, true)*/
         );
-        new ParticleSpawner(particleAmount, supplier, particles, 33).start();
+        this.openCL = new OpenCLApp(particles, particleAmount);
+        new ParticleSpawner(particleAmount, supplier, particles, 20).start();
     }
     
-    private final float subSteps = 4;
+    private final float subSteps = 8;
     
-    protected void update(float delta) {
+    /*protected void update(float delta) {
         float subDelta = delta / subSteps;
         
         for (int i = 0; i < subSteps; i++) {
@@ -55,6 +63,20 @@ public class PhysicsContainer {
                 particle.update(subDelta);
             }
         }
+    }*/
+    
+    protected void update(float delta) {
+        float subDelta = delta / subSteps;
+        int size = particles.size();
+        openCL.setPosBuffer();
+        
+        for (int i = 0; i < subSteps; i++) {
+            openCL.updatePosBuffer(subDelta);
+        }
+        
+        if (size != particles.size()) return; //TODO whack, replace this with latch or something
+        
+        checkCLError(clWaitForEvents(openCL.pollPosBuffer(particles)));
     }
 
     private void applyGlobalGravity(Particle particle) {

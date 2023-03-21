@@ -27,6 +27,8 @@ public class Renderer extends Thread {
         long start = System.nanoTime();
         double delta;
         long now;
+        long sleepTime = 0;
+        int printInfo = 0;
 
         while (true) {
             delta = (System.nanoTime() - start) / 1000000000d;
@@ -34,7 +36,7 @@ public class Renderer extends Thread {
 
             float updateTime = Math.max((float) delta, 0);
             //labelFPSText.setValue("FPS: " + 1f / updateTime);
-            physicsContainer.update(updateTime / 1f);
+            physicsContainer.update(updateTime);
 
             long systemPhysicsTime = System.nanoTime();
             double physicsTime = (systemPhysicsTime - start) / 1000000000d;
@@ -56,12 +58,16 @@ public class Renderer extends Thread {
             }
 
             long systemRenderTime = System.nanoTime();
-            double renderTime = (systemRenderTime - physicsTime) / 1000000000d;
-
-            System.out.printf("Delta: %f, physics: %f, render: %f\n", delta, physicsTime, renderTime);
+            double renderTime = (systemRenderTime - systemPhysicsTime) / 1000000000d;
+    
+            if (printInfo++ > 60) {
+                System.out.printf("Delta: %f, physics: %f, render: %f, sleep: %f\n", delta, physicsTime, renderTime, sleepTime / 1000f);
+                printInfo = 0;
+            }
 
             try {
-                Thread.sleep((long) Math.max(((double) 2 * fpsMS) - Math.max((delta * 1000d), fpsMS), 0f)); //Sleep period dependent on last render cycle
+                sleepTime = (long) Math.max(((double) 2 * fpsMS) - Math.max((delta * 1000d), fpsMS), 0f);
+                Thread.sleep(sleepTime); //Sleep period dependent on last render cycle
             } catch (InterruptedException e) {
                 System.err.println("Render thread could not sleep:\n" + e.getMessage());
             } catch (IllegalArgumentException ex) {

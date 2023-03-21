@@ -4,14 +4,13 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
-import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 import org.etieskrill.injection.math.Vector2;
 
 public class App extends Application {
 
-    protected static final Vector2 windowSize = new Vector2(800f, 600f);
+    public static final Vector2 windowSize = new Vector2(800f, 600f);
 
     @Override
     public void start(Stage stage) throws Exception {
