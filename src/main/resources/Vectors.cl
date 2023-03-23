@@ -61,14 +61,14 @@ float2 solveCollisions(float8* pos, const int num, const int gid, float2 parPos,
 }
 
 //Single kernel array traversal and insertion
-kernel void sort(global float8* particles, const int num, global float8** sorted, const bool forX) {
+kernel void sort(global float8* particles, const int num, global float8** sorted, const int forY) {
     for (int i = 0; i < num; i++) {
         if (sorted[i] == NULL) sorted[i] = particles + i;
         for (int j = i; j > 0; j--) {
-            float v1 = forX ? *sorted[j].x : *sorted[j].y;
-            float v2 = forX ? *sorted[j - 1].x : *sorted[j - 1].y;
+            float v1 = forY ? (*sorted[j]).y : (*sorted[j]).x;
+            float v2 = forY ? (*sorted[j - 1]).y : (*sorted[j - 1]).x;
             if (v1 > v2) {
-                float8* tmp = sorted[j];
+                global float8* tmp = sorted[j];
                 sorted[j] = sorted[j - 1];
                 sorted[j - 1] = tmp;
             }

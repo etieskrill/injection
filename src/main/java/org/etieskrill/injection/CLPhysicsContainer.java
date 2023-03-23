@@ -2,10 +2,12 @@ package org.etieskrill.injection;
 
 import org.etieskrill.injection.math.Vector2;
 import org.etieskrill.injection.particle.Particle;
+import org.jocl.Sizeof;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.opencl.*;
 import org.lwjgl.system.MemoryStack;
+import org.lwjgl.system.Pointer;
 
 import java.io.IOException;
 import java.nio.FloatBuffer;
@@ -13,6 +15,7 @@ import java.nio.IntBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static org.etieskrill.lwjgl.opencl.demo.InfoUtil.getProgramBuildInfoInt;
 import static org.etieskrill.lwjgl.opencl.demo.InfoUtil.getProgramBuildInfoStringASCII;
@@ -34,8 +37,10 @@ public class CLPhysicsContainer {
     private long program;
     private long kernel;
     
-    private final FloatBuffer posBuffer;
+    private FloatBuffer posBuffer;
     private long clPosBuffer;
+    private PointerBuffer workSize;
+    private PointerBuffer event;
     
     private final Queue<Particle> particles;
     
@@ -46,23 +51,23 @@ public class CLPhysicsContainer {
         buildProgram("Vectors.cl");
         
         posBuffer = BufferUtils.createFloatBuffer(vectorDimension * maxNumParticles);
-        clPosBuffer = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, posBuffer, errorno);
+        clPosBuffer = clCreateBuffer(context, /*CL_MEM_READ_WRITE*/CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, posBuffer, errorno);
         checkCLError(errorno.get(0));
         
-        kernel = clCreateKernel(program, "integrate", errorno);
+        //kernel = clCreateKernel(program, "integrate", errorno);
+        kernel = clCreateKernel(program, "sort", errorno);
         checkCLError(errorno.get(0));
     
-        /*for (int i = 0; i < 60; i++) {
-            long start = System.nanoTime();
-            updatePosBuffer(0.016f);
-    
-            checkCLError(clWaitForEvents(pollPosBuffer()));
-            while (posBuffer.hasRemaining()) {
-                System.out.print("sout: " + posBuffer.get() + " " + posBuffer.get());
-            }
-            posBuffer.rewind();
-            System.out.println("cycle time: " + (System.nanoTime() - start) / 1000000d);
-        }*/
+        workSize = BufferUtils.createPointerBuffer(1);
+        event = BufferUtils.createPointerBuffer(1);
+        
+        long clXSortedPosBuffer = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, Sizeof.cl_long, errorno);
+        checkCLError(errorno.get(0));
+        
+        clSetKernelArg1p(kernel, 0, clPosBuffer);
+        clSetKernelArg1i(kernel, 1, particles.size());
+        clSetKernelArg1p(kernel, 2, clXSortedPosBuffer);
+        clSetKernelArg1i(kernel, 3, 0);
     }
     
     /*public static void main(String[] args) {
@@ -126,26 +131,36 @@ public class CLPhysicsContainer {
         checkCLError(clBuildProgram(program, device, "", programCallback, NULL));
     }
     
+    private void cleanup() {
+        checkCLError(clReleaseMemObject(platform));
+        checkCLError(clReleaseContext(context));
+        checkCLError(clReleaseCommandQueue(queue));
+        checkCLError(clReleaseProgram(program));
+        checkCLError(clReleaseKernel(kernel));
+        checkCLError(clReleaseMemObject(clPosBuffer));
+        posBuffer = null;
+        workSize = null;
+        particles.clear();
+        
+        CL.destroy();
+    }
+    
     public void updatePosBuffer(float delta) {
         clSetKernelArg1p(kernel, 0, clPosBuffer);
         clSetKernelArg1i(kernel, 1, particles.size());
         clSetKernelArg1f(kernel, 2, delta);
         clSetKernelArg2f(kernel, 3, App.windowSize.getX(), App.windowSize.getY());
         
-        PointerBuffer workSize = BufferUtils.createPointerBuffer(1);
         workSize.put(0, particles.size());
-        PointerBuffer event = BufferUtils.createPointerBuffer(1);
         checkCLError(clEnqueueNDRangeKernel(queue, kernel, 1, null, workSize,
                 null, null, event));
         checkCLError(clWaitForEvents(event));
     }
     
-    public PointerBuffer pollPosBuffer(Queue<Particle> particles, int size) {
-        PointerBuffer event = BufferUtils.createPointerBuffer(1);
-        checkCLError(clEnqueueReadBuffer(queue, clPosBuffer, true, 0, posBuffer, null, event));
+    public void pollPosBuffer(Queue<Particle> particles, int size) {
+        checkCLError(clEnqueueReadBuffer(queue, clPosBuffer, true, 0, posBuffer, null, null));
         
         int i = 0;
-        
         for (Particle particle : particles) {
             if (i >= size) break;
             
@@ -161,11 +176,10 @@ public class CLPhysicsContainer {
         }
         
         posBuffer.rewind();
-        return event;
     }
     
-    public PointerBuffer pollPosBuffer(Queue<Particle> particles) {
-        return pollPosBuffer(particles, particles.size());
+    public void pollPosBuffer(Queue<Particle> particles) {
+        pollPosBuffer(particles, particles.size());
     }
     
     public void setPosBuffer() {

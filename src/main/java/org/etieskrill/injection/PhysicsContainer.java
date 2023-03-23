@@ -81,7 +81,7 @@ public class PhysicsContainer {
         }
         
         //Do not update particles added since the last call to setPosBuffer
-        checkCLError(clWaitForEvents(clContainer.pollPosBuffer(particles, size)));
+        clContainer.pollPosBuffer(particles, size);
     }
 
     private void applyGlobalGravity(Particle particle) {
