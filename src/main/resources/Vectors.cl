@@ -1,5 +1,5 @@
 float2 applyContainerConstraint(float2 pos, float rad, float2 ws);
-float2 solveCollisions(float8* pos, const int num, const int gid, float2 parPos, float rad);
+float2 solveCollisions(global float8* pos, const int num, const int gid, float2 parPos, float rad);
 
 kernel void integrate(global float8* pos, const int num, const float delta, const float2 ws) {
     const int gid = get_global_id(0);
@@ -40,7 +40,7 @@ float2 applyContainerConstraint(float2 pos, float rad, float2 ws) {
     return pos;
 }
 
-float2 solveCollisions(float8* pos, const int num, const int gid, float2 parPos, float rad) {
+float2 solveCollisions(global float8* pos, const int num, const int gid, float2 parPos, float rad) {
     for (int i = 0; i < num; i++) {
         if (i == gid) continue;
         float8 par2 = pos[i];
@@ -61,7 +61,7 @@ float2 solveCollisions(float8* pos, const int num, const int gid, float2 parPos,
 }
 
 //Single kernel array traversal and insertion
-kernel void sort(global float8* particles, const int num, global float8** sorted, const int forY) {
+/*kernel void sort(global float8* particles, const int num, global float8** sorted, const int forY) {
     for (int i = 0; i < num; i++) {
         if (sorted[i] == NULL) sorted[i] = particles + i;
         for (int j = i; j > 0; j--) {
@@ -75,7 +75,7 @@ kernel void sort(global float8* particles, const int num, global float8** sorted
             //eod im bloody tired, i clogged the toilet and i am going to bed
         }
     }
-}
+}*/
 
 //Multi-kernel integrity traversal
 

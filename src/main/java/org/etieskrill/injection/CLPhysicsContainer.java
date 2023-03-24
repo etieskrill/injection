@@ -54,20 +54,20 @@ public class CLPhysicsContainer {
         clPosBuffer = clCreateBuffer(context, /*CL_MEM_READ_WRITE*/CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, posBuffer, errorno);
         checkCLError(errorno.get(0));
         
-        //kernel = clCreateKernel(program, "integrate", errorno);
-        kernel = clCreateKernel(program, "sort", errorno);
+        kernel = clCreateKernel(program, "integrate", errorno);
+        //kernel = clCreateKernel(program, "sort", errorno);
         checkCLError(errorno.get(0));
     
         workSize = BufferUtils.createPointerBuffer(1);
         event = BufferUtils.createPointerBuffer(1);
         
-        long clXSortedPosBuffer = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, Sizeof.cl_long, errorno);
+        /*long clXSortedPosBuffer = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, Sizeof.cl_long, errorno);
         checkCLError(errorno.get(0));
         
         clSetKernelArg1p(kernel, 0, clPosBuffer);
         clSetKernelArg1i(kernel, 1, particles.size());
         clSetKernelArg1p(kernel, 2, clXSortedPosBuffer);
-        clSetKernelArg1i(kernel, 3, 0);
+        clSetKernelArg1i(kernel, 3, 0);*/
     }
     
     /*public static void main(String[] args) {
