@@ -1,0 +1,1 @@
+java -jar ./injection-1.0-SNAPSHOT-injection.jar
