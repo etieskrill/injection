@@ -45,7 +45,7 @@ public class PhysicsContainer {
         new ParticleSpawner(particleAmount / 2, supplier2, particles, 30).start();
     }
     
-    private final float subSteps = 24;
+    private final float subSteps = 64;
     
     /*protected void update(float delta) {
         float subDelta = delta / subSteps;

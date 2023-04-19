@@ -37,6 +37,8 @@ public class Renderer extends Thread {
             long systemPhysicsTime = System.nanoTime();
             double physicsTime = (systemPhysicsTime - start) / 1000000000d;
 
+            canvas.setTranslateX(-App.windowX.get());
+            canvas.setTranslateY(-App.windowY.get());
             GraphicsContext g2d = canvas.getGraphicsContext2D();
             g2d.setFill(Color.BLACK);
             g2d.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());

@@ -5,15 +5,16 @@ import org.etieskrill.injection.particle.Particle;
 import org.jocl.Sizeof;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.PointerBuffer;
-import org.lwjgl.opencl.*;
+import org.lwjgl.opencl.CL;
+import org.lwjgl.opencl.CLContextCallback;
+import org.lwjgl.opencl.CLContextCallbackI;
+import org.lwjgl.opencl.CLProgramCallback;
 import org.lwjgl.system.MemoryStack;
-import org.lwjgl.system.Pointer;
 
 import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -55,14 +56,16 @@ public class CLPhysicsContainer {
         clPosBuffer = clCreateBuffer(context, /*CL_MEM_READ_WRITE*/CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, posBuffer, errorno);
         checkCLError(errorno.get(0));
         
-        //kernel = clCreateKernel(program, "integrate", errorno);
-        kernel = clCreateKernel(program, "sort", errorno);
+        kernel = clCreateKernel(program, "integrate", errorno);
+        //kernel = clCreateKernel(program, "sort", errorno);
         checkCLError(errorno.get(0));
     
         workSize = BufferUtils.createPointerBuffer(1);
+        //workSize.put(maxNumParticles).put(maxNumParticles);
         event = BufferUtils.createPointerBuffer(1);
 
-        long clXSortedPosBuffer = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, Sizeof.cl_long, errorno);
+        /*long clXSortedPosBuffer = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, Sizeof.cl_int, errorno);
+        //long clXSortedPosBuffer = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, (long) maxNumParticles * Sizeof.cl_long, errorno);
         checkCLError(errorno.get(0));
         
         clSetKernelArg1p(kernel, 0, clPosBuffer);
@@ -78,7 +81,7 @@ public class CLPhysicsContainer {
 
         int i = 0;
         for (Particle particle : particles) {
-            if (i >= maxNumParticles) break;
+            if (i++ >= maxNumParticles) break;
 
             if (!xSortedPosBuffer.hasRemaining()) {
                 System.err.println("Could not find position data for particle at index " + i + ".");
@@ -88,12 +91,11 @@ public class CLPhysicsContainer {
             particle.setPosPrev(new Vector2(xSortedPosBuffer.get(), xSortedPosBuffer.get()));
             //TODO find a better solution for this hot garbage
             for (int j = 0; j < 4; j++) xSortedPosBuffer.get();
-            i++;
         }
 
         for (Particle particle : particles) {
             System.out.println(particle.getPos());
-        }
+        }*/
     }
     
     public static void main(String[] args) {
@@ -181,6 +183,7 @@ public class CLPhysicsContainer {
         clSetKernelArg1i(kernel, 1, particles.size());
         clSetKernelArg1f(kernel, 2, delta);
         clSetKernelArg2f(kernel, 3, App.windowSize.getX(), App.windowSize.getY());
+        clSetKernelArg2f(kernel, 4, (float) App.windowX.get(), (float) App.windowY.get());
         
         workSize.put(0, particles.size());
         checkCLError(clEnqueueNDRangeKernel(queue, kernel, 1, null, workSize,

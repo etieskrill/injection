@@ -1,41 +1,47 @@
-float2 applyContainerConstraint(float2 pars, float rad, float2 ws);
+float2 applyContainerConstraint(float2 pars, float rad, float2 wSize, float2 wPos);
 float2 solveCollisionsForce(global float8* pars, const int num, const int gid, float2 parPos, float rad);
 float2 solveCollisionsSweep(global float8* pars, const int num, const int gid, float2 parPos, float rad);
 
-kernel void integrate(global float8* pars, const int num, const float delta, const float2 ws) {
+kernel void integrate(global float8* particles, const int num, const float delta, const float2 wSize, const float2 wPos) {
     const int gid = get_global_id(0);
-    float8 par = pars[gid];
+    float8 particle = particles[gid];
 
-    float2 parPos = (float2)(par.x, par.y);
-    float2 parPosPrev = (float2)(par.z, par.w);
-    float2 acc = (float2)(0, 0);//(par.hi, par.lo);
-    float rad = 3; //= par.even.z; //TODO replace with actual value (why tf do these specs return float4s)
+    float2 position = (float2)(particle.x, particle.y);
+    float2 previousPosition = (float2)(particle.z, particle.w);
+    float2 acceleration = (float2)(0, 0);//(particle.hi, particle.lo);
+    float radius = 3; //= particle.even.z; //TODO replace with actual value (why tf do these specs return float4s)
 
-    float2 grav = (float2)(0, 600);
+    float2 gravity = (float2)(0, 1000);
 
-    acc += grav;
+    acceleration += gravity;
 
-    parPos = applyContainerConstraint(parPos, rad, ws);
-    parPos = solveCollisionsForce(pars, num, gid, parPos, rad);
+    position = applyContainerConstraint(position, radius, wSize, wPos);
+    position = solveCollisionsForce(particles, num, gid, position, radius);
 
-    float2 vel = parPos - parPosPrev;
-    parPosPrev = parPos;
-    parPos = parPos + vel + acc * delta * delta;
+    //float damping = 0.5;
 
-    pars[gid] = (float8)(parPos, parPosPrev, acc, 0, 0);
+    //float2 vel = (position - previousPosition) * (float)(1 - (damping * delta));
+    float2 vel = position - previousPosition;
+    previousPosition = position;
+    position = position + vel + acceleration * delta * delta;
+    //position -= 0.001f * (position - previousPosition);
+
+    particles[gid] = (float8)(position, previousPosition, acceleration, 0, 0);
 }
 
-float2 applyContainerConstraint(float2 pos, float rad, float2 ws) {
-    if (pos.x > ws.x - rad) {
-        pos.x = ws.x - rad;
-    } else if (pos.x < rad) {
-        pos.x = rad;
+float2 applyContainerConstraint(float2 pos, float rad, float2 wSize, float2 wPos) {
+    //pos.x + rad > wPos.x + wSize.x
+
+    if (pos.x > wPos.x + wSize.x - rad) {
+        pos.x -= (pos.x - (wPos.x + wSize.x - rad)) * 0.025f;
+    } else if (pos.x < wPos.x + rad) {
+        pos.x -= (pos.x - (wPos.x + rad)) * 0.025f;
     }
 
-    if (pos.y > ws.y - rad) {
-        pos.y = ws.y - rad;
-    } else if (pos.y < rad) {
-        pos.y = rad;
+    if (pos.y > wPos.y + wSize.y - rad) {
+        pos.y -= (pos.y - (wPos.y + wSize.y - rad)) * 0.025f;
+    } else if (pos.y < wPos.y + rad) {
+        pos.y -= (pos.y - (wPos.y + rad)) * 0.025f;
     }
 
     return pos;
@@ -50,7 +56,7 @@ float2 solveCollisionsForce(global float8* pars, const int num, const int gid, f
         float desiredDist = 3 + rad; //TODO fill in radius
         if (dist < desiredDist) {
             float2 normalPos = normalize(relPos);
-            float correct = (desiredDist - dist) / 2;
+            float correct = (desiredDist - dist) / 8; //TODO originally 2, is this a bad idea?
             normalPos *= correct;
             parPos += normalPos;
             pars[i].x -= normalPos.x;
@@ -82,11 +88,15 @@ void findCollisions(
             float minB = posB - radB;
             float maxB = posB + radB;
             if (maxA < minB) break; //Searching particle's span ended
-            if (minA > maxB) continue; //
-            //TODO narrow phase
-            solveCollision
+            if (minA > maxB) continue; //TODO This should never happen though???
+
+            //At this point, the two boundary boxes are colliding on this axis
+            collisions[numCols] = (int2)(i, j);
+            numCols++;
         }
     }
+
+    *numCollisions = numCols;
 }
 
 float2 solveCollisionsSweep(global float8* pars, const int num, const int gid, float2 parPos, float rad) {
