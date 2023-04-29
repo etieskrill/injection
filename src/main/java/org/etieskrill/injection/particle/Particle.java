@@ -1,25 +1,25 @@
 package org.etieskrill.injection.particle;
 
-import org.etieskrill.injection.math.Vector2;
+import org.etieskrill.injection.math.Vector2f;
 
 public class Particle {
 
     private final float radius;
-    private final Vector2 pos;
-    private final Vector2 posPrev;
-    private final Vector2 acc;
+    private final Vector2f pos;
+    private final Vector2f posPrev;
+    private final Vector2f acc;
 
     private float temp;
 
-    public Particle(float radius, Vector2 pos) {
+    public Particle(float radius, Vector2f pos) {
         this(radius, pos, pos);
     }
 
-    public Particle(float radius, Vector2 posPrev, Vector2 pos) {
+    public Particle(float radius, Vector2f posPrev, Vector2f pos) {
         this.radius = radius;
-        this.pos = new Vector2(pos);
-        this.posPrev = new Vector2(posPrev);
-        this.acc = new Vector2();
+        this.pos = new Vector2f(pos);
+        this.posPrev = new Vector2f(posPrev);
+        this.acc = new Vector2f();
     }
 
     public void update(float delta) {
@@ -27,14 +27,14 @@ public class Particle {
         this.pos.set(pos.add(vel.scl(delta)));
         acc.setZero();*/
 
-        Vector2 vel = pos.sub(posPrev);
+        Vector2f vel = pos.sub(posPrev);
         posPrev.set(pos);
         pos.set(pos.add(vel).add(acc.scl(delta * delta)));
         acc.setZero();
         temp *= Math.max(1f - (0.3f * delta), 0f);
     }
 
-    public void accelerate(Vector2 vec) {
+    public void accelerate(Vector2f vec) {
         this.acc.set(this.acc.add(vec));
     }
     
@@ -50,19 +50,19 @@ public class Particle {
         return radius;
     }
 
-    public Vector2 getPos() {
+    public Vector2f getPos() {
         return pos;
     }
     
-    public Vector2 getPosPrev() {
+    public Vector2f getPosPrev() {
         return posPrev;
     }
 
-    public void setPos(Vector2 vec) {
+    public void setPos(Vector2f vec) {
         this.pos.set(vec);
     }
     
-    public void setPosPrev(Vector2 vec) {
+    public void setPosPrev(Vector2f vec) {
         this.posPrev.set(vec);
     }
     
@@ -70,11 +70,11 @@ public class Particle {
         this.vel.setZero();
     }
 
-    public Vector2 getVel() {
+    public Vector2f getVel() {
         return vel;
     }*/
     
-    public Vector2 getAcc() {
+    public Vector2f getAcc() {
         return acc;
     }
     

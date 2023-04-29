@@ -1,7 +1,8 @@
 package org.etieskrill.injection;
 
-import org.etieskrill.injection.math.Vector2;
+import org.etieskrill.injection.math.Vector2f;
 import org.etieskrill.injection.particle.Particle;
+import org.etieskrill.injection.util.ResourceReader;
 import org.jocl.Sizeof;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.PointerBuffer;
@@ -11,11 +12,8 @@ import org.lwjgl.opencl.CLContextCallbackI;
 import org.lwjgl.opencl.CLProgramCallback;
 import org.lwjgl.system.MemoryStack;
 
-import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.nio.charset.StandardCharsets;
-import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -57,15 +55,17 @@ public class CLPhysicsContainer {
         checkCLError(errorno.get(0));
         
         kernel = clCreateKernel(program, "integrate", errorno);
-        //kernel = clCreateKernel(program, "sort", errorno);
         checkCLError(errorno.get(0));
     
         workSize = BufferUtils.createPointerBuffer(1);
         //workSize.put(maxNumParticles).put(maxNumParticles);
         event = BufferUtils.createPointerBuffer(1);
 
-        /*long clXSortedPosBuffer = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, Sizeof.cl_int, errorno);
-        //long clXSortedPosBuffer = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, (long) maxNumParticles * Sizeof.cl_long, errorno);
+        /*TODO*///long clXSortedPosBuffer = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, Sizeof.cl_int2, errorno);
+        long clXSortedPosBuffer = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, (long) maxNumParticles * Sizeof.cl_int2, errorno);
+        checkCLError(errorno.get(0));
+
+        kernel = clCreateKernel(program, "sort", errorno);
         checkCLError(errorno.get(0));
         
         clSetKernelArg1p(kernel, 0, clPosBuffer);
@@ -87,22 +87,22 @@ public class CLPhysicsContainer {
                 System.err.println("Could not find position data for particle at index " + i + ".");
                 break;
             }
-            particle.setPos(new Vector2(xSortedPosBuffer.get(), xSortedPosBuffer.get()));
-            particle.setPosPrev(new Vector2(xSortedPosBuffer.get(), xSortedPosBuffer.get()));
+            particle.setPos(new Vector2f(xSortedPosBuffer.get(), xSortedPosBuffer.get()));
+            particle.setPosPrev(new Vector2f(xSortedPosBuffer.get(), xSortedPosBuffer.get()));
             //TODO find a better solution for this hot garbage
             for (int j = 0; j < 4; j++) xSortedPosBuffer.get();
         }
 
         for (Particle particle : particles) {
             System.out.println(particle.getPos());
-        }*/
+        }/*TODO*/
     }
     
     public static void main(String[] args) {
         Queue<Particle> ps = new ConcurrentLinkedQueue<>();
-        ps.add(new Particle(3f, new Vector2(100f, 50f)));
-        ps.add(new Particle(3f, new Vector2(50f, 50f)));
-        ps.add(new Particle(3f, new Vector2(150f, 50f)));
+        ps.add(new Particle(3f, new Vector2f(100f, 50f)));
+        ps.add(new Particle(3f, new Vector2f(50f, 50f)));
+        ps.add(new Particle(3f, new Vector2f(150f, 50f)));
 
         new CLPhysicsContainer(ps, 3);
     }
@@ -141,13 +141,7 @@ public class CLPhysicsContainer {
     }
     
     private void buildProgram(String name) {
-        String source;
-        try {
-            byte[] bytes = Objects.requireNonNull(CLPhysicsContainer.class.getClassLoader().getResourceAsStream(name)).readAllBytes();
-            source = new String(bytes, StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        String source = ResourceReader.getRaw(name);
         program = clCreateProgramWithSource(context, source, errorno);
         checkCLError(errorno.get(0));
     
@@ -202,8 +196,8 @@ public class CLPhysicsContainer {
                 System.err.println("Could not find position data for particle at index " + i + ".");
                 break;
             }
-            particle.setPos(new Vector2(posBuffer.get(), posBuffer.get()));
-            particle.setPosPrev(new Vector2(posBuffer.get(), posBuffer.get()));
+            particle.setPos(new Vector2f(posBuffer.get(), posBuffer.get()));
+            particle.setPosPrev(new Vector2f(posBuffer.get(), posBuffer.get()));
             //TODO find a better solution for this hot garbage
             for (int j = 0; j < 4; j++) posBuffer.get();
             i++;

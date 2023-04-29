@@ -1,23 +1,22 @@
 package org.etieskrill.injection.math;
 
-public class Vector2 {
+public class Vector2f {
 
     private float x;
     private float y;
 
-    public Vector2(float x, float y) {
+    public Vector2f(float x, float y) {
         this.x = x;
         this.y = y;
     }
 
-    public Vector2() {
+    public Vector2f() {
         this.x = 0f;
         this.y = 0f;
     }
 
-    public Vector2(Vector2 vec) {
-        this.x = vec.getX();
-        this.y = vec.getY();
+    public Vector2f(Vector2f vec) {
+        this(vec.getX(), vec.getY());
     }
 
     public float length2() {
@@ -28,32 +27,32 @@ public class Vector2 {
         return (float) Math.sqrt(length2());
     }
 
-    public Vector2 add(Vector2 vec) {
-        return new Vector2(getX() + vec.getX(), getY() + vec.getY());
+    public Vector2f add(Vector2f vec) {
+        return new Vector2f(getX() + vec.getX(), getY() + vec.getY());
     }
 
-    public Vector2 sub(Vector2 vec) {
-        return new Vector2(getX() - vec.getX(), getY() - vec.getY());
+    public Vector2f sub(Vector2f vec) {
+        return new Vector2f(getX() - vec.getX(), getY() - vec.getY());
     }
 
-    public Vector2 scl(float s) {
-        return new Vector2(getX() * s, getY() * s);
+    public Vector2f scl(float s) {
+        return new Vector2f(getX() * s, getY() * s);
     }
 
-    public float dot(Vector2 vec) {
+    public float dot(Vector2f vec) {
         return getX() * vec.getX() + getY() * vec.getY();
     }
 
-    public Vector2 normal() {
+    public Vector2f normal() {
         return scl(1 / length());
     }
 
-    public Vector2 interpolate(Vector2 vec, float f) {
+    public Vector2f interpolate(Vector2f vec, float f) {
         if (f < 0f || f > 1f) throw new IllegalArgumentException("Supplied value must be normalised");
-        return new Vector2(getX() + (vec.getX() - getX()) * f, getY() + (vec.getY() - getY()) * f);
+        return new Vector2f(getX() + (vec.getX() - getX()) * f, getY() + (vec.getY() - getY()) * f);
     }
 
-    public Vector2 set(Vector2 vec) {
+    public Vector2f set(Vector2f vec) {
         this.x = vec.getX();
         this.y = vec.getY();
         return this;

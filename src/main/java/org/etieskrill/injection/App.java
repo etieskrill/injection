@@ -8,11 +8,11 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
-import org.etieskrill.injection.math.Vector2;
+import org.etieskrill.injection.math.Vector2f;
 
 public class App extends Application {
 
-    public static final Vector2 windowSize = new Vector2(800f, 600f);
+    public static final Vector2f windowSize = new Vector2f(800f, 600f);
     public static ReadOnlyDoubleProperty windowX;
     public static ReadOnlyDoubleProperty windowY;
 

@@ -1,6 +1,6 @@
 package org.etieskrill.injection.particle.generation;
 
-import org.etieskrill.injection.math.Vector2;
+import org.etieskrill.injection.math.Vector2f;
 import org.etieskrill.injection.particle.Particle;
 
 import java.util.function.Supplier;
@@ -19,7 +19,7 @@ public final class ParticleSupplier implements Supplier<Particle> {
 
     @Override
     public Particle get() {
-        Vector2 pos = positionStrategy.get();
+        Vector2f pos = positionStrategy.get();
         return new Particle(sizeStrategy.get(), pos, pos.add(velocityStrategy.get()));
     }
 

@@ -2,7 +2,14 @@ float2 applyContainerConstraint(float2 pars, float rad, float2 wSize, float2 wPo
 float2 solveCollisionsForce(global float8* pars, const int num, const int gid, float2 parPos, float rad);
 float2 solveCollisionsSweep(global float8* pars, const int num, const int gid, float2 parPos, float rad);
 
-kernel void integrate(global float8* particles, const int num, const float delta, const float2 wSize, const float2 wPos) {
+kernel void integrate(
+    global float8* particles,
+    const int num,
+    const float delta,
+    const float2 wSize,
+    const float2 wPos
+    )
+{
     const int gid = get_global_id(0);
     float8 particle = particles[gid];
 
@@ -120,8 +127,9 @@ kernel void sort(global float8* particles, const int num, global int* sorted, co
             //eod im bloody tired, i clogged the toilet and i am going to bed
         }
     }
+    sorted[0] = 10;
 }
 
 //Multi-kernel integrity traversal
 
-//Single kernel array insertion //TODO maybe rough lookup table?
+//Single kernel array insertion //TODO maybe rough lookup table? bs idea this is log(n) for a reason

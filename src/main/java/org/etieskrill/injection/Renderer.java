@@ -1,11 +1,13 @@
 package org.etieskrill.injection;
 
-import javafx.beans.property.SimpleStringProperty;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
-import org.etieskrill.injection.math.Vector2;
+import org.etieskrill.injection.math.Vector2f;
 import org.etieskrill.injection.particle.Particle;
+import org.etieskrill.injection.util.AtomicFloat;
+
+import java.util.PriorityQueue;
 
 public class Renderer extends Thread {
 
@@ -22,6 +24,14 @@ public class Renderer extends Thread {
 
     @Override
     public void run() {
+        AtomicFloat dragX = new AtomicFloat(), dragY = new AtomicFloat(),
+                    dragXPrev = new AtomicFloat(), dragYPrev = new AtomicFloat();
+
+        canvas.setOnMouseDragged((mouseEvent) -> {
+            dragXPrev.set(dragX.getAndSet((float) mouseEvent.getX()));
+            dragYPrev.set(dragY.getAndSet((float) mouseEvent.getY()));
+        });
+
         long start = System.nanoTime();
         double delta;
         long sleepTime = 0;
@@ -40,12 +50,18 @@ public class Renderer extends Thread {
             canvas.setTranslateX(-App.windowX.get());
             canvas.setTranslateY(-App.windowY.get());
             GraphicsContext g2d = canvas.getGraphicsContext2D();
+
+            if (dragX.get() != dragXPrev.get() || dragY.get() != dragYPrev.get()) {
+                g2d.setStroke(Color.RED);
+                g2d.strokeLine(dragXPrev.get(), dragYPrev.get(), dragX.get(), dragY.get());
+            }
+
             g2d.setFill(Color.BLACK);
             g2d.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
             g2d.setStroke(Color.DIMGRAY);
             g2d.setFill(Color.LIGHTGRAY);
             for (Particle particle : physicsContainer.getParticles()) {
-                Vector2 pos = particle.getPos();
+                Vector2f pos = particle.getPos();
                 float radius = particle.getRadius();
                 //g2d.setFill(new Color(particle.getTemp(), 0.1f, 0.1f, 1f));
                 //g2d.setFill(new Color(Math.max(particle.getTemp() * 1.2f - 0.2f, 0f), 0f, 0f, 1f));
