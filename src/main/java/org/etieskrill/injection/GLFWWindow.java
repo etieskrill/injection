@@ -1,11 +1,16 @@
 package org.etieskrill.injection;
 
+import org.etieskrill.injection.graphics.gl.Loader;
+import org.etieskrill.injection.graphics.gl.RawMemoryModel;
+import org.etieskrill.injection.graphics.gl.Renderer;
 import org.etieskrill.injection.util.ResourceReader;
+import org.lwjgl.BufferUtils;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.nuklear.*;
 import org.lwjgl.opengl.GL;
+import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GLCapabilities;
 import org.lwjgl.opengl.GLUtil;
 import org.lwjgl.system.Callback;
@@ -14,6 +19,8 @@ import org.lwjgl.system.Platform;
 
 import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 import java.util.Objects;
 
 import static org.lwjgl.glfw.GLFW.*;
@@ -24,8 +31,12 @@ import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.nuklear.Nuklear.*;
 
 public class GLFWWindow {
+    
+    private long
+            primaryMonitor,
+            window;
 
-    private static final int BUFFER_INITIAL_SIZE = 4 * 1024;
+    /*private static final int BUFFER_INITIAL_SIZE = 4 * 1024;
 
     private static final NkAllocator ALLOCATOR;
     private static final NkDrawVertexLayoutElement.Buffer VERTEX_LAYOUT;
@@ -53,17 +64,27 @@ public class GLFWWindow {
     private int uniform_tex;
     private int uniform_proj;
     
-    private static NkContext ctx;
-
-    public static void main(String[] args) {
+    private static NkContext ctx;*/
+    
+    public GLFWWindow() {
+        init();
+        loop();
+    
+        //glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
+    
+        glfwTerminate();
+    }
+    
+    private void init() {
         glfwSetErrorCallback(GLFWErrorCallback.createPrint());
+    
         if (!glfwInit())
             throw new IllegalStateException("Unable to initialize glfw");
-
+    
         glfwSetErrorCallback((retVal, argv) -> System.out.println(retVal + " dunno how to extract the message lol"));
-
+    
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-
+    
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         if (Platform.get() == Platform.MACOSX) {
             glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
@@ -72,56 +93,126 @@ public class GLFWWindow {
             glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
         }
         glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
-
-        long primaryMonitor = glfwGetPrimaryMonitor();
+    
+        primaryMonitor = glfwGetPrimaryMonitor();
         if (primaryMonitor == NULL)
             throw new IllegalStateException("Could not initialise primary monitor");
         GLFWVidMode primaryVidMode = glfwGetVideoMode(primaryMonitor);
-        long window = glfwCreateWindow(primaryVidMode.width(), primaryVidMode.height(), "Test", primaryMonitor, NULL);
+        window = glfwCreateWindow(primaryVidMode.width(), primaryVidMode.height(), "Test", NULL, NULL);
         if (window == NULL)
             throw new IllegalStateException("Could not create window:\n" + glfwGetError(null));
-
-        ctx = NkContext.create(window);
-        
+    
+        //ctx = NkContext.create(window);
+    
         glfwMakeContextCurrent(window);
         glfwSwapInterval(1); //TODO why does it break when 4<?
-
+    
         GLCapabilities caps = GL.createCapabilities();
         Callback debugProc = GLUtil.setupDebugMessageCallback(System.out); //TODO free when done
-
-        GLFWWindow glfwWindow = new GLFWWindow();
-        glfwWindow.setupWindow(window, NkContext.create());
-
+    
+        //glfwWindow.setupWindow(window, NkContext.create());
+    
         glfwShowWindow(window);
-
+    }
+    
+    private void loop() {
         int displayCounter = 0;
         double accumulatedFPS = 0;
         double time = 0;
-
+        
+        /*int vao = glGenVertexArrays();
+        glBindVertexArray(vao);
+        
+        int vbo = glGenBuffers();
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    
+        float[] vertices = {
+                -0.5f, -0.5f,
+                -0.5f, 0.5f,
+                0.5f, -0.5f,
+                0.5f, 0.5f
+        };
+        FloatBuffer buffer = BufferUtils.createFloatBuffer(vertices.length);
+        buffer.put(vertices);
+        buffer.flip();
+        
+        glBufferData(GL_ARRAY_BUFFER, buffer, GL_STATIC_DRAW);
+        glVertexAttribPointer(0, 2, GL_FLOAT, false, 0, 0);
+        
+        int ebo = glGenBuffers();
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+    
+        int[] indices = {0, 3, 1, 0, 2, 3};
+        IntBuffer buf = BufferUtils.createIntBuffer(indices.length);
+        buf.put(indices);
+        buf.flip();
+        
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, buf, GL_STATIC_DRAW);
+    
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);*/
+        
+        Loader loader = new Loader();
+    
+        float[] vertices = {
+                -0.5f, -0.5f,
+                -0.5f, 0.5f,
+                0.5f, -0.5f,
+                0.5f, 0.5f
+        };
+        int[] indices = {0, 3, 1, 0, 2, 3};
+    
+        RawMemoryModel model1 = loader.loadToVAO(vertices, indices);
+    
+        float[] vertices2 = {
+                -1f, -1f,
+                -0.5f, -0.5f,
+                -0.5f, -1f
+        };
+        int[] indices2 = {1, 0, 2};
+    
+        RawMemoryModel model2 = loader.loadToVAO(vertices2, indices2);
+    
+        Renderer renderer = new Renderer();
+        
         while (!glfwWindowShouldClose(window)) {
             double now = GLFW.glfwGetTime();
-
+            
+            /*glClearColor(1, 0, 0, 1);
+            glClear(GL_COLOR_BUFFER_BIT);
+    
+            glBindVertexArray(vao);
+            glEnableVertexAttribArray(0);
+            //glDrawArrays(GL_TRIANGLES, 0, vertices.length);
+            glDrawElements(GL_TRIANGLES, indices.length, GL_UNSIGNED_INT, 0);
+            glDisableVertexAttribArray(0);
+            glBindVertexArray(0);*/
+            
+            renderer.prepare();
+            renderer.render(model1);
+            renderer.render(model2);
+            
             if (displayCounter++ > 60) {
                 //System.out.printf("%.3f\n", 1 / (now - time));
                 displayCounter = 0;
-                System.out.println(accumulatedFPS / 60f);
+                System.out.printf("%.3f\n" ,accumulatedFPS / 60f);
                 accumulatedFPS = 0;
             } else {
                 accumulatedFPS += 1 / (now - time);
             }
-
+        
             time = now;
-
+        
             glfwSwapBuffers(window);
             glfwPollEvents();
         }
         
-        //glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
-
-        glfwTerminate();
+        //glDeleteVertexArrays(vao);
+        //glDeleteBuffers(vbo);
     }
 
-    private NkContext setupWindow(long win, NkContext ctx) {
+    /*private NkContext setupWindow(long win, NkContext ctx) {
         glfwSetScrollCallback(win, (window, xoffset, yoffset) -> {
             try (MemoryStack stack = stackPush()) {
                 NkVec2 scroll = NkVec2.malloc(stack)
@@ -346,6 +437,10 @@ public class GLFWWindow {
 
         Objects.requireNonNull(ALLOCATOR.alloc()).free();
         Objects.requireNonNull(ALLOCATOR.mfree()).free();
+    }*/
+    
+    public static void main(String[] args) {
+        new GLFWWindow();
     }
     
 }
