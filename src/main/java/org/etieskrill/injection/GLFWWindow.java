@@ -3,6 +3,7 @@ package org.etieskrill.injection;
 import org.etieskrill.injection.graphics.gl.Loader;
 import org.etieskrill.injection.graphics.gl.RawMemoryModel;
 import org.etieskrill.injection.graphics.gl.Renderer;
+import org.etieskrill.injection.graphics.gl.ShapeModelFactory;
 import org.etieskrill.injection.util.ResourceReader;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.glfw.GLFW;
@@ -155,6 +156,7 @@ public class GLFWWindow {
         
         Loader loader = new Loader();
     
+        /*
         float[] vertices = {
                 -0.5f, -0.5f,
                 -0.5f, 0.5f,
@@ -163,16 +165,23 @@ public class GLFWWindow {
         };
         int[] indices = {0, 3, 1, 0, 2, 3};
     
-        RawMemoryModel model1 = loader.loadToVAO(vertices, indices);
+        RawMemoryModel model1 = loader.loadToVAO(vertices, indices, GL_TRIANGLES);
+        */
+
+        ShapeModelFactory factory = new ShapeModelFactory();
+
+        RawMemoryModel model1 = factory.rectangle(-0.5f, -0.5f, 1f, 1f);
     
         float[] vertices2 = {
                 -1f, -1f,
                 -0.5f, -0.5f,
-                -0.5f, -1f
+                -0.5f, -1f,
         };
         int[] indices2 = {1, 0, 2};
     
-        RawMemoryModel model2 = loader.loadToVAO(vertices2, indices2);
+        RawMemoryModel model2 = loader.loadToVAO(vertices2, indices2, GL_TRIANGLES);
+
+        RawMemoryModel model3 = factory.circle(0, 0, 0.5f, 10);
     
         Renderer renderer = new Renderer();
         
@@ -188,7 +197,7 @@ public class GLFWWindow {
             glDrawElements(GL_TRIANGLES, indices.length, GL_UNSIGNED_INT, 0);
             glDisableVertexAttribArray(0);
             glBindVertexArray(0);*/
-            
+
             renderer.prepare();
             renderer.render(model1);
             renderer.render(model2);

@@ -13,12 +13,12 @@ public class Loader {
     
     public static int eboTemp = 0;
     
-    public RawMemoryModel loadToVAO(float[] vertices, int[] indices) {
+    public RawMemoryModel loadToVAO(final float[] vertices, final int[] indices, final int drawMode) {
         int vao = createVAO();
         storeInAttributeList(0, vertices);
         bindIndicesBuffer(indices);
         unbindVAO();
-        return new RawMemoryModel(vao, indices.length);
+        return new RawMemoryModel(vao, indices.length, drawMode);
     }
     
     private int createVAO() {
