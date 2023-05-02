@@ -3,14 +3,15 @@ package org.etieskrill.engine.graphics.gl;
 import org.lwjgl.BufferUtils;
 
 import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
+import java.nio.ShortBuffer;
+
 import org.lwjgl.opengl.GL11C;
 
-public class ShapeModelFactory {
+public class ModelFactory {
 
     private final Loader loader = new Loader();
 
-    public RawMemoryModel rectangle(float x, float y, float width, float height) {
+    public RawModel rectangle(float x, float y, float width, float height) {
         if (width < 0) {
             float tmp = x;
             x = width;
@@ -30,7 +31,7 @@ public class ShapeModelFactory {
                 x + width, y + height
         };
 
-        int[] indices = {0, 1, 2, 2, 1, 3};
+        short[] indices = {0, 1, 2, 2, 1, 3};
 
         return loader.loadToVAO(vertices, indices, GL11C.GL_TRIANGLES);
     }
@@ -46,38 +47,38 @@ public class ShapeModelFactory {
      * @param segments number of segments to subdivide the circle sector into
      * @return an indexed memory model of the circle sector
      */
-    public RawMemoryModel circleSect(float x, float y, float radius, float start, float end, int segments) {
+    public RawModel circleSect(float x, float y, float radius, float start, float end, int segments) {
         if (radius < 0) throw new IllegalArgumentException("Radius should not be smaller than zero");
         if (segments < 3) throw new IllegalArgumentException("Circle sector must have more than two segments");
 
         FloatBuffer vertices = BufferUtils.createFloatBuffer(2 * (segments + 2));
         vertices.put(x).put(y);
 
-        IntBuffer indices = BufferUtils.createIntBuffer(segments + 2);
-        indices.put(0);
+        ShortBuffer indices = BufferUtils.createShortBuffer(segments + 2);
+        indices.put((short) 0);
 
-        for (int i = 0; i <= segments; i++) {
+        for (short i = 0; i <= segments; i++) {
             float subAngle = i * ((end - start) / segments) + start;
 
             float subX = (float) (radius * Math.cos(Math.toRadians(subAngle))) + x;
             float subY = (float) (radius * Math.sin(Math.toRadians(subAngle))) + y;
 
             vertices.put(subX).put(subY);
-            indices.put(i + 1);
+            indices.put((short) (i + 1));
         }
         
         float[] vertices_a = new float[2 * (segments + 2)];
         vertices.flip();
         vertices.get(vertices_a);
         
-        int[] indices_a = new int[segments + 2];
+        short[] indices_a = new short[segments + 2];
         indices.flip();
         indices.get(indices_a);
         
         return loader.loadToVAO(vertices_a, indices_a, GL11C.GL_TRIANGLE_FAN);
     }
 
-    public RawMemoryModel circle(float x, float y, float radius, int segments) {
+    public RawModel circle(float x, float y, float radius, int segments) {
         return circleSect(x, y, radius, 0, 360, segments);
     }
 

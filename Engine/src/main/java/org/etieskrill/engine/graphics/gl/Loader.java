@@ -14,14 +14,12 @@ public class Loader {
     private final List<Integer> vbos = new ArrayList<>();
     private final List<Integer> ebos = new ArrayList<>();
     
-    public static int eboTemp = 0;
-    
-    public RawMemoryModel loadToVAO(final float[] vertices, final int[] indices, final int drawMode) {
+    public RawModel loadToVAO(final float[] vertices, final short[] indices, final int drawMode) {
         int vao = createVAO();
-        storeInAttributeList(0, vertices);
-        bindIndicesBuffer(indices);
+        int vbo = storeInAttributeList(0, vertices);
+        int ebo = bindIndicesBuffer(indices);
         unbindVAO();
-        return new RawMemoryModel(vao, indices.length, drawMode);
+        return new RawModel(vertices, indices, vao, vbo, ebo, indices.length, drawMode);
     }
     
     private int createVAO() {
@@ -35,22 +33,22 @@ public class Loader {
         GL30C.glBindVertexArray(0);
     }
     
-    private void storeInAttributeList(int index, float[] vertices) {
+    private int storeInAttributeList(int index, float[] vertices) {
         int vbo = GL15C.glGenBuffers();
         vbos.add(vbo);
         GL15C.glBindBuffer(GL15C.GL_ARRAY_BUFFER, vbo);
-        GL15C.glBufferData(GL15C.GL_ARRAY_BUFFER, vertices, GL15C.GL_STATIC_DRAW);
+        GL15C.glBufferData(GL15C.GL_ARRAY_BUFFER, vertices, GL15C.GL_DYNAMIC_DRAW);
         GL20C.glVertexAttribPointer(index, 2, GL11C.GL_FLOAT, false, 0, 0);
         GL15C.glBindBuffer(GL15C.GL_ARRAY_BUFFER, 0);
+        return vbo;
     }
     
-    private void bindIndicesBuffer(int[] indices) {
+    private int bindIndicesBuffer(short[] indices) {
         int ebo = GL15C.glGenBuffers();
-        eboTemp = ebo;
         ebos.add(ebo);
         GL15C.glBindBuffer(GL15C.GL_ELEMENT_ARRAY_BUFFER, ebo);
-        GL15C.glBufferData(GL15C.GL_ELEMENT_ARRAY_BUFFER, indices, GL15C.GL_STATIC_DRAW);
-        //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+        GL15C.glBufferData(GL15C.GL_ELEMENT_ARRAY_BUFFER, indices, GL15C.GL_DYNAMIC_DRAW);
+        return ebo;
     }
     
     public void cleanup() {
