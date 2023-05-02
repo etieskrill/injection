@@ -1,7 +1,0 @@
-package org.etieskrill.injection.particle.generation;
-
-import org.etieskrill.injection.math.Vector2f;
-
-import java.util.function.Supplier;
-
-public interface VelocityStrategy extends Supplier<Vector2f> {}
