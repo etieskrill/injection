@@ -82,6 +82,27 @@ public class ModelFactory {
         return circleSect(x, y, radius, 0, 360, segments);
     }
 
+    public MovableModelList roundedRect(float x, float y, float width, float height, float rounding, int segments) {
+        if (rounding < 0) throw new IllegalArgumentException("corner rounding cannot be smaller than zero");
+
+        MovableModelList models = new MovableModelList();
+
+        float xTopLeft = x + rounding, yTopLeft = y + height - rounding;
+        float xTopRight = x + width - rounding, yTopRight = y + height - rounding;
+        float xBottomLeft = x + rounding, yBottomLeft = y + rounding;
+        float xBottomRight = x + width - rounding, yBottomRight = y + rounding;
+
+        models.add(rectangle(x + rounding, y, width - 2 * rounding, height));
+        models.add(rectangle(x, y + rounding, rounding, height - 2 * rounding));
+        models.add(rectangle(x + width - rounding, y + rounding, rounding, height - 2 * rounding));
+        models.add(circleSect(xTopLeft, yTopLeft, rounding, 90, 180, segments));
+        models.add(circleSect(xTopRight, yTopRight, rounding, 0, 90, segments));
+        models.add(circleSect(xBottomLeft, yBottomLeft, rounding, 180, 270, segments));
+        models.add(circleSect(xBottomRight, yBottomRight, rounding, 270, 360, segments));
+
+        return models;
+    }
+
     public void disposeLoader() {
         loader.cleanup();
     }

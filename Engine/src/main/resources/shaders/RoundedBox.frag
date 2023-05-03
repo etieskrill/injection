@@ -1,0 +1,10 @@
+#version 450 core
+
+in vec4 colour;
+out vec4 outColour;
+
+void main(void) {
+
+    gl_Color = colour;
+
+}

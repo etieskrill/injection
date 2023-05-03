@@ -1,8 +1,6 @@
 package org.etieskrill.engine.time;
 
 import java.util.*;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.LongStream;
 
 public class SystemNanoTimePacer implements LoopPacer {
     
@@ -10,21 +8,27 @@ public class SystemNanoTimePacer implements LoopPacer {
     private static final int AVERAGE_FRAMERATE_SPAN = 20;
     
     private final Deque<Long> deltaBuffer = new ArrayDeque<>(AVERAGE_FRAMERATE_SPAN);
+    private final int ignoredInitialReadings;
     
     private long targetDelta;
     private volatile long timeNow, timeLast, delta;
     private volatile double averageFPS;
+
+    private volatile long totalFrames, localFrames;
     
     private boolean started = false;
     
     private long thread, lastThread = 0;
     
-    public SystemNanoTimePacer(double targetDeltaSeconds) {
+    public SystemNanoTimePacer(double targetDeltaSeconds, int ignoredInitialReadings) {
         this.targetDelta = (long) (targetDeltaSeconds * NANO_FACTOR);
+        this.ignoredInitialReadings = ignoredInitialReadings;
     }
     
     @Override
     public void start() {
+        if (started) throw new IllegalStateException("Pacer was already started");
+
         this.timeLast = System.nanoTime();
         this.deltaBuffer.addLast(0L);
         this.started = true;
@@ -39,29 +43,34 @@ public class SystemNanoTimePacer implements LoopPacer {
         
         updateTime();
         delta = timeNow - timeLast;
-        
-        if (deltaBuffer.size() >= AVERAGE_FRAMERATE_SPAN) deltaBuffer.removeFirst();
-        deltaBuffer.addLast(delta);
-        
-        long sum = 0;
-        for (long value : deltaBuffer) {
-            sum += value;
-        }
-        averageFPS = (AVERAGE_FRAMERATE_SPAN * NANO_FACTOR) / (double)sum;
-    
-        //System.out.println(averageFPS);
-        
-        timeLast = timeNow;
-        
+
         try {
             Thread.sleep((int) Math.max(targetDelta - delta, 0) / MILLI_FACTOR);
         } catch (InterruptedException e) {
             System.err.printf("[%s] Could not sleep", Thread.currentThread().getName());
         }
+
+        if (totalFrames > ignoredInitialReadings) updateAverageFPS(System.nanoTime() - timeLast);
+        timeLast = timeNow;
+
+        incrementFrameCounters();
+    }
+
+    private void updateAverageFPS(long newDelta) {
+        if (deltaBuffer.size() >= AVERAGE_FRAMERATE_SPAN) deltaBuffer.removeFirst();
+        deltaBuffer.addLast(delta);
+
+        long sum = 0;
+        for (long value : deltaBuffer) {
+            sum += value;
+        }
+
+        //TODO technically the value is wrong until the entire buffer is filled, but a buffer size call with every call seems pretty expensive in comparison
+        averageFPS = (AVERAGE_FRAMERATE_SPAN * NANO_FACTOR) / (double)sum;
     }
     
     @Override
-    public double getSecondsSinceLastFrame() {
+    public double getDeltaTimeSeconds() {
         return (double)delta / NANO_FACTOR;
     }
     
@@ -75,7 +84,22 @@ public class SystemNanoTimePacer implements LoopPacer {
     public double getAverageFPS() {
         return averageFPS;
     }
-    
+
+    @Override
+    public long getTotalFramesElapsed() {
+        return totalFrames;
+    }
+
+    @Override
+    public long getFramesElapsed() {
+        return localFrames;
+    }
+
+    @Override
+    public void resetFrameCounter() {
+        localFrames = 0;
+    }
+
     @Override
     public double getTargetDeltaTime() {
         return (double)targetDelta / NANO_FACTOR;
@@ -88,6 +112,11 @@ public class SystemNanoTimePacer implements LoopPacer {
     
     private void updateTime() {
         this.timeNow = System.nanoTime();
+    }
+
+    private synchronized void incrementFrameCounters() { //TODO figure out whether synchronized is the correct choice here
+        totalFrames++;
+        localFrames++;
     }
     
 }

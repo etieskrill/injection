@@ -1,4 +1,4 @@
-package org.etieskrill.engine.graphics.gl;
+package org.etieskrill.engine.graphics.gl.shaders;
 
 import org.etieskrill.engine.util.ResourceReader;
 import org.lwjgl.opengl.GL11C;

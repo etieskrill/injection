@@ -18,7 +18,7 @@ public class MovableModel extends RawModel {
         return position;
     }
     
-    public void updatePosition(Vec2f newPosition) {
+    public synchronized void updatePosition(Vec2f newPosition) {
         this.position.set(newPosition);
         
         float[] vertices = getVertices();
