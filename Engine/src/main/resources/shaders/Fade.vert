@@ -1,6 +1,6 @@
-#version 450 core
+#version 330 core
 
-in vec2 position;
+layout (location = 0) in vec2 position;
 
 out vec3 colour;
 

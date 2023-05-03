@@ -18,7 +18,18 @@ public abstract class ShaderProgram {
         GL20C.glAttachShader(programID, fragID);
         
         GL20C.glLinkProgram(programID);
+        if (GL20C.glGetProgrami(programID, GL20C.GL_LINK_STATUS) != GL11C.GL_TRUE) {
+            System.out.println(GL20C.glGetProgramInfoLog(programID));
+            System.err.println("Shader program could not be linked.");
+        }
+        
+        disposeShaders();
+        
         GL20C.glValidateProgram(programID);
+        if (GL20C.glGetProgrami(programID, GL20C.GL_VALIDATE_STATUS) != GL11C.GL_TRUE) {
+            System.out.println(GL20C.glGetProgramInfoLog(programID));
+            System.err.println("Shader program was not successfully validated.");
+        }
         
         bindAttributes();
     }
@@ -41,7 +52,7 @@ public abstract class ShaderProgram {
         int shaderID = GL20C.glCreateShader(shaderType);
         GL20C.glShaderSource(shaderID, ResourceReader.getRaw(file));
         GL20C.glCompileShader(shaderID);
-        
+    
         if (GL20C.glGetShaderi(shaderID, GL20C.GL_COMPILE_STATUS) != GL11C.GL_TRUE) {
             System.out.println(GL20C.glGetShaderInfoLog(shaderID));
             System.err.println("Failed to compile shader.");
@@ -51,12 +62,15 @@ public abstract class ShaderProgram {
         return shaderID;
     }
     
+    public void disposeShaders() {
+        GL20C.glDeleteShader(vertID);
+        GL20C.glDeleteShader(fragID);
+    }
+    
     public void dispose() {
         stop();
         GL20C.glDetachShader(programID, vertID);
-        GL20C.glDeleteShader(vertID);
         GL20C.glDetachShader(programID, fragID);
-        GL20C.glDeleteShader(fragID);
         GL20C.glDeleteProgram(programID);
     }
     

@@ -20,6 +20,7 @@ public class ShaderFactory {
 
         @Override
         protected void bindAttributes() {
+            //TODO perhaps this is a duplicate of the layout(... = 0) specifier in the vertex shader?
             super.bindAttribute(0, "position");
         }
     }

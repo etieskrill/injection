@@ -39,6 +39,7 @@ public class Loader {
         GL15C.glBindBuffer(GL15C.GL_ARRAY_BUFFER, vbo);
         GL15C.glBufferData(GL15C.GL_ARRAY_BUFFER, vertices, GL15C.GL_DYNAMIC_DRAW);
         GL20C.glVertexAttribPointer(index, 2, GL11C.GL_FLOAT, false, 0, 0);
+        GL20C.glEnableVertexAttribArray(0);
         GL15C.glBindBuffer(GL15C.GL_ARRAY_BUFFER, 0);
         return vbo;
     }

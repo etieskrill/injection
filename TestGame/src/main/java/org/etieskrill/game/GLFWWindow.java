@@ -10,12 +10,12 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
-import org.lwjgl.opengl.GL;
-import org.lwjgl.opengl.GLUtil;
+import org.lwjgl.opengl.*;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.system.Platform;
 
 import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.system.MemoryUtil.*;
 
 public class GLFWWindow {
     
@@ -53,23 +53,21 @@ public class GLFWWindow {
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
         
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-        if (Platform.get() == Platform.MACOSX) {
-            glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-            glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-        } else {
-            glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
-        }
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+        if (Platform.get() == Platform.MACOSX)
+            glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
         
-        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
+        glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
     
         primaryMonitor = glfwGetPrimaryMonitor();
-        if (primaryMonitor == MemoryUtil.NULL)
+        if (primaryMonitor == NULL)
             throw new IllegalStateException("Could not find primary monitor");
         
         GLFWVidMode primaryVidMode = glfwGetVideoMode(primaryMonitor);
         window = glfwCreateWindow(primaryVidMode.width(), primaryVidMode.height(),
-                "Test", MemoryUtil.NULL, MemoryUtil.NULL);
-        if (window == MemoryUtil.NULL)
+                "Test", NULL, NULL);
+        if (window == NULL)
             throw new IllegalStateException("Could not create glfw window");
         
         glfwMakeContextCurrent(window);
@@ -77,6 +75,7 @@ public class GLFWWindow {
         
         GL.createCapabilities();
         GLUtil.setupDebugMessageCallback(System.out); //TODO unbind when done
+        //GL33C.glViewport(0, 0, 1920, 1080); //this is apparently done ... somewhere behind the scenes?
         
         if (!initKeybinds()) throw new IllegalStateException("Could not initialise keybinds");
         
@@ -84,6 +83,12 @@ public class GLFWWindow {
     }
     
     private boolean initKeybinds() {
+        //TODO via callback or via glfwGetKey? either option function by polling, so difference is only in saved state
+        // concurrency?
+        // acktshually the callback should save some polling cycles, since input events are not read every render cycle,
+        // unlike with the getKey method, but this should and will be addressed as soon as it becomes an issue, whether
+        // of performance or otherwise, and no sooner. timed tests will decide final result
+        
         glfwSetKeyCallback(window, (long window, int key, int scancode, int action, int mods) -> {
             if (key == GLFW_KEY_ESCAPE && (mods & GLFW_MOD_SHIFT) != 0) {
                 glfwSetWindowShouldClose(window, true);
@@ -97,7 +102,7 @@ public class GLFWWindow {
                 dPressed = action != GLFW_RELEASE;
             }
         });
-
+        
         return true;
     }
 
