@@ -19,9 +19,14 @@ public class ShaderFactory {
         }
 
         @Override
+        protected void getUniformLocations() {
+            addUniform("uFadingColour");
+        }
+
+        @Override
         protected void bindAttributes() {
             //TODO perhaps this is a duplicate of the layout(... = 0) specifier in the vertex shader?
-            super.bindAttribute(0, "position");
+            super.bindAttribute(0, "iPosition");
         }
     }
 
@@ -32,6 +37,9 @@ public class ShaderFactory {
         public RoundedBoxShader() {
             super(VERTEX_FILE, FRAGMENT_FILE);
         }
+
+        @Override
+        protected void getUniformLocations() {}
 
         @Override
         protected void bindAttributes() {

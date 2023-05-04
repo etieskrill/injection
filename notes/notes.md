@@ -11,3 +11,10 @@
 - wireframes can be drawn using `glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)` and reset again with 
   `glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)`, read details at 
   [Khronos](https://registry.khronos.org/OpenGL-Refpages/gl4/html/glPolygonMode.xhtml)
+- a variable `uniform` is global to a shader program, and as such can be accessed by eny of it's 
+  attached shaders.
+
+
+# Other Resources
+
+- [Me like](https://en.wikipedia.org/wiki/Swizzling_(computer_graphics))

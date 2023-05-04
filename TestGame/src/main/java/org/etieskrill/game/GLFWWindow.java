@@ -14,6 +14,8 @@ import org.lwjgl.opengl.*;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.system.Platform;
 
+import java.util.Arrays;
+
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.system.MemoryUtil.*;
 
@@ -76,7 +78,12 @@ public class GLFWWindow {
         GL.createCapabilities();
         GLUtil.setupDebugMessageCallback(System.out); //TODO unbind when done
         //GL33C.glViewport(0, 0, 1920, 1080); //this is apparently done ... somewhere behind the scenes?
-        
+
+        //Get max vertex attributes
+        //int[] caps = new int[1];
+        //GL30C.glGetIntegerv(GL30C.GL_MAX_VERTEX_ATTRIBS, caps);
+        //System.out.println(Arrays.toString(caps));
+
         if (!initKeybinds()) throw new IllegalStateException("Could not initialise keybinds");
         
         glfwShowWindow(window);
@@ -113,18 +120,25 @@ public class GLFWWindow {
 
         ModelFactory factory = new ModelFactory();
 
+        float[] vertices = new float[]{
+                // positions         // colors
+                 0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f, 1.0f,   // bottom right
+                -0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f, 1.0f,   // bottom left
+                 0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f, 1.0f    // top
+        };
+
         model1 = new MovableModel(factory.rectangle(-0.25f, -0.25f, 0.5f, 0.5f));
         RawModel model2 = factory.circleSect(-0.5f, 0.5f, 0.15f, 0, 150, 8);
-        RawModel model3 = factory.circle(0, 0, 0.2f, 20);
+        MovableModel model3 = new MovableModel(loader.loadToVAO(vertices, new short[]{0, 1, 2}, GL33C.GL_TRIANGLES));
         MovableModel model4 = new MovableModel(factory.rectangle(-1f, -1f, 2f, 2f));
 
         MovableModelList model5 = factory.roundedRect(-0.25f, -0.25f, 0.5f, 0.5f, 0.03f, 8);
     
         Renderer renderer = new Renderer();
         ShaderProgram shader = ShaderFactory.getStandardShader();
-        
+
         pacer.start();
-        
+
         while (!glfwWindowShouldClose(window)) {
             Vec2f newPosition = new Vec2f();
             if (wPressed) newPosition.set(newPosition.add(new Vec2f(0f, 1f)));
@@ -133,15 +147,24 @@ public class GLFWWindow {
             if (aPressed) newPosition.set(newPosition.add(new Vec2f(-1f, 0f)));
 
             Vec2f deltaPosition = newPosition.scl((float) pacer.getDeltaTimeSeconds());
-            model5.updatePosition(model1.getPosition().add(deltaPosition));
+            //model5.updatePosition(model1.getPosition().add(deltaPosition));
+            //model3.updatePosition(deltaPosition);
 
             renderer.prepare();
             shader.start();
+
+            float scale = 0.1f, speed = 2f;
+            float r = (float) (scale * Math.sin(speed * pacer.getSecondsElapsedTotal()));
+            float g = (float) (scale * Math.sin(speed * pacer.getSecondsElapsedTotal()) + 0.5);
+            float b = (float) (scale * Math.sin(speed * pacer.getSecondsElapsedTotal()) + 0.5);
+
+            GL33C.glUniform4f(shader.getUniformLocation("uFadingColour"), r, g, b, 1f);
+
             //renderer.render(model1);
             //renderer.render(model2);
-            //renderer.render(model3);
+            renderer.render(model3);
             //renderer.render(model4);
-            model5.render(renderer);
+            //model5.render(renderer);
             shader.stop();
 
             if (pacer.getFramesElapsed() > TARGET_FPS) {

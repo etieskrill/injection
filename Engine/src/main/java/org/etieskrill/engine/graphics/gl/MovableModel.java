@@ -24,12 +24,12 @@ public class MovableModel extends RawModel {
         float[] vertices = getVertices();
         float[] positionVertices = new float[vertices.length];
     
-        for (int i = 0; i < vertices.length; i+=2) { //TODO resolve dimensionality
+        for (int i = 0; i < vertices.length; i+=3) { //TODO resolve dimensionality
             positionVertices[i] = vertices[i] + position.getX();
             positionVertices[i + 1] = vertices[i + 1] + position.getY();
         }
     
-        super.update(positionVertices, getIndices(), getDrawMode());
+        super.update(positionVertices, new float[(int) (positionVertices.length / 0.75)], getIndices(), getDrawMode());
     }
     
 }

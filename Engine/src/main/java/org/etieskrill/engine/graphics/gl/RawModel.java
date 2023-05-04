@@ -1,5 +1,6 @@
 package org.etieskrill.engine.graphics.gl;
 
+import org.etieskrill.engine.util.FloatArrayMerger;
 import org.lwjgl.opengl.GL15C;
 import org.lwjgl.opengl.GL30C;
 
@@ -32,10 +33,11 @@ public class RawModel {
         this.drawMode = rawModel.getDrawMode();
     }
     
-    public void update(float[] vertices, short[] indices, int drawMode) {
+    public void update(float[] vertices, float[] colours, short[] indices, int drawMode) {
         GL30C.glBindVertexArray(this.vao);
+        float[] data = FloatArrayMerger.merge(vertices, colours, 3, 4);
         GL15C.glBindBuffer(GL15C.GL_ARRAY_BUFFER, vbo);
-        GL30C.glBufferData(GL15C.GL_ARRAY_BUFFER, vertices, GL15C.GL_DYNAMIC_DRAW);
+        GL30C.glBufferData(GL15C.GL_ARRAY_BUFFER, data, GL15C.GL_DYNAMIC_DRAW);
         GL15C.glBindBuffer(GL15C.GL_ELEMENT_ARRAY_BUFFER, ebo);
         GL30C.glBufferData(GL15C.GL_ELEMENT_ARRAY_BUFFER, indices, GL15C.GL_DYNAMIC_DRAW);
         GL15C.glBindBuffer(GL15C.GL_ARRAY_BUFFER, 0);
