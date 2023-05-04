@@ -72,4 +72,9 @@ public class Vec2f {
         y = 0f;
     }
     
+    @Override
+    public String toString() {
+        return String.format("[%.3f, %.3f]", getX(), getY());
+    }
+    
 }

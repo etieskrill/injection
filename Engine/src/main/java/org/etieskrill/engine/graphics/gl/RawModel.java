@@ -7,14 +7,16 @@ import org.lwjgl.opengl.GL30C;
 public class RawModel {
     
     private final float[] vertices;
+    private final float[] colours;
     private final short[] indices;
     
     private final int vao, vbo, ebo;
     private final int numVertices;
     private int drawMode;
     
-    public RawModel(float[] vertices, short[] indices, int vao, int vbo, int ebo, int numVertices, int drawMode) {
+    public RawModel(float[] vertices, float[] colours, short[] indices, int vao, int vbo, int ebo, int numVertices, int drawMode) {
         this.vertices = vertices;
+        this.colours = colours;
         this.indices = indices;
         this.vao = vao;
         this.vbo = vbo;
@@ -25,6 +27,7 @@ public class RawModel {
     
     public RawModel(RawModel rawModel) {
         this.vertices = rawModel.getVertices();
+        this.colours = rawModel.getColours();
         this.indices = rawModel.getIndices();
         this.vao = rawModel.getVao();
         this.vbo = rawModel.getVbo();
@@ -46,6 +49,10 @@ public class RawModel {
     
     public float[] getVertices() {
         return vertices;
+    }
+    
+    public float[] getColours() {
+        return colours;
     }
     
     public short[] getIndices() {

@@ -1,4 +1,4 @@
-# TODOs
+# TODOs and hints to potential TODOs
 
 - set GLFW_DECORATED window hint to false for borderless
 - read up on [GLFW Window Hints](https://www.glfw.org/docs/latest/window.html#window_hints)

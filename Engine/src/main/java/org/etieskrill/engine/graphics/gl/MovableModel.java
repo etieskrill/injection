@@ -22,6 +22,7 @@ public class MovableModel extends RawModel {
         this.position.set(newPosition);
         
         float[] vertices = getVertices();
+        float[] colours = getColours();
         float[] positionVertices = new float[vertices.length];
     
         for (int i = 0; i < vertices.length; i+=3) { //TODO resolve dimensionality
@@ -29,7 +30,7 @@ public class MovableModel extends RawModel {
             positionVertices[i + 1] = vertices[i + 1] + position.getY();
         }
     
-        super.update(positionVertices, new float[(int) (positionVertices.length / 0.75)], getIndices(), getDrawMode());
+        super.update(positionVertices, colours, getIndices(), getDrawMode());
     }
     
 }

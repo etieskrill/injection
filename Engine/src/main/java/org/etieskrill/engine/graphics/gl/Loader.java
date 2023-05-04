@@ -5,6 +5,7 @@ import org.jocl.Sizeof;
 import org.lwjgl.opengl.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Loader {
@@ -15,18 +16,20 @@ public class Loader {
     private final List<Integer> vbos = new ArrayList<>();
     private final List<Integer> ebos = new ArrayList<>();
     
-    public RawModel loadToVAO(final float[] vertices, final short[] indices, final int drawMode) {
+    public RawModel loadToVAO(final float[] vertices, final float[] colours, final short[] indices, final int drawMode) {
         int vao = createVAO();
-        int vbo = storeInAttributeList(vertices, new float[(int) (vertices.length / 0.75)]);
+        int vbo = storeInAttributeList(vertices, colours);
         int ebo = bindIndicesBuffer(indices);
         unbindVAO();
-        return new RawModel(vertices, indices, vao, vbo, ebo, indices.length, drawMode);
+        return new RawModel(vertices, colours, indices, vao, vbo, ebo, indices.length, drawMode);
     }
     
     private int createVAO() {
         int vao = GL30C.glGenVertexArrays();
         vaos.add(vao);
+        
         GL30C.glBindVertexArray(vao);
+        
         return vao;
     }
     
@@ -37,13 +40,16 @@ public class Loader {
     private int storeInAttributeList(float[] vertices, float[] colours) {
         int vbo = GL15C.glGenBuffers();
         vbos.add(vbo);
+        
         float[] data = FloatArrayMerger.merge(vertices, colours, 3, 4);
         GL15C.glBindBuffer(GL15C.GL_ARRAY_BUFFER, vbo);
         GL15C.glBufferData(GL15C.GL_ARRAY_BUFFER, data, GL15C.GL_DYNAMIC_DRAW);
+        
         GL20C.glVertexAttribPointer(0, 3, GL11C.GL_FLOAT, false, 7 * GL_FLOAT_BYTE_SIZE, 0);
         GL20C.glEnableVertexAttribArray(0);
-        //GL33C.glVertexAttribPointer(1, 4, GL33C.GL_FLOAT, false, 7 * GL_FLOAT_BYTE_SIZE, 3 * GL_FLOAT_BYTE_SIZE);
-        //GL33C.glEnableVertexAttribArray(1);
+        GL33C.glVertexAttribPointer(1, 4, GL33C.GL_FLOAT, false, 7 * GL_FLOAT_BYTE_SIZE, 3 * GL_FLOAT_BYTE_SIZE);
+        GL33C.glEnableVertexAttribArray(1);
+        
         GL15C.glBindBuffer(GL15C.GL_ARRAY_BUFFER, 0);
         return vbo;
     }
@@ -51,8 +57,10 @@ public class Loader {
     private int bindIndicesBuffer(short[] indices) {
         int ebo = GL15C.glGenBuffers();
         ebos.add(ebo);
+        
         GL15C.glBindBuffer(GL15C.GL_ELEMENT_ARRAY_BUFFER, ebo);
         GL15C.glBufferData(GL15C.GL_ELEMENT_ARRAY_BUFFER, indices, GL15C.GL_DYNAMIC_DRAW);
+        
         return ebo;
     }
     

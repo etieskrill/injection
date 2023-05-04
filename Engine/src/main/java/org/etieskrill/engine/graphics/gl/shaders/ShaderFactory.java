@@ -43,7 +43,7 @@ public class ShaderFactory {
 
         @Override
         protected void bindAttributes() {
-            super.bindAttribute(0, "position");
+            super.bindAttribute(0, "iPosition");
         }
     }
 

@@ -6,9 +6,7 @@ public class FloatArrayMerger {
 
     public static float[] merge(float[] a1, float[] a2, int stride1, int stride2) {
         int numVertices = a1.length / stride1;
-
-        System.out.println(numVertices + " " + a2.length / stride2);
-
+        
         if (numVertices != a2.length / stride2)
             throw new IllegalArgumentException("Vertex and colour array length does not match");
 

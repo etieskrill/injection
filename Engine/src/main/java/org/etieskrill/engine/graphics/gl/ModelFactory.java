@@ -4,6 +4,7 @@ import org.lwjgl.BufferUtils;
 
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
+import java.util.Arrays;
 
 import org.lwjgl.opengl.GL11C;
 
@@ -25,15 +26,18 @@ public class ModelFactory {
         }
 
         float[] vertices = {
-                x, y,
-                x + width, y,
-                x, y + height,
-                x + width, y + height
+                x, y, 0f,
+                x + width, y, 0f,
+                x, y + height, 0f,
+                x + width, y + height, 0f
         };
+        
+        float[] colours = new float[(int) (vertices.length / 0.75)];
+        Arrays.fill(colours, 1f);
 
         short[] indices = {0, 1, 2, 2, 1, 3};
 
-        return loader.loadToVAO(vertices, indices, GL11C.GL_TRIANGLES);
+        return loader.loadToVAO(vertices, colours, indices, GL11C.GL_TRIANGLES);
     }
 
     /**
@@ -51,8 +55,8 @@ public class ModelFactory {
         if (radius < 0) throw new IllegalArgumentException("Radius should not be smaller than zero");
         if (segments < 3) throw new IllegalArgumentException("Circle sector must have more than two segments");
 
-        FloatBuffer vertices = BufferUtils.createFloatBuffer(2 * (segments + 2));
-        vertices.put(x).put(y);
+        FloatBuffer vertices = BufferUtils.createFloatBuffer(3 * (segments + 2));
+        vertices.put(x).put(y).put(0f);
 
         ShortBuffer indices = BufferUtils.createShortBuffer(segments + 2);
         indices.put((short) 0);
@@ -63,19 +67,22 @@ public class ModelFactory {
             float subX = (float) (radius * Math.cos(Math.toRadians(subAngle))) + x;
             float subY = (float) (radius * Math.sin(Math.toRadians(subAngle))) + y;
 
-            vertices.put(subX).put(subY);
+            vertices.put(subX).put(subY).put(0f);
             indices.put((short) (i + 1));
         }
         
-        float[] vertices_a = new float[2 * (segments + 2)];
         vertices.flip();
+        float[] vertices_a = new float[vertices.capacity()];
         vertices.get(vertices_a);
+    
+        float[] colours = new float[(int) (vertices_a.length / 0.75)];
+        Arrays.fill(colours, 1f);
         
-        short[] indices_a = new short[segments + 2];
         indices.flip();
+        short[] indices_a = new short[indices.capacity()];
         indices.get(indices_a);
         
-        return loader.loadToVAO(vertices_a, indices_a, GL11C.GL_TRIANGLE_FAN);
+        return loader.loadToVAO(vertices_a, colours, indices_a, GL11C.GL_TRIANGLE_FAN);
     }
 
     public RawModel circle(float x, float y, float radius, int segments) {

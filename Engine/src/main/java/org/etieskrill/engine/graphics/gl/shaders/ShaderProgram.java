@@ -62,7 +62,7 @@ public abstract class ShaderProgram {
     protected void addUniform(CharSequence name) {
         int uniformLocation = GL33C.glGetUniformLocation(programID, name);
         if (uniformLocation == -1) {
-            System.err.printf("Could not find location of uniform with name \"%s\"", name);
+            System.err.printf("Could not find location of uniform with name \"%s\"\n", name);
         }
 
         uniforms.put(name, uniformLocation);
