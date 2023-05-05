@@ -11,6 +11,7 @@ import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
+import org.lwjgl.opengl.GL11C;
 import org.lwjgl.opengl.GL33C;
 import org.lwjgl.stb.STBImage;
 import org.lwjgl.system.Platform;
@@ -85,9 +86,16 @@ public class GLFWWindow {
         //GL30C.glGetIntegerv(GL30C.GL_MAX_VERTEX_ATTRIBS, caps);
         //System.out.println(Arrays.toString(caps));
 
+        if (!initTextureSettings()) throw new IllegalStateException("Could not initialise texture settings");
         if (!initKeybinds()) throw new IllegalStateException("Could not initialise keybinds");
         
         glfwShowWindow(window);
+    }
+
+    private boolean initTextureSettings() {
+        GL33C.glTexParameteri(GL33C.GL_TEXTURE_2D, GL33C.GL_TEXTURE_MIN_FILTER, GL33C.GL_NEAREST_MIPMAP_NEAREST); //GL_<mipmap level selection>_MIPMAP_<mipmap texture sampling>
+        GL33C.glTexParameteri(GL33C.GL_TEXTURE_2D, GL33C.GL_TEXTURE_MAG_FILTER, GL33C.GL_LINEAR); //GL_<mipmap texture sampling>
+        return true;
     }
     
     private boolean initKeybinds() {
@@ -132,12 +140,15 @@ public class GLFWWindow {
                 0.0f, 1.0f, 0.0f, 1.0f,
                 0.0f, 0.0f, 1.0f, 1.0f
         };
+
+        float[] textures = new float[(int) (vertices.length / 1.5)];
+        Arrays.fill(textures, 0f);
     
         //STBImage.stbi_load
 
         //model1 = new MovableModel(factory.rectangle(-0.25f, -0.25f, 0.5f, 0.5f));
         //RawModel model2 = factory.circleSect(-0.5f, 0.5f, 0.15f, 0, 150, 8);
-        MovableModel model3 = new MovableModel(loader.loadToVAO(vertices, colours, new short[]{0, 1, 2}, GL33C.GL_TRIANGLES));
+        MovableModel model3 = new MovableModel(loader.loadToVAO(vertices, colours, textures, new short[]{0, 1, 2}, GL33C.GL_TRIANGLES));
         //MovableModel model4 = new MovableModel(factory.rectangle(-1f, -1f, 2f, 2f));
 
         MovableModelList model5 = factory.roundedRect(-0.25f, -0.25f, 0.5f, 0.5f, 0.03f, 8);

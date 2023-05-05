@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.MissingResourceException;
 import java.util.Objects;
 
 public class ResourceReader {
@@ -20,6 +21,10 @@ public class ResourceReader {
             resource = new String(bytes, StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new RuntimeException(e);
+        } catch (NullPointerException e) {
+            //TODO that constructor is a bit wack
+
+            throw new MissingResourceException("Plaintext resource could not be located", "String", "name");
         }
 
         return resource;

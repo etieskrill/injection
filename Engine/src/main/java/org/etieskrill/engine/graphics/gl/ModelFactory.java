@@ -35,9 +35,16 @@ public class ModelFactory {
         float[] colours = new float[(int) (vertices.length / 0.75)];
         Arrays.fill(colours, 1f);
 
+        float[] textures = new float[] {
+                0f, 0f,
+                1f, 0f,
+                0f, 1f,
+                1f, 1f
+        };
+
         short[] indices = {0, 1, 2, 2, 1, 3};
 
-        return loader.loadToVAO(vertices, colours, indices, GL11C.GL_TRIANGLES);
+        return loader.loadToVAO(vertices, colours, textures, indices, GL11C.GL_TRIANGLES);
     }
 
     /**
@@ -77,12 +84,15 @@ public class ModelFactory {
     
         float[] colours = new float[(int) (vertices_a.length / 0.75)];
         Arrays.fill(colours, 1f);
+
+        float[] textures = new float[(int) (vertices_a.length / 1.5)];
+        Arrays.fill(textures, 0f);
         
         indices.flip();
         short[] indices_a = new short[indices.capacity()];
         indices.get(indices_a);
         
-        return loader.loadToVAO(vertices_a, colours, indices_a, GL11C.GL_TRIANGLE_FAN);
+        return loader.loadToVAO(vertices_a, colours, textures, indices_a, GL11C.GL_TRIANGLE_FAN);
     }
 
     public RawModel circle(float x, float y, float radius, int segments) {
