@@ -27,7 +27,7 @@ public abstract class ShaderProgram {
         GL20C.glLinkProgram(programID);
         if (GL20C.glGetProgrami(programID, GL20C.GL_LINK_STATUS) != GL11C.GL_TRUE) {
             System.out.println(GL20C.glGetProgramInfoLog(programID));
-            System.err.println("Shader program could not be linked.");
+            System.err.println("Shader program could not be linked");
         }
         
         disposeShaders();
@@ -35,7 +35,7 @@ public abstract class ShaderProgram {
         GL20C.glValidateProgram(programID);
         if (GL20C.glGetProgrami(programID, GL20C.GL_VALIDATE_STATUS) != GL11C.GL_TRUE) {
             System.out.println(GL20C.glGetProgramInfoLog(programID));
-            System.err.println("Shader program was not successfully validated.");
+            System.err.println("Shader program was not successfully validated");
         }
 
         this.uniforms = new HashMap<>();
@@ -63,6 +63,8 @@ public abstract class ShaderProgram {
         int uniformLocation = GL33C.glGetUniformLocation(programID, name);
         if (uniformLocation == -1) {
             System.err.printf("Could not find location of uniform with name \"%s\"\n", name);
+        } else if (uniformLocation < 0) {
+            System.err.println("why hello");
         }
 
         uniforms.put(name, uniformLocation);
@@ -79,7 +81,12 @@ public abstract class ShaderProgram {
     
         if (GL20C.glGetShaderi(shaderID, GL20C.GL_COMPILE_STATUS) != GL11C.GL_TRUE) {
             System.out.println(GL20C.glGetShaderInfoLog(shaderID));
-            System.err.println("Failed to compile shader of type " + shaderType);
+            String shaderTypeName = "unknown";
+            switch (shaderType) {
+                case GL33C.GL_VERTEX_SHADER -> shaderTypeName = "vertex";
+                case GL33C.GL_FRAGMENT_SHADER -> shaderTypeName = "fragment";
+            }
+            System.err.println("Failed to compile " + shaderTypeName + " shader");
             System.exit(-1);
         }
         

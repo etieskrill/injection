@@ -32,8 +32,12 @@ public class ModelFactory {
                 x + width, y + height, 0f
         };
         
-        float[] colours = new float[(int) (vertices.length / 0.75)];
-        Arrays.fill(colours, 1f);
+        float[] colours = new float[] {
+                1f, 0f, 0f, 1f,
+                0f, 1f, 0f, 1f,
+                0f, 0f, 1f, 1f,
+                1f, 1f, 0f, 1f
+        };
 
         float[] textures = new float[] {
                 0f, 0f,

@@ -91,6 +91,11 @@
             <classifier>${lwjgl.natives}</classifier>
         </dependency>
         <dependency>
+            <groupId>io.github.java-graphics</groupId>
+            <artifactId>glm</artifactId>
+            <version>1.0.1</version>
+        </dependency>
+        <dependency>
             <groupId>org.jocl</groupId>
             <artifactId>jocl</artifactId>
             <version>2.0.4</version>

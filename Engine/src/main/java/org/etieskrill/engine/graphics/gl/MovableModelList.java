@@ -1,6 +1,6 @@
 package org.etieskrill.engine.graphics.gl;
 
-import org.etieskrill.engine.math.Vec2f;
+import org.etieskrill.engine.math.Vec3f;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,11 +13,11 @@ import java.util.List;
 public class MovableModelList {
 
     private final List<MovableModel> models;
-    private final Vec2f position;
+    private final Vec3f position;
 
     public MovableModelList() {
         this.models = new ArrayList<>();
-        this.position = new Vec2f();
+        this.position = new Vec3f();
     }
 
     public void add(RawModel model) {
@@ -30,11 +30,11 @@ public class MovableModelList {
         return models.remove(movableModel);
     }
 
-    public Vec2f getPosition() {
+    public Vec3f getPosition() {
         return position;
     }
 
-    public synchronized void updatePosition(Vec2f newPosition) {
+    public synchronized void updatePosition(Vec3f newPosition) {
         this.position.set(newPosition);
 
         for (MovableModel model : models) {

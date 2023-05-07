@@ -1,11 +1,17 @@
-#version 330 core
+#version 430 core
 
-in vec4 iColour;
+out vec4 oColour; //TODO why in the goddamn giggity fuck does this have to be before the ins
 
-out vec4 oColour;
+in vec4 tColour;
+in vec2 tTextureCoords;
 
-void main(void) {
+layout (binding = 0) uniform sampler2D texture1;
+layout (binding = 1) uniform sampler2D texture2;
 
-    oColour = iColour;
+void main() {
+
+    oColour = mix(texture(texture1, tTextureCoords), texture(texture2, 2 * tTextureCoords), 0.6);
+    //oColour = texture(texture1, tTextureCoords) * tColour;
+    //oColour = texture(texture1, tTextureCoords) * tColour;
 
 }

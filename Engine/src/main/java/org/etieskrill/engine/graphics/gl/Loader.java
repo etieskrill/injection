@@ -10,7 +10,7 @@ import static org.etieskrill.engine.graphics.gl.RawModel.*;
 
 public class Loader {
 
-    public static final int GL_FLOAT_BYTE_SIZE = 4;
+    public static final int GL_FLOAT_BYTE_SIZE = Float.BYTES;
 
     private final List<Integer> vaos = new ArrayList<>();
     private final List<Integer> vbos = new ArrayList<>();

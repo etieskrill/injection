@@ -21,6 +21,9 @@ public class ShaderFactory {
         @Override
         protected void getUniformLocations() {
             addUniform("uFadingColour");
+            addUniform("texture1");
+            addUniform("texture2");
+            addUniform("transform");
         }
 
         @Override
