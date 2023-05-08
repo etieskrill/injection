@@ -8,11 +8,13 @@ out vec4 tColour;
 out vec2 tTextureCoords;
 
 //uniform vec4 uFadingColour;
-uniform mat4 transform;
+uniform mat4 uModel;
+uniform mat4 uView;
+uniform mat4 uProjection;
 
 void main() {
 
-    gl_Position = transform * vec4(iPosition, 1.0);
+    gl_Position = uProjection * uView * uModel * vec4(iPosition, 1.0);
     tColour = iColour;
     tTextureCoords = iTextureCoords;
 

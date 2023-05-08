@@ -18,10 +18,10 @@ public class Loader {
     
     public RawModel loadToVAO(float[] vertices, float[] colours, float[] textures, short[] indices, int drawMode) {
         int vao = createVAO();
-        int vbo = storeInAttributeList(vertices, colours, textures);
-        int ebo = bindIndicesBuffer(indices);
+        storeInAttributeList(vertices, colours, textures);
+        bindIndicesBuffer(indices);
         unbindVAO();
-        return new RawModel(vertices, colours, textures, indices, vao, vbo, ebo, indices.length, drawMode);
+        return new RawModel(vao, indices.length, drawMode);
     }
     
     private int createVAO() {

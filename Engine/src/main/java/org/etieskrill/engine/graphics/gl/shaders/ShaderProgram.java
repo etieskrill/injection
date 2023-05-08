@@ -1,5 +1,6 @@
 package org.etieskrill.engine.graphics.gl.shaders;
 
+import glm.mat._4.Mat4;
 import org.etieskrill.engine.util.ResourceReader;
 import org.lwjgl.opengl.GL11C;
 import org.lwjgl.opengl.GL20C;
@@ -63,11 +64,14 @@ public abstract class ShaderProgram {
         int uniformLocation = GL33C.glGetUniformLocation(programID, name);
         if (uniformLocation == -1) {
             System.err.printf("Could not find location of uniform with name \"%s\"\n", name);
-        } else if (uniformLocation < 0) {
-            System.err.println("why hello");
+            return;
         }
 
         uniforms.put(name, uniformLocation);
+    }
+
+    public void setUniformMat4(CharSequence name, boolean transpose, Mat4 mat) {
+        GL33C.glUniformMatrix4fv(getUniformLocation(name), transpose, mat.toFa_());
     }
     
     protected void bindAttribute(int attribute, String variableName) {
@@ -110,8 +114,13 @@ public abstract class ShaderProgram {
     }
 
     public int getUniformLocation(CharSequence name) {
-        //TODO null handling?
-        return uniforms.get(name);
+        Integer location = uniforms.get(name);
+        if (location == null) {
+            System.err.printf("Uniform of name %s was not registered in the shader\n", name);
+            return -1;
+        }
+
+        return location;
     }
 
 }

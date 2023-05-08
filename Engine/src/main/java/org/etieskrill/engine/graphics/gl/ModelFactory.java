@@ -1,5 +1,7 @@
 package org.etieskrill.engine.graphics.gl;
 
+import glm.mat._3.Mat3;
+import glm.vec._3.Vec3;
 import org.lwjgl.BufferUtils;
 
 import java.nio.FloatBuffer;
@@ -7,6 +9,7 @@ import java.nio.ShortBuffer;
 import java.util.Arrays;
 
 import org.lwjgl.opengl.GL11C;
+import org.lwjgl.opengl.GL33C;
 
 public class ModelFactory {
 
@@ -103,10 +106,10 @@ public class ModelFactory {
         return circleSect(x, y, radius, 0, 360, segments);
     }
 
-    public MovableModelList roundedRect(float x, float y, float width, float height, float rounding, int segments) {
+    public RawModelList roundedRect(float x, float y, float width, float height, float rounding, int segments) {
         if (rounding < 0) throw new IllegalArgumentException("corner rounding cannot be smaller than zero");
 
-        MovableModelList models = new MovableModelList();
+        RawModelList models = new RawModelList();
 
         float xTopLeft = x + rounding, yTopLeft = y + height - rounding;
         float xTopRight = x + width - rounding, yTopRight = y + height - rounding;
@@ -122,6 +125,145 @@ public class ModelFactory {
         models.add(circleSect(xBottomRight, yBottomRight, rounding, 270, 360, segments));
 
         return models;
+    }
+
+    public RawModel box(Vec3 size) {
+        /*if (width < 0) {
+            float tmp = x;
+            x = width;
+            width = tmp;
+        }
+
+        if (height < 0) {
+            float tmp = y;
+            y = height;
+            height = tmp;
+        }
+
+        if (depth < 0) {
+            float tmp = z;
+            z = depth;
+            depth = tmp;
+        }*/
+
+        /*float[] vertices = {
+                0f, 0f, 0f,
+                size.x, 0f, 0f,
+                size.x, size.y, 0f,
+                0f, size.y, 0f,
+                0f, 0f, size.z,
+                size.x, 0f, size.z,
+                size.x, size.y, size.z,
+                0f, size.y, size.z
+        };
+
+        float[] colours = new float[(int) (vertices.length / 0.75f)];
+
+        float[] textures = {
+                0f, 0f,
+                1f, 0f,
+                1f, 1f,
+                0f, 1f,
+                0f, 0f,
+                1f, 0f,
+                1f, 1f,
+                0f, 1f
+        };
+
+        short[] indices = {
+                0, 1, 2, 0, 2, 3,
+                0, 1, 5, 0, 5, 4,
+                4, 5, 6, 4, 6, 7,
+                4, 5, 6, 4, 6, 7
+        };*/
+
+        float[] vertices = {
+                -0.5f, -0.5f, -0.5f,
+                0.5f, -0.5f, -0.5f,
+                0.5f,  0.5f, -0.5f,
+                0.5f,  0.5f, -0.5f,
+                -0.5f,  0.5f, -0.5f,
+                -0.5f, -0.5f, -0.5f,
+                -0.5f, -0.5f,  0.5f,
+                0.5f, -0.5f,  0.5f,
+                0.5f,  0.5f,  0.5f,
+                0.5f,  0.5f,  0.5f,
+                -0.5f,  0.5f,  0.5f,
+                -0.5f, -0.5f,  0.5f,
+                -0.5f,  0.5f,  0.5f,
+                -0.5f,  0.5f, -0.5f,
+                -0.5f, -0.5f, -0.5f,
+                -0.5f, -0.5f, -0.5f,
+                -0.5f, -0.5f,  0.5f,
+                -0.5f,  0.5f,  0.5f,
+                0.5f,  0.5f,  0.5f,
+                0.5f,  0.5f, -0.5f,
+                0.5f, -0.5f, -0.5f,
+                0.5f, -0.5f, -0.5f,
+                0.5f, -0.5f,  0.5f,
+                0.5f,  0.5f,  0.5f,
+                -0.5f, -0.5f, -0.5f,
+                0.5f, -0.5f, -0.5f,
+                0.5f, -0.5f,  0.5f,
+                0.5f, -0.5f,  0.5f,
+                -0.5f, -0.5f,  0.5f,
+                -0.5f, -0.5f, -0.5f,
+                -0.5f,  0.5f, -0.5f,
+                0.5f,  0.5f, -0.5f,
+                0.5f,  0.5f,  0.5f,
+                0.5f,  0.5f,  0.5f,
+                -0.5f,  0.5f,  0.5f,
+                -0.5f,  0.5f, -0.5f
+        };
+
+        float[] textures = {
+                0.0f, 0.0f,
+                1.0f, 0.0f,
+                1.0f, 1.0f,
+                1.0f, 1.0f,
+                0.0f, 1.0f,
+                0.0f, 0.0f,
+
+                0.0f, 0.0f,
+                1.0f, 0.0f,
+                1.0f, 1.0f,
+                1.0f, 1.0f,
+                0.0f, 1.0f,
+                0.0f, 0.0f,
+
+                1.0f, 0.0f,
+                1.0f, 1.0f,
+                0.0f, 1.0f,
+                0.0f, 1.0f,
+                0.0f, 0.0f,
+                1.0f, 0.0f,
+
+                1.0f, 0.0f,
+                1.0f, 1.0f,
+                0.0f, 1.0f,
+                0.0f, 1.0f,
+                0.0f, 0.0f,
+                1.0f, 0.0f,
+
+                0.0f, 1.0f,
+                1.0f, 1.0f,
+                1.0f, 0.0f,
+                1.0f, 0.0f,
+                0.0f, 0.0f,
+                0.0f, 1.0f,
+
+                0.0f, 1.0f,
+                1.0f, 1.0f,
+                1.0f, 0.0f,
+                1.0f, 0.0f,
+                0.0f, 0.0f,
+                0.0f, 1.0f
+        };
+
+        float[] colours = new float[(int) (vertices.length / 0.75f)];
+        short[] indices = new short[36];
+
+        return loader.loadToVAO(vertices, colours, textures, indices, GL33C.GL_TRIANGLES);
     }
 
     public void disposeLoader() {

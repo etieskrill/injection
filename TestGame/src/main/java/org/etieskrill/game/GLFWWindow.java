@@ -1,6 +1,8 @@
 package org.etieskrill.game;
 
 import glm.mat._4.Mat4;
+import glm.vec._3.Vec3;
+import jglm.Vec;
 import org.etieskrill.engine.graphics.gl.*;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderFactory;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
@@ -31,7 +33,6 @@ public class GLFWWindow {
     private static final double TARGET_FPS = 60d;
 
     private volatile boolean wPressed, aPressed, sPressed, dPressed;
-    private MovableModel model1;
     private LoopPacer pacer;
 
     private long
@@ -43,7 +44,6 @@ public class GLFWWindow {
         loop();
         
         //glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
-        
         glfwTerminate();
     }
     
@@ -90,6 +90,7 @@ public class GLFWWindow {
         //int[] caps = new int[1];
         //GL30C.glGetIntegerv(GL30C.GL_MAX_VERTEX_ATTRIBS, caps);
         //System.out.println(Arrays.toString(caps));
+        GL33C.glEnable(GL33C.GL_DEPTH_TEST);
 
         if (!initTextureSettings()) throw new IllegalStateException("Could not initialise texture settings");
         if (!initKeybinds()) throw new IllegalStateException("Could not initialise keybinds");
@@ -146,15 +147,8 @@ public class GLFWWindow {
                 0.0f, 0.0f, 1.0f, 1.0f
         };
 
-        float[] textures = new float[(int) (vertices.length / 1.5)];
-        Arrays.fill(textures, 0f);
-    
-        //model1 = new MovableModel(factory.rectangle(-0.25f, -0.45f, 0.5f, 0.9f));
-        model1 = new MovableModel(factory.rectangle(-0.25f, -0.25f, 0.5f, 0.5f));
-        //RawModel model2 = factory.circleSect(-0.5f, 0.5f, 0.15f, 0, 150, 8);
-        //MovableModel model3 = new MovableModel(loader.loadToVAO(vertices, colours, textures, new short[]{0, 1, 2}, GL33C.GL_TRIANGLES));
-        //MovableModel model4 = new MovableModel(factory.rectangle(-1f, -1f, 2f, 2f));
-        //MovableModelList model5 = factory.roundedRect(-0.25f, -0.25f, 0.5f, 0.5f, 0.03f, 8);
+        RawModel model1 = factory.rectangle(-0.25f, -0.25f, 0.5f, 0.5f);
+        RawModel model2 = factory.box(new Vec3(0.5f, 0.5f, 0.5f));
         
         //GL33C.glActiveTexture(GL33C.GL_TEXTURE0);
         Texture containerTexture = new Texture("container.jpg", 0);
@@ -170,38 +164,29 @@ public class GLFWWindow {
         pacer.start();
         
         while (!glfwWindowShouldClose(window)) {
-            Vec3f newPosition = new Vec3f();
-            if (wPressed) newPosition.set(newPosition.add(new Vec3f(0f, 1f, 0f)));
-            if (dPressed) newPosition.set(newPosition.add(new Vec3f(1f, 0f, 0f)));
-            if (sPressed) newPosition.set(newPosition.add(new Vec3f(0f, -1f, 0f)));
-            if (aPressed) newPosition.set(newPosition.add(new Vec3f(-1f, 0f, 0f)));
-    
+            Vec3 newPosition = new Vec3();
+            if (wPressed) newPosition.set(newPosition.add(new Vec3(0f, 1f, 0f)));
+            if (dPressed) newPosition.set(newPosition.add(new Vec3(1f, 0f, 0f)));
+            if (sPressed) newPosition.set(newPosition.add(new Vec3(0f, -1f, 0f)));
+            if (aPressed) newPosition.set(newPosition.add(new Vec3(-1f, 0f, 0f)));
 
-            Vec3f deltaPosition = newPosition.scl((float) pacer.getDeltaTimeSeconds() * 0.5f);
-            //model5.updatePosition(model5.getPosition().add(deltaPosition));
-            //model3.updatePosition(model3.getPosition().add(deltaPosition));
-            model1.updatePosition(model1.getPosition().add(deltaPosition));
+            Vec3 deltaPosition = newPosition.mul((float) pacer.getDeltaTimeSeconds() * 0.5f);
+            //model1.setPosition(model1.getPosition().add(deltaPosition));
+
             renderer.prepare();
             shader.start();
-            
-            GL33C.glUniformMatrix4fv(shader.getUniformLocation("transform"), false, new Mat4().rotateZ(pacer.getSecondsElapsedTotal()).toFa_());
+
+            float seconds = (float) pacer.getSecondsElapsedTotal();
+            shader.setUniformMat4("uModel", false, new Mat4().translate(0f, 0f, 5f).rotate(seconds, new Vec3(Math.sin(seconds), Math.cos(seconds), 0f).normalize()));
+            shader.setUniformMat4("uView", false, new Mat4().translation(-0.0f, -0.0f, 0f));
+            shader.setUniformMat4("uProjection", false, new Mat4().perspectiveFov((float) Math.toRadians(60f), 1920f, 1080f, 0.1f, 100f)); //the near fucking clipping plane needs to be positive in order for the z-buffer to work
             
             containerTexture.bind(0);
             baleTexture.bind(1);
-            
-            //float scale = 0.1f, speed = 2f;
-            //float r = (float) (scale * Math.sin(speed * pacer.getSecondsElapsedTotal()));
-            //float g = (float) (scale * Math.sin(speed * pacer.getSecondsElapsedTotal()) + 0.5);
-            //float b = (float) (scale * Math.sin(speed * pacer.getSecondsElapsedTotal()) + 0.5);
 
-            //GL33C.glUniform4f(shader.getUniformLocation("uFadingColour"), r, g, b, 1f);
-            
-            renderer.render(model1);
-            
-            //renderer.render(model2);
-            //renderer.render(model3);
-            //renderer.render(model4);
-            //model5.render(renderer);
+            //renderer.render(model1);
+            renderer.renderPrimitive(model2);
+
             shader.stop();
 
             if (pacer.getFramesElapsed() > TARGET_FPS) {

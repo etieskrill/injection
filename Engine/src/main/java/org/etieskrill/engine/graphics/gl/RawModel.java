@@ -1,5 +1,8 @@
 package org.etieskrill.engine.graphics.gl;
 
+import glm.mat._4.Mat4;
+import glm.vec._3.Vec3;
+import org.etieskrill.engine.math.Vec3f;
 import org.etieskrill.engine.util.FloatArrayMerger;
 import org.lwjgl.opengl.GL33C;
 
@@ -26,37 +29,33 @@ public class RawModel {
         }
     }
     
-    private final float[] vertices;
-    private final float[] colours;
-    private final float[] textures;
-    private final short[] indices;
-    
-    private final int vao, vbo, ebo;
+    private final int vao;
     private final int numVertices;
-    private int drawMode;
-    
-    public RawModel(float[] vertices, float[] colours, float[] textures, short[] indices,
-                    int vao, int vbo, int ebo,
-                    int numVertices, int drawMode) {
-        this.vertices = vertices;
-        this.colours = colours;
-        this.textures = textures;
-        this.indices = indices;
+    private final int drawMode;
+
+    private Vec3 position = new Vec3();
+    private float scale = 0f;
+    private float rotation = 0f;
+    private Vec3 rotationAxis = new Vec3();
+
+    private Mat4 transform = new Mat4();
+
+    public RawModel(int vao, int numVertices, int drawMode) {
         this.vao = vao;
-        this.vbo = vbo;
-        this.ebo = ebo;
         this.numVertices = numVertices;
         this.drawMode = drawMode;
     }
     
     public RawModel(RawModel rawModel) {
-        this(
-                rawModel.getVertices(), rawModel.getColours(), rawModel.getTextures(), rawModel.getIndices(),
-                rawModel.getVao(), rawModel.getVbo(), rawModel.getEbo(),
-                rawModel.getNumVertices(), rawModel.getDrawMode()
-        );
+        this(rawModel.getVao(), rawModel.getNumVertices(), rawModel.getDrawMode());
     }
-    
+
+    protected RawModel() {
+        this.vao = 0;
+        this.numVertices = 0;
+        this.drawMode = 0;
+    }
+
     /*public static RawModel get(int vao, int vbo, int ebo) {
         return new RawModelWrapper(vao, vbo, ebo);
     }
@@ -77,46 +76,33 @@ public class RawModel {
     public void unbind() {};
     
     //public void update() {};
-    
-    public void update(float[] vertices, float[] colours, float[] textures, short[] indices, int drawMode) {
-        GL33C.glBindVertexArray(this.vao);
-        float[] data = FloatArrayMerger.merge(vertices, colours, MODEL_POSITION_COMPONENTS, MODEL_COLOUR_COMPONENTS);
-        data = FloatArrayMerger.merge(data, textures, MODEL_POSITION_COMPONENTS + MODEL_COLOUR_COMPONENTS,
-                MODEL_TEXTURE_COMPONENTS);
-        GL33C.glBindBuffer(GL33C.GL_ARRAY_BUFFER, vbo);
-        GL33C.glBufferData(GL33C.GL_ARRAY_BUFFER, data, GL33C.GL_DYNAMIC_DRAW);
-        GL33C.glBindBuffer(GL33C.GL_ELEMENT_ARRAY_BUFFER, ebo);
-        GL33C.glBufferData(GL33C.GL_ELEMENT_ARRAY_BUFFER, indices, GL33C.GL_DYNAMIC_DRAW);
-        GL33C.glBindBuffer(GL33C.GL_ARRAY_BUFFER, 0);
-        this.drawMode = drawMode;
-    }
-    
-    public float[] getVertices() {
-        return vertices;
-    }
-    
-    public float[] getColours() {
-        return colours;
+
+    public void setPosition(Vec3 newPosition) {
+        this.position.set(newPosition);
+        updateTransform();
     }
 
-    public float[] getTextures() {
-        return textures;
+    public void setScale(float scale) {
+        this.scale = scale;
+        updateTransform();
     }
 
-    public short[] getIndices() {
-        return indices;
+    public void setRotation(float rotation, Vec3 rotationAxis) {
+        this.rotation = rotation;
+        this.rotationAxis = rotationAxis;
+        updateTransform();
     }
-    
+
+    private void updateTransform() {
+        transform.set(transform.identity().translate(position).scale(scale).rotate(rotation, rotationAxis));
+    }
+
+    public void setTransform(Mat4 transform) {
+        this.transform = transform;
+    }
+
     public int getVao() {
         return vao;
-    }
-    
-    public int getVbo() {
-        return vbo;
-    }
-    
-    public int getEbo() {
-        return ebo;
     }
     
     public int getNumVertices() {

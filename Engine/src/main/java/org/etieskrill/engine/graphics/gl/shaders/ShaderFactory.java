@@ -23,7 +23,9 @@ public class ShaderFactory {
             addUniform("uFadingColour");
             addUniform("texture1");
             addUniform("texture2");
-            addUniform("transform");
+            addUniform("uModel");
+            addUniform("uView");
+            addUniform("uProjection");
         }
 
         @Override
