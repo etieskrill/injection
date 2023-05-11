@@ -24,6 +24,7 @@ import org.lwjgl.system.Platform;
 
 import javax.swing.plaf.basic.BasicInternalFrameTitlePane;
 import java.util.Arrays;
+import java.util.Random;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
@@ -135,21 +136,28 @@ public class GLFWWindow {
 
         ModelFactory factory = new ModelFactory();
 
-        float[] vertices = new float[] {
-                 0.5f, -0.5f, 0.0f,
-                -0.5f, -0.5f, 0.0f,
-                 0.0f,  0.5f, 0.0f
-        };
-        
-        float[] colours = new float[] {
-                1.0f, 0.0f, 0.0f, 1.0f,
-                0.0f, 1.0f, 0.0f, 1.0f,
-                0.0f, 0.0f, 1.0f, 1.0f
+        Vec3 cubePositions[] = {
+            new Vec3( 0.0f,  0.0f,  0.0f),
+            new Vec3( 2.0f,  5.0f, -15.0f),
+            new Vec3(-1.5f, -2.2f, -2.5f),
+            new Vec3(-3.8f, -2.0f, -12.3f),
+            new Vec3( 2.4f, -0.4f, -3.5f),
+            new Vec3(-1.7f,  3.0f, -7.5f),
+            new Vec3( 1.3f, -2.0f, -2.5f),
+            new Vec3( 1.5f,  2.0f, -2.5f),
+            new Vec3( 1.5f,  0.2f, -1.5f),
+            new Vec3(-1.3f,  1.0f, -1.5f)
         };
 
-        RawModel model1 = factory.rectangle(-0.25f, -0.25f, 0.5f, 0.5f);
-        RawModel model2 = factory.box(new Vec3(0.5f, 0.5f, 0.5f));
-        
+        RawModel[] models = new RawModel[cubePositions.length];
+        for (int i = 0; i < cubePositions.length; i++) {
+            models[i] = factory.box(new Vec3(0.1f, 0.1f, 0.1f))
+                    .setPosition(cubePositions[i])
+                    .setRotation(new Random(69420).nextFloat(),
+                            Vec3.linearRand_(new Vec3(-1f, -1f, -1f), new Vec3(1f, 1f, 1f)));
+            System.out.println(Arrays.toString(models[i].getTransform().toFa_()));
+        }
+
         //GL33C.glActiveTexture(GL33C.GL_TEXTURE0);
         Texture containerTexture = new Texture("container.jpg", 0);
         //GL33C.glActiveTexture(GL33C.GL_TEXTURE1);
@@ -176,16 +184,18 @@ public class GLFWWindow {
             renderer.prepare();
             shader.start();
 
-            float seconds = (float) pacer.getSecondsElapsedTotal();
-            shader.setUniformMat4("uModel", false, new Mat4().translate(0f, 0f, 5f).rotate(seconds, new Vec3(Math.sin(seconds), Math.cos(seconds), 0f).normalize()));
-            shader.setUniformMat4("uView", false, new Mat4().translation(-0.0f, -0.0f, 0f));
+            float seconds = 0; //(float) pacer.getSecondsElapsedTotal();
+            //shader.setUniformMat4("uModel", false, new Mat4().translate(0f, 0f, 5f).rotate(seconds, new Vec3(Math.sin(seconds), Math.cos(seconds), 0f).normalize()));
+            shader.setUniformMat4("uView", false, new Mat4().translation(-0.0f, -0.0f, -0f));
             shader.setUniformMat4("uProjection", false, new Mat4().perspectiveFov((float) Math.toRadians(60f), 1920f, 1080f, 0.1f, 100f)); //the near fucking clipping plane needs to be positive in order for the z-buffer to work
             
             containerTexture.bind(0);
             baleTexture.bind(1);
 
-            //renderer.render(model1);
-            renderer.renderPrimitive(model2);
+            for (RawModel model : models) {
+                shader.setUniformMat4("uModel", false, model.getTransform());
+                renderer.render(model);
+            }
 
             shader.stop();
 

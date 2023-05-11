@@ -2,9 +2,8 @@ package org.etieskrill.engine.graphics.gl;
 
 import glm.mat._4.Mat4;
 import glm.vec._3.Vec3;
-import org.etieskrill.engine.math.Vec3f;
-import org.etieskrill.engine.util.FloatArrayMerger;
-import org.lwjgl.opengl.GL33C;
+
+import java.util.Arrays;
 
 public class RawModel {
 
@@ -32,9 +31,10 @@ public class RawModel {
     private final int vao;
     private final int numVertices;
     private final int drawMode;
+    private final boolean indexBuffer;
 
     private Vec3 position = new Vec3();
-    private float scale = 0f;
+    private float scale = 1f;
     private float rotation = 0f;
     private Vec3 rotationAxis = new Vec3();
 
@@ -44,16 +44,18 @@ public class RawModel {
         this.vao = vao;
         this.numVertices = numVertices;
         this.drawMode = drawMode;
+        this.indexBuffer = true;
+    }
+
+    public RawModel(int vao, int numVertices, int drawMode, boolean indexBuffer) {
+        this.vao = vao;
+        this.numVertices = numVertices;
+        this.drawMode = drawMode;
+        this.indexBuffer = indexBuffer;
     }
     
     public RawModel(RawModel rawModel) {
-        this(rawModel.getVao(), rawModel.getNumVertices(), rawModel.getDrawMode());
-    }
-
-    protected RawModel() {
-        this.vao = 0;
-        this.numVertices = 0;
-        this.drawMode = 0;
+        this(rawModel.getVao(), rawModel.getNumVertices(), rawModel.getDrawMode(), rawModel.hasIndexBuffer());
     }
 
     /*public static RawModel get(int vao, int vbo, int ebo) {
@@ -77,20 +79,23 @@ public class RawModel {
     
     //public void update() {};
 
-    public void setPosition(Vec3 newPosition) {
+    public RawModel setPosition(Vec3 newPosition) {
         this.position.set(newPosition);
         updateTransform();
+        return this;
     }
 
-    public void setScale(float scale) {
+    public RawModel setScale(float scale) {
         this.scale = scale;
         updateTransform();
+        return this;
     }
 
-    public void setRotation(float rotation, Vec3 rotationAxis) {
+    public RawModel setRotation(float rotation, Vec3 rotationAxis) {
         this.rotation = rotation;
         this.rotationAxis = rotationAxis;
         updateTransform();
+        return this;
     }
 
     private void updateTransform() {
@@ -112,5 +117,13 @@ public class RawModel {
     public int getDrawMode() {
         return drawMode;
     }
-    
+
+    public boolean hasIndexBuffer() {
+        return indexBuffer;
+    }
+
+    public Mat4 getTransform() {
+        return transform;
+    }
+
 }

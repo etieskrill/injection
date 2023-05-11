@@ -216,6 +216,12 @@ public class ModelFactory {
                 -0.5f,  0.5f, -0.5f
         };
 
+        for (int i = 0; i < vertices.length; i+=3) {
+            vertices[i] *= 2 * size.x;
+            vertices[i + 1] *= 2 * size.y;
+            vertices[i + 2] *= 2 * size.z;
+        }
+
         float[] textures = {
                 0.0f, 0.0f,
                 1.0f, 0.0f,
@@ -261,9 +267,8 @@ public class ModelFactory {
         };
 
         float[] colours = new float[(int) (vertices.length / 0.75f)];
-        short[] indices = new short[36];
 
-        return loader.loadToVAO(vertices, colours, textures, indices, GL33C.GL_TRIANGLES);
+        return loader.loadToVAO(vertices, colours, textures, null, GL33C.GL_TRIANGLES);
     }
 
     public void disposeLoader() {

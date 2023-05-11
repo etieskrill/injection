@@ -17,11 +17,14 @@ public class Loader {
     private final List<Integer> ebos = new ArrayList<>();
     
     public RawModel loadToVAO(float[] vertices, float[] colours, float[] textures, short[] indices, int drawMode) {
+        boolean hasIndexBuffer = indices != null;
+
         int vao = createVAO();
         storeInAttributeList(vertices, colours, textures);
-        bindIndicesBuffer(indices);
+        if (hasIndexBuffer) bindIndicesBuffer(indices);
         unbindVAO();
-        return new RawModel(vao, indices.length, drawMode);
+
+        return new RawModel(vao, hasIndexBuffer ? indices.length : vertices.length, drawMode, hasIndexBuffer);
     }
     
     private int createVAO() {

@@ -12,7 +12,7 @@ import java.util.List;
  * method or something of the likes in {@link org.etieskrill.engine.graphics.gl.RawModel}.
  */
 @Deprecated
-public class RawModelList extends RawModel {
+public class RawModelList {
 
     private final List<RawModel> models;
 
@@ -24,7 +24,6 @@ public class RawModelList extends RawModel {
     private Mat4 transform;
 
     public RawModelList() {
-        super();
         this.models = new ArrayList<>();
     }
 
