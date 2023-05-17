@@ -1,4 +1,4 @@
-#version 430 core
+#version 420 core
 
 out vec4 oColour; //TODO why in the goddamn giggity fuck does this have to be before the ins
 

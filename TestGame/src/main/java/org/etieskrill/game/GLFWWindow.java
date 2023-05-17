@@ -2,28 +2,19 @@ package org.etieskrill.game;
 
 import glm.mat._4.Mat4;
 import glm.vec._3.Vec3;
-import jglm.Vec;
 import org.etieskrill.engine.graphics.gl.*;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderFactory;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
-import org.etieskrill.engine.math.Mat4f;
-import org.etieskrill.engine.math.Vec2f;
-import org.etieskrill.engine.math.Vec3f;
 import org.etieskrill.engine.time.LoopPacer;
 import org.etieskrill.engine.time.SystemNanoTimePacer;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
-import org.lwjgl.opengl.ARBMatrixPalette;
 import org.lwjgl.opengl.GL;
-import org.lwjgl.opengl.GL11C;
 import org.lwjgl.opengl.GL33C;
-import org.lwjgl.stb.STBImage;
 import org.lwjgl.system.Platform;
 
-import javax.swing.plaf.basic.BasicInternalFrameTitlePane;
-import java.util.Arrays;
 import java.util.Random;
 
 import static org.lwjgl.glfw.GLFW.*;
@@ -92,7 +83,8 @@ public class GLFWWindow {
         //GL30C.glGetIntegerv(GL30C.GL_MAX_VERTEX_ATTRIBS, caps);
         //System.out.println(Arrays.toString(caps));
         GL33C.glEnable(GL33C.GL_DEPTH_TEST);
-
+        GL33C.glDepthFunc(GL33C.GL_LESS);
+        
         if (!initTextureSettings()) throw new IllegalStateException("Could not initialise texture settings");
         if (!initKeybinds()) throw new IllegalStateException("Could not initialise keybinds");
         
@@ -151,17 +143,16 @@ public class GLFWWindow {
 
         RawModel[] models = new RawModel[cubePositions.length];
         for (int i = 0; i < cubePositions.length; i++) {
-            models[i] = factory.box(new Vec3(0.1f, 0.1f, 0.1f))
+            models[i] = factory.box(new Vec3(0.5f, 0.5f, 0.5f))
                     .setPosition(cubePositions[i])
                     .setRotation(new Random(69420).nextFloat(),
                             Vec3.linearRand_(new Vec3(-1f, -1f, -1f), new Vec3(1f, 1f, 1f)));
-            System.out.println(Arrays.toString(models[i].getTransform().toFa_()));
         }
 
         //GL33C.glActiveTexture(GL33C.GL_TEXTURE0);
         Texture containerTexture = new Texture("container.jpg", 0);
         //GL33C.glActiveTexture(GL33C.GL_TEXTURE1);
-        Texture baleTexture = new Texture("buff_bale.jpg", 1);
+        Texture pepegaTexture = new Texture("pepega.png", 1);
         
         GL33C.glTexParameteri(GL33C.GL_TEXTURE_2D, GL33C.GL_TEXTURE_WRAP_S, GL33C.GL_MIRRORED_REPEAT);
         GL33C.glTexParameteri(GL33C.GL_TEXTURE_2D, GL33C.GL_TEXTURE_WRAP_T, GL33C.GL_MIRRORED_REPEAT);
@@ -184,13 +175,19 @@ public class GLFWWindow {
             renderer.prepare();
             shader.start();
 
-            float seconds = 0; //(float) pacer.getSecondsElapsedTotal();
-            //shader.setUniformMat4("uModel", false, new Mat4().translate(0f, 0f, 5f).rotate(seconds, new Vec3(Math.sin(seconds), Math.cos(seconds), 0f).normalize()));
-            shader.setUniformMat4("uView", false, new Mat4().translation(-0.0f, -0.0f, -0f));
+            float seconds = (float) pacer.getSecondsElapsedTotal();
+            float radius = 5f;
+            Vec3 pos = new Vec3(radius * Math.cos(seconds), 0f, radius * Math.sin(seconds)),
+                    target = new Vec3(0f, 0f, 0f),
+                    up = new Vec3(0f, 1f, 0f);
+    
+            Mat4 view = new Mat4().lookAt(pos, target, up).translate(new Vec3(pos.x * 2, pos.y * 2, pos.z * 2));
+            
+            shader.setUniformMat4("uView", false, view);
             shader.setUniformMat4("uProjection", false, new Mat4().perspectiveFov((float) Math.toRadians(60f), 1920f, 1080f, 0.1f, 100f)); //the near fucking clipping plane needs to be positive in order for the z-buffer to work
             
             containerTexture.bind(0);
-            baleTexture.bind(1);
+            pepegaTexture.bind(1);
 
             for (RawModel model : models) {
                 shader.setUniformMat4("uModel", false, model.getTransform());
@@ -212,6 +209,14 @@ public class GLFWWindow {
         
         shader.dispose();
         loader.cleanup();
+    }
+    
+    private String matToString(Mat4 mat) {
+        return String.format("[%6.3f, %6.3f, %6.3f, %6.3f]\n[%6.3f, %6.3f, %6.3f, %6.3f]\n[%6.3f, %6.3f, %6.3f, %6.3f]\n[%6.3f, %6.3f, %6.3f, %6.3f]",
+                mat.m00, mat.m01, mat.m02, mat.m03,
+                mat.m10, mat.m11, mat.m12, mat.m13,
+                mat.m20, mat.m21, mat.m22, mat.m23,
+                mat.m30, mat.m31, mat.m32, mat.m33);
     }
     
     public static void main(String[] args) {
