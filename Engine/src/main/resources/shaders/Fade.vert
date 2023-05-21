@@ -7,7 +7,6 @@ layout (location = 2) in vec2 iTextureCoords;
 out vec4 tColour;
 out vec2 tTextureCoords;
 
-//uniform vec4 uFadingColour;
 uniform mat4 uModel;
 uniform mat4 uView;
 uniform mat4 uProjection;

@@ -41,17 +41,10 @@ public abstract class ShaderProgram {
 
         this.uniforms = new HashMap<>();
         getUniformLocations();
-        
-        //bindAttributes();
-        // TODO i don't think this is necessary with the layout qualifier in the vertex shader,
-        //  though according to the spec https://www.khronos.org/opengl/wiki/Layout_Qualifier_(GLSL) the core
-        //  functionality of this is only available to opengl core 4.1 and higher, so i dunno about compatibility
     }
 
     protected abstract void getUniformLocations();
-
-    protected abstract void bindAttributes();
-
+    
     public void start() {
         GL20C.glUseProgram(programID);
     }
@@ -72,10 +65,6 @@ public abstract class ShaderProgram {
 
     public void setUniformMat4(CharSequence name, boolean transpose, Mat4 mat) {
         GL33C.glUniformMatrix4fv(getUniformLocation(name), transpose, mat.toFa_());
-    }
-    
-    protected void bindAttribute(int attribute, String variableName) {
-        GL20C.glBindAttribLocation(programID, attribute, variableName);
     }
     
     private static int loadShader(String file, int shaderType) {

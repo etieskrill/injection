@@ -82,7 +82,7 @@ public class Loader {
         return ebo;
     }
     
-    public void cleanup() {
+    public void dispose() {
         for (int vao : vaos) GL33C.glDeleteBuffers(vao);
         for (int vbo : vbos) GL33C.glDeleteVertexArrays(vbo);
         for (int ebo : ebos) GL33C.glDeleteBuffers(ebo);

@@ -25,6 +25,11 @@ public class SystemNanoTimePacer implements LoopPacer {
         this.ignoredInitialReadings = ignoredInitialReadings;
     }
     
+    public SystemNanoTimePacer(double targetDeltaSeconds) {
+        this.targetDelta = (long) (targetDeltaSeconds * NANO_FACTOR);
+        this.ignoredInitialReadings = (int) (10f / targetDelta);
+    }
+    
     @Override
     public void start() {
         if (started) throw new IllegalStateException("Pacer was already started");
@@ -58,7 +63,7 @@ public class SystemNanoTimePacer implements LoopPacer {
 
     private void updateAverageFPS(long newDelta) {
         if (deltaBuffer.size() >= AVERAGE_FRAMERATE_SPAN) deltaBuffer.removeFirst();
-        deltaBuffer.addLast(delta);
+        deltaBuffer.addLast(newDelta);
 
         long sum = 0;
         for (long value : deltaBuffer) {
@@ -114,7 +119,7 @@ public class SystemNanoTimePacer implements LoopPacer {
         this.timeNow = System.nanoTime();
     }
 
-    private synchronized void incrementFrameCounters() { //TODO figure out whether synchronized is the correct choice here
+    private synchronized void incrementFrameCounters() {
         totalFrames++;
         localFrames++;
     }

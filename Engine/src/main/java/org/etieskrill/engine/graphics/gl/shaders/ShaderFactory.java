@@ -10,7 +10,7 @@ public class ShaderFactory {
         return new RoundedBoxShader();
     }
 
-    static class StaticShader extends ShaderProgram {
+    private static class StaticShader extends ShaderProgram {
         private static final String VERTEX_FILE = "shaders/Fade.vert";
         private static final String FRAGMENT_FILE = "shaders/Fade.frag";
 
@@ -20,22 +20,16 @@ public class ShaderFactory {
 
         @Override
         protected void getUniformLocations() {
-            addUniform("uFadingColour");
             addUniform("texture1");
             addUniform("texture2");
             addUniform("uModel");
             addUniform("uView");
             addUniform("uProjection");
         }
-
-        @Override
-        protected void bindAttributes() {
-            //TODO perhaps this is a duplicate of the layout(... = 0) specifier in the vertex shader?
-            super.bindAttribute(0, "iPosition");
-        }
+        
     }
 
-    static class RoundedBoxShader extends ShaderProgram {
+    private static class RoundedBoxShader extends ShaderProgram {
         private static final String VERTEX_FILE = "shaders/RoundedBox.vert";
         private static final String FRAGMENT_FILE = "shaders/RoundedBox.frag";
 
@@ -45,11 +39,6 @@ public class ShaderFactory {
 
         @Override
         protected void getUniformLocations() {}
-
-        @Override
-        protected void bindAttributes() {
-            super.bindAttribute(0, "iPosition");
-        }
     }
 
 }

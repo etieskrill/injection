@@ -1,6 +1,5 @@
 package org.etieskrill.engine.graphics.gl;
 
-import glm.mat._3.Mat3;
 import glm.vec._3.Vec3;
 import org.lwjgl.BufferUtils;
 
@@ -272,7 +271,7 @@ public class ModelFactory {
     }
 
     public void disposeLoader() {
-        loader.cleanup();
+        loader.dispose();
     }
 
 }
