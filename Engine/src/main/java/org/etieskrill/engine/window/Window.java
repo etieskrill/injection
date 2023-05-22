@@ -5,6 +5,8 @@ import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.system.Platform;
 
+import java.util.List;
+
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
@@ -75,6 +77,11 @@ public class Window {
         public int getHeight() {
             return height;
         }
+
+        @Override
+        public String toString() {
+            return String.format("%s(%d x %d)", name(), width, height);
+        }
     }
     
     public Window(WindowMode mode, WindowSize size, int targetFrameRate) {
@@ -93,7 +100,7 @@ public class Window {
         
         glfwSetErrorCallback((retVal, argv) -> {
             PointerBuffer errorMessage = BufferUtils.createPointerBuffer(1);
-            throw new IllegalStateException(String.format("GLFW error ocurred: %d\nMessage: %s",
+            throw new IllegalStateException(String.format("GLFW error occurred: %d\nMessage: %s",
                     glfwGetError(errorMessage), errorMessage.getStringASCII()));
         });
     
@@ -149,7 +156,7 @@ public class Window {
     
     //TODO should probably be named more appropriately
     public void update() {
-        glfwSwapBuffers(window);
+        glfwSwapBuffers(window); //Buffers are usually swapped before polling events
         glfwPollEvents(); //Also proves to system that window has not frozen
     }
     
@@ -166,5 +173,17 @@ public class Window {
         this.title = title;
         glfwSetWindowTitle(window, title);
     }
-    
+
+    public WindowMode getMode() {
+        return mode;
+    }
+
+    public WindowSize getSize() {
+        return size;
+    }
+
+    public float getTargetFrameRate() {
+        return targetFrameRate;
+    }
+
 }

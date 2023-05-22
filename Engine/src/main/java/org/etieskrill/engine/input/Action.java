@@ -1,4 +1,4 @@
-package org.etieskrill.game;
+package org.etieskrill.engine.input;
 
 /**
  * A shadow of {@link java.lang.Runnable} in case own functionality is needed sometime.

@@ -24,20 +24,18 @@ public class DemCubez {
 
     private volatile boolean wPressed, aPressed, sPressed, dPressed, spacePressed, shiftPressed;
     private volatile double pitch, yaw, roll, prevMouseX, prevMouseY, zoom;
-    
-    private LoopPacer pacer;
 
     private Window window;
     
-    public DemCubez() {;
+    public DemCubez() {
         init();
         loop();
         terminate();
     }
     
     private void init() {
-        this.window = new Window(Window.WindowMode.BORDERLESS, Window.WindowSize.FHD, (int) TARGET_FPS);
-        
+        this.window = new Window(Window.WindowMode.WINDOWED, null, 0);
+
         if (!initGL()) throw new IllegalStateException("Could not initialise texture settings");
         if (!initKeybinds()) throw new IllegalStateException("Could not initialise keybinds");
         if (!initMouse()) throw new IllegalStateException("Could not initialise mouse");
@@ -89,17 +87,19 @@ public class DemCubez {
     
     private boolean initMouse() {
         glfwSetInputMode(window.getID(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        
+        if (glfwRawMouseMotionSupported())
+            glfwSetInputMode(window.getID(), GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+
         double[] prevX = new double[1], prevY = new double[1];
         glfwGetCursorPos(window.getID(), prevX, prevY);
         prevMouseX = prevX[0];
         prevMouseY = prevY[0];
         
         yaw = 90d;
-        zoom = 3.81f; //this equates to basically 60° for the fov, don't ask how, i guess that
+        zoom = 3.81f; //this equates to basically 60° for the fov, don't ask how (i guessed it by trial and error)
         
         float mouseSensitivity = 0.15f, zoomSensitivity = 0.5f;
-        
+
         glfwSetCursorPosCallback(window.getID(), (window, xpos, ypos) -> {
             double dx = xpos - prevMouseX;
             double dy = ypos - prevMouseY;
@@ -166,8 +166,8 @@ public class DemCubez {
         ShaderProgram shader = ShaderFactory.getStandardShader();
     
         Vec3 camPosition = new Vec3(0f, 0f, -3f), camFront = new Vec3(0f, 0f, -1f), up = new Vec3(0f, 1f, 0f);
-    
-        pacer = new SystemNanoTimePacer(1d / TARGET_FPS);
+
+        LoopPacer pacer = new SystemNanoTimePacer(1d / TARGET_FPS);
         pacer.start();
         
         while (!window.shouldClose()) {
@@ -217,7 +217,6 @@ public class DemCubez {
             }
 
             window.update();
-            
             pacer.nextFrame();
         }
         

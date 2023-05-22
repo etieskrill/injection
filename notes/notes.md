@@ -13,6 +13,9 @@
   [Khronos](https://registry.khronos.org/OpenGL-Refpages/gl4/html/glPolygonMode.xhtml)
 - a variable `uniform` is global to a shader program, and as such can be accessed by eny of it's 
   attached shaders.
+- to poll capslock and numlock it may be necessary to set the following input mode:
+  `glfwSetInputMode(window, GLFW_LOCK_KEY_MODS, GLFW_TRUE);`
+  [GLFW Input](https://www.glfw.org/docs/latest/input_guide.html#input_char)
 
 
 # Other Resources

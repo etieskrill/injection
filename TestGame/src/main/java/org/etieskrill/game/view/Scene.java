@@ -1,8 +1,8 @@
 package org.etieskrill.game.view;
 
 import org.etieskrill.engine.util.UniqueIDManager;
-import org.etieskrill.game.settings.KeyBind;
-import org.etieskrill.game.settings.KeyBindAPI;
+import org.etieskrill.engine.input.KeyBind;
+import org.etieskrill.engine.input.KeyBindAPI;
 
 public class Scene {
     

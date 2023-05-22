@@ -1,7 +1,4 @@
-package org.etieskrill.game.settings;
-
-
-import org.etieskrill.game.Action;
+package org.etieskrill.engine.input;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -16,7 +13,7 @@ public class KeyBind implements KeyBindAPI {
     }
     
     @Override
-    public boolean fire(int key) {
+    public boolean invoke(int key) {
         Action action = keyBinds.get(key);
         if (action == null) return false;
         action.run();
