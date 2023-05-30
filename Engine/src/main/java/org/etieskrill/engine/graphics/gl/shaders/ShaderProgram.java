@@ -2,14 +2,10 @@ package org.etieskrill.engine.graphics.gl.shaders;
 
 import glm.mat._4.Mat4;
 import org.etieskrill.engine.util.ResourceReader;
-import org.lwjgl.opengl.GL11C;
-import org.lwjgl.opengl.GL20C;
 import org.lwjgl.opengl.GL33C;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 public abstract class ShaderProgram {
     
@@ -17,25 +13,25 @@ public abstract class ShaderProgram {
     private final Map<CharSequence, Integer> uniforms;
     
     public ShaderProgram(String vertexFile, String fragmentFile) {
-        programID = GL20C.glCreateProgram();
+        programID = GL33C.glCreateProgram();
         
-        vertID = loadShader(vertexFile, GL20C.GL_VERTEX_SHADER);
-        GL20C.glAttachShader(programID, vertID);
+        vertID = loadShader(vertexFile, GL33C.GL_VERTEX_SHADER);
+        GL33C.glAttachShader(programID, vertID);
         
-        fragID = loadShader(fragmentFile, GL20C.GL_FRAGMENT_SHADER);
-        GL20C.glAttachShader(programID, fragID);
-        
-        GL20C.glLinkProgram(programID);
-        if (GL20C.glGetProgrami(programID, GL20C.GL_LINK_STATUS) != GL11C.GL_TRUE) {
-            System.out.println(GL20C.glGetProgramInfoLog(programID));
+        fragID = loadShader(fragmentFile, GL33C.GL_FRAGMENT_SHADER);
+        GL33C.glAttachShader(programID, fragID);
+    
+        GL33C.glLinkProgram(programID);
+        if (GL33C.glGetProgrami(programID, GL33C.GL_LINK_STATUS) != GL33C.GL_TRUE) {
+            System.out.println(GL33C.glGetProgramInfoLog(programID));
             System.err.println("Shader program could not be linked");
         }
         
         disposeShaders();
-        
-        GL20C.glValidateProgram(programID);
-        if (GL20C.glGetProgrami(programID, GL20C.GL_VALIDATE_STATUS) != GL11C.GL_TRUE) {
-            System.out.println(GL20C.glGetProgramInfoLog(programID));
+    
+        GL33C.glValidateProgram(programID);
+        if (GL33C.glGetProgrami(programID, GL33C.GL_VALIDATE_STATUS) != GL33C.GL_TRUE) {
+            System.out.println(GL33C.glGetProgramInfoLog(programID));
             System.err.println("Shader program was not successfully validated");
         }
 
@@ -46,11 +42,11 @@ public abstract class ShaderProgram {
     protected abstract void getUniformLocations();
     
     public void start() {
-        GL20C.glUseProgram(programID);
+        GL33C.glUseProgram(programID);
     }
     
     public void stop() {
-        GL20C.glUseProgram(0);
+        GL33C.glUseProgram(0);
     }
 
     protected void addUniform(CharSequence name) {
@@ -68,12 +64,12 @@ public abstract class ShaderProgram {
     }
     
     private static int loadShader(String file, int shaderType) {
-        int shaderID = GL20C.glCreateShader(shaderType);
-        GL20C.glShaderSource(shaderID, ResourceReader.getRaw(file));
-        GL20C.glCompileShader(shaderID);
+        int shaderID = GL33C.glCreateShader(shaderType);
+        GL33C.glShaderSource(shaderID, ResourceReader.getRaw(file));
+        GL33C.glCompileShader(shaderID);
     
-        if (GL20C.glGetShaderi(shaderID, GL20C.GL_COMPILE_STATUS) != GL11C.GL_TRUE) {
-            System.out.println(GL20C.glGetShaderInfoLog(shaderID));
+        if (GL33C.glGetShaderi(shaderID, GL33C.GL_COMPILE_STATUS) != GL33C.GL_TRUE) {
+            System.out.println(GL33C.glGetShaderInfoLog(shaderID));
             String shaderTypeName = "unknown";
             switch (shaderType) {
                 case GL33C.GL_VERTEX_SHADER -> shaderTypeName = "vertex";
@@ -87,15 +83,17 @@ public abstract class ShaderProgram {
     }
     
     public void disposeShaders() {
-        GL20C.glDeleteShader(vertID);
-        GL20C.glDeleteShader(fragID);
+        GL33C.glDeleteShader(vertID);
+        GL33C.glDeleteShader(fragID);
     }
     
     public void dispose() {
         stop();
-        GL20C.glDetachShader(programID, vertID);
-        GL20C.glDetachShader(programID, fragID);
-        GL20C.glDeleteProgram(programID);
+        GL33C.glDetachShader(programID, vertID);
+        GL33C.glDeleteShader(vertID);
+        GL33C.glDetachShader(programID, fragID);
+        GL33C.glDeleteShader(fragID);
+        GL33C.glDeleteProgram(programID);
     }
 
     public int getProgramID() {

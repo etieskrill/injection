@@ -8,9 +8,12 @@ import org.etieskrill.engine.graphics.gl.Renderer;
 import org.etieskrill.engine.graphics.gl.Texture;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderFactory;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
+import org.etieskrill.engine.math.Vec2f;
+import org.etieskrill.engine.scene._2d.Button;
 import org.etieskrill.engine.time.LoopPacer;
 import org.etieskrill.engine.time.SystemNanoTimePacer;
 import org.etieskrill.engine.window.Window;
+import org.etieskrill.engine.window.WindowBuilder;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL33C;
 
@@ -34,8 +37,10 @@ public class DemCubez {
     }
     
     private void init() {
-        this.window = new Window(Window.WindowMode.WINDOWED, null, 0);
-
+        this.window = WindowBuilder.create()
+                .setMode(Window.WindowMode.BORDERLESS)
+                .build();
+        
         if (!initGL()) throw new IllegalStateException("Could not initialise texture settings");
         if (!initKeybinds()) throw new IllegalStateException("Could not initialise keybinds");
         if (!initMouse()) throw new IllegalStateException("Could not initialise mouse");
@@ -65,20 +70,17 @@ public class DemCubez {
     
     private boolean initKeybinds() {
         glfwSetKeyCallback(window.getID(), (long window, int key, int scancode, int action, int mods) -> {
-            if (key == GLFW_KEY_ESCAPE && (mods & GLFW_MOD_SHIFT) != 0) {
-                glfwSetWindowShouldClose(window, true);
-            } else if (key == GLFW_KEY_W) {
-                wPressed = action != GLFW_RELEASE;
-            } else if (key == GLFW_KEY_A) {
-                aPressed = action != GLFW_RELEASE;
-            } else if (key == GLFW_KEY_S) {
-                sPressed = action != GLFW_RELEASE;
-            } else if (key == GLFW_KEY_D) {
-                dPressed = action != GLFW_RELEASE;
-            } else if (key == GLFW_KEY_SPACE) {
-                spacePressed = action != GLFW_RELEASE;
-            } else if (key == GLFW_KEY_LEFT_SHIFT) {
-                shiftPressed = action != GLFW_RELEASE;
+            switch (key) {
+                case GLFW_KEY_ESCAPE -> {
+                    if ((mods & GLFW_MOD_SHIFT) != 0)
+                        glfwSetWindowShouldClose(window, true);
+                }
+                case GLFW_KEY_W -> wPressed = action != GLFW_RELEASE;
+                case GLFW_KEY_A -> aPressed = action != GLFW_RELEASE;
+                case GLFW_KEY_S -> sPressed = action != GLFW_RELEASE;
+                case GLFW_KEY_D -> dPressed = action != GLFW_RELEASE;
+                case GLFW_KEY_SPACE -> spacePressed = action != GLFW_RELEASE;
+                case GLFW_KEY_LEFT_SHIFT -> shiftPressed = action != GLFW_RELEASE;
             }
         });
         
@@ -96,7 +98,7 @@ public class DemCubez {
         prevMouseY = prevY[0];
         
         yaw = 90d;
-        zoom = 3.81f; //this equates to basically 60° for the fov, don't ask how (i guessed it by trial and error)
+        zoom = 3.81f; //this equates to almost 60° for the fov, don't ask why, i guessed it by trial and error
         
         float mouseSensitivity = 0.15f, zoomSensitivity = 0.5f;
 
@@ -166,6 +168,8 @@ public class DemCubez {
         ShaderProgram shader = ShaderFactory.getStandardShader();
     
         Vec3 camPosition = new Vec3(0f, 0f, -3f), camFront = new Vec3(0f, 0f, -1f), up = new Vec3(0f, 1f, 0f);
+        
+        window.setRoot(new Button(new Vec2f(100f, 100f), new Vec2f(50f, 10f), 0f));
 
         LoopPacer pacer = new SystemNanoTimePacer(1d / TARGET_FPS);
         pacer.start();
@@ -185,7 +189,7 @@ public class DemCubez {
             if (dPressed) add(deltaPosition, camRight.negate_());
             if (spacePressed) add(deltaPosition, camUp);
             if (shiftPressed) add(deltaPosition, camUp.negate_());
-    
+            
             float delta = (float) pacer.getDeltaTimeSeconds();
             deltaPosition.set(deltaPosition.x * delta * camSpeed, deltaPosition.y * delta * camSpeed, deltaPosition.z * delta * camSpeed);
             add(camPosition, deltaPosition);
@@ -216,7 +220,8 @@ public class DemCubez {
                 pacer.resetFrameCounter();
             }
 
-            window.update();
+            //shader.setUniformMat4("uModel", false, new Mat4().identity());
+            window.update(renderer, factory);
             pacer.nextFrame();
         }
         
@@ -238,7 +243,11 @@ public class DemCubez {
     }
     
     private String matToString(Mat4 mat) {
-        return String.format("[%6.3f, %6.3f, %6.3f, %6.3f]\n[%6.3f, %6.3f, %6.3f, %6.3f]\n[%6.3f, %6.3f, %6.3f, %6.3f]\n[%6.3f, %6.3f, %6.3f, %6.3f]",
+        return String.format("""
+                        [%6.3f, %6.3f, %6.3f, %6.3f]
+                        [%6.3f, %6.3f, %6.3f, %6.3f]
+                        [%6.3f, %6.3f, %6.3f, %6.3f]
+                        [%6.3f, %6.3f, %6.3f, %6.3f]""",
                 mat.m00, mat.m01, mat.m02, mat.m03,
                 mat.m10, mat.m11, mat.m12, mat.m13,
                 mat.m20, mat.m21, mat.m22, mat.m23,

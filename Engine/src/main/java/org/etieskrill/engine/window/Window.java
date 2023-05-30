@@ -1,11 +1,13 @@
 package org.etieskrill.engine.window;
 
+import org.etieskrill.engine.graphics.gl.ModelFactory;
+import org.etieskrill.engine.graphics.gl.Renderer;
+import org.etieskrill.engine.math.Vec2f;
+import org.etieskrill.engine.scene._2d.Node;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.system.Platform;
-
-import java.util.List;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
@@ -16,9 +18,15 @@ public class Window {
     
     private WindowMode mode;
     private long monitor;
+    private GLFWVidMode videoMode;
     private WindowSize size;
+    private Vec2f position;
     private float targetFrameRate;
     private String title;
+    
+    private Node root;
+    
+    private boolean built = false;
     
     public enum WindowMode {
         FULLSCREEN,
@@ -36,7 +44,9 @@ public class Window {
         XGA(768, 1024),
         UWHD(1080, 2560),
         UWQHD(1440, 3440),
-        UHD_4K(2160, 3840);
+        UHD_4K(2160, 3840),
+        
+        LARGEST_FIT(0, 0);
         
         WindowSize(final int height, final int width) {
             if (width < height)
@@ -84,12 +94,13 @@ public class Window {
         }
     }
     
-    public Window(WindowMode mode, WindowSize size, int targetFrameRate) {
+    public Window(WindowMode mode, WindowSize size, Vec2f position, float targetFrameRate, String title) {
         this.mode = mode;
         this.size = size;
+        this.position = position;
         this.targetFrameRate = targetFrameRate;
         
-        this.title = "Window";
+        this.title = title;
         
         init();
     }
@@ -103,8 +114,6 @@ public class Window {
             throw new IllegalStateException(String.format("GLFW error occurred: %d\nMessage: %s",
                     glfwGetError(errorMessage), errorMessage.getStringASCII()));
         });
-    
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
         
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -116,21 +125,25 @@ public class Window {
         if (monitor == NULL)
             throw new IllegalStateException("Could not find primary monitor");
     
-        if (mode == null) mode = WindowMode.WINDOWED;
-        GLFWVidMode videoMode = glfwGetVideoMode(monitor);
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+    
+        if (mode == null) throw new IllegalArgumentException("Window mode must not be null");
+        videoMode = glfwGetVideoMode(monitor);
         if (videoMode == null) {
             System.err.println("Video mode for monitor could not be retrieved");
-            size = WindowSize.HD;
-            targetFrameRate = 60f;
+            size = size == null ? WindowSize.HD : size;
+            targetFrameRate = targetFrameRate < 0 ? 60f : targetFrameRate;
         }
-        if (size == null) size = WindowSize.getLargestFit(videoMode.width(), videoMode.height());
-        if (targetFrameRate == 0) targetFrameRate = videoMode.refreshRate();
+        
+        if (size == null)
+            throw new IllegalArgumentException("Window size must not be null");
+        else if (size == WindowSize.LARGEST_FIT)
+            size = WindowSize.getLargestFit(videoMode.width(), videoMode.height());
+        
+        if (targetFrameRate < 0) targetFrameRate = videoMode.refreshRate();
     
-        glfwWindowHint(GLFW_DECORATED, switch (mode) {
-            case FULLSCREEN, BORDERLESS -> GLFW_FALSE;
-            case WINDOWED -> GLFW_TRUE;
-        });
-        glfwWindowHint(GLFW_REFRESH_RATE, (int) targetFrameRate);
+        setMode(mode);
+        setRefreshRate(targetFrameRate);
         
         window = glfwCreateWindow(size.getWidth(), size.getHeight(), title,
                 switch (mode) {
@@ -144,10 +157,19 @@ public class Window {
         //glfwGetWindowMonitor()
         glfwMakeContextCurrent(window);
         glfwSwapInterval(1); //TODO why does it break when 4<?
+        
+        setPos(position);
+        this.built = true;
+        
+        setTitle(title);
     }
     
     public void show() {
         glfwShowWindow(window);
+    }
+    
+    public void hide() {
+        glfwHideWindow(window);
     }
     
     public boolean shouldClose() {
@@ -155,9 +177,12 @@ public class Window {
     }
     
     //TODO should probably be named more appropriately
-    public void update() {
+    public void update(Renderer renderer, ModelFactory models) {
+        //glfwMakeContextCurrent(window);
         glfwSwapBuffers(window); //Buffers are usually swapped before polling events
         glfwPollEvents(); //Also proves to system that window has not frozen
+        
+        if (root != null) root.draw(renderer, models);
     }
     
     @Deprecated
@@ -165,25 +190,60 @@ public class Window {
         return window;
     }
     
+    public WindowMode getMode() {
+        return mode;
+    }
+    
+    public void setMode(WindowMode mode) {
+        this.mode = mode;
+        glfwWindowHint(GLFW_DECORATED, switch (mode) {
+            case FULLSCREEN, BORDERLESS -> GLFW_FALSE;
+            case WINDOWED -> GLFW_TRUE;
+        });
+    }
+    
+    public WindowSize getSize() {
+        return size;
+    }
+    
+    public void setSize(WindowSize size) {
+        this.size = size;
+        glfwSetWindowSize(window, size.getWidth(), size.getHeight());
+    }
+    
+    public float getRefreshRate() {
+        return targetFrameRate;
+    }
+    
+    public void setRefreshRate(float refreshRate) {
+        if (refreshRate < 0)
+            throw new IllegalArgumentException("Refresh rate must not be negative");
+        this.targetFrameRate = refreshRate;
+        glfwWindowHint(GLFW_REFRESH_RATE, (int) targetFrameRate);
+    }
+    
     public String getTitle() {
         return title;
     }
     
     public void setTitle(String title) {
+        if (!built)
+            throw new IllegalStateException("Window must be fully initialised before renaming");
         this.title = title;
         glfwSetWindowTitle(window, title);
     }
-
-    public WindowMode getMode() {
-        return mode;
+    
+    //on Windows, will only succeed if entire window is still within screen space after translation
+    public void setPos(Vec2f pos) {
+        glfwSetWindowPos(this.window, (int) pos.getX(), (int) pos.getY());
     }
-
-    public WindowSize getSize() {
-        return size;
+    
+    public Node getRoot() {
+        return root;
     }
-
-    public float getTargetFrameRate() {
-        return targetFrameRate;
+    
+    public void setRoot(Node root) {
+        this.root = root;
     }
-
+    
 }
