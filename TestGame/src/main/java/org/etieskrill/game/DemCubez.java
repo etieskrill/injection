@@ -2,6 +2,7 @@ package org.etieskrill.game;
 
 import glm.mat._4.Mat4;
 import glm.vec._3.Vec3;
+import glm.vec._4.Vec4;
 import org.etieskrill.engine.graphics.gl.ModelFactory;
 import org.etieskrill.engine.graphics.gl.RawModel;
 import org.etieskrill.engine.graphics.gl.Renderer;
@@ -17,6 +18,7 @@ import org.etieskrill.engine.window.WindowBuilder;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL33C;
 
+import java.util.Arrays;
 import java.util.Random;
 
 import static org.lwjgl.glfw.GLFW.*;
@@ -39,8 +41,9 @@ public class DemCubez {
     private void init() {
         this.window = WindowBuilder.create()
                 .setMode(Window.WindowMode.BORDERLESS)
+                .setTitle("DemCubez")
                 .build();
-        
+
         if (!initGL()) throw new IllegalStateException("Could not initialise texture settings");
         if (!initKeybinds()) throw new IllegalStateException("Could not initialise keybinds");
         if (!initMouse()) throw new IllegalStateException("Could not initialise mouse");
@@ -64,7 +67,7 @@ public class DemCubez {
         
         GL33C.glTexParameteri(GL33C.GL_TEXTURE_2D, GL33C.GL_TEXTURE_MIN_FILTER, GL33C.GL_NEAREST_MIPMAP_NEAREST); //GL_<mipmap level selection>_MIPMAP_<mipmap texture sampling>
         GL33C.glTexParameteri(GL33C.GL_TEXTURE_2D, GL33C.GL_TEXTURE_MAG_FILTER, GL33C.GL_LINEAR); //GL_<mipmap texture sampling>
-        
+
         return GL33C.glGetError() == GL33C.GL_NO_ERROR;
     }
     
@@ -117,6 +120,9 @@ public class DemCubez {
             
             prevMouseX = xpos;
             prevMouseY = ypos;
+        });
+
+        glfwSetMouseButtonCallback(window.getID(), (window, button, action, mods) -> {
         });
         
         glfwSetScrollCallback(window.getID(), (window, xoffset, yoffset) -> {
@@ -173,7 +179,8 @@ public class DemCubez {
 
         LoopPacer pacer = new SystemNanoTimePacer(1d / TARGET_FPS);
         pacer.start();
-        
+
+
         while (!window.shouldClose()) {
             camFront.set(Math.cos(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch)),
                     Math.sin(Math.toRadians(pitch)), Math.sin(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch)))
@@ -202,7 +209,9 @@ public class DemCubez {
             shader.setUniformMat4("uView", false, view);
             
             float fov = (float) (((110f - 30f) / (10f - 0.1f)) * (zoom - 0.1f) + 30f);
-            Mat4 clip = new Mat4().perspectiveFov((float) Math.toRadians(fov), 1920f, 1080f, 0.1f, 100f);
+            Mat4 clip = new Mat4().perspectiveFov((float) Math.toRadians(fov), window.getSize().getWidth(), window.getSize().getHeight(), 0.1f, 100f);
+            //clip.set(clip.ortho(0f, window.getSize().getWidth() * 2f, 0f, window.getSize().getHeight() * 2f, 0f, -100f));
+            clip.set(clip.ortho(-(float) zoom, (float) zoom, -(float) zoom / window.getSize().getAspectRatio(), (float) (zoom / window.getSize().getAspectRatio()), 0f, -100f));
             shader.setUniformMat4("uProjection", false, clip); //the near fucking clipping plane needs to be positive in order for the z-buffer to work
             
             containerTexture.bind(0);
@@ -220,8 +229,17 @@ public class DemCubez {
                 pacer.resetFrameCounter();
             }
 
-            //shader.setUniformMat4("uModel", false, new Mat4().identity());
+            view = new Mat4().identity();
+            shader.setUniformMat4("uView", false, view);
+
+            clip = new Mat4().identity();
+            shader.setUniformMat4("uProjection", false, clip);
+
+            RawModel rect = factory.rectangle(0f, 0f, 0.5f, 1f).setPosition(new Vec3(0f, 0f, 10f));
+            shader.setUniformMat4("uModel", false, rect.getTransform());
+            renderer.render(rect);
             window.update(renderer, factory);
+            renderer.render(rect);
             pacer.nextFrame();
         }
         

@@ -1,4 +1,4 @@
-package org.etieskrill.game.view;
+package org.etieskrill.engine.scene._2d;
 
 import org.etieskrill.engine.util.UniqueIDManager;
 import org.etieskrill.engine.input.KeyBind;

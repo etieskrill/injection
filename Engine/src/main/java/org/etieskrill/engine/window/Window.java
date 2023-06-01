@@ -37,6 +37,7 @@ public class Window {
     public enum WindowSize {
         HD(720, 1280),
         FHD(1080, 1920),
+        WUXGA(1200, 1920),
         WQHD(1440, 2560),
         UHD(2160, 3840),
         VGA(480, 640),
@@ -45,6 +46,7 @@ public class Window {
         UWHD(1080, 2560),
         UWQHD(1440, 3440),
         UHD_4K(2160, 3840),
+        THICC(100, 4000),
         
         LARGEST_FIT(0, 0);
         
@@ -134,7 +136,7 @@ public class Window {
             size = size == null ? WindowSize.HD : size;
             targetFrameRate = targetFrameRate < 0 ? 60f : targetFrameRate;
         }
-        
+
         if (size == null)
             throw new IllegalArgumentException("Window size must not be null");
         else if (size == WindowSize.LARGEST_FIT)
@@ -144,7 +146,7 @@ public class Window {
     
         setMode(mode);
         setRefreshRate(targetFrameRate);
-        
+
         window = glfwCreateWindow(size.getWidth(), size.getHeight(), title,
                 switch (mode) {
                     case FULLSCREEN -> monitor;

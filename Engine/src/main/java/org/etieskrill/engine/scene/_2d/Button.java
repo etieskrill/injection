@@ -15,6 +15,7 @@ public class Button extends Actor {
     public void draw(Renderer renderer, ModelFactory models) {
         RawModelList model = models.roundedRect(position.getX(), position.getY(), size.getX(), size.getY(), 1, 10);
         model.render(renderer);
+        renderer.render(models.rectangle(100f, 100f, 50f, 200f));
     }
     
 }
