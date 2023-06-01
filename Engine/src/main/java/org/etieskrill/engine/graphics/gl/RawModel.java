@@ -3,8 +3,6 @@ package org.etieskrill.engine.graphics.gl;
 import glm.mat._4.Mat4;
 import glm.vec._3.Vec3;
 
-import java.util.Arrays;
-
 public class RawModel {
 
     public static final int
@@ -33,51 +31,38 @@ public class RawModel {
     private final int drawMode;
     private final boolean indexBuffer;
 
-    private Vec3 position = new Vec3();
-    private float scale = 1f;
-    private float rotation = 0f;
-    private Vec3 rotationAxis = new Vec3();
+    private final Vec3 position;
+    private float scale;
+    private float rotation;
+    private final Vec3 rotationAxis;
 
-    private Mat4 transform = new Mat4();
+    private final Mat4 transform;
 
     public RawModel(int vao, int numVertices, int drawMode) {
-        this.vao = vao;
-        this.numVertices = numVertices;
-        this.drawMode = drawMode;
-        this.indexBuffer = true;
+        this(vao, numVertices, drawMode, true);
     }
 
     public RawModel(int vao, int numVertices, int drawMode, boolean indexBuffer) {
+        this(vao, numVertices, drawMode, indexBuffer, new Vec3(), 1f, 0f, new Vec3(), new Mat4());
+    }
+    
+    public RawModel(int vao, int numVertices, int drawMode, boolean indexBuffer,
+                    Vec3 position, float scale, float rotation, Vec3 rotationAxis, Mat4 transform) {
         this.vao = vao;
         this.numVertices = numVertices;
         this.drawMode = drawMode;
         this.indexBuffer = indexBuffer;
+        this.position = position;
+        this.scale = scale;
+        this.rotation = rotation;
+        this.rotationAxis = rotationAxis;
+        this.transform = transform;
     }
     
-    public RawModel(RawModel rawModel) {
-        this(rawModel.getVao(), rawModel.getNumVertices(), rawModel.getDrawMode(), rawModel.hasIndexBuffer());
+    protected RawModel(RawModel rawModel) {
+        this(rawModel.getVao(), rawModel.getNumVertices(), rawModel.getDrawMode(), rawModel.hasIndexBuffer(),
+                rawModel.position, rawModel.scale, rawModel.rotation, rawModel.rotationAxis, rawModel.transform);
     }
-
-    /*public static RawModel get(int vao, int vbo, int ebo) {
-        return new RawModelWrapper(vao, vbo, ebo);
-    }
-    
-    private static class RawModelWrapper extends RawModel {
-        public RawModelWrapper(int vao, int vbo, int ebo) {
-            super(vao, vbo, ebo);
-        }
-    
-        @Override
-        public void bind() {}
-    
-        @Override
-        public void unbind() {}
-    }*/
-    
-    public void bind() {};
-    public void unbind() {};
-    
-    //public void update() {};
 
     public RawModel setPosition(Vec3 newPosition) {
         this.position.set(newPosition);
@@ -93,7 +78,7 @@ public class RawModel {
 
     public RawModel setRotation(float rotation, Vec3 rotationAxis) {
         this.rotation = rotation;
-        this.rotationAxis = rotationAxis;
+        this.rotationAxis.set(rotationAxis);
         updateTransform();
         return this;
     }
@@ -102,11 +87,7 @@ public class RawModel {
         transform.set(transform.identity().translate(position).scale(scale).rotate(rotation, rotationAxis));
     }
 
-    public void setTransform(Mat4 transform) {
-        this.transform = transform;
-    }
-
-    public int getVao() {
+    protected int getVao() {
         return vao;
     }
     
@@ -124,6 +105,10 @@ public class RawModel {
 
     public Mat4 getTransform() {
         return transform;
+    }
+    
+    public void setTransform(Mat4 transform) {
+        this.transform.set(transform);
     }
 
 }

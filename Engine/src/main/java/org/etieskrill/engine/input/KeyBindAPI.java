@@ -3,8 +3,8 @@ package org.etieskrill.engine.input;
 import org.etieskrill.engine.scene._2d.Scene;
 
 /**
- * Must expose a method of determining whether a certain input method is triggered, and register keybindings to actions,
- * where actions are scene-specific.
+ * Must expose a method of determining whether a certain input method is currently triggered, and register keybindings
+ * to actions, where actions are scene-specific.
  */
 public interface KeyBindAPI {
     

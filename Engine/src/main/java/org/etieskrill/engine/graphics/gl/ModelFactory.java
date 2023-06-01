@@ -107,6 +107,8 @@ public class ModelFactory {
 
     public RawModelList roundedRect(float x, float y, float width, float height, float rounding, int segments) {
         if (rounding < 0) throw new IllegalArgumentException("corner rounding cannot be smaller than zero");
+        if (2 * rounding > width || 2 * rounding > height)
+            throw new IllegalArgumentException("rounding cannot exceed total width or height");
 
         RawModelList models = new RawModelList();
 

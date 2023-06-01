@@ -2,11 +2,7 @@ package org.etieskrill.game;
 
 import glm.mat._4.Mat4;
 import glm.vec._3.Vec3;
-import glm.vec._4.Vec4;
-import org.etieskrill.engine.graphics.gl.ModelFactory;
-import org.etieskrill.engine.graphics.gl.RawModel;
-import org.etieskrill.engine.graphics.gl.Renderer;
-import org.etieskrill.engine.graphics.gl.Texture;
+import org.etieskrill.engine.graphics.gl.*;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderFactory;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.math.Vec2f;
@@ -18,16 +14,15 @@ import org.etieskrill.engine.window.WindowBuilder;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL33C;
 
-import java.util.Arrays;
 import java.util.Random;
 
 import static org.lwjgl.glfw.GLFW.*;
 
 public class DemCubez {
     
-    private static final double TARGET_FPS = 60d;
+    private static final float TARGET_FPS = 60f;
 
-    private volatile boolean wPressed, aPressed, sPressed, dPressed, spacePressed, shiftPressed;
+    private volatile boolean wPressed, aPressed, sPressed, dPressed, spacePressed, shiftPressed, escPressed, escPressedPrev;
     private volatile double pitch, yaw, roll, prevMouseX, prevMouseY, zoom;
 
     private Window window;
@@ -41,6 +36,7 @@ public class DemCubez {
     private void init() {
         this.window = WindowBuilder.create()
                 .setMode(Window.WindowMode.BORDERLESS)
+                .setRefreshRate(TARGET_FPS)
                 .setTitle("DemCubez")
                 .build();
 
@@ -58,15 +54,20 @@ public class DemCubez {
         //GL33C.glViewport(0, 0, 1920, 1080); //this is apparently done ... somewhere behind the scenes?
     
         //Get max vertex attributes
-        //int[] caps = new int[1];
-        //GL30C.glGetIntegerv(GL30C.GL_MAX_VERTEX_ATTRIBS, caps);
-        //System.out.println(Arrays.toString(caps));
+        /*int[] caps = new int[1];
+        GL33C.glGetIntegerv(GL33C.GL_MAX_VERTEX_ATTRIBS, caps);
+        System.out.println(Arrays.toString(caps));
+        GL33C.glGetIntegerv(GL33C.GL_MAX_TEXTURE_IMAGE_UNITS, caps);
+        System.out.println(Arrays.toString(caps));*/
         
         GL33C.glEnable(GL33C.GL_DEPTH_TEST);
         GL33C.glDepthFunc(GL33C.GL_LESS);
         
         GL33C.glTexParameteri(GL33C.GL_TEXTURE_2D, GL33C.GL_TEXTURE_MIN_FILTER, GL33C.GL_NEAREST_MIPMAP_NEAREST); //GL_<mipmap level selection>_MIPMAP_<mipmap texture sampling>
         GL33C.glTexParameteri(GL33C.GL_TEXTURE_2D, GL33C.GL_TEXTURE_MAG_FILTER, GL33C.GL_LINEAR); //GL_<mipmap texture sampling>
+    
+        GL33C.glTexParameteri(GL33C.GL_TEXTURE_2D, GL33C.GL_TEXTURE_WRAP_S, GL33C.GL_MIRRORED_REPEAT);
+        GL33C.glTexParameteri(GL33C.GL_TEXTURE_2D, GL33C.GL_TEXTURE_WRAP_T, GL33C.GL_MIRRORED_REPEAT);
 
         return GL33C.glGetError() == GL33C.GL_NO_ERROR;
     }
@@ -75,7 +76,10 @@ public class DemCubez {
         glfwSetKeyCallback(window.getID(), (long window, int key, int scancode, int action, int mods) -> {
             switch (key) {
                 case GLFW_KEY_ESCAPE -> {
-                    if ((mods & GLFW_MOD_SHIFT) != 0)
+                    if (mods == 0 && action == GLFW_RELEASE) {
+                        escPressed = !escPressed;
+                    }
+                    else if ((mods & GLFW_MOD_SHIFT) != 0)
                         glfwSetWindowShouldClose(window, true);
                 }
                 case GLFW_KEY_W -> wPressed = action != GLFW_RELEASE;
@@ -94,11 +98,8 @@ public class DemCubez {
         glfwSetInputMode(window.getID(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         if (glfwRawMouseMotionSupported())
             glfwSetInputMode(window.getID(), GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
-
-        double[] prevX = new double[1], prevY = new double[1];
-        glfwGetCursorPos(window.getID(), prevX, prevY);
-        prevMouseX = prevX[0];
-        prevMouseY = prevY[0];
+        
+        resetPreviousMousePosition();
         
         yaw = 90d;
         zoom = 3.81f; //this equates to almost 60° for the fov, don't ask why, i guessed it by trial and error
@@ -137,6 +138,13 @@ public class DemCubez {
     
         return glfwGetError(null) == GLFW_NO_ERROR;
     }
+    
+    private void resetPreviousMousePosition() {
+        double[] prevX = new double[1], prevY = new double[1];
+        glfwGetCursorPos(window.getID(), prevX, prevY);
+        prevMouseX = prevX[0];
+        prevMouseY = prevY[0];
+    }
 
     private void loop() {
         ModelFactory factory = new ModelFactory();
@@ -153,36 +161,44 @@ public class DemCubez {
             new Vec3( 1.5f,  0.2f, -1.5f),
             new Vec3(-1.3f,  1.0f, -1.5f)
         };
-
-        RawModel[] models = new RawModel[cubePositions.length];
+    
+        Texture containerTexture = new Texture("container.jpg");
+        Texture pepegaTexture = new Texture("pepega.png");
+        
+        Model[] models = new Model[cubePositions.length];
         for (int i = 0; i < cubePositions.length; i++) {
-            models[i] = factory.box(new Vec3(0.5f, 0.5f, 0.5f))
+            models[i] = new Model(factory.box(new Vec3(0.5f, 0.5f, 0.5f))
                     .setPosition(cubePositions[i])
                     .setRotation(new Random(69420).nextFloat(),
-                            Vec3.linearRand_(new Vec3(-1f, -1f, -1f), new Vec3(1f, 1f, 1f)));
+                            Vec3.linearRand_(new Vec3(-1f, -1f, -1f), new Vec3(1f, 1f, 1f))));
+            models[i].addTexture(containerTexture, 0).addTexture(pepegaTexture, 1);
         }
-
-        //GL33C.glActiveTexture(GL33C.GL_TEXTURE0);
-        Texture containerTexture = new Texture("container.jpg", 0);
-        //GL33C.glActiveTexture(GL33C.GL_TEXTURE1);
-        Texture pepegaTexture = new Texture("pepega.png", 1);
-        
-        GL33C.glTexParameteri(GL33C.GL_TEXTURE_2D, GL33C.GL_TEXTURE_WRAP_S, GL33C.GL_MIRRORED_REPEAT);
-        GL33C.glTexParameteri(GL33C.GL_TEXTURE_2D, GL33C.GL_TEXTURE_WRAP_T, GL33C.GL_MIRRORED_REPEAT);
         
         Renderer renderer = new Renderer();
         ShaderProgram shader = ShaderFactory.getStandardShader();
     
         Vec3 camPosition = new Vec3(0f, 0f, -3f), camFront = new Vec3(0f, 0f, -1f), up = new Vec3(0f, 1f, 0f);
         
-        window.setRoot(new Button(new Vec2f(100f, 100f), new Vec2f(50f, 10f), 0f));
+        window.setRoot(new Button(new Vec2f(-0.0f, 0.0f), new Vec2f(0.5f, 0.2f), 0f));
+        window.getRoot().hide();
 
         LoopPacer pacer = new SystemNanoTimePacer(1d / TARGET_FPS);
         pacer.start();
-
-
+        
         while (!window.shouldClose()) {
-            camFront.set(Math.cos(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch)),
+            if (escPressed && !escPressedPrev) {
+                glfwSetInputMode(window.getID(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                window.getRoot().show();
+                escPressedPrev = true;
+            }
+            else if (!escPressed && escPressedPrev) {
+                resetPreviousMousePosition();
+                glfwSetInputMode(window.getID(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                window.getRoot().hide();
+                escPressedPrev = false;
+            }
+            
+            if (!escPressed) camFront.set(Math.cos(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch)),
                     Math.sin(Math.toRadians(pitch)), Math.sin(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch)))
                     .normalize();
             Vec3 camRight = camFront.cross_(up).normalize(), camUp = camFront.cross_(camRight).normalize();
@@ -199,7 +215,7 @@ public class DemCubez {
             
             float delta = (float) pacer.getDeltaTimeSeconds();
             deltaPosition.set(deltaPosition.x * delta * camSpeed, deltaPosition.y * delta * camSpeed, deltaPosition.z * delta * camSpeed);
-            add(camPosition, deltaPosition);
+            if (!escPressed) add(camPosition, deltaPosition);
             
             renderer.prepare();
             shader.start();
@@ -210,19 +226,13 @@ public class DemCubez {
             
             float fov = (float) (((110f - 30f) / (10f - 0.1f)) * (zoom - 0.1f) + 30f);
             Mat4 clip = new Mat4().perspectiveFov((float) Math.toRadians(fov), window.getSize().getWidth(), window.getSize().getHeight(), 0.1f, 100f);
-            //clip.set(clip.ortho(0f, window.getSize().getWidth() * 2f, 0f, window.getSize().getHeight() * 2f, 0f, -100f));
-            clip.set(clip.ortho(-(float) zoom, (float) zoom, -(float) zoom / window.getSize().getAspectRatio(), (float) (zoom / window.getSize().getAspectRatio()), 0f, -100f));
+            //clip.set(clip.ortho(-(float) zoom, (float) zoom, -(float) zoom / window.getSize().getAspectRatio(), (float) (zoom / window.getSize().getAspectRatio()), 0f, -100f));
             shader.setUniformMat4("uProjection", false, clip); //the near fucking clipping plane needs to be positive in order for the z-buffer to work
-            
-            containerTexture.bind(0);
-            pepegaTexture.bind(1);
 
-            for (RawModel model : models) {
+            for (Model model : models) {
                 shader.setUniformMat4("uModel", false, model.getTransform());
                 renderer.render(model);
             }
-
-            shader.stop();
 
             if (pacer.getFramesElapsed() > TARGET_FPS) {
                 System.out.printf("%.3f\n", pacer.getAverageFPS());
@@ -235,11 +245,12 @@ public class DemCubez {
             clip = new Mat4().identity();
             shader.setUniformMat4("uProjection", false, clip);
 
-            RawModel rect = factory.rectangle(0f, 0f, 0.5f, 1f).setPosition(new Vec3(0f, 0f, 10f));
-            shader.setUniformMat4("uModel", false, rect.getTransform());
-            renderer.render(rect);
+            shader.setUniformMat4("uModel", false, new Mat4());
+            
             window.update(renderer, factory);
-            renderer.render(rect);
+            
+            shader.stop();
+            
             pacer.nextFrame();
         }
         

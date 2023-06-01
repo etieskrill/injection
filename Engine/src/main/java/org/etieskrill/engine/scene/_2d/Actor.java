@@ -2,6 +2,7 @@ package org.etieskrill.engine.scene._2d;
 
 import org.etieskrill.engine.graphics.gl.ModelFactory;
 import org.etieskrill.engine.graphics.gl.Renderer;
+import org.etieskrill.engine.input.Action;
 import org.etieskrill.engine.math.Vec2f;
 
 public abstract class Actor extends Node {
@@ -9,6 +10,8 @@ public abstract class Actor extends Node {
     protected final Vec2f position;
     protected final Vec2f size;
     protected float rotation;
+    
+    protected Action onClick, onHover, onDrag;
     
     public Actor() {
         this(new Vec2f(), new Vec2f(), 0f);

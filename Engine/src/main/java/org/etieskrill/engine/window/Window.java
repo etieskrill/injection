@@ -145,7 +145,7 @@ public class Window {
         if (targetFrameRate < 0) targetFrameRate = videoMode.refreshRate();
     
         setMode(mode);
-        setRefreshRate(targetFrameRate);
+        setRefreshRate(144);//targetFrameRate);
 
         window = glfwCreateWindow(size.getWidth(), size.getHeight(), title,
                 switch (mode) {
@@ -180,11 +180,11 @@ public class Window {
     
     //TODO should probably be named more appropriately
     public void update(Renderer renderer, ModelFactory models) {
+        if (root != null) root.render(renderer, models);
+        
         //glfwMakeContextCurrent(window);
         glfwSwapBuffers(window); //Buffers are usually swapped before polling events
         glfwPollEvents(); //Also proves to system that window has not frozen
-        
-        if (root != null) root.draw(renderer, models);
     }
     
     @Deprecated

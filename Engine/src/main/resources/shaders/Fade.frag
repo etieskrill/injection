@@ -10,7 +10,8 @@ layout (binding = 1) uniform sampler2D texture2;
 
 void main() {
 
-    oColour = mix(texture(texture1, tTextureCoords), texture(texture2, tTextureCoords), 0.4);
+    oColour = tColour + mix(texture(texture1, tTextureCoords), texture(texture2, tTextureCoords), 0.4);
+    //oColour = mix(texture(texture1, tTextureCoords), texture(texture2, tTextureCoords), 0.4);
     //oColour = texture(texture1, tTextureCoords) * tColour;
     //oColour = texture(texture1, tTextureCoords) * tColour;
 

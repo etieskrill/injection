@@ -8,20 +8,25 @@ import java.util.List;
 
 public abstract class Node {
     
-    public abstract void draw(Renderer renderer, ModelFactory models);
+    protected abstract void draw(Renderer renderer, ModelFactory models);
     
     public void render(Renderer renderer, ModelFactory models) {
+        if (!visible) return;
         draw(renderer, models);
         children.forEach(child -> child.render(renderer, models));
     }
     
-    private final List<Node> children;
+    protected final List<Node> children;
+    
+    protected boolean visible;
     
     protected Node() {
         this.children = new ArrayList<>();
+        show();
     }
     
     public void addChild(Node child) {
+        if (child == this) throw new IllegalArgumentException("a node cannot be its own child");
         children.add(child);
     }
     
@@ -31,6 +36,20 @@ public abstract class Node {
     
     public void clearChildren() {
         children.clear();
+    }
+    
+    public boolean isVisible() {
+        return visible;
+    }
+    
+    public void show() {
+        this.visible = true;
+        children.forEach(Node::show);
+    }
+    
+    public void hide() {
+        this.visible = false;
+        children.forEach(Node::hide);
     }
     
 }

@@ -1,5 +1,6 @@
 package org.etieskrill.engine.graphics.gl;
 
+import org.etieskrill.engine.Disposable;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL13C;
 import org.lwjgl.opengl.GL33C;
@@ -10,11 +11,10 @@ import java.util.MissingResourceException;
 
 import static org.lwjgl.stb.STBImage.*;
 
-public class Texture {
+public class Texture implements Disposable {
 
     private final int textureID;
     private final int pixelWidth, pixelHeight, colourChannels;
-    
     
     /**
      * As this class makes use of the stb_image library, it can decode to all the image formats specified in the
@@ -22,15 +22,11 @@ public class Texture {
      *
      * @param file name of the texture file relative to the resources/textures folder
      */
-    public Texture(String file, int unit) {
-        if (unit < 0 || unit > 15)
-            throw new IllegalArgumentException("Texture unit " + unit + " is out of the valid range");
-        
+    public Texture(String file) {
         file = "Engine/src/main/resources/textures/" + file;
         
         textureID = generateGLTexture();
         
-        //GL33C.glActiveTexture(GL13C.GL_TEXTURE0 + unit);
         GL33C.glBindTexture(GL33C.GL_TEXTURE_2D, textureID);
 
         IntBuffer bufferWidth = BufferUtils.createIntBuffer(1),
@@ -87,8 +83,31 @@ public class Texture {
         return colourChannels;
     }
 
+    @Override
     public void dispose() {
         GL33C.glDeleteTextures(textureID);
     }
-
+    
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        
+        Texture texture = (Texture) o;
+        
+        if (textureID != texture.textureID) return false;
+        if (pixelWidth != texture.pixelWidth) return false;
+        if (pixelHeight != texture.pixelHeight) return false;
+        return colourChannels == texture.colourChannels;
+    }
+    
+    @Override
+    public int hashCode() {
+        int result = textureID;
+        result = 31 * result + pixelWidth;
+        result = 31 * result + pixelHeight;
+        result = 31 * result + colourChannels;
+        return result;
+    }
+    
 }
