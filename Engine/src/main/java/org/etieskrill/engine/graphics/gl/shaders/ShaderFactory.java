@@ -10,6 +10,10 @@ public class ShaderFactory {
         return new RoundedBoxShader();
     }
 
+    public static ShaderProgram getLightSourceShader() {
+        return new LightSourceShader();
+    }
+
     private static class StaticShader extends ShaderProgram {
         private static final String VERTEX_FILE = "shaders/Fade.vert";
         private static final String FRAGMENT_FILE = "shaders/Fade.frag";
@@ -25,6 +29,10 @@ public class ShaderFactory {
             addUniform("uModel");
             addUniform("uView");
             addUniform("uProjection");
+            addUniform("uObjectColour");
+            addUniform("uLightColour");
+            addUniform("uAmbientStrength");
+            addUniform("uLightPosition");
         }
         
     }
@@ -39,6 +47,22 @@ public class ShaderFactory {
 
         @Override
         protected void getUniformLocations() {}
+    }
+
+    private static class LightSourceShader extends ShaderProgram {
+        private static final String VERTEX_FILE = "shaders/LightSource.vert";
+        private static final String FRAGMENT_FILE = "shaders/LightSource.frag";
+
+        public LightSourceShader() {
+            super(VERTEX_FILE, FRAGMENT_FILE);
+        }
+
+        @Override
+        protected void getUniformLocations() {
+            addUniform("uModel");
+            addUniform("uCombined");
+            addUniform("uLightColour");
+        }
     }
 
 }

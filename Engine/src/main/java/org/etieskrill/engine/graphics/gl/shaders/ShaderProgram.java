@@ -1,11 +1,14 @@
 package org.etieskrill.engine.graphics.gl.shaders;
 
 import glm.mat._4.Mat4;
+import glm.vec._3.Vec3;
+import glm.vec._4.Vec4;
 import org.etieskrill.engine.util.ResourceReader;
-import org.lwjgl.opengl.GL33C;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import static org.lwjgl.opengl.GL33C.*;
 
 public abstract class ShaderProgram {
     
@@ -13,25 +16,25 @@ public abstract class ShaderProgram {
     private final Map<CharSequence, Integer> uniforms;
     
     public ShaderProgram(String vertexFile, String fragmentFile) {
-        programID = GL33C.glCreateProgram();
+        programID = glCreateProgram();
         
-        vertID = loadShader(vertexFile, GL33C.GL_VERTEX_SHADER);
-        GL33C.glAttachShader(programID, vertID);
+        vertID = loadShader(vertexFile, GL_VERTEX_SHADER);
+        glAttachShader(programID, vertID);
         
-        fragID = loadShader(fragmentFile, GL33C.GL_FRAGMENT_SHADER);
-        GL33C.glAttachShader(programID, fragID);
+        fragID = loadShader(fragmentFile, GL_FRAGMENT_SHADER);
+        glAttachShader(programID, fragID);
     
-        GL33C.glLinkProgram(programID);
-        if (GL33C.glGetProgrami(programID, GL33C.GL_LINK_STATUS) != GL33C.GL_TRUE) {
-            System.out.println(GL33C.glGetProgramInfoLog(programID));
+        glLinkProgram(programID);
+        if (glGetProgrami(programID, GL_LINK_STATUS) != GL_TRUE) {
+            System.out.println(glGetProgramInfoLog(programID));
             System.err.println("Shader program could not be linked");
         }
         
         disposeShaders();
     
-        GL33C.glValidateProgram(programID);
-        if (GL33C.glGetProgrami(programID, GL33C.GL_VALIDATE_STATUS) != GL33C.GL_TRUE) {
-            System.out.println(GL33C.glGetProgramInfoLog(programID));
+        glValidateProgram(programID);
+        if (glGetProgrami(programID, GL_VALIDATE_STATUS) != GL_TRUE) {
+            System.out.println(glGetProgramInfoLog(programID));
             System.err.println("Shader program was not successfully validated");
         }
 
@@ -42,38 +45,50 @@ public abstract class ShaderProgram {
     protected abstract void getUniformLocations();
     
     public void start() {
-        GL33C.glUseProgram(programID);
+        glUseProgram(programID);
     }
     
     public void stop() {
-        GL33C.glUseProgram(0);
+        glUseProgram(0);
     }
 
     protected void addUniform(CharSequence name) {
-        int uniformLocation = GL33C.glGetUniformLocation(programID, name);
+        int uniformLocation = glGetUniformLocation(programID, name);
         if (uniformLocation == -1) {
-            System.err.printf("Could not find location of uniform with name \"%s\"\n", name);
+            System.err.printf("[%s] Could not find location of uniform with name \"%s\"\n", this.getClass().getSimpleName(), name);
             return;
         }
 
         uniforms.put(name, uniformLocation);
     }
 
+    public void setUniformFloat(CharSequence name, float val) {
+        glUniform1f(getUniformLocation(name), val);
+    }
+
+    public void setUniformVec3(CharSequence name, Vec3 vec) {
+        glUniform3fv(getUniformLocation(name), vec.toDfb_());
+    }
+
+    public void setUniformVec4(CharSequence name, Vec4 vec) {
+        glUniform4fv(getUniformLocation(name), vec.toDfb_());
+    }
+
     public void setUniformMat4(CharSequence name, boolean transpose, Mat4 mat) {
-        GL33C.glUniformMatrix4fv(getUniformLocation(name), transpose, mat.toFa_());
+        glUniformMatrix4fv(getUniformLocation(name), transpose, mat.toFa_());
     }
     
     private static int loadShader(String file, int shaderType) {
-        int shaderID = GL33C.glCreateShader(shaderType);
-        GL33C.glShaderSource(shaderID, ResourceReader.getRaw(file));
-        GL33C.glCompileShader(shaderID);
+        int shaderID = glCreateShader(shaderType);
+        glShaderSource(shaderID, ResourceReader.getRaw(file));
+        glCompileShader(shaderID);
     
-        if (GL33C.glGetShaderi(shaderID, GL33C.GL_COMPILE_STATUS) != GL33C.GL_TRUE) {
-            System.out.println(GL33C.glGetShaderInfoLog(shaderID));
+        if (glGetShaderi(shaderID, GL_COMPILE_STATUS) != GL_TRUE) {
+            System.out.println(glGetShaderInfoLog(shaderID));
             String shaderTypeName = "unknown";
             switch (shaderType) {
-                case GL33C.GL_VERTEX_SHADER -> shaderTypeName = "vertex";
-                case GL33C.GL_FRAGMENT_SHADER -> shaderTypeName = "fragment";
+                case GL_VERTEX_SHADER -> shaderTypeName = "vertex";
+                case GL_FRAGMENT_SHADER -> shaderTypeName = "fragment";
             }
             System.err.println("Failed to compile " + shaderTypeName + " shader");
             System.exit(-1);
@@ -83,17 +98,15 @@ public abstract class ShaderProgram {
     }
     
     public void disposeShaders() {
-        GL33C.glDeleteShader(vertID);
-        GL33C.glDeleteShader(fragID);
+        glDeleteShader(vertID);
+        glDeleteShader(fragID);
     }
     
     public void dispose() {
         stop();
-        GL33C.glDetachShader(programID, vertID);
-        GL33C.glDeleteShader(vertID);
-        GL33C.glDetachShader(programID, fragID);
-        GL33C.glDeleteShader(fragID);
-        GL33C.glDeleteProgram(programID);
+        glDetachShader(programID, vertID);
+        glDetachShader(programID, fragID);
+        glDeleteProgram(programID);
     }
 
     public int getProgramID() {

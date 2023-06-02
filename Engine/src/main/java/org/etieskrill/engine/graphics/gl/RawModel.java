@@ -7,11 +7,13 @@ public class RawModel {
 
     public static final int
             MODEL_POSITION_COMPONENTS = 3,
+            MODEL_NORMAL_COMPONENTS = 3,
             MODEL_COLOUR_COMPONENTS = 4,
             MODEL_TEXTURE_COMPONENTS = 2;
     
     public enum ModelComponents {
         MODEL_POSITION_COMPONENTS(3),
+        MODEL_NORMAL_COMPONENTS(3),
         MODEL_COLOUR_COMPONENTS(4),
         MODEL_TEXTURE_COMPONENTS(2);
     
@@ -64,16 +66,28 @@ public class RawModel {
                 rawModel.position, rawModel.scale, rawModel.rotation, rawModel.rotationAxis, rawModel.transform);
     }
 
+    public Vec3 getPosition() {
+        return position;
+    }
+
     public RawModel setPosition(Vec3 newPosition) {
         this.position.set(newPosition);
         updateTransform();
         return this;
     }
 
+    public float getScale() {
+        return scale;
+    }
+
     public RawModel setScale(float scale) {
         this.scale = scale;
         updateTransform();
         return this;
+    }
+
+    public float getRotation() {
+        return rotation;
     }
 
     public RawModel setRotation(float rotation, Vec3 rotationAxis) {

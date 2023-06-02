@@ -185,30 +185,35 @@ public class ModelFactory {
                 0.5f,  0.5f, -0.5f,
                 -0.5f,  0.5f, -0.5f,
                 -0.5f, -0.5f, -0.5f,
+
                 -0.5f, -0.5f,  0.5f,
                 0.5f, -0.5f,  0.5f,
                 0.5f,  0.5f,  0.5f,
                 0.5f,  0.5f,  0.5f,
                 -0.5f,  0.5f,  0.5f,
                 -0.5f, -0.5f,  0.5f,
+
                 -0.5f,  0.5f,  0.5f,
                 -0.5f,  0.5f, -0.5f,
                 -0.5f, -0.5f, -0.5f,
                 -0.5f, -0.5f, -0.5f,
                 -0.5f, -0.5f,  0.5f,
                 -0.5f,  0.5f,  0.5f,
+
                 0.5f,  0.5f,  0.5f,
                 0.5f,  0.5f, -0.5f,
                 0.5f, -0.5f, -0.5f,
                 0.5f, -0.5f, -0.5f,
                 0.5f, -0.5f,  0.5f,
                 0.5f,  0.5f,  0.5f,
+
                 -0.5f, -0.5f, -0.5f,
                 0.5f, -0.5f, -0.5f,
                 0.5f, -0.5f,  0.5f,
                 0.5f, -0.5f,  0.5f,
                 -0.5f, -0.5f,  0.5f,
                 -0.5f, -0.5f, -0.5f,
+
                 -0.5f,  0.5f, -0.5f,
                 0.5f,  0.5f, -0.5f,
                 0.5f,  0.5f,  0.5f,
@@ -267,9 +272,53 @@ public class ModelFactory {
                 0.0f, 1.0f
         };
 
+        float[] normals = {
+                0.0f,  0.0f, -1.0f,
+                0.0f,  0.0f, -1.0f,
+                0.0f,  0.0f, -1.0f,
+                0.0f,  0.0f, -1.0f,
+                0.0f,  0.0f, -1.0f,
+                0.0f,  0.0f, -1.0f,
+
+                0.0f,  0.0f, 1.0f,
+                0.0f,  0.0f, 1.0f,
+                0.0f,  0.0f, 1.0f,
+                0.0f,  0.0f, 1.0f,
+                0.0f,  0.0f, 1.0f,
+                0.0f,  0.0f, 1.0f,
+
+                -1.0f,  0.0f,  0.0f,
+                -1.0f,  0.0f,  0.0f,
+                -1.0f,  0.0f,  0.0f,
+                -1.0f,  0.0f,  0.0f,
+                -1.0f,  0.0f,  0.0f,
+                -1.0f,  0.0f,  0.0f,
+
+                1.0f,  0.0f,  0.0f,
+                1.0f,  0.0f,  0.0f,
+                1.0f,  0.0f,  0.0f,
+                1.0f,  0.0f,  0.0f,
+                1.0f,  0.0f,  0.0f,
+                1.0f,  0.0f,  0.0f,
+
+                0.0f, -1.0f,  0.0f,
+                0.0f, -1.0f,  0.0f,
+                0.0f, -1.0f,  0.0f,
+                0.0f, -1.0f,  0.0f,
+                0.0f, -1.0f,  0.0f,
+                0.0f, -1.0f,  0.0f,
+
+                0.0f,  1.0f,  0.0f,
+                0.0f,  1.0f,  0.0f,
+                0.0f,  1.0f,  0.0f,
+                0.0f,  1.0f,  0.0f,
+                0.0f,  1.0f,  0.0f,
+                0.0f,  1.0f,  0.0f
+        };
+
         float[] colours = new float[(int) (vertices.length / 0.75f)];
 
-        return loader.loadToVAO(vertices, colours, textures, null, GL33C.GL_TRIANGLES);
+        return loader.loadToVAO(vertices, normals, colours, textures, null, GL33C.GL_TRIANGLES);
     }
 
     public void disposeLoader() {

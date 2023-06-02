@@ -2,6 +2,7 @@ package org.etieskrill.game;
 
 import glm.mat._4.Mat4;
 import glm.vec._3.Vec3;
+import glm.vec._4.Vec4;
 import org.etieskrill.engine.graphics.gl.*;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderFactory;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
@@ -173,9 +174,14 @@ public class DemCubez {
                             Vec3.linearRand_(new Vec3(-1f, -1f, -1f), new Vec3(1f, 1f, 1f))));
             models[i].addTexture(containerTexture, 0).addTexture(pepegaTexture, 1);
         }
+
+        RawModel lightSource = factory
+                .box(new Vec3(1f, 0.5f, 0.5f))
+                .setPosition(new Vec3(0f, 0f, -5f));
         
         Renderer renderer = new Renderer();
         ShaderProgram shader = ShaderFactory.getStandardShader();
+        ShaderProgram lightShader = ShaderFactory.getLightSourceShader();
     
         Vec3 camPosition = new Vec3(0f, 0f, -3f), camFront = new Vec3(0f, 0f, -1f), up = new Vec3(0f, 1f, 0f);
         
@@ -216,6 +222,10 @@ public class DemCubez {
             float delta = (float) pacer.getDeltaTimeSeconds();
             deltaPosition.set(deltaPosition.x * delta * camSpeed, deltaPosition.y * delta * camSpeed, deltaPosition.z * delta * camSpeed);
             if (!escPressed) add(camPosition, deltaPosition);
+
+            float radius = 6.5f, speed = 50f, time = speed * (float) pacer.getSecondsElapsedTotal();
+            Vec3 newLightSourcePos = new Vec3(radius * Math.cos(Math.toRadians(time)), 0f, radius * Math.sin(Math.toRadians(time)));
+            if (!escPressed) lightSource.setPosition(newLightSourcePos);
             
             renderer.prepare();
             shader.start();
@@ -229,15 +239,28 @@ public class DemCubez {
             //clip.set(clip.ortho(-(float) zoom, (float) zoom, -(float) zoom / window.getSize().getAspectRatio(), (float) (zoom / window.getSize().getAspectRatio()), 0f, -100f));
             shader.setUniformMat4("uProjection", false, clip); //the near fucking clipping plane needs to be positive in order for the z-buffer to work
 
+            Vec4 lightColour = new Vec4(1f);
+            shader.setUniformVec4("uLightColour", lightColour);
+            shader.setUniformVec3("uLightPosition", lightSource.getPosition());
+
+            float ambientStrength = 0.25f;
+            shader.setUniformFloat("uAmbientStrength", ambientStrength);
+            shader.setUniformVec3("uLightPosition", lightSource.getPosition());
+
             for (Model model : models) {
                 shader.setUniformMat4("uModel", false, model.getTransform());
                 renderer.render(model);
             }
 
-            if (pacer.getFramesElapsed() > TARGET_FPS) {
-                System.out.printf("%.3f\n", pacer.getAverageFPS());
-                pacer.resetFrameCounter();
-            }
+            lightShader.start();
+            lightShader.setUniformMat4("uCombined", false, clip.mul_(view));
+
+            lightShader.setUniformMat4("uModel", false, lightSource.getTransform());
+            lightShader.setUniformVec4("uLightColour", lightColour);
+
+            renderer.render(lightSource);
+
+            shader.start();
 
             view = new Mat4().identity();
             shader.setUniformMat4("uView", false, view);
@@ -250,6 +273,11 @@ public class DemCubez {
             window.update(renderer, factory);
             
             shader.stop();
+
+            if (pacer.getFramesElapsed() > TARGET_FPS) {
+                System.out.printf("%.3f\n", pacer.getAverageFPS());
+                pacer.resetFrameCounter();
+            }
             
             pacer.nextFrame();
         }
