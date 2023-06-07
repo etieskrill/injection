@@ -27,12 +27,15 @@ public class ShaderFactory {
             addUniform("texture1");
             addUniform("texture2");
             addUniform("uModel");
+            addUniform("uNormal");
             addUniform("uView");
             addUniform("uProjection");
-            addUniform("uObjectColour");
             addUniform("uLightColour");
             addUniform("uAmbientStrength");
             addUniform("uLightPosition");
+            addUniform("uViewPosition");
+            addUniform("uSpecularStrength");
+            addUniform("uSpecularComponent");
         }
         
     }

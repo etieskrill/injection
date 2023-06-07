@@ -1,5 +1,6 @@
 package org.etieskrill.game;
 
+import glm.mat._3.Mat3;
 import glm.mat._4.Mat4;
 import glm.vec._3.Vec3;
 import glm.vec._4.Vec4;
@@ -23,7 +24,8 @@ public class DemCubez {
     
     private static final float TARGET_FPS = 60f;
 
-    private volatile boolean wPressed, aPressed, sPressed, dPressed, spacePressed, shiftPressed, escPressed, escPressedPrev;
+    private volatile boolean wPressed, aPressed, sPressed, dPressed, spacePressed, shiftPressed, qPressed, ePressed,
+            escPressed, escPressedPrev;
     private volatile double pitch, yaw, roll, prevMouseX, prevMouseY, zoom;
 
     private Window window;
@@ -89,6 +91,8 @@ public class DemCubez {
                 case GLFW_KEY_D -> dPressed = action != GLFW_RELEASE;
                 case GLFW_KEY_SPACE -> spacePressed = action != GLFW_RELEASE;
                 case GLFW_KEY_LEFT_SHIFT -> shiftPressed = action != GLFW_RELEASE;
+                case GLFW_KEY_Q -> qPressed = action != GLFW_RELEASE;
+                case GLFW_KEY_E -> ePressed = action != GLFW_RELEASE;
             }
         });
         
@@ -108,11 +112,11 @@ public class DemCubez {
         float mouseSensitivity = 0.15f, zoomSensitivity = 0.5f;
 
         glfwSetCursorPosCallback(window.getID(), (window, xpos, ypos) -> {
-            double dx = xpos - prevMouseX;
-            double dy = ypos - prevMouseY;
+            double dx = (xpos - prevMouseX) * mouseSensitivity;
+            double dy = (ypos - prevMouseY) * mouseSensitivity;
             
-            pitch += dy * mouseSensitivity;
-            yaw -= dx * mouseSensitivity;
+            pitch += Math.cos(roll) * dy + Math.sin(roll) * dx;
+            yaw -= Math.cos(roll) * dx + Math.sin(roll) * dy;
             
             if (pitch > 89d) {
                 pitch = 89d;
@@ -223,7 +227,15 @@ public class DemCubez {
             deltaPosition.set(deltaPosition.x * delta * camSpeed, deltaPosition.y * delta * camSpeed, deltaPosition.z * delta * camSpeed);
             if (!escPressed) add(camPosition, deltaPosition);
 
-            float radius = 6.5f, speed = 50f, time = speed * (float) pacer.getSecondsElapsedTotal();
+            float camRollSpeed = 1f, camRoll = 0;
+            if (qPressed) camRoll -= camRollSpeed;
+            if (ePressed) camRoll += camRollSpeed;
+
+            roll += camRoll;
+            roll %= 360;
+            up.set(new Mat3().rotateZ(Math.toRadians(roll)).mul(new Vec3(0f, 1f, 0f)));
+
+            double radius = 6.5f, speed = 50f, time = speed * pacer.getSecondsElapsedTotal();
             Vec3 newLightSourcePos = new Vec3(radius * Math.cos(Math.toRadians(time)), 0f, radius * Math.sin(Math.toRadians(time)));
             if (!escPressed) lightSource.setPosition(newLightSourcePos);
             
@@ -246,9 +258,16 @@ public class DemCubez {
             float ambientStrength = 0.25f;
             shader.setUniformFloat("uAmbientStrength", ambientStrength);
             shader.setUniformVec3("uLightPosition", lightSource.getPosition());
+            shader.setUniformVec3("uViewPosition", camPosition);
+
+            float specularIntensity = 1f, specularScatter = 256f;
+            shader.setUniformFloat("uSpecularStrength", specularIntensity);
+            shader.setUniformFloat("uSpecularComponent", specularScatter);
 
             for (Model model : models) {
                 shader.setUniformMat4("uModel", false, model.getTransform());
+                shader.setUniformMat3("uNormal", false, model.getTransform()
+                        .inverse_().transpose().toMat3_());
                 renderer.render(model);
             }
 

@@ -1,5 +1,6 @@
 package org.etieskrill.engine.graphics.gl.shaders;
 
+import glm.mat._3.Mat3;
 import glm.mat._4.Mat4;
 import glm.vec._3.Vec3;
 import glm.vec._4.Vec4;
@@ -72,6 +73,10 @@ public abstract class ShaderProgram {
 
     public void setUniformVec4(CharSequence name, Vec4 vec) {
         glUniform4fv(getUniformLocation(name), vec.toDfb_());
+    }
+
+    public void setUniformMat3(CharSequence name, boolean transpose, Mat3 mat) {
+        glUniformMatrix3fv(getUniformLocation(name), transpose, mat.toFa_());
     }
 
     public void setUniformMat4(CharSequence name, boolean transpose, Mat4 mat) {
