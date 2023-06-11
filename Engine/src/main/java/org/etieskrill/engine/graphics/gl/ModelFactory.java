@@ -317,6 +317,7 @@ public class ModelFactory {
         };
 
         float[] colours = new float[(int) (vertices.length / 0.75f)];
+        Arrays.fill(colours, 1f);
 
         return loader.loadToVAO(vertices, normals, colours, textures, null, GL33C.GL_TRIANGLES);
     }

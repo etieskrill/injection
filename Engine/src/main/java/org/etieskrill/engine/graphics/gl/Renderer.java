@@ -5,7 +5,7 @@ import static org.lwjgl.opengl.GL33C.*;
 public class Renderer {
     
     public void prepare() {
-        glClearColor(0f, 0f, 0f, 1f);
+        glClearColor(0.025f, 0.025f, 0.025f, 1f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
     

@@ -2,12 +2,16 @@
 
 out vec4 oColour;
 
-in vec4 tColour;
+struct Light {
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+};
 
-uniform vec4 uLightColour;
+uniform Light light;
 
 void main() {
 
-    oColour = uLightColour;
+    oColour = vec4(light.ambient + light.diffuse + light.specular, 1.0);
 
 }

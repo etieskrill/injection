@@ -6,7 +6,9 @@ import glm.vec._3.Vec3;
 import glm.vec._4.Vec4;
 import org.etieskrill.engine.util.ResourceReader;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.lwjgl.opengl.GL33C.*;
@@ -15,6 +17,7 @@ public abstract class ShaderProgram {
     
     private final int programID, vertID, fragID;
     private final Map<CharSequence, Integer> uniforms;
+    private final List<CharSequence> unfoundUniforms;
     
     public ShaderProgram(String vertexFile, String fragmentFile) {
         programID = glCreateProgram();
@@ -40,6 +43,7 @@ public abstract class ShaderProgram {
         }
 
         this.uniforms = new HashMap<>();
+        this.unfoundUniforms = new ArrayList<>();
         getUniformLocations();
     }
 
@@ -56,11 +60,16 @@ public abstract class ShaderProgram {
     protected void addUniform(CharSequence name) {
         int uniformLocation = glGetUniformLocation(programID, name);
         if (uniformLocation == -1) {
+            unfoundUniforms.add(name);
             System.err.printf("[%s] Could not find location of uniform with name \"%s\"\n", this.getClass().getSimpleName(), name);
             return;
         }
 
         uniforms.put(name, uniformLocation);
+    }
+    
+    public void setUniformInt(CharSequence name, int val) {
+        glUniform1i(getUniformLocation(name), val);
     }
 
     public void setUniformFloat(CharSequence name, float val) {
@@ -121,7 +130,8 @@ public abstract class ShaderProgram {
     public int getUniformLocation(CharSequence name) {
         Integer location = uniforms.get(name);
         if (location == null) {
-            System.err.printf("Uniform of name %s was not registered in the shader\n", name);
+            CharSequence message = !unfoundUniforms.contains(name) ? "registered" : "found or is never used";
+            System.err.printf("Uniform of name \"%s\" was not %s in the shader\n", name, message);
             return -1;
         }
 

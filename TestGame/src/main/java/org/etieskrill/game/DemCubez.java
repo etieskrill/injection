@@ -16,6 +16,7 @@ import org.etieskrill.engine.window.WindowBuilder;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL33C;
 
+import java.util.Arrays;
 import java.util.Random;
 
 import static org.lwjgl.glfw.GLFW.*;
@@ -25,7 +26,7 @@ public class DemCubez {
     private static final float TARGET_FPS = 60f;
 
     private volatile boolean wPressed, aPressed, sPressed, dPressed, spacePressed, shiftPressed, qPressed, ePressed,
-            escPressed, escPressedPrev;
+            escPressed, escPressedPrev, ctrlPressed;
     private volatile double pitch, yaw, roll, prevMouseX, prevMouseY, zoom;
 
     private Window window;
@@ -93,6 +94,7 @@ public class DemCubez {
                 case GLFW_KEY_LEFT_SHIFT -> shiftPressed = action != GLFW_RELEASE;
                 case GLFW_KEY_Q -> qPressed = action != GLFW_RELEASE;
                 case GLFW_KEY_E -> ePressed = action != GLFW_RELEASE;
+                case GLFW_KEY_LEFT_CONTROL -> ctrlPressed = action != GLFW_RELEASE;
             }
         });
         
@@ -167,7 +169,9 @@ public class DemCubez {
             new Vec3(-1.3f,  1.0f, -1.5f)
         };
     
-        Texture containerTexture = new Texture("container.jpg");
+        Texture containerTexture = new Texture("container2.png");
+        Texture containerSpecular = new Texture("container2_specular.png");
+        Texture containerEmissive = new Texture("container2_emissive.jpg");
         Texture pepegaTexture = new Texture("pepega.png");
         
         Model[] models = new Model[cubePositions.length];
@@ -176,11 +180,12 @@ public class DemCubez {
                     .setPosition(cubePositions[i])
                     .setRotation(new Random(69420).nextFloat(),
                             Vec3.linearRand_(new Vec3(-1f, -1f, -1f), new Vec3(1f, 1f, 1f))));
-            models[i].addTexture(containerTexture, 0).addTexture(pepegaTexture, 1);
+            models[i].addTexture(containerTexture, 0).addTexture(containerSpecular, 1)
+                    .addTexture(containerEmissive, 2);
         }
 
         RawModel lightSource = factory
-                .box(new Vec3(1f, 0.5f, 0.5f))
+                .box(new Vec3(0.2f, 0.2f, 0.2f))
                 .setPosition(new Vec3(0f, 0f, -5f));
         
         Renderer renderer = new Renderer();
@@ -215,7 +220,7 @@ public class DemCubez {
     
             Vec3 deltaPosition = new Vec3();
     
-            float camSpeed = 2f;
+            float camSpeed = !ctrlPressed ? 2f : 4f;
             if (wPressed) add(deltaPosition, camFront);
             if (sPressed) add(deltaPosition, camFront.negate_());
             if (aPressed) add(deltaPosition, camRight);
@@ -250,19 +255,43 @@ public class DemCubez {
             Mat4 clip = new Mat4().perspectiveFov((float) Math.toRadians(fov), window.getSize().getWidth(), window.getSize().getHeight(), 0.1f, 100f);
             //clip.set(clip.ortho(-(float) zoom, (float) zoom, -(float) zoom / window.getSize().getAspectRatio(), (float) (zoom / window.getSize().getAspectRatio()), 0f, -100f));
             shader.setUniformMat4("uProjection", false, clip); //the near fucking clipping plane needs to be positive in order for the z-buffer to work
-
-            Vec4 lightColour = new Vec4(1f);
-            shader.setUniformVec4("uLightColour", lightColour);
-            shader.setUniformVec3("uLightPosition", lightSource.getPosition());
-
-            float ambientStrength = 0.25f;
-            shader.setUniformFloat("uAmbientStrength", ambientStrength);
-            shader.setUniformVec3("uLightPosition", lightSource.getPosition());
+            
+            shader.setUniformVec3("light.position", lightSource.getPosition());
+            
+            //These are essentially intensity factors
+            double seconds = pacer.getSecondsElapsedTotal();
+            Vec3 lightColour = new Vec3(1f); //Math.sin(seconds * 2), Math.sin(seconds * 0.7), Math.sin(seconds * 1.3));
+            Vec3 ambient = mul_(lightColour, 0.2f);
+            shader.setUniformVec3("light.ambient", ambient);
+            Vec3 diffuse = mul_(lightColour, 0.5f);
+            shader.setUniformVec3("light.diffuse", diffuse);
+            Vec3 specular = mul_(lightColour, 1f);
+            shader.setUniformVec3("light.specular", specular);
+            
+            shader.setUniformFloat("light.constant", 1f);
+            shader.setUniformFloat("light.linear", 0.09f);
+            shader.setUniformFloat("light.quadratic", 0.032f);
+            
+            shader.setUniformVec3("flashlight.position", camPosition);
+            shader.setUniformVec3("flashlight.direction", camFront);
+            shader.setUniformFloat("flashlight.cutoff", (float) Math.cos(Math.toRadians(12.5)));
+            
+            shader.setUniformVec3("flashlight.ambient", ambient);
+            shader.setUniformVec3("flashlight.diffuse", diffuse);
+            shader.setUniformVec3("flashlight.specular", specular);
+    
+            shader.setUniformFloat("flashlight.constant", 1f);
+            shader.setUniformFloat("flashlight.linear", 0.09f);
+            shader.setUniformFloat("flashlight.quadratic", 0.032f);
+            
             shader.setUniformVec3("uViewPosition", camPosition);
-
-            float specularIntensity = 1f, specularScatter = 256f;
-            shader.setUniformFloat("uSpecularStrength", specularIntensity);
-            shader.setUniformFloat("uSpecularComponent", specularScatter);
+            shader.setUniformFloat("uTime", (float) pacer.getSecondsElapsedTotal());
+            
+            //Bind material struct to samplers and assign values
+            shader.setUniformInt("material.diffuse", 0); //TODO automating this would require a model- and shader-dependent object
+            shader.setUniformInt("material.specular", 1);
+            shader.setUniformInt("material.emission", 2);
+            shader.setUniformFloat("material.shininess", 64);
 
             for (Model model : models) {
                 shader.setUniformMat4("uModel", false, model.getTransform());
@@ -273,9 +302,11 @@ public class DemCubez {
 
             lightShader.start();
             lightShader.setUniformMat4("uCombined", false, clip.mul_(view));
-
             lightShader.setUniformMat4("uModel", false, lightSource.getTransform());
-            lightShader.setUniformVec4("uLightColour", lightColour);
+            
+            lightShader.setUniformVec3("light.ambient", ambient);
+            lightShader.setUniformVec3("light.diffuse", diffuse);
+            lightShader.setUniformVec3("light.specular", specular);
 
             renderer.render(lightSource);
 
@@ -312,6 +343,10 @@ public class DemCubez {
     
     private static Vec3 add(Vec3 a, Vec3 b) {
         return a.set(a.x + b.x, a.y + b.y, a.z + b.z);
+    }
+    
+    private static Vec3 mul_(Vec3 a, float s) {
+        return new Vec3(a.x * s, a.y * s, a.z * s);
     }
     
     private static Vec3 mul(Vec3 a, Vec3 b) {

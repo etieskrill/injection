@@ -25,6 +25,14 @@ public class Model extends RawModel {
     }
     
     public Model addTexture(Texture texture, int unit) {
+        if (textures.putIfAbsent(unit, texture) != null)
+            throw new IllegalArgumentException("Cannot add texture to a unit that is already occupied");
+        return this;
+    }
+    
+    public Model replaceTexture(Texture texture, int unit) {
+        if (!textures.containsKey(unit))
+            throw new IllegalArgumentException("Cannot replace texture in an empty unit");
         textures.put(unit, texture);
         return this;
     }

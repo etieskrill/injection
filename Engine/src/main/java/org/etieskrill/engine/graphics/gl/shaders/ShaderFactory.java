@@ -15,8 +15,8 @@ public class ShaderFactory {
     }
 
     private static class StaticShader extends ShaderProgram {
-        private static final String VERTEX_FILE = "shaders/Fade.vert";
-        private static final String FRAGMENT_FILE = "shaders/Fade.frag";
+        private static final String VERTEX_FILE = "shaders/Phong.vert";
+        private static final String FRAGMENT_FILE = "shaders/Phong.frag";
 
         public StaticShader() {
             super(VERTEX_FILE, FRAGMENT_FILE);
@@ -24,18 +24,44 @@ public class ShaderFactory {
 
         @Override
         protected void getUniformLocations() {
-            addUniform("texture1");
-            addUniform("texture2");
+            //samplers are not directly bound to a shader, but instead via the texture unit binding points
+            //(something to do with samplers being of an opaque type?)
+            //addUniform("diffuseMap");
+            //addUniform("specularMap");
+            
             addUniform("uModel");
             addUniform("uNormal");
             addUniform("uView");
             addUniform("uProjection");
-            addUniform("uLightColour");
-            addUniform("uAmbientStrength");
-            addUniform("uLightPosition");
+            
             addUniform("uViewPosition");
-            addUniform("uSpecularStrength");
-            addUniform("uSpecularComponent");
+            addUniform("uTime");
+            
+            addUniform("light.position");
+            addUniform("light.ambient");
+            addUniform("light.diffuse");
+            addUniform("light.specular");
+            
+            addUniform("light.constant");
+            addUniform("light.linear");
+            addUniform("light.quadratic");
+    
+            addUniform("flashlight.position");
+            addUniform("flashlight.direction");
+            addUniform("flashlight.cutoff");
+            
+            addUniform("flashlight.ambient");
+            addUniform("flashlight.diffuse");
+            addUniform("flashlight.specular");
+            
+            addUniform("flashlight.constant");
+            addUniform("flashlight.linear");
+            addUniform("flashlight.quadratic");
+            
+            addUniform("material.diffuse");
+            addUniform("material.specular");
+            addUniform("material.emission");
+            addUniform("material.shininess");
         }
         
     }
@@ -64,7 +90,9 @@ public class ShaderFactory {
         protected void getUniformLocations() {
             addUniform("uModel");
             addUniform("uCombined");
-            addUniform("uLightColour");
+            addUniform("light.ambient");
+            addUniform("light.diffuse");
+            addUniform("light.specular");
         }
     }
 
