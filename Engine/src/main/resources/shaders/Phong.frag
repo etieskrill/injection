@@ -88,7 +88,7 @@ void main() {
     vec3 flashlightPart = vec3(0f);
 
     vec3 flashlightDirection = normalize(vec3(-flashlight.position.xy, flashlight.position.z) - tFragPos);
-    float theta = dot(flashlightDirection, normalize(vec3(-flashlight.direction.xy, -flashlight.direction.z)));
+    float theta = dot(flashlightDirection, normalize(vec3(flashlight.direction.xy, -flashlight.direction.z)));
     if(theta > flashlight.cutoff) {
         /*vec3 flashAmbient = flashlight.ambient * texture(material.diffuse, tTextureCoords).rgb;
 
@@ -108,7 +108,7 @@ void main() {
 
         flashlightPart = (flashAmbient + flashDiffuse + flashSpecular) * flashAttenuation;*/
 
-        flashlightPart = vec3(1f);
+        //flashlightPart = vec3(1f);
     }
 
     oColour = vec4((ambient + diffuse + specular) * attenuation + emission + flashlightPart, 1.0);

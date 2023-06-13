@@ -1,9 +1,10 @@
 package org.etieskrill.engine.window;
 
-import org.etieskrill.engine.graphics.gl.ModelFactory;
-import org.etieskrill.engine.graphics.gl.Renderer;
+import glm.vec._2.Vec2;
+import org.etieskrill.engine.graphics.gl.Batch;
 import org.etieskrill.engine.math.Vec2f;
 import org.etieskrill.engine.scene._2d.Node;
+import org.etieskrill.engine.scene._2d.Root;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFWVidMode;
@@ -24,7 +25,7 @@ public class Window {
     private float targetFrameRate;
     private String title;
     
-    private Node root;
+    private Root root;
     
     private boolean built = false;
     
@@ -76,6 +77,10 @@ public class Window {
                     largestFit = windowSize;
             }
             return largestFit;
+        }
+        
+        public Vec2f getSize() {
+            return new Vec2f(width, height);
         }
         
         public float getAspectRatio() {
@@ -145,7 +150,7 @@ public class Window {
         if (targetFrameRate < 0) targetFrameRate = videoMode.refreshRate();
     
         setMode(mode);
-        setRefreshRate(144);//targetFrameRate);
+        setRefreshRate(targetFrameRate);//144);
 
         window = glfwCreateWindow(size.getWidth(), size.getHeight(), title,
                 switch (mode) {
@@ -179,8 +184,13 @@ public class Window {
     }
     
     //TODO should probably be named more appropriately
-    public void update(Renderer renderer, ModelFactory models) {
-        if (root != null) root.render(renderer, models);
+    public void update(Batch batch, double delta) {
+        if (root != null) {
+            updateRoot();
+            root.layout();
+            root.update(delta);
+            root.render(batch);
+        }
         
         //glfwMakeContextCurrent(window);
         glfwSwapBuffers(window); //Buffers are usually swapped before polling events
@@ -244,8 +254,15 @@ public class Window {
         return root;
     }
     
-    public void setRoot(Node root) {
+    public void setRoot(Root root) {
         this.root = root;
+        updateRoot();
+    }
+    
+    private void updateRoot() {
+        root.setPosition(position);
+        root.setSize(size.getSize());
+        root.setRotation(0);
     }
     
 }

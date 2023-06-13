@@ -14,8 +14,12 @@ public class Vec2f {
         this(vec.x, vec.y);
     }
     
+    public Vec2f(float f) {
+        this(f, f);
+    }
+    
     public Vec2f() {
-        this(0f, 0f);
+        this(0f);
     }
     
     public Vec2f add(Vec2f another) {

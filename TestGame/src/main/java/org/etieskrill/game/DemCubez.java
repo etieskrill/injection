@@ -9,6 +9,8 @@ import org.etieskrill.engine.graphics.gl.shaders.ShaderFactory;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.math.Vec2f;
 import org.etieskrill.engine.scene._2d.Button;
+import org.etieskrill.engine.scene._2d.Layout;
+import org.etieskrill.engine.scene._2d.Root;
 import org.etieskrill.engine.time.LoopPacer;
 import org.etieskrill.engine.time.SystemNanoTimePacer;
 import org.etieskrill.engine.window.Window;
@@ -194,7 +196,11 @@ public class DemCubez {
     
         Vec3 camPosition = new Vec3(0f, 0f, -3f), camFront = new Vec3(0f, 0f, -1f), up = new Vec3(0f, 1f, 0f);
         
-        window.setRoot(new Button(new Vec2f(-0.0f, 0.0f), new Vec2f(0.5f, 0.2f), 0f));
+        Root root = new Root();
+        Button button = new Button(new Vec2f(100f, 20f));
+        button.getLayout().setAlignment(Layout.Alignment.BOTTOM_LEFT);
+        root.addChild(button);
+        window.setRoot(root);
         window.getRoot().hide();
 
         LoopPacer pacer = new SystemNanoTimePacer(1d / TARGET_FPS);
@@ -272,17 +278,17 @@ public class DemCubez {
             shader.setUniformFloat("light.linear", 0.09f);
             shader.setUniformFloat("light.quadratic", 0.032f);
             
-            shader.setUniformVec3("flashlight.position", camPosition);
-            shader.setUniformVec3("flashlight.direction", camFront);
-            shader.setUniformFloat("flashlight.cutoff", (float) Math.cos(Math.toRadians(12.5)));
+            //shader.setUniformVec3("flashlight.position", camPosition);
+            //shader.setUniformVec3("flashlight.direction", camFront);
+            //shader.setUniformFloat("flashlight.cutoff", (float) Math.cos(Math.toRadians(12.5)));
             
-            shader.setUniformVec3("flashlight.ambient", ambient);
-            shader.setUniformVec3("flashlight.diffuse", diffuse);
-            shader.setUniformVec3("flashlight.specular", specular);
+            //shader.setUniformVec3("flashlight.ambient", ambient);
+            //shader.setUniformVec3("flashlight.diffuse", diffuse);
+            //shader.setUniformVec3("flashlight.specular", specular);
     
-            shader.setUniformFloat("flashlight.constant", 1f);
-            shader.setUniformFloat("flashlight.linear", 0.09f);
-            shader.setUniformFloat("flashlight.quadratic", 0.032f);
+            //shader.setUniformFloat("flashlight.constant", 1f);
+            //shader.setUniformFloat("flashlight.linear", 0.09f);
+            //shader.setUniformFloat("flashlight.quadratic", 0.032f);
             
             shader.setUniformVec3("uViewPosition", camPosition);
             shader.setUniformFloat("uTime", (float) pacer.getSecondsElapsedTotal());
@@ -320,7 +326,7 @@ public class DemCubez {
 
             shader.setUniformMat4("uModel", false, new Mat4());
             
-            window.update(renderer, factory);
+            window.update(new Batch(renderer, factory), pacer.getDeltaTimeSeconds());
             
             shader.stop();
 
