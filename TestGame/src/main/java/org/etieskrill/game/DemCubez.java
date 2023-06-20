@@ -3,14 +3,16 @@ package org.etieskrill.game;
 import glm.mat._3.Mat3;
 import glm.mat._4.Mat4;
 import glm.vec._3.Vec3;
-import glm.vec._4.Vec4;
+import org.etieskrill.engine.graphics.Camera;
+import org.etieskrill.engine.graphics.OrthographicCamera;
 import org.etieskrill.engine.graphics.gl.*;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderFactory;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.math.Vec2f;
 import org.etieskrill.engine.scene._2d.Button;
 import org.etieskrill.engine.scene._2d.Layout;
-import org.etieskrill.engine.scene._2d.Root;
+import org.etieskrill.engine.scene._2d.Container;
+import org.etieskrill.engine.scene._2d.Stage;
 import org.etieskrill.engine.time.LoopPacer;
 import org.etieskrill.engine.time.SystemNanoTimePacer;
 import org.etieskrill.engine.window.Window;
@@ -18,7 +20,6 @@ import org.etieskrill.engine.window.WindowBuilder;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL33C;
 
-import java.util.Arrays;
 import java.util.Random;
 
 import static org.lwjgl.glfw.GLFW.*;
@@ -29,6 +30,7 @@ public class DemCubez {
 
     private volatile boolean wPressed, aPressed, sPressed, dPressed, spacePressed, shiftPressed, qPressed, ePressed,
             escPressed, escPressedPrev, ctrlPressed;
+    private volatile boolean paused;
     private volatile double pitch, yaw, roll, prevMouseX, prevMouseY, zoom;
 
     private Window window;
@@ -116,6 +118,8 @@ public class DemCubez {
         float mouseSensitivity = 0.15f, zoomSensitivity = 0.5f;
 
         glfwSetCursorPosCallback(window.getID(), (window, xpos, ypos) -> {
+            if (paused) return;
+            
             double dx = (xpos - prevMouseX) * mouseSensitivity;
             double dy = (ypos - prevMouseY) * mouseSensitivity;
             
@@ -193,29 +197,37 @@ public class DemCubez {
         Renderer renderer = new Renderer();
         ShaderProgram shader = ShaderFactory.getStandardShader();
         ShaderProgram lightShader = ShaderFactory.getLightSourceShader();
+        
+        Batch batch = new Batch(renderer, factory);
     
         Vec3 camPosition = new Vec3(0f, 0f, -3f), camFront = new Vec3(0f, 0f, -1f), up = new Vec3(0f, 1f, 0f);
         
-        Root root = new Root();
+        Container container = new Container();
         Button button = new Button(new Vec2f(100f, 20f));
         button.getLayout().setAlignment(Layout.Alignment.BOTTOM_LEFT);
-        root.addChild(button);
-        window.setRoot(root);
-        window.getRoot().hide();
+        container.setChild(button);
+    
+        Camera uiCamera = new OrthographicCamera();
+        System.out.println(matToString(uiCamera.getCombined()));
+        
+        window.setStage(new Stage(batch, container, uiCamera));
+        window.getStage().getRoot().hide();
 
         LoopPacer pacer = new SystemNanoTimePacer(1d / TARGET_FPS);
         pacer.start();
         
         while (!window.shouldClose()) {
             if (escPressed && !escPressedPrev) {
+                paused = true;
                 glfwSetInputMode(window.getID(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-                window.getRoot().show();
+                window.getStage().show();
                 escPressedPrev = true;
             }
             else if (!escPressed && escPressedPrev) {
+                paused = false;
                 resetPreviousMousePosition();
                 glfwSetInputMode(window.getID(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-                window.getRoot().hide();
+                window.getStage().hide();
                 escPressedPrev = false;
             }
             
@@ -326,7 +338,7 @@ public class DemCubez {
 
             shader.setUniformMat4("uModel", false, new Mat4());
             
-            window.update(new Batch(renderer, factory), pacer.getDeltaTimeSeconds());
+            window.update(pacer.getDeltaTimeSeconds());
             
             shader.stop();
 

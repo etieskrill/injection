@@ -13,6 +13,10 @@ public class ShaderFactory {
     public static ShaderProgram getLightSourceShader() {
         return new LightSourceShader();
     }
+    
+    public static ShaderProgram getTextureShader() {
+        return new TextureShader();
+    }
 
     private static class StaticShader extends ShaderProgram {
         private static final String VERTEX_FILE = "shaders/Phong.vert";
@@ -93,6 +97,23 @@ public class ShaderFactory {
             addUniform("light.ambient");
             addUniform("light.diffuse");
             addUniform("light.specular");
+        }
+    }
+    
+    private static class TextureShader extends ShaderProgram {
+        private static final String VERTEX_FILE = "shaders/Texture.vert";
+        private static final String FRAGMENT_FILE = "shaders/Texture.frag";
+        
+        public TextureShader() {
+            super(VERTEX_FILE, FRAGMENT_FILE);
+        }
+        
+        @Override
+        protected void getUniformLocations() {
+            addUniform("uModel");
+            addUniform("uCombined");
+            addUniform("diffuseMap");
+            addUniform("uTime");
         }
     }
 

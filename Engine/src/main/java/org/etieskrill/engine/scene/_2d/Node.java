@@ -3,17 +3,13 @@ package org.etieskrill.engine.scene._2d;
 import org.etieskrill.engine.graphics.gl.Batch;
 import org.etieskrill.engine.math.Vec2f;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public abstract class Node {
+    
+    protected Node parent;
     
     protected final Vec2f position;
     protected final Vec2f size;
     protected float rotation;
-    
-    protected Node parent;
-    protected final List<Node> children;
     
     protected boolean visible;
     
@@ -22,7 +18,6 @@ public abstract class Node {
     }
     
     public Node(Vec2f size) {
-        this.children = new ArrayList<>();
         this.position = new Vec2f();
         this.size = size;
         this.rotation = 0f;
@@ -34,42 +29,9 @@ public abstract class Node {
     public void render(Batch batch) {
         if (!visible) return;
         draw(batch);
-        children.forEach(child -> child.render(batch));
     }
     
-    public abstract void update(double delta);
-    
-    public void addChild(Node child) {
-        if (child == null) throw new IllegalArgumentException("child must not be null");
-        if (child == this) throw new IllegalArgumentException("a node cannot be its own child");
-        if (child.hasParent(this) || child.hasChild(this))
-            throw new IllegalArgumentException("adding child would cause circular graph");
-        child.setParent(this);
-        children.add(child);
-    }
-    
-    private boolean hasParent(Node node) {
-        if (node.getParent() == null) return false;
-        else if (this == node) return true;
-        return node.getParent().hasParent(node);
-    }
-    
-    private boolean hasChild(Node node) {
-        if (children.size() == 0) return false;
-        for (Node child : children) {
-            if (child == node) return true;
-            if (child.hasChild(node)) return true;
-        }
-        return false;
-    }
-    
-    public boolean removeChild(Node child) {
-        return children.remove(child);
-    }
-    
-    public void clearChildren() {
-        children.clear();
-    }
+    //public abstract void update(double delta);
     
     public boolean isVisible() {
         return visible;
@@ -77,12 +39,10 @@ public abstract class Node {
     
     public void show() {
         this.visible = true;
-        children.forEach(Node::show);
     }
     
     public void hide() {
         this.visible = false;
-        children.forEach(Node::hide);
     }
     
     public Node getParent() {

@@ -45,7 +45,7 @@ public class Model extends RawModel {
         textures.forEach((unit, texture) -> texture.bind(unit));
     }
     
-    public static void unbind() {
+    public static void unbindTextures() {
         for (int i = 0; i < GL_MAX_TEXTURE_UNITS; i++) {
             glActiveTexture(GL_TEXTURE0 + i);
             glBindTexture(GL_TEXTURE_2D, 0);

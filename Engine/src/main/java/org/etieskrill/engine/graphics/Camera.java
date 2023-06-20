@@ -8,6 +8,7 @@ public abstract class Camera {
     protected final Vec3 position;
     protected float rotation;
     protected final Vec3 rotationAxis;
+    protected float scaleX, scaleY;
     protected float zoom;
     
     protected final Mat4 view, perspective, combined;
@@ -19,13 +20,15 @@ public abstract class Camera {
         this.position = new Vec3();
         this.rotation = 0f;
         this.rotationAxis = new Vec3();
+        this.scaleX = 1f;
+        this.scaleY = 1f;
         this.zoom = 1f;
         this.view = new Mat4();
         this.perspective = new Mat4();
         this.combined = new Mat4();
         
         this.near = 0.1f;
-        this.far = 100f;
+        this.far = -100f;
         this.front = new Vec3();
         this.right = new Vec3();
         this.up = new Vec3();
@@ -33,6 +36,7 @@ public abstract class Camera {
     }
     
     public void update() {
+        updateView();
     }
     
     public Camera setPosition(Vec3 position) {
@@ -50,12 +54,35 @@ public abstract class Camera {
         return this;
     }
     
+    public float getScaleX() {
+        return scaleX;
+    }
+    
+    public void setScaleX(float scaleX) {
+        this.scaleX = scaleX;
+    }
+    
+    public float getScaleY() {
+        return scaleY;
+    }
+    
+    public void setScaleY(float scaleY) {
+        this.scaleY = scaleY;
+    }
+    
     public Camera setZoom(float zoom) {
         this.zoom = zoom;
         return this;
     }
     
     private void updateView() {
+        Mat4 newMat = new Mat4()
+                .lookAt(position, position.add_(front), up)
+                .translate(new Vec3(position.x * 2, position.y * 2, position.z * 2));
+                //.scale(0.0005f);
+                //.scale(new Vec3(scaleX, scaleY, 1.0));
+        this.view.set(newMat);
+        updateCombined();
     }
     
     protected Camera setPerspective(Mat4 perspective) {
@@ -66,6 +93,10 @@ public abstract class Camera {
     
     private void updateCombined() {
         this.combined.set(view.mul_(perspective));
+    }
+    
+    public Mat4 getCombined() {
+        return combined;
     }
     
     public Camera setNear(float near) {

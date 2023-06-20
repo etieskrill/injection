@@ -1,21 +1,66 @@
 package org.etieskrill.engine.graphics.gl;
 
-public class Batch {
+import glm.mat._4.Mat4;
+import org.etieskrill.engine.Disposable;
+import org.etieskrill.engine.graphics.gl.shaders.ShaderFactory;
+import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
+
+public class Batch implements Disposable {
     
     private final Renderer renderer;
     private final ModelFactory models;
     
+    private ShaderProgram shader;
+    
+    private final Mat4 transform, combined;
+    
     public Batch(Renderer renderer, ModelFactory models) {
         this.renderer = renderer;
         this.models = models;
+        this.shader = ShaderFactory.getTextureShader();
+        this.transform = new Mat4(1f);
+        this.combined = new Mat4(1f);
     }
     
-    public Renderer getRenderer() {
-        return renderer;
+    public void render(RawModel model) {
+        shader.start();
+        
+        shader.setUniformMat4("uModel", false, transform);
+        shader.setUniformMat4("uCombined", false, combined);
+        
+        renderer.render(model);
+        
+        shader.stop();
     }
     
     public ModelFactory getModelFactory() {
         return models;
+    }
+    
+    public void setTransform(Mat4 mat) {
+        this.transform.set(mat);
+    }
+    
+    public void resetTransform() {
+        this.transform.set(1f);
+    }
+    
+    public void setCombined(Mat4 mat) {
+        this.combined.set(mat);
+    }
+    
+    public ShaderProgram getShader() {
+        return shader;
+    }
+    
+    public void setShader(ShaderProgram shader) {
+        this.shader = shader;
+    }
+    
+    @Override
+    public void dispose() {
+        shader.dispose();
+        models.disposeLoader();
     }
     
 }

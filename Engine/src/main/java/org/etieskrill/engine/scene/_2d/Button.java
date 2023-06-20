@@ -1,11 +1,12 @@
 package org.etieskrill.engine.scene._2d;
 
 import org.etieskrill.engine.graphics.gl.Batch;
+import org.etieskrill.engine.graphics.gl.Model;
 import org.etieskrill.engine.graphics.gl.RawModel;
-import org.etieskrill.engine.graphics.gl.RawModelList;
+import org.etieskrill.engine.graphics.gl.Texture;
 import org.etieskrill.engine.math.Vec2f;
 
-public class Button extends LayoutNode {
+public class Button extends Group {
     
     public Button(Vec2f size) {
         super(size);
@@ -17,12 +18,14 @@ public class Button extends LayoutNode {
         //        size.getX() > size.getY() ? size.getY() / 4f : size.getX() / 4f, 10);
         //model.render(batch.getRenderer());
         RawModel model = batch.getModelFactory().rectangle(position.getX(), position.getY(), size.getX(), size.getY());
-        batch.getRenderer().render(model);
+        Model _model = new Model(model);
+        _model.addTexture(new Texture("buff_bale.jpg"), 0);
+        batch.render(_model);
     }
     
-    @Override
-    public void update(double delta) {
-    }
+    //@Override
+    //public void update(double delta) {
+    //}
     
     @Override
     public void layout() {

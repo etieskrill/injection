@@ -18,7 +18,7 @@ public class Renderer {
         else
             glDrawArrays(model.getDrawMode(), 0, model.getNumVertices());
         
-        if (model instanceof Model) Model.unbind();
+        if (model instanceof Model) Model.unbindTextures();
         glBindVertexArray(0);
     }
     

@@ -1,10 +1,7 @@
 package org.etieskrill.engine.window;
 
-import glm.vec._2.Vec2;
-import org.etieskrill.engine.graphics.gl.Batch;
 import org.etieskrill.engine.math.Vec2f;
-import org.etieskrill.engine.scene._2d.Node;
-import org.etieskrill.engine.scene._2d.Root;
+import org.etieskrill.engine.scene._2d.Stage;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFWVidMode;
@@ -25,7 +22,7 @@ public class Window {
     private float targetFrameRate;
     private String title;
     
-    private Root root;
+    private Stage stage;
     
     private boolean built = false;
     
@@ -184,12 +181,10 @@ public class Window {
     }
     
     //TODO should probably be named more appropriately
-    public void update(Batch batch, double delta) {
-        if (root != null) {
-            updateRoot();
-            root.layout();
-            root.update(delta);
-            root.render(batch);
+    public void update(double delta) {
+        if (stage != null) {
+            stage.update(delta);
+            stage.render();
         }
         
         //glfwMakeContextCurrent(window);
@@ -250,19 +245,12 @@ public class Window {
         glfwSetWindowPos(this.window, (int) pos.getX(), (int) pos.getY());
     }
     
-    public Node getRoot() {
-        return root;
+    public Stage getStage() {
+        return stage;
     }
     
-    public void setRoot(Root root) {
-        this.root = root;
-        updateRoot();
-    }
-    
-    private void updateRoot() {
-        root.setPosition(position);
-        root.setSize(size.getSize());
-        root.setRotation(0);
+    public void setStage(Stage stage) {
+        this.stage = stage;
     }
     
 }
