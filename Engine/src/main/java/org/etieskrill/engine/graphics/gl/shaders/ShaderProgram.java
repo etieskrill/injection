@@ -104,7 +104,7 @@ public abstract class ShaderProgram {
                 case GL_VERTEX_SHADER -> shaderTypeName = "vertex";
                 case GL_FRAGMENT_SHADER -> shaderTypeName = "fragment";
             }
-            System.err.println("Failed to compile " + shaderTypeName + " shader");
+            System.err.printf("Failed to compile %s shader\n", shaderTypeName);
             System.exit(-1);
         }
         

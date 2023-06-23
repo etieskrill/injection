@@ -85,7 +85,7 @@ void main() {
     attenuation = min(attenuation, 1.0);
 
     //Flashlight
-    vec3 flashlightPart = vec3(0f);
+    vec3 flashlightPart = vec3(0);
 
     vec3 flashlightDirection = normalize(vec3(-flashlight.position.xy, flashlight.position.z) - tFragPos);
     float theta = dot(flashlightDirection, normalize(vec3(flashlight.direction.xy, -flashlight.direction.z)));

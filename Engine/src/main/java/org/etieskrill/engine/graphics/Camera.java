@@ -15,6 +15,8 @@ public abstract class Camera {
     
     protected float near, far;
     protected final Vec3 front, right, up, worldUp;
+
+    protected float pitch, yaw, roll;
     
     protected Camera() {
         this.position = new Vec3();
@@ -37,6 +39,22 @@ public abstract class Camera {
     
     public void update() {
         updateView();
+        updatePerspective();
+        updateCombined();
+    }
+
+    /**
+     * Moves the camera relative to its rotation.
+     * @param translation vector to move by
+     * @return itself for chaining
+     */
+    //TODO optimise
+    public Camera translate(Vec3 translation) {
+        Vec3 delta = new Vec3();
+        delta.add(front.mul_(translation.x));
+        delta.add(right.mul_(translation.y));
+        delta.add(up.mul_(translation.z));
+        return setPosition(this.position.add_(delta));
     }
     
     public Camera setPosition(Vec3 position) {
@@ -75,19 +93,28 @@ public abstract class Camera {
         return this;
     }
     
-    private void updateView() {
+    protected void updateView() {
+        front.set(
+                 Math.cos(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch)),
+                    Math.sin(Math.toRadians(pitch)),
+                 Math.sin(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch)))
+                .normalize();
+
+        right.set(front.cross_(worldUp)).normalize();
+        up.set(front.cross_(right)).normalize();
+
         Mat4 newMat = new Mat4()
                 .lookAt(position, position.add_(front), up)
                 .translate(new Vec3(position.x * 2, position.y * 2, position.z * 2));
                 //.scale(0.0005f);
                 //.scale(new Vec3(scaleX, scaleY, 1.0));
         this.view.set(newMat);
-        updateCombined();
     }
+
+    protected abstract void updatePerspective();
     
     protected Camera setPerspective(Mat4 perspective) {
         this.perspective.set(perspective);
-        updateCombined();
         return this;
     }
     
@@ -113,5 +140,41 @@ public abstract class Camera {
         this.worldUp.set(worldUp);
         return this;
     }
-    
+
+    public float getPitch() {
+        return pitch;
+    }
+
+    public void setPitch(float pitch) {
+        this.pitch = pitch;
+    }
+
+    public void setPitchBy(float pitch) {
+        this.pitch += pitch;
+    }
+
+    public float getYaw() {
+        return yaw;
+    }
+
+    public void setYaw(float yaw) {
+        this.yaw = yaw;
+    }
+
+    public void setYawBy(float yaw) {
+        this.yaw += yaw;
+    }
+
+    public float getRoll() {
+        return roll;
+    }
+
+    public void setRoll(float roll) {
+        this.roll = roll;
+    }
+
+    public void setRollBy(float roll) {
+        this.roll += roll;
+    }
+
 }

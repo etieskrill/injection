@@ -1,13 +1,17 @@
 package org.etieskrill.engine.scene._2d;
 
+import glm.mat._4.Mat4;
 import org.etieskrill.engine.graphics.Camera;
 import org.etieskrill.engine.graphics.gl.Batch;
+import org.etieskrill.engine.math.Vec2f;
 
 public class Stage {
     
     private Batch batch;
     private Container root;
     private Camera camera;
+
+    private Vec2f size;
     
     public Stage(Batch batch, Container root, Camera camera) {
         this.batch = batch;
@@ -17,21 +21,22 @@ public class Stage {
     
     public void update(double delta) {
         //TODO viewport based stuff
-        //root.setPosition(position);
-        //root.setSize(size.getSize());
-        //root.setRotation(0);
+        root.setPosition(new Vec2f(0f));
+        root.setSize(size);
+        root.setRotation(0);
         
-        camera.setScaleX(0.5f);
-        camera.setScaleX(0.5f);
+        //camera.setScaleX(0.5f);
+        //camera.setScaleX(0.5f);
     
         root.layout();
     }
     
     public void render() {
         if (!root.isVisible()) return;
-        //batch.setTransform(camera.getT);
+        batch.setTransform(new Mat4().scale(0.01f));
         batch.setCombined(camera.getCombined());
         root.render(batch);
+        batch.resetTransform();
     }
     
     public Batch getBatch() {
@@ -65,5 +70,9 @@ public class Stage {
     public void hide() {
         this.root.hide();
     }
-    
+
+    public void setSize(Vec2f size) {
+        this.size = size;
+    }
+
 }

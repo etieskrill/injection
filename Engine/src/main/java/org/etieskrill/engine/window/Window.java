@@ -76,7 +76,7 @@ public class Window {
             return largestFit;
         }
         
-        public Vec2f getSize() {
+        public Vec2f getVector() {
             return new Vec2f(width, height);
         }
         
@@ -251,6 +251,7 @@ public class Window {
     
     public void setStage(Stage stage) {
         this.stage = stage;
+        this.stage.setSize(this.size.getVector());
     }
     
 }

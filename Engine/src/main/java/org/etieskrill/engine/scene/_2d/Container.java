@@ -32,7 +32,7 @@ public class Container extends LayoutNode {
         
         child.layout();
         
-        Vec2f newPosition = switch (child.getLayout().getAlignment()) {
+        Vec2f newPosition = switch (getLayout().getAlignment()) {
             case TOP_LEFT -> new Vec2f(0f, size.getY() - child.getSize().getY());
             case TOP_CENTER -> new Vec2f(size.getX() / 2f - child.getSize().getX() / 2f, size.getY() - child.getSize().getY());
             case TOP_RIGHT -> new Vec2f(size.getX() - child.getSize().getX(), size.getY() - child.getSize().getY());

@@ -10,7 +10,11 @@ public class OrthographicCamera extends Camera {
         super();
         setPerspective(new Mat4().ortho(left, right, bottom, top, near, far));
     }
-    
+
+    @Override
+    protected void updatePerspective() {
+    }
+
     public OrthographicCamera setTop(float top) {
         this.top = top;
         return this;

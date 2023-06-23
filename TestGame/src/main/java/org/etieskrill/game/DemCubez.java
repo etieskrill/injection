@@ -5,6 +5,7 @@ import glm.mat._4.Mat4;
 import glm.vec._3.Vec3;
 import org.etieskrill.engine.graphics.Camera;
 import org.etieskrill.engine.graphics.OrthographicCamera;
+import org.etieskrill.engine.graphics.PerspectiveCamera;
 import org.etieskrill.engine.graphics.gl.*;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderFactory;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
@@ -200,17 +201,15 @@ public class DemCubez {
         
         Batch batch = new Batch(renderer, factory);
     
-        Vec3 camPosition = new Vec3(0f, 0f, -3f), camFront = new Vec3(0f, 0f, -1f), up = new Vec3(0f, 1f, 0f);
+        //Vec3 camPosition = new Vec3(0f, 0f, -3f), camFront = new Vec3(0f, 0f, -1f), up = new Vec3(0f, 1f, 0f);
+        PerspectiveCamera camera = new PerspectiveCamera(window.getSize().getVector());
         
         Container container = new Container();
+        container.getLayout().setAlignment(Layout.Alignment.BOTTOM_LEFT);
         Button button = new Button(new Vec2f(100f, 20f));
-        button.getLayout().setAlignment(Layout.Alignment.BOTTOM_LEFT);
         container.setChild(button);
-    
-        Camera uiCamera = new OrthographicCamera();
-        System.out.println(matToString(uiCamera.getCombined()));
-        
-        window.setStage(new Stage(batch, container, uiCamera));
+
+        window.setStage(new Stage(batch, container, new OrthographicCamera()));
         window.getStage().getRoot().hide();
 
         LoopPacer pacer = new SystemNanoTimePacer(1d / TARGET_FPS);
@@ -234,7 +233,7 @@ public class DemCubez {
             if (!escPressed) camFront.set(Math.cos(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch)),
                     Math.sin(Math.toRadians(pitch)), Math.sin(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch)))
                     .normalize();
-            Vec3 camRight = camFront.cross_(up).normalize(), camUp = camFront.cross_(camRight).normalize();
+            //Vec3 camRight = camFront.cross_(up).normalize(), camUp = camFront.cross_(camRight).normalize();
     
             Vec3 deltaPosition = new Vec3();
     
@@ -269,8 +268,8 @@ public class DemCubez {
             Mat4 view = new Mat4().lookAt(pos, target, up).translate(new Vec3(pos.x * 2, pos.y * 2, pos.z * 2));
             shader.setUniformMat4("uView", false, view);
             
-            float fov = (float) (((110f - 30f) / (10f - 0.1f)) * (zoom - 0.1f) + 30f);
-            Mat4 clip = new Mat4().perspectiveFov((float) Math.toRadians(fov), window.getSize().getWidth(), window.getSize().getHeight(), 0.1f, 100f);
+            //float fov = (float) (((110f - 30f) / (10f - 0.1f)) * (zoom - 0.1f) + 30f);
+            //Mat4 clip = new Mat4().perspectiveFov((float) Math.toRadians(fov), window.getSize().getWidth(), window.getSize().getHeight(), 0.1f, 100f);
             //clip.set(clip.ortho(-(float) zoom, (float) zoom, -(float) zoom / window.getSize().getAspectRatio(), (float) (zoom / window.getSize().getAspectRatio()), 0f, -100f));
             shader.setUniformMat4("uProjection", false, clip); //the near fucking clipping plane needs to be positive in order for the z-buffer to work
             
@@ -285,7 +284,7 @@ public class DemCubez {
             shader.setUniformVec3("light.diffuse", diffuse);
             Vec3 specular = mul_(lightColour, 1f);
             shader.setUniformVec3("light.specular", specular);
-            
+
             shader.setUniformFloat("light.constant", 1f);
             shader.setUniformFloat("light.linear", 0.09f);
             shader.setUniformFloat("light.quadratic", 0.032f);

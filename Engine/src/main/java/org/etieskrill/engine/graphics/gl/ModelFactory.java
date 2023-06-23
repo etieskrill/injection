@@ -322,6 +322,11 @@ public class ModelFactory {
         return loader.loadToVAO(vertices, normals, colours, textures, null, GL33C.GL_TRIANGLES);
     }
 
+    //TODO probs fibonacci or subdivision, test with phong, gouraud and flat shading
+    public RawModel sphere(float radius, int subdivisions) {
+        return null;
+    }
+
     public void disposeLoader() {
         loader.dispose();
     }
