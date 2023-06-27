@@ -80,8 +80,8 @@ void main() {
         emission = vec3(0.0);
     }
 
-    float distance = 1.0 / length(lightDirection);
-    float attenuation = 1.0 / light.constant + light.linear * distance + light.quadratic * distance * distance;
+    float distance = length(light.position - tFragPos);
+    float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * distance * distance);
     attenuation = min(attenuation, 1.0);
 
     //Flashlight

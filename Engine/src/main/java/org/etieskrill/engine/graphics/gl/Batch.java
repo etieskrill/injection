@@ -5,6 +5,8 @@ import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderFactory;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 
+import java.util.Arrays;
+
 public class Batch implements Disposable {
     
     private final Renderer renderer;
@@ -24,9 +26,13 @@ public class Batch implements Disposable {
     
     public void render(RawModel model) {
         shader.start();
+    
+        //System.out.println(Arrays.toString(transform.toFa_()) + "\n" + Arrays.toString(combined.toFa_()));
         
         shader.setUniformMat4("uModel", false, transform);
         shader.setUniformMat4("uCombined", false, combined);
+    
+        //System.out.println(Arrays.toString(transform.toFa_()) + "\n" + Arrays.toString(combined.toFa_()) + "\n\n");
         
         renderer.render(model);
         

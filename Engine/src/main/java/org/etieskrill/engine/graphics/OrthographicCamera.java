@@ -1,10 +1,12 @@
 package org.etieskrill.engine.graphics;
 
 import glm.mat._4.Mat4;
+import glm.vec._3.Vec3;
 
 public class OrthographicCamera extends Camera {
     
-    private float top = 1f, bottom = -1f, left = -1f, right = 1f;
+    //private float top = -540f, bottom = 540f, left = -960f, right = 960f;
+    private float top = -1080f, bottom = 0f, left = 0f, right = 1920f;
     
     public OrthographicCamera() {
         super();

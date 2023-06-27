@@ -10,6 +10,7 @@ public class PerspectiveCamera extends Camera {
     public PerspectiveCamera(Vec2f size) {
         super();
         setFar(100f); //TODO figure out why this is negative in ortho
+        setFov(60f);
         setPerspective(new Mat4().perspectiveFov((float) Math.toRadians(fov), size.getX(), size.getY(), near, far));
     }
 
@@ -17,5 +18,13 @@ public class PerspectiveCamera extends Camera {
     protected void updatePerspective() {
         this.fov = (((110f - 30f) / (10f - 0.1f)) * (zoom - 0.1f) + 30f);
     }
-
+    
+    public float getFov() {
+        return fov;
+    }
+    
+    public void setFov(float fov) {
+        this.fov = fov;
+    }
+    
 }

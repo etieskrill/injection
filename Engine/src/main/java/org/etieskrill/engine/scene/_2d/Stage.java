@@ -5,6 +5,8 @@ import org.etieskrill.engine.graphics.Camera;
 import org.etieskrill.engine.graphics.gl.Batch;
 import org.etieskrill.engine.math.Vec2f;
 
+import java.util.Arrays;
+
 public class Stage {
     
     private Batch batch;
@@ -17,6 +19,9 @@ public class Stage {
         this.batch = batch;
         this.root = root;
         this.camera = camera;
+    
+        camera.setOrientation(0f, 90f, 0f);
+        camera.update();
     }
     
     public void update(double delta) {
@@ -33,7 +38,7 @@ public class Stage {
     
     public void render() {
         if (!root.isVisible()) return;
-        batch.setTransform(new Mat4().scale(0.01f));
+        //batch.setTransform(new Mat4().scale(0.01f));
         batch.setCombined(camera.getCombined());
         root.render(batch);
         batch.resetTransform();

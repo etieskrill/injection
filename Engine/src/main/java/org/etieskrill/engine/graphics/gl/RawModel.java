@@ -59,6 +59,7 @@ public class RawModel {
         this.rotation = rotation;
         this.rotationAxis = rotationAxis;
         this.transform = transform;
+        updateTransform();
     }
     
     protected RawModel(RawModel rawModel) {

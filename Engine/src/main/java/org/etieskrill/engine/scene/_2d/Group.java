@@ -8,7 +8,7 @@ import java.util.List;
 
 public abstract class Group extends LayoutNode {
     
-    protected final List<Node> children;
+    protected final List<Group> children;
     
     public Group(Vec2f size) {
         super(size);
@@ -17,8 +17,8 @@ public abstract class Group extends LayoutNode {
     
     @Override
     public void render(Batch batch) {
-        if (!super.visible) return;
-        super.render(batch);
+        if (!isVisible()) return;
+        draw(batch);
         children.forEach(child -> child.render(batch));
     }
     
@@ -46,7 +46,7 @@ public abstract class Group extends LayoutNode {
         return false;
     }*/
     
-    public boolean removeChild(Node child) {
+    public boolean removeChild(Group child) {
         return children.remove(child);
     }
     

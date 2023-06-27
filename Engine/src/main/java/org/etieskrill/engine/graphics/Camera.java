@@ -3,6 +3,8 @@ package org.etieskrill.engine.graphics;
 import glm.mat._4.Mat4;
 import glm.vec._3.Vec3;
 
+import java.util.Arrays;
+
 public abstract class Camera {
     
     protected final Vec3 position;
@@ -16,7 +18,8 @@ public abstract class Camera {
     protected float near, far;
     protected final Vec3 front, right, up, worldUp;
 
-    protected float pitch, yaw, roll;
+    protected double pitch, yaw, roll;
+    protected boolean clampPitch;
     
     protected Camera() {
         this.position = new Vec3();
@@ -34,7 +37,11 @@ public abstract class Camera {
         this.front = new Vec3();
         this.right = new Vec3();
         this.up = new Vec3();
-        this.worldUp = new Vec3();
+        this.worldUp = new Vec3(0f, 1f, 0f);
+        
+        this.clampPitch = true;
+        
+        update();
     }
     
     public void update() {
@@ -51,10 +58,11 @@ public abstract class Camera {
     //TODO optimise
     public Camera translate(Vec3 translation) {
         Vec3 delta = new Vec3();
-        delta.add(front.mul_(translation.x));
-        delta.add(right.mul_(translation.y));
-        delta.add(up.mul_(translation.z));
-        return setPosition(this.position.add_(delta));
+        add(delta, mul_(front, translation.z));
+        add(delta, mul_(right, translation.x));
+        add(delta, mul_(up, translation.y));
+        add(this.position, delta);
+        return this;
     }
     
     public Camera setPosition(Vec3 position) {
@@ -102,9 +110,11 @@ public abstract class Camera {
 
         right.set(front.cross_(worldUp)).normalize();
         up.set(front.cross_(right)).normalize();
+        
+        Vec3 target = new Vec3(position.x + front.x, position.y + front.y, position.z + front.z);
 
         Mat4 newMat = new Mat4()
-                .lookAt(position, position.add_(front), up)
+                .lookAt(position, target, up)
                 .translate(new Vec3(position.x * 2, position.y * 2, position.z * 2));
                 //.scale(0.0005f);
                 //.scale(new Vec3(scaleX, scaleY, 1.0));
@@ -119,7 +129,21 @@ public abstract class Camera {
     }
     
     private void updateCombined() {
-        this.combined.set(view.mul_(perspective));
+        this.combined.set(perspective.mul_(view));
+    }
+    
+    public Vec3 getPosition() {
+        return position;
+    }
+    
+    @Deprecated
+    public Mat4 getView() {
+        return view;
+    }
+    
+    @Deprecated
+    public Mat4 getPerspective() {
+        return perspective;
     }
     
     public Mat4 getCombined() {
@@ -141,40 +165,55 @@ public abstract class Camera {
         return this;
     }
 
-    public float getPitch() {
+    public double getPitch() {
         return pitch;
     }
-
-    public void setPitch(float pitch) {
-        this.pitch = pitch;
-    }
-
-    public void setPitchBy(float pitch) {
-        this.pitch += pitch;
-    }
-
-    public float getYaw() {
+    
+    public double getYaw() {
         return yaw;
     }
-
-    public void setYaw(float yaw) {
-        this.yaw = yaw;
-    }
-
-    public void setYawBy(float yaw) {
-        this.yaw += yaw;
-    }
-
-    public float getRoll() {
+    
+    public double getRoll() {
         return roll;
     }
-
-    public void setRoll(float roll) {
+    
+    public Camera setOrientation(double pitch, double yaw, double roll) {
+        if (clampPitch) {
+            if (pitch > 89f) pitch = 89f;
+            else if (pitch < -89f) pitch = -89f;
+        }
+        this.pitch = pitch;
+        this.yaw = yaw;
+        
+        if (roll != 0f) throw new UnsupportedOperationException("plz dont use roll yet");
         this.roll = roll;
+        
+        return this;
     }
 
-    public void setRollBy(float roll) {
+    public Camera orient(double pitch, double yaw, double roll) {
+        this.pitch += pitch;
+        if (clampPitch) {
+            if (this.pitch > 89.0) this.pitch = 89.0;
+            else if (this.pitch < -89.0) this.pitch = -89.0;
+        }
+        
+        this.yaw += yaw;
+        this.yaw %= 360.0;
+        
+        if (roll != 0.0) throw new UnsupportedOperationException("plz dont use roll yet");
         this.roll += roll;
+        
+        return this;
+    }
+    
+    //TODO replace
+    private static Vec3 add(Vec3 a, Vec3 b) {
+        return a.set(a.x + b.x, a.y + b.y, a.z + b.z);
+    }
+    
+    private static Vec3 mul_(Vec3 a, float s) {
+        return new Vec3(a.x * s, a.y * s, a.z * s);
     }
 
 }

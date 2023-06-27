@@ -21,6 +21,7 @@ import org.etieskrill.engine.window.WindowBuilder;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL33C;
 
+import java.util.Arrays;
 import java.util.Random;
 
 import static org.lwjgl.glfw.GLFW.*;
@@ -32,7 +33,7 @@ public class DemCubez {
     private volatile boolean wPressed, aPressed, sPressed, dPressed, spacePressed, shiftPressed, qPressed, ePressed,
             escPressed, escPressedPrev, ctrlPressed;
     private volatile boolean paused;
-    private volatile double pitch, yaw, roll, prevMouseX, prevMouseY, zoom;
+    private volatile double dPitch, dYaw, dRoll, prevMouseX, prevMouseY, zoom;
 
     private Window window;
     
@@ -108,33 +109,33 @@ public class DemCubez {
     
     private boolean initMouse() {
         glfwSetInputMode(window.getID(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        if (glfwRawMouseMotionSupported())
-            glfwSetInputMode(window.getID(), GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+        //if (glfwRawMouseMotionSupported())
+        //    glfwSetInputMode(window.getID(), GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
         
         resetPreviousMousePosition();
-        
-        yaw = 90d;
-        zoom = 3.81f; //this equates to almost 60° for the fov, don't ask why, i guessed it by trial and error
         
         float mouseSensitivity = 0.15f, zoomSensitivity = 0.5f;
 
         glfwSetCursorPosCallback(window.getID(), (window, xpos, ypos) -> {
             if (paused) return;
             
-            double dx = (xpos - prevMouseX) * mouseSensitivity;
-            double dy = (ypos - prevMouseY) * mouseSensitivity;
+            double dx = ((xpos - prevMouseX) * mouseSensitivity);
+            double dy = -((ypos - prevMouseY) * mouseSensitivity);
             
-            pitch += Math.cos(roll) * dy + Math.sin(roll) * dx;
-            yaw -= Math.cos(roll) * dx + Math.sin(roll) * dy;
+            dPitch = (float) dy;
+            dYaw = (float) dx;
             
-            if (pitch > 89d) {
-                pitch = 89d;
-            } else if (pitch < -89d) {
-                pitch = -89d;
-            }
+            //pitch += Math.cos(roll) * dy + Math.sin(roll) * dx;
+            //yaw -= Math.cos(roll) * dx + Math.sin(roll) * dy;
             
-            prevMouseX = xpos;
-            prevMouseY = ypos;
+//            if (pitch > 89f) {
+//                pitch = 89f;
+//            } else if (pitch < -89f) {
+//                pitch = -89f;
+//            }
+            
+            prevMouseX = (float) xpos;
+            prevMouseY = (float) ypos;
         });
 
         glfwSetMouseButtonCallback(window.getID(), (window, button, action, mods) -> {
@@ -144,9 +145,9 @@ public class DemCubez {
             zoom -= yoffset * zoomSensitivity;
     
             if (zoom > 10d) {
-                zoom = 10d;
+                zoom = 10f;
             } else if (zoom < 0.1d) {
-                zoom = 0.1d;
+                zoom = 0.1f;
             }
         });
     
@@ -156,8 +157,8 @@ public class DemCubez {
     private void resetPreviousMousePosition() {
         double[] prevX = new double[1], prevY = new double[1];
         glfwGetCursorPos(window.getID(), prevX, prevY);
-        prevMouseX = prevX[0];
-        prevMouseY = prevY[0];
+        prevMouseX = (float) prevX[0];
+        prevMouseY = (float) prevY[0];
     }
 
     private void loop() {
@@ -203,14 +204,18 @@ public class DemCubez {
     
         //Vec3 camPosition = new Vec3(0f, 0f, -3f), camFront = new Vec3(0f, 0f, -1f), up = new Vec3(0f, 1f, 0f);
         PerspectiveCamera camera = new PerspectiveCamera(window.getSize().getVector());
+    
+        camera.setPosition(new Vec3(0f, 0f, -3f))
+                .setOrientation(0f, 90f, 0f)
+                .setZoom(3.81f); //this equates to almost 60° for the fov, don't ask why, i guessed it by trial and error
         
         Container container = new Container();
         container.getLayout().setAlignment(Layout.Alignment.BOTTOM_LEFT);
-        Button button = new Button(new Vec2f(100f, 20f));
+        Button button = new Button(new Vec2f(200f, 50f));
         container.setChild(button);
 
         window.setStage(new Stage(batch, container, new OrthographicCamera()));
-        window.getStage().getRoot().hide();
+        window.getStage().hide();
 
         LoopPacer pacer = new SystemNanoTimePacer(1d / TARGET_FPS);
         pacer.start();
@@ -229,33 +234,33 @@ public class DemCubez {
                 window.getStage().hide();
                 escPressedPrev = false;
             }
-            
-            if (!escPressed) camFront.set(Math.cos(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch)),
-                    Math.sin(Math.toRadians(pitch)), Math.sin(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch)))
-                    .normalize();
-            //Vec3 camRight = camFront.cross_(up).normalize(), camUp = camFront.cross_(camRight).normalize();
+    
+            if (!escPressed) {
+                camera.orient(dPitch, dYaw, 0f);
+                dPitch = 0f;
+                dYaw = 0f;
+            }
     
             Vec3 deltaPosition = new Vec3();
     
             float camSpeed = !ctrlPressed ? 2f : 4f;
-            if (wPressed) add(deltaPosition, camFront);
-            if (sPressed) add(deltaPosition, camFront.negate_());
-            if (aPressed) add(deltaPosition, camRight);
-            if (dPressed) add(deltaPosition, camRight.negate_());
-            if (spacePressed) add(deltaPosition, camUp);
-            if (shiftPressed) add(deltaPosition, camUp.negate_());
-            
+            if (wPressed) add(deltaPosition, new Vec3(0f, 0f, 1f));
+            if (sPressed) add(deltaPosition, new Vec3(0f, 0f, -1f));
+            if (aPressed) add(deltaPosition, new Vec3(-1f, 0f, 0f));
+            if (dPressed) add(deltaPosition, new Vec3(1f, 0f, 0f));
+            if (spacePressed) add(deltaPosition, new Vec3(0f, -1f, 0f));
+            if (shiftPressed) add(deltaPosition, new Vec3(0f, 1f, 0f));
+    
             float delta = (float) pacer.getDeltaTimeSeconds();
-            deltaPosition.set(deltaPosition.x * delta * camSpeed, deltaPosition.y * delta * camSpeed, deltaPosition.z * delta * camSpeed);
-            if (!escPressed) add(camPosition, deltaPosition);
+            deltaPosition = mul_(mul_(deltaPosition, camSpeed), delta);
+            if (!escPressed) camera.translate(deltaPosition);
 
             float camRollSpeed = 1f, camRoll = 0;
             if (qPressed) camRoll -= camRollSpeed;
             if (ePressed) camRoll += camRollSpeed;
-
-            roll += camRoll;
-            roll %= 360;
-            up.set(new Mat3().rotateZ(Math.toRadians(roll)).mul(new Vec3(0f, 1f, 0f)));
+            
+            dRoll = camRoll % 360;
+            //up.set(new Mat3().rotateZ(Math.toRadians(roll)).mul(new Vec3(0f, 1f, 0f)));
 
             double radius = 6.5f, speed = 50f, time = speed * pacer.getSecondsElapsedTotal();
             Vec3 newLightSourcePos = new Vec3(radius * Math.cos(Math.toRadians(time)), 0f, radius * Math.sin(Math.toRadians(time)));
@@ -264,20 +269,16 @@ public class DemCubez {
             renderer.prepare();
             shader.start();
 
-            Vec3 pos = new Vec3(camPosition), target = add(new Vec3(pos), camFront);
-            Mat4 view = new Mat4().lookAt(pos, target, up).translate(new Vec3(pos.x * 2, pos.y * 2, pos.z * 2));
-            shader.setUniformMat4("uView", false, view);
+            camera.update();
+            shader.setUniformMat4("uView", false, camera.getView());
             
-            //float fov = (float) (((110f - 30f) / (10f - 0.1f)) * (zoom - 0.1f) + 30f);
-            //Mat4 clip = new Mat4().perspectiveFov((float) Math.toRadians(fov), window.getSize().getWidth(), window.getSize().getHeight(), 0.1f, 100f);
             //clip.set(clip.ortho(-(float) zoom, (float) zoom, -(float) zoom / window.getSize().getAspectRatio(), (float) (zoom / window.getSize().getAspectRatio()), 0f, -100f));
-            shader.setUniformMat4("uProjection", false, clip); //the near fucking clipping plane needs to be positive in order for the z-buffer to work
+            shader.setUniformMat4("uProjection", false, camera.getPerspective()); //the near fucking clipping plane needs to be positive in order for the z-buffer to work
             
             shader.setUniformVec3("light.position", lightSource.getPosition());
             
             //These are essentially intensity factors
-            double seconds = pacer.getSecondsElapsedTotal();
-            Vec3 lightColour = new Vec3(1f); //Math.sin(seconds * 2), Math.sin(seconds * 0.7), Math.sin(seconds * 1.3));
+            Vec3 lightColour = new Vec3(1f);
             Vec3 ambient = mul_(lightColour, 0.2f);
             shader.setUniformVec3("light.ambient", ambient);
             Vec3 diffuse = mul_(lightColour, 0.5f);
@@ -286,8 +287,8 @@ public class DemCubez {
             shader.setUniformVec3("light.specular", specular);
 
             shader.setUniformFloat("light.constant", 1f);
-            shader.setUniformFloat("light.linear", 0.09f);
-            shader.setUniformFloat("light.quadratic", 0.032f);
+            shader.setUniformFloat("light.linear", 0.01f);
+            shader.setUniformFloat("light.quadratic", 0.005f);
             
             //shader.setUniformVec3("flashlight.position", camPosition);
             //shader.setUniformVec3("flashlight.direction", camFront);
@@ -301,7 +302,7 @@ public class DemCubez {
             //shader.setUniformFloat("flashlight.linear", 0.09f);
             //shader.setUniformFloat("flashlight.quadratic", 0.032f);
             
-            shader.setUniformVec3("uViewPosition", camPosition);
+            shader.setUniformVec3("uViewPosition", camera.getPosition());
             shader.setUniformFloat("uTime", (float) pacer.getSecondsElapsedTotal());
             
             //Bind material struct to samplers and assign values
@@ -316,9 +317,12 @@ public class DemCubez {
                         .inverse_().transpose().toMat3_());
                 renderer.render(model);
             }
-
+    
+            //System.out.println("main: " + batch);
+            //button.render(batch);
+            
             lightShader.start();
-            lightShader.setUniformMat4("uCombined", false, clip.mul_(view));
+            lightShader.setUniformMat4("uCombined", false, camera.getCombined());
             lightShader.setUniformMat4("uModel", false, lightSource.getTransform());
             
             lightShader.setUniformVec3("light.ambient", ambient);
@@ -329,13 +333,16 @@ public class DemCubez {
 
             shader.start();
 
-            view = new Mat4().identity();
+            /*Mat4 view = new Mat4().identity();
             shader.setUniformMat4("uView", false, view);
 
-            clip = new Mat4().identity();
+            Mat4 clip = new Mat4().identity();
             shader.setUniformMat4("uProjection", false, clip);
 
             shader.setUniformMat4("uModel", false, new Mat4());
+             */
+    
+            //button.draw(batch);
             
             window.update(pacer.getDeltaTimeSeconds());
             

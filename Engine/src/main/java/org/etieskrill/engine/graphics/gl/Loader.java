@@ -4,7 +4,9 @@ import org.etieskrill.engine.util.FloatArrayMerger;
 import org.lwjgl.opengl.GL33C;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.etieskrill.engine.graphics.gl.RawModel.*;
 import static org.lwjgl.opengl.GL33C.*;
@@ -16,6 +18,8 @@ public class Loader {
     private final List<Integer> vaos = new ArrayList<>();
     private final List<Integer> vbos = new ArrayList<>();
     private final List<Integer> ebos = new ArrayList<>();
+    
+    private final Map<String, Texture> textures = new HashMap<>();
     
     public RawModel loadToVAO(float[] vertices, float[] colours, float[] textures, short[] indices, int drawMode) {
         boolean hasIndexBuffer = indices != null;
@@ -103,10 +107,31 @@ public class Loader {
         return ebo;
     }
     
+    public Texture loadTexture(String name, String file) {
+        if (textures.containsKey(name)) {
+            System.out.printf("[%s] Texture was already loaded.\n", getClass().getSimpleName());
+            return textures.get(name);
+        }
+        
+        Texture texture = new Texture(file);
+        textures.put(name, texture);
+        return texture;
+    }
+    
+    public Texture loadTexture(String file) {
+        String[] path = file.split("/");
+        return loadTexture(path[path.length - 1], file);
+    }
+    
+    public Texture getTexture(String name) {
+        return textures.get(name);
+    }
+    
     public void dispose() {
         for (int vao : vaos) glDeleteBuffers(vao);
         for (int vbo : vbos) glDeleteVertexArrays(vbo);
         for (int ebo : ebos) glDeleteBuffers(ebo);
+        for (Texture texture : textures.values()) texture.dispose();
     }
     
 }

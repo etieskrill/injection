@@ -43,8 +43,11 @@ public class Texture implements Disposable {
             throw new MissingResourceException(stbi_failure_reason(), "Texture", file);
         }
         
-        //TODO the colour format is apparently not resolved in accordance with the file format by the bloody library, so what is it for then?
-        int format = file.contains("jpg") ? GL33C.GL_RGB : GL33C.GL_RGBA;
+        int format = switch (colourChannels) {
+            case 3 -> GL33C.GL_RGB;
+            case 4 -> GL33C.GL_RGBA;
+            default -> throw new IllegalStateException("Unexpected colour format: " + colourChannels + " channels");
+        };
         
         GL33C.glTexImage2D(GL33C.GL_TEXTURE_2D, 0, GL33C.GL_RGB, pixelWidth, pixelHeight,
                 0, format, GL33C.GL_UNSIGNED_BYTE, textureData);

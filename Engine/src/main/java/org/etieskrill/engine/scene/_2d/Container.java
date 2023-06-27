@@ -16,8 +16,7 @@ public class Container extends LayoutNode {
     
     @Override
     public void render(Batch batch) {
-        if (!isVisible()) return;
-        super.render(batch);
+        if (!isVisible() || child == null) return;
         child.render(batch);
     }
     
@@ -47,6 +46,18 @@ public class Container extends LayoutNode {
         child.setPosition(newPosition);
         
         shouldLayout = false;
+    }
+    
+    @Override
+    public void show() {
+        this.visible = true;
+        if (child != null) child.show();
+    }
+    
+    @Override
+    public void hide() {
+        this.visible = false;
+        if (child != null) child.hide();
     }
     
     public Group getChild() {
