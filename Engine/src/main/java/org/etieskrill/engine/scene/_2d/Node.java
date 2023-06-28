@@ -5,15 +5,9 @@ import org.etieskrill.engine.math.Vec2f;
 
 public abstract class Node {
     
-    protected Node parent;
-    
     protected boolean visible;
     
     public Node() {
-        this(new Vec2f());
-    }
-    
-    public Node(Vec2f prefSize) {
         show();
     }
     
@@ -36,14 +30,6 @@ public abstract class Node {
     
     public void hide() {
         this.visible = false;
-    }
-    
-    public Node getParent() {
-        return parent;
-    }
-    
-    protected void setParent(Node parent) {
-        this.parent = parent;
     }
     
 }

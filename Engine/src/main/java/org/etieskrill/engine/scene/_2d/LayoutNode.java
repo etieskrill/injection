@@ -1,10 +1,13 @@
 package org.etieskrill.engine.scene._2d;
 
 import org.etieskrill.engine.math.Vec2f;
+import org.jetbrains.annotations.Contract;
 
 public abstract class LayoutNode extends Node implements Layoutable {
     
-    private Layout layout;
+    protected LayoutNode parent;
+    
+    protected Layout layout;
 
     protected final Vec2f position, size;
     protected float rotation;
@@ -27,6 +30,32 @@ public abstract class LayoutNode extends Node implements Layoutable {
     @Override
     public void invalidate() {
         shouldLayout = true;
+    }
+    
+    /**
+     * Mutates the argument, so a copy must be passed if this is not desired.
+     *
+     * @param position
+     * @return
+     */
+    @Contract(mutates = "param1")
+    public Vec2f getPositionRelativeToRoot(Vec2f position) {
+        //System.out.println(this + " " + parent);
+        //System.out.println("yems " + position);
+        if (parent == null) return position.add(this.position);
+        return parent.getPositionRelativeToRoot(position);
+    }
+    
+    public Vec2f getPositionRelativeToRoot() {
+        return getPositionRelativeToRoot(new Vec2f(0f));
+    }
+    
+    public LayoutNode getParent() {
+        return parent;
+    }
+    
+    protected void setParent(LayoutNode parent) {
+        this.parent = parent;
     }
     
     public Layout getLayout() {

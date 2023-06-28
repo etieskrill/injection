@@ -103,8 +103,8 @@ public class DemCubez {
     
     private boolean initMouse() {
         glfwSetInputMode(window.getID(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        if (glfwRawMouseMotionSupported())
-            glfwSetInputMode(window.getID(), GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+        //if (glfwRawMouseMotionSupported())
+        //    glfwSetInputMode(window.getID(), GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
         
         resetPreviousMousePosition();
         
@@ -213,7 +213,10 @@ public class DemCubez {
         Button button1 = new Button(layout);
         Button button2 = new Button(layout);
         Button button3 = new Button(layout);
-        container.setChild(new VerticalGroup(button1, button2, button3));
+        VerticalGroup menu = new VerticalGroup(button1, button2, button3);
+        //menu.layout();
+        //menu.getLayout().setAlignment(Layout.Alignment.CENTER);
+        container.setChild(menu);
 
         window.setStage(new Stage(batch, container, new OrthographicCamera(window.getSize().getVector())));
         window.getStage().hide();

@@ -42,6 +42,10 @@ public class Vec2f {
         return (float) Math.sqrt(mag2());
     }
     
+    public float length() {
+        return mag();
+    }
+    
     public Vec2f normalise() {
         return scl(1 / mag());
     }

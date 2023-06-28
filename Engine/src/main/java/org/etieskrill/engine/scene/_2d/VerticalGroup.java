@@ -13,7 +13,12 @@ public class VerticalGroup extends Group {
         super();
         for (Group child : children) addChild(child);
     }
-
+    
+    @Override
+    public Vec2f computeSize() {
+        return null;
+    }
+    
     @Override
     public void layout() {
         float minWidth = 0, minHeight = 0;
@@ -31,15 +36,19 @@ public class VerticalGroup extends Group {
             case TOP_CENTER, CENTER, BOTTOM_CENTER -> {}
             case TOP_RIGHT, CENTER_RIGHT, BOTTOM_RIGHT -> {}
         }
-
+        
         for (Group child : children) {
             child.setSize(new Vec2f(100f));
+            child.setPosition(getPositionRelativeToRoot(new Vec2f(0f, 0f)));
         }
+    
+        System.out.println(getPositionRelativeToRoot());
         
         shouldLayout = false;
     }
     
     @Override
-    protected void draw(Batch batch) {}
+    protected void draw(Batch batch) {
+    }
     
 }

@@ -26,6 +26,7 @@ public class OrthographicCamera extends Camera {
     @Override
     protected void updatePerspective() {
         //TODO proper zoom
+        float zoom = 1f / this.zoom;
         perspective.set(new Mat4().ortho(zoom * left, zoom * right, zoom * bottom, zoom * top, zoom * near, zoom * far));
     }
 

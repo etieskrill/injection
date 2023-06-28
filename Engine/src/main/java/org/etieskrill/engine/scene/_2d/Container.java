@@ -26,17 +26,26 @@ public class Container extends LayoutNode {
     //}
     
     @Override
+    public Vec2f computeSize() {
+        child.computeSize();
+        return child.getSize();
+    }
+    
+    @Override
     public void layout() {
         if (!shouldLayout || child == null) return;
         
-        child.layout();
+        child.computeSize();
         Vec2f computedSize = new Vec2f(child.size), actualSize = new Vec2f(computedSize);
-
+        
         Vec2f prefSize = getLayout().getPrefSize();
 
-        //actualSize = Math.min(computedSize.getX(), Math.max())
+        double actualX = Math.min(child.getLayout().getPrefSize().getX(), Math.max(child.getLayout().getMinSize().getX(), computedSize.getX()));
+        double actualY = Math.min(child.getLayout().getPrefSize().getY(), Math.max(child.getLayout().getMinSize().getY(), computedSize.getY()));
         if (computedSize.getX() > prefSize.getX()) actualSize.setX(Math.max(computedSize.getX(), getLayout().getMinSize().getX()));
         if (computedSize.getY() > prefSize.getY()) actualSize.setY(Math.max(computedSize.getY(), getLayout().getMinSize().getY()));
+    
+        System.out.println("here " + actualX + " " + actualY + " " + actualSize);
 
         Vec2f newPosition = switch (getLayout().getAlignment()) {
             case TOP_LEFT -> new Vec2f(0f, size.getY() - actualSize.getY());
@@ -49,8 +58,9 @@ public class Container extends LayoutNode {
             case BOTTOM_CENTER -> new Vec2f(size.getX() / 2f - actualSize.getX() / 2f, 0f);
             case BOTTOM_RIGHT -> new Vec2f(size.getX() - actualSize.getX(), 0f);
         };
-
-        child.setPosition(newPosition);
+    
+        child.setPosition(getPositionRelativeToRoot(new Vec2f(newPosition)));
+        child.layout();
 
         shouldLayout = false;
     }

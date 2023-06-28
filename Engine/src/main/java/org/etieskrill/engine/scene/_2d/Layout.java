@@ -5,12 +5,12 @@ import org.etieskrill.engine.math.Vec2f;
 public class Layout {
     
     private final Vec2f minSize, prefSize;
-    private float padTop, padBottom, padLeft, padRight;
+    private float marginTop, marginBottom, marginLeft, marginRight;
     private Alignment alignment;
     private Scaling scaling;
     
     public static Layout get() {
-        return new Layout(new Vec2f(0f), new Vec2f(), Alignment.CENTER, Scaling.PRESERVE_RATIO);
+        return new Layout(new Vec2f(-1f), new Vec2f(-1f), Alignment.CENTER, Scaling.PRESERVE_RATIO);
     }
 
     public static Layout copy(Layout layout) {
@@ -46,6 +46,22 @@ public class Layout {
         STRETCH
     }
     
+    public Vec2f computeSpan() {
+        float spanX = Math.max(prefSize.getX() - minSize.getX(), 0f);
+        float spanY = Math.max(prefSize.getY() - minSize.getY(), 0f);
+        return new Vec2f(spanX, spanY);
+    }
+    
+    public Vec2f getSize(Vec2f border) {
+        float sizeX = 0f; //=  ? prefSize.getX() : ;
+        if (prefSize.getX() - minSize.getX() < 0f) {
+            if (prefSize.getX() == 0f) sizeX = prefSize.getX();
+            else sizeX = prefSize.getX();
+        }
+        
+        return null;
+    }
+    
     public Alignment getAlignment() {
         return alignment;
     }
@@ -64,7 +80,7 @@ public class Layout {
         return this;
     }
 
-    public Vec2f getMinSize() {
+    Vec2f getMinSize() {
         return minSize;
     }
 
@@ -73,7 +89,7 @@ public class Layout {
         return this;
     }
 
-    public Vec2f getPrefSize() {
+    Vec2f getPrefSize() {
         return prefSize;
     }
 
@@ -83,30 +99,30 @@ public class Layout {
     }
 
     public Layout pad(float top, float bottom, float left, float right) {
-        return padTop(top).padBottom(bottom).padLeft(left).padRight(right);
+        return marginTop(top).marginBottom(bottom).marginLeft(left).marginRight(right);
     }
 
     public Layout pad(float vertical, float horizontal) {
-        return padTop(vertical).padBottom(vertical).padLeft(horizontal).padRight(horizontal);
+        return marginTop(vertical).marginBottom(vertical).marginLeft(horizontal).marginRight(horizontal);
     }
 
-    public Layout padTop(float padTop) {
-        this.padTop = padTop;
+    public Layout marginTop(float marginTop) {
+        this.marginTop = marginTop;
         return this;
     }
 
-    public Layout padBottom(float padBottom) {
-        this.padBottom = padBottom;
+    public Layout marginBottom(float marginBottom) {
+        this.marginBottom = marginBottom;
         return this;
     }
 
-    public Layout padLeft(float padLeft) {
-        this.padLeft = padLeft;
+    public Layout marginLeft(float marginLeft) {
+        this.marginLeft = marginLeft;
         return this;
     }
 
-    public Layout padRight(float padRight) {
-        this.padRight = padRight;
+    public Layout marginRight(float marginRight) {
+        this.marginRight = marginRight;
         return this;
     }
 

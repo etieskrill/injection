@@ -3,6 +3,7 @@ package org.etieskrill.engine.scene._2d;
 import glm.vec._3.Vec3;
 import org.etieskrill.engine.graphics.gl.Batch;
 import org.etieskrill.engine.graphics.gl.RawModelList;
+import org.etieskrill.engine.math.Vec2f;
 
 public class Button extends Group {
     
@@ -39,6 +40,11 @@ public class Button extends Group {
     //@Override
     //public void update(double delta) {
     //}
+    
+    @Override
+    public Vec2f computeSize() {
+        return null;
+    }
     
     @Override
     public void layout() {
