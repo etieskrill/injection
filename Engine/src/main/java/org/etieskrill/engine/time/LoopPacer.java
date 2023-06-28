@@ -11,7 +11,12 @@ public interface LoopPacer {
     
     double getDeltaTimeSeconds();
     double getSecondsElapsedTotal();
-    
+
+    void pauseTimer();
+    void resumeTimer();
+    void resetTimer();
+    double getTime();
+
     double getAverageFPS();
 
     long getTotalFramesElapsed();

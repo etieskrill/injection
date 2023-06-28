@@ -1,19 +1,14 @@
 package org.etieskrill.game;
 
-import glm.mat._3.Mat3;
 import glm.mat._4.Mat4;
 import glm.vec._3.Vec3;
-import org.etieskrill.engine.graphics.Camera;
 import org.etieskrill.engine.graphics.OrthographicCamera;
 import org.etieskrill.engine.graphics.PerspectiveCamera;
 import org.etieskrill.engine.graphics.gl.*;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderFactory;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.math.Vec2f;
-import org.etieskrill.engine.scene._2d.Button;
-import org.etieskrill.engine.scene._2d.Layout;
-import org.etieskrill.engine.scene._2d.Container;
-import org.etieskrill.engine.scene._2d.Stage;
+import org.etieskrill.engine.scene._2d.*;
 import org.etieskrill.engine.time.LoopPacer;
 import org.etieskrill.engine.time.SystemNanoTimePacer;
 import org.etieskrill.engine.window.Window;
@@ -21,7 +16,6 @@ import org.etieskrill.engine.window.WindowBuilder;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL33C;
 
-import java.util.Arrays;
 import java.util.Random;
 
 import static org.lwjgl.glfw.GLFW.*;
@@ -109,16 +103,16 @@ public class DemCubez {
     
     private boolean initMouse() {
         glfwSetInputMode(window.getID(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        //if (glfwRawMouseMotionSupported())
-        //    glfwSetInputMode(window.getID(), GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+        if (glfwRawMouseMotionSupported())
+            glfwSetInputMode(window.getID(), GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
         
         resetPreviousMousePosition();
         
-        float mouseSensitivity = 0.15f, zoomSensitivity = 0.5f;
+        float mouseSensitivity = 0.25f, zoomSensitivity = 0.5f;
 
         glfwSetCursorPosCallback(window.getID(), (window, xpos, ypos) -> {
             if (paused) return;
-            
+
             double dx = ((xpos - prevMouseX) * mouseSensitivity);
             double dy = -((ypos - prevMouseY) * mouseSensitivity);
             
@@ -208,13 +202,20 @@ public class DemCubez {
         camera.setPosition(new Vec3(0f, 0f, -3f))
                 .setOrientation(0f, 90f, 0f)
                 .setZoom(3.81f); //this equates to almost 60° for the fov, don't ask why, i guessed it by trial and error
+
+        zoom = camera.getZoom();
         
         Container container = new Container();
-        container.getLayout().setAlignment(Layout.Alignment.BOTTOM_LEFT);
-        Button button = new Button(new Vec2f(200f, 50f));
-        container.setChild(button);
+        container.getLayout().setAlignment(Layout.Alignment.CENTER);
+        Layout layout = Layout.get()
+                .setPrefSize(new Vec2f(500f, 200f))
+                .setMinSize(new Vec2f(350f, 150f));
+        Button button1 = new Button(layout);
+        Button button2 = new Button(layout);
+        Button button3 = new Button(layout);
+        container.setChild(new VerticalGroup(button1, button2, button3));
 
-        window.setStage(new Stage(batch, container, new OrthographicCamera()));
+        window.setStage(new Stage(batch, container, new OrthographicCamera(window.getSize().getVector())));
         window.getStage().hide();
 
         LoopPacer pacer = new SystemNanoTimePacer(1d / TARGET_FPS);
@@ -223,12 +224,14 @@ public class DemCubez {
         while (!window.shouldClose()) {
             if (escPressed && !escPressedPrev) {
                 paused = true;
+                pacer.pauseTimer();
                 glfwSetInputMode(window.getID(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
                 window.getStage().show();
                 escPressedPrev = true;
             }
             else if (!escPressed && escPressedPrev) {
                 paused = false;
+                pacer.resumeTimer();
                 resetPreviousMousePosition();
                 glfwSetInputMode(window.getID(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
                 window.getStage().hide();
@@ -262,7 +265,9 @@ public class DemCubez {
             dRoll = camRoll % 360;
             //up.set(new Mat3().rotateZ(Math.toRadians(roll)).mul(new Vec3(0f, 1f, 0f)));
 
-            double radius = 6.5f, speed = 50f, time = speed * pacer.getSecondsElapsedTotal();
+            camera.setZoom((float) zoom);
+
+            double radius = 6.5f, speed = 50f, time = speed * pacer.getTime();
             Vec3 newLightSourcePos = new Vec3(radius * Math.cos(Math.toRadians(time)), 0f, radius * Math.sin(Math.toRadians(time)));
             if (!escPressed) lightSource.setPosition(newLightSourcePos);
             
@@ -271,10 +276,8 @@ public class DemCubez {
 
             camera.update();
             shader.setUniformMat4("uView", false, camera.getView());
-            
-            //clip.set(clip.ortho(-(float) zoom, (float) zoom, -(float) zoom / window.getSize().getAspectRatio(), (float) (zoom / window.getSize().getAspectRatio()), 0f, -100f));
-            shader.setUniformMat4("uProjection", false, camera.getPerspective()); //the near fucking clipping plane needs to be positive in order for the z-buffer to work
-            
+            shader.setUniformMat4("uProjection", false, camera.getPerspective());
+
             shader.setUniformVec3("light.position", lightSource.getPosition());
             
             //These are essentially intensity factors
@@ -303,7 +306,7 @@ public class DemCubez {
             //shader.setUniformFloat("flashlight.quadratic", 0.032f);
             
             shader.setUniformVec3("uViewPosition", camera.getPosition());
-            shader.setUniformFloat("uTime", (float) pacer.getSecondsElapsedTotal());
+            shader.setUniformFloat("uTime", (float) pacer.getTime());
             
             //Bind material struct to samplers and assign values
             shader.setUniformInt("material.diffuse", 0); //TODO automating this would require a model- and shader-dependent object

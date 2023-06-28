@@ -8,7 +8,7 @@ public class Container extends LayoutNode {
     private Group child;
     
     public Container() {
-        super(new Vec2f());
+        super();
     }
     
     @Override
@@ -30,21 +30,28 @@ public class Container extends LayoutNode {
         if (!shouldLayout || child == null) return;
         
         child.layout();
-        
+        Vec2f computedSize = new Vec2f(child.size), actualSize = new Vec2f(computedSize);
+
+        Vec2f prefSize = getLayout().getPrefSize();
+
+        //actualSize = Math.min(computedSize.getX(), Math.max())
+        if (computedSize.getX() > prefSize.getX()) actualSize.setX(Math.max(computedSize.getX(), getLayout().getMinSize().getX()));
+        if (computedSize.getY() > prefSize.getY()) actualSize.setY(Math.max(computedSize.getY(), getLayout().getMinSize().getY()));
+
         Vec2f newPosition = switch (getLayout().getAlignment()) {
-            case TOP_LEFT -> new Vec2f(0f, size.getY() - child.getSize().getY());
-            case TOP_CENTER -> new Vec2f(size.getX() / 2f - child.getSize().getX() / 2f, size.getY() - child.getSize().getY());
-            case TOP_RIGHT -> new Vec2f(size.getX() - child.getSize().getX(), size.getY() - child.getSize().getY());
-            case CENTER_LEFT -> new Vec2f(0f, size.getY() / 2f - child.getSize().getY() / 2f);
-            case CENTER -> new Vec2f(size.getX() / 2f - child.getSize().getX() / 2f, size.getY() / 2f - child.getSize().getY() / 2f);
-            case CENTER_RIGHT -> new Vec2f(size.getX() - child.getSize().getX(), size.getY() / 2f - child.getSize().getY() / 2f);
+            case TOP_LEFT -> new Vec2f(0f, size.getY() - actualSize.getY());
+            case TOP_CENTER -> new Vec2f(size.getX() / 2f - actualSize.getX() / 2f, size.getY() - actualSize.getY());
+            case TOP_RIGHT -> new Vec2f(size.getX() - actualSize.getX(), size.getY() - actualSize.getY());
+            case CENTER_LEFT -> new Vec2f(0f, size.getY() / 2f - actualSize.getY() / 2f);
+            case CENTER -> new Vec2f(size.getX() / 2f - actualSize.getX() / 2f, size.getY() / 2f - actualSize.getY() / 2f);
+            case CENTER_RIGHT -> new Vec2f(size.getX() - actualSize.getX(), size.getY() / 2f - actualSize.getY() / 2f);
             case BOTTOM_LEFT -> new Vec2f(0f, 0f);
-            case BOTTOM_CENTER -> new Vec2f(size.getX() / 2f - child.getSize().getX() / 2f, 0f);
-            case BOTTOM_RIGHT -> new Vec2f(size.getX() - child.getSize().getX(), 0f);
+            case BOTTOM_CENTER -> new Vec2f(size.getX() / 2f - actualSize.getX() / 2f, 0f);
+            case BOTTOM_RIGHT -> new Vec2f(size.getX() - actualSize.getX(), 0f);
         };
-    
+
         child.setPosition(newPosition);
-        
+
         shouldLayout = false;
     }
     
@@ -65,6 +72,7 @@ public class Container extends LayoutNode {
     }
     
     public void setChild(Group child) {
+        child.setParent(this);
         this.child = child;
     }
     

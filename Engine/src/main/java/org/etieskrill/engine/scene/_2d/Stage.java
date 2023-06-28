@@ -1,11 +1,8 @@
 package org.etieskrill.engine.scene._2d;
 
-import glm.mat._4.Mat4;
 import org.etieskrill.engine.graphics.Camera;
 import org.etieskrill.engine.graphics.gl.Batch;
 import org.etieskrill.engine.math.Vec2f;
-
-import java.util.Arrays;
 
 public class Stage {
     
@@ -21,14 +18,14 @@ public class Stage {
         this.camera = camera;
     
         camera.setOrientation(0f, 90f, 0f);
-        camera.update();
     }
     
     public void update(double delta) {
         //TODO viewport based stuff
-        root.setPosition(new Vec2f(0f));
-        root.setSize(size);
-        root.setRotation(0);
+        root.position.set(0f, 0f);
+        root.size.set(size);
+        root.getLayout().setMinSize(size).setPrefSize(size);
+        root.rotation = 0f;
         
         //camera.setScaleX(0.5f);
         //camera.setScaleX(0.5f);

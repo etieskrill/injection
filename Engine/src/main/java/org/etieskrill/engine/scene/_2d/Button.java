@@ -1,15 +1,18 @@
 package org.etieskrill.engine.scene._2d;
 
+import glm.vec._3.Vec3;
 import org.etieskrill.engine.graphics.gl.Batch;
-import org.etieskrill.engine.graphics.gl.Model;
-import org.etieskrill.engine.graphics.gl.RawModel;
-import org.etieskrill.engine.graphics.gl.Texture;
-import org.etieskrill.engine.math.Vec2f;
+import org.etieskrill.engine.graphics.gl.RawModelList;
 
 public class Button extends Group {
     
-    public Button(Vec2f size) {
-        super(size);
+    public Button() {
+        super();
+    }
+
+    public Button(Layout layout) {
+        super();
+        setLayout(layout);
     }
     
     @Override
@@ -17,9 +20,19 @@ public class Button extends Group {
         //RawModelList model = batch.getModelFactory().roundedRect(position.getX(), position.getY(), size.getX(), size.getY(),
         //        size.getX() > size.getY() ? size.getY() / 4f : size.getX() / 4f, 10);
         //model.render(batch.getRenderer());
-        RawModel model = batch.getModelFactory().rectangle(position.getX(), position.getY(), size.getX(), size.getY());
-        Model _model = new Model(model);
-        _model.addTexture(new Texture("buff_bale.jpg"), 0);
+
+        //RawModel model = batch.getModelFactory().rectangle(position.getX(), position.getY(), size.getX(), size.getY());
+        //Model _model = new Model(model);
+        //_model.addTexture(new Texture("buff_bale.jpg"), 0);
+        //batch.render(_model);
+
+        //System.out.println("[" + toString() + "] " + position + " " + size);
+
+        RawModelList _model = batch.getModelFactory().roundedRect(
+                position.getX(), position.getY(), size.getX(), size.getY(),
+                size.getX() > size.getY() ? size.getY() / 4f : size.getX() / 4f, 10);
+        batch.getShader().start();
+        batch.getShader().setUniformVec3("uColour", new Vec3(1f, 0f, 0f));
         batch.render(_model);
     }
     
@@ -31,5 +44,5 @@ public class Button extends Group {
     public void layout() {
         shouldLayout = false;
     }
-    
+
 }

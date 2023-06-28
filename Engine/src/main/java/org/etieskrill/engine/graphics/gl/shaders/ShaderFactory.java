@@ -113,6 +113,7 @@ public class ShaderFactory {
             addUniform("uModel");
             addUniform("uCombined");
             addUniform("diffuseMap");
+            addUniform("uColour");
             addUniform("uTime");
         }
     }

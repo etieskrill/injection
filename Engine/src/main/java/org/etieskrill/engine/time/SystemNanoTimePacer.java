@@ -1,6 +1,7 @@
 package org.etieskrill.engine.time;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class SystemNanoTimePacer implements LoopPacer {
     
@@ -12,6 +13,8 @@ public class SystemNanoTimePacer implements LoopPacer {
     
     private long targetDelta;
     private volatile long timeNow, timeLast, delta;
+    private final AtomicLong timerTime = new AtomicLong();
+    private volatile boolean timerPaused;
     private volatile double averageFPS;
 
     private volatile long totalFrames, localFrames;
@@ -48,6 +51,7 @@ public class SystemNanoTimePacer implements LoopPacer {
         
         updateTime();
         delta = timeNow - timeLast;
+        if (!timerPaused) timerTime.addAndGet(delta);
 
         try {
             Thread.sleep((int) Math.max(targetDelta - delta, 0) / MILLI_FACTOR);
@@ -84,7 +88,27 @@ public class SystemNanoTimePacer implements LoopPacer {
         updateTime();
         return (double)timeNow / NANO_FACTOR;
     }
-    
+
+    @Override
+    public void pauseTimer() {
+        this.timerPaused = true;
+    }
+
+    @Override
+    public void resumeTimer() {
+        this.timerPaused = false;
+    }
+
+    @Override
+    public void resetTimer() {
+        this.timerTime.set(0L);
+    }
+
+    @Override
+    public double getTime() {
+        return (double)this.timerTime.get() / NANO_FACTOR;
+    }
+
     @Override
     public double getAverageFPS() {
         return averageFPS;

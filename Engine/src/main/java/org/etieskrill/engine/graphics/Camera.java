@@ -10,7 +10,6 @@ public abstract class Camera {
     protected final Vec3 position;
     protected float rotation;
     protected final Vec3 rotationAxis;
-    protected float scaleX, scaleY;
     protected float zoom;
     
     protected final Mat4 view, perspective, combined;
@@ -20,18 +19,19 @@ public abstract class Camera {
 
     protected double pitch, yaw, roll;
     protected boolean clampPitch;
+
+    protected boolean autoUpdate;
     
     protected Camera() {
         this.position = new Vec3();
         this.rotation = 0f;
         this.rotationAxis = new Vec3();
-        this.scaleX = 1f;
-        this.scaleY = 1f;
         this.zoom = 1f;
         this.view = new Mat4();
         this.perspective = new Mat4();
         this.combined = new Mat4();
-        
+
+        //the near fucking clipping plane needs to be positive in order for the z-buffer to work, but only for perspective projection?
         this.near = 0.1f;
         this.far = -100f;
         this.front = new Vec3();
@@ -40,8 +40,7 @@ public abstract class Camera {
         this.worldUp = new Vec3(0f, 1f, 0f);
         
         this.clampPitch = true;
-        
-        update();
+        this.autoUpdate = true;
     }
     
     public void update() {
@@ -62,42 +61,35 @@ public abstract class Camera {
         add(delta, mul_(right, translation.x));
         add(delta, mul_(up, translation.y));
         add(this.position, delta);
+        if (autoUpdate) update();
         return this;
     }
     
     public Camera setPosition(Vec3 position) {
         this.position.set(position);
+        if (autoUpdate) update();
         return this;
     }
-    
+
+    @Deprecated
     public Camera setRotation(float rotation) {
         this.rotation = rotation;
         return this;
     }
-    
+
+    @Deprecated
     public Camera setRotationAxis(Vec3 rotationAxis) {
         this.rotationAxis.set(rotationAxis);
         return this;
     }
-    
-    public float getScaleX() {
-        return scaleX;
+
+    public float getZoom() {
+        return zoom;
     }
-    
-    public void setScaleX(float scaleX) {
-        this.scaleX = scaleX;
-    }
-    
-    public float getScaleY() {
-        return scaleY;
-    }
-    
-    public void setScaleY(float scaleY) {
-        this.scaleY = scaleY;
-    }
-    
+
     public Camera setZoom(float zoom) {
         this.zoom = zoom;
+        if (autoUpdate) update();
         return this;
     }
     
@@ -125,6 +117,7 @@ public abstract class Camera {
     
     protected Camera setPerspective(Mat4 perspective) {
         this.perspective.set(perspective);
+        if (autoUpdate) update();
         return this;
     }
     
@@ -152,16 +145,19 @@ public abstract class Camera {
     
     public Camera setNear(float near) {
         this.near = near;
+        if (autoUpdate) update();
         return this;
     }
     
     public Camera setFar(float far) {
         this.far = far;
+        if (autoUpdate) update();
         return this;
     }
     
     public Camera setWorldUp(Vec3 worldUp) {
         this.worldUp.set(worldUp);
+        if (autoUpdate) update();
         return this;
     }
 
@@ -187,7 +183,8 @@ public abstract class Camera {
         
         if (roll != 0f) throw new UnsupportedOperationException("plz dont use roll yet");
         this.roll = roll;
-        
+
+        if (autoUpdate) update();
         return this;
     }
 
@@ -203,10 +200,15 @@ public abstract class Camera {
         
         if (roll != 0.0) throw new UnsupportedOperationException("plz dont use roll yet");
         this.roll += roll;
-        
+
+        if (autoUpdate) update();
         return this;
     }
-    
+
+    public void setAutoUpdate(boolean autoUpdate) {
+        this.autoUpdate = autoUpdate;
+    }
+
     //TODO replace
     private static Vec3 add(Vec3 a, Vec3 b) {
         return a.set(a.x + b.x, a.y + b.y, a.z + b.z);

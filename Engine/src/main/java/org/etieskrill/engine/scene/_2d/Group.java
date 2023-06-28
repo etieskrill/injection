@@ -10,8 +10,8 @@ public abstract class Group extends LayoutNode {
     
     protected final List<Group> children;
     
-    public Group(Vec2f size) {
-        super(size);
+    public Group() {
+        super();
         this.children = new ArrayList<>();
     }
     
@@ -47,6 +47,8 @@ public abstract class Group extends LayoutNode {
     }*/
     
     public boolean removeChild(Group child) {
+        if (!children.contains(child)) return false;
+        child.setParent(null);
         return children.remove(child);
     }
     
