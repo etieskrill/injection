@@ -206,10 +206,10 @@ public class DemCubez {
         zoom = camera.getZoom();
         
         Container container = new Container();
-        container.getLayout().setAlignment(Layout.Alignment.CENTER);
+        container.getLayout().setAlignment(Layout.Alignment.TOP_LEFT);
         Layout layout = Layout.get()
-                .setPrefSize(new Vec2f(500f, 200f))
-                .setMinSize(new Vec2f(350f, 150f));
+                .setPrefSize(new Vec2f(400f, 100f))
+                .setMinSize(new Vec2f(250f, 50f));
         Button button1 = new Button(layout);
         Button button2 = new Button(layout);
         Button button3 = new Button(layout);

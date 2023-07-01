@@ -23,15 +23,15 @@ public class Vec2f {
     }
     
     public Vec2f add(Vec2f another) {
-        return new Vec2f(x + another.x, y + another.y);
+        return set(x + another.x, y + another.y);
     }
     
     public Vec2f sub(Vec2f another) {
-        return new Vec2f(x - another.x, y - another.y);
+        return set(x - another.x, y - another.y);
     }
     
     public Vec2f scl(float s) {
-        return new Vec2f(x * s, y * s);
+        return set(x * s, y * s);
     }
     
     public float mag2() {
@@ -66,18 +66,20 @@ public class Vec2f {
         this.y = y;
     }
     
-    public void set(float x, float y) {
+    public Vec2f set(float x, float y) {
         this.x = x;
         this.y = y;
+        return this;
     }
     
-    public void set(Vec2f vec) {
-        set(vec.x, vec.y);
+    public Vec2f set(Vec2f vec) {
+        return set(vec.x, vec.y);
     }
     
-    public void setZero() {
+    public Vec2f setZero() {
         x = 0f;
         y = 0f;
+        return this;
     }
     
     @Override

@@ -16,21 +16,22 @@ public class VerticalGroup extends Group {
     
     @Override
     public Vec2f computeSize() {
-        return null;
+        Vec2f totalSpan = new Vec2f(0f);
+        float minTotalWidth = 0f, minTotalHeight = 0f,
+                prefTotalWidth = 0f, prefTotalHeight = 0f;
+
+        for (Group child : children) {
+            child.layout();
+            totalSpan.add(child.getLayout().computeSpan());
+            Vec2f computedSize = child.getSize();
+
+            if (computedSize.getX() > minTotalWidth) minTotalWidth = computedSize.getX();
+            minTotalHeight += computedSize.getY();
+        }
     }
     
     @Override
     public void layout() {
-        float minWidth = 0, minHeight = 0;
-        
-        for (Group child : children) {
-            child.layout();
-            Vec2f computedSize = child.getSize();
-            
-            if (computedSize.getX() > minWidth) minWidth = computedSize.getX();
-            minHeight += computedSize.getY();
-        }
-        
         switch (getLayout().getAlignment()) {
             case TOP_LEFT, CENTER_LEFT, BOTTOM_LEFT -> {}
             case TOP_CENTER, CENTER, BOTTOM_CENTER -> {}
@@ -38,12 +39,9 @@ public class VerticalGroup extends Group {
         }
         
         for (Group child : children) {
-            child.setSize(new Vec2f(100f));
-            child.setPosition(getPositionRelativeToRoot(new Vec2f(0f, 0f)));
+            child.setPosition(getPositionRelativeToRoot(new Vec2f(child.getSize()).scl(-0.5f)));
         }
-    
-        System.out.println(getPositionRelativeToRoot());
-        
+
         shouldLayout = false;
     }
     

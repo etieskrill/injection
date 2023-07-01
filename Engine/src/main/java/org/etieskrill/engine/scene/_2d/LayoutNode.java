@@ -40,10 +40,8 @@ public abstract class LayoutNode extends Node implements Layoutable {
      */
     @Contract(mutates = "param1")
     public Vec2f getPositionRelativeToRoot(Vec2f position) {
-        //System.out.println(this + " " + parent);
-        //System.out.println("yems " + position);
         if (parent == null) return position.add(this.position);
-        return parent.getPositionRelativeToRoot(position);
+        return parent.getPositionRelativeToRoot(position.add(this.position));
     }
     
     public Vec2f getPositionRelativeToRoot() {

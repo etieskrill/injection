@@ -43,11 +43,13 @@ public class Button extends Group {
     
     @Override
     public Vec2f computeSize() {
-        return null;
+        setSize(getLayout().getPrefSize());
+        return size;
     }
     
     @Override
     public void layout() {
+        computeSize();
         shouldLayout = false;
     }
 

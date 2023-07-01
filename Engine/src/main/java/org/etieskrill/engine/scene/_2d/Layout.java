@@ -53,13 +53,23 @@ public class Layout {
     }
     
     public Vec2f getSize(Vec2f border) {
-        float sizeX = 0f; //=  ? prefSize.getX() : ;
-        if (prefSize.getX() - minSize.getX() < 0f) {
-            if (prefSize.getX() == 0f) sizeX = prefSize.getX();
-            else sizeX = prefSize.getX();
-        }
-        
-        return null;
+        float sizeX = 0f;
+        if (border.getX() - minSize.getX() < 0f || prefSize.getX() - minSize.getX() < 0f)
+            sizeX = minSize.getX();
+        else if (border.getX() - prefSize.getX() < 0f)
+            sizeX = border.getX();
+        else
+            sizeX = prefSize.getX();
+
+        float sizeY = 0f;
+        if (border.getY() - minSize.getY() < 0f || prefSize.getY() - minSize.getY() < 0f)
+            sizeY = minSize.getY();
+        else if (border.getX() - prefSize.getY() < 0f)
+            sizeY = border.getY();
+        else
+            sizeY = prefSize.getY();
+
+        return new Vec2f(sizeX, sizeY);
     }
     
     public Alignment getAlignment() {
