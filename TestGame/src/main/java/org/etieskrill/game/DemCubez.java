@@ -2,9 +2,11 @@ package org.etieskrill.game;
 
 import glm.mat._4.Mat4;
 import glm.vec._3.Vec3;
+import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.OrthographicCamera;
 import org.etieskrill.engine.graphics.PerspectiveCamera;
 import org.etieskrill.engine.graphics.gl.*;
+import org.etieskrill.engine.graphics.gl.Texture.TextureType;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderFactory;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.math.Vec2f;
@@ -14,22 +16,29 @@ import org.etieskrill.engine.time.SystemNanoTimePacer;
 import org.etieskrill.engine.window.Window;
 import org.etieskrill.engine.window.WindowBuilder;
 import org.lwjgl.opengl.GL;
-import org.lwjgl.opengl.GL33C;
+import org.lwjgl.opengl.GLUtil;
 
+import java.util.Arrays;
 import java.util.Random;
 
 import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.opengl.GL33C.*;
 
 public class DemCubez {
     
     private static final float TARGET_FPS = 60f;
 
+    private final Loader loader = Loader.get();
+    
     private volatile boolean wPressed, aPressed, sPressed, dPressed, spacePressed, shiftPressed, qPressed, ePressed,
             escPressed, escPressedPrev, ctrlPressed;
     private volatile boolean paused;
     private volatile double dPitch, dYaw, dRoll, prevMouseX, prevMouseY, zoom;
 
     private Window window;
+    
+    private PerspectiveCamera camera;
+    private LoopPacer pacer;
     
     public DemCubez() {
         init();
@@ -58,22 +67,23 @@ public class DemCubez {
         //GL33C.glViewport(0, 0, 1920, 1080); //this is apparently done ... somewhere behind the scenes?
     
         //Get max vertex attributes
-        /*int[] caps = new int[1];
-        GL33C.glGetIntegerv(GL33C.GL_MAX_VERTEX_ATTRIBS, caps);
-        System.out.println(Arrays.toString(caps));
-        GL33C.glGetIntegerv(GL33C.GL_MAX_TEXTURE_IMAGE_UNITS, caps);
-        System.out.println(Arrays.toString(caps));*/
+        /*System.out.println(glGetInteger(GL_MAX_VERTEX_UNIFORM_COMPONENTS));
+        System.out.println(glGetInteger(GL_MAX_VARYING_FLOATS));
+        System.out.println(glGetInteger(GL_MAX_VERTEX_ATTRIBS));
+        System.out.println(glGetInteger(GL_MAX_TEXTURE_IMAGE_UNITS));
+        System.out.println(glGetInteger(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS));
+        System.out.println(glGetInteger(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS));*/
         
-        GL33C.glEnable(GL33C.GL_DEPTH_TEST);
-        GL33C.glDepthFunc(GL33C.GL_LESS);
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LESS);
         
-        GL33C.glTexParameteri(GL33C.GL_TEXTURE_2D, GL33C.GL_TEXTURE_MIN_FILTER, GL33C.GL_NEAREST_MIPMAP_NEAREST); //GL_<mipmap level selection>_MIPMAP_<mipmap texture sampling>
-        GL33C.glTexParameteri(GL33C.GL_TEXTURE_2D, GL33C.GL_TEXTURE_MAG_FILTER, GL33C.GL_LINEAR); //GL_<mipmap texture sampling>
-    
-        GL33C.glTexParameteri(GL33C.GL_TEXTURE_2D, GL33C.GL_TEXTURE_WRAP_S, GL33C.GL_MIRRORED_REPEAT);
-        GL33C.glTexParameteri(GL33C.GL_TEXTURE_2D, GL33C.GL_TEXTURE_WRAP_T, GL33C.GL_MIRRORED_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST); //GL_<mipmap level selection>_MIPMAP_<mipmap texture sampling>
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); //GL_<mipmap texture sampling>
+        
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-        return GL33C.glGetError() == GL33C.GL_NO_ERROR;
+        return glGetError() == GL_NO_ERROR;
     }
     
     private boolean initKeybinds() {
@@ -171,24 +181,33 @@ public class DemCubez {
             new Vec3(-1.3f,  1.0f, -1.5f)
         };
     
-        Texture containerTexture = new Texture("container2.png");
-        Texture containerSpecular = new Texture("container2_specular.png");
-        Texture containerEmissive = new Texture("container2_emissive.jpg");
-        Texture pepegaTexture = new Texture("pepega.png");
+        loader.loadTexture("container2.png", "container", TextureType.DIFFUSE);
+        loader.loadTexture("container2_specular.png", "container_specular", TextureType.SPECULAR);
+        loader.loadTexture("container2_emissive.jpg", "container_emissive", TextureType.EMISSIVE);
         
         Model[] models = new Model[cubePositions.length];
+        RawModel cubeModel = factory.box(new Vec3(0.5f, 0.5f, 0.5f));
+        //TODO !!!!!!!! separate gl memory object from this object ffs
         for (int i = 0; i < cubePositions.length; i++) {
-            models[i] = new Model(factory.box(new Vec3(0.5f, 0.5f, 0.5f))
+            models[i] = new Model(factory.box(new Vec3(0.5f, 0.5f, 0.5f)));
+            models[i]
                     .setPosition(cubePositions[i])
                     .setRotation(new Random(69420).nextFloat(),
-                            Vec3.linearRand_(new Vec3(-1f, -1f, -1f), new Vec3(1f, 1f, 1f))));
-            models[i].addTexture(containerTexture, 0).addTexture(containerSpecular, 1)
-                    .addTexture(containerEmissive, 2);
+                            Vec3.linearRand_(new Vec3(-1f, -1f, -1f), new Vec3(1f, 1f, 1f)));
+            models[i].addTexture(loader.getTexture("container"), 0)
+                    .addTexture(loader.getTexture("container_specular"), 1)
+                    .addTexture(loader.getTexture("container_emissive"), 2);
         }
 
-        RawModel lightSource = factory
-                .box(new Vec3(0.2f, 0.2f, 0.2f))
-                .setPosition(new Vec3(0f, 0f, -5f));
+        RawModel[] lightSources = new RawModel[2];
+        for (int i = 0; i < lightSources.length; i++) {
+            lightSources[i] = factory
+                    .box(new Vec3(0.2f, 0.2f, 0.2f))
+                    .setPosition(new Vec3(0f, 0f, -5f));
+        }
+    
+        org.etieskrill.engine.graphics.assimp.Model backpack =
+                new org.etieskrill.engine.graphics.assimp.Model("Survival_BackPack_2.fbx");
         
         Renderer renderer = new Renderer();
         ShaderProgram shader = ShaderFactory.getStandardShader();
@@ -196,17 +215,15 @@ public class DemCubez {
         
         Batch batch = new Batch(renderer, factory);
     
-        //Vec3 camPosition = new Vec3(0f, 0f, -3f), camFront = new Vec3(0f, 0f, -1f), up = new Vec3(0f, 1f, 0f);
-        PerspectiveCamera camera = new PerspectiveCamera(window.getSize().getVector());
+        camera = new PerspectiveCamera(window.getSize().getVector());
     
         camera.setPosition(new Vec3(0f, 0f, -3f))
-                .setOrientation(0f, 90f, 0f)
-                .setZoom(3.81f); //this equates to almost 60° for the fov, don't ask why, i guessed it by trial and error
+                .setOrientation(0f, 90f, 0f);
 
         zoom = camera.getZoom();
         
         Container container = new Container();
-        container.getLayout().setAlignment(Layout.Alignment.TOP_LEFT);
+        //container.getLayout().setAlignment(Layout.Alignment.BOTTOM_RIGHT);
         Layout layout = Layout.get()
                 .setPrefSize(new Vec2f(400f, 100f))
                 .setMinSize(new Vec2f(250f, 50f));
@@ -220,11 +237,14 @@ public class DemCubez {
 
         window.setStage(new Stage(batch, container, new OrthographicCamera(window.getSize().getVector())));
         window.getStage().hide();
+        
+        ShaderProgram backpackShader = ShaderFactory.getStandardShader();
 
-        LoopPacer pacer = new SystemNanoTimePacer(1d / TARGET_FPS);
+        pacer = new SystemNanoTimePacer(1d / TARGET_FPS);
         pacer.start();
         
         while (!window.shouldClose()) {
+            //Toggle escape button and related behaviour
             if (escPressed && !escPressedPrev) {
                 paused = true;
                 pacer.pauseTimer();
@@ -247,54 +267,54 @@ public class DemCubez {
                 dYaw = 0f;
             }
     
-            Vec3 deltaPosition = new Vec3();
+            updatePlayerCamera();
+
+            double radius = 4f, speed = 50f, time = speed * pacer.getTime();
+            Vec3 offset = new Vec3(0f, 0f, -2f);
+            Vec3 newLightSourcePos = new Vec3(
+                    radius * Math.cos(Math.toRadians(time)),
+                    0f,
+                    radius * Math.sin(Math.toRadians(time))
+            );
+            if (!escPressed) {
+                lightSources[0].setPosition(add_(newLightSourcePos, offset));
+                lightSources[1].setPosition(add_(newLightSourcePos.negate(), offset));
+            }
     
-            float camSpeed = !ctrlPressed ? 2f : 4f;
-            if (wPressed) add(deltaPosition, new Vec3(0f, 0f, 1f));
-            if (sPressed) add(deltaPosition, new Vec3(0f, 0f, -1f));
-            if (aPressed) add(deltaPosition, new Vec3(-1f, 0f, 0f));
-            if (dPressed) add(deltaPosition, new Vec3(1f, 0f, 0f));
-            if (spacePressed) add(deltaPosition, new Vec3(0f, -1f, 0f));
-            if (shiftPressed) add(deltaPosition, new Vec3(0f, 1f, 0f));
-    
-            float delta = (float) pacer.getDeltaTimeSeconds();
-            deltaPosition = mul_(mul_(deltaPosition, camSpeed), delta);
-            if (!escPressed) camera.translate(deltaPosition);
-
-            float camRollSpeed = 1f, camRoll = 0;
-            if (qPressed) camRoll -= camRollSpeed;
-            if (ePressed) camRoll += camRollSpeed;
-            
-            dRoll = camRoll % 360;
-            //up.set(new Mat3().rotateZ(Math.toRadians(roll)).mul(new Vec3(0f, 1f, 0f)));
-
-            camera.setZoom((float) zoom);
-
-            double radius = 6.5f, speed = 50f, time = speed * pacer.getTime();
-            Vec3 newLightSourcePos = new Vec3(radius * Math.cos(Math.toRadians(time)), 0f, radius * Math.sin(Math.toRadians(time)));
-            if (!escPressed) lightSource.setPosition(newLightSourcePos);
+            for (Model cube : models) {
+                cube.setRotation(cube.getRotation() + 0.01f, cube.getRotationAxis());
+            }
             
             renderer.prepare();
             shader.start();
 
-            camera.update();
             shader.setUniformMat4("uView", false, camera.getView());
             shader.setUniformMat4("uProjection", false, camera.getPerspective());
-
-            shader.setUniformVec3("light.position", lightSource.getPosition());
             
             //These are essentially intensity factors
             Vec3 lightColour = new Vec3(1f);
-            Vec3 ambient = mul_(lightColour, 0.2f);
-            shader.setUniformVec3("light.ambient", ambient);
+            Vec3 ambient = mul_(lightColour, 0.1f);
+            shader.setUniformVec3_("globalLights[0].ambient", ambient);
             Vec3 diffuse = mul_(lightColour, 0.5f);
-            shader.setUniformVec3("light.diffuse", diffuse);
+            shader.setUniformVec3_("globalLights[0].diffuse", diffuse);
             Vec3 specular = mul_(lightColour, 1f);
-            shader.setUniformVec3("light.specular", specular);
+            shader.setUniformVec3_("globalLights[0].specular", specular);
 
-            shader.setUniformFloat("light.constant", 1f);
-            shader.setUniformFloat("light.linear", 0.01f);
-            shader.setUniformFloat("light.quadratic", 0.005f);
+            shader.setUniformFloat_("globalLights[0].constant", 1f);
+            shader.setUniformFloat_("globalLights[0].linear", 0.01f);
+            shader.setUniformFloat_("globalLights[0].quadratic", 0.005f);
+            
+            for (int i = 0; i < lightSources.length; i++) {
+                shader.setUniformVec3_("lights[" + i + "].position", lightSources[i].getPosition());
+                
+                shader.setUniformVec3_("lights[" + i + "].ambient", ambient);
+                shader.setUniformVec3_("lights[" + i + "].diffuse", diffuse);
+                shader.setUniformVec3_("lights[" + i + "].specular", specular);
+    
+                shader.setUniformFloat_("lights[" + i + "].constant", 1f);
+                shader.setUniformFloat_("lights[" + i + "].linear", 0.01f);
+                shader.setUniformFloat_("lights[" + i + "].quadratic", 0.005f);
+            }
             
             //shader.setUniformVec3("flashlight.position", camPosition);
             //shader.setUniformVec3("flashlight.direction", camFront);
@@ -308,7 +328,8 @@ public class DemCubez {
             //shader.setUniformFloat("flashlight.linear", 0.09f);
             //shader.setUniformFloat("flashlight.quadratic", 0.032f);
             
-            shader.setUniformVec3("uViewPosition", camera.getPosition());
+//            shader.setUniformVec3("uViewPosition", camera.getPosition());
+            shader.setUniformVec3("uViewDirection", camera.getDirection());
             shader.setUniformFloat("uTime", (float) pacer.getTime());
             
             //Bind material struct to samplers and assign values
@@ -321,39 +342,29 @@ public class DemCubez {
                 shader.setUniformMat4("uModel", false, model.getTransform());
                 shader.setUniformMat3("uNormal", false, model.getTransform()
                         .inverse_().transpose().toMat3_());
-                renderer.render(model);
+                //renderer.render(model);
             }
-    
-            //System.out.println("main: " + batch);
-            //button.render(batch);
+            
+            backpackShader.setUniformMat4("uView", false, camera.getView());
+            backpackShader.setUniformMat4("uProjection", false, camera.getPerspective());
+            shader.setUniformMat4("uModel", false, new Mat4(1f));
+            shader.setUniformMat3("uNormal", false, new Mat4(1f).inverse().transpose().toMat3_());
+            renderer.render(backpack, shader);
             
             lightShader.start();
             lightShader.setUniformMat4("uCombined", false, camera.getCombined());
-            lightShader.setUniformMat4("uModel", false, lightSource.getTransform());
-            
-            lightShader.setUniformVec3("light.ambient", ambient);
-            lightShader.setUniformVec3("light.diffuse", diffuse);
-            lightShader.setUniformVec3("light.specular", specular);
-
-            renderer.render(lightSource);
-
-            shader.start();
-
-            /*Mat4 view = new Mat4().identity();
-            shader.setUniformMat4("uView", false, view);
-
-            Mat4 clip = new Mat4().identity();
-            shader.setUniformMat4("uProjection", false, clip);
-
-            shader.setUniformMat4("uModel", false, new Mat4());
-             */
+            for (int i = 0; i < lightSources.length; i++) {
+                lightShader.setUniformMat4("uModel", false, lightSources[i].getTransform());
     
-            //button.draw(batch);
+                lightShader.setUniformVec3("light.ambient", ambient);
+                lightShader.setUniformVec3("light.diffuse", diffuse);
+                lightShader.setUniformVec3("light.specular", specular);
+    
+                renderer.render(lightSources[i]);
+            }
             
             window.update(pacer.getDeltaTimeSeconds());
             
-            shader.stop();
-
             if (pacer.getFramesElapsed() > TARGET_FPS) {
                 System.out.printf("%.3f\n", pacer.getAverageFPS());
                 pacer.resetFrameCounter();
@@ -366,9 +377,40 @@ public class DemCubez {
         factory.disposeLoader();
     }
     
+    private void updatePlayerCamera() {
+        Vec3 deltaPosition = new Vec3();
+    
+        float camSpeed = !ctrlPressed ? 2f : 4f;
+        if (wPressed) add(deltaPosition, new Vec3(0f, 0f, 1f));
+        if (sPressed) add(deltaPosition, new Vec3(0f, 0f, -1f));
+        if (aPressed) add(deltaPosition, new Vec3(-1f, 0f, 0f));
+        if (dPressed) add(deltaPosition, new Vec3(1f, 0f, 0f));
+        if (spacePressed) add(deltaPosition, new Vec3(0f, -1f, 0f));
+        if (shiftPressed) add(deltaPosition, new Vec3(0f, 1f, 0f));
+    
+        if (deltaPosition.length() > 0f) deltaPosition.normalize();
+    
+        float delta = (float) pacer.getDeltaTimeSeconds();
+        deltaPosition = mul_(mul_(deltaPosition, camSpeed), delta);
+        if (!escPressed) camera.translate(deltaPosition);
+    
+        float camRollSpeed = 1f, camRoll = 0;
+        if (qPressed) camRoll -= camRollSpeed;
+        if (ePressed) camRoll += camRollSpeed;
+    
+        dRoll = camRoll % 360;
+        //up.set(new Mat3().rotateZ(Math.toRadians(roll)).mul(new Vec3(0f, 1f, 0f)));
+    
+        camera.setZoom((float) zoom);
+    }
+    
     private void terminate() {
-        GL33C.glFlush();
+        glFlush();
         glfwTerminate();
+    }
+    
+    private static Vec3 add_(Vec3 a, Vec3 b) {
+        return new Vec3(a.x + b.x, a.y + b.y, a.z + b.z);
     }
     
     private static Vec3 add(Vec3 a, Vec3 b) {

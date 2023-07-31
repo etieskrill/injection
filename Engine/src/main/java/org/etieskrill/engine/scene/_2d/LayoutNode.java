@@ -76,8 +76,8 @@ public abstract class LayoutNode extends Node implements Layoutable {
         return size;
     }
 
-    protected void setSize(Vec2f size) {
-        this.size.set(size);
+    protected Vec2f setSize(Vec2f size) {
+        return this.size.set(size);
     }
 
     protected float getRotation() {

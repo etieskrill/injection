@@ -38,29 +38,21 @@ public class ShaderFactory {
             addUniform("uView");
             addUniform("uProjection");
             
-            addUniform("uViewPosition");
+            //addUniform("uViewPosition");
+            addUniform("uViewDirection");
             addUniform("uTime");
-            
-            addUniform("light.position");
-            addUniform("light.ambient");
-            addUniform("light.diffuse");
-            addUniform("light.specular");
-            
-            addUniform("light.constant");
-            addUniform("light.linear");
-            addUniform("light.quadratic");
     
-            addUniform("flashlight.position");
-            addUniform("flashlight.direction");
-            addUniform("flashlight.cutoff");
-            
-            addUniform("flashlight.ambient");
-            addUniform("flashlight.diffuse");
-            addUniform("flashlight.specular");
-            
-            addUniform("flashlight.constant");
-            addUniform("flashlight.linear");
-            addUniform("flashlight.quadratic");
+//            addUniform("flashlight.position");
+//            addUniform("flashlight.direction");
+//            addUniform("flashlight.cutoff");
+//
+//            addUniform("flashlight.ambient");
+//            addUniform("flashlight.diffuse");
+//            addUniform("flashlight.specular");
+//
+//            addUniform("flashlight.constant");
+//            addUniform("flashlight.linear");
+//            addUniform("flashlight.quadratic");
             
             addUniform("material.diffuse");
             addUniform("material.specular");
@@ -114,7 +106,7 @@ public class ShaderFactory {
             addUniform("uCombined");
             addUniform("diffuseMap");
             addUniform("uColour");
-            addUniform("uTime");
+            //addUniform("uTime");
         }
     }
 

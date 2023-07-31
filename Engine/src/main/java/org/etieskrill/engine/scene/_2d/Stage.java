@@ -1,7 +1,7 @@
 package org.etieskrill.engine.scene._2d;
 
 import org.etieskrill.engine.graphics.Camera;
-import org.etieskrill.engine.graphics.gl.Batch;
+import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.math.Vec2f;
 
 public class Stage {
@@ -23,13 +23,14 @@ public class Stage {
     public void update(double delta) {
         //TODO viewport based stuff
         root.position.set(0f, 0f);
-        root.size.set(size);
+        //root.size.set(size);
         root.getLayout().setMinSize(size).setPrefSize(size);
         root.rotation = 0f;
         
         //camera.setScaleX(0.5f);
         //camera.setScaleX(0.5f);
     
+        root.computeSize(size, size);
         root.layout();
     }
     

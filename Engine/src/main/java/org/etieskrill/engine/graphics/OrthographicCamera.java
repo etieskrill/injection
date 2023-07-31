@@ -33,9 +33,6 @@ public class OrthographicCamera extends Camera {
     @Override
     public Camera setPosition(Vec3 position) {
         this.position.set(position);
-        //System.out.println(position);
-        //this.position.set(new Vec3(550f, 50f, 0f));
-        //this.position.set(new Vec3(0f));
         updateDimensions();
         if (autoUpdate) update();
         return this;

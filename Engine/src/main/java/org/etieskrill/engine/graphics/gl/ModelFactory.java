@@ -12,7 +12,7 @@ import org.lwjgl.opengl.GL33C;
 
 public class ModelFactory {
 
-    private final Loader loader = new Loader();
+    private final Loader loader = Loader.get();
 
     public RawModel rectangle(float x, float y, float width, float height) {
         if (width < 0) {
@@ -319,7 +319,7 @@ public class ModelFactory {
         float[] colours = new float[(int) (vertices.length / 0.75f)];
         Arrays.fill(colours, 1f);
 
-        return loader.loadToVAO(vertices, normals, colours, textures, null, GL33C.GL_TRIANGLES);
+        return loader.loadToVAO(vertices, normals, textures, null, GL33C.GL_TRIANGLES);
     }
 
     //TODO probs fibonacci or subdivision, test with phong, gouraud and flat shading

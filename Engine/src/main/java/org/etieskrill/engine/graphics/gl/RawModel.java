@@ -8,13 +8,11 @@ public class RawModel {
     public static final int
             MODEL_POSITION_COMPONENTS = 3,
             MODEL_NORMAL_COMPONENTS = 3,
-            MODEL_COLOUR_COMPONENTS = 4,
             MODEL_TEXTURE_COMPONENTS = 2;
     
     public enum ModelComponents {
         MODEL_POSITION_COMPONENTS(3),
         MODEL_NORMAL_COMPONENTS(3),
-        MODEL_COLOUR_COMPONENTS(4),
         MODEL_TEXTURE_COMPONENTS(2);
     
         private final int components;
@@ -90,10 +88,15 @@ public class RawModel {
     public float getRotation() {
         return rotation;
     }
-
+    
+    public Vec3 getRotationAxis() {
+        return rotationAxis;
+    }
+    
     public RawModel setRotation(float rotation, Vec3 rotationAxis) {
         this.rotation = rotation;
-        this.rotationAxis.set(rotationAxis);
+        //thanks java glm documentation for specifying so clearly that this vector needs to be normalised
+        this.rotationAxis.set(rotationAxis).normalize();
         updateTransform();
         return this;
     }

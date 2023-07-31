@@ -129,6 +129,13 @@ public abstract class Camera {
         return position;
     }
     
+    public Vec3 getDirection() {
+        return new Vec3(
+                Math.sin(Math.toRadians(pitch)) * Math.cos(Math.toRadians(yaw)),
+                Math.sin(Math.toRadians(pitch)) * Math.sin(Math.toRadians(yaw)),
+                Math.cos(Math.toRadians(pitch)));
+    }
+    
     @Deprecated
     public Mat4 getView() {
         return view;

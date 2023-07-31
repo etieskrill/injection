@@ -75,9 +75,19 @@ public abstract class ShaderProgram {
     public void setUniformFloat(CharSequence name, float val) {
         glUniform1f(getUniformLocation(name), val);
     }
+    
+    @Deprecated
+    public void setUniformFloat_(CharSequence name, float val) {
+        glUniform1f(glGetUniformLocation(programID, name), val);
+    }
 
     public void setUniformVec3(CharSequence name, Vec3 vec) {
         glUniform3fv(getUniformLocation(name), vec.toDfb_());
+    }
+    
+    @Deprecated
+    public void setUniformVec3_(CharSequence name, Vec3 vec) {
+        glUniform3fv(glGetUniformLocation(programID, name), vec.toDfb_());
     }
 
     public void setUniformVec4(CharSequence name, Vec4 vec) {
@@ -131,7 +141,8 @@ public abstract class ShaderProgram {
         Integer location = uniforms.get(name);
         if (location == null) {
             CharSequence message = !unfoundUniforms.contains(name) ? "registered" : "found or is never used";
-            System.err.printf("Uniform of name \"%s\" was not %s in the shader\n", name, message);
+            System.err.printf("[%s] Uniform of name \"%s\" was not %s in the shader\n",
+                    getClass().getSimpleName(), name, message);
             return -1;
         }
 

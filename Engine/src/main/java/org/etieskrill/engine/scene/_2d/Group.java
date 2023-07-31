@@ -1,7 +1,6 @@
 package org.etieskrill.engine.scene._2d;
 
-import org.etieskrill.engine.graphics.gl.Batch;
-import org.etieskrill.engine.math.Vec2f;
+import org.etieskrill.engine.graphics.Batch;
 
 import java.util.ArrayList;
 import java.util.List;

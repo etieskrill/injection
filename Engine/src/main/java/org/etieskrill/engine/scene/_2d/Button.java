@@ -1,7 +1,7 @@
 package org.etieskrill.engine.scene._2d;
 
 import glm.vec._3.Vec3;
-import org.etieskrill.engine.graphics.gl.Batch;
+import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.gl.RawModelList;
 import org.etieskrill.engine.math.Vec2f;
 
@@ -42,14 +42,13 @@ public class Button extends Group {
     //}
     
     @Override
-    public Vec2f computeSize() {
-        setSize(getLayout().getPrefSize());
-        return size;
+    public Vec2f computeSize(Vec2f minSize, Vec2f prefSize) {
+        return setSize(getLayout().getPrefSize());
     }
     
     @Override
     public void layout() {
-        computeSize();
+        //computeSize();
         shouldLayout = false;
     }
 

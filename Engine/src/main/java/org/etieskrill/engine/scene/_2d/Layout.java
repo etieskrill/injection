@@ -64,7 +64,7 @@ public class Layout {
         float sizeY = 0f;
         if (border.getY() - minSize.getY() < 0f || prefSize.getY() - minSize.getY() < 0f)
             sizeY = minSize.getY();
-        else if (border.getX() - prefSize.getY() < 0f)
+        else if (border.getY() - prefSize.getY() < 0f)
             sizeY = border.getY();
         else
             sizeY = prefSize.getY();
@@ -134,6 +134,11 @@ public class Layout {
     public Layout marginRight(float marginRight) {
         this.marginRight = marginRight;
         return this;
+    }
+    
+    public boolean caresAboutSize() {
+        return minSize.getX() >= 0f || prefSize.getX() >= 0f
+                || minSize.getY() >= 0f || prefSize.getY() >= 0f;
     }
 
 }

@@ -1,5 +1,7 @@
 package org.etieskrill.engine.math;
 
+import java.util.List;
+
 public class Vec2f {
     
     private float x;
@@ -80,6 +82,10 @@ public class Vec2f {
         x = 0f;
         y = 0f;
         return this;
+    }
+    
+    public List<Float> toList() {
+        return List.of(x, y);
     }
     
     @Override

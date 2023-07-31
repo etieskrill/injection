@@ -1,12 +1,12 @@
 package org.etieskrill.engine.graphics.gl;
 
+import org.etieskrill.engine.graphics.assimp.Material;
+import org.etieskrill.engine.graphics.assimp.Mesh;
+import org.etieskrill.engine.graphics.assimp.Vertex;
+import org.etieskrill.engine.graphics.gl.Texture.TextureType;
 import org.etieskrill.engine.util.FloatArrayMerger;
-import org.lwjgl.opengl.GL33C;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.etieskrill.engine.graphics.gl.RawModel.*;
 import static org.lwjgl.opengl.GL33C.*;
@@ -15,32 +15,75 @@ public class Loader {
 
     public static final int GL_FLOAT_BYTE_SIZE = Float.BYTES;
 
+    private static Loader loader;
+    
     private final List<Integer> vaos = new ArrayList<>();
     private final List<Integer> vbos = new ArrayList<>();
     private final List<Integer> ebos = new ArrayList<>();
     
     private final Map<String, Texture> textures = new HashMap<>();
     
-    public RawModel loadToVAO(float[] vertices, float[] colours, float[] textures, short[] indices, int drawMode) {
+    public static Loader get() {
+        if (loader == null)
+            loader = new Loader();
+        return loader;
+    }
+    
+    private Loader() {}
+
+    public RawModel loadToVAO(float[] vertices, float[] normals, float[] textures, short[] indices, int drawMode) {
         boolean hasIndexBuffer = indices != null;
 
         int vao = createVAO();
-        storeInAttributeList(vertices, new float[vertices.length * MODEL_NORMAL_COMPONENTS / MODEL_POSITION_COMPONENTS], colours, textures);
-        if (hasIndexBuffer) bindIndicesBuffer(indices);
+        storeInAttributeList(vertices, normals, textures);
+        if (hasIndexBuffer) prepareIndexBuffer(indices);
         unbindVAO();
 
         return new RawModel(vao, hasIndexBuffer ? indices.length : vertices.length, drawMode, hasIndexBuffer);
     }
-
-    public RawModel loadToVAO(float[] vertices, float[] normals, float[] colours, float[] textures, short[] indices, int drawMode) {
-        boolean hasIndexBuffer = indices != null;
-
+    
+    public Mesh loadToVAO(Vector<Vertex> vertices, Vector<Short> indices, Material material) {
         int vao = createVAO();
-        storeInAttributeList(vertices, normals, colours, textures);
-        if (hasIndexBuffer) bindIndicesBuffer(indices);
+    
+        List<Float> _data = vertices.stream()
+                .map(Vertex::toList)
+                .flatMap(List::stream)
+                .toList();
+        float[] data = new float[_data.size()];
+        for (int i = 0; i < _data.size(); i++) data[i] = _data.get(i);
+        int vbo = prepareVBO(data);
+        
+        short[] _indices = new short[indices.size()];
+        for (int i = 0; i < indices.size(); i++) _indices[i] = indices.get(i);
+        int ebo = prepareIndexBuffer(_indices);
+        
         unbindVAO();
-
-        return new RawModel(vao, hasIndexBuffer ? indices.length : vertices.length, drawMode, hasIndexBuffer);
+        return new Mesh(vertices, indices, material, vao, vbo, ebo);
+    }
+    
+    private int prepareVBO(float[] data) {
+        int vbo = glGenBuffers();
+        vbos.add(vbo);
+    
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, data, GL_STATIC_READ);
+    
+        int totalStride = (Vertex.COMPONENTS) * GL_FLOAT_BYTE_SIZE;
+    
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, Vertex.POSITION_COMPONENTS, GL_FLOAT, false,
+                totalStride, 0);
+    
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, Vertex.NORMAL_COMPONENTS, GL_FLOAT, true,
+                totalStride, Vertex.POSITION_COMPONENTS * GL_FLOAT_BYTE_SIZE);
+    
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, Vertex.TEXTURE_COMPONENTS, GL_FLOAT, false,
+                totalStride, (Vertex.POSITION_COMPONENTS + MODEL_NORMAL_COMPONENTS) * GL_FLOAT_BYTE_SIZE);
+    
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        return vbo;
     }
     
     private int createVAO() {
@@ -56,26 +99,22 @@ public class Loader {
         glBindVertexArray(0);
     }
     
-    private int storeInAttributeList(float[] vertices, float[] normals, float[] colours, float[] textures) {
+    private int storeInAttributeList(float[] vertices, float[] normals, float[] textures) {
         int vbo = glGenBuffers();
         vbos.add(vbo);
 
         int vertexLength = vertices.length / MODEL_POSITION_COMPONENTS;
         if (vertexLength != normals.length / MODEL_NORMAL_COMPONENTS)
             throw new IllegalArgumentException("Number of vertex positions does not match number of vertex normals");
-        else if (vertexLength != colours.length / MODEL_COLOUR_COMPONENTS)
-            throw new IllegalArgumentException("Number of vertex positions does not match number of vertex colours");
         else if (vertexLength != textures.length / MODEL_TEXTURE_COMPONENTS)
             throw new IllegalArgumentException("Number of vertex positions does not match number of vertex textures");
 
         float[] data = FloatArrayMerger.merge(vertices, normals, MODEL_POSITION_COMPONENTS, MODEL_NORMAL_COMPONENTS);
-        data = FloatArrayMerger.merge(data, colours, MODEL_POSITION_COMPONENTS + MODEL_NORMAL_COMPONENTS, MODEL_COLOUR_COMPONENTS);
-        data = FloatArrayMerger.merge(data, textures, MODEL_POSITION_COMPONENTS + MODEL_NORMAL_COMPONENTS + MODEL_COLOUR_COMPONENTS,
-                MODEL_TEXTURE_COMPONENTS);
+        data = FloatArrayMerger.merge(data, textures, MODEL_POSITION_COMPONENTS + MODEL_NORMAL_COMPONENTS, MODEL_TEXTURE_COMPONENTS);
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
         glBufferData(GL_ARRAY_BUFFER, data, GL_DYNAMIC_DRAW);
 
-        int totalStride = (MODEL_POSITION_COMPONENTS + MODEL_NORMAL_COMPONENTS + MODEL_COLOUR_COMPONENTS + MODEL_TEXTURE_COMPONENTS) * GL_FLOAT_BYTE_SIZE;
+        int totalStride = (MODEL_POSITION_COMPONENTS + MODEL_NORMAL_COMPONENTS + MODEL_TEXTURE_COMPONENTS) * GL_FLOAT_BYTE_SIZE;
         
         glVertexAttribPointer(0, MODEL_POSITION_COMPONENTS, GL_FLOAT, false,
                 totalStride, 0);
@@ -85,19 +124,15 @@ public class Loader {
                 totalStride, MODEL_POSITION_COMPONENTS * GL_FLOAT_BYTE_SIZE);
         glEnableVertexAttribArray(1);
 
-        glVertexAttribPointer(2, MODEL_COLOUR_COMPONENTS, GL_FLOAT, false,
+        glVertexAttribPointer(2, MODEL_TEXTURE_COMPONENTS, GL_FLOAT, false,
                 totalStride, (MODEL_POSITION_COMPONENTS + MODEL_NORMAL_COMPONENTS) * GL_FLOAT_BYTE_SIZE);
         glEnableVertexAttribArray(2);
-
-        glVertexAttribPointer(3, MODEL_TEXTURE_COMPONENTS, GL_FLOAT, false,
-                totalStride, (MODEL_POSITION_COMPONENTS + MODEL_NORMAL_COMPONENTS + MODEL_COLOUR_COMPONENTS) * GL_FLOAT_BYTE_SIZE);
-        glEnableVertexAttribArray(3);
 
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         return vbo;
     }
     
-    private int bindIndicesBuffer(short[] indices) {
+    private int prepareIndexBuffer(short[] indices) {
         int ebo = glGenBuffers();
         ebos.add(ebo);
 
@@ -107,20 +142,31 @@ public class Loader {
         return ebo;
     }
     
-    public Texture loadTexture(String name, String file) {
+    public Texture loadTexture(String file, String name) {
+        return loadTexture(file, name, TextureType.UNKNOWN);
+    }
+    
+    public Texture loadTexture(String file, String name, TextureType type) {
+        if (file == null) {
+            System.err.printf("[%s] Texture file name must not be null.\n", getClass().getSimpleName());
+            return null;
+        }
+        if (name == null || name.length() == 0) {
+            System.err.printf("[%s] Invalid texture name: \"%s\"\n",
+                    getClass().getSimpleName(), name != null ? name : "null");
+            return null;
+        }
+        
         if (textures.containsKey(name)) {
-            System.out.printf("[%s] Texture was already loaded.\n", getClass().getSimpleName());
+//            System.out.printf("[%s] %s texture for name \"%s\" was already loaded.\n",
+//                    getClass().getSimpleName(), type.name(), name);
+            System.out.printf("[%s] Texture \"%s\" was already loaded.\n", getClass().getSimpleName(), name);
             return textures.get(name);
         }
         
-        Texture texture = new Texture(file);
+        Texture texture = Texture.ofFile(file, type);
         textures.put(name, texture);
         return texture;
-    }
-    
-    public Texture loadTexture(String file) {
-        String[] path = file.split("/");
-        return loadTexture(path[path.length - 1], file);
     }
     
     public Texture getTexture(String name) {

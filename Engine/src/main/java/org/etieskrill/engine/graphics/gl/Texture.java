@@ -2,32 +2,63 @@ package org.etieskrill.engine.graphics.gl;
 
 import org.etieskrill.engine.Disposable;
 import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.GL13C;
-import org.lwjgl.opengl.GL33C;
 
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.MissingResourceException;
 
+import static org.lwjgl.opengl.GL33C.*;
 import static org.lwjgl.stb.STBImage.*;
 
+/**
+ * As this class makes use of the stb_image library, it can decode from all the image formats specified in the
+ * official documentation: <a href="https://github.com/nothings/stb/blob/master/stb_image.h">stb_image</a>
+ */
 public class Texture implements Disposable {
+    
+    private static final String directory = "Engine/src/main/resources/textures/";
 
     private final int textureID;
     private final int pixelWidth, pixelHeight, colourChannels;
+    private final TextureType type;
+    
+    public enum TextureType {
+        UNKNOWN,
+        DIFFUSE,
+        SPECULAR,
+        EMISSIVE
+    }
     
     /**
-     * As this class makes use of the stb_image library, it can decode to all the image formats specified in the
-     * official documentation: <a href="https://github.com/nothings/stb/blob/master/stb_image.h">stb_image</a>
+     * Reads image attributes from the specified file and generates a GL texture object.
      *
      * @param file name of the texture file relative to the resources/textures folder
+     * @param type the type of texture, if any
      */
-    public Texture(String file) {
-        file = "Engine/src/main/resources/textures/" + file;
+    public static Texture ofFile(String file, TextureType type) {
+        return new Texture(file, type);
+    }
+    
+    /**
+     * Reads image attributes from the specified file and generates a GL texture object.
+     * @param file name of the texture file relative to the resources/textures folder
+     */
+    public static Texture ofFile(String file) {
+        return ofFile(file, TextureType.UNKNOWN);
+    }
+    
+    private Texture(String file, TextureType type) {
+        if (type == null) {
+            type = TextureType.UNKNOWN;
+            System.out.printf("[%s] No file type specified for file \"%s\"\n", getClass().getSimpleName(), file);
+        }
+        
+        this.type = type;
+        
+        file = directory + file;
         
         textureID = generateGLTexture();
-        
-        GL33C.glBindTexture(GL33C.GL_TEXTURE_2D, textureID);
+        glBindTexture(GL_TEXTURE_2D, textureID);
 
         IntBuffer bufferWidth = BufferUtils.createIntBuffer(1),
                 bufferHeight = BufferUtils.createIntBuffer(1),
@@ -44,36 +75,40 @@ public class Texture implements Disposable {
         }
         
         int format = switch (colourChannels) {
-            case 3 -> GL33C.GL_RGB;
-            case 4 -> GL33C.GL_RGBA;
+            case 3 -> GL_RGB;
+            case 4 -> GL_RGBA;
             default -> throw new IllegalStateException("Unexpected colour format: " + colourChannels + " channels");
         };
         
-        GL33C.glTexImage2D(GL33C.GL_TEXTURE_2D, 0, GL33C.GL_RGB, pixelWidth, pixelHeight,
-                0, format, GL33C.GL_UNSIGNED_BYTE, textureData);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, pixelWidth, pixelHeight,
+                0, format, GL_UNSIGNED_BYTE, textureData);
 
         stbi_image_free(textureData);
 
-        GL33C.glGenerateMipmap(GL33C.GL_TEXTURE_2D);
+        glGenerateMipmap(GL_TEXTURE_2D);
     }
 
     private int generateGLTexture() {
         IntBuffer textures = BufferUtils.createIntBuffer(1);
-        GL33C.glGenTextures(textures);
+        glGenTextures(textures);
         if (!textures.hasRemaining())
             throw new IllegalStateException("OpenGL could not generate any textures");
         return textures.get();
     }
     
     public void bind(int unit) {
-        GL33C.glActiveTexture(GL33C.GL_TEXTURE0 + unit);
-        GL33C.glBindTexture(GL33C.GL_TEXTURE_2D, textureID);
+        glActiveTexture(GL_TEXTURE0 + unit);
+        glBindTexture(GL_TEXTURE_2D, textureID);
     }
 
     public int getTextureID() {
         return textureID;
     }
-
+    
+    public TextureType getType() {
+        return type;
+    }
+    
     public int getPixelWidth() {
         return pixelWidth;
     }
@@ -88,7 +123,7 @@ public class Texture implements Disposable {
 
     @Override
     public void dispose() {
-        GL33C.glDeleteTextures(textureID);
+        glDeleteTextures(textureID);
     }
     
     @Override

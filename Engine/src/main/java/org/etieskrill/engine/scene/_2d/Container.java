@@ -1,6 +1,6 @@
 package org.etieskrill.engine.scene._2d;
 
-import org.etieskrill.engine.graphics.gl.Batch;
+import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.math.Vec2f;
 
 public class Container extends LayoutNode {
@@ -26,18 +26,19 @@ public class Container extends LayoutNode {
     //}
     
     @Override
-    public Vec2f computeSize() {
-        child.computeSize();
-        return child.getSize();
+    public Vec2f computeSize(Vec2f minSize, Vec2f prefSize) {
+        if (parent == null) return setSize(getLayout().getPrefSize());
+        if (!getLayout().caresAboutSize()) return new Vec2f();
+        
+        return setSize(parent != null ? getLayout().getSize(parent.getSize()) : getLayout().getPrefSize());
     }
     
     @Override
     public void layout() {
         if (!shouldLayout || child == null) return;
         
-        child.computeSize();
-        Vec2f computedSize = new Vec2f(child.size), actualSize = new Vec2f(computedSize);
-        
+        //child.computeSize();
+        Vec2f computedSize = new Vec2f(child.getSize()), actualSize = new Vec2f(computedSize);
         Vec2f prefSize = getLayout().getPrefSize();
 
         double actualX = Math.min(child.getLayout().getPrefSize().getX(), Math.max(child.getLayout().getMinSize().getX(), computedSize.getX()));
@@ -45,7 +46,7 @@ public class Container extends LayoutNode {
         if (computedSize.getX() > prefSize.getX()) actualSize.setX(Math.max(computedSize.getX(), getLayout().getMinSize().getX()));
         if (computedSize.getY() > prefSize.getY()) actualSize.setY(Math.max(computedSize.getY(), getLayout().getMinSize().getY()));
     
-        System.out.println("here " + actualX + " " + actualY + " " + actualSize);
+        //System.out.println(computedSize + " " + actualX + " " + actualY + " " + actualSize);
 
         Vec2f newPosition = switch (getLayout().getAlignment()) {
             case TOP_LEFT -> new Vec2f(0f, size.getY() - actualSize.getY());
@@ -59,7 +60,7 @@ public class Container extends LayoutNode {
             case BOTTOM_RIGHT -> new Vec2f(size.getX() - actualSize.getX(), 0f);
         };
     
-        child.setPosition(getPositionRelativeToRoot(new Vec2f(newPosition)));
+        child.setPosition(getPositionRelativeToRoot(newPosition));
         child.layout();
 
         shouldLayout = false;
