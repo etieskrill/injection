@@ -1,5 +1,6 @@
 package org.etieskrill.engine.graphics.gl;
 
+import glm.mat._4.Mat4;
 import org.etieskrill.engine.graphics.assimp.Material;
 import org.etieskrill.engine.graphics.assimp.Mesh;
 import org.etieskrill.engine.graphics.assimp.Vertex;
@@ -42,7 +43,7 @@ public class Loader {
         return new RawModel(vao, hasIndexBuffer ? indices.length : vertices.length, drawMode, hasIndexBuffer);
     }
     
-    public Mesh loadToVAO(Vector<Vertex> vertices, Vector<Short> indices, Material material) {
+    public Mesh loadToVAO(Vector<Vertex> vertices, Vector<Short> indices, Material material, Mat4 transform) {
         int vao = createVAO();
     
         List<Float> _data = vertices.stream()
@@ -58,7 +59,7 @@ public class Loader {
         int ebo = prepareIndexBuffer(_indices);
         
         unbindVAO();
-        return new Mesh(vertices, indices, material, vao, vbo, ebo);
+        return new Mesh(vertices, indices, material, vao, vbo, ebo, transform);
     }
     
     private int prepareVBO(float[] data) {
@@ -146,6 +147,14 @@ public class Loader {
         return loadTexture(file, name, TextureType.UNKNOWN);
     }
     
+    /**
+     * Loads the texture with the specified file name relative to the textures folder, or returns the loaded texture if
+     * it was already loaded, or {@code null} if an error occurred while loading or destructuring the image file.
+     * @param file just the file name without the path
+     * @param name internal identifier name
+     * @param type the texture type
+     * @return a loaded texture, or null
+     */
     public Texture loadTexture(String file, String name, TextureType type) {
         if (file == null) {
             System.err.printf("[%s] Texture file name must not be null.\n", getClass().getSimpleName());

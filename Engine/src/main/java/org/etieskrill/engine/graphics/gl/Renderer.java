@@ -59,8 +59,8 @@ public class Renderer {
             }
             
             glActiveTexture(GL_TEXTURE0 + i);
-            glBindTexture(GL_TEXTURE, texture.getTextureID());
-            shader.setUniformInt("material." + texture.getType().name().toLowerCase() + number, i);
+            glBindTexture(GL_TEXTURE_2D, texture.getTextureID());
+            shader.setUniformInt_("material." + texture.getType().name().toLowerCase() + number, i);
         }
     }
     

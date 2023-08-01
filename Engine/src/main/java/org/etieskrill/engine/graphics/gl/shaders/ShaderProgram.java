@@ -71,6 +71,10 @@ public abstract class ShaderProgram {
     public void setUniformInt(CharSequence name, int val) {
         glUniform1i(getUniformLocation(name), val);
     }
+    
+    public void setUniformInt_(CharSequence name, int val) {
+        glUniform1i(glGetUniformLocation(programID, name), val);
+    }
 
     public void setUniformFloat(CharSequence name, float val) {
         glUniform1f(getUniformLocation(name), val);

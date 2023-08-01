@@ -41,7 +41,7 @@ struct SpotLight {
 };
 
 struct Material {
-    sampler2D diffuse;
+    sampler2D diffuse0;
     sampler2D specular;
     float shininess;
     sampler2D emission;
@@ -52,10 +52,6 @@ out vec4 oColour;
 in vec3 tNormal;
 in vec2 tTextureCoords;
 in vec3 tFragPos;
-
-layout (binding = 0) uniform sampler2D diffuseMap;
-layout (binding = 1) uniform sampler2D specularMap;
-layout (binding = 2) uniform sampler2D emissionMap;
 
 uniform vec3 uViewPosition;
 uniform vec3 uViewDirection;
@@ -119,11 +115,11 @@ void main()
 
 vec3 calculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDirection)
 {
-    vec3 ambient = light.ambient * texture(material.diffuse, tTextureCoords).rgb;
+    vec3 ambient = light.ambient * texture(material.diffuse0, tTextureCoords).rgb;
 
     vec3 lightDirection = normalize(-light.direction);
     float diff = max(dot(normal, lightDirection), 0.0);
-    vec3 diffuse = light.diffuse * diff * texture(material.diffuse, tTextureCoords).rgb;
+    vec3 diffuse = light.diffuse * diff * texture(material.diffuse0, tTextureCoords).rgb;
 
     vec3 reflectionDirection = reflect(-lightDirection, normal);
     float spec = pow(max(dot(viewDirection, reflectionDirection), 0.0), material.shininess);
@@ -134,11 +130,11 @@ vec3 calculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDir
 
 vec3 calculatePointLight(PointLight light, vec3 normal, vec3 fragPosition, vec3 viewDirection)
 {
-    vec3 ambient = light.ambient * texture(material.diffuse, tTextureCoords).rgb;
+    vec3 ambient = light.ambient * texture(material.diffuse0, tTextureCoords).rgb;
 
     vec3 lightDirection = normalize(light.position - fragPosition);
     float diff = max(dot(normal, lightDirection), 0.0);
-    vec3 diffuse = light.diffuse * diff * texture(material.diffuse, tTextureCoords).rgb;
+    vec3 diffuse = light.diffuse * diff * texture(material.diffuse0, tTextureCoords).rgb;
 
     vec3 reflectionDirection = reflect(-lightDirection, normal);
     float spec = pow(max(dot(viewDirection, reflectionDirection), 0.0), material.shininess);

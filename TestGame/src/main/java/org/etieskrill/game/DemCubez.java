@@ -18,7 +18,6 @@ import org.etieskrill.engine.window.WindowBuilder;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GLUtil;
 
-import java.util.Arrays;
 import java.util.Random;
 
 import static org.lwjgl.glfw.GLFW.*;
@@ -186,7 +185,6 @@ public class DemCubez {
         loader.loadTexture("container2_emissive.jpg", "container_emissive", TextureType.EMISSIVE);
         
         Model[] models = new Model[cubePositions.length];
-        RawModel cubeModel = factory.box(new Vec3(0.5f, 0.5f, 0.5f));
         //TODO !!!!!!!! separate gl memory object from this object ffs
         for (int i = 0; i < cubePositions.length; i++) {
             models[i] = new Model(factory.box(new Vec3(0.5f, 0.5f, 0.5f)));
@@ -333,7 +331,7 @@ public class DemCubez {
             shader.setUniformFloat("uTime", (float) pacer.getTime());
             
             //Bind material struct to samplers and assign values
-            shader.setUniformInt("material.diffuse", 0); //TODO automating this would require a model- and shader-dependent object
+            //shader.setUniformInt("material.diffuse", 0); //TODO automating this would require a model- and shader-dependent object
             shader.setUniformInt("material.specular", 1);
             shader.setUniformInt("material.emission", 2);
             shader.setUniformFloat("material.shininess", 64);
@@ -347,7 +345,7 @@ public class DemCubez {
             
             backpackShader.setUniformMat4("uView", false, camera.getView());
             backpackShader.setUniformMat4("uProjection", false, camera.getPerspective());
-            shader.setUniformMat4("uModel", false, new Mat4(1f));
+            shader.setUniformMat4("uModel", false, new Mat4(1f).scale(-0.05f));
             shader.setUniformMat3("uNormal", false, new Mat4(1f).inverse().transpose().toMat3_());
             renderer.render(backpack, shader);
             

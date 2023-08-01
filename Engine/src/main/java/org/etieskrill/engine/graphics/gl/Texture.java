@@ -66,13 +66,13 @@ public class Texture implements Disposable {
 
         stbi_set_flip_vertically_on_load(true);
         ByteBuffer textureData = stbi_load(file, bufferWidth, bufferHeight, bufferColourChannels, 0);
-        pixelWidth = bufferWidth.get();
-        pixelHeight = bufferHeight.get();
-        colourChannels = bufferColourChannels.get();
-
         if (textureData == null || !textureData.hasRemaining()) {
             throw new MissingResourceException(stbi_failure_reason(), "Texture", file);
         }
+        
+        pixelWidth = bufferWidth.get();
+        pixelHeight = bufferHeight.get();
+        colourChannels = bufferColourChannels.get();
         
         int format = switch (colourChannels) {
             case 3 -> GL_RGB;
