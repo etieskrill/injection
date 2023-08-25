@@ -41,4 +41,8 @@ public class Mesh {
         return vao;
     }
     
+    public Mat4 getTransform() {
+        return transform;
+    }
+    
 }

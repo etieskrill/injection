@@ -8,6 +8,7 @@ out vec3 tNormal;
 out vec2 tTextureCoords;
 out vec3 tFragPos;
 
+uniform mat4 uMesh;
 uniform mat4 uModel;
 uniform mat3 uNormal;
 uniform mat4 uView;
@@ -15,7 +16,7 @@ uniform mat4 uProjection;
 
 void main() {
 
-    gl_Position = uProjection * uView * uModel * vec4(iPosition, 1.0);
+    gl_Position = uProjection * uView * uModel * uMesh * vec4(iPosition, 1.0);
     tNormal = normalize(uNormal * iNormal);
     tTextureCoords = iTextureCoords;
     tFragPos = vec3(uModel * vec4(iPosition, 1.0));

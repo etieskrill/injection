@@ -46,7 +46,12 @@ public abstract class ShaderProgram {
         this.unfoundUniforms = new ArrayList<>();
         getUniformLocations();
     }
-
+    
+    private void disposeShaders() {
+        glDeleteShader(vertID);
+        glDeleteShader(fragID);
+    }
+    
     protected abstract void getUniformLocations();
     
     public void start() {
@@ -56,7 +61,7 @@ public abstract class ShaderProgram {
     public void stop() {
         glUseProgram(0);
     }
-
+    
     protected void addUniform(CharSequence name) {
         int uniformLocation = glGetUniformLocation(programID, name);
         if (uniformLocation == -1) {
@@ -75,7 +80,7 @@ public abstract class ShaderProgram {
     public void setUniformInt_(CharSequence name, int val) {
         glUniform1i(glGetUniformLocation(programID, name), val);
     }
-
+    
     public void setUniformFloat(CharSequence name, float val) {
         glUniform1f(getUniformLocation(name), val);
     }
@@ -84,7 +89,7 @@ public abstract class ShaderProgram {
     public void setUniformFloat_(CharSequence name, float val) {
         glUniform1f(glGetUniformLocation(programID, name), val);
     }
-
+    
     public void setUniformVec3(CharSequence name, Vec3 vec) {
         glUniform3fv(getUniformLocation(name), vec.toDfb_());
     }
@@ -93,16 +98,24 @@ public abstract class ShaderProgram {
     public void setUniformVec3_(CharSequence name, Vec3 vec) {
         glUniform3fv(glGetUniformLocation(programID, name), vec.toDfb_());
     }
-
+    
     public void setUniformVec4(CharSequence name, Vec4 vec) {
         glUniform4fv(getUniformLocation(name), vec.toDfb_());
     }
-
-    public void setUniformMat3(CharSequence name, boolean transpose, Mat3 mat) {
+    
+    public void setUniformMat3(CharSequence name, Mat3 mat) {
+        setUniformMat3(name, mat, false);
+    }
+    
+    public void setUniformMat3(CharSequence name, Mat3 mat, boolean transpose) {
         glUniformMatrix3fv(getUniformLocation(name), transpose, mat.toFa_());
     }
-
-    public void setUniformMat4(CharSequence name, boolean transpose, Mat4 mat) {
+    
+    public void setUniformMat4(CharSequence name, Mat4 mat) {
+        setUniformMat4(name, mat, false);
+    }
+    
+    public void setUniformMat4(CharSequence name, Mat4 mat, boolean transpose) {
         glUniformMatrix4fv(getUniformLocation(name), transpose, mat.toFa_());
     }
     
@@ -125,28 +138,19 @@ public abstract class ShaderProgram {
         return shaderID;
     }
     
-    public void disposeShaders() {
-        glDeleteShader(vertID);
-        glDeleteShader(fragID);
-    }
-    
     public void dispose() {
         stop();
         glDetachShader(programID, vertID);
         glDetachShader(programID, fragID);
         glDeleteProgram(programID);
     }
-
-    public int getProgramID() {
-        return programID;
-    }
-
-    public int getUniformLocation(CharSequence name) {
+    
+    protected int getUniformLocation(CharSequence name) {
         Integer location = uniforms.get(name);
         if (location == null) {
             CharSequence message = !unfoundUniforms.contains(name) ? "registered" : "found or is never used";
-            System.err.printf("[%s] Uniform of name \"%s\" was not %s in the shader\n",
-                    getClass().getSimpleName(), name, message);
+            //System.err.printf("[%s] Uniform of name \"%s\" was not %s in the shader\n",
+            //        getClass().getSimpleName(), name, message);
             return -1;
         }
 

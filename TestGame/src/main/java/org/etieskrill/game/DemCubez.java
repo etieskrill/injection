@@ -18,6 +18,7 @@ import org.etieskrill.engine.window.WindowBuilder;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GLUtil;
 
+import java.util.Arrays;
 import java.util.Random;
 
 import static org.lwjgl.glfw.GLFW.*;
@@ -196,16 +197,17 @@ public class DemCubez {
                     .addTexture(loader.getTexture("container_specular"), 1)
                     .addTexture(loader.getTexture("container_emissive"), 2);
         }
-
-        RawModel[] lightSources = new RawModel[2];
+    
+        org.etieskrill.engine.graphics.assimp.Model[] lightSources = new org.etieskrill.engine.graphics.assimp.Model[2];
         for (int i = 0; i < lightSources.length; i++) {
-            lightSources[i] = factory
-                    .box(new Vec3(0.2f, 0.2f, 0.2f))
-                    .setPosition(new Vec3(0f, 0f, -5f));
+            org.etieskrill.engine.graphics.assimp.Model model = org.etieskrill.engine.graphics.assimp.Model.ofFile("cube.obj");
+            model.setScale(0.2f).setPosition(new Vec3(0f, 0f, -5f));
+            lightSources[i] = model;
         }
     
         org.etieskrill.engine.graphics.assimp.Model backpack =
-                new org.etieskrill.engine.graphics.assimp.Model("Survival_BackPack_2.fbx");
+                org.etieskrill.engine.graphics.assimp.Model.ofFile("Survival_BackPack_2.fbx");
+        backpack.setScale(new Vec3(0.01f)).setRotation((float) Math.toRadians(-90f), new Vec3(1f, 0f, 0f));
         
         Renderer renderer = new Renderer();
         ShaderProgram shader = ShaderFactory.getStandardShader();
@@ -286,8 +288,8 @@ public class DemCubez {
             renderer.prepare();
             shader.start();
 
-            shader.setUniformMat4("uView", false, camera.getView());
-            shader.setUniformMat4("uProjection", false, camera.getPerspective());
+            shader.setUniformMat4("uView", camera.getView());
+            shader.setUniformMat4("uProjection", camera.getPerspective());
             
             //These are essentially intensity factors
             Vec3 lightColour = new Vec3(1f);
@@ -337,28 +339,23 @@ public class DemCubez {
             shader.setUniformFloat("material.shininess", 64);
 
             for (Model model : models) {
-                shader.setUniformMat4("uModel", false, model.getTransform());
-                shader.setUniformMat3("uNormal", false, model.getTransform()
-                        .inverse_().transpose().toMat3_());
                 //renderer.render(model);
             }
             
-            backpackShader.setUniformMat4("uView", false, camera.getView());
-            backpackShader.setUniformMat4("uProjection", false, camera.getPerspective());
-            shader.setUniformMat4("uModel", false, new Mat4(1f).scale(-0.05f));
-            shader.setUniformMat3("uNormal", false, new Mat4(1f).inverse().transpose().toMat3_());
+            backpackShader.setUniformMat4("uView", camera.getView());
+            backpackShader.setUniformMat4("uProjection", camera.getPerspective());
             renderer.render(backpack, shader);
             
             lightShader.start();
-            lightShader.setUniformMat4("uCombined", false, camera.getCombined());
+            lightShader.setUniformMat4("uCombined", camera.getCombined());
             for (int i = 0; i < lightSources.length; i++) {
-                lightShader.setUniformMat4("uModel", false, lightSources[i].getTransform());
-    
                 lightShader.setUniformVec3("light.ambient", ambient);
                 lightShader.setUniformVec3("light.diffuse", diffuse);
                 lightShader.setUniformVec3("light.specular", specular);
     
-                renderer.render(lightSources[i]);
+                //renderer.render(lightSources[i]);
+                //System.err.println("rendering light source " + i);
+                renderer.render(lightSources[i], lightShader);
             }
             
             window.update(pacer.getDeltaTimeSeconds());

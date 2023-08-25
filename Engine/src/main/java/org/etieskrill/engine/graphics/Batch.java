@@ -28,8 +28,8 @@ public class Batch implements Disposable {
     
         //System.out.println(Arrays.toString(transform.toFa_()) + "\n" + Arrays.toString(combined.toFa_()));
 
-        shader.setUniformMat4("uModel", false, transform);
-        shader.setUniformMat4("uCombined", false, combined);
+        shader.setUniformMat4("uModel", transform);
+        shader.setUniformMat4("uCombined", combined);
     
         //System.out.println(Arrays.toString(transform.toFa_()) + "\n" + Arrays.toString(combined.toFa_()) + "\n\n");
         
@@ -41,8 +41,8 @@ public class Batch implements Disposable {
     public void render(RawModelList model) {
         shader.start();
 
-        shader.setUniformMat4("uModel", false, transform);
-        shader.setUniformMat4("uCombined", false, combined);
+        shader.setUniformMat4("uModel", transform);
+        shader.setUniformMat4("uCombined", combined);
 
         model.render(renderer);
 

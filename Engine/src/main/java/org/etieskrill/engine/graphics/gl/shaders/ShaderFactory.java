@@ -33,6 +33,7 @@ public class ShaderFactory {
             //addUniform("diffuseMap");
             //addUniform("specularMap");
             
+            addUniform("uMesh");
             addUniform("uModel");
             addUniform("uNormal");
             addUniform("uView");
@@ -84,6 +85,7 @@ public class ShaderFactory {
 
         @Override
         protected void getUniformLocations() {
+            addUniform("uMesh");
             addUniform("uModel");
             addUniform("uCombined");
             addUniform("light.ambient");
