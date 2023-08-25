@@ -59,7 +59,7 @@ public class Loader {
         int ebo = prepareIndexBuffer(_indices);
         
         unbindVAO();
-        return new Mesh(vertices, indices, material, vao, vbo, ebo, transform);
+        return new Mesh(material, vao, indices.size(), vbo, ebo, transform);
     }
     
     private int prepareVBO(float[] data) {

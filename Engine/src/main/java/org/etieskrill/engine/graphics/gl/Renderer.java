@@ -48,7 +48,7 @@ public class Renderer {
         glBindVertexArray(mesh.getVao());
         
         shader.start();
-        glDrawElements(GL_TRIANGLES, mesh.getIndices().size(), GL_UNSIGNED_SHORT, 0);
+        glDrawElements(GL_TRIANGLES, mesh.getNumIndices(), GL_UNSIGNED_SHORT, 0);
         shader.stop();
         
         glBindVertexArray(0);
