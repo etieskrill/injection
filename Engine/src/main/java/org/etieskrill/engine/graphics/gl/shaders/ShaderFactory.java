@@ -36,8 +36,7 @@ public class ShaderFactory {
             addUniform("uMesh");
             addUniform("uModel");
             addUniform("uNormal");
-            addUniform("uView");
-            addUniform("uProjection");
+            addUniform("uCombined");
             
             //addUniform("uViewPosition");
             addUniform("uViewDirection");

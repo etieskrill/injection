@@ -136,16 +136,6 @@ public abstract class Camera {
                 Math.cos(Math.toRadians(pitch)));
     }
     
-    @Deprecated
-    public Mat4 getView() {
-        return view;
-    }
-    
-    @Deprecated
-    public Mat4 getPerspective() {
-        return perspective;
-    }
-    
     public Mat4 getCombined() {
         return combined;
     }

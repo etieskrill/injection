@@ -287,9 +287,8 @@ public class DemCubez {
             
             renderer.prepare();
             shader.start();
-
-            shader.setUniformMat4("uView", camera.getView());
-            shader.setUniformMat4("uProjection", camera.getPerspective());
+            
+            shader.setUniformMat4("uCombined", camera.getCombined());
             
             //These are essentially intensity factors
             Vec3 lightColour = new Vec3(1f);
@@ -342,8 +341,7 @@ public class DemCubez {
                 //renderer.render(model);
             }
             
-            backpackShader.setUniformMat4("uView", camera.getView());
-            backpackShader.setUniformMat4("uProjection", camera.getPerspective());
+            backpackShader.setUniformMat4("uCombined", camera.getCombined());
             renderer.render(backpack, shader);
             
             lightShader.start();
