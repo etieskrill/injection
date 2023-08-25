@@ -127,7 +127,7 @@ public class Model {
     }
     
     private Material processMaterial(AIMaterial aiMaterial) {
-        Material material = new Material();
+        Material material = Material.getBlank();
     
         /* this is for ... debugging 3d model file structures, which should not be my problem in the first place
         for (int i = 0; i < 22; i++) {

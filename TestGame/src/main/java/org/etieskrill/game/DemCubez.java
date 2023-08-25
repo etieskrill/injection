@@ -5,7 +5,11 @@ import glm.vec._3.Vec3;
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.OrthographicCamera;
 import org.etieskrill.engine.graphics.PerspectiveCamera;
-import org.etieskrill.engine.graphics.gl.*;
+import org.etieskrill.engine.graphics.assimp.Material;
+import org.etieskrill.engine.graphics.assimp.Model;
+import org.etieskrill.engine.graphics.gl.Loader;
+import org.etieskrill.engine.graphics.gl.ModelFactory;
+import org.etieskrill.engine.graphics.gl.Renderer;
 import org.etieskrill.engine.graphics.gl.Texture.TextureType;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderFactory;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
@@ -16,9 +20,7 @@ import org.etieskrill.engine.time.SystemNanoTimePacer;
 import org.etieskrill.engine.window.Window;
 import org.etieskrill.engine.window.WindowBuilder;
 import org.lwjgl.opengl.GL;
-import org.lwjgl.opengl.GLUtil;
 
-import java.util.Arrays;
 import java.util.Random;
 
 import static org.lwjgl.glfw.GLFW.*;
@@ -184,29 +186,37 @@ public class DemCubez {
         loader.loadTexture("container2.png", "container", TextureType.DIFFUSE);
         loader.loadTexture("container2_specular.png", "container_specular", TextureType.SPECULAR);
         loader.loadTexture("container2_emissive.jpg", "container_emissive", TextureType.EMISSIVE);
+    
+        Material cubeMaterial = new Material.Builder()
+                .setTextures(
+                        loader.getTexture("container"),
+                        loader.getTexture("container_specular"),
+                        loader.getTexture("container_emissive"))
+                .setShininess(64f)
+                .build();
         
         Model[] models = new Model[cubePositions.length];
-        //TODO !!!!!!!! separate gl memory object from this object ffs
         for (int i = 0; i < cubePositions.length; i++) {
-            models[i] = new Model(factory.box(new Vec3(0.5f, 0.5f, 0.5f)));
-            models[i]
+            //models[i] = new Model(factory.box(new Vec3(0.5f, 0.5f, 0.5f)));
+            models[i] = Model.ofFile("cube.obj")
+                    .setScale(0.5f)
                     .setPosition(cubePositions[i])
                     .setRotation(new Random(69420).nextFloat(),
                             Vec3.linearRand_(new Vec3(-1f, -1f, -1f), new Vec3(1f, 1f, 1f)));
-            models[i].addTexture(loader.getTexture("container"), 0)
-                    .addTexture(loader.getTexture("container_specular"), 1)
-                    .addTexture(loader.getTexture("container_emissive"), 2);
+//            models[i].addTexture(loader.getTexture("container"), 0)
+//                    .addTexture(loader.getTexture("container_specular"), 1)
+//                    .addTexture(loader.getTexture("container_emissive"), 2);
         }
     
-        org.etieskrill.engine.graphics.assimp.Model[] lightSources = new org.etieskrill.engine.graphics.assimp.Model[2];
+        Model[] lightSources = new Model[2];
         for (int i = 0; i < lightSources.length; i++) {
-            org.etieskrill.engine.graphics.assimp.Model model = org.etieskrill.engine.graphics.assimp.Model.ofFile("cube.obj");
+            Model model = Model.ofFile("cube.obj");
             model.setScale(0.2f).setPosition(new Vec3(0f, 0f, -5f));
             lightSources[i] = model;
         }
     
-        org.etieskrill.engine.graphics.assimp.Model backpack =
-                org.etieskrill.engine.graphics.assimp.Model.ofFile("Survival_BackPack_2.fbx");
+        Model backpack =
+                Model.ofFile("Survival_BackPack_2.fbx");
         backpack.setScale(new Vec3(0.01f)).setRotation((float) Math.toRadians(-90f), new Vec3(1f, 0f, 0f));
         
         Renderer renderer = new Renderer();
@@ -330,19 +340,13 @@ public class DemCubez {
 //            shader.setUniformVec3("uViewPosition", camera.getPosition());
             shader.setUniformVec3("uViewDirection", camera.getDirection());
             shader.setUniformFloat("uTime", (float) pacer.getTime());
-            
-            //Bind material struct to samplers and assign values
-            //shader.setUniformInt("material.diffuse", 0); //TODO automating this would require a model- and shader-dependent object
-            shader.setUniformInt("material.specular", 1);
-            shader.setUniformInt("material.emission", 2);
-            shader.setUniformFloat("material.shininess", 64);
 
             for (Model model : models) {
-                //renderer.render(model);
+                renderer.render(model, shader);
             }
             
             backpackShader.setUniformMat4("uCombined", camera.getCombined());
-            renderer.render(backpack, shader);
+            //renderer.render(backpack, shader);
             
             lightShader.start();
             lightShader.setUniformMat4("uCombined", camera.getCombined());

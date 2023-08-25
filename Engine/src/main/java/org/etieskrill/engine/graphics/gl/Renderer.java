@@ -1,12 +1,9 @@
 package org.etieskrill.engine.graphics.gl;
 
 import glm.mat._4.Mat4;
-import glm.vec._3.Vec3;
-import glm.vec._4.Vec4;
 import org.etieskrill.engine.graphics.assimp.Mesh;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 
-import java.util.Arrays;
 import java.util.Vector;
 
 import static org.lwjgl.opengl.GL33C.*;
@@ -45,7 +42,7 @@ public class Renderer {
     }
     
     public void render(Mesh mesh, ShaderProgram shader) {
-        bindTextures(mesh, shader);
+        bindMaterial(mesh, shader);
         shader.setUniformMat4("uMesh", mesh.getTransform());
         
         glBindVertexArray(mesh.getVao());
@@ -57,7 +54,7 @@ public class Renderer {
         glBindVertexArray(0);
     }
     
-    private void bindTextures(Mesh mesh, ShaderProgram shader) {
+    private void bindMaterial(Mesh mesh, ShaderProgram shader) {
         int diffuse = 0, specular = 0, emissive = 0;
         Vector<Texture> textures = mesh.getMaterial().getTextures();
         
@@ -72,10 +69,11 @@ public class Renderer {
             }
             
             int validTextures = diffuse + specular + emissive;
-            glActiveTexture(GL_TEXTURE0 + validTextures);
-            glBindTexture(GL_TEXTURE_2D, texture.getTextureID());
-            shader.setUniformInt_("material." + texture.getType().name().toLowerCase() + number, i);
+            texture.bind(validTextures);
+            shader.setUniformInt_("material." + texture.getType().name().toLowerCase() + number, validTextures);
         }
+        
+        shader.setUniformFloat_("material.shininess", mesh.getMaterial().getShininess());
     }
     
     private String matToString(Mat4 mat) {

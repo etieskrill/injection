@@ -6,6 +6,8 @@ import org.etieskrill.engine.graphics.gl.*;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderFactory;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 
+//TODO the Renderer currently does almost everything from here, this should only have batching mechanisms (duh)
+@Deprecated
 public class Batch implements Disposable {
     
     private final Renderer renderer;

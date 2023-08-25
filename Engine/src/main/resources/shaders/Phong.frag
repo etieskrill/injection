@@ -42,9 +42,9 @@ struct SpotLight {
 
 struct Material {
     sampler2D diffuse0;
-    sampler2D specular;
+    sampler2D specular0;
     float shininess;
-    sampler2D emission;
+    sampler2D emission0;
 };
 
 out vec4 oColour;
@@ -102,8 +102,8 @@ void main()
     }
 
     vec3 emission;
-    if (length(texture(material.specular, tTextureCoords).rgb) == 0.0) {
-        emission = texture(material.emission, tTextureCoords + vec2(0.0, uTime * 0.25)).rgb;
+    if (length(texture(material.specular0, tTextureCoords).rgb) == 0.0) {
+        emission = texture(material.emission0, tTextureCoords + vec2(0.0, uTime * 0.25)).rgb;
         emission = emission.grb * 0.7;
     } else {
         emission = vec3(0.0);
@@ -123,7 +123,7 @@ vec3 calculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDir
 
     vec3 reflectionDirection = reflect(-lightDirection, normal);
     float spec = pow(max(dot(viewDirection, reflectionDirection), 0.0), material.shininess);
-    vec3 specular = light.specular * spec * texture(material.specular, tTextureCoords).rgb;
+    vec3 specular = light.specular * spec * texture(material.specular0, tTextureCoords).rgb;
 
     return ambient + diffuse + specular;
 }
@@ -138,7 +138,7 @@ vec3 calculatePointLight(PointLight light, vec3 normal, vec3 fragPosition, vec3 
 
     vec3 reflectionDirection = reflect(-lightDirection, normal);
     float spec = pow(max(dot(viewDirection, reflectionDirection), 0.0), material.shininess);
-    vec3 specular = light.specular * spec * texture(material.specular, tTextureCoords).rgb;
+    vec3 specular = light.specular * spec * texture(material.specular0, tTextureCoords).rgb;
 
     float distance = length(lightDirection);
     float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * distance * distance);
