@@ -20,10 +20,12 @@ import static org.lwjgl.stb.STBImage.*;
 public class Texture implements Disposable {
     
     private static final String directory = "Engine/src/main/resources/textures/";
-    private static final Supplier<Texture> PLACEHOLDER_TEXTURE = () -> Texture.ofFile("pepega.png");
+    private static final Supplier<Texture> DEFAULT_TEXTURE = () -> Texture.ofFile("pepega.png");
     
     private static final Logger logger = LoggerFactory.getLogger(Texture.class);
-
+    
+    private final String file;
+    
     private final int textureID;
     private final int pixelWidth, pixelHeight, colourChannels;
     private final TextureType type;
@@ -50,7 +52,7 @@ public class Texture implements Disposable {
             return new Texture(file, type);
         } catch (MissingResourceException e) {
             logger.debug("Texture could not be loaded, using placeholder: ", e);
-            return PLACEHOLDER_TEXTURE.get();
+            return DEFAULT_TEXTURE.get();
         }
     }
     
@@ -62,15 +64,20 @@ public class Texture implements Disposable {
         return ofFile(file, TextureType.UNKNOWN);
     }
     
+    public static Texture getDefault() {
+        return DEFAULT_TEXTURE.get();
+    }
+    
     private Texture(String file, TextureType type) {
         if (type == null) {
             type = TextureType.UNKNOWN;
             logger.trace("Texture {} has no type specified", file);
         }
-        
+    
+        this.file = file;
         this.type = type;
         
-        String path = directory + file;
+        file = directory + this.file;
         
         textureID = generateGLTexture();
         glBindTexture(GL_TEXTURE_2D, textureID);
@@ -80,9 +87,9 @@ public class Texture implements Disposable {
                 bufferColourChannels = BufferUtils.createIntBuffer(1);
 
         stbi_set_flip_vertically_on_load(true);
-        ByteBuffer textureData = stbi_load(path, bufferWidth, bufferHeight, bufferColourChannels, 0);
+        ByteBuffer textureData = stbi_load(file, bufferWidth, bufferHeight, bufferColourChannels, 0);
         if (textureData == null || !textureData.hasRemaining()) {
-            throw new MissingResourceException(stbi_failure_reason(), getClass().getSimpleName(), path);
+            throw new MissingResourceException(stbi_failure_reason(), getClass().getSimpleName(), file);
         }
         
         pixelWidth = bufferWidth.get();
@@ -90,6 +97,7 @@ public class Texture implements Disposable {
         colourChannels = bufferColourChannels.get();
         
         int format = switch (colourChannels) {
+            case 1 -> GL_ALPHA;
             case 3 -> GL_RGB;
             case 4 -> GL_RGBA;
             default -> throw new IllegalStateException("Unexpected colour format: " + colourChannels + " channels");
@@ -136,9 +144,14 @@ public class Texture implements Disposable {
         return colourChannels;
     }
 
+    //TODO is there any way to make this less stateful / just better
+    private boolean wasAlreadyDisposed = false;
+    
     @Override
     public void dispose() {
+        if (wasAlreadyDisposed) return;
         glDeleteTextures(textureID);
+        wasAlreadyDisposed = true;
     }
     
     @Override

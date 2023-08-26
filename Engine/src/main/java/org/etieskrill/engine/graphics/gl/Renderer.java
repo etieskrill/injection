@@ -17,7 +17,7 @@ public class Renderer {
     private static final float clearColour = 0.25f;//0.025f;
     
     public void prepare() {
-        logger.debug("New render cycle");
+        //logger.debug("New render cycle");
         glClearColor(clearColour, clearColour, clearColour, 1f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
@@ -60,7 +60,7 @@ public class Renderer {
             shader.setUniformInt("material." + texture.getType().name().toLowerCase() + number, validTextures);
         }
         
-        shader.setUniformFloat("material.shininess", mesh.getMaterial().getShininess());
+        shader.setUniformFloat("material.shininess", 32f);
     }
     
 }

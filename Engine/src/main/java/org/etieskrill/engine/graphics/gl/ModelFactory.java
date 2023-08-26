@@ -8,12 +8,7 @@ import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 import java.util.Arrays;
 
-import org.lwjgl.opengl.GL11C;
-import org.lwjgl.opengl.GL33C;
-
 public class ModelFactory {
-
-    private final Loader loader = Loader.get();
 
     public Model rectangle(float x, float y, float width, float height) {
         if (width < 0) {
@@ -331,10 +326,6 @@ public class ModelFactory {
     //TODO probs fibonacci or subdivision, test with phong, gouraud and flat shading
     public Model sphere(float radius, int subdivisions) {
         throw new UnsupportedOperationException("Currently under major reconstruction");
-    }
-
-    public void disposeLoader() {
-        loader.dispose();
     }
 
 }

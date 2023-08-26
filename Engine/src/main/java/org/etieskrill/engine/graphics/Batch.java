@@ -68,7 +68,6 @@ public class Batch implements Disposable {
     @Override
     public void dispose() {
         shader.dispose();
-        models.disposeLoader();
     }
     
 }

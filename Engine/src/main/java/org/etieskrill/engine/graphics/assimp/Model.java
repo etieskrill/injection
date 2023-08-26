@@ -2,7 +2,8 @@ package org.etieskrill.engine.graphics.assimp;
 
 import glm.mat._4.Mat4;
 import glm.vec._3.Vec3;
-import org.etieskrill.engine.graphics.gl.Loader;
+import org.etieskrill.engine.Disposable;
+import org.etieskrill.engine.graphics.gl.Loaders.TextureLoader;
 import org.etieskrill.engine.graphics.gl.Texture;
 import org.etieskrill.engine.graphics.gl.Texture.TextureType;
 import org.etieskrill.engine.math.Vec2f;
@@ -19,17 +20,15 @@ import java.util.function.Supplier;
 
 import static org.lwjgl.assimp.Assimp.*;
 
-public class Model {
+public class Model implements Disposable, Cloneable {
     
     private static final String DIRECTORY = "Engine/src/main/resources/models/";
     private static final Supplier<Model> ERROR_MODEL = () -> Model.ofFile("cube.obj");
     
     private static final Logger logger = LoggerFactory.getLogger(Model.class);
     
-    private static final Loader loader = Loader.get();
-    
-    private final Vector<Mesh> meshes;
-    private final Vector<Material> materials;
+    private final Vector<Mesh> meshes; //TODO these should become immutable after model instantiation
+    private final Vector<Material> materials; //TODO since meshes know their materials, these here may not be necessary?
     
     private final String name;
     
@@ -41,11 +40,15 @@ public class Model {
     private final Mat4 transform;
     
     public static Model ofFile(String file) {
+        return ofFile(file, file.split("\\.")[0]);
+    }
+    
+    public static Model ofFile(String file, String name) {
         if (file.isBlank()) throw new IllegalArgumentException("File name cannot be blank");
         if (file.contains("/")) throw new IllegalArgumentException("Custom folder structure not implemented yet: " + file);
     
         try {
-            return new Model(file, new Vector<>(), new Vector<>(),
+            return new Model(file, name, new Vector<>(), new Vector<>(),
                     new Vec3(0f), new Vec3(1f), 0f, new Vec3(0f), new Mat4().identity());
         } catch (FileNotFoundException e) {
             logger.debug("Exception while loading model, using default: ", e);
@@ -53,15 +56,29 @@ public class Model {
         }
     }
     
-    private Model(String file, Vector<Mesh> meshes, Vector<Material> materials,
+    private Model(String file, String name, Vector<Mesh> meshes, Vector<Material> materials,
                  Vec3 position, Vec3 scale, float rotation, Vec3 rotationAxis, Mat4 transform) throws FileNotFoundException {
         this.meshes = meshes;
         this.materials = materials;
-        
-        this.name = file.split("\\.")[0];
+        this.name = name;
         logger.debug("Loading model {} from file {}", name, file);
         loadModel(file);
         
+        this.position = position;
+        this.scale = scale;
+        this.rotation = rotation;
+        this.rotationAxis = rotationAxis;
+        this.transform = transform;
+    }
+    
+    /**
+     * Clone constructor, be very careful not to use it anywhere else as it does not actually load anything.
+     */
+    private Model(String name, Vector<Mesh> meshes, Vector<Material> materials,
+                  Vec3 position, Vec3 scale, float rotation, Vec3 rotationAxis, Mat4 transform) {
+        this.meshes = meshes;
+        this.materials = materials;
+        this.name = name;
         this.position = position;
         this.scale = scale;
         this.rotation = rotation;
@@ -131,8 +148,7 @@ public class Model {
         }
         
         Material material = materials.get(mesh.mMaterialIndex());
-        
-        return loader.loadToVAO(vertices, indices, material, transform);
+        return Mesh.Loader.loadToVAO(vertices, indices, material, transform);
     }
     
     private Material processMaterial(AIMaterial aiMaterial) {
@@ -170,9 +186,12 @@ public class Model {
                 System.err.println(aiGetErrorString());
                 continue;
             }
-    
-            Texture texture = loader.loadTexture(file.dataString(),
-                    name + "_" + type.name().toLowerCase() + "_" + i, type);
+            
+            //TODO i think using the loader by default here is warranted, since textures are separate files, and
+            // more often than not the bulk redundant data (probably), i should add an option to switch this off tho
+            Texture texture = TextureLoader.get().load(
+                    name + "_" + type.name().toLowerCase() + "_" + i,
+                    () -> Texture.ofFile(file.dataString(), type));
             material.addTexture(texture);
             validTextures++;
         }
@@ -246,6 +265,23 @@ public class Model {
                 mat.d1(), mat.d2(), mat.d3(), mat.d4()
         };
         return new Mat4(values).transpose();
+    }
+    
+    @Override
+    public void dispose() {
+        meshes.forEach(Mesh::dispose);
+        materials.forEach(Material::dispose);
+    }
+    
+    @Override
+    public Model clone() {
+        Model clone = new Model(name, meshes, materials,
+                new Vec3(position), new Vec3(scale), rotation, new Vec3(rotationAxis), new Mat4(transform)
+        );
+        // TODO: copy mutable state here, so the clone can't change the internals of the original
+//        if (name == "light") System.out.println(this.position == clone.position);
+//        if (name == "light") System.out.println(clone.getMeshes().size() + " " + clone.getPosition());
+        return clone;
     }
     
 }

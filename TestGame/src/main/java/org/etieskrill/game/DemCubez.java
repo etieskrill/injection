@@ -5,7 +5,7 @@ import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.OrthographicCamera;
 import org.etieskrill.engine.graphics.PerspectiveCamera;
 import org.etieskrill.engine.graphics.assimp.Model;
-import org.etieskrill.engine.graphics.gl.Loader;
+import org.etieskrill.engine.graphics.gl.Loaders.ModelLoader;
 import org.etieskrill.engine.graphics.gl.ModelFactory;
 import org.etieskrill.engine.graphics.gl.Renderer;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderFactory;
@@ -31,7 +31,7 @@ public class DemCubez {
     
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    private final Loader loader = Loader.get();
+    private final ModelLoader modelLoader = new ModelLoader();
     
     private volatile boolean wPressed, aPressed, sPressed, dPressed, spacePressed, shiftPressed, qPressed, ePressed,
             escPressed, escPressedPrev, ctrlPressed;
@@ -184,25 +184,30 @@ public class DemCubez {
             new Vec3( 1.5f,  0.2f, -1.5f),
             new Vec3(-1.3f,  1.0f, -1.5f)
         };
-        
+    
+        ModelLoader.get().load("cube", () ->
+                Model.ofFile("cube.obj")
+                        .setScale(1.0f)
+        );
         Model[] models = new Model[cubePositions.length];
         for (int i = 0; i < cubePositions.length; i++) {
-            models[i] = Model.ofFile("cube.obj")
-                    .setScale(0.5f)
+            models[i] = ModelLoader.get().get("cube")
                     .setPosition(cubePositions[i])
                     .setRotation(new Random(69420).nextFloat(),
                             Vec3.linearRand_(new Vec3(-1f, -1f, -1f), new Vec3(1f, 1f, 1f)));
         }
-    
+        
         Model[] lightSources = new Model[2];
         for (int i = 0; i < lightSources.length; i++) {
-            Model model = Model.ofFile("cube.obj");
-            model.setScale(0.2f).setPosition(new Vec3(0f, 0f, -5f));
-            lightSources[i] = model;
+            lightSources[i] = ModelLoader.get().load("light", () -> Model.ofFile("cube.obj", "light"))
+                    .setScale(0.2f)
+                    .setPosition(new Vec3(0f, 0f, -5f));
         }
     
-        Model backpack = Model.ofFile("Survival_BackPack_2.fbx");
-        backpack.setPosition(new Vec3(0, 0, -3)).setScale(new Vec3(0.001f)).setRotation((float) Math.toRadians(180f), new Vec3(1f, 0f, 0f));
+        Model backpack = Model.ofFile("Survival_BackPack_2.fbx")
+                .setPosition(new Vec3(0, 0, -3))
+                .setScale(new Vec3(0.001f))
+                .setRotation((float) Math.toRadians(180f), new Vec3(1f, 0f, 0f));
         
         Renderer renderer = new Renderer();
         ShaderProgram shader = ShaderFactory.getStandardShader();
@@ -353,7 +358,7 @@ public class DemCubez {
         }
         
         shader.dispose();
-        factory.disposeLoader();
+        modelLoader.dispose();
     }
     
     private void updatePlayerCamera() {
