@@ -180,18 +180,6 @@ public class DemCubez {
             new Vec3( 1.5f,  0.2f, -1.5f),
             new Vec3(-1.3f,  1.0f, -1.5f)
         };
-    
-//        loader.loadTexture("container2.png", "container", TextureType.DIFFUSE);
-//        loader.loadTexture("container2_specular.png", "container_specular", TextureType.SPECULAR);
-//        loader.loadTexture("container2_emissive.jpg", "container_emissive", TextureType.EMISSIVE);
-//
-//        Material cubeMaterial = new Material.Builder()
-//                .setTextures(
-//                        loader.getTexture("container"),
-//                        loader.getTexture("container_specular"),
-//                        loader.getTexture("container_emissive"))
-//                .setShininess(64f)
-//                .build();
         
         Model[] models = new Model[cubePositions.length];
         for (int i = 0; i < cubePositions.length; i++) {
@@ -318,6 +306,7 @@ public class DemCubez {
                 shader.setUniformFloat_("lights[" + i + "].quadratic", 0.005f);
             }
             
+            //TODO light source wrappers
             //shader.setUniformVec3("flashlight.position", camPosition);
             //shader.setUniformVec3("flashlight.direction", camFront);
             //shader.setUniformFloat("flashlight.cutoff", (float) Math.cos(Math.toRadians(12.5)));
@@ -330,7 +319,6 @@ public class DemCubez {
             //shader.setUniformFloat("flashlight.linear", 0.09f);
             //shader.setUniformFloat("flashlight.quadratic", 0.032f);
             
-//            shader.setUniformVec3("uViewPosition", camera.getPosition());
             shader.setUniformVec3("uViewDirection", camera.getDirection());
             shader.setUniformFloat("uTime", (float) pacer.getTime());
 
@@ -347,8 +335,6 @@ public class DemCubez {
                 lightShader.setUniformVec3("light.diffuse", diffuse);
                 lightShader.setUniformVec3("light.specular", specular);
     
-                //renderer.render(lightSources[i]);
-                //System.err.println("rendering light source " + i);
                 renderer.render(lightSources[i], lightShader);
             }
             
@@ -398,6 +384,8 @@ public class DemCubez {
         glfwTerminate();
     }
     
+    //TODO own port of glm to java
+    //i honestly still cannot believe that a typo this major is in this library, does anyone ever use it at all?
     private static Vec3 add_(Vec3 a, Vec3 b) {
         return new Vec3(a.x + b.x, a.y + b.y, a.z + b.z);
     }
@@ -412,18 +400,6 @@ public class DemCubez {
     
     private static Vec3 mul(Vec3 a, Vec3 b) {
         return a.set(a.x * b.x, a.y * b.y, a.z * b.z);
-    }
-    
-    private String matToString(Mat4 mat) {
-        return String.format("""
-                        [%6.3f, %6.3f, %6.3f, %6.3f]
-                        [%6.3f, %6.3f, %6.3f, %6.3f]
-                        [%6.3f, %6.3f, %6.3f, %6.3f]
-                        [%6.3f, %6.3f, %6.3f, %6.3f]""",
-                mat.m00, mat.m01, mat.m02, mat.m03,
-                mat.m10, mat.m11, mat.m12, mat.m13,
-                mat.m20, mat.m21, mat.m22, mat.m23,
-                mat.m30, mat.m31, mat.m32, mat.m33);
     }
     
     public static void main(String[] args) {

@@ -80,6 +80,7 @@ public abstract class ShaderProgram {
         glUniform1i(getUniformLocation(name), val);
     }
     
+    @Deprecated
     public void setUniformInt_(CharSequence name, int val) {
         if (AUTO_START_ON_VARIABLE_SET) start();
         glUniform1i(glGetUniformLocation(programID, name), val);

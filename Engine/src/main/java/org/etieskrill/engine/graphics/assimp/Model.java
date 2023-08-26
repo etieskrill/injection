@@ -97,8 +97,6 @@ public class Model {
         processNode(scene.mRootNode(), scene);
     }
     
-    private static int x = 0;
-    
     private void processNode(AINode node, AIScene scene) {
         PointerBuffer mMeshes = scene.mMeshes();
         if (mMeshes == null) return;
@@ -252,19 +250,7 @@ public class Model {
                 mat.c1(), mat.c2(), mat.c3(), mat.c4(),
                 mat.d1(), mat.d2(), mat.d3(), mat.d4()
         };
-        return new Mat4(values).transpose();//.scale(new Vec3(0.5f, 0.05f, 1f)); //TODO transpose if some weird fuckshit happens
-    }
-    
-    private String matToString(Mat4 mat) {
-        return String.format("""
-                        [%6.3f, %6.3f, %6.3f, %6.3f]
-                        [%6.3f, %6.3f, %6.3f, %6.3f]
-                        [%6.3f, %6.3f, %6.3f, %6.3f]
-                        [%6.3f, %6.3f, %6.3f, %6.3f]""",
-                mat.m00, mat.m01, mat.m02, mat.m03,
-                mat.m10, mat.m11, mat.m12, mat.m13,
-                mat.m20, mat.m21, mat.m22, mat.m23,
-                mat.m30, mat.m31, mat.m32, mat.m33);
+        return new Mat4(values).transpose();
     }
     
 }

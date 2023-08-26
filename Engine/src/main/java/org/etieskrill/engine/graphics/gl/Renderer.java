@@ -1,6 +1,5 @@
 package org.etieskrill.engine.graphics.gl;
 
-import glm.mat._4.Mat4;
 import org.etieskrill.engine.graphics.assimp.Mesh;
 import org.etieskrill.engine.graphics.assimp.Model;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
@@ -44,9 +43,8 @@ public class Renderer {
     private void bindMaterial(Mesh mesh, ShaderProgram shader) {
         int diffuse = 0, specular = 0, emissive = 0;
         Vector<Texture> textures = mesh.getMaterial().getTextures();
-        
-        for (int i = 0; i < textures.size(); i++) {
-            Texture texture = textures.get(i);
+    
+        for (Texture texture : textures) {
             int number = 0;
             switch (texture.getType()) {
                 case DIFFUSE -> number = diffuse++;
@@ -54,26 +52,14 @@ public class Renderer {
                 case EMISSIVE -> number = emissive++;
                 case UNKNOWN -> throw new IllegalStateException("Texture has invalid type");
             }
-            
+        
             int validTextures = (diffuse + specular + emissive) - 1;
             texture.bind(validTextures);
             //System.out.printf("Binding material.%s%d to unit %d\n", texture.getType().name().toLowerCase(), number, validTextures);
             shader.setUniformInt_("material." + texture.getType().name().toLowerCase() + number, validTextures);
         }
         
-        shader.setUniformFloat_("material.shininess", mesh.getMaterial().getShininess());
-    }
-    
-    private String matToString(Mat4 mat) {
-        return String.format("""
-                        [%6.3f, %6.3f, %6.3f, %6.3f]
-                        [%6.3f, %6.3f, %6.3f, %6.3f]
-                        [%6.3f, %6.3f, %6.3f, %6.3f]
-                        [%6.3f, %6.3f, %6.3f, %6.3f]""",
-                mat.m00, mat.m01, mat.m02, mat.m03,
-                mat.m10, mat.m11, mat.m12, mat.m13,
-                mat.m20, mat.m21, mat.m22, mat.m23,
-                mat.m30, mat.m31, mat.m32, mat.m33);
+        shader.setUniformFloat("material.shininess", mesh.getMaterial().getShininess());
     }
     
 }

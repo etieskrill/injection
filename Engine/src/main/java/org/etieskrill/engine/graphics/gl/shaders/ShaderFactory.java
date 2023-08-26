@@ -28,17 +28,11 @@ public class ShaderFactory {
 
         @Override
         protected void getUniformLocations() {
-            //samplers are not directly bound to a shader, but instead via the texture unit binding points
-            //(something to do with samplers being of an opaque type?)
-            //addUniform("diffuseMap");
-            //addUniform("specularMap");
-            
             addUniform("uMesh");
             addUniform("uModel");
             addUniform("uNormal");
             addUniform("uCombined");
             
-            //addUniform("uViewPosition");
             addUniform("uViewDirection");
             addUniform("uTime");
     
