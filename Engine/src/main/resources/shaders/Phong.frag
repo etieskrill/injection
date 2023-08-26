@@ -102,15 +102,14 @@ void main()
     }
 
     vec3 emission;
-//    if (length(texture(material.specular0, tTextureCoords).rgb) == 0.0) {
+    if (length(texture(material.specular0, tTextureCoords).rgb) == 0.0) {
         emission = texture(material.emissive0, tTextureCoords + vec2(0.0, uTime * 0.25)).rgb;
         emission = emission.grb * 0.7;
-//    } else {
-//        emission = vec3(0.0);
-//    }
+    } else {
+        emission = vec3(0.0);
+    }
 
     oColour = vec4(combinedLight + emission, 1.0);
-    //oColour = vec4(1.0);
 }
 
 vec3 calculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDirection)

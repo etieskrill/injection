@@ -9,15 +9,22 @@ import org.etieskrill.engine.math.Vec2f;
 import org.etieskrill.engine.math.Vec3f;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.assimp.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.FileNotFoundException;
 import java.nio.IntBuffer;
 import java.util.Vector;
+import java.util.function.Supplier;
 
 import static org.lwjgl.assimp.Assimp.*;
 
 public class Model {
     
-    private static final String directory = "Engine/src/main/resources/models/";
+    private static final String DIRECTORY = "Engine/src/main/resources/models/";
+    private static final Supplier<Model> ERROR_MODEL = () -> Model.ofFile("cube.obj");
+    
+    private static final Logger logger = LoggerFactory.getLogger(Model.class);
     
     private static final Loader loader = Loader.get();
     
@@ -34,19 +41,25 @@ public class Model {
     private final Mat4 transform;
     
     public static Model ofFile(String file) {
-        if (file.isBlank()) throw new IllegalArgumentException("Invalid file name: " + file);
+        if (file.isBlank()) throw new IllegalArgumentException("File name cannot be blank");
         if (file.contains("/")) throw new IllegalArgumentException("Custom folder structure not implemented yet: " + file);
-        
-        return new Model(file, new Vector<>(), new Vector<>(),
-                new Vec3(0f), new Vec3(1f), 0f, new Vec3(0f), new Mat4().identity());
+    
+        try {
+            return new Model(file, new Vector<>(), new Vector<>(),
+                    new Vec3(0f), new Vec3(1f), 0f, new Vec3(0f), new Mat4().identity());
+        } catch (FileNotFoundException e) {
+            logger.debug("Exception while loading model, using default: ", e);
+            return ERROR_MODEL.get();
+        }
     }
     
     private Model(String file, Vector<Mesh> meshes, Vector<Material> materials,
-                 Vec3 position, Vec3 scale, float rotation, Vec3 rotationAxis, Mat4 transform) {
+                 Vec3 position, Vec3 scale, float rotation, Vec3 rotationAxis, Mat4 transform) throws FileNotFoundException {
         this.meshes = meshes;
         this.materials = materials;
         
         this.name = file.split("\\.")[0];
+        logger.debug("Loading model {} from file {}", name, file);
         loadModel(file);
         
         this.position = position;
@@ -56,23 +69,22 @@ public class Model {
         this.transform = transform;
     }
     
-    private void loadModel(String file) {
-        AIScene scene = aiImportFile(directory + file,
+    private void loadModel(String file) throws FileNotFoundException {
+        AIScene scene = aiImportFile(DIRECTORY + file,
                 aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_OptimizeMeshes);
     
         if (scene == null || (scene.mFlags() & AI_SCENE_FLAGS_INCOMPLETE) != 0
                 || scene.mRootNode() == null) {
-            System.err.println(aiGetErrorString());
-            return;
+            throw new FileNotFoundException(aiGetErrorString());
         }
     
+        logger.trace("{} materials found", scene.mNumMaterials());
         PointerBuffer mMaterials = scene.mMaterials();
-        if (mMaterials == null) return;
         for (int i = 0; i < scene.mNumMaterials(); i++) {
+            logger.trace("Processing material {}", i);
             materials.add(processMaterial(AIMaterial.create(mMaterials.get())));
         }
     
-        //if (file.equals("Survival_BackPack_2.fbx")) System.out.println(matToString(toMat4(scene.mRootNode().mTransformation())));
         processNode(scene.mRootNode(), scene);
     }
     
@@ -80,7 +92,6 @@ public class Model {
         PointerBuffer mMeshes = scene.mMeshes();
         if (mMeshes == null) return;
         for (int i = 0; i < node.mNumMeshes(); i++) {
-            //System.out.println("node " + x++ + ": " + matToString(toMat4(node.mTransformation())));
             Mat4 transform = toMat4(node.mTransformation());
             AINode parent = node;
             while ((parent = parent.mParent()) != null) {
@@ -130,19 +141,27 @@ public class Model {
         AIColor4D color = AIColor4D.create();
         aiGetMaterialColor(aiMaterial, "", 0, 0, color);
         
-        //material.
+        for (int type : new int[] {
+                aiTextureType_DIFFUSE, aiTextureType_SPECULAR, aiTextureType_EMISSIVE, aiTextureType_HEIGHT,
+                aiTextureType_SHININESS //TODO use Texture.TextureType instead?
+        }) addTexturesToMaterial(material, aiMaterial, type);
         
-        addTexturesToMaterial(material, aiMaterial, aiTextureType_DIFFUSE);
-        addTexturesToMaterial(material, aiMaterial, aiTextureType_SHININESS);
-        addTexturesToMaterial(material, aiMaterial, aiTextureType_EMISSIVE);
-        
+        logger.trace("Added {} total textures to material", material.getTextures().size());
         return material;
     }
     
     private void addTexturesToMaterial(Material material, AIMaterial aiMaterial, int textureType) {
         AIString file = AIString.create();
+        int validTextures = 0;
     
-        //for (int i = 0; i < 22; i++) System.out.println(i + ": " + aiGetMaterialTextureCount(aiMaterial, i));
+        TextureType type = switch (textureType) {
+            case aiTextureType_DIFFUSE -> TextureType.DIFFUSE;
+            case aiTextureType_SPECULAR -> TextureType.SPECULAR;
+            case aiTextureType_EMISSIVE -> TextureType.EMISSIVE;
+            case aiTextureType_HEIGHT -> TextureType.HEIGHT;
+            case aiTextureType_SHININESS -> TextureType.SHININESS;
+            default -> TextureType.UNKNOWN;
+        };
         
         for (int i = 0; i < aiGetMaterialTextureCount(aiMaterial, textureType); i++) {
             if (aiGetMaterialTexture(aiMaterial, textureType, i, file,
@@ -151,21 +170,14 @@ public class Model {
                 System.err.println(aiGetErrorString());
                 continue;
             }
-            
-            TextureType type = switch (textureType) {
-                case aiTextureType_DIFFUSE -> TextureType.DIFFUSE;
-                case aiTextureType_SPECULAR -> TextureType.SPECULAR;
-                case aiTextureType_EMISSIVE -> TextureType.EMISSIVE;
-                default -> TextureType.UNKNOWN;
-            };
     
-            if (textureType == aiTextureType_SPECULAR) System.err.println("but it found one wdym");
-            if (textureType == aiTextureType_SPECULAR) System.err.println(file.dataString());
-            System.out.println(name + "_" + type.name().toLowerCase() + "_" + i);
             Texture texture = loader.loadTexture(file.dataString(),
                     name + "_" + type.name().toLowerCase() + "_" + i, type);
             material.addTexture(texture);
+            validTextures++;
         }
+        
+        logger.trace("{} {} textures loaded", validTextures, type.name().toLowerCase());
     }
     
     public String getName() {

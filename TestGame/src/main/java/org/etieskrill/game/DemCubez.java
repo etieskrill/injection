@@ -1,6 +1,5 @@
 package org.etieskrill.game;
 
-import glm.mat._4.Mat4;
 import glm.vec._3.Vec3;
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.OrthographicCamera;
@@ -18,6 +17,8 @@ import org.etieskrill.engine.time.SystemNanoTimePacer;
 import org.etieskrill.engine.window.Window;
 import org.etieskrill.engine.window.WindowBuilder;
 import org.lwjgl.opengl.GL;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Random;
 
@@ -27,6 +28,8 @@ import static org.lwjgl.opengl.GL33C.*;
 public class DemCubez {
     
     private static final float TARGET_FPS = 60f;
+    
+    private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private final Loader loader = Loader.get();
     
@@ -52,6 +55,7 @@ public class DemCubez {
                 .setRefreshRate(TARGET_FPS)
                 .setTitle("DemCubez")
                 .build();
+        logger.info("Window initialised");
 
         if (!initGL()) throw new IllegalStateException("Could not initialise texture settings");
         if (!initKeybinds()) throw new IllegalStateException("Could not initialise keybinds");
@@ -198,7 +202,7 @@ public class DemCubez {
         }
     
         Model backpack = Model.ofFile("Survival_BackPack_2.fbx");
-        backpack.setScale(new Vec3(0.005f));//.setRotation((float) Math.toRadians(180f), new Vec3(1f, 0f, 0f));
+        backpack.setPosition(new Vec3(0, 0, -3)).setScale(new Vec3(0.001f)).setRotation((float) Math.toRadians(180f), new Vec3(1f, 0f, 0f));
         
         Renderer renderer = new Renderer();
         ShaderProgram shader = ShaderFactory.getStandardShader();
@@ -274,7 +278,7 @@ public class DemCubez {
             }
     
             for (Model cube : models) {
-                //cube.setRotation(cube.getRotation() + 0.01f, cube.getRotationAxis());
+                cube.setRotation(cube.getRotation() + 0.01f, cube.getRotationAxis());
             }
             
             renderer.prepare();

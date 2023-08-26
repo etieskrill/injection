@@ -3,6 +3,8 @@ package org.etieskrill.engine.graphics.gl;
 import org.etieskrill.engine.graphics.assimp.Mesh;
 import org.etieskrill.engine.graphics.assimp.Model;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Vector;
 
@@ -10,22 +12,21 @@ import static org.lwjgl.opengl.GL33C.*;
 
 public class Renderer {
     
-    private static final float clearColour = 0.5f;//0.025f;
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+    
+    private static final float clearColour = 0.25f;//0.025f;
     
     public void prepare() {
+        logger.debug("New render cycle");
         glClearColor(clearColour, clearColour, clearColour, 1f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
     
     public void render(Model model, ShaderProgram shader) {
         shader.setUniformMat4("uModel", model.getTransform());
-        shader.setUniformMat3("uNormal", model.getTransform()
-                .inverse_().transpose().toMat3_());
-        //System.out.println("\033[0;32m" + matToString(model.getTransform()) + "\033[0m\n");
-        for (int i = 0; i < model.getMeshes().size(); i++) {
-            //System.out.println("mesh nr: " + i);
-            render(model.getMeshes().get(i), shader);
-        }
+        shader.setUniformMat3("uNormal", model.getTransform().inverse_().transpose().toMat3_());
+        for (Mesh mesh : model.getMeshes())
+            render(mesh, shader);
     }
     
     public void render(Mesh mesh, ShaderProgram shader) {

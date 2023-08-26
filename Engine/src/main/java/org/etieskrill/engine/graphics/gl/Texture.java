@@ -2,10 +2,13 @@ package org.etieskrill.engine.graphics.gl;
 
 import org.etieskrill.engine.Disposable;
 import org.lwjgl.BufferUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.MissingResourceException;
+import java.util.function.Supplier;
 
 import static org.lwjgl.opengl.GL33C.*;
 import static org.lwjgl.stb.STBImage.*;
@@ -17,6 +20,9 @@ import static org.lwjgl.stb.STBImage.*;
 public class Texture implements Disposable {
     
     private static final String directory = "Engine/src/main/resources/textures/";
+    private static final Supplier<Texture> PLACEHOLDER_TEXTURE = () -> Texture.ofFile("pepega.png");
+    
+    private static final Logger logger = LoggerFactory.getLogger(Texture.class);
 
     private final int textureID;
     private final int pixelWidth, pixelHeight, colourChannels;
@@ -26,6 +32,8 @@ public class Texture implements Disposable {
         UNKNOWN,
         DIFFUSE,
         SPECULAR,
+        SHININESS,
+        HEIGHT,
         EMISSIVE
     }
     
@@ -36,7 +44,14 @@ public class Texture implements Disposable {
      * @param type the type of texture, if any
      */
     public static Texture ofFile(String file, TextureType type) {
-        return new Texture(file, type);
+        logger.debug("Loading {} texture from {}", type.name().toLowerCase(), file);
+        
+        try {
+            return new Texture(file, type);
+        } catch (MissingResourceException e) {
+            logger.debug("Texture could not be loaded, using placeholder: ", e);
+            return PLACEHOLDER_TEXTURE.get();
+        }
     }
     
     /**
@@ -50,12 +65,12 @@ public class Texture implements Disposable {
     private Texture(String file, TextureType type) {
         if (type == null) {
             type = TextureType.UNKNOWN;
-            System.out.printf("[%s] No file type specified for file \"%s\"\n", getClass().getSimpleName(), file);
+            logger.trace("Texture {} has no type specified", file);
         }
         
         this.type = type;
         
-        file = directory + file;
+        String path = directory + file;
         
         textureID = generateGLTexture();
         glBindTexture(GL_TEXTURE_2D, textureID);
@@ -65,9 +80,9 @@ public class Texture implements Disposable {
                 bufferColourChannels = BufferUtils.createIntBuffer(1);
 
         stbi_set_flip_vertically_on_load(true);
-        ByteBuffer textureData = stbi_load(file, bufferWidth, bufferHeight, bufferColourChannels, 0);
+        ByteBuffer textureData = stbi_load(path, bufferWidth, bufferHeight, bufferColourChannels, 0);
         if (textureData == null || !textureData.hasRemaining()) {
-            throw new MissingResourceException(stbi_failure_reason(), "Texture", file);
+            throw new MissingResourceException(stbi_failure_reason(), getClass().getSimpleName(), path);
         }
         
         pixelWidth = bufferWidth.get();
