@@ -5,12 +5,10 @@ import glm.vec._3.Vec3;
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.OrthographicCamera;
 import org.etieskrill.engine.graphics.PerspectiveCamera;
-import org.etieskrill.engine.graphics.assimp.Material;
 import org.etieskrill.engine.graphics.assimp.Model;
 import org.etieskrill.engine.graphics.gl.Loader;
 import org.etieskrill.engine.graphics.gl.ModelFactory;
 import org.etieskrill.engine.graphics.gl.Renderer;
-import org.etieskrill.engine.graphics.gl.Texture.TextureType;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderFactory;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.math.Vec2f;
@@ -183,29 +181,25 @@ public class DemCubez {
             new Vec3(-1.3f,  1.0f, -1.5f)
         };
     
-        loader.loadTexture("container2.png", "container", TextureType.DIFFUSE);
-        loader.loadTexture("container2_specular.png", "container_specular", TextureType.SPECULAR);
-        loader.loadTexture("container2_emissive.jpg", "container_emissive", TextureType.EMISSIVE);
-    
-        Material cubeMaterial = new Material.Builder()
-                .setTextures(
-                        loader.getTexture("container"),
-                        loader.getTexture("container_specular"),
-                        loader.getTexture("container_emissive"))
-                .setShininess(64f)
-                .build();
+//        loader.loadTexture("container2.png", "container", TextureType.DIFFUSE);
+//        loader.loadTexture("container2_specular.png", "container_specular", TextureType.SPECULAR);
+//        loader.loadTexture("container2_emissive.jpg", "container_emissive", TextureType.EMISSIVE);
+//
+//        Material cubeMaterial = new Material.Builder()
+//                .setTextures(
+//                        loader.getTexture("container"),
+//                        loader.getTexture("container_specular"),
+//                        loader.getTexture("container_emissive"))
+//                .setShininess(64f)
+//                .build();
         
         Model[] models = new Model[cubePositions.length];
         for (int i = 0; i < cubePositions.length; i++) {
-            //models[i] = new Model(factory.box(new Vec3(0.5f, 0.5f, 0.5f)));
             models[i] = Model.ofFile("cube.obj")
                     .setScale(0.5f)
                     .setPosition(cubePositions[i])
                     .setRotation(new Random(69420).nextFloat(),
                             Vec3.linearRand_(new Vec3(-1f, -1f, -1f), new Vec3(1f, 1f, 1f)));
-//            models[i].addTexture(loader.getTexture("container"), 0)
-//                    .addTexture(loader.getTexture("container_specular"), 1)
-//                    .addTexture(loader.getTexture("container_emissive"), 2);
         }
     
         Model[] lightSources = new Model[2];
@@ -292,11 +286,10 @@ public class DemCubez {
             }
     
             for (Model cube : models) {
-                cube.setRotation(cube.getRotation() + 0.01f, cube.getRotationAxis());
+                //cube.setRotation(cube.getRotation() + 0.01f, cube.getRotationAxis());
             }
             
             renderer.prepare();
-            shader.start();
             
             shader.setUniformMat4("uCombined", camera.getCombined());
             
@@ -348,7 +341,6 @@ public class DemCubez {
             backpackShader.setUniformMat4("uCombined", camera.getCombined());
             //renderer.render(backpack, shader);
             
-            lightShader.start();
             lightShader.setUniformMat4("uCombined", camera.getCombined());
             for (int i = 0; i < lightSources.length; i++) {
                 lightShader.setUniformVec3("light.ambient", ambient);

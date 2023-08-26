@@ -11,7 +11,6 @@ import org.lwjgl.PointerBuffer;
 import org.lwjgl.assimp.*;
 
 import java.nio.IntBuffer;
-import java.util.Arrays;
 import java.util.Vector;
 
 import static org.lwjgl.assimp.Assimp.*;
@@ -36,6 +35,7 @@ public class Model {
     
     public static Model ofFile(String file) {
         if (file.isBlank()) throw new IllegalArgumentException("Invalid file name: " + file);
+        if (file.contains("/")) throw new IllegalArgumentException("Custom folder structure not implemented yet: " + file);
         
         return new Model(file, new Vector<>(), new Vector<>(),
                 new Vec3(0f), new Vec3(1f), 0f, new Vec3(0f), new Mat4().identity());
@@ -46,7 +46,7 @@ public class Model {
         this.meshes = meshes;
         this.materials = materials;
         
-        this.name = Arrays.stream(file.split("\\.")).reduce((first, second) -> second).get();
+        this.name = file.split("\\.")[0];
         loadModel(file);
         
         this.position = position;
@@ -72,7 +72,7 @@ public class Model {
             materials.add(processMaterial(AIMaterial.create(mMaterials.get())));
         }
     
-        if (file.equals("Survival_BackPack_2.fbx")) System.out.println(matToString(toMat4(scene.mRootNode().mTransformation())));
+        //if (file.equals("Survival_BackPack_2.fbx")) System.out.println(matToString(toMat4(scene.mRootNode().mTransformation())));
         processNode(scene.mRootNode(), scene);
     }
     
@@ -82,7 +82,7 @@ public class Model {
         PointerBuffer mMeshes = scene.mMeshes();
         if (mMeshes == null) return;
         for (int i = 0; i < node.mNumMeshes(); i++) {
-            System.out.println("node " + x++ + ": " + matToString(toMat4(node.mTransformation())));
+            //System.out.println("node " + x++ + ": " + matToString(toMat4(node.mTransformation())));
             Mat4 transform = toMat4(node.mTransformation());
             AINode parent = node;
             while ((parent = parent.mParent()) != null) {
@@ -111,7 +111,7 @@ public class Model {
         
         Vector<Vertex> vertices = new Vector<>();
         for (int i = 0; i < mesh.mNumVertices(); i++)
-            vertices.add(new Vertex(positions.get(i), normals.get(0), texCoords.get(0)));
+            vertices.add(new Vertex(positions.get(i), normals.get(i), texCoords.get(i)));
         
         Vector<Short> indices = new Vector<>();
         for (int i = 0; i < mesh.mNumFaces(); i++) {
@@ -128,61 +128,15 @@ public class Model {
     
     private Material processMaterial(AIMaterial aiMaterial) {
         Material material = Material.getBlank();
-    
-        /* this is for ... debugging 3d model file structures, which should not be my problem in the first place
-        for (int i = 0; i < 22; i++) {
-            int count = aiGetMaterialTextureCount(aiMaterial, i);
-            System.out.print("[" + i + "] " + (count > 0 ? "!" + count + "!" : count) + " ");
-        }
-        System.out.println();
-        */
+        
+        AIColor4D color = AIColor4D.create();
+        aiGetMaterialColor(aiMaterial, "", 0, 0, color);
+        
+        //material.
         
         addTexturesToMaterial(material, aiMaterial, aiTextureType_DIFFUSE);
-        //addTexturesToMaterial(material, aiMaterial, aiTextureType_SHININESS);
-        
-//        AIString.Buffer string = AIString.malloc(256);
-//        System.err.println(aiGetMaterialTexture(aiMaterial, aiTextureType_DIFFUSE, 0, AIString.create(string.address()), new int[1], null, null, null, null, null));
-//        System.err.println("data: " + string.dataString());
-        
-        /*PointerBuffer buffer = aiMaterial.mProperties();
-        for (int i = 0; i < aiMaterial.mNumProperties(); i++) {
-            AIMaterialProperty property = AIMaterialProperty.create(buffer.get());
-            
-            TextureType type = TextureType.UNKNOWN;
-            switch (property.mType()) {
-                case aiTextureType_DIFFUSE -> type = TextureType.DIFFUSE;
-                case aiTextureType_SPECULAR -> type = TextureType.SPECULAR;
-                case aiTextureType_EMISSIVE -> type = TextureType.EMISSIVE;
-                case aiTextureType_NONE -> {
-                    System.err.println("what the fuck do i do here huh");
-                    continue;
-                }
-            };
-            
-//            ByteBuffer fileBuffer = property.mData();
-//            for (int j = 0; j < property.mDataLength(); j++) {
-//                System.out.print((char) fileBuffer.get());
-//            }
-//            System.out.println();
-            
-            StringBuilder builder = new StringBuilder();
-            ByteBuffer fileBuffer = property.mData();
-            for (int j = 0; j < property.mDataLength(); j++) {
-                builder.append((char) fileBuffer.get());
-            }
-            System.out.println(i + " " + property.mType() + " " + builder);
-    
-            int k = 0;
-            for (int j = 0; j < 22; j++) {
-                int textures = aiGetMaterialTextureCount(aiMaterial, i);
-                k += textures;
-                System.out.print(textures + " ");
-            }
-            System.out.println(k);
-            
-            //String file = new String(Arrays.copyOfRange(property.mData().array(), 0, property.mDataLength()));
-            //material.addTexture(loader.loadTexture(file, "backpack_" + type.name().toLowerCase(), type));
-        }*/
+        addTexturesToMaterial(material, aiMaterial, aiTextureType_SHININESS);
+        addTexturesToMaterial(material, aiMaterial, aiTextureType_EMISSIVE);
         
         return material;
     }
@@ -204,10 +158,16 @@ public class Model {
                 case aiTextureType_EMISSIVE -> TextureType.EMISSIVE;
                 default -> TextureType.UNKNOWN;
             };
-            
-            Texture texture = loader.loadTexture(file.dataString(), name + type.name().toLowerCase() + i, type);
+    
+            System.err.println("Material texture: " + file.dataString() + " as " + type.name());
+            Texture texture = loader.loadTexture(file.dataString(),
+                    name + "_" + type.name().toLowerCase() + "_" + i, type);
             material.addTexture(texture);
         }
+    }
+    
+    public String getName() {
+        return name;
     }
     
     public Vector<Mesh> getMeshes() {

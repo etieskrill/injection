@@ -54,9 +54,9 @@ public class ShaderFactory {
 //            addUniform("flashlight.linear");
 //            addUniform("flashlight.quadratic");
             
-            addUniform("material.diffuse");
-            addUniform("material.specular");
-            addUniform("material.emission");
+            addUniform("material.diffuse0");
+            addUniform("material.specular0");
+            addUniform("material.emission0");
             addUniform("material.shininess");
         }
         

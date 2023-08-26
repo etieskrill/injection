@@ -169,7 +169,7 @@ public class Loader {
         if (textures.containsKey(name)) {
 //            System.out.printf("[%s] %s texture for name \"%s\" was already loaded.\n",
 //                    getClass().getSimpleName(), type.name(), name);
-            System.out.printf("[%s] Texture \"%s\" was already loaded.\n", getClass().getSimpleName(), name);
+//            System.out.printf("[%s] Texture \"%s\" was already loaded.\n", getClass().getSimpleName(), name);
             return textures.get(name);
         }
         

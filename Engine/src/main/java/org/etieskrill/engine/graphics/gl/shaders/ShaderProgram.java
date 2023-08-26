@@ -15,6 +15,8 @@ import static org.lwjgl.opengl.GL33C.*;
 
 public abstract class ShaderProgram {
     
+    private static final boolean AUTO_START_ON_VARIABLE_SET = true;
+    
     private final int programID, vertID, fragID;
     private final Map<CharSequence, Integer> uniforms;
     private final List<CharSequence> unfoundUniforms;
@@ -74,48 +76,59 @@ public abstract class ShaderProgram {
     }
     
     public void setUniformInt(CharSequence name, int val) {
+        if (AUTO_START_ON_VARIABLE_SET) start();
         glUniform1i(getUniformLocation(name), val);
     }
     
     public void setUniformInt_(CharSequence name, int val) {
+        if (AUTO_START_ON_VARIABLE_SET) start();
         glUniform1i(glGetUniformLocation(programID, name), val);
     }
     
     public void setUniformFloat(CharSequence name, float val) {
+        if (AUTO_START_ON_VARIABLE_SET) start();
         glUniform1f(getUniformLocation(name), val);
     }
     
     @Deprecated
     public void setUniformFloat_(CharSequence name, float val) {
+        if (AUTO_START_ON_VARIABLE_SET) start();
         glUniform1f(glGetUniformLocation(programID, name), val);
     }
     
     public void setUniformVec3(CharSequence name, Vec3 vec) {
+        if (AUTO_START_ON_VARIABLE_SET) start();
         glUniform3fv(getUniformLocation(name), vec.toDfb_());
     }
     
     @Deprecated
     public void setUniformVec3_(CharSequence name, Vec3 vec) {
+        if (AUTO_START_ON_VARIABLE_SET) start();
         glUniform3fv(glGetUniformLocation(programID, name), vec.toDfb_());
     }
     
     public void setUniformVec4(CharSequence name, Vec4 vec) {
+        if (AUTO_START_ON_VARIABLE_SET) start();
         glUniform4fv(getUniformLocation(name), vec.toDfb_());
     }
     
     public void setUniformMat3(CharSequence name, Mat3 mat) {
+        if (AUTO_START_ON_VARIABLE_SET) start();
         setUniformMat3(name, mat, false);
     }
     
     public void setUniformMat3(CharSequence name, Mat3 mat, boolean transpose) {
+        if (AUTO_START_ON_VARIABLE_SET) start();
         glUniformMatrix3fv(getUniformLocation(name), transpose, mat.toFa_());
     }
     
     public void setUniformMat4(CharSequence name, Mat4 mat) {
+        if (AUTO_START_ON_VARIABLE_SET) start();
         setUniformMat4(name, mat, false);
     }
     
     public void setUniformMat4(CharSequence name, Mat4 mat, boolean transpose) {
+        if (AUTO_START_ON_VARIABLE_SET) start();
         glUniformMatrix4fv(getUniformLocation(name), transpose, mat.toFa_());
     }
     
