@@ -141,6 +141,8 @@ public class Model {
     
     private void addTexturesToMaterial(Material material, AIMaterial aiMaterial, int textureType) {
         AIString file = AIString.create();
+    
+        //for (int i = 0; i < 22; i++) System.out.println(i + ": " + aiGetMaterialTextureCount(aiMaterial, i));
         
         for (int i = 0; i < aiGetMaterialTextureCount(aiMaterial, textureType); i++) {
             if (aiGetMaterialTexture(aiMaterial, textureType, i, file,
@@ -157,7 +159,9 @@ public class Model {
                 default -> TextureType.UNKNOWN;
             };
     
-            System.err.println("Material texture: " + file.dataString() + " as " + type.name());
+            if (textureType == aiTextureType_SPECULAR) System.err.println("but it found one wdym");
+            if (textureType == aiTextureType_SPECULAR) System.err.println(file.dataString());
+            System.out.println(name + "_" + type.name().toLowerCase() + "_" + i);
             Texture texture = loader.loadTexture(file.dataString(),
                     name + "_" + type.name().toLowerCase() + "_" + i, type);
             material.addTexture(texture);

@@ -44,7 +44,7 @@ struct Material {
     sampler2D diffuse0;
     sampler2D specular0;
     float shininess;
-    sampler2D emission0;
+    sampler2D emissive0;
 };
 
 out vec4 oColour;
@@ -102,12 +102,12 @@ void main()
     }
 
     vec3 emission;
-    if (length(texture(material.specular0, tTextureCoords).rgb) == 0.0) {
-        emission = texture(material.emission0, tTextureCoords + vec2(0.0, uTime * 0.25)).rgb;
+//    if (length(texture(material.specular0, tTextureCoords).rgb) == 0.0) {
+        emission = texture(material.emissive0, tTextureCoords + vec2(0.0, uTime * 0.25)).rgb;
         emission = emission.grb * 0.7;
-    } else {
-        emission = vec3(0.0);
-    }
+//    } else {
+//        emission = vec3(0.0);
+//    }
 
     oColour = vec4(combinedLight + emission, 1.0);
     //oColour = vec4(1.0);

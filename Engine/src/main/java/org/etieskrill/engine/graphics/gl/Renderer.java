@@ -55,8 +55,8 @@ public class Renderer {
         
             int validTextures = (diffuse + specular + emissive) - 1;
             texture.bind(validTextures);
-            //System.out.printf("Binding material.%s%d to unit %d\n", texture.getType().name().toLowerCase(), number, validTextures);
-            shader.setUniformInt_("material." + texture.getType().name().toLowerCase() + number, validTextures);
+            //System.out.printf("Binding texture of type %s as material.%s%d to unit %d\n", texture.getType().name(), texture.getType().name().toLowerCase(), number, validTextures);
+            shader.setUniformInt("material." + texture.getType().name().toLowerCase() + number, validTextures);
         }
         
         shader.setUniformFloat("material.shininess", mesh.getMaterial().getShininess());

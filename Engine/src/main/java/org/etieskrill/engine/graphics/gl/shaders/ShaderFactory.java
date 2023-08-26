@@ -50,7 +50,7 @@ public class ShaderFactory {
             
             addUniform("material.diffuse0");
             addUniform("material.specular0");
-            addUniform("material.emission0");
+            addUniform("material.emissive0");
             addUniform("material.shininess");
         }
         

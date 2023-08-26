@@ -197,9 +197,8 @@ public class DemCubez {
             lightSources[i] = model;
         }
     
-        Model backpack =
-                Model.ofFile("Survival_BackPack_2.fbx");
-        backpack.setScale(new Vec3(0.01f)).setRotation((float) Math.toRadians(-90f), new Vec3(1f, 0f, 0f));
+        Model backpack = Model.ofFile("Survival_BackPack_2.fbx");
+        backpack.setScale(new Vec3(0.005f));//.setRotation((float) Math.toRadians(180f), new Vec3(1f, 0f, 0f));
         
         Renderer renderer = new Renderer();
         ShaderProgram shader = ShaderFactory.getStandardShader();
@@ -210,7 +209,8 @@ public class DemCubez {
         camera = new PerspectiveCamera(window.getSize().getVector());
     
         camera.setPosition(new Vec3(0f, 0f, -3f))
-                .setOrientation(0f, 90f, 0f);
+                .setOrientation(0f, 90f, 0f)
+                .setFar(-1000f);
 
         zoom = camera.getZoom();
         
@@ -327,7 +327,7 @@ public class DemCubez {
             }
             
             backpackShader.setUniformMat4("uCombined", camera.getCombined());
-            //renderer.render(backpack, shader);
+            renderer.render(backpack, backpackShader);
             
             lightShader.setUniformMat4("uCombined", camera.getCombined());
             for (int i = 0; i < lightSources.length; i++) {
