@@ -39,17 +39,6 @@ public class Batch implements Disposable {
         
         shader.stop();
     }
-
-    public void render(RawModelList model) {
-        shader.start();
-
-        shader.setUniformMat4("uModel", transform);
-        shader.setUniformMat4("uCombined", combined);
-
-        model.render(renderer);
-
-        shader.stop();
-    }
     
     public ModelFactory getModelFactory() {
         return models;

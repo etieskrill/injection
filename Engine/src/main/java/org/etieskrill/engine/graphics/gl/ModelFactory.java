@@ -1,6 +1,7 @@
 package org.etieskrill.engine.graphics.gl;
 
 import glm.vec._3.Vec3;
+import org.etieskrill.engine.graphics.assimp.Model;
 import org.lwjgl.BufferUtils;
 
 import java.nio.FloatBuffer;
@@ -105,27 +106,27 @@ public class ModelFactory {
         return circleSect(x, y, radius, 0, 360, segments);
     }
 
-    public RawModelList roundedRect(float x, float y, float width, float height, float rounding, int segments) {
+    public Model roundedRect(float x, float y, float width, float height, float rounding, int segments) {
         if (rounding < 0) throw new IllegalArgumentException("corner rounding cannot be smaller than zero");
         if (2 * rounding > width || 2 * rounding > height)
             throw new IllegalArgumentException("rounding cannot exceed total width or height");
 
-        RawModelList models = new RawModelList();
+//        Model models = Model.of();
 
         float xTopLeft = x + rounding, yTopLeft = y + height - rounding;
         float xTopRight = x + width - rounding, yTopRight = y + height - rounding;
         float xBottomLeft = x + rounding, yBottomLeft = y + rounding;
         float xBottomRight = x + width - rounding, yBottomRight = y + rounding;
 
-        models.add(rectangle(x + rounding, y, width - 2 * rounding, height));
-        models.add(rectangle(x, y + rounding, rounding, height - 2 * rounding));
-        models.add(rectangle(x + width - rounding, y + rounding, rounding, height - 2 * rounding));
-        models.add(circleSect(xTopLeft, yTopLeft, rounding, 90, 180, segments));
-        models.add(circleSect(xTopRight, yTopRight, rounding, 0, 90, segments));
-        models.add(circleSect(xBottomLeft, yBottomLeft, rounding, 180, 270, segments));
-        models.add(circleSect(xBottomRight, yBottomRight, rounding, 270, 360, segments));
+//        models.add(rectangle(x + rounding, y, width - 2 * rounding, height));
+//        models.add(rectangle(x, y + rounding, rounding, height - 2 * rounding));
+//        models.add(rectangle(x + width - rounding, y + rounding, rounding, height - 2 * rounding));
+//        models.add(circleSect(xTopLeft, yTopLeft, rounding, 90, 180, segments));
+//        models.add(circleSect(xTopRight, yTopRight, rounding, 0, 90, segments));
+//        models.add(circleSect(xBottomLeft, yBottomLeft, rounding, 180, 270, segments));
+//        models.add(circleSect(xBottomRight, yBottomRight, rounding, 270, 360, segments));
 
-        return models;
+        return null;
     }
 
     public RawModel box(Vec3 size) {
