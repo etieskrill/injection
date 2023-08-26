@@ -18,19 +18,6 @@ public class Renderer {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
     
-    public void render(RawModel model) {
-        glBindVertexArray(model.getVao());
-        if (model instanceof org.etieskrill.engine.graphics.gl.Model texModel) texModel.bind();
-        
-        if (model.hasIndexBuffer())
-            glDrawElements(model.getDrawMode(), model.getNumVertices(), GL_UNSIGNED_SHORT, 0);
-        else
-            glDrawArrays(model.getDrawMode(), 0, model.getNumVertices());
-        
-        if (model instanceof org.etieskrill.engine.graphics.gl.Model) org.etieskrill.engine.graphics.gl.Model.unbindTextures();
-        glBindVertexArray(0);
-    }
-    
     public void render(Model model, ShaderProgram shader) {
         shader.setUniformMat4("uModel", model.getTransform());
         shader.setUniformMat3("uNormal", model.getTransform()

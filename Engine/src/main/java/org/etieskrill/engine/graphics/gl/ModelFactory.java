@@ -15,7 +15,7 @@ public class ModelFactory {
 
     private final Loader loader = Loader.get();
 
-    public RawModel rectangle(float x, float y, float width, float height) {
+    public Model rectangle(float x, float y, float width, float height) {
         if (width < 0) {
             float tmp = x;
             x = width;
@@ -51,7 +51,8 @@ public class ModelFactory {
 
         short[] indices = {0, 1, 2, 2, 1, 3};
 
-        return loader.loadToVAO(vertices, colours, textures, indices, GL11C.GL_TRIANGLES);
+        //return loader.loadToVAO(vertices, colours, textures, indices, GL11C.GL_TRIANGLES);
+        throw new UnsupportedOperationException("Currently under major reconstruction");
     }
 
     /**
@@ -65,7 +66,8 @@ public class ModelFactory {
      * @param segments number of segments to subdivide the circle sector into
      * @return an indexed memory model of the circle sector
      */
-    public RawModel circleSect(float x, float y, float radius, float start, float end, int segments) {
+    public Model circleSect(float x, float y, float radius, float start, float end, int segments) {
+        
         if (radius < 0) throw new IllegalArgumentException("Radius should not be smaller than zero");
         if (segments < 3) throw new IllegalArgumentException("Circle sector must have more than two segments");
 
@@ -99,11 +101,13 @@ public class ModelFactory {
         short[] indices_a = new short[indices.capacity()];
         indices.get(indices_a);
         
-        return loader.loadToVAO(vertices_a, colours, textures, indices_a, GL11C.GL_TRIANGLE_FAN);
+        //return loader.loadToVAO(vertices_a, colours, textures, indices_a, GL11C.GL_TRIANGLE_FAN);
+        throw new UnsupportedOperationException("Currently under major reconstruction");
     }
 
-    public RawModel circle(float x, float y, float radius, int segments) {
-        return circleSect(x, y, radius, 0, 360, segments);
+    public Model circle(float x, float y, float radius, int segments) {
+        //return circleSect(x, y, radius, 0, 360, segments);
+        throw new UnsupportedOperationException("Currently under major reconstruction");
     }
 
     public Model roundedRect(float x, float y, float width, float height, float rounding, int segments) {
@@ -126,10 +130,10 @@ public class ModelFactory {
 //        models.add(circleSect(xBottomLeft, yBottomLeft, rounding, 180, 270, segments));
 //        models.add(circleSect(xBottomRight, yBottomRight, rounding, 270, 360, segments));
 
-        return null;
+        throw new UnsupportedOperationException("Currently under major reconstruction");
     }
 
-    public RawModel box(Vec3 size) {
+    public Model box(Vec3 size) {
         /*if (width < 0) {
             float tmp = x;
             x = width;
@@ -320,12 +324,13 @@ public class ModelFactory {
         float[] colours = new float[(int) (vertices.length / 0.75f)];
         Arrays.fill(colours, 1f);
 
-        return loader.loadToVAO(vertices, normals, textures, null, GL33C.GL_TRIANGLES);
+        //return loader.loadToVAO(vertices, normals, textures, null, GL33C.GL_TRIANGLES);
+        throw new UnsupportedOperationException("Currently under major reconstruction");
     }
 
     //TODO probs fibonacci or subdivision, test with phong, gouraud and flat shading
-    public RawModel sphere(float radius, int subdivisions) {
-        return null;
+    public Model sphere(float radius, int subdivisions) {
+        throw new UnsupportedOperationException("Currently under major reconstruction");
     }
 
     public void disposeLoader() {

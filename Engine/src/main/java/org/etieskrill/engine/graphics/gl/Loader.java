@@ -9,7 +9,7 @@ import org.etieskrill.engine.util.FloatArrayMerger;
 
 import java.util.*;
 
-import static org.etieskrill.engine.graphics.gl.RawModel.*;
+import static org.etieskrill.engine.graphics.assimp.Model.*;
 import static org.lwjgl.opengl.GL33C.*;
 
 public class Loader {
@@ -31,17 +31,6 @@ public class Loader {
     }
     
     private Loader() {}
-
-    public RawModel loadToVAO(float[] vertices, float[] normals, float[] textures, short[] indices, int drawMode) {
-        boolean hasIndexBuffer = indices != null;
-
-        int vao = createVAO();
-        storeInAttributeList(vertices, normals, textures);
-        if (hasIndexBuffer) prepareIndexBuffer(indices);
-        unbindVAO();
-
-        return new RawModel(vao, hasIndexBuffer ? indices.length : vertices.length, drawMode, hasIndexBuffer);
-    }
     
     public Mesh loadToVAO(Vector<Vertex> vertices, Vector<Short> indices, Material material, Mat4 transform) {
         int vao = createVAO();

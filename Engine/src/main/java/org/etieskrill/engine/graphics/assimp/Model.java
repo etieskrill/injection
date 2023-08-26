@@ -17,6 +17,27 @@ import static org.lwjgl.assimp.Assimp.*;
 
 public class Model {
     
+    public static final int
+            MODEL_POSITION_COMPONENTS = 3,
+            MODEL_NORMAL_COMPONENTS = 3,
+            MODEL_TEXTURE_COMPONENTS = 2;
+    
+    public enum ModelComponents {
+        MODEL_POSITION_COMPONENTS(3),
+        MODEL_NORMAL_COMPONENTS(3),
+        MODEL_TEXTURE_COMPONENTS(2);
+        
+        private final int components;
+        
+        ModelComponents(int numComponents) {
+            this.components = numComponents;
+        }
+        
+        public int getComponents() {
+            return components;
+        }
+    }
+    
     private static final String directory = "Engine/src/main/resources/models/";
     
     private static final Loader loader = Loader.get();

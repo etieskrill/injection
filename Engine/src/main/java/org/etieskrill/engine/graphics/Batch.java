@@ -2,6 +2,7 @@ package org.etieskrill.engine.graphics;
 
 import glm.mat._4.Mat4;
 import org.etieskrill.engine.Disposable;
+import org.etieskrill.engine.graphics.assimp.Model;
 import org.etieskrill.engine.graphics.gl.*;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderFactory;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
@@ -25,7 +26,7 @@ public class Batch implements Disposable {
         this.combined = new Mat4(1f);
     }
     
-    public void render(RawModel model) {
+    public void render(Model model) {
         shader.start();
     
         //System.out.println(Arrays.toString(transform.toFa_()) + "\n" + Arrays.toString(combined.toFa_()));
@@ -35,7 +36,7 @@ public class Batch implements Disposable {
     
         //System.out.println(Arrays.toString(transform.toFa_()) + "\n" + Arrays.toString(combined.toFa_()) + "\n\n");
         
-        renderer.render(model);
+        //renderer.render(model);
         
         shader.stop();
     }
