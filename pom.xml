@@ -15,8 +15,6 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>19</maven.compiler.source>
         <maven.compiler.target>19</maven.compiler.target>
-        <lwjgl.version>3.3.1</lwjgl.version>
-        <lwjgl.natives>natives-windows</lwjgl.natives>
     </properties>
 
     <modules>
@@ -37,14 +35,5 @@
             </properties>
         </profile>
     </profiles>
-
-    <dependencies>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.13.2</version>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
 
 </project>
