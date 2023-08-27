@@ -1,6 +1,6 @@
 package org.etieskrill.engine.window;
 
-import org.etieskrill.engine.math.Vec2f;
+import glm_.vec2.Vec2;
 import org.etieskrill.engine.scene._2d.Stage;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.PointerBuffer;
@@ -18,7 +18,7 @@ public class Window {
     private long monitor;
     private GLFWVidMode videoMode;
     private WindowSize size;
-    private Vec2f position;
+    private Vec2 position;
     private float targetFrameRate;
     private String title;
     
@@ -76,8 +76,8 @@ public class Window {
             return largestFit;
         }
         
-        public Vec2f getVector() {
-            return new Vec2f(width, height);
+        public Vec2 getVector() {
+            return new Vec2(width, height);
         }
         
         public float getAspectRatio() {
@@ -98,7 +98,7 @@ public class Window {
         }
     }
     
-    public Window(WindowMode mode, WindowSize size, Vec2f position, float targetFrameRate, String title) {
+    public Window(WindowMode mode, WindowSize size, Vec2 position, float targetFrameRate, String title) {
         this.mode = mode;
         this.size = size;
         this.position = position;
@@ -241,8 +241,8 @@ public class Window {
     }
     
     //on Windows, will only succeed if entire window is still within screen space after translation
-    public void setPos(Vec2f pos) {
-        glfwSetWindowPos(this.window, (int) pos.getX(), (int) pos.getY());
+    public void setPos(Vec2 pos) {
+        glfwSetWindowPos(this.window, (int)(float) pos.getX(), (int)(float) pos.getY());
     }
     
     public Stage getStage() {
