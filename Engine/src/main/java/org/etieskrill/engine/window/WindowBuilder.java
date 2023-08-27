@@ -8,9 +8,10 @@ public class WindowBuilder {
     
     private Window.WindowMode mode;
     private Window.WindowSize size;
-    private final Vec2 position = new Vec2();
-    private float refreshRate = GLFW_DONT_CARE;
+    private Vec2 position;
+    private float refreshRate;
     private String title;
+    private Window.Cursor cursor;
     
     private WindowBuilder() {}
     
@@ -29,7 +30,7 @@ public class WindowBuilder {
     }
     
     public WindowBuilder setPosition(Vec2 position) {
-        this.position.put(position);
+        this.position = position;
         return this;
     }
     
@@ -43,12 +44,19 @@ public class WindowBuilder {
         return this;
     }
     
+    public void setCursor(Window.Cursor cursor) {
+        this.cursor = cursor;
+    }
+    
     public Window build() {
-        return new Window(mode != null ? mode : Window.WindowMode.WINDOWED,
+        return new Window(
+                mode != null ? mode : Window.WindowMode.WINDOWED,
                 size != null ? size : Window.WindowSize.LARGEST_FIT,
-                position,
-                refreshRate,
-                title != null ? title : "Window");
+                position != null ? position : new Vec2(),
+                refreshRate != 0 ? refreshRate : GLFW_DONT_CARE,
+                title != null ? title : "Window",
+                cursor != null ? cursor : Window.Cursor.getDefault()
+        );
     }
     
 }

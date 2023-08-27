@@ -4,7 +4,7 @@ import glm_.mat4x4.Mat4;
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.graphics.assimp.Model;
 import org.etieskrill.engine.graphics.gl.*;
-import org.etieskrill.engine.graphics.gl.shaders.ShaderFactory;
+import org.etieskrill.engine.graphics.gl.shaders.Shaders;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 
 //TODO the Renderer currently does almost everything from here, this should only have batching mechanisms (duh)
@@ -21,7 +21,7 @@ public class Batch implements Disposable {
     public Batch(Renderer renderer, ModelFactory models) {
         this.renderer = renderer;
         this.models = models;
-        this.shader = ShaderFactory.getTextureShader();
+        this.shader = Shaders.getTextureShader();
         this.transform = new Mat4(1f);
         this.combined = new Mat4(1f);
     }

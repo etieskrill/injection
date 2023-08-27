@@ -9,12 +9,13 @@ import org.etieskrill.engine.graphics.assimp.Model;
 import org.etieskrill.engine.graphics.gl.Loaders.ModelLoader;
 import org.etieskrill.engine.graphics.gl.ModelFactory;
 import org.etieskrill.engine.graphics.gl.Renderer;
-import org.etieskrill.engine.graphics.gl.shaders.ShaderFactory;
+import org.etieskrill.engine.graphics.gl.shaders.Shaders;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.scene._2d.*;
 import org.etieskrill.engine.time.LoopPacer;
 import org.etieskrill.engine.time.SystemNanoTimePacer;
 import org.etieskrill.engine.window.Window;
+import org.etieskrill.engine.window.Window.Cursor.CursorMode;
 import org.etieskrill.engine.window.WindowBuilder;
 import org.lwjgl.opengl.GL;
 import org.slf4j.Logger;
@@ -50,6 +51,8 @@ public class DemCubez {
     }
     
     private void init() {
+        Window.USE_RAW_MOUSE_MOTION_IF_AVAILABLE = false;
+        
         this.window = WindowBuilder.create()
                 .setMode(Window.WindowMode.BORDERLESS)
                 .setRefreshRate(TARGET_FPS)
@@ -116,13 +119,11 @@ public class DemCubez {
     }
     
     private boolean initMouse() {
-        glfwSetInputMode(window.getID(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        //if (glfwRawMouseMotionSupported())
-        //    glfwSetInputMode(window.getID(), GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+        window.getCursor().setMode(CursorMode.DISABLED);
         
         resetPreviousMousePosition();
         
-        float mouseSensitivity = 0.25f, zoomSensitivity = 0.5f;
+        float mouseSensitivity = 0.15f, zoomSensitivity = 0.5f;
 
         glfwSetCursorPosCallback(window.getID(), (window, xpos, ypos) -> {
             if (paused) return;
@@ -175,7 +176,7 @@ public class DemCubez {
         ModelFactory factory = new ModelFactory();
 
         Vec3[] cubePositions = {
-            new Vec3( 0.0f,  0.0f,  0.0f),
+            //new Vec3( 0.0f,  0.0f,  0.0f),
             new Vec3( 2.0f,  5.0f, -15.0f),
             new Vec3(-1.5f, -2.2f, -2.5f),
             new Vec3(-3.8f, -2.0f, -12.3f),
@@ -211,15 +212,17 @@ public class DemCubez {
                     .setPosition(new Vec3(0f, 0f, -5f));
         }
     
-        Model backpack = Model.ofFile("backpack.obj")
-                .setPosition(new Vec3(0, 0, -3))
-                .setScale(new Vec3(0.05f))
-                .setRotation((float) Math.toRadians(180f), new Vec3(1f, 0f, 0f));
+        Model backpack = Model.ofFile("Sting-Sword.obj")
+                .setPosition(new Vec3(0, 0, -2))
+                .setScale(new Vec3(0.1f))
+                //.setRotation((float) Math.toRadians(180f), new Vec3(1f, 0f, 0f))
+        ;
         
         Renderer renderer = new Renderer();
-        ShaderProgram shader = ShaderFactory.getStandardShader();
-        ShaderProgram lightShader = ShaderFactory.getLightSourceShader();
-        
+        ShaderProgram shader = Shaders.getStandardShader();
+        ShaderProgram lightShader = Shaders.getLightSourceShader();
+        ShaderProgram backpackShader = Shaders.getStandardShader();
+    
         Batch batch = new Batch(renderer, factory);
     
         camera = new PerspectiveCamera(window.getSize().getVector());
@@ -227,7 +230,7 @@ public class DemCubez {
         camera.setPosition(new Vec3(0f, 0f, 3f))
                 .setOrientation(0f, -90f, 0f)
                 .setFar(-1000f);
-
+    
         Container container = new Container();
         //container.getLayout().setAlignment(Layout.Alignment.BOTTOM_RIGHT);
         Layout layout = Layout.get()
@@ -240,12 +243,10 @@ public class DemCubez {
         //menu.layout();
         //menu.getLayout().setAlignment(Layout.Alignment.CENTER);
         container.setChild(menu);
-
+    
         window.setStage(new Stage(batch, container, new OrthographicCamera(window.getSize().getVector())));
         window.getStage().hide();
         
-        ShaderProgram backpackShader = ShaderFactory.getStandardShader();
-
         pacer = new SystemNanoTimePacer(1d / TARGET_FPS);
         pacer.start();
         
@@ -254,7 +255,7 @@ public class DemCubez {
             if (escPressed && !escPressedPrev) {
                 paused = true;
                 pacer.pauseTimer();
-                glfwSetInputMode(window.getID(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                window.getCursor().setMode(CursorMode.NORMAL);
                 window.getStage().show();
                 escPressedPrev = true;
             }
@@ -262,7 +263,7 @@ public class DemCubez {
                 paused = false;
                 pacer.resumeTimer();
                 resetPreviousMousePosition();
-                glfwSetInputMode(window.getID(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                window.getCursor().setMode(CursorMode.DISABLED);
                 window.getStage().hide();
                 escPressedPrev = false;
             }
@@ -287,38 +288,54 @@ public class DemCubez {
                 lightSources[1].setPosition(newLightSourcePos.negate().plus(offset));
             }
     
-            for (Model cube : models) {
-                cube.setRotation(cube.getRotation() + 0.01f, cube.getRotationAxis());
+            if (!paused) {
+                for (Model cube : models)
+                    cube.setRotation(cube.getRotation() + 0.01f, cube.getRotationAxis());
             }
             
             renderer.prepare();
             
             shader.setUniformMat4("uCombined", camera.getCombined());
             
+            Vec3 globalLightDirection = new Vec3(1f);
+            
             //These are essentially intensity factors
             Vec3 lightColour = new Vec3(1f);
             Vec3 ambient = lightColour.times(0.1f);
-            shader.setUniformVec3_("globalLights[0].ambient", ambient);
             Vec3 diffuse = lightColour.times(0.5f);
-            shader.setUniformVec3_("globalLights[0].diffuse", diffuse);
-            Vec3 specular = lightColour.times(1f);
-            shader.setUniformVec3_("globalLights[0].specular", specular);
-
-            shader.setUniformFloat_("globalLights[0].constant", 1f);
-            shader.setUniformFloat_("globalLights[0].linear", 0.01f);
-            shader.setUniformFloat_("globalLights[0].quadratic", 0.005f);
+            Vec3 specular = lightColour.times(0.1f);
             
-            for (int i = 0; i < lightSources.length; i++) {
-                shader.setUniformVec3_("lights[" + i + "].position", lightSources[i].getPosition());
-                
-                shader.setUniformVec3_("lights[" + i + "].ambient", ambient);
-                shader.setUniformVec3_("lights[" + i + "].diffuse", diffuse);
-                shader.setUniformVec3_("lights[" + i + "].specular", specular);
-    
-                shader.setUniformFloat_("lights[" + i + "].constant", 1f);
-                shader.setUniformFloat_("lights[" + i + "].linear", 0.01f);
-                shader.setUniformFloat_("lights[" + i + "].quadratic", 0.005f);
-            }
+            shader.setUniformVec3_("globalLights[0].direction", globalLightDirection);
+            shader.setUniformVec3_("globalLights[0].ambient", ambient);
+            shader.setUniformVec3_("globalLights[0].diffuse", diffuse);
+            shader.setUniformVec3_("globalLights[0].specular", specular);
+            
+            backpackShader.setUniformVec3_("globalLights[0].direction", globalLightDirection);
+            backpackShader.setUniformVec3_("globalLights[0].ambient", ambient);
+            backpackShader.setUniformVec3_("globalLights[0].diffuse", diffuse);
+            backpackShader.setUniformVec3_("globalLights[0].specular", specular);
+            
+//            for (int i = 0; i < lightSources.length; i++) {
+//                shader.setUniformVec3_("lights[" + i + "].position", lightSources[i].getPosition());
+//
+//                shader.setUniformVec3_("lights[" + i + "].ambient", ambient);
+//                shader.setUniformVec3_("lights[" + i + "].diffuse", diffuse);
+//                shader.setUniformVec3_("lights[" + i + "].specular", specular);
+//
+//                shader.setUniformFloat_("lights[" + i + "].constant", 1f);
+//                shader.setUniformFloat_("lights[" + i + "].linear", 0.01f);
+//                shader.setUniformFloat_("lights[" + i + "].quadratic", 0.005f);
+//
+//                backpackShader.setUniformVec3_("lights[" + i + "].position", lightSources[i].getPosition());
+//
+//                backpackShader.setUniformVec3_("lights[" + i + "].ambient", ambient);
+//                backpackShader.setUniformVec3_("lights[" + i + "].diffuse", diffuse);
+//                backpackShader.setUniformVec3_("lights[" + i + "].specular", specular);
+//
+//                backpackShader.setUniformFloat_("lights[" + i + "].constant", 1f);
+//                backpackShader.setUniformFloat_("lights[" + i + "].linear", 0.01f);
+//                backpackShader.setUniformFloat_("lights[" + i + "].quadratic", 0.005f);
+//            }
             
             //TODO light source wrappers
             //shader.setUniformVec3("flashlight.position", camPosition);
@@ -341,7 +358,7 @@ public class DemCubez {
             }
             
             backpackShader.setUniformMat4("uCombined", camera.getCombined());
-            //renderer.render(backpack, backpackShader);
+            renderer.render(backpack, backpackShader);
             
             lightShader.setUniformMat4("uCombined", camera.getCombined());
             for (int i = 0; i < lightSources.length; i++) {

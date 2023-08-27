@@ -6,7 +6,7 @@ newmtl container
     Ke 1.000000 0.000000 0.000000
     Ni 1.000000
     d 1.000000
-    illum 1
     map_Kd container2.png
-    map_Ks container2_specular.png
+#    map_Ks container2_specular.png
     map_Ke container2_emissive.jpg
+    illum 1

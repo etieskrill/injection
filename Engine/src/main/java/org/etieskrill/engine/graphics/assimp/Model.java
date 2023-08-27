@@ -12,7 +12,7 @@ import org.lwjgl.assimp.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.IntBuffer;
 import java.util.Vector;
 import java.util.function.Supplier;
@@ -50,7 +50,7 @@ public class Model implements Disposable {
         try {
             return new Model(file, name, new Vector<>(), new Vector<>(),
                     new Vec3(0f), new Vec3(1f), 0f, new Vec3(0f), new Mat4().identity());
-        } catch (FileNotFoundException e) {
+        } catch (IOException e) {
             logger.debug("Exception while loading model, using default: ", e);
             return ERROR_MODEL.get();
         }
@@ -75,7 +75,7 @@ public class Model implements Disposable {
     }
     
     private Model(String file, String name, Vector<Mesh> meshes, Vector<Material> materials,
-                 Vec3 position, Vec3 scale, float rotation, Vec3 rotationAxis, Mat4 transform) throws FileNotFoundException {
+                 Vec3 position, Vec3 scale, float rotation, Vec3 rotationAxis, Mat4 transform) throws IOException {
         this.meshes = meshes;
         this.materials = materials;
         this.file = file.split("\\.")[0];
@@ -90,13 +90,13 @@ public class Model implements Disposable {
         this.transform = transform;
     }
     
-    private void loadModel(String file) throws FileNotFoundException {
+    private void loadModel(String file) throws IOException {
         AIScene scene = aiImportFile(DIRECTORY + file,
-                aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_OptimizeMeshes);
+                aiProcess_Triangulate |/* aiProcess_FlipUVs |*/ aiProcess_OptimizeMeshes);
     
         if (scene == null || (scene.mFlags() & AI_SCENE_FLAGS_INCOMPLETE) != 0
                 || scene.mRootNode() == null) {
-            throw new FileNotFoundException(aiGetErrorString());
+            throw new IOException(aiGetErrorString());
         }
     
         logger.trace("{} materials found", scene.mNumMaterials());
@@ -141,7 +141,11 @@ public class Model implements Disposable {
         
         Vector<Vertex> vertices = new Vector<>();
         for (int i = 0; i < mesh.mNumVertices(); i++)
-            vertices.add(new Vertex(positions.get(i), normals.get(i), texCoords.get(i)));
+            vertices.add(new Vertex(
+                    positions.get(i),
+                    normals.size() > 0 ? normals.get(i) : new Vec3(),
+                    texCoords.size() > 0 ?texCoords.get(i) : new Vec2())
+            );
         
         Vector<Short> indices = new Vector<>();
         for (int i = 0; i < mesh.mNumFaces(); i++) {
@@ -150,6 +154,9 @@ public class Model implements Disposable {
             for (int j = 0; j < face.mNumIndices(); j++)
                 indices.add((short) buffer.get());
         }
+        
+        logger.trace("Loaded mesh with {} vertices {} normals and {} uv coordinates", vertices.size(),
+                normals.size() > 0 ? "with" : "without", texCoords.size() > 0 ? "with" : "without");
         
         Material material = materials.get(mesh.mMaterialIndex());
         return Mesh.Loader.loadToVAO(vertices, indices, material, transform);

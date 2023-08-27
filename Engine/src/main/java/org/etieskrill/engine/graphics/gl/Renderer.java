@@ -30,15 +30,15 @@ public class Renderer {
     }
     
     public void render(Mesh mesh, ShaderProgram shader) {
+        shader.start();
         bindMaterial(mesh, shader);
         shader.setUniformMat4("uMesh", mesh.getTransform());
-        
         glBindVertexArray(mesh.getVao());
-        shader.start();
-        glDrawElements(GL_TRIANGLES, mesh.getNumIndices(), GL_UNSIGNED_SHORT, 0);
-        shader.stop();
         
+        glDrawElements(GL_TRIANGLES, mesh.getNumIndices(), GL_UNSIGNED_SHORT, 0);
+    
         glBindVertexArray(0);
+        shader.stop();
     }
     
     private void bindMaterial(Mesh mesh, ShaderProgram shader) {
@@ -56,7 +56,8 @@ public class Renderer {
         
             int validTextures = (diffuse + specular + emissive) - 1;
             texture.bind(validTextures);
-            //System.out.printf("Binding texture of type %s as material.%s%d to unit %d\n", texture.getType().name(), texture.getType().name().toLowerCase(), number, validTextures);
+//            if (mesh.getNumIndices() < 400) logger.trace("Binding texture of type {} as material.{}{} to unit {}",
+//                    texture.getType().name(), texture.getType().name().toLowerCase(), number, validTextures);
             shader.setUniformInt("material." + texture.getType().name().toLowerCase() + number, validTextures);
         }
         

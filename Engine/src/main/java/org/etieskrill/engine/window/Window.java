@@ -12,6 +12,8 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class Window {
     
+    public static boolean USE_RAW_MOUSE_MOTION_IF_AVAILABLE = true;
+    
     private long window;
     
     private WindowMode mode;
@@ -21,6 +23,8 @@ public class Window {
     private Vec2 position;
     private float targetFrameRate;
     private String title;
+    
+    private Cursor cursor;
     
     private Stage stage;
     
@@ -98,7 +102,7 @@ public class Window {
         }
     }
     
-    public Window(WindowMode mode, WindowSize size, Vec2 position, float targetFrameRate, String title) {
+    Window(WindowMode mode, WindowSize size, Vec2 position, float targetFrameRate, String title, Cursor cursor) {
         this.mode = mode;
         this.size = size;
         this.position = position;
@@ -107,6 +111,8 @@ public class Window {
         this.title = title;
         
         init();
+        
+        this.cursor = cursor.setWindow(window);
     }
     
     private void init() {
@@ -128,7 +134,7 @@ public class Window {
         monitor = glfwGetPrimaryMonitor();
         if (monitor == NULL)
             throw new IllegalStateException("Could not find primary monitor");
-    
+        
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
     
         if (mode == null) throw new IllegalArgumentException("Window mode must not be null");
@@ -149,23 +155,30 @@ public class Window {
         setMode(mode);
         setRefreshRate(targetFrameRate);//144);
 
-        window = glfwCreateWindow(size.getWidth(), size.getHeight(), title,
+        this.window = glfwCreateWindow(size.getWidth(), size.getHeight(), title,
                 switch (mode) {
                     case FULLSCREEN -> monitor;
                     case WINDOWED, BORDERLESS -> NULL;
                 },
                 NULL);
-        if (window == NULL)
+        if (this.window == NULL)
             throw new IllegalStateException("Could not create glfw window");
     
         //glfwGetWindowMonitor()
         glfwMakeContextCurrent(window);
         glfwSwapInterval(1); //TODO why does it break when 4<?
         
+        configInput();
+        
         setPos(position);
         this.built = true;
         
         setTitle(title);
+    }
+    
+    private void configInput() {
+        if (USE_RAW_MOUSE_MOTION_IF_AVAILABLE && glfwRawMouseMotionSupported())
+            glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
     }
     
     public void show() {
@@ -183,8 +196,10 @@ public class Window {
     //TODO should probably be named more appropriately
     public void update(double delta) {
         if (stage != null) {
-            stage.update(delta);
-            stage.render();
+            try {
+                stage.update(delta);
+                stage.render();
+            } catch (UnsupportedOperationException ignored) {}
         }
         
         //glfwMakeContextCurrent(window);
@@ -245,6 +260,10 @@ public class Window {
         glfwSetWindowPos(this.window, (int)(float) pos.getX(), (int)(float) pos.getY());
     }
     
+    public Cursor getCursor() {
+        return cursor;
+    }
+    
     public Stage getStage() {
         return stage;
     }
@@ -254,15 +273,40 @@ public class Window {
         this.stage.setSize(this.size.getVector());
     }
     
-    public class Cursor {
+    public static class Cursor {
+        
+        private long window = 0L;
+        
+        private boolean windowSet = false;
+        
+        public static Cursor getDefault() {
+            return new Cursor();
+        }
+        
+        private Cursor() {}
+        
         public enum CursorMode {
+            /**
+             * Movement is not restricted and normal cursor is shown.
+             */
             NORMAL,
+            /**
+             * Movement is not restricted, but the cursor is not visible.
+             */
             HIDDEN,
+            /**
+             * Cursor movement is locked to the window, and movement is fed into a virtual unlimited cursor space. Use
+             * for mouse motion based camera control and the likes.
+             */
             DISABLED,
+            /**
+             * Restricts cursor movement to the window, but otherwise behaves normally.
+             */
             CAPTURED
         }
         
-        public void setCursorMode(CursorMode mode) {
+        public void setMode(CursorMode mode) {
+            checkWindow();
             int glfwMode = switch (mode) {
                 case NORMAL -> GLFW_CURSOR_NORMAL;
                 case HIDDEN -> GLFW_CURSOR_HIDDEN;
@@ -286,7 +330,8 @@ public class Window {
             NOT_ALLOWED
         }
         
-        public void setCursorShape(CursorShape shape) {
+        public void setShape(CursorShape shape) {
+            checkWindow();
             int glfwShape = switch (shape) {
                 case ARROW -> GLFW_ARROW_CURSOR;
                 case IBEAM -> GLFW_IBEAM_CURSOR;
@@ -303,6 +348,18 @@ public class Window {
             //glfwCreateStandardCursor(glfwShape);
             //glfwSetInputMode(window, );
         }
+        
+        private void checkWindow() {
+            if (!windowSet) throw new IllegalStateException("Cursor is not assigned to window");
+        }
+        
+        Cursor setWindow(long window) {
+            if (windowSet) throw new UnsupportedOperationException("Cursor is already assigned to window");
+            this.window = window;
+            windowSet = true;
+            return this;
+        }
+        
     }
     
 }

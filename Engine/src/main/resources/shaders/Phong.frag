@@ -57,7 +57,7 @@ uniform vec3 uViewPosition;
 uniform vec3 uViewDirection;
 uniform float uTime;
 
-uniform DirectionalLight uGlobalLights[NR_DIRECTIONAL_LIGHTS];
+uniform DirectionalLight globalLights[NR_DIRECTIONAL_LIGHTS];
 uniform PointLight lights[NR_POINT_LIGHTS];
 uniform SpotLight flashlight;
 uniform Material material;
@@ -96,18 +96,18 @@ void main()
 
     vec3 combinedLight = vec3(0.0);
     for (int i = 0; i < NR_DIRECTIONAL_LIGHTS; i++)
-        combinedLight += calculateDirectionalLight(uGlobalLights[i], tNormal, uViewDirection);
+        combinedLight += calculateDirectionalLight(globalLights[i], tNormal, uViewDirection);
     for (int i = 0; i < NR_POINT_LIGHTS; i++) {
         combinedLight += calculatePointLight(lights[i], tNormal, tFragPos, uViewDirection);
     }
 
     vec3 emission;
-    if (length(texture(material.specular0, tTextureCoords).rgb) == 0.0) {
+//    if (length(texture(material.specular0, tTextureCoords).rgb) == 0.0) {
         emission = texture(material.emissive0, tTextureCoords + vec2(0.0, uTime * 0.25)).rgb;
-        emission = emission.grb * 0.7;
-    } else {
-        emission = vec3(0.0);
-    }
+//        emission = emission.grb * 0.7;
+//    } else {
+//        emission = vec3(0.0);
+//    }
 
     oColour = vec4(combinedLight + emission, 1.0);
 }
