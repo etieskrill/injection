@@ -3,9 +3,6 @@ package org.etieskrill.engine.graphics.gl;
 import org.etieskrill.engine.graphics.assimp.Mesh;
 import org.etieskrill.engine.graphics.assimp.Model;
 
-import java.util.Objects;
-import java.util.function.Supplier;
-
 public class Loaders {
     
     public static final class TextureLoader extends Loader<Texture> {
@@ -50,8 +47,8 @@ public class Loaders {
     
         @Override
         public Model get(String name) {
-            logger.debug("Creating new instance of model {} via clone", name);
-            return super.get(name).clone();
+            logger.debug("Creating new instance of model {} via copy", name);
+            return new Model(super.get(name));
         }
     
         @Override

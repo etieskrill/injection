@@ -146,7 +146,7 @@ public abstract class Camera {
         return this;
     }
     
-    public Camera setFar(float far) {
+    public Camera setFar(float far) { //TODO far is negative, 1.: find out why, 2.: adjust if necessary
         this.far = far;
         if (autoUpdate) update();
         return this;

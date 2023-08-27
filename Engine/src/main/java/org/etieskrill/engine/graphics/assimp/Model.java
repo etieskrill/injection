@@ -20,7 +20,7 @@ import java.util.function.Supplier;
 
 import static org.lwjgl.assimp.Assimp.*;
 
-public class Model implements Disposable, Cloneable {
+public class Model implements Disposable {
     
     private static final String DIRECTORY = "Engine/src/main/resources/models/";
     private static final Supplier<Model> ERROR_MODEL = () -> Model.ofFile("cube.obj");
@@ -30,6 +30,7 @@ public class Model implements Disposable, Cloneable {
     private final Vector<Mesh> meshes; //TODO these should become immutable after model instantiation
     private final Vector<Material> materials; //TODO since meshes know their materials, these here may not be necessary?
     
+    private final String file;
     private final String name;
     
     private final Vec3 position;
@@ -56,29 +57,33 @@ public class Model implements Disposable, Cloneable {
         }
     }
     
+    /**
+     * Copy constructor, for ... not cloning.
+     */
+    public Model(Model model) {
+        //TODO since the below three lines represent the model as loaded into the graphics memory
+        // and should effectively be immutable, consider encapsulating them into another class
+        this.meshes = model.meshes;
+        this.materials = model.materials;
+        this.file = model.file;
+        this.name = model.name;
+        logger.trace("Creating copy of model {}", name);
+        this.position = new Vec3(model.position);
+        this.scale = new Vec3(model.scale);
+        this.rotation = model.rotation;
+        this.rotationAxis = new Vec3(model.rotationAxis);
+        this.transform = new Mat4(model.transform);
+    }
+    
     private Model(String file, String name, Vector<Mesh> meshes, Vector<Material> materials,
                  Vec3 position, Vec3 scale, float rotation, Vec3 rotationAxis, Mat4 transform) throws FileNotFoundException {
         this.meshes = meshes;
         this.materials = materials;
+        this.file = file.split("\\.")[0];
         this.name = name;
         logger.debug("Loading model {} from file {}", name, file);
         loadModel(file);
         
-        this.position = position;
-        this.scale = scale;
-        this.rotation = rotation;
-        this.rotationAxis = rotationAxis;
-        this.transform = transform;
-    }
-    
-    /**
-     * Clone constructor, be very careful not to use it anywhere else as it does not actually load anything.
-     */
-    private Model(String name, Vector<Mesh> meshes, Vector<Material> materials,
-                  Vec3 position, Vec3 scale, float rotation, Vec3 rotationAxis, Mat4 transform) {
-        this.meshes = meshes;
-        this.materials = materials;
-        this.name = name;
         this.position = position;
         this.scale = scale;
         this.rotation = rotation;
@@ -190,7 +195,7 @@ public class Model implements Disposable, Cloneable {
             //TODO i think using the loader by default here is warranted, since textures are separate files, and
             // more often than not the bulk redundant data (probably), i should add an option to switch this off tho
             Texture texture = TextureLoader.get().load(
-                    name + "_" + type.name().toLowerCase() + "_" + i,
+                    this.file + "_" + type.name().toLowerCase() + "_" + i,
                     () -> Texture.ofFile(file.dataString(), type));
             material.addTexture(texture);
             validTextures++;
@@ -271,17 +276,6 @@ public class Model implements Disposable, Cloneable {
     public void dispose() {
         meshes.forEach(Mesh::dispose);
         materials.forEach(Material::dispose);
-    }
-    
-    @Override
-    public Model clone() {
-        Model clone = new Model(name, meshes, materials,
-                new Vec3(position), new Vec3(scale), rotation, new Vec3(rotationAxis), new Mat4(transform)
-        );
-        // TODO: copy mutable state here, so the clone can't change the internals of the original
-//        if (name == "light") System.out.println(this.position == clone.position);
-//        if (name == "light") System.out.println(clone.getMeshes().size() + " " + clone.getPosition());
-        return clone;
     }
     
 }

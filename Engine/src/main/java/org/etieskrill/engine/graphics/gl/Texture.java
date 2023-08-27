@@ -123,9 +123,9 @@ public class Texture implements Disposable {
         glActiveTexture(GL_TEXTURE0 + unit);
         glBindTexture(GL_TEXTURE_2D, textureID);
     }
-
-    public int getTextureID() {
-        return textureID;
+    
+    public String getFile() {
+        return file;
     }
     
     public TextureType getType() {
@@ -144,7 +144,7 @@ public class Texture implements Disposable {
         return colourChannels;
     }
 
-    //TODO is there any way to make this less stateful / just better
+    //TODO is there any way to make this less stateful / just more better
     private boolean wasAlreadyDisposed = false;
     
     @Override

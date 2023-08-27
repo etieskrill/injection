@@ -36,7 +36,7 @@ public class DemCubez {
     private volatile boolean wPressed, aPressed, sPressed, dPressed, spacePressed, shiftPressed, qPressed, ePressed,
             escPressed, escPressedPrev, ctrlPressed;
     private volatile boolean paused;
-    private volatile double dPitch, dYaw, dRoll, prevMouseX, prevMouseY, zoom;
+    private volatile double dPitch, dYaw, dRoll, prevMouseX, prevMouseY;
 
     private Window window;
     
@@ -57,7 +57,7 @@ public class DemCubez {
                 .build();
         logger.info("Window initialised");
 
-        if (!initGL()) throw new IllegalStateException("Could not initialise texture settings");
+        if (!initGL()) throw new IllegalStateException("Could not initialise graphics settings");
         if (!initKeybinds()) throw new IllegalStateException("Could not initialise keybinds");
         if (!initMouse()) throw new IllegalStateException("Could not initialise mouse");
         
@@ -150,13 +150,15 @@ public class DemCubez {
         });
         
         glfwSetScrollCallback(window.getID(), (window, xoffset, yoffset) -> {
-            zoom -= yoffset * zoomSensitivity;
+            double zoom = camera.getZoom() - yoffset * zoomSensitivity;
     
             if (zoom > 10d) {
                 zoom = 10f;
             } else if (zoom < 0.1d) {
                 zoom = 0.1f;
             }
+            
+            camera.setZoom((float) zoom);
         });
     
         return glfwGetError(null) == GLFW_NO_ERROR;
@@ -204,9 +206,9 @@ public class DemCubez {
                     .setPosition(new Vec3(0f, 0f, -5f));
         }
     
-        Model backpack = Model.ofFile("Survival_BackPack_2.fbx")
+        Model backpack = Model.ofFile("backpack.obj")
                 .setPosition(new Vec3(0, 0, -3))
-                .setScale(new Vec3(0.001f))
+                .setScale(new Vec3(0.05f))
                 .setRotation((float) Math.toRadians(180f), new Vec3(1f, 0f, 0f));
         
         Renderer renderer = new Renderer();
@@ -221,8 +223,6 @@ public class DemCubez {
                 .setOrientation(0f, 90f, 0f)
                 .setFar(-1000f);
 
-        zoom = camera.getZoom();
-        
         Container container = new Container();
         //container.getLayout().setAlignment(Layout.Alignment.BOTTOM_RIGHT);
         Layout layout = Layout.get()
@@ -384,8 +384,6 @@ public class DemCubez {
     
         dRoll = camRoll % 360;
         //up.set(new Mat3().rotateZ(Math.toRadians(roll)).mul(new Vec3(0f, 1f, 0f)));
-    
-        camera.setZoom((float) zoom);
     }
     
     private void terminate() {
