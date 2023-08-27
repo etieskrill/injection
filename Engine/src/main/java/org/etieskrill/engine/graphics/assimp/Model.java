@@ -1,13 +1,12 @@
 package org.etieskrill.engine.graphics.assimp;
 
-import glm.mat._4.Mat4;
-import glm.vec._3.Vec3;
+import glm_.mat4x4.Mat4;
+import glm_.vec2.Vec2;
+import glm_.vec3.Vec3;
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.graphics.gl.Loaders.TextureLoader;
 import org.etieskrill.engine.graphics.gl.Texture;
 import org.etieskrill.engine.graphics.gl.Texture.TextureType;
-import org.etieskrill.engine.math.Vec2f;
-import org.etieskrill.engine.math.Vec3f;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.assimp.*;
 import org.slf4j.Logger;
@@ -87,7 +86,7 @@ public class Model implements Disposable {
         this.position = position;
         this.scale = scale;
         this.rotation = rotation;
-        this.rotationAxis = rotationAxis;
+        this.rotationAxis = rotationAxis.length() == 1f ? rotationAxis : new Vec3(1f, 0f, 0f);
         this.transform = transform;
     }
     
@@ -117,7 +116,7 @@ public class Model implements Disposable {
             Mat4 transform = toMat4(node.mTransformation());
             AINode parent = node;
             while ((parent = parent.mParent()) != null) {
-                transform.mul(toMat4(parent.mTransformation()));
+                transform.times(toMat4(parent.mTransformation()));
             }
             meshes.add(processMesh(AIMesh.create(mMeshes.get(node.mMeshes().get(i))), transform));
         }
@@ -129,16 +128,16 @@ public class Model implements Disposable {
     }
     
     private Mesh processMesh(AIMesh mesh, Mat4 transform) {
-        Vector<Vec3f> positions = new Vector<>();
-        mesh.mVertices().forEach(vertex -> positions.add(new Vec3f(vertex.x(), vertex.y(), vertex.z())));
+        Vector<Vec3> positions = new Vector<>();
+        mesh.mVertices().forEach(vertex -> positions.add(new Vec3(vertex.x(), vertex.y(), vertex.z())));
         
-        Vector<Vec3f> normals = new Vector<>();
+        Vector<Vec3> normals = new Vector<>();
         if (mesh.mNormals() != null)
-            mesh.mNormals().forEach(normal -> normals.add(new Vec3f(normal.x(), normal.y(), normal.z())));
+            mesh.mNormals().forEach(normal -> normals.add(new Vec3(normal.x(), normal.y(), normal.z())));
         
-        Vector<Vec2f> texCoords = new Vector<>();
+        Vector<Vec2> texCoords = new Vector<>();
         if (mesh.mTextureCoords(0) != null)
-            mesh.mTextureCoords(0).forEach(texCoord -> texCoords.add(new Vec2f(texCoord.x(), texCoord.y())));
+            mesh.mTextureCoords(0).forEach(texCoord -> texCoords.add(new Vec2(texCoord.x(), texCoord.y())));
         
         Vector<Vertex> vertices = new Vector<>();
         for (int i = 0; i < mesh.mNumVertices(); i++)
@@ -217,7 +216,7 @@ public class Model implements Disposable {
     }
     
     public Model setPosition(Vec3 vec) {
-        this.position.set(vec);
+        this.position.put(vec);
         return this;
     }
     
@@ -226,12 +225,12 @@ public class Model implements Disposable {
     }
     
     public Model setScale(float scale) {
-        this.scale.set(scale);
+        this.scale.put(scale);
         return this;
     }
     
     public Model setScale(Vec3 scale) {
-        this.scale.set(scale);
+        this.scale.put(scale);
         return this;
     }
     
@@ -245,7 +244,7 @@ public class Model implements Disposable {
     
     public Model setRotation(float rotation, Vec3 rotationAxis) {
         this.rotation = rotation;
-        this.rotationAxis.set(rotationAxis.normalize_());
+        this.rotationAxis.put(rotationAxis.normalize());
         return this;
     }
     
@@ -256,10 +255,11 @@ public class Model implements Disposable {
     }
     
     private void updateTransform() {
-        this.transform.identity()
+        this.transform.put(this.transform.identity()
                 .translate(position)
                 .scale(scale)
-                .rotate(rotation, rotationAxis);
+                .rotate(rotation, rotationAxis)
+        );
     }
     
     private static Mat4 toMat4(AIMatrix4x4 mat) {

@@ -1,16 +1,16 @@
 package org.etieskrill.engine.scene._2d;
 
-import org.etieskrill.engine.math.Vec2f;
+import glm_.vec2.Vec2;
 
 public class Layout {
     
-    private final Vec2f minSize, prefSize;
+    private final Vec2 minSize, prefSize;
     private float marginTop, marginBottom, marginLeft, marginRight;
     private Alignment alignment;
     private Scaling scaling;
     
     public static Layout get() {
-        return new Layout(new Vec2f(-1f), new Vec2f(-1f), Alignment.CENTER, Scaling.PRESERVE_RATIO);
+        return new Layout(new Vec2(-1f), new Vec2(-1f), Alignment.CENTER, Scaling.PRESERVE_RATIO);
     }
 
     public static Layout copy(Layout layout) {
@@ -21,7 +21,7 @@ public class Layout {
         return copy(this);
     }
     
-    private Layout(Vec2f minSize, Vec2f prefSize, Alignment alignment, Scaling scaling) {
+    private Layout(Vec2 minSize, Vec2 prefSize, Alignment alignment, Scaling scaling) {
         this.minSize = minSize;
         this.prefSize = prefSize;
         this.alignment = alignment;
@@ -46,13 +46,13 @@ public class Layout {
         STRETCH
     }
     
-    public Vec2f computeSpan() {
+    public Vec2 computeSpan() {
         float spanX = Math.max(prefSize.getX() - minSize.getX(), 0f);
         float spanY = Math.max(prefSize.getY() - minSize.getY(), 0f);
-        return new Vec2f(spanX, spanY);
+        return new Vec2(spanX, spanY);
     }
     
-    public Vec2f getSize(Vec2f border) {
+    public Vec2 getSize(Vec2 border) {
         float sizeX = 0f;
         if (border.getX() - minSize.getX() < 0f || prefSize.getX() - minSize.getX() < 0f)
             sizeX = minSize.getX();
@@ -69,7 +69,7 @@ public class Layout {
         else
             sizeY = prefSize.getY();
 
-        return new Vec2f(sizeX, sizeY);
+        return new Vec2(sizeX, sizeY);
     }
     
     public Alignment getAlignment() {
@@ -89,22 +89,22 @@ public class Layout {
         this.scaling = scaling;
         return this;
     }
-
-    Vec2f getMinSize() {
+    
+    Vec2 getMinSize() {
         return minSize;
     }
 
-    public Layout setMinSize(Vec2f minSize) {
-        this.minSize.set(minSize);
+    public Layout setMinSize(Vec2 minSize) {
+        this.minSize.put(minSize);
         return this;
     }
-
-    Vec2f getPrefSize() {
+    
+    Vec2 getPrefSize() {
         return prefSize;
     }
 
-    public Layout setPrefSize(Vec2f prefSize) {
-        this.prefSize.set(prefSize);
+    public Layout setPrefSize(Vec2 prefSize) {
+        this.prefSize.put(prefSize);
         return this;
     }
 

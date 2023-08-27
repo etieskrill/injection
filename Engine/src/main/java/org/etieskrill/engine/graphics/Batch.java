@@ -1,6 +1,6 @@
 package org.etieskrill.engine.graphics;
 
-import glm.mat._4.Mat4;
+import glm_.mat4x4.Mat4;
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.graphics.assimp.Model;
 import org.etieskrill.engine.graphics.gl.*;
@@ -46,15 +46,15 @@ public class Batch implements Disposable {
     }
     
     public void setTransform(Mat4 mat) {
-        this.transform.set(mat);
+        this.transform.put(mat);
     }
     
     public void resetTransform() {
-        this.transform.set(1f);
+        this.transform.put(1f);
     }
     
     public void setCombined(Mat4 mat) {
-        this.combined.set(mat);
+        this.combined.put(mat);
     }
     
     public ShaderProgram getShader() {

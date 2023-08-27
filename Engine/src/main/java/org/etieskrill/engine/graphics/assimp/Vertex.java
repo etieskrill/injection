@@ -1,8 +1,11 @@
 package org.etieskrill.engine.graphics.assimp;
 
-import org.etieskrill.engine.math.Vec2f;
-import org.etieskrill.engine.math.Vec3f;
+import glm_.vec2.Vec2;
+import glm_.vec3.Vec3;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -14,32 +17,33 @@ public class Vertex {
             TEXTURE_COMPONENTS = 2,
             COMPONENTS = 8;
     
-    private final Vec3f position;
-    private final Vec3f normal;
-    private final Vec2f textureCoords;
+    private final Vec3 position;
+    private final Vec3 normal;
+    private final Vec2 textureCoords;
     
-    public Vertex(Vec3f position, Vec3f normal, Vec2f textureCoords) {
+    public Vertex(Vec3 position, Vec3 normal, Vec2 textureCoords) {
         this.position = position;
         this.normal = normal;
         this.textureCoords = textureCoords;
     }
     
-    public Vec3f getPosition() {
+    public Vec3 getPosition() {
         return position;
     }
     
-    public Vec3f getNormal() {
+    public Vec3 getNormal() {
         return normal;
     }
     
-    public Vec2f getTextureCoords() {
+    public Vec2 getTextureCoords() {
         return textureCoords;
     }
     
-    public List<Float> toList() {
-        return Stream.of(position.toList(), normal.toList(), textureCoords.toList())
-                .flatMap(List::stream)
-                .toList();
+    public List<Float> toList() { //TODO optimise this
+        List<Float> data = new ArrayList<>();
+        for (float[] arr : new float[][]{position.getArray(), normal.getArray(), textureCoords.getArray()})
+            for (Float f : arr) data.add(f);
+        return data;
     }
     
     @Override

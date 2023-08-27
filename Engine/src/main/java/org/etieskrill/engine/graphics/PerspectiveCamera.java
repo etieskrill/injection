@@ -1,20 +1,21 @@
 package org.etieskrill.engine.graphics;
 
-import glm.mat._4.Mat4;
-import org.etieskrill.engine.math.Vec2f;
-import org.etieskrill.engine.math.Vec3f;
+import glm_.mat4x4.Mat4;
+import glm_.vec2.Vec2;
+
+import static glm_.Java.glm;
 
 public class PerspectiveCamera extends Camera {
 
-    private final Vec2f size;
+    private final Vec2 size;
     private float fov;
 
-    public PerspectiveCamera(Vec2f size) {
+    public PerspectiveCamera(Vec2 size) {
         super();
-        this.size = new Vec2f(size);
+        this.size = new Vec2(size);
         setFar(100f); //TODO figure out why this is negative in ortho
         setZoom(3.81f); //setFov(60f);
-        setPerspective(new Mat4().perspectiveFov((float) Math.toRadians(fov), size.getX(), size.getY(), near, far));
+        setPerspective(glm.perspectiveFov((float) Math.toRadians(fov), size.getX(), size.getY(), near, far));
 
         if (autoUpdate) update();
     }
@@ -22,15 +23,15 @@ public class PerspectiveCamera extends Camera {
     @Override
     protected void updatePerspective() {
         this.fov = (((110f - 30f) / (10f - 0.1f)) * (zoom - 0.1f) + 30f);
-        perspective.set(new Mat4().perspectiveFov((float) Math.toRadians(fov), size.getX(), size.getY(), near, far));
+        this.perspective.put(glm.perspectiveFov((float) Math.toRadians(fov), size.getX(), size.getY(), near, far));
     }
 
-    public Vec2f getSize() {
+    public Vec2 getSize() {
         return size;
     }
 
-    public void setSize(Vec2f size) {
-        this.size.set(size);
+    public void setSize(Vec2 size) {
+        this.size.put(size);
     }
 
     public float getFov() {

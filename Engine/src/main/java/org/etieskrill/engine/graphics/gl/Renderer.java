@@ -24,7 +24,7 @@ public class Renderer {
     
     public void render(Model model, ShaderProgram shader) {
         shader.setUniformMat4("uModel", model.getTransform());
-        shader.setUniformMat3("uNormal", model.getTransform().inverse_().transpose().toMat3_());
+        shader.setUniformMat3("uNormal", model.getTransform().inverse().transpose().toMat3());
         for (Mesh mesh : model.getMeshes())
             render(mesh, shader);
     }

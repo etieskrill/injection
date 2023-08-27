@@ -1,9 +1,9 @@
 package org.etieskrill.engine.scene._2d;
 
-import glm.vec._3.Vec3;
+import glm_.vec2.Vec2;
+import glm_.vec3.Vec3;
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.assimp.Model;
-import org.etieskrill.engine.math.Vec2f;
 
 public class Button extends Group {
     
@@ -42,7 +42,7 @@ public class Button extends Group {
     //}
     
     @Override
-    public Vec2f computeSize(Vec2f minSize, Vec2f prefSize) {
+    public Vec2 computeSize(Vec2 minSize, Vec2 prefSize) {
         return setSize(getLayout().getPrefSize());
     }
     

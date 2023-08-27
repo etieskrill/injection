@@ -1,10 +1,10 @@
 package org.etieskrill.engine.scene._2d;
 
-import org.etieskrill.engine.math.Vec2f;
+import glm_.vec2.Vec2;
 
 public interface Layoutable {
     
-    Vec2f computeSize(Vec2f minSize, Vec2f prefSize);
+    Vec2 computeSize(Vec2 minSize, Vec2 prefSize);
     void layout();
     
     void invalidate();

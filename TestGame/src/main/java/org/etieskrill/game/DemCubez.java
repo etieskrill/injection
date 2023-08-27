@@ -1,6 +1,7 @@
 package org.etieskrill.game;
 
-import glm.vec._3.Vec3;
+import glm_.vec2.Vec2;
+import glm_.vec3.Vec3;
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.OrthographicCamera;
 import org.etieskrill.engine.graphics.PerspectiveCamera;
@@ -10,7 +11,6 @@ import org.etieskrill.engine.graphics.gl.ModelFactory;
 import org.etieskrill.engine.graphics.gl.Renderer;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderFactory;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
-import org.etieskrill.engine.math.Vec2f;
 import org.etieskrill.engine.scene._2d.*;
 import org.etieskrill.engine.time.LoopPacer;
 import org.etieskrill.engine.time.SystemNanoTimePacer;
@@ -192,11 +192,16 @@ public class DemCubez {
                         .setScale(1.0f)
         );
         Model[] models = new Model[cubePositions.length];
+        Random random = new Random(69420);
         for (int i = 0; i < cubePositions.length; i++) {
             models[i] = ModelLoader.get().get("cube")
                     .setPosition(cubePositions[i])
-                    .setRotation(new Random(69420).nextFloat(),
-                            Vec3.linearRand_(new Vec3(-1f, -1f, -1f), new Vec3(1f, 1f, 1f)));
+                    .setRotation(random.nextFloat(),
+                            new Vec3(
+                                    random.nextFloat(-1f, 1f),
+                                    random.nextFloat(-1f, 1f),
+                                    random.nextFloat(-1f, 1f))
+                    );
         }
         
         Model[] lightSources = new Model[2];
@@ -219,15 +224,15 @@ public class DemCubez {
     
         camera = new PerspectiveCamera(window.getSize().getVector());
     
-        camera.setPosition(new Vec3(0f, 0f, -3f))
-                .setOrientation(0f, 90f, 0f)
+        camera.setPosition(new Vec3(0f, 0f, 3f))
+                .setOrientation(0f, -90f, 0f)
                 .setFar(-1000f);
 
         Container container = new Container();
         //container.getLayout().setAlignment(Layout.Alignment.BOTTOM_RIGHT);
         Layout layout = Layout.get()
-                .setPrefSize(new Vec2f(400f, 100f))
-                .setMinSize(new Vec2f(250f, 50f));
+                .setPrefSize(new Vec2(400f, 100f))
+                .setMinSize(new Vec2(250f, 50f));
         Button button1 = new Button(layout);
         Button button2 = new Button(layout);
         Button button3 = new Button(layout);
@@ -278,8 +283,8 @@ public class DemCubez {
                     radius * Math.sin(Math.toRadians(time))
             );
             if (!escPressed) {
-                lightSources[0].setPosition(add_(newLightSourcePos, offset));
-                lightSources[1].setPosition(add_(newLightSourcePos.negate(), offset));
+                lightSources[0].setPosition(newLightSourcePos.plus(offset));
+                lightSources[1].setPosition(newLightSourcePos.negate().plus(offset));
             }
     
             for (Model cube : models) {
@@ -292,11 +297,11 @@ public class DemCubez {
             
             //These are essentially intensity factors
             Vec3 lightColour = new Vec3(1f);
-            Vec3 ambient = mul_(lightColour, 0.1f);
+            Vec3 ambient = lightColour.times(0.1f);
             shader.setUniformVec3_("globalLights[0].ambient", ambient);
-            Vec3 diffuse = mul_(lightColour, 0.5f);
+            Vec3 diffuse = lightColour.times(0.5f);
             shader.setUniformVec3_("globalLights[0].diffuse", diffuse);
-            Vec3 specular = mul_(lightColour, 1f);
+            Vec3 specular = lightColour.times(1f);
             shader.setUniformVec3_("globalLights[0].specular", specular);
 
             shader.setUniformFloat_("globalLights[0].constant", 1f);
@@ -336,7 +341,7 @@ public class DemCubez {
             }
             
             backpackShader.setUniformMat4("uCombined", camera.getCombined());
-            renderer.render(backpack, backpackShader);
+            //renderer.render(backpack, backpackShader);
             
             lightShader.setUniformMat4("uCombined", camera.getCombined());
             for (int i = 0; i < lightSources.length; i++) {
@@ -365,17 +370,17 @@ public class DemCubez {
         Vec3 deltaPosition = new Vec3();
     
         float camSpeed = !ctrlPressed ? 2f : 4f;
-        if (wPressed) add(deltaPosition, new Vec3(0f, 0f, 1f));
-        if (sPressed) add(deltaPosition, new Vec3(0f, 0f, -1f));
-        if (aPressed) add(deltaPosition, new Vec3(-1f, 0f, 0f));
-        if (dPressed) add(deltaPosition, new Vec3(1f, 0f, 0f));
-        if (spacePressed) add(deltaPosition, new Vec3(0f, -1f, 0f));
-        if (shiftPressed) add(deltaPosition, new Vec3(0f, 1f, 0f));
+        if (wPressed) deltaPosition.plusAssign(new Vec3(0f, 0f, 1f));
+        if (sPressed) deltaPosition.plusAssign(new Vec3(0f, 0f, -1f));
+        if (aPressed) deltaPosition.plusAssign(new Vec3(-1f, 0f, 0f));
+        if (dPressed) deltaPosition.plusAssign(new Vec3(1f, 0f, 0f));
+        if (spacePressed) deltaPosition.plusAssign(new Vec3(0f, -1f, 0f));
+        if (shiftPressed) deltaPosition.plusAssign(new Vec3(0f, 1f, 0f));
     
         if (deltaPosition.length() > 0f) deltaPosition.normalize();
     
         float delta = (float) pacer.getDeltaTimeSeconds();
-        deltaPosition = mul_(mul_(deltaPosition, camSpeed), delta);
+        deltaPosition = deltaPosition.times(camSpeed).times(delta);
         if (!escPressed) camera.translate(deltaPosition);
     
         float camRollSpeed = 1f, camRoll = 0;
@@ -389,24 +394,6 @@ public class DemCubez {
     private void terminate() {
         glFlush();
         glfwTerminate();
-    }
-    
-    //TODO own port of glm to java
-    //i honestly still cannot believe that a typo this major is in this library, does anyone ever use it at all?
-    private static Vec3 add_(Vec3 a, Vec3 b) {
-        return new Vec3(a.x + b.x, a.y + b.y, a.z + b.z);
-    }
-    
-    private static Vec3 add(Vec3 a, Vec3 b) {
-        return a.set(a.x + b.x, a.y + b.y, a.z + b.z);
-    }
-    
-    private static Vec3 mul_(Vec3 a, float s) {
-        return new Vec3(a.x * s, a.y * s, a.z * s);
-    }
-    
-    private static Vec3 mul(Vec3 a, Vec3 b) {
-        return a.set(a.x * b.x, a.y * b.y, a.z * b.z);
     }
     
     public static void main(String[] args) {

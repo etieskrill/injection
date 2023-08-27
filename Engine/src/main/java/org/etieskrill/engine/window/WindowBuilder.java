@@ -1,6 +1,6 @@
 package org.etieskrill.engine.window;
 
-import org.etieskrill.engine.math.Vec2f;
+import glm_.vec2.Vec2;
 
 import static org.lwjgl.glfw.GLFW.GLFW_DONT_CARE;
 
@@ -8,7 +8,7 @@ public class WindowBuilder {
     
     private Window.WindowMode mode;
     private Window.WindowSize size;
-    private final Vec2f position = new Vec2f();
+    private final Vec2 position = new Vec2();
     private float refreshRate = GLFW_DONT_CARE;
     private String title;
     
@@ -28,8 +28,8 @@ public class WindowBuilder {
         return this;
     }
     
-    public WindowBuilder setPosition(Vec2f position) {
-        this.position.set(position);
+    public WindowBuilder setPosition(Vec2 position) {
+        this.position.put(position);
         return this;
     }
     

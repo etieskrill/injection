@@ -1,8 +1,8 @@
 package org.etieskrill.engine.scene._2d;
 
+import glm_.vec2.Vec2;
 import org.etieskrill.engine.graphics.Camera;
 import org.etieskrill.engine.graphics.Batch;
-import org.etieskrill.engine.math.Vec2f;
 
 public class Stage {
     
@@ -10,7 +10,7 @@ public class Stage {
     private Container root;
     private Camera camera;
 
-    private Vec2f size;
+    private Vec2 size;
     
     public Stage(Batch batch, Container root, Camera camera) {
         this.batch = batch;
@@ -22,7 +22,7 @@ public class Stage {
     
     public void update(double delta) {
         //TODO viewport based stuff
-        root.position.set(0f, 0f);
+        root.position.put(0f, 0f);
         //root.size.set(size);
         root.getLayout().setMinSize(size).setPrefSize(size);
         root.rotation = 0f;
@@ -74,7 +74,7 @@ public class Stage {
         this.root.hide();
     }
 
-    public void setSize(Vec2f size) {
+    public void setSize(Vec2 size) {
         this.size = size;
     }
 

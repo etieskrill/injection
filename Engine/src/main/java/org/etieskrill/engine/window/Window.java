@@ -254,4 +254,55 @@ public class Window {
         this.stage.setSize(this.size.getVector());
     }
     
+    public class Cursor {
+        public enum CursorMode {
+            NORMAL,
+            HIDDEN,
+            DISABLED,
+            CAPTURED
+        }
+        
+        public void setCursorMode(CursorMode mode) {
+            int glfwMode = switch (mode) {
+                case NORMAL -> GLFW_CURSOR_NORMAL;
+                case HIDDEN -> GLFW_CURSOR_HIDDEN;
+                case DISABLED -> GLFW_CURSOR_DISABLED;
+                case CAPTURED -> GLFW_CURSOR_CAPTURED;
+            };
+            
+            glfwSetInputMode(window, GLFW_CURSOR, glfwMode);
+        }
+        
+        public enum CursorShape {
+            ARROW,
+            IBEAM,
+            CROSSHAIR,
+            POINTING_HAND,
+            RESIZE_EW,
+            RESIZE_NS,
+            RESIZE_NWSE,
+            RESIZE_NESW,
+            RESIZE_ALL,
+            NOT_ALLOWED
+        }
+        
+        public void setCursorShape(CursorShape shape) {
+            int glfwShape = switch (shape) {
+                case ARROW -> GLFW_ARROW_CURSOR;
+                case IBEAM -> GLFW_IBEAM_CURSOR;
+                case CROSSHAIR -> GLFW_CROSSHAIR_CURSOR;
+                case POINTING_HAND -> GLFW_POINTING_HAND_CURSOR;
+                case RESIZE_EW -> GLFW_RESIZE_EW_CURSOR;
+                case RESIZE_NS -> GLFW_RESIZE_NS_CURSOR;
+                case RESIZE_NWSE -> GLFW_RESIZE_NWSE_CURSOR;
+                case RESIZE_NESW -> GLFW_RESIZE_NESW_CURSOR;
+                case RESIZE_ALL -> GLFW_RESIZE_ALL_CURSOR;
+                case NOT_ALLOWED -> GLFW_NOT_ALLOWED_CURSOR;
+            };
+            
+            //glfwCreateStandardCursor(glfwShape);
+            //glfwSetInputMode(window, );
+        }
+    }
+    
 }

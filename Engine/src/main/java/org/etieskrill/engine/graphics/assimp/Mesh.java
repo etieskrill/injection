@@ -1,6 +1,6 @@
 package org.etieskrill.engine.graphics.assimp;
 
-import glm.mat._4.Mat4;
+import glm_.mat4x4.Mat4;
 import org.etieskrill.engine.Disposable;
 
 import java.util.List;

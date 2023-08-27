@@ -1,9 +1,9 @@
 package org.etieskrill.engine.graphics.gl.shaders;
 
-import glm.mat._3.Mat3;
-import glm.mat._4.Mat4;
-import glm.vec._3.Vec3;
-import glm.vec._4.Vec4;
+import glm_.mat3x3.Mat3;
+import glm_.mat4x4.Mat4;
+import glm_.vec3.Vec3;
+import glm_.vec4.Vec4;
 import org.etieskrill.engine.util.ResourceReader;
 
 import java.util.ArrayList;
@@ -99,18 +99,18 @@ public abstract class ShaderProgram {
     
     public void setUniformVec3(CharSequence name, Vec3 vec) {
         if (AUTO_START_ON_VARIABLE_SET) start();
-        glUniform3fv(getUniformLocation(name), vec.toDfb_());
+        glUniform3fv(getUniformLocation(name), vec.toFloatArray());
     }
     
     @Deprecated
     public void setUniformVec3_(CharSequence name, Vec3 vec) {
         if (AUTO_START_ON_VARIABLE_SET) start();
-        glUniform3fv(glGetUniformLocation(programID, name), vec.toDfb_());
+        glUniform3fv(glGetUniformLocation(programID, name), vec.toFloatArray());
     }
     
     public void setUniformVec4(CharSequence name, Vec4 vec) {
         if (AUTO_START_ON_VARIABLE_SET) start();
-        glUniform4fv(getUniformLocation(name), vec.toDfb_());
+        glUniform4fv(getUniformLocation(name), vec.toFloatArray());
     }
     
     public void setUniformMat3(CharSequence name, Mat3 mat) {
@@ -120,7 +120,7 @@ public abstract class ShaderProgram {
     
     public void setUniformMat3(CharSequence name, Mat3 mat, boolean transpose) {
         if (AUTO_START_ON_VARIABLE_SET) start();
-        glUniformMatrix3fv(getUniformLocation(name), transpose, mat.toFa_());
+        glUniformMatrix3fv(getUniformLocation(name), transpose, mat.toFloatArray());
     }
     
     public void setUniformMat4(CharSequence name, Mat4 mat) {
@@ -130,7 +130,7 @@ public abstract class ShaderProgram {
     
     public void setUniformMat4(CharSequence name, Mat4 mat, boolean transpose) {
         if (AUTO_START_ON_VARIABLE_SET) start();
-        glUniformMatrix4fv(getUniformLocation(name), transpose, mat.toFa_());
+        glUniformMatrix4fv(getUniformLocation(name), transpose, mat.toFloatArray());
     }
     
     private static int loadShader(String file, int shaderType) {

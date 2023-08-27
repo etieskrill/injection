@@ -1,7 +1,7 @@
 package org.etieskrill.engine.scene._2d;
 
+import glm_.vec2.Vec2;
 import org.etieskrill.engine.graphics.Batch;
-import org.etieskrill.engine.math.Vec2f;
 
 public class Container extends LayoutNode {
     
@@ -26,9 +26,9 @@ public class Container extends LayoutNode {
     //}
     
     @Override
-    public Vec2f computeSize(Vec2f minSize, Vec2f prefSize) {
+    public Vec2 computeSize(Vec2 minSize, Vec2 prefSize) {
         if (parent == null) return setSize(getLayout().getPrefSize());
-        if (!getLayout().caresAboutSize()) return new Vec2f();
+        if (!getLayout().caresAboutSize()) return new Vec2();
         
         return setSize(parent != null ? getLayout().getSize(parent.getSize()) : getLayout().getPrefSize());
     }
@@ -38,8 +38,8 @@ public class Container extends LayoutNode {
         if (!shouldLayout || child == null) return;
         
         //child.computeSize();
-        Vec2f computedSize = new Vec2f(child.getSize()), actualSize = new Vec2f(computedSize);
-        Vec2f prefSize = getLayout().getPrefSize();
+        Vec2 computedSize = new Vec2(child.getSize()), actualSize = new Vec2(computedSize);
+        Vec2 prefSize = getLayout().getPrefSize();
 
         double actualX = Math.min(child.getLayout().getPrefSize().getX(), Math.max(child.getLayout().getMinSize().getX(), computedSize.getX()));
         double actualY = Math.min(child.getLayout().getPrefSize().getY(), Math.max(child.getLayout().getMinSize().getY(), computedSize.getY()));
@@ -47,17 +47,17 @@ public class Container extends LayoutNode {
         if (computedSize.getY() > prefSize.getY()) actualSize.setY(Math.max(computedSize.getY(), getLayout().getMinSize().getY()));
     
         //System.out.println(computedSize + " " + actualX + " " + actualY + " " + actualSize);
-
-        Vec2f newPosition = switch (getLayout().getAlignment()) {
-            case TOP_LEFT -> new Vec2f(0f, size.getY() - actualSize.getY());
-            case TOP_CENTER -> new Vec2f(size.getX() / 2f - actualSize.getX() / 2f, size.getY() - actualSize.getY());
-            case TOP_RIGHT -> new Vec2f(size.getX() - actualSize.getX(), size.getY() - actualSize.getY());
-            case CENTER_LEFT -> new Vec2f(0f, size.getY() / 2f - actualSize.getY() / 2f);
-            case CENTER -> new Vec2f(size.getX() / 2f - actualSize.getX() / 2f, size.getY() / 2f - actualSize.getY() / 2f);
-            case CENTER_RIGHT -> new Vec2f(size.getX() - actualSize.getX(), size.getY() / 2f - actualSize.getY() / 2f);
-            case BOTTOM_LEFT -> new Vec2f(0f, 0f);
-            case BOTTOM_CENTER -> new Vec2f(size.getX() / 2f - actualSize.getX() / 2f, 0f);
-            case BOTTOM_RIGHT -> new Vec2f(size.getX() - actualSize.getX(), 0f);
+    
+        Vec2 newPosition = switch (getLayout().getAlignment()) {
+            case TOP_LEFT -> new Vec2(0f, size.getY() - actualSize.getY());
+            case TOP_CENTER -> new Vec2(size.getX() / 2f - actualSize.getX() / 2f, size.getY() - actualSize.getY());
+            case TOP_RIGHT -> new Vec2(size.getX() - actualSize.getX(), size.getY() - actualSize.getY());
+            case CENTER_LEFT -> new Vec2(0f, size.getY() / 2f - actualSize.getY() / 2f);
+            case CENTER -> new Vec2(size.getX() / 2f - actualSize.getX() / 2f, size.getY() / 2f - actualSize.getY() / 2f);
+            case CENTER_RIGHT -> new Vec2(size.getX() - actualSize.getX(), size.getY() / 2f - actualSize.getY() / 2f);
+            case BOTTOM_LEFT -> new Vec2(0f, 0f);
+            case BOTTOM_CENTER -> new Vec2(size.getX() / 2f - actualSize.getX() / 2f, 0f);
+            case BOTTOM_RIGHT -> new Vec2(size.getX() - actualSize.getX(), 0f);
         };
     
         child.setPosition(getPositionRelativeToRoot(newPosition));

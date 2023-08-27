@@ -1,7 +1,7 @@
 package org.etieskrill.engine.scene._2d;
 
+import glm_.vec2.Vec2;
 import org.etieskrill.engine.graphics.Batch;
-import org.etieskrill.engine.math.Vec2f;
 
 public class VerticalGroup extends Group {
     
@@ -15,12 +15,12 @@ public class VerticalGroup extends Group {
     }
     
     @Override
-    public Vec2f computeSize(Vec2f minSize, Vec2f prefSize) {
+    public Vec2 computeSize(Vec2 minSize, Vec2 prefSize) {
         if (getLayout().caresAboutSize())
             return setSize(getLayout().getSize(parent.getSize()));
         
         //for (Group child : children) child.computeSize();
-        //System.out.println(setSize(new Vec2f(500f)));
+        //System.out.println(setSize(new Vec2(500f)));
         return size;
     }
     
@@ -28,18 +28,18 @@ public class VerticalGroup extends Group {
     public void layout() {
         if (!shouldLayout || children.size() == 0) return;
     
-        Vec2f totalSpan = new Vec2f(0f);
+        Vec2 totalSpan = new Vec2(0f);
         float minTotalWidth = 0f, minTotalHeight = 0f,
                 prefTotalWidth = 0f, prefTotalHeight = 0f;
     
         for (Group child : children) {
-            totalSpan.add(child.getLayout().computeSpan());
-        
-            Vec2f minSize = child.getLayout().getMinSize();
+            totalSpan.plusAssign(child.getLayout().computeSpan());
+    
+            Vec2 minSize = child.getLayout().getMinSize();
             if (minSize.getX() > minTotalWidth) minTotalWidth = minSize.getX();
             minTotalHeight += minSize.getY();
-        
-            Vec2f prefSize = child.getLayout().getPrefSize();
+    
+            Vec2 prefSize = child.getLayout().getPrefSize();
             if (prefSize.getX() > prefTotalWidth) prefTotalWidth = prefSize.getX();
             prefTotalHeight += prefSize.getY();
         }
@@ -54,7 +54,7 @@ public class VerticalGroup extends Group {
         }
         
         for (Group child : children) {
-            child.setPosition(getPositionRelativeToRoot(/*new Vec2f(child.getSize()).scl(-0.5f)*/));
+            child.setPosition(getPositionRelativeToRoot(/*new Vec2(child.getSize()).scl(-0.5f)*/));
         }
 
         shouldLayout = false;

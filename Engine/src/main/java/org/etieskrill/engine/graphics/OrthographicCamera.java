@@ -1,25 +1,27 @@
 package org.etieskrill.engine.graphics;
 
-import glm.mat._4.Mat4;
-import glm.vec._3.Vec3;
-import org.etieskrill.engine.math.Vec2f;
+import glm_.mat4x4.Mat4;
+import glm_.vec2.Vec2;
+import glm_.vec3.Vec3;
+
+import static glm_.Java.glm;
 
 public class OrthographicCamera extends Camera {
     
-    private final Vec2f size;
+    private final Vec2 size;
     private float top, bottom, left, right;
     
-    public OrthographicCamera(Vec2f size, Vec3 origin) {
+    public OrthographicCamera(Vec2 size, Vec3 origin) {
         super();
-        this.size = new Vec2f();
+        this.size = new Vec2();
         setSize(size);
         setPosition(origin);
-        setPerspective(new Mat4().ortho(left, right, bottom, top, near, far));
+        setPerspective(glm.ortho(left, right, bottom, top, near, far));
 
         if (autoUpdate) update();
     }
 
-    public OrthographicCamera(Vec2f size) {
+    public OrthographicCamera(Vec2 size) {
         this(size, new Vec3(0f));
     }
 
@@ -27,27 +29,27 @@ public class OrthographicCamera extends Camera {
     protected void updatePerspective() {
         //TODO proper zoom
         float zoom = 1f / this.zoom;
-        perspective.set(new Mat4().ortho(zoom * left, zoom * right, zoom * bottom, zoom * top, zoom * near, zoom * far));
+        perspective.put(glm.ortho(zoom * left, zoom * right, zoom * bottom, zoom * top, zoom * near, zoom * far));
     }
 
     @Override
     public Camera setPosition(Vec3 position) {
-        this.position.set(position);
+        this.position.put(position);
         updateDimensions();
         if (autoUpdate) update();
         return this;
     }
 
-    public void setSize(Vec2f size) {
-        this.size.set(size);
+    public void setSize(Vec2 size) {
+        this.size.put(size);
         updateDimensions();
         if (autoUpdate) update();
     }
 
     private void updateDimensions() {
-        bottom = position.y;
+        bottom = position.getY();
         top = -size.getY() + bottom; //negative because ... reasons
-        left = position.x;
+        left = position.getX();
         right = size.getX() + left;
     }
     

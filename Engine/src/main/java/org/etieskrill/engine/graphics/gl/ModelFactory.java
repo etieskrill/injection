@@ -1,6 +1,6 @@
 package org.etieskrill.engine.graphics.gl;
 
-import glm.vec._3.Vec3;
+import glm_.vec3.Vec3;
 import org.etieskrill.engine.graphics.assimp.Model;
 import org.lwjgl.BufferUtils;
 
@@ -223,9 +223,9 @@ public class ModelFactory {
         };
 
         for (int i = 0; i < vertices.length; i+=3) {
-            vertices[i] *= 2 * size.x;
-            vertices[i + 1] *= 2 * size.y;
-            vertices[i + 2] *= 2 * size.z;
+            vertices[i] *= 2 * size.getX();
+            vertices[i + 1] *= 2 * size.getY();
+            vertices[i + 2] *= 2 * size.getZ();
         }
 
         float[] textures = {
