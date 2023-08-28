@@ -67,33 +67,6 @@ vec3 calculatePointLight(PointLight light, vec3 normal, vec3 fragPosition, vec3 
 
 void main()
 {
-    //Flashlight
-    vec3 flashlightPart = vec3(0);
-
-    vec3 flashlightDirection = normalize(vec3(-flashlight.position.xy, flashlight.position.z) - tFragPos);
-    float theta = dot(flashlightDirection, normalize(vec3(flashlight.direction.xy, -flashlight.direction.z)));
-    if (theta > flashlight.cutoff) {
-        /*vec3 flashAmbient = flashlight.ambient * texture(material.diffuse, tTextureCoords).rgb;
-
-        vec3 lightDirection = normalize(flashlight.position - tFragPos);
-        float diff = max(dot(tNormal, lightDirection), 0.0); //TODO put in vertex
-        vec3 flashDiffuse = flashlight.diffuse * diff * texture(material.diffuse, tTextureCoords).rgb;
-
-        vec3 viewDirection = normalize(-uViewPosition - tFragPos);
-        vec3 reflectionDirection = reflect(-lightDirection, tNormal);
-        float spec = pow(max(dot(viewDirection, reflectionDirection), 0.0), material.shininess);
-        vec3 flashSpecular = flashlight.specular * spec * texture(material.specular, tTextureCoords).rgb;
-
-        float distance = 1.0 / length(normalize(flashlight.position - tFragPos));
-        //float flashAttenuation = 1.0 / flashlight.constant + flashlight.linear * distance + flashlight.quadratic * distance * distance;
-        //flashAttenuation = min(attenuation, 1.0);
-        float flashAttenuation = 1.0;
-
-        flashlightPart = (flashAmbient + flashDiffuse + flashSpecular) * flashAttenuation;*/
-
-        //flashlightPart = vec3(1f);
-    }
-
     vec3 combinedLight = vec3(0.0);
     for (int i = 0; i < NR_DIRECTIONAL_LIGHTS; i++)
         combinedLight += calculateDirectionalLight(globalLights[i], tNormal, uViewDirection);
@@ -101,15 +74,10 @@ void main()
         combinedLight += calculatePointLight(lights[i], tNormal, tFragPos, uViewDirection);
     }
 
-    vec3 emission;
-//    if (length(texture(material.specular0, tTextureCoords).rgb) == 0.0) {
-        emission = texture(material.emissive0, tTextureCoords + vec2(0.0, uTime * 0.25)).rgb;
-//        emission = emission.grb * 0.7;
-//    } else {
-//        emission = vec3(0.0);
-//    }
+    vec3 emission = texture(material.emissive0, tTextureCoords).rgb;
+    combinedLight += emission * (sin(2 * uTime) * 0.20 + 0.75);
 
-    oColour = vec4(combinedLight + emission, 1.0);
+    oColour = vec4(combinedLight, 1.0);
 }
 
 vec3 calculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDirection)

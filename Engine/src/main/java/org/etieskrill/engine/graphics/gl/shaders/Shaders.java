@@ -2,30 +2,32 @@ package org.etieskrill.engine.graphics.gl.shaders;
 
 public class Shaders {
 
-    public static ShaderProgram getStandardShader() {
+    public static StaticShader getStandardShader() {
         return new StaticShader();
     }
+    
+    public static ContainerShader getContainerShader() {
+        return new ContainerShader();
+    }
 
-    public static ShaderProgram getRoundedBoxShader() {
+    public static RoundedBoxShader getRoundedBoxShader() {
         return new RoundedBoxShader();
     }
 
-    public static ShaderProgram getLightSourceShader() {
+    public static LightSourceShader getLightSourceShader() {
         return new LightSourceShader();
     }
     
-    public static ShaderProgram getTextureShader() {
+    public static TextureShader getTextureShader() {
         return new TextureShader();
     }
 
     private static class StaticShader extends ShaderProgram {
-        private static final String VERTEX_FILE = "shaders/Phong.vert";
-        private static final String FRAGMENT_FILE = "shaders/Phong.frag";
-
-        public StaticShader() {
-            super(VERTEX_FILE, FRAGMENT_FILE);
+        @Override
+        protected String[] getShaderFileNames() {
+            return new String[]{"Phong.vert", "Phong.frag"};
         }
-
+        
         @Override
         protected void getUniformLocations() {
             addUniform("uMesh");
@@ -44,30 +46,29 @@ public class Shaders {
         
     }
     
-    //private static class ContainerShader extends ShaderProgram {
-    //    private static final String VERETX_FILE
-    //}
+    private static class ContainerShader extends StaticShader {
+        @Override
+        protected String[] getShaderFileNames() {
+            return new String[]{"Container.vert", "Container.frag"};
+        }
+    }
 
     private static class RoundedBoxShader extends ShaderProgram {
-        private static final String VERTEX_FILE = "shaders/RoundedBox.vert";
-        private static final String FRAGMENT_FILE = "shaders/RoundedBox.frag";
-
-        public RoundedBoxShader() {
-            super(VERTEX_FILE, FRAGMENT_FILE);
+        @Override
+        protected String[] getShaderFileNames() {
+            return new String[]{"RoundedBox.vert", "RoundedBox.frag"};
         }
-
+        
         @Override
         protected void getUniformLocations() {}
     }
 
     private static class LightSourceShader extends ShaderProgram {
-        private static final String VERTEX_FILE = "shaders/LightSource.vert";
-        private static final String FRAGMENT_FILE = "shaders/LightSource.frag";
-
-        public LightSourceShader() {
-            super(VERTEX_FILE, FRAGMENT_FILE);
+        @Override
+        protected String[] getShaderFileNames() {
+            return new String[]{"LightSource.vert", "LightSource.frag"};
         }
-
+        
         @Override
         protected void getUniformLocations() {
             addUniform("uMesh");
@@ -80,11 +81,9 @@ public class Shaders {
     }
     
     private static class TextureShader extends ShaderProgram {
-        private static final String VERTEX_FILE = "shaders/Texture.vert";
-        private static final String FRAGMENT_FILE = "shaders/Texture.frag";
-        
-        public TextureShader() {
-            super(VERTEX_FILE, FRAGMENT_FILE);
+        @Override
+        protected String[] getShaderFileNames() {
+            return new String[]{"Texture.vert", "Texture.frag"};
         }
         
         @Override
@@ -93,7 +92,6 @@ public class Shaders {
             addUniform("uCombined");
             addUniform("diffuseMap");
             addUniform("uColour");
-            //addUniform("uTime");
         }
     }
 

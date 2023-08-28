@@ -219,9 +219,9 @@ public class DemCubez {
         ;
         
         Renderer renderer = new Renderer();
-        ShaderProgram shader = Shaders.getStandardShader();
+        ShaderProgram containerShader = Shaders.getContainerShader();
         ShaderProgram lightShader = Shaders.getLightSourceShader();
-        ShaderProgram backpackShader = Shaders.getStandardShader();
+        ShaderProgram swordShader = Shaders.getStandardShader();
     
         Batch batch = new Batch(renderer, factory);
     
@@ -294,27 +294,26 @@ public class DemCubez {
             }
             
             renderer.prepare();
-            
-            shader.setUniformMat4("uCombined", camera.getCombined());
-            
+    
+    
             Vec3 globalLightDirection = new Vec3(1f);
-            
+    
             //These are essentially intensity factors
             Vec3 lightColour = new Vec3(1f);
             Vec3 ambient = lightColour.times(0.1f);
             Vec3 diffuse = lightColour.times(0.5f);
             Vec3 specular = lightColour.times(0.1f);
-            
-            shader.setUniformVec3_("globalLights[0].direction", globalLightDirection);
-            shader.setUniformVec3_("globalLights[0].ambient", ambient);
-            shader.setUniformVec3_("globalLights[0].diffuse", diffuse);
-            shader.setUniformVec3_("globalLights[0].specular", specular);
-            
-            backpackShader.setUniformVec3_("globalLights[0].direction", globalLightDirection);
-            backpackShader.setUniformVec3_("globalLights[0].ambient", ambient);
-            backpackShader.setUniformVec3_("globalLights[0].diffuse", diffuse);
-            backpackShader.setUniformVec3_("globalLights[0].specular", specular);
-            
+    
+            containerShader.setUniformVec3_("globalLights[0].direction", globalLightDirection);
+            containerShader.setUniformVec3_("globalLights[0].ambient", ambient);
+            containerShader.setUniformVec3_("globalLights[0].diffuse", diffuse);
+            containerShader.setUniformVec3_("globalLights[0].specular", specular);
+    
+            swordShader.setUniformVec3_("globalLights[0].direction", globalLightDirection);
+            swordShader.setUniformVec3_("globalLights[0].ambient", ambient);
+            swordShader.setUniformVec3_("globalLights[0].diffuse", diffuse);
+            swordShader.setUniformVec3_("globalLights[0].specular", specular);
+    
 //            for (int i = 0; i < lightSources.length; i++) {
 //                shader.setUniformVec3_("lights[" + i + "].position", lightSources[i].getPosition());
 //
@@ -336,12 +335,12 @@ public class DemCubez {
 //                backpackShader.setUniformFloat_("lights[" + i + "].linear", 0.01f);
 //                backpackShader.setUniformFloat_("lights[" + i + "].quadratic", 0.005f);
 //            }
-            
+    
             //TODO light source wrappers
             //shader.setUniformVec3("flashlight.position", camPosition);
             //shader.setUniformVec3("flashlight.direction", camFront);
             //shader.setUniformFloat("flashlight.cutoff", (float) Math.cos(Math.toRadians(12.5)));
-            
+    
             //shader.setUniformVec3("flashlight.ambient", ambient);
             //shader.setUniformVec3("flashlight.diffuse", diffuse);
             //shader.setUniformVec3("flashlight.specular", specular);
@@ -349,16 +348,18 @@ public class DemCubez {
             //shader.setUniformFloat("flashlight.constant", 1f);
             //shader.setUniformFloat("flashlight.linear", 0.09f);
             //shader.setUniformFloat("flashlight.quadratic", 0.032f);
-            
-            shader.setUniformVec3("uViewDirection", camera.getDirection());
-            shader.setUniformFloat("uTime", (float) pacer.getTime());
-
+    
+            containerShader.setUniformVec3("uViewDirection", camera.getDirection());
+            containerShader.setUniformFloat("uTime", (float) pacer.getTime());
+    
+            containerShader.setUniformMat4("uCombined", camera.getCombined());
             for (Model model : models) {
-                renderer.render(model, shader);
+                renderer.render(model, containerShader);
             }
             
-            backpackShader.setUniformMat4("uCombined", camera.getCombined());
-            renderer.render(backpack, backpackShader);
+            swordShader.setUniformFloat("uTime", (float) pacer.getTime());
+            swordShader.setUniformMat4("uCombined", camera.getCombined());
+            renderer.render(backpack, swordShader);
             
             lightShader.setUniformMat4("uCombined", camera.getCombined());
             for (int i = 0; i < lightSources.length; i++) {
@@ -379,7 +380,7 @@ public class DemCubez {
             pacer.nextFrame();
         }
         
-        shader.dispose();
+        containerShader.dispose();
         modelLoader.dispose();
     }
     

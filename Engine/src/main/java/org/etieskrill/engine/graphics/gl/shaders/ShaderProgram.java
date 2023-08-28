@@ -21,7 +21,13 @@ public abstract class ShaderProgram {
     private final Map<CharSequence, Integer> uniforms;
     private final List<CharSequence> unfoundUniforms;
     
-    public ShaderProgram(String vertexFile, String fragmentFile) {
+    public ShaderProgram() {
+        String[] shaderFiles = getShaderFileNames();
+        String
+                vertexFile = "shaders/" + shaderFiles[0],
+                fragmentFile = "shaders/" + shaderFiles[1];
+        //TODO create spec for other shader types and shader programs split across multiple files
+        
         programID = glCreateProgram();
         
         vertID = loadShader(vertexFile, GL_VERTEX_SHADER);
@@ -53,6 +59,8 @@ public abstract class ShaderProgram {
         glDeleteShader(vertID);
         glDeleteShader(fragID);
     }
+    
+    protected abstract String[] getShaderFileNames();
     
     protected abstract void getUniformLocations();
     

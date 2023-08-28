@@ -10,6 +10,6 @@ newmtl Sting
     Ni 1.000000
     d 1.000000
     map_Kd Sting_Base_Color.png
-    # map_Ks Sting_Metallic.png
+    map_Ks Sting_Metallic.png
     map_Ke Sting_Emissive.png
     illum 2
