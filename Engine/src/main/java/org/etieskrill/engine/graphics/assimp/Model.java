@@ -91,8 +91,21 @@ public class Model implements Disposable {
     }
     
     private void loadModel(String file) throws IOException {
-        AIScene scene = aiImportFile(DIRECTORY + file,
-                aiProcess_Triangulate |/* aiProcess_FlipUVs |*/ aiProcess_OptimizeMeshes);
+        //TODO properly set these
+        int processFlags =
+                aiProcess_Triangulate |
+                        //aiProcess_FlipUVs |
+                        aiProcess_OptimizeMeshes |
+                        aiProcess_JoinIdenticalVertices |
+                        aiProcess_RemoveRedundantMaterials |
+                        aiProcess_FindInvalidData |
+                        aiProcess_GenUVCoords |
+                        aiProcess_TransformUVCoords |
+                        aiProcess_FindInstances |
+                        aiProcess_PreTransformVertices
+                ;
+        
+        AIScene scene = aiImportFile(DIRECTORY + file, processFlags);
     
         if (scene == null || (scene.mFlags() & AI_SCENE_FLAGS_INCOMPLETE) != 0
                 || scene.mRootNode() == null) {
@@ -114,10 +127,11 @@ public class Model implements Disposable {
         if (mMeshes == null) return;
         for (int i = 0; i < node.mNumMeshes(); i++) {
             Mat4 transform = toMat4(node.mTransformation());
-            AINode parent = node;
-            while ((parent = parent.mParent()) != null) {
-                transform.times(toMat4(parent.mTransformation()));
-            }
+            // No longer necessary, thanks to the aiProcecss_PreTransformVertices flag (it never worked anyway)
+//            AINode parent = node;
+//            while ((parent = parent.mParent()) != null) {
+//                transform.timesAssign(toMat4(parent.mTransformation()));
+//            }
             meshes.add(processMesh(AIMesh.create(mMeshes.get(node.mMeshes().get(i))), transform));
         }
         

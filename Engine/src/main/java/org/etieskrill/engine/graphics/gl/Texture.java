@@ -20,7 +20,9 @@ import static org.lwjgl.stb.STBImage.*;
 public class Texture implements Disposable {
     
     private static final String directory = "Engine/src/main/resources/textures/";
-    private static final Supplier<Texture> DEFAULT_TEXTURE = () -> Texture.ofFile("pepega.png");
+    //TODO what to do if not all textures could be loaded; only load single diffuse placeholder,
+    // or if diffuse is present only that - dunno, choices, choices
+    private static final Supplier<Texture> DEFAULT_TEXTURE = () -> Texture.ofFile("pepega.png", TextureType.DIFFUSE);
     
     private static final Logger logger = LoggerFactory.getLogger(Texture.class);
     

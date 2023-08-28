@@ -5,6 +5,7 @@ import glm_.vec3.Vec3;
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.OrthographicCamera;
 import org.etieskrill.engine.graphics.PerspectiveCamera;
+import org.etieskrill.engine.graphics.assimp.Mesh;
 import org.etieskrill.engine.graphics.assimp.Model;
 import org.etieskrill.engine.graphics.gl.Loaders.ModelLoader;
 import org.etieskrill.engine.graphics.gl.ModelFactory;
@@ -70,16 +71,16 @@ public class DemCubez {
     private boolean initGL() {
         GL.createCapabilities();
         
-        //GLUtil.setupDebugMessageCallback(System.out); //TODO unbind when done
-        //GL33C.glViewport(0, 0, 1920, 1080); //this is apparently done ... somewhere behind the scenes?
-    
+//        GLUtil.setupDebugMessageCallback(System.out); //TODO unbind when done
+//        GL33C.glViewport(0, 0, 1920, 1080); //this is apparently done ... somewhere behind the scenes?
+//
         //Get max vertex attributes
-        /*System.out.println(glGetInteger(GL_MAX_VERTEX_UNIFORM_COMPONENTS));
-        System.out.println(glGetInteger(GL_MAX_VARYING_FLOATS));
-        System.out.println(glGetInteger(GL_MAX_VERTEX_ATTRIBS));
-        System.out.println(glGetInteger(GL_MAX_TEXTURE_IMAGE_UNITS));
-        System.out.println(glGetInteger(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS));
-        System.out.println(glGetInteger(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS));*/
+//        System.out.println(glGetInteger(GL_MAX_VERTEX_UNIFORM_COMPONENTS));
+//        System.out.println(glGetInteger(GL_MAX_VARYING_FLOATS));
+//        System.out.println(glGetInteger(GL_MAX_VERTEX_ATTRIBS));
+//        System.out.println(glGetInteger(GL_MAX_TEXTURE_IMAGE_UNITS));
+//        System.out.println(glGetInteger(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS));
+//        System.out.println(glGetInteger(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS));
         
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LESS);
@@ -212,10 +213,10 @@ public class DemCubez {
                     .setPosition(new Vec3(0f, 0f, -5f));
         }
     
-        Model backpack = Model.ofFile("Sting-Sword.obj")
+        Model sword = Model.ofFile("Sting-Sword.fbx")
                 .setPosition(new Vec3(0, 0, -2))
                 .setScale(new Vec3(0.1f))
-                //.setRotation((float) Math.toRadians(180f), new Vec3(1f, 0f, 0f))
+                .setRotation((float) Math.toRadians(90f), new Vec3(1f, 0f, 0f))
         ;
         
         Renderer renderer = new Renderer();
@@ -359,7 +360,7 @@ public class DemCubez {
             
             swordShader.setUniformFloat("uTime", (float) pacer.getTime());
             swordShader.setUniformMat4("uCombined", camera.getCombined());
-            renderer.render(backpack, swordShader);
+            renderer.render(sword, swordShader);
             
             lightShader.setUniformMat4("uCombined", camera.getCombined());
             for (int i = 0; i < lightSources.length; i++) {

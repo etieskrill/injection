@@ -37,6 +37,11 @@ public class Renderer {
         
         glDrawElements(GL_TRIANGLES, mesh.getNumIndices(), GL_UNSIGNED_SHORT, 0);
     
+        for (int i = 0; i < 32; i++) {
+            glActiveTexture(GL_TEXTURE0 + i);
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
+    
         glBindVertexArray(0);
         shader.stop();
     }
