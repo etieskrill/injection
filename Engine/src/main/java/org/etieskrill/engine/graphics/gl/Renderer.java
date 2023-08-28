@@ -54,7 +54,7 @@ public class Renderer {
         for (Texture texture : textures) {
             int number = switch (texture.getType()) {
                 case DIFFUSE -> diffuse++;
-                case SPECULAR -> specular++;
+                case SPECULAR -> specular++; //TODO could pass texture colour channels here, but it is probs best to just finally define a standard for this whole shebang
                 case EMISSIVE -> emissive++;
                 case HEIGHT -> height++;
                 case SHININESS -> shininess++;
