@@ -1,6 +1,7 @@
 #version 330 core
 
 #define LIMIT_ATTENUATION true
+#define SINGLE_CHANNEL_SPECULAR true
 
 #define NR_DIRECTIONAL_LIGHTS 1
 #define NR_POINT_LIGHTS 2
@@ -44,6 +45,7 @@ struct Material {
     sampler2D diffuse0;
     sampler2D specular0;
     float shininess;
+    float specularity;
     sampler2D emissive0;
 };
 
@@ -75,7 +77,7 @@ void main()
     }
 
     vec3 emission = texture(material.emissive0, tTextureCoords).rgb;
-    combinedLight += emission * (sin(2 * uTime) * 0.20 + 0.75);
+    combinedLight += emission * (sin(2 * uTime) * 0.1 + 0.3);
 
     oColour = vec4(combinedLight, 1.0);
 }
@@ -89,8 +91,9 @@ vec3 calculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDir
     vec3 diffuse = light.diffuse * diff * texture(material.diffuse0, tTextureCoords).rgb;
 
     vec3 reflectionDirection = reflect(-lightDirection, normal);
-    float spec = pow(max(dot(viewDirection, reflectionDirection), 0.0), material.shininess);
-    vec3 specular = light.specular * spec * texture(material.specular0, tTextureCoords).rgb;
+    float spec = material.specularity * pow(max(dot(viewDirection, reflectionDirection), 0.0), material.shininess);
+    vec4 specTex = texture(material.specular0, tTextureCoords);
+    vec3 specular = light.specular * spec * (SINGLE_CHANNEL_SPECULAR ? specTex.rrr : specTex.rgb);
 
     return ambient + diffuse + specular;
 }
@@ -104,8 +107,9 @@ vec3 calculatePointLight(PointLight light, vec3 normal, vec3 fragPosition, vec3 
     vec3 diffuse = light.diffuse * diff * texture(material.diffuse0, tTextureCoords).rgb;
 
     vec3 reflectionDirection = reflect(-lightDirection, normal);
-    float spec = pow(max(dot(viewDirection, reflectionDirection), 0.0), material.shininess);
-    vec3 specular = light.specular * spec * texture(material.specular0, tTextureCoords).rgb;
+    float spec = material.specularity * pow(max(dot(viewDirection, reflectionDirection), 0.0), material.shininess);
+    vec4 specTex = texture(material.specular0, tTextureCoords);
+    vec3 specular = light.specular * spec * (SINGLE_CHANNEL_SPECULAR ? specTex.rrr : specTex.rgb);
 
     float distance = length(lightDirection);
     float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * distance * distance);

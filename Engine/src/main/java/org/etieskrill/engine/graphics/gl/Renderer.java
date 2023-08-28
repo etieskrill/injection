@@ -1,5 +1,6 @@
 package org.etieskrill.engine.graphics.gl;
 
+import org.etieskrill.engine.graphics.assimp.Material;
 import org.etieskrill.engine.graphics.assimp.Mesh;
 import org.etieskrill.engine.graphics.assimp.Model;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
@@ -31,7 +32,7 @@ public class Renderer {
     
     private void render(Mesh mesh, ShaderProgram shader) {
         shader.start();
-        bindMaterial(mesh, shader);
+        bindMaterial(mesh.getMaterial(), shader);
         shader.setUniformMat4("uMesh", mesh.getTransform());
         glBindVertexArray(mesh.getVao());
         
@@ -46,27 +47,29 @@ public class Renderer {
         shader.stop();
     }
     
-    private void bindMaterial(Mesh mesh, ShaderProgram shader) {
-        int diffuse = 0, specular = 0, emissive = 0;
-        Vector<Texture> textures = mesh.getMaterial().getTextures();
+    private void bindMaterial(Material material, ShaderProgram shader) {
+        int diffuse = 0, specular = 0, emissive = 0, height = 0, shininess = 0;
+        Vector<Texture> textures = material.getTextures();
     
         for (Texture texture : textures) {
-            int number = 0;
-            switch (texture.getType()) {
-                case DIFFUSE -> number = diffuse++;
-                case SPECULAR -> number = specular++;
-                case EMISSIVE -> number = emissive++;
+            int number = switch (texture.getType()) {
+                case DIFFUSE -> diffuse++;
+                case SPECULAR -> specular++;
+                case EMISSIVE -> emissive++;
+                case HEIGHT -> height++;
+                case SHININESS -> shininess++;
                 case UNKNOWN -> throw new IllegalStateException("Texture has invalid type");
-            }
+            };
         
-            int validTextures = (diffuse + specular + emissive) - 1;
+            int validTextures = (diffuse + specular + emissive + height + shininess) - 1;
             texture.bind(validTextures);
 //            if (mesh.getNumIndices() < 400) logger.trace("Binding texture of type {} as material.{}{} to unit {}",
 //                    texture.getType().name(), texture.getType().name().toLowerCase(), number, validTextures);
             shader.setUniformInt("material." + texture.getType().name().toLowerCase() + number, validTextures);
         }
         
-        shader.setUniformFloat("material.shininess", 32f);
+        shader.setUniformFloat("material.shininess", material.getShininess());
+        shader.setUniformFloat("material.specularity", material.getShininessStrength());
     }
     
 }

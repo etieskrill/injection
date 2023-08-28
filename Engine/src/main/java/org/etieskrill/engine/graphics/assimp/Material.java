@@ -11,40 +11,55 @@ public class Material implements Disposable {
     //TODO number max gl texture units check
     private final Vector<Texture> textures;
     
+    private final float shininess, shininessStrength;
+    
     public static final class Builder {
         private Vector<Texture> textures = new Vector<>();
+        private float shininess = 32f, shininessStrength = 1f;
+        
+        public Builder addTextures(Texture... textures) {
+            this.textures.addAll(List.of(textures));
+            return this;
+        }
+        
+        public Builder addTextures(Vector<Texture> textures) {
+            this.textures.addAll(textures);
+            return this;
+        }
     
-        public Builder setTextures(Texture... textures) {
-            this.textures = new Vector<>(List.of(textures));
-            return this;
+        public void setShininess(float shininess) {
+            this.shininess = shininess;
         }
-        
-        public Builder setTextures(Vector<Texture> textures) {
-            this.textures = textures;
-            return this;
+    
+        public void setShininessStrength(float shininessStrength) {
+            this.shininessStrength = shininessStrength;
         }
-        
+    
         public Material build() {
-            return new Material(textures);
+            return new Material(textures, shininess, shininessStrength);
         }
     }
-    
-    //TODO add custom implementation for single shininess value (should be more efficient) ((in edge cases))
     
     public static Material getBlank() {
         return new Material.Builder().build();
     }
     
-    private Material(Vector<Texture> textures) {
+    private Material(Vector<Texture> textures, float shininess, float shininessStrength) {
         this.textures = new Vector<>(textures);
+        this.shininess = shininess;
+        this.shininessStrength = shininessStrength;
     }
     
     public Vector<Texture> getTextures() {
         return textures;
     }
     
-    public void addTexture(Texture texture) {
-        this.textures.add(texture);
+    public float getShininess() {
+        return shininess;
+    }
+    
+    public float getShininessStrength() {
+        return shininessStrength;
     }
     
     private boolean wasAlreadyDisposed = false;

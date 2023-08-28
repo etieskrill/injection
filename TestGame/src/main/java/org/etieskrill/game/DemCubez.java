@@ -1,5 +1,6 @@
 package org.etieskrill.game;
 
+import glm_.mat4x4.Mat4;
 import glm_.vec2.Vec2;
 import glm_.vec3.Vec3;
 import org.etieskrill.engine.graphics.Batch;
@@ -213,10 +214,16 @@ public class DemCubez {
                     .setPosition(new Vec3(0f, 0f, -5f));
         }
     
-        Model sword = Model.ofFile("Sting-Sword.fbx")
+        Model sword = Model.ofFile("Sting-Sword.obj")
                 .setPosition(new Vec3(0, 0, -2))
                 .setScale(new Vec3(0.1f))
                 .setRotation((float) Math.toRadians(90f), new Vec3(1f, 0f, 0f))
+        ;
+    
+        Model backpack = Model.ofFile("backpack.obj")
+                .setPosition(new Vec3(-3, -1, -2))
+                .setScale(new Vec3(0.15f))
+                .setRotation((float) Math.toRadians(180f), new Vec3(1f, 0f, 1f))
         ;
         
         Renderer renderer = new Renderer();
@@ -302,54 +309,48 @@ public class DemCubez {
             //These are essentially intensity factors
             Vec3 lightColour = new Vec3(1f);
             Vec3 ambient = lightColour.times(0.1f);
-            Vec3 diffuse = lightColour.times(0.5f);
-            Vec3 specular = lightColour.times(0.1f);
+            Vec3 diffuse = lightColour.times(0.25f);
+            Vec3 specular = lightColour.times(0.5f);
     
             containerShader.setUniformVec3_("globalLights[0].direction", globalLightDirection);
             containerShader.setUniformVec3_("globalLights[0].ambient", ambient);
             containerShader.setUniformVec3_("globalLights[0].diffuse", diffuse);
             containerShader.setUniformVec3_("globalLights[0].specular", specular);
-    
+
             swordShader.setUniformVec3_("globalLights[0].direction", globalLightDirection);
             swordShader.setUniformVec3_("globalLights[0].ambient", ambient);
             swordShader.setUniformVec3_("globalLights[0].diffuse", diffuse);
             swordShader.setUniformVec3_("globalLights[0].specular", specular);
+            
+            Vec3 pointLightColour = new Vec3(1f);
+            Vec3 pointLightAmbient = pointLightColour.times(0.1f);
+            Vec3 pointLightDiffuse = pointLightColour.times(0.3f);
+            Vec3 pointLightSpecular = pointLightColour.times(0.2f);
+            
+            for (int i = 0; i < lightSources.length; i++) {
+                containerShader.setUniformVec3_("lights[" + i + "].position", lightSources[i].getPosition());
+
+                containerShader.setUniformVec3_("lights[" + i + "].ambient", pointLightAmbient);
+                containerShader.setUniformVec3_("lights[" + i + "].diffuse", pointLightDiffuse);
+                containerShader.setUniformVec3_("lights[" + i + "].specular", pointLightSpecular);
+
+                containerShader.setUniformFloat_("lights[" + i + "].constant", 1f);
+                containerShader.setUniformFloat_("lights[" + i + "].linear", 0.01f);
+                containerShader.setUniformFloat_("lights[" + i + "].quadratic", 0.005f);
+
+                swordShader.setUniformVec3_("lights[" + i + "].position", lightSources[i].getPosition());
+
+                swordShader.setUniformVec3_("lights[" + i + "].ambient", pointLightAmbient);
+                swordShader.setUniformVec3_("lights[" + i + "].diffuse", pointLightDiffuse);
+                swordShader.setUniformVec3_("lights[" + i + "].specular", pointLightSpecular);
+
+                swordShader.setUniformFloat_("lights[" + i + "].constant", 1f);
+                swordShader.setUniformFloat_("lights[" + i + "].linear", 0.01f);
+                swordShader.setUniformFloat_("lights[" + i + "].quadratic", 0.005f);
+            }
     
-//            for (int i = 0; i < lightSources.length; i++) {
-//                shader.setUniformVec3_("lights[" + i + "].position", lightSources[i].getPosition());
-//
-//                shader.setUniformVec3_("lights[" + i + "].ambient", ambient);
-//                shader.setUniformVec3_("lights[" + i + "].diffuse", diffuse);
-//                shader.setUniformVec3_("lights[" + i + "].specular", specular);
-//
-//                shader.setUniformFloat_("lights[" + i + "].constant", 1f);
-//                shader.setUniformFloat_("lights[" + i + "].linear", 0.01f);
-//                shader.setUniformFloat_("lights[" + i + "].quadratic", 0.005f);
-//
-//                backpackShader.setUniformVec3_("lights[" + i + "].position", lightSources[i].getPosition());
-//
-//                backpackShader.setUniformVec3_("lights[" + i + "].ambient", ambient);
-//                backpackShader.setUniformVec3_("lights[" + i + "].diffuse", diffuse);
-//                backpackShader.setUniformVec3_("lights[" + i + "].specular", specular);
-//
-//                backpackShader.setUniformFloat_("lights[" + i + "].constant", 1f);
-//                backpackShader.setUniformFloat_("lights[" + i + "].linear", 0.01f);
-//                backpackShader.setUniformFloat_("lights[" + i + "].quadratic", 0.005f);
-//            }
-    
-            //TODO light source wrappers
-            //shader.setUniformVec3("flashlight.position", camPosition);
-            //shader.setUniformVec3("flashlight.direction", camFront);
-            //shader.setUniformFloat("flashlight.cutoff", (float) Math.cos(Math.toRadians(12.5)));
-    
-            //shader.setUniformVec3("flashlight.ambient", ambient);
-            //shader.setUniformVec3("flashlight.diffuse", diffuse);
-            //shader.setUniformVec3("flashlight.specular", specular);
-    
-            //shader.setUniformFloat("flashlight.constant", 1f);
-            //shader.setUniformFloat("flashlight.linear", 0.09f);
-            //shader.setUniformFloat("flashlight.quadratic", 0.032f);
-    
+            //TODO consider passing fragment position to frag shader with view applied,
+            // so this nonsense becomes unnecessary
             containerShader.setUniformVec3("uViewDirection", camera.getDirection());
             containerShader.setUniformFloat("uTime", (float) pacer.getTime());
     
@@ -358,15 +359,17 @@ public class DemCubez {
                 renderer.render(model, containerShader);
             }
             
+            swordShader.setUniformVec3("uViewDirection", camera.getDirection());
             swordShader.setUniformFloat("uTime", (float) pacer.getTime());
             swordShader.setUniformMat4("uCombined", camera.getCombined());
             renderer.render(sword, swordShader);
+            renderer.render(backpack, containerShader);
             
             lightShader.setUniformMat4("uCombined", camera.getCombined());
             for (int i = 0; i < lightSources.length; i++) {
-                lightShader.setUniformVec3("light.ambient", ambient);
-                lightShader.setUniformVec3("light.diffuse", diffuse);
-                lightShader.setUniformVec3("light.specular", specular);
+                lightShader.setUniformVec3("light.ambient", pointLightAmbient);
+                lightShader.setUniformVec3("light.diffuse", pointLightDiffuse);
+                lightShader.setUniformVec3("light.specular", pointLightSpecular);
     
                 renderer.render(lightSources[i], lightShader);
             }

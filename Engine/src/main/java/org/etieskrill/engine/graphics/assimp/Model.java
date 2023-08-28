@@ -7,16 +7,19 @@ import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.graphics.gl.Loaders.TextureLoader;
 import org.etieskrill.engine.graphics.gl.Texture;
 import org.etieskrill.engine.graphics.gl.Texture.TextureType;
+import org.lwjgl.BufferUtils;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.assimp.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.Vector;
 import java.util.function.Supplier;
 
+import static org.etieskrill.engine.graphics.gl.Texture.TextureType.*;
 import static org.lwjgl.assimp.Assimp.*;
 
 public class Model implements Disposable {
@@ -120,6 +123,8 @@ public class Model implements Disposable {
         }
     
         processNode(scene.mRootNode(), scene);
+        
+        aiReleaseImport(scene);
     }
     
     private void processNode(AINode node, AIScene scene) {
@@ -177,35 +182,29 @@ public class Model implements Disposable {
     }
     
     private Material processMaterial(AIMaterial aiMaterial) {
-        Material material = Material.getBlank();
+        Material.Builder material = new Material.Builder();
         
         AIColor4D color = AIColor4D.create();
         aiGetMaterialColor(aiMaterial, "", 0, 0, color);
         
-        for (int type : new int[] {
-                aiTextureType_DIFFUSE, aiTextureType_SPECULAR, aiTextureType_EMISSIVE, aiTextureType_HEIGHT,
-                aiTextureType_SHININESS //TODO use Texture.TextureType instead?
+        for (TextureType type : new TextureType[] {
+                DIFFUSE, SPECULAR, EMISSIVE, HEIGHT, SHININESS
         }) addTexturesToMaterial(material, aiMaterial, type);
         
-        logger.trace("Added {} total textures to material", material.getTextures().size());
-        return material;
+        int numProperties = addPropertiesToMaterial(material, aiMaterial);
+        
+        Material mat = material.build();
+        logger.trace("Added {} textures and {} properties to material", mat.getTextures().size(), numProperties);
+        return mat;
     }
     
-    private void addTexturesToMaterial(Material material, AIMaterial aiMaterial, int textureType) {
+    private void addTexturesToMaterial(Material.Builder material, AIMaterial aiMaterial, TextureType textureType) {
         AIString file = AIString.create();
-        int validTextures = 0;
     
-        TextureType type = switch (textureType) {
-            case aiTextureType_DIFFUSE -> TextureType.DIFFUSE;
-            case aiTextureType_SPECULAR -> TextureType.SPECULAR;
-            case aiTextureType_EMISSIVE -> TextureType.EMISSIVE;
-            case aiTextureType_HEIGHT -> TextureType.HEIGHT;
-            case aiTextureType_SHININESS -> TextureType.SHININESS;
-            default -> TextureType.UNKNOWN;
-        };
-        
-        for (int i = 0; i < aiGetMaterialTextureCount(aiMaterial, textureType); i++) {
-            if (aiGetMaterialTexture(aiMaterial, textureType, i, file,
+        int aiTextureType = textureType.toAITextureType();
+        int validTextures = 0;
+        for (int i = 0; i < aiGetMaterialTextureCount(aiMaterial, aiTextureType); i++) {
+            if (aiGetMaterialTexture(aiMaterial, aiTextureType, i, file,
                     new int[1], null, null, null, null, null)
                     != aiReturn_SUCCESS) {
                 System.err.println(aiGetErrorString());
@@ -215,13 +214,34 @@ public class Model implements Disposable {
             //TODO i think using the loader by default here is warranted, since textures are separate files, and
             // more often than not the bulk redundant data (probably), i should add an option to switch this off tho
             Texture texture = TextureLoader.get().load(
-                    this.file + "_" + type.name().toLowerCase() + "_" + i,
-                    () -> Texture.ofFile(file.dataString(), type));
-            material.addTexture(texture);
+                    this.file + "_" + textureType.name().toLowerCase() + "_" + i,
+                    () -> Texture.ofFile(file.dataString(), textureType));
+            material.addTextures(texture);
             validTextures++;
         }
         
-        logger.trace("{} {} textures loaded", validTextures, type.name().toLowerCase());
+        logger.trace("{} {} textures loaded", validTextures, textureType.name().toLowerCase());
+    }
+    
+    private int addPropertiesToMaterial(Material.Builder material, AIMaterial aiMaterial) {
+        int validProperties = 0;
+        PointerBuffer propBuffer = BufferUtils.createPointerBuffer(1);
+        
+        if (aiReturn_SUCCESS == aiGetMaterialProperty(aiMaterial, AI_MATKEY_SHININESS, propBuffer)) {
+            logger.trace("Material shininess property found");
+            ByteBuffer buffer = AIMaterialProperty.create(propBuffer.get()).mData();
+            material.setShininess(buffer.getFloat());
+            validProperties++;
+        }
+        
+        if (aiReturn_SUCCESS == aiGetMaterialProperty(aiMaterial, AI_MATKEY_SHININESS_STRENGTH, propBuffer.clear())) {
+            logger.trace("Material shininess strength property found");
+            ByteBuffer buffer = AIMaterialProperty.create(propBuffer.get()).mData();
+            material.setShininessStrength(buffer.getFloat());
+            validProperties++;
+        }
+        
+        return validProperties;
     }
     
     public String getName() {

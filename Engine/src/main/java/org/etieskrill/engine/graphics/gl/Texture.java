@@ -10,6 +10,7 @@ import java.nio.IntBuffer;
 import java.util.MissingResourceException;
 import java.util.function.Supplier;
 
+import static org.lwjgl.assimp.Assimp.*;
 import static org.lwjgl.opengl.GL33C.*;
 import static org.lwjgl.stb.STBImage.*;
 
@@ -19,10 +20,13 @@ import static org.lwjgl.stb.STBImage.*;
  */
 public class Texture implements Disposable {
     
+    public static final int NR_BYTES_PER_COLOUR_CHANNEL = 8;
+    
     private static final String directory = "Engine/src/main/resources/textures/";
     //TODO what to do if not all textures could be loaded; only load single diffuse placeholder,
     // or if diffuse is present only that - dunno, choices, choices
     private static final Supplier<Texture> DEFAULT_TEXTURE = () -> Texture.ofFile("pepega.png", TextureType.DIFFUSE);
+    private static final Supplier<Texture> TRANSPARENT_TEXTURE = () -> Texture.ofFile("transparent.png", TextureType.UNKNOWN);
     
     private static final Logger logger = LoggerFactory.getLogger(Texture.class);
     
@@ -38,7 +42,29 @@ public class Texture implements Disposable {
         SPECULAR,
         SHININESS,
         HEIGHT,
-        EMISSIVE
+        EMISSIVE;
+        
+        public static TextureType fromAITextureType(int aiTextureType) {
+            return switch (aiTextureType) {
+                case aiTextureType_DIFFUSE -> DIFFUSE;
+                case aiTextureType_SPECULAR -> SPECULAR;
+                case aiTextureType_EMISSIVE -> EMISSIVE;
+                case aiTextureType_HEIGHT -> HEIGHT;
+                case aiTextureType_SHININESS -> SHININESS;
+                default -> UNKNOWN;
+            };
+        }
+    
+        public int toAITextureType() {
+            return switch (this) {
+                case DIFFUSE -> aiTextureType_DIFFUSE;
+                case SPECULAR -> aiTextureType_SPECULAR;
+                case EMISSIVE -> aiTextureType_EMISSIVE;
+                case HEIGHT -> aiTextureType_HEIGHT;
+                case SHININESS -> aiTextureType_SHININESS;
+                default -> aiTextureType_UNKNOWN;
+            };
+        }
     }
     
     /**
@@ -48,13 +74,11 @@ public class Texture implements Disposable {
      * @param type the type of texture, if any
      */
     public static Texture ofFile(String file, TextureType type) {
-        logger.debug("Loading {} texture from {}", type.name().toLowerCase(), file);
-        
         try {
             return new Texture(file, type);
         } catch (MissingResourceException e) {
             logger.debug("Texture could not be loaded, using placeholder: ", e);
-            return DEFAULT_TEXTURE.get();
+            return type == TextureType.DIFFUSE ? DEFAULT_TEXTURE.get() : TRANSPARENT_TEXTURE.get();
         }
     }
     
@@ -99,14 +123,16 @@ public class Texture implements Disposable {
         colourChannels = bufferColourChannels.get();
         
         int format = switch (colourChannels) {
-            case 1 -> GL_ALPHA;
+            case 1 -> GL_RED; //GL_ALPHA does NOT work, this caused me quite a bit of pain
             case 3 -> GL_RGB;
             case 4 -> GL_RGBA;
             default -> throw new IllegalStateException("Unexpected colour format: " + colourChannels + " channels");
         };
         
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, pixelWidth, pixelHeight,
+        glTexImage2D(GL_TEXTURE_2D, 0, format, pixelWidth, pixelHeight,
                 0, format, GL_UNSIGNED_BYTE, textureData);
+        logger.debug("Loaded {}x{} {}-bit {} texture from {}",
+                pixelWidth, pixelHeight, NR_BYTES_PER_COLOUR_CHANNEL * colourChannels, type.name().toLowerCase(), file);
 
         stbi_image_free(textureData);
 
