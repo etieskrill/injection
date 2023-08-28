@@ -29,7 +29,7 @@ public class Renderer {
             render(mesh, shader);
     }
     
-    public void render(Mesh mesh, ShaderProgram shader) {
+    private void render(Mesh mesh, ShaderProgram shader) {
         shader.start();
         bindMaterial(mesh, shader);
         shader.setUniformMat4("uMesh", mesh.getTransform());

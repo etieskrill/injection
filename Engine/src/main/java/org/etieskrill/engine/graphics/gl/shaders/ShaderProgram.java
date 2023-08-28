@@ -4,55 +4,77 @@ import glm_.mat3x3.Mat3;
 import glm_.mat4x4.Mat4;
 import glm_.vec3.Vec3;
 import glm_.vec4.Vec4;
+import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.util.ResourceReader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.lwjgl.opengl.GL33C.*;
 
-public abstract class ShaderProgram {
+public abstract class ShaderProgram implements Disposable {
     
-    private static final boolean AUTO_START_ON_VARIABLE_SET = true;
+    public static boolean AUTO_START_ON_VARIABLE_SET = true;
+    public static boolean CLEAR_ERROR_BEFORE_SHADER_CREATION = true;
     
-    private final int programID, vertID, fragID;
+    //TODO move placeholder shader here
+    private static final String DEFAULT_VERTEX_FILE = "shaders/Phong.vert";
+    private static final String DEFAULT_FRAGMENT_FILE = "shaders/Phong.frag";
+    
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+    
+    private int programID, vertID, fragID;
     private final Map<CharSequence, Integer> uniforms;
     private final List<CharSequence> unfoundUniforms;
     
-    public ShaderProgram() {
+    protected ShaderProgram() {
         String[] shaderFiles = getShaderFileNames();
         String
                 vertexFile = "shaders/" + shaderFiles[0],
                 fragmentFile = "shaders/" + shaderFiles[1];
         //TODO create spec for other shader types and shader programs split across multiple files
+        // consider just creating a standard, such that only a single unique identifier must be passed
         
-        programID = glCreateProgram();
+        logger.debug("Creating shader from files: {}", Arrays.toString(shaderFiles));
         
-        vertID = loadShader(vertexFile, GL_VERTEX_SHADER);
-        glAttachShader(programID, vertID);
-        
-        fragID = loadShader(fragmentFile, GL_FRAGMENT_SHADER);
-        glAttachShader(programID, fragID);
-    
-        glLinkProgram(programID);
-        if (glGetProgrami(programID, GL_LINK_STATUS) != GL_TRUE) {
-            System.out.println(glGetProgramInfoLog(programID));
-            System.err.println("Shader program could not be linked");
+        try {
+            if (CLEAR_ERROR_BEFORE_SHADER_CREATION) clearGlErrorStatus();
+            createProgram(vertexFile, fragmentFile);
+        } catch (IllegalStateException e) {
+            logger.warn("Exception during shader creation, using default shader", e);
+            createProgram(DEFAULT_VERTEX_FILE, DEFAULT_FRAGMENT_FILE);
         }
-        
-        disposeShaders();
     
-        glValidateProgram(programID);
-        if (glGetProgrami(programID, GL_VALIDATE_STATUS) != GL_TRUE) {
-            System.out.println(glGetProgramInfoLog(programID));
-            System.err.println("Shader program was not successfully validated");
-        }
-
         this.uniforms = new HashMap<>();
         this.unfoundUniforms = new ArrayList<>();
         getUniformLocations();
+    }
+    
+    private void createProgram(String vertFile, String fragFile) {
+        programID = glCreateProgram();
+    
+        vertID = loadShader(vertFile, GL_VERTEX_SHADER);
+        glAttachShader(programID, vertID);
+        
+        fragID = loadShader(fragFile, GL_FRAGMENT_SHADER);
+        glAttachShader(programID, fragID);
+    
+        glLinkProgram(programID);
+        if (glGetProgrami(programID, GL_LINK_STATUS) != GL_TRUE)
+            throw new IllegalStateException("Shader program could not be linked:\n%s"
+                    .formatted(glGetProgramInfoLog(programID)));
+    
+        disposeShaders();
+    
+        glValidateProgram(programID);
+        if (glGetProgrami(programID, GL_VALIDATE_STATUS) != GL_TRUE)
+            throw new IllegalStateException("Shader program was not successfully validated\n%s"
+                    .formatted(glGetProgramInfoLog(programID)));
+    
+        int errorCode;
+        if ((errorCode = glGetError()) != GL_NO_ERROR)
+            throw new IllegalStateException("Error while creating shader: %d".formatted(errorCode));
     }
     
     private void disposeShaders() {
@@ -76,7 +98,7 @@ public abstract class ShaderProgram {
         int uniformLocation = glGetUniformLocation(programID, name);
         if (uniformLocation == -1) {
             unfoundUniforms.add(name);
-            System.err.printf("[%s] Could not find location of uniform with name \"%s\"\n", this.getClass().getSimpleName(), name);
+            logger.debug("Could not find location of uniform with name \"{}\"", name);
             return;
         }
 
@@ -141,30 +163,25 @@ public abstract class ShaderProgram {
         glUniformMatrix4fv(getUniformLocation(name), transpose, mat.toFloatArray());
     }
     
-    private static int loadShader(String file, int shaderType) {
+    private int loadShader(String file, int shaderType) {
+        String shaderTypeName = switch (shaderType) {
+            case GL_VERTEX_SHADER -> "vertex";
+            case GL_FRAGMENT_SHADER -> "fragment";
+            default -> "unknown";
+        };
+        
+        logger.trace("Loading {} shader from file: {}", shaderTypeName, file);
         int shaderID = glCreateShader(shaderType);
         glShaderSource(shaderID, ResourceReader.getRaw(file));
         glCompileShader(shaderID);
     
         if (glGetShaderi(shaderID, GL_COMPILE_STATUS) != GL_TRUE) {
-            System.out.println(glGetShaderInfoLog(shaderID));
-            String shaderTypeName = "unknown";
-            switch (shaderType) {
-                case GL_VERTEX_SHADER -> shaderTypeName = "vertex";
-                case GL_FRAGMENT_SHADER -> shaderTypeName = "fragment";
-            }
-            System.err.printf("Failed to compile %s shader\n", shaderTypeName);
-            System.exit(-1);
+            throw new IllegalStateException(
+                    "Failed to compile %s shader from %s:\n%s"
+                    .formatted(shaderTypeName, file, glGetShaderInfoLog(shaderID)));
         }
         
         return shaderID;
-    }
-    
-    public void dispose() {
-        stop();
-        glDetachShader(programID, vertID);
-        glDetachShader(programID, fragID);
-        glDeleteProgram(programID);
     }
     
     protected int getUniformLocation(CharSequence name) {
@@ -177,6 +194,18 @@ public abstract class ShaderProgram {
         }
 
         return location;
+    }
+    
+    private void clearGlErrorStatus() {
+        glGetError();
+    }
+    
+    @Override
+    public void dispose() {
+        stop();
+        glDetachShader(programID, vertID);
+        glDetachShader(programID, fragID);
+        glDeleteProgram(programID);
     }
 
 }

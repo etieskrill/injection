@@ -9,6 +9,10 @@ public class Shaders {
     public static ContainerShader getContainerShader() {
         return new ContainerShader();
     }
+    
+    public static SwordShader getSwordShader() {
+        return new SwordShader();
+    }
 
     public static RoundedBoxShader getRoundedBoxShader() {
         return new RoundedBoxShader();
@@ -36,7 +40,6 @@ public class Shaders {
             addUniform("uCombined");
             
             addUniform("uViewDirection");
-            addUniform("uTime");
             
             addUniform("material.diffuse0");
             addUniform("material.specular0");
@@ -50,6 +53,25 @@ public class Shaders {
         @Override
         protected String[] getShaderFileNames() {
             return new String[]{"Container.vert", "Container.frag"};
+        }
+    
+        @Override
+        protected void getUniformLocations() {
+            super.getUniformLocations();
+            addUniform("uTime");
+        }
+    }
+    
+    private static class SwordShader extends StaticShader {
+        @Override
+        protected String[] getShaderFileNames() {
+            return new String[]{"Sword.vert", "Sword.frag"};
+        }
+    
+        @Override
+        protected void getUniformLocations() {
+            super.getUniformLocations();
+            addUniform("uTime");
         }
     }
 

@@ -53,7 +53,9 @@ in vec3 tNormal;
 in vec2 tTextureCoords;
 in vec3 tFragPos;
 
+uniform vec3 uViewPosition;
 uniform vec3 uViewDirection;
+uniform float uTime;
 
 uniform DirectionalLight globalLights[NR_DIRECTIONAL_LIGHTS];
 uniform PointLight lights[NR_POINT_LIGHTS];
@@ -73,7 +75,7 @@ void main()
     }
 
     vec3 emission = texture(material.emissive0, tTextureCoords).rgb;
-    combinedLight += emission;
+    combinedLight += emission * (sin(2 * uTime) * 0.20 + 0.75);
 
     oColour = vec4(combinedLight, 1.0);
 }

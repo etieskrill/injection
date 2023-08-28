@@ -24,7 +24,7 @@ public class ResourceReader {
         } catch (NullPointerException e) {
             //TODO that constructor is a bit wack
 
-            throw new MissingResourceException("Plaintext resource could not be located", "String", "name");
+            throw new MissingResourceException("Plaintext resource %s could not be located".formatted(name), "File", name);
         }
 
         return resource;

@@ -221,7 +221,7 @@ public class DemCubez {
         Renderer renderer = new Renderer();
         ShaderProgram containerShader = Shaders.getContainerShader();
         ShaderProgram lightShader = Shaders.getLightSourceShader();
-        ShaderProgram swordShader = Shaders.getStandardShader();
+        ShaderProgram swordShader = Shaders.getSwordShader();
     
         Batch batch = new Batch(renderer, factory);
     
