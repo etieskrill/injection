@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
+import static org.etieskrill.engine.graphics.gl.shaders.ShaderProgram.ShaderType.*;
 import static org.lwjgl.opengl.GL33C.*;
 
 public abstract class ShaderProgram implements Disposable {
@@ -28,15 +29,47 @@ public abstract class ShaderProgram implements Disposable {
     private final Map<CharSequence, Integer> uniforms;
     private final List<CharSequence> unfoundUniforms;
     
+    public enum ShaderType {
+        VERTEX,
+        FRAGMENT,
+    }
+    
+    private static class ShaderFile {
+        private final String file;
+        private final ShaderType type;
+        
+        public ShaderFile(String file, ShaderType type) {
+            this.file = file;
+            this.type = type;
+        }
+        
+        public String getFile() {
+            return file;
+        }
+        
+        public ShaderType getType() {
+            return type;
+        }
+    
+        @Override
+        public String toString() {
+            return "[%s, %s]".formatted(file, type.name().toLowerCase());
+        }
+    }
+    
     protected ShaderProgram() {
         String[] shaderFiles = getShaderFileNames();
         String
                 vertexFile = "shaders/" + shaderFiles[0],
                 fragmentFile = "shaders/" + shaderFiles[1];
+        ShaderFile[] files = {
+                new ShaderFile(shaderFiles[0], VERTEX),
+                new ShaderFile(shaderFiles[1], FRAGMENT)
+        };
         //TODO create spec for other shader types and shader programs split across multiple files
         // consider just creating a standard, such that only a single unique identifier must be passed
         
-        logger.debug("Creating shader from files: {}", Arrays.toString(shaderFiles));
+        logger.debug("Creating shader from files: {}", Arrays.toString(files));
         
         try {
             if (CLEAR_ERROR_BEFORE_SHADER_CREATION) clearGlErrorStatus();
