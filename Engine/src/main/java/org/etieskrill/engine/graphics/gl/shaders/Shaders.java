@@ -49,6 +49,7 @@ public class Shaders {
             addUniform("material.specular0");
             addUniform("material.emissive0");
             addUniform("material.shininess");
+            addUniform("material.specularity");
         }
         
     }
@@ -117,6 +118,24 @@ public class Shaders {
             addUniform("uModel");
             addUniform("uCombined");
             addUniform("diffuseMap");
+            addUniform("uColour");
+        }
+    }
+    
+    private static class SingleColourShader extends ShaderProgram {
+        @Override
+        protected String[] getShaderFileNames() {
+            return new String[]{"SingleColour.vert", "SingleColour.frag"};
+        }
+    
+        @Override
+        protected void getUniformLocations() {
+            //TODO i've forgotten about this thing waaaay to often, either enforce via enums soon or rework this goddamned system
+            addUniform("uMesh");
+            addUniform("uModel");
+            addUniform("uNormal");
+            addUniform("uCombined");
+            
             addUniform("uColour");
         }
     }
