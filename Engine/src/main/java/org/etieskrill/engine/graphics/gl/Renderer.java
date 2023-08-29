@@ -1,10 +1,10 @@
 package org.etieskrill.engine.graphics.gl;
 
+import glm_.mat4x4.Mat4;
 import org.etieskrill.engine.graphics.assimp.Material;
 import org.etieskrill.engine.graphics.assimp.Mesh;
 import org.etieskrill.engine.graphics.assimp.Model;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
-import org.etieskrill.engine.graphics.gl.shaders.Shaders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,8 +17,6 @@ public class Renderer {
     private static final float clearColour = 0.25f;//0.025f;
     
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    
-    private static final float clearColour = 0.25f;//0.025f;
     
     public void prepare() {
         //logger.debug("New render cycle");

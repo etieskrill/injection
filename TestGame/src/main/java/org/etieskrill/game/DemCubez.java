@@ -357,7 +357,7 @@ public class DemCubez {
     
             containerShader.setUniformMat4("uCombined", camera.getCombined());
             for (Model model : models) {
-                renderer.render(model, containerShader);
+                renderer.render(model, containerShader, camera.getCombined());
             }
             
             swordShader.setUniformVec3("uViewDirection", camera.getDirection());
