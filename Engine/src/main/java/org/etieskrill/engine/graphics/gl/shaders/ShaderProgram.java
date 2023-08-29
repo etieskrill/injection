@@ -127,6 +127,7 @@ public abstract class ShaderProgram implements Disposable {
         glUseProgram(0);
     }
     
+    //TODO set identity values as standard, if enum-option is implemented
     protected void addUniform(CharSequence name) {
         int uniformLocation = glGetUniformLocation(programID, name);
         if (uniformLocation == -1) {

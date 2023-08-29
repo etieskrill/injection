@@ -85,6 +85,7 @@ public class DemCubez {
         
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LESS);
+        glEnable(GL_STENCIL_TEST);
         
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST); //GL_<mipmap level selection>_MIPMAP_<mipmap texture sampling>
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); //GL_<mipmap texture sampling>
@@ -361,17 +362,15 @@ public class DemCubez {
             
             swordShader.setUniformVec3("uViewDirection", camera.getDirection());
             swordShader.setUniformFloat("uTime", (float) pacer.getTime());
-            swordShader.setUniformMat4("uCombined", camera.getCombined());
-            renderer.render(sword, swordShader);
-            renderer.render(backpack, containerShader);
+            renderer.render(sword, swordShader, camera.getCombined());
+            renderer.render(backpack, containerShader, camera.getCombined());
             
-            lightShader.setUniformMat4("uCombined", camera.getCombined());
             for (int i = 0; i < lightSources.length; i++) {
                 lightShader.setUniformVec3("light.ambient", pointLightAmbient);
                 lightShader.setUniformVec3("light.diffuse", pointLightDiffuse);
                 lightShader.setUniformVec3("light.specular", pointLightSpecular);
     
-                renderer.render(lightSources[i], lightShader);
+                renderer.render(lightSources[i], lightShader, camera.getCombined());
             }
             
             window.update(pacer.getDeltaTimeSeconds());

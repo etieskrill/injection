@@ -25,6 +25,10 @@ public class Shaders {
     public static TextureShader getTextureShader() {
         return new TextureShader();
     }
+    
+    public static SingleColourShader getSingleColourShader() {
+        return new SingleColourShader();
+    }
 
     private static class StaticShader extends ShaderProgram {
         @Override

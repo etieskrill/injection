@@ -124,6 +124,7 @@ public class Texture implements Disposable {
         
         int format = switch (colourChannels) {
             case 1 -> GL_RED; //GL_ALPHA does NOT work, this caused me quite a bit of pain
+            case 2 -> GL_RG;
             case 3 -> GL_RGB;
             case 4 -> GL_RGBA;
             default -> throw new IllegalStateException("Unexpected colour format: " + colourChannels + " channels");

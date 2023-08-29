@@ -4,6 +4,7 @@ import org.etieskrill.engine.graphics.assimp.Material;
 import org.etieskrill.engine.graphics.assimp.Mesh;
 import org.etieskrill.engine.graphics.assimp.Model;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
+import org.etieskrill.engine.graphics.gl.shaders.Shaders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,6 +14,8 @@ import static org.lwjgl.opengl.GL33C.*;
 
 public class Renderer {
     
+    private static final float clearColour = 0.25f;//0.025f;
+    
     private final Logger logger = LoggerFactory.getLogger(getClass());
     
     private static final float clearColour = 0.25f;//0.025f;
@@ -20,18 +23,21 @@ public class Renderer {
     public void prepare() {
         //logger.debug("New render cycle");
         glClearColor(clearColour, clearColour, clearColour, 1f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     }
     
-    public void render(Model model, ShaderProgram shader) {
+    public void render(Model model, ShaderProgram shader, Mat4 combined) {
+        shader.setUniformMat4("uCombined", combined);
         shader.setUniformMat4("uModel", model.getTransform());
         shader.setUniformMat3("uNormal", model.getTransform().inverse().transpose().toMat3());
+    
+        shader.start();
         for (Mesh mesh : model.getMeshes())
             render(mesh, shader);
+        shader.stop();
     }
     
     private void render(Mesh mesh, ShaderProgram shader) {
-        shader.start();
         bindMaterial(mesh.getMaterial(), shader);
         shader.setUniformMat4("uMesh", mesh.getTransform());
         glBindVertexArray(mesh.getVao());
@@ -44,7 +50,6 @@ public class Renderer {
         }
     
         glBindVertexArray(0);
-        shader.stop();
     }
     
     private void bindMaterial(Material material, ShaderProgram shader) {
@@ -68,6 +73,7 @@ public class Renderer {
             shader.setUniformInt("material." + texture.getType().name().toLowerCase() + number, validTextures);
         }
         
+        //TODO either use non-register methods here, or more strongly hint at/enforce registration
         shader.setUniformFloat("material.shininess", material.getShininess());
         shader.setUniformFloat("material.specularity", material.getShininessStrength());
     }
