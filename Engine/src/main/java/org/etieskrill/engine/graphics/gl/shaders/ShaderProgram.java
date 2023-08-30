@@ -25,9 +25,11 @@ public abstract class ShaderProgram implements Disposable {
     
     private final Logger logger = LoggerFactory.getLogger(getClass());
     
+    private boolean STRICT_UNIFORM_DETECTION = true;
+    
     private int programID, vertID, fragID;
-    private final Map<CharSequence, Integer> uniforms;
-    private final List<CharSequence> unfoundUniforms;
+    private final Map<Uniform, Integer> uniforms;
+    private final List<Uniform> unfoundUniforms;
     
     public enum ShaderType {
         VERTEX,
@@ -70,18 +72,19 @@ public abstract class ShaderProgram implements Disposable {
         // consider just creating a standard, such that only a single unique identifier must be passed
         
         logger.debug("Creating shader from files: {}", Arrays.toString(files));
+    
+        this.uniforms = new HashMap<>();
+        this.unfoundUniforms = STRICT_UNIFORM_DETECTION ? new ArrayList<>() : null;
         
         try {
             if (CLEAR_ERROR_BEFORE_SHADER_CREATION) clearGlErrorStatus();
+            init();
             createProgram(vertexFile, fragmentFile);
+            getUniformLocations();
         } catch (IllegalStateException e) {
             logger.warn("Exception during shader creation, using default shader", e);
             createProgram(DEFAULT_VERTEX_FILE, DEFAULT_FRAGMENT_FILE);
         }
-    
-        this.uniforms = new HashMap<>();
-        this.unfoundUniforms = new ArrayList<>();
-        getUniformLocations();
     }
     
     private void createProgram(String vertFile, String fragFile) {
@@ -110,93 +113,6 @@ public abstract class ShaderProgram implements Disposable {
             throw new IllegalStateException("Error while creating shader: %d".formatted(errorCode));
     }
     
-    private void disposeShaders() {
-        glDeleteShader(vertID);
-        glDeleteShader(fragID);
-    }
-    
-    protected abstract String[] getShaderFileNames();
-    
-    protected abstract void getUniformLocations();
-    
-    public void start() {
-        glUseProgram(programID);
-    }
-    
-    public void stop() {
-        glUseProgram(0);
-    }
-    
-    //TODO set identity values as standard, if enum-option is implemented
-    protected void addUniform(CharSequence name) {
-        int uniformLocation = glGetUniformLocation(programID, name);
-        if (uniformLocation == -1) {
-            unfoundUniforms.add(name);
-            logger.debug("Could not find location of uniform with name \"{}\"", name);
-            return;
-        }
-
-        uniforms.put(name, uniformLocation);
-    }
-    
-    public void setUniformInt(CharSequence name, int val) {
-        if (AUTO_START_ON_VARIABLE_SET) start();
-        glUniform1i(getUniformLocation(name), val);
-    }
-    
-    @Deprecated
-    public void setUniformInt_(CharSequence name, int val) {
-        if (AUTO_START_ON_VARIABLE_SET) start();
-        glUniform1i(glGetUniformLocation(programID, name), val);
-    }
-    
-    public void setUniformFloat(CharSequence name, float val) {
-        if (AUTO_START_ON_VARIABLE_SET) start();
-        glUniform1f(getUniformLocation(name), val);
-    }
-    
-    @Deprecated
-    public void setUniformFloat_(CharSequence name, float val) {
-        if (AUTO_START_ON_VARIABLE_SET) start();
-        glUniform1f(glGetUniformLocation(programID, name), val);
-    }
-    
-    public void setUniformVec3(CharSequence name, Vec3 vec) {
-        if (AUTO_START_ON_VARIABLE_SET) start();
-        glUniform3fv(getUniformLocation(name), vec.toFloatArray());
-    }
-    
-    @Deprecated
-    public void setUniformVec3_(CharSequence name, Vec3 vec) {
-        if (AUTO_START_ON_VARIABLE_SET) start();
-        glUniform3fv(glGetUniformLocation(programID, name), vec.toFloatArray());
-    }
-    
-    public void setUniformVec4(CharSequence name, Vec4 vec) {
-        if (AUTO_START_ON_VARIABLE_SET) start();
-        glUniform4fv(getUniformLocation(name), vec.toFloatArray());
-    }
-    
-    public void setUniformMat3(CharSequence name, Mat3 mat) {
-        if (AUTO_START_ON_VARIABLE_SET) start();
-        setUniformMat3(name, mat, false);
-    }
-    
-    public void setUniformMat3(CharSequence name, Mat3 mat, boolean transpose) {
-        if (AUTO_START_ON_VARIABLE_SET) start();
-        glUniformMatrix3fv(getUniformLocation(name), transpose, mat.toFloatArray());
-    }
-    
-    public void setUniformMat4(CharSequence name, Mat4 mat) {
-        if (AUTO_START_ON_VARIABLE_SET) start();
-        setUniformMat4(name, mat, false);
-    }
-    
-    public void setUniformMat4(CharSequence name, Mat4 mat, boolean transpose) {
-        if (AUTO_START_ON_VARIABLE_SET) start();
-        glUniformMatrix4fv(getUniformLocation(name), transpose, mat.toFloatArray());
-    }
-    
     private int loadShader(String file, int shaderType) {
         String shaderTypeName = switch (shaderType) {
             case GL_VERTEX_SHADER -> "vertex";
@@ -218,16 +134,160 @@ public abstract class ShaderProgram implements Disposable {
         return shaderID;
     }
     
-    protected int getUniformLocation(CharSequence name) {
-        Integer location = uniforms.get(name);
+    private void disposeShaders() {
+        glDeleteShader(vertID);
+        glDeleteShader(fragID);
+    }
+    
+    public void start() {
+        glUseProgram(programID);
+    }
+    
+    public void stop() {
+        glUseProgram(0);
+    }
+    
+    //TODO this is so-called bullshit spaghetti code. fix it.
+    public boolean setUniform(CharSequence name, Object value) {
+        if (name == null) throw new NullPointerException("Name must not be null");
+        if (value == null) throw new NullPointerException("Value must not be null");
+    
+        Uniform uniform;
+        if (STRICT_UNIFORM_DETECTION) {
+            Optional<Uniform> optUniform = uniforms.keySet().stream()
+                    .filter(element -> name.equals(element.getName()))
+                    .findAny();
+            if (optUniform.isEmpty()) return false;
+            uniform = optUniform.get();
+    
+            if (!value.getClass().equals(uniform.getType().get())) return false;
+        } else {
+            Uniform.Type type = Uniform.Type.getFromClass(value.getClass());
+            if (type == null) return false;
+            uniform = new Uniform((String) name, type);
+        }
+        
+        int location = STRICT_UNIFORM_DETECTION ?
+                getUniformLocation(uniform) :
+                glGetUniformLocation(programID, name);
+        if (location == -1) return false;
+        
+        if (AUTO_START_ON_VARIABLE_SET) start();
+        switch (uniform.type) {
+            case INT, SAMPLER2D -> glUniform1i(location, (Integer) value);
+            case FLOAT -> glUniform1f(location, (Float) value);
+            case VEC3 -> glUniform3fv(location, ((Vec3) value).toFloatArray());
+            case VEC4 -> glUniform4fv(location, ((Vec4) value).toFloatArray());
+            case MAT3 -> glUniformMatrix3fv(location, false, ((Mat3) value).toFloatArray());
+            case MAT4 -> glUniformMatrix4fv(location, false, ((Mat4) value).toFloatArray());
+        }
+        
+        return true;
+    }
+    
+    protected static class Uniform {
+        protected enum Type {
+            INT(Integer.class),
+            FLOAT(Float.class),
+            VEC3(Vec3.class),
+            VEC4(Vec4.class),
+            MAT3(Mat3.class),
+            MAT4(Mat4.class),
+            
+            SAMPLER2D(Integer.class);
+            
+            private final Class<?> type;
+    
+            public static Type getFromClass(Class<?> type) {
+                return Arrays.stream(Type.values())
+                        .filter(value -> value.get().equals(type))
+                        .findAny()
+                    .orElse(null);
+            }
+            
+            Type(Class<?> type) {
+                this.type = type;
+            }
+    
+            public Class<?> get() {
+                return type;
+            }
+        }
+        
+        private final String name;
+        private final Type type;
+    
+        public Uniform(String name, Type type) {
+            this.name = name;
+            this.type = type;
+        }
+    
+        public String getName() {
+            return name;
+        }
+    
+        public Type getType() {
+            return type;
+        }
+    
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+        
+            Uniform uniform = (Uniform) o;
+        
+            if (!name.equals(uniform.name)) return false;
+            return type.equals(uniform.type);
+        }
+    
+        @Override
+        public String toString() {
+            return "%s %s".formatted(type.name().toLowerCase(), name);
+        }
+    }
+    
+    protected abstract void init();
+    
+    protected abstract String[] getShaderFileNames();
+    
+    protected abstract void getUniformLocations();
+    
+    protected void addUniform(String name, Uniform.Type type) {
+        addUniform(new Uniform(name, type));
+    }
+    
+    //TODO set identity values as standard, if enum-option is implemented
+    protected void addUniform(Uniform uniform) {
+        if (uniforms.containsKey(uniform)) return;
+        int uniformLocation = glGetUniformLocation(programID, uniform.getName());
+        if (uniformLocation != -1) {
+            uniforms.put(uniform, uniformLocation);
+            return;
+        }
+    
+        if (STRICT_UNIFORM_DETECTION)
+            throw new IllegalStateException(
+                    "Cannot register non-existent uniform \"%s\" in strict mode".formatted(uniform.getName()));
+        
+        unfoundUniforms.add(uniform);
+        logger.debug("Could not find location of uniform {}", uniform);
+    }
+    
+    protected int getUniformLocation(Uniform uniform) {
+        Integer location = uniforms.get(uniform);
         if (location == null) {
-            CharSequence message = !unfoundUniforms.contains(name) ? "registered" : "found or is never used";
+            //CharSequence message = !unfoundUniforms.contains(name) ? "registered" : "found or is never used";
             //System.err.printf("[%s] Uniform of name \"%s\" was not %s in the shader\n",
             //        getClass().getSimpleName(), name, message);
             return -1;
         }
 
         return location;
+    }
+    
+    protected void disableStrictUniformChecking() {
+        this.STRICT_UNIFORM_DETECTION = false;
     }
     
     private void clearGlErrorStatus() {

@@ -1,5 +1,9 @@
 package org.etieskrill.engine.graphics.gl.shaders;
 
+import glm_.mat4x4.Mat4;
+
+import static org.etieskrill.engine.graphics.gl.shaders.ShaderProgram.Uniform.Type.*;
+
 public class Shaders {
 
     public static StaticShader getStandardShader() {
@@ -30,7 +34,10 @@ public class Shaders {
         return new SingleColourShader();
     }
 
-    private static class StaticShader extends ShaderProgram {
+    public static class StaticShader extends ShaderProgram {
+        @Override
+        protected void init() {}
+    
         @Override
         protected String[] getShaderFileNames() {
             return new String[]{"Phong.vert", "Phong.frag"};
@@ -38,23 +45,29 @@ public class Shaders {
         
         @Override
         protected void getUniformLocations() {
-            addUniform("uMesh");
-            addUniform("uModel");
-            addUniform("uNormal");
-            addUniform("uCombined");
+            //TODO theoretically, a sort of autodetect feature is entirely possible
+            addUniform("uMesh", MAT4);
+            addUniform("uModel", MAT4);
+            addUniform("uNormal", MAT4);
+            addUniform("uCombined", MAT4);
             
-            addUniform("uViewDirection");
+            addUniform("uViewDirection", VEC3);
             
-            addUniform("material.diffuse0");
-            addUniform("material.specular0");
-            addUniform("material.emissive0");
-            addUniform("material.shininess");
-            addUniform("material.specularity");
+            addUniform("material.diffuse0", SAMPLER2D);
+            addUniform("material.specular0", SAMPLER2D);
+            addUniform("material.emissive0", SAMPLER2D);
+            addUniform("material.shininess", FLOAT);
+            addUniform("material.specularity", FLOAT);
         }
         
     }
     
     private static class ContainerShader extends StaticShader {
+        @Override
+        protected void init() {
+            disableStrictUniformChecking();
+        }
+    
         @Override
         protected String[] getShaderFileNames() {
             return new String[]{"Container.vert", "Container.frag"};
@@ -63,7 +76,7 @@ public class Shaders {
         @Override
         protected void getUniformLocations() {
             super.getUniformLocations();
-            addUniform("uTime");
+            addUniform("uTime", FLOAT);
         }
     }
     
@@ -76,11 +89,14 @@ public class Shaders {
         @Override
         protected void getUniformLocations() {
             super.getUniformLocations();
-            addUniform("uTime");
+            addUniform("uTime", FLOAT);
         }
     }
 
     private static class RoundedBoxShader extends ShaderProgram {
+        @Override
+        protected void init() {}
+    
         @Override
         protected String[] getShaderFileNames() {
             return new String[]{"RoundedBox.vert", "RoundedBox.frag"};
@@ -92,22 +108,28 @@ public class Shaders {
 
     private static class LightSourceShader extends ShaderProgram {
         @Override
+        protected void init() {}
+        
+        @Override
         protected String[] getShaderFileNames() {
             return new String[]{"LightSource.vert", "LightSource.frag"};
         }
         
         @Override
         protected void getUniformLocations() {
-            addUniform("uMesh");
-            addUniform("uModel");
-            addUniform("uCombined");
-            addUniform("light.ambient");
-            addUniform("light.diffuse");
-            addUniform("light.specular");
+            addUniform("uMesh", MAT4);
+            addUniform("uModel", MAT4);
+            addUniform("uCombined", MAT4);
+            addUniform("light.ambient", FLOAT);
+            addUniform("light.diffuse", FLOAT);
+            addUniform("light.specular", FLOAT);
         }
     }
     
     private static class TextureShader extends ShaderProgram {
+        @Override
+        protected void init() {}
+        
         @Override
         protected String[] getShaderFileNames() {
             return new String[]{"Texture.vert", "Texture.frag"};
@@ -115,14 +137,17 @@ public class Shaders {
         
         @Override
         protected void getUniformLocations() {
-            addUniform("uModel");
-            addUniform("uCombined");
-            addUniform("diffuseMap");
-            addUniform("uColour");
+            addUniform("uModel", MAT4);
+            addUniform("uCombined", MAT4);
+            addUniform("diffuseMap", SAMPLER2D);
+            addUniform("uColour", VEC3);
         }
     }
     
     private static class SingleColourShader extends ShaderProgram {
+        @Override
+        protected void init() {}
+        
         @Override
         protected String[] getShaderFileNames() {
             return new String[]{"SingleColour.vert", "SingleColour.frag"};
@@ -131,12 +156,12 @@ public class Shaders {
         @Override
         protected void getUniformLocations() {
             //TODO i've forgotten about this thing waaaay to often, either enforce via enums soon or rework this goddamned system
-            addUniform("uMesh");
-            addUniform("uModel");
-            addUniform("uNormal");
-            addUniform("uCombined");
+            addUniform("uMesh", MAT4);
+            addUniform("uModel", MAT4);
+            addUniform("uNormal", MAT4);
+            addUniform("uCombined", MAT4);
             
-            addUniform("uColour");
+            addUniform("uColour", VEC4);
         }
     }
 

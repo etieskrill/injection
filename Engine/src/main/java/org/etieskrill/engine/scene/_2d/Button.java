@@ -33,7 +33,7 @@ public class Button extends Group {
                 position.getX(), position.getY(), size.getX(), size.getY(),
                 size.getX() > size.getY() ? size.getY() / 4f : size.getX() / 4f, 10);
         batch.getShader().start();
-        batch.getShader().setUniformVec3("uColour", new Vec3(1f, 0f, 0f));
+        batch.getShader().setUniform("uColour", new Vec3(1f, 0f, 0f));
         //batch.render(_model);
     }
     

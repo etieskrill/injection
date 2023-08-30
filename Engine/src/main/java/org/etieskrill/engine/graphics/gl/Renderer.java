@@ -25,9 +25,9 @@ public class Renderer {
     }
     
     public void render(Model model, ShaderProgram shader, Mat4 combined) {
-        shader.setUniformMat4("uCombined", combined);
-        shader.setUniformMat4("uModel", model.getTransform());
-        shader.setUniformMat3("uNormal", model.getTransform().inverse().transpose().toMat3());
+        shader.setUniform("uCombined", combined);
+        shader.setUniform("uModel", model.getTransform());
+        shader.setUniform("uNormal", model.getTransform().inverse().transpose().toMat3());
     
         shader.start();
         for (Mesh mesh : model.getMeshes())
@@ -37,7 +37,7 @@ public class Renderer {
     
     private void render(Mesh mesh, ShaderProgram shader) {
         bindMaterial(mesh.getMaterial(), shader);
-        shader.setUniformMat4("uMesh", mesh.getTransform());
+        shader.setUniform("uMesh", mesh.getTransform());
         glBindVertexArray(mesh.getVao());
         
         glDrawElements(GL_TRIANGLES, mesh.getNumIndices(), GL_UNSIGNED_SHORT, 0);
@@ -68,12 +68,12 @@ public class Renderer {
             texture.bind(validTextures);
 //            if (mesh.getNumIndices() < 400) logger.trace("Binding texture of type {} as material.{}{} to unit {}",
 //                    texture.getType().name(), texture.getType().name().toLowerCase(), number, validTextures);
-            shader.setUniformInt("material." + texture.getType().name().toLowerCase() + number, validTextures);
+            shader.setUniform("material." + texture.getType().name().toLowerCase() + number, validTextures);
         }
         
         //TODO either use non-register methods here, or more strongly hint at/enforce registration
-        shader.setUniformFloat("material.shininess", material.getShininess());
-        shader.setUniformFloat("material.specularity", material.getShininessStrength());
+        shader.setUniform("material.shininess", material.getShininess());
+        shader.setUniform("material.specularity", material.getShininessStrength());
     }
     
 }

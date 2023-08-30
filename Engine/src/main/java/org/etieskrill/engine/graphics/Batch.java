@@ -31,8 +31,8 @@ public class Batch implements Disposable {
     
         //System.out.println(Arrays.toString(transform.toFa_()) + "\n" + Arrays.toString(combined.toFa_()));
 
-        shader.setUniformMat4("uModel", transform);
-        shader.setUniformMat4("uCombined", combined);
+        shader.setUniform("uModel", transform);
+        shader.setUniform("uCombined", combined);
     
         //System.out.println(Arrays.toString(transform.toFa_()) + "\n" + Arrays.toString(combined.toFa_()) + "\n\n");
         

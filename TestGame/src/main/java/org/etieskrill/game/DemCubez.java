@@ -313,15 +313,15 @@ public class DemCubez {
             Vec3 diffuse = lightColour.times(0.25f);
             Vec3 specular = lightColour.times(0.5f);
     
-            containerShader.setUniformVec3_("globalLights[0].direction", globalLightDirection);
-            containerShader.setUniformVec3_("globalLights[0].ambient", ambient);
-            containerShader.setUniformVec3_("globalLights[0].diffuse", diffuse);
-            containerShader.setUniformVec3_("globalLights[0].specular", specular);
+            containerShader.setUniform("globalLights[0].direction", globalLightDirection);
+            containerShader.setUniform("globalLights[0].ambient", ambient);
+            containerShader.setUniform("globalLights[0].diffuse", diffuse);
+            containerShader.setUniform("globalLights[0].specular", specular);
 
-            swordShader.setUniformVec3_("globalLights[0].direction", globalLightDirection);
-            swordShader.setUniformVec3_("globalLights[0].ambient", ambient);
-            swordShader.setUniformVec3_("globalLights[0].diffuse", diffuse);
-            swordShader.setUniformVec3_("globalLights[0].specular", specular);
+            swordShader.setUniform("globalLights[0].direction", globalLightDirection);
+            swordShader.setUniform("globalLights[0].ambient", ambient);
+            swordShader.setUniform("globalLights[0].diffuse", diffuse);
+            swordShader.setUniform("globalLights[0].specular", specular);
             
             Vec3 pointLightColour = new Vec3(1f);
             Vec3 pointLightAmbient = pointLightColour.times(0.1f);
@@ -329,46 +329,46 @@ public class DemCubez {
             Vec3 pointLightSpecular = pointLightColour.times(0.2f);
             
             for (int i = 0; i < lightSources.length; i++) {
-                containerShader.setUniformVec3_("lights[" + i + "].position", lightSources[i].getPosition());
+                containerShader.setUniform("lights[" + i + "].position", lightSources[i].getPosition());
 
-                containerShader.setUniformVec3_("lights[" + i + "].ambient", pointLightAmbient);
-                containerShader.setUniformVec3_("lights[" + i + "].diffuse", pointLightDiffuse);
-                containerShader.setUniformVec3_("lights[" + i + "].specular", pointLightSpecular);
+                containerShader.setUniform("lights[" + i + "].ambient", pointLightAmbient);
+                containerShader.setUniform("lights[" + i + "].diffuse", pointLightDiffuse);
+                containerShader.setUniform("lights[" + i + "].specular", pointLightSpecular);
 
-                containerShader.setUniformFloat_("lights[" + i + "].constant", 1f);
-                containerShader.setUniformFloat_("lights[" + i + "].linear", 0.01f);
-                containerShader.setUniformFloat_("lights[" + i + "].quadratic", 0.005f);
+                containerShader.setUniform("lights[" + i + "].constant", 1f);
+                containerShader.setUniform("lights[" + i + "].linear", 0.01f);
+                containerShader.setUniform("lights[" + i + "].quadratic", 0.005f);
 
-                swordShader.setUniformVec3_("lights[" + i + "].position", lightSources[i].getPosition());
+                swordShader.setUniform("lights[" + i + "].position", lightSources[i].getPosition());
 
-                swordShader.setUniformVec3_("lights[" + i + "].ambient", pointLightAmbient);
-                swordShader.setUniformVec3_("lights[" + i + "].diffuse", pointLightDiffuse);
-                swordShader.setUniformVec3_("lights[" + i + "].specular", pointLightSpecular);
+                swordShader.setUniform("lights[" + i + "].ambient", pointLightAmbient);
+                swordShader.setUniform("lights[" + i + "].diffuse", pointLightDiffuse);
+                swordShader.setUniform("lights[" + i + "].specular", pointLightSpecular);
 
-                swordShader.setUniformFloat_("lights[" + i + "].constant", 1f);
-                swordShader.setUniformFloat_("lights[" + i + "].linear", 0.01f);
-                swordShader.setUniformFloat_("lights[" + i + "].quadratic", 0.005f);
+                swordShader.setUniform("lights[" + i + "].constant", 1f);
+                swordShader.setUniform("lights[" + i + "].linear", 0.01f);
+                swordShader.setUniform("lights[" + i + "].quadratic", 0.005f);
             }
     
             //TODO consider passing fragment position to frag shader with view applied,
             // so this nonsense becomes unnecessary
-            containerShader.setUniformVec3("uViewDirection", camera.getDirection());
-            containerShader.setUniformFloat("uTime", (float) pacer.getTime());
+            containerShader.setUniform("uViewDirection", camera.getDirection());
+            containerShader.setUniform("uTime", (float) pacer.getTime());
     
-            containerShader.setUniformMat4("uCombined", camera.getCombined());
+            containerShader.setUniform("uCombined", camera.getCombined());
             for (Model model : models) {
                 renderer.render(model, containerShader, camera.getCombined());
             }
             
-            swordShader.setUniformVec3("uViewDirection", camera.getDirection());
-            swordShader.setUniformFloat("uTime", (float) pacer.getTime());
+            swordShader.setUniform("uViewDirection", camera.getDirection());
+            swordShader.setUniform("uTime", (float) pacer.getTime());
             renderer.render(sword, swordShader, camera.getCombined());
             renderer.render(backpack, containerShader, camera.getCombined());
             
             for (int i = 0; i < lightSources.length; i++) {
-                lightShader.setUniformVec3("light.ambient", pointLightAmbient);
-                lightShader.setUniformVec3("light.diffuse", pointLightDiffuse);
-                lightShader.setUniformVec3("light.specular", pointLightSpecular);
+                lightShader.setUniform("light.ambient", pointLightAmbient);
+                lightShader.setUniform("light.diffuse", pointLightDiffuse);
+                lightShader.setUniform("light.specular", pointLightSpecular);
     
                 renderer.render(lightSources[i], lightShader, camera.getCombined());
             }
