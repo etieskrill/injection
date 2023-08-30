@@ -29,7 +29,6 @@ public abstract class ShaderProgram implements Disposable {
     
     private int programID, vertID, fragID;
     private final Map<Uniform, Integer> uniforms;
-    private final List<Uniform> unfoundUniforms;
     
     public enum ShaderType {
         VERTEX,
@@ -74,7 +73,6 @@ public abstract class ShaderProgram implements Disposable {
         logger.debug("Creating shader from files: {}", Arrays.toString(files));
     
         this.uniforms = new HashMap<>();
-        this.unfoundUniforms = STRICT_UNIFORM_DETECTION ? new ArrayList<>() : null;
         
         try {
             if (CLEAR_ERROR_BEFORE_SHADER_CREATION) clearGlErrorStatus();
@@ -167,8 +165,10 @@ public abstract class ShaderProgram implements Disposable {
             uniform = new Uniform((String) name, type);
         }
         
+        //This is not a boxed Integer with a null check, because in strict mode, non-registered names are
+        //already filtered out in the above statement, which intellisense somehow knows apparently
         int location = STRICT_UNIFORM_DETECTION ?
-                getUniformLocation(uniform) :
+                uniforms.get(uniform) :
                 glGetUniformLocation(programID, name);
         if (location == -1) return false;
         
@@ -270,20 +270,7 @@ public abstract class ShaderProgram implements Disposable {
             throw new IllegalStateException(
                     "Cannot register non-existent uniform \"%s\" in strict mode".formatted(uniform.getName()));
         
-        unfoundUniforms.add(uniform);
         logger.debug("Could not find location of uniform {}", uniform);
-    }
-    
-    protected int getUniformLocation(Uniform uniform) {
-        Integer location = uniforms.get(uniform);
-        if (location == null) {
-            //CharSequence message = !unfoundUniforms.contains(name) ? "registered" : "found or is never used";
-            //System.err.printf("[%s] Uniform of name \"%s\" was not %s in the shader\n",
-            //        getClass().getSimpleName(), name, message);
-            return -1;
-        }
-
-        return location;
     }
     
     protected void disableStrictUniformChecking() {
