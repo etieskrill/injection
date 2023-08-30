@@ -108,7 +108,9 @@ public class Shaders {
 
     private static class LightSourceShader extends ShaderProgram {
         @Override
-        protected void init() {}
+        protected void init() {
+            disableStrictUniformChecking();
+        }
         
         @Override
         protected String[] getShaderFileNames() {

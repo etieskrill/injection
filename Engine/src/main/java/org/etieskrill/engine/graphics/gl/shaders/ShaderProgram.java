@@ -165,13 +165,17 @@ public abstract class ShaderProgram implements Disposable {
             uniform = new Uniform((String) name, type);
         }
         
+        return setUniform(uniform, value);
+    }
+    
+    private boolean setUniform(Uniform uniform, Object value) {
         //This is not a boxed Integer with a null check, because in strict mode, non-registered names are
         //already filtered out in the above statement, which intellisense somehow knows apparently
         int location = STRICT_UNIFORM_DETECTION ?
                 uniforms.get(uniform) :
-                glGetUniformLocation(programID, name);
+                glGetUniformLocation(programID, uniform.getName());
         if (location == -1) return false;
-        
+    
         if (AUTO_START_ON_VARIABLE_SET) start();
         switch (uniform.type) {
             case INT, SAMPLER2D -> glUniform1i(location, (Integer) value);
@@ -181,7 +185,7 @@ public abstract class ShaderProgram implements Disposable {
             case MAT3 -> glUniformMatrix3fv(location, false, ((Mat3) value).toFloatArray());
             case MAT4 -> glUniformMatrix4fv(location, false, ((Mat4) value).toFloatArray());
         }
-        
+    
         return true;
     }
     
@@ -263,6 +267,7 @@ public abstract class ShaderProgram implements Disposable {
         int uniformLocation = glGetUniformLocation(programID, uniform.getName());
         if (uniformLocation != -1) {
             uniforms.put(uniform, uniformLocation);
+            setStandardValue(uniform, uniformLocation);
             return;
         }
     
@@ -271,6 +276,17 @@ public abstract class ShaderProgram implements Disposable {
                     "Cannot register non-existent uniform \"%s\" in strict mode".formatted(uniform.getName()));
         
         logger.debug("Could not find location of uniform {}", uniform);
+    }
+    
+    private void setStandardValue(Uniform uniform, int location) {
+        switch (uniform.type) {
+            case INT, SAMPLER2D -> glUniform1i(location, 0);
+            case FLOAT -> glUniform1f(location, 0f);
+            case VEC3 -> glUniform3fv(location, new Vec3(0f).toFloatArray());
+            case VEC4 -> glUniform4fv(location, new Vec4(0f).toFloatArray());
+            case MAT3 -> glUniformMatrix3fv(location, false, new Mat3().identity().toFloatArray());
+            case MAT4 -> glUniformMatrix4fv(location, false, new Mat4().identity().toFloatArray());
+        }
     }
     
     protected void disableStrictUniformChecking() {
