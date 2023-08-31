@@ -146,14 +146,19 @@ public abstract class ShaderProgram implements Disposable {
     }
     
     //TODO this is so-called bullshit spaghetti code. fix it.
-    public boolean setUniform(CharSequence name, Object value) {
+    public boolean setUniform(String name, Object value) {
         if (name == null) throw new NullPointerException("Name must not be null");
         if (value == null) throw new NullPointerException("Value must not be null");
     
         Uniform uniform;
         if (STRICT_UNIFORM_DETECTION) {
+            String templateName;
+            int arrIndex = Uniform.getArrayIndex(name);
+            if (arrIndex != -1) {
+                templateName = name;
+            } else templateName = name;
             Optional<Uniform> optUniform = uniforms.keySet().stream()
-                    .filter(element -> name.equals(element.getName()))
+                    .filter(element -> templateName.equals(element.getName()))
                     .findAny();
             if (optUniform.isEmpty()) return false;
             uniform = optUniform.get();
@@ -162,7 +167,7 @@ public abstract class ShaderProgram implements Disposable {
         } else {
             Uniform.Type type = Uniform.Type.getFromClass(value.getClass());
             if (type == null) return false;
-            uniform = new Uniform((String) name, type);
+            uniform = new Uniform(name, type);
         }
         
         return setUniform(uniform, value);
@@ -220,10 +225,37 @@ public abstract class ShaderProgram implements Disposable {
         
         private final String name;
         private final Type type;
+        private final boolean wildcard;
     
         public Uniform(String name, Type type) {
+            int numArrayIndices = 0;
+            for (int i = 0; i < name.length(); i++) {
+                if (name.charAt(i) == '$') numArrayIndices++;
+                if (numArrayIndices > 1) throw new IllegalArgumentException(
+                        "Only a single array index placeholder may be specified: " + name);
+            }
+            
+            if (name.contains("*")) {
+                if (numArrayIndices > 0 || name.indexOf("*") != name.length() - 1) throw new IllegalArgumentException(
+                        "Name may only contain either an array index or a wildcard, " +
+                        "and the wildcard must be at the end of the name: " + name);
+                wildcard = true;
+            } else wildcard = false;
+            
             this.name = name;
             this.type = type;
+        }
+        
+        public static int getArrayIndex(String name) {
+            return name.indexOf("$");
+        }
+        
+        public int getArrayIndex() {
+            return getArrayIndex(this.getName());
+        }
+        
+        public boolean hasWildcard() {
+            return wildcard;
         }
     
         public String getName() {
@@ -261,13 +293,15 @@ public abstract class ShaderProgram implements Disposable {
         addUniform(new Uniform(name, type));
     }
     
-    //TODO set identity values as standard, if enum-option is implemented
     protected void addUniform(Uniform uniform) {
+        if (uniform.getName().charAt(0) == 'g')
+        
         if (uniforms.containsKey(uniform)) return;
         int uniformLocation = glGetUniformLocation(programID, uniform.getName());
         if (uniformLocation != -1) {
             uniforms.put(uniform, uniformLocation);
             setStandardValue(uniform, uniformLocation);
+            logger.trace("Registered uniform {}", uniform.getName());
             return;
         }
     

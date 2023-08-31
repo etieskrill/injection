@@ -36,7 +36,9 @@ public class Shaders {
 
     public static class StaticShader extends ShaderProgram {
         @Override
-        protected void init() {}
+        protected void init() {
+            disableStrictUniformChecking();
+        }
     
         @Override
         protected String[] getShaderFileNames() {
@@ -58,6 +60,11 @@ public class Shaders {
             addUniform("material.emissive0", SAMPLER2D);
             addUniform("material.shininess", FLOAT);
             addUniform("material.specularity", FLOAT);
+            
+            addUniform("globalLights[$].direction", VEC3);
+            addUniform("globalLights[$].ambient", VEC3);
+            addUniform("globalLights[$].diffuse", VEC3);
+            addUniform("globalLights[$].specular", VEC3);
         }
         
     }
