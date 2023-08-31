@@ -317,6 +317,22 @@ public class Window {
             glfwSetInputMode(window, GLFW_CURSOR, glfwMode);
         }
         
+        public void normal() {
+            setMode(CursorMode.NORMAL);
+        }
+        
+        public void hide() {
+            setMode(CursorMode.HIDDEN);
+        }
+        
+        public void disable() {
+            setMode(CursorMode.DISABLED);
+        }
+        
+        public void capture() {
+            setMode(CursorMode.CAPTURED);
+        }
+        
         public enum CursorShape {
             ARROW,
             IBEAM,

@@ -23,7 +23,9 @@ import org.lwjgl.opengl.GL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.naming.directory.BasicAttribute;
 import java.util.Random;
+import java.util.stream.BaseStream;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL33C.*;
@@ -231,12 +233,9 @@ public class DemCubez {
         ShaderProgram containerShader = Shaders.getContainerShader();
         ShaderProgram lightShader = Shaders.getLightSourceShader();
         ShaderProgram swordShader = Shaders.getSwordShader();
-    
-        Batch batch = new Batch(renderer, factory);
-    
-        camera = new PerspectiveCamera(window.getSize().getVector());
-    
-        camera.setPosition(new Vec3(0f, 0f, 3f))
+        
+        camera = (PerspectiveCamera) new PerspectiveCamera(window.getSize().getVector())
+                .setPosition(new Vec3(0f, 0f, 3f))
                 .setOrientation(0f, -90f, 0f)
                 .setFar(-1000f);
     
@@ -253,7 +252,7 @@ public class DemCubez {
         //menu.getLayout().setAlignment(Layout.Alignment.CENTER);
         container.setChild(menu);
     
-        window.setStage(new Stage(batch, container, new OrthographicCamera(window.getSize().getVector())));
+        window.setStage(new Stage(new Batch(renderer, new ModelFactory()), container, new OrthographicCamera(window.getSize().getVector())));
         window.getStage().hide();
         
         pacer = new SystemNanoTimePacer(1d / TARGET_FPS);
@@ -264,7 +263,7 @@ public class DemCubez {
             if (escPressed && !escPressedPrev) {
                 paused = true;
                 pacer.pauseTimer();
-                window.getCursor().setMode(CursorMode.NORMAL);
+                window.getCursor().normal();
                 window.getStage().show();
                 escPressedPrev = true;
             }
@@ -272,7 +271,7 @@ public class DemCubez {
                 paused = false;
                 pacer.resumeTimer();
                 resetPreviousMousePosition();
-                window.getCursor().setMode(CursorMode.DISABLED);
+                window.getCursor().disable();
                 window.getStage().hide();
                 escPressedPrev = false;
             }
@@ -398,7 +397,7 @@ public class DemCubez {
         if (spacePressed) deltaPosition.plusAssign(new Vec3(0f, -1f, 0f));
         if (shiftPressed) deltaPosition.plusAssign(new Vec3(0f, 1f, 0f));
     
-        if (deltaPosition.length() > 0f) deltaPosition.normalize();
+        deltaPosition.normalize();
     
         float delta = (float) pacer.getDeltaTimeSeconds();
         deltaPosition = deltaPosition.times(camSpeed).times(delta);
