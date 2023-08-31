@@ -130,15 +130,8 @@ public class Model implements Disposable {
     private void processNode(AINode node, AIScene scene) {
         PointerBuffer mMeshes = scene.mMeshes();
         if (mMeshes == null) return;
-        for (int i = 0; i < node.mNumMeshes(); i++) {
-            Mat4 transform = toMat4(node.mTransformation());
-            // No longer necessary, thanks to the aiProcecss_PreTransformVertices flag (it never worked anyway)
-//            AINode parent = node;
-//            while ((parent = parent.mParent()) != null) {
-//                transform.timesAssign(toMat4(parent.mTransformation()));
-//            }
-            meshes.add(processMesh(AIMesh.create(mMeshes.get(node.mMeshes().get(i))), transform));
-        }
+        for (int i = 0; i < node.mNumMeshes(); i++)
+            meshes.add(processMesh(AIMesh.create(mMeshes.get(node.mMeshes().get(i)))));
         
         PointerBuffer mChildren = node.mChildren();
         if (mChildren == null) return;
@@ -146,7 +139,7 @@ public class Model implements Disposable {
             processNode(AINode.create(mChildren.get()), scene);
     }
     
-    private Mesh processMesh(AIMesh mesh, Mat4 transform) {
+    private Mesh processMesh(AIMesh mesh) {
         Vector<Vec3> positions = new Vector<>();
         mesh.mVertices().forEach(vertex -> positions.add(new Vec3(vertex.x(), vertex.y(), vertex.z())));
         
@@ -178,7 +171,7 @@ public class Model implements Disposable {
                 normals.size() > 0 ? "with" : "without", texCoords.size() > 0 ? "with" : "without");
         
         Material material = materials.get(mesh.mMaterialIndex());
-        return Mesh.Loader.loadToVAO(vertices, indices, material, transform);
+        return Mesh.Loader.loadToVAO(vertices, indices, material);
     }
     
     private Material processMaterial(AIMaterial aiMaterial) {

@@ -16,10 +16,9 @@ public class Mesh implements Disposable {
     
     private final Material material;
     private final int vao, numIndices, vbo, ebo;
-    private final Mat4 transform;
     
     public static final class Loader {
-        public static Mesh loadToVAO(Vector<Vertex> vertices, Vector<Short> indices, Material material, Mat4 transform) {
+        public static Mesh loadToVAO(Vector<Vertex> vertices, Vector<Short> indices, Material material) {
             int vao = createVAO();
         
             List<Float> _data = vertices.stream()
@@ -35,7 +34,7 @@ public class Mesh implements Disposable {
             int ebo = prepareIndexBuffer(_indices);
         
             unbindVAO();
-            return new Mesh(material, vao, indices.size(), vbo, ebo, transform);
+            return new Mesh(material, vao, indices.size(), vbo, ebo);
         }
     
         private static int createVAO() {
@@ -78,16 +77,13 @@ public class Mesh implements Disposable {
     }
     
     public Mesh(Material material,
-                int vao, int numIndices, int vbo, int ebo,
-                Mat4 transform) {
+                int vao, int numIndices, int vbo, int ebo) {
         this.material = material;
         
         this.vao = vao;
         this.numIndices = numIndices;
         this.vbo = vbo;
         this.ebo = ebo;
-        
-        this.transform = transform;
     }
     
     public Material getMaterial() {
@@ -100,10 +96,6 @@ public class Mesh implements Disposable {
     
     public int getVao() {
         return vao;
-    }
-    
-    public Mat4 getTransform() {
-        return transform;
     }
     
     @Override

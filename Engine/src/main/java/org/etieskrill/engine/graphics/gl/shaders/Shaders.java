@@ -48,7 +48,6 @@ public class Shaders {
         @Override
         protected void getUniformLocations() {
             //TODO theoretically, a sort of autodetect feature is entirely possible
-            addUniform("uMesh", MAT4);
             addUniform("uModel", MAT4);
             addUniform("uNormal", MAT4);
             addUniform("uCombined", MAT4);
@@ -126,7 +125,6 @@ public class Shaders {
         
         @Override
         protected void getUniformLocations() {
-            addUniform("uMesh", MAT4);
             addUniform("uModel", MAT4);
             addUniform("uCombined", MAT4);
             addUniform("light.ambient", FLOAT);
@@ -165,7 +163,6 @@ public class Shaders {
         @Override
         protected void getUniformLocations() {
             //TODO i've forgotten about this thing waaaay to often, either enforce via enums soon or rework this goddamned system
-            addUniform("uMesh", MAT4);
             addUniform("uModel", MAT4);
             addUniform("uNormal", MAT4);
             addUniform("uCombined", MAT4);

@@ -65,6 +65,7 @@ uniform Material material;
 vec3 calculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDirection);
 vec3 calculatePointLight(PointLight light, vec3 normal, vec3 fragPosition, vec3 viewDirection);
 
+//TODO i think the specular calculations are completely wrong, as they should depend on position and not direction of the camera, but i should implement this in view space to mitigate passing such variables anyway
 void main()
 {
     vec3 combinedLight = vec3(0.0);

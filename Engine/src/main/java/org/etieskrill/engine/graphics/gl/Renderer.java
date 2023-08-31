@@ -37,7 +37,6 @@ public class Renderer {
     
     private void render(Mesh mesh, ShaderProgram shader) {
         bindMaterial(mesh.getMaterial(), shader);
-        shader.setUniform("uMesh", mesh.getTransform());
         glBindVertexArray(mesh.getVao());
         
         glDrawElements(GL_TRIANGLES, mesh.getNumIndices(), GL_UNSIGNED_SHORT, 0);
