@@ -354,14 +354,13 @@ public class DemCubez {
             containerShader.setUniform("uViewDirection", camera.getDirection());
             containerShader.setUniform("uTime", (float) pacer.getTime());
     
-            containerShader.setUniform("uCombined", camera.getCombined());
             for (Model model : models) {
                 renderer.render(model, containerShader, camera.getCombined());
             }
             
             swordShader.setUniform("uViewDirection", camera.getDirection());
             swordShader.setUniform("uTime", (float) pacer.getTime());
-            renderer.render(sword, swordShader, camera.getCombined());
+            renderer.renderOutline(sword, swordShader, camera.getCombined());
             renderer.render(backpack, containerShader, camera.getCombined());
             
             for (int i = 0; i < lightSources.length; i++) {

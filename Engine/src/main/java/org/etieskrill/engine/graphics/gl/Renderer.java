@@ -1,10 +1,12 @@
 package org.etieskrill.engine.graphics.gl;
 
 import glm_.mat4x4.Mat4;
+import glm_.vec4.Vec4;
 import org.etieskrill.engine.graphics.assimp.Material;
 import org.etieskrill.engine.graphics.assimp.Mesh;
 import org.etieskrill.engine.graphics.assimp.Model;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
+import org.etieskrill.engine.graphics.gl.shaders.Shaders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +35,34 @@ public class Renderer {
         for (Mesh mesh : model.getMeshes())
             render(mesh, shader);
         shader.stop();
+    }
+    
+    private final ShaderProgram outlineShader = Shaders.getOutlineShader();
+    
+    public void renderOutline(Model model, ShaderProgram shader, Mat4 combined) {
+        renderOutline(model, shader, combined, 0.5f, new Vec4(1f, 0f, 0f, 1f));
+    }
+    
+    public void renderOutline(Model model, ShaderProgram shader, Mat4 combined, float thickness, Vec4 colour) {
+        outlineShader.setUniform("uThicknessFactor", thickness);
+        outlineShader.setUniform("uColour", colour);
+        
+        glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+        
+        glStencilFunc(GL_ALWAYS, 1, 0xFF);
+        glStencilMask(0xFF);
+        render(model, shader, combined);
+        
+        glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+        glStencilMask(0x00);
+//        glDisable(GL_DEPTH_TEST);
+        //glClear(GL_DEPTH_BUFFER_BIT); //if outline rendered at end do this
+        glDepthFunc(GL_ALWAYS);
+        render(model, outlineShader, combined);
+        glDepthFunc(GL_LESS);
+        glStencilMask(0xFF);
+        glStencilFunc(GL_ALWAYS, 1, 0xFF);
+//        glEnable(GL_DEPTH_TEST);
     }
     
     private void render(Mesh mesh, ShaderProgram shader) {
@@ -65,12 +95,9 @@ public class Renderer {
         
             int validTextures = (diffuse + specular + emissive + height + shininess) - 1;
             texture.bind(validTextures);
-//            if (mesh.getNumIndices() < 400) logger.trace("Binding texture of type {} as material.{}{} to unit {}",
-//                    texture.getType().name(), texture.getType().name().toLowerCase(), number, validTextures);
             shader.setUniform("material." + texture.getType().name().toLowerCase() + number, validTextures);
         }
         
-        //TODO either use non-register methods here, or more strongly hint at/enforce registration
         shader.setUniform("material.shininess", material.getShininess());
         shader.setUniform("material.specularity", material.getShininessStrength());
     }

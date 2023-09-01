@@ -1,7 +1,5 @@
 package org.etieskrill.engine.graphics.gl.shaders;
 
-import glm_.mat4x4.Mat4;
-
 import static org.etieskrill.engine.graphics.gl.shaders.ShaderProgram.Uniform.Type.*;
 
 public class Shaders {
@@ -33,8 +31,12 @@ public class Shaders {
     public static SingleColourShader getSingleColourShader() {
         return new SingleColourShader();
     }
+    
+    public static OutlineShader getOutlineShader() {
+        return new OutlineShader();
+    }
 
-    public static class StaticShader extends ShaderProgram {
+    private static class StaticShader extends ShaderProgram {
         @Override
         protected void init() {
             disableStrictUniformChecking();
@@ -49,7 +51,7 @@ public class Shaders {
         protected void getUniformLocations() {
             //TODO theoretically, a sort of autodetect feature is entirely possible
             addUniform("uModel", MAT4);
-            addUniform("uNormal", MAT4);
+            addUniform("uNormal", MAT3);
             addUniform("uCombined", MAT4);
             
             addUniform("uViewDirection", VEC3);
@@ -164,8 +166,29 @@ public class Shaders {
         protected void getUniformLocations() {
             //TODO i've forgotten about this thing waaaay to often, either enforce via enums soon or rework this goddamned system
             addUniform("uModel", MAT4);
-            addUniform("uNormal", MAT4);
+            addUniform("uNormal", MAT3);
             addUniform("uCombined", MAT4);
+            
+            addUniform("uColour", VEC4);
+        }
+    }
+    
+    private static class OutlineShader extends ShaderProgram {
+        @Override
+        protected void init() {}
+    
+        @Override
+        protected String[] getShaderFileNames() {
+            return new String[]{"Outline.vert", "Outline.frag"};
+        }
+    
+        @Override
+        protected void getUniformLocations() {
+            addUniform("uModel", MAT4);
+            addUniform("uNormal", MAT3);
+            addUniform("uCombined", MAT4);
+            
+            addUniform("uThicknessFactor", FLOAT);
             
             addUniform("uColour", VEC4);
         }
