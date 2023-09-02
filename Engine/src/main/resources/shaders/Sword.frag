@@ -56,7 +56,6 @@ in vec2 tTextureCoords;
 in vec3 tFragPos;
 
 uniform vec3 uViewPosition;
-uniform vec3 uViewDirection;
 uniform float uTime;
 
 uniform DirectionalLight globalLights[NR_DIRECTIONAL_LIGHTS];
@@ -64,16 +63,16 @@ uniform PointLight lights[NR_POINT_LIGHTS];
 uniform SpotLight flashlight;
 uniform Material material;
 
-vec3 calculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDirection);
-vec3 calculatePointLight(PointLight light, vec3 normal, vec3 fragPosition, vec3 viewDirection);
+vec3 calculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 fragPosition, vec3 viewPosition);
+vec3 calculatePointLight(PointLight light, vec3 normal, vec3 fragPosition, vec3 viewPosition);
 
 void main()
 {
     vec3 combinedLight = vec3(0.0);
     for (int i = 0; i < NR_DIRECTIONAL_LIGHTS; i++)
-        combinedLight += calculateDirectionalLight(globalLights[i], tNormal, uViewDirection);
+        combinedLight += calculateDirectionalLight(globalLights[i], tNormal, tFragPos, uViewPosition);
     for (int i = 0; i < NR_POINT_LIGHTS; i++) {
-        combinedLight += calculatePointLight(lights[i], tNormal, tFragPos, uViewDirection);
+        combinedLight += calculatePointLight(lights[i], tNormal, tFragPos, uViewPosition);
     }
 
     vec3 emission = texture(material.emissive0, tTextureCoords).rgb;
@@ -82,7 +81,7 @@ void main()
     oColour = vec4(combinedLight, 1.0);
 }
 
-vec3 calculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDirection)
+vec3 calculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 fragPosition, vec3 viewPosition)
 {
     vec3 ambient = light.ambient * texture(material.diffuse0, tTextureCoords).rgb;
 
@@ -91,6 +90,7 @@ vec3 calculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDir
     vec3 diffuse = light.diffuse * diff * texture(material.diffuse0, tTextureCoords).rgb;
 
     vec3 reflectionDirection = reflect(-lightDirection, normal);
+    vec3 viewDirection = normalize(viewPosition - fragPosition);
     float spec = material.specularity * pow(max(dot(viewDirection, reflectionDirection), 0.0), material.shininess);
     vec4 specTex = texture(material.specular0, tTextureCoords);
     vec3 specular = light.specular * spec * (SINGLE_CHANNEL_SPECULAR ? specTex.rrr : specTex.rgb);
@@ -98,7 +98,7 @@ vec3 calculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDir
     return ambient + diffuse + specular;
 }
 
-vec3 calculatePointLight(PointLight light, vec3 normal, vec3 fragPosition, vec3 viewDirection)
+vec3 calculatePointLight(PointLight light, vec3 normal, vec3 fragPosition, vec3 viewPosition)
 {
     vec3 ambient = light.ambient * texture(material.diffuse0, tTextureCoords).rgb;
 
@@ -107,6 +107,7 @@ vec3 calculatePointLight(PointLight light, vec3 normal, vec3 fragPosition, vec3 
     vec3 diffuse = light.diffuse * diff * texture(material.diffuse0, tTextureCoords).rgb;
 
     vec3 reflectionDirection = reflect(-lightDirection, normal);
+    vec3 viewDirection = normalize(viewPosition - fragPosition);
     float spec = material.specularity * pow(max(dot(viewDirection, reflectionDirection), 0.0), material.shininess);
     vec4 specTex = texture(material.specular0, tTextureCoords);
     vec3 specular = light.specular * spec * (SINGLE_CHANNEL_SPECULAR ? specTex.rrr : specTex.rgb);

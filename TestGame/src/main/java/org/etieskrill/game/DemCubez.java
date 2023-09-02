@@ -351,14 +351,14 @@ public class DemCubez {
     
             //TODO consider passing fragment position to frag shader with view applied,
             // so this nonsense becomes unnecessary
-            containerShader.setUniform("uViewDirection", camera.getDirection());
+            containerShader.setUniform("uViewPosition", camera.getPosition());
             containerShader.setUniform("uTime", (float) pacer.getTime());
     
             for (Model model : models) {
                 renderer.render(model, containerShader, camera.getCombined());
             }
             
-            swordShader.setUniform("uViewDirection", camera.getDirection());
+            swordShader.setUniform("uViewPosition", camera.getPosition());
             swordShader.setUniform("uTime", (float) pacer.getTime());
             renderer.renderOutline(sword, swordShader, camera.getCombined());
             renderer.render(backpack, containerShader, camera.getCombined());

@@ -54,7 +54,7 @@ public class Shaders {
             addUniform("uNormal", MAT3);
             addUniform("uCombined", MAT4);
             
-            addUniform("uViewDirection", VEC3);
+            addUniform("uViewPosition", VEC3);
             
             addUniform("material.diffuse0", SAMPLER2D);
             addUniform("material.specular0", SAMPLER2D);
