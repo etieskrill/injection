@@ -40,10 +40,10 @@ public class Renderer {
     private final ShaderProgram outlineShader = Shaders.getOutlineShader();
     
     public void renderOutline(Model model, ShaderProgram shader, Mat4 combined) {
-        renderOutline(model, shader, combined, 0.5f, new Vec4(1f, 0f, 0f, 1f));
+        renderOutline(model, shader, combined, 0.5f, new Vec4(1f, 0f, 0f, 1f), false);
     }
     
-    public void renderOutline(Model model, ShaderProgram shader, Mat4 combined, float thickness, Vec4 colour) {
+    public void renderOutline(Model model, ShaderProgram shader, Mat4 combined, float thickness, Vec4 colour, boolean writeToFront) {
         outlineShader.setUniform("uThicknessFactor", thickness);
         outlineShader.setUniform("uColour", colour);
         
@@ -55,14 +55,12 @@ public class Renderer {
     
         glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
         glStencilMask(0x00);
-//        glDisable(GL_DEPTH_TEST);
-        //glClear(GL_DEPTH_BUFFER_BIT); //if outline rendered at end do this
-//        glDepthFunc(GL_ALWAYS);
+        if (writeToFront) glDisable(GL_DEPTH_TEST);
         render(model, outlineShader, combined);
-//        glDepthFunc(GL_LESS);
-        glStencilMask(0xFF);
+    
         glStencilFunc(GL_ALWAYS, 0, 0xFF);
-//        glEnable(GL_DEPTH_TEST);
+        glStencilMask(0xFF);
+        if (writeToFront) glEnable(GL_DEPTH_TEST);
     }
     
     private void render(Mesh mesh, ShaderProgram shader) {
