@@ -121,7 +121,8 @@ public class Texture implements Disposable {
         pixelWidth = bufferWidth.get();
         pixelHeight = bufferHeight.get();
         colourChannels = bufferColourChannels.get();
-        
+    
+        //TODO currently, the internal format and the format are set to the same value, which seems to work so far
         int format = switch (colourChannels) {
             case 1 -> GL_RED; //GL_ALPHA does NOT work, this caused me quite a bit of pain
             case 2 -> GL_RG;

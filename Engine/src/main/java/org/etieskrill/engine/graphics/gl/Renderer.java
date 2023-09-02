@@ -48,20 +48,20 @@ public class Renderer {
         outlineShader.setUniform("uColour", colour);
         
         glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-        
+    
         glStencilFunc(GL_ALWAYS, 1, 0xFF);
         glStencilMask(0xFF);
         render(model, shader, combined);
-        
+    
         glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
         glStencilMask(0x00);
 //        glDisable(GL_DEPTH_TEST);
         //glClear(GL_DEPTH_BUFFER_BIT); //if outline rendered at end do this
-        glDepthFunc(GL_ALWAYS);
+//        glDepthFunc(GL_ALWAYS);
         render(model, outlineShader, combined);
-        glDepthFunc(GL_LESS);
+//        glDepthFunc(GL_LESS);
         glStencilMask(0xFF);
-        glStencilFunc(GL_ALWAYS, 1, 0xFF);
+        glStencilFunc(GL_ALWAYS, 0, 0xFF);
 //        glEnable(GL_DEPTH_TEST);
     }
     
