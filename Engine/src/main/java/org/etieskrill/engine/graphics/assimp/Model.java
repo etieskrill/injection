@@ -103,9 +103,7 @@ public class Model implements Disposable {
     }
     
     public static Model ofFile(String file) {
-        Model model = new Builder(file).build();
-        System.out.println(model.getName() + " " + model.getMeshes().size());
-        return model;
+        return new Builder(file).build();
     }
     
     /**
