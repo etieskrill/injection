@@ -86,6 +86,9 @@ public class DemCubez {
         glEnable(GL_STENCIL_TEST);
         glEnable(GL_BLEND);
         
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
+        
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST); //GL_<mipmap level selection>_MIPMAP_<mipmap texture sampling>
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); //GL_<mipmap texture sampling>
         
@@ -210,7 +213,8 @@ public class DemCubez {
         };
         Vector<Model> grassModels = new Vector<>(grassPosition.length);
         for (Vec3 position : grassPosition) {
-            grassModels.add(ModelLoader.get().load("grass", () -> Model.ofFile("grass.obj"))
+            grassModels.add(ModelLoader.get().load("grass", () ->
+                            new Model.Builder("grass.obj").disableCulling().build())
                     .setPosition(position)
                     .setRotation((float) Math.toRadians(180f), new Vec3(0f, 0f, 1f))
             );
@@ -218,7 +222,8 @@ public class DemCubez {
         
         Model[] lightSources = new Model[2];
         for (int i = 0; i < lightSources.length; i++) {
-            lightSources[i] = ModelLoader.get().load("light", () -> Model.ofFile("cube.obj", "light"))
+            lightSources[i] = ModelLoader.get().load("light", () ->
+                            new Model.Builder("cube.obj").setName("light").build())
                     .setScale(0.2f)
                     .setPosition(new Vec3(0f, 0f, -5f));
         }

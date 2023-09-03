@@ -25,7 +25,7 @@ import static org.lwjgl.assimp.Assimp.*;
 public class Model implements Disposable {
     
     private static final String DIRECTORY = "Engine/src/main/resources/models/";
-    private static final Supplier<Model> ERROR_MODEL = () -> Model.ofFile("cube.obj");
+    private static final Supplier<Model> ERROR_MODEL = () -> new Builder("cube.obj").build();
     
     private static final Logger logger = LoggerFactory.getLogger(Model.class);
     
@@ -42,21 +42,63 @@ public class Model implements Disposable {
     
     private final Mat4 transform;
     
-    public static Model ofFile(String file) {
-        return ofFile(file, file.split("\\.")[0]);
+    private final boolean doCulling;
+    
+    public static class Builder {
+        private final Vector<Mesh> meshes = new Vector<>();
+        private final Vector<Material> materials = new Vector<>();
+    
+        private final String file;
+        private String name;
+    
+        private boolean doCulling = true;
+        
+        public Builder(String file) {
+            if (file.isBlank()) throw new IllegalArgumentException("File name cannot be blank");
+            if (file.contains("/")) throw new IllegalArgumentException("Custom folder structure not implemented yet: " + file);
+            
+            this.file = file;
+            this.name = file.split("\\.")[0];
+        }
+    
+        public Builder setMeshes(Vector<Mesh> meshes) {
+            this.meshes.clear();
+            this.meshes.addAll(meshes);
+            return this;
+        }
+    
+        public Builder setMaterials(Vector<Material> materials) {
+            this.materials.clear();
+            this.materials.addAll(materials);
+            return this;
+        }
+    
+        public Builder setName(String name) {
+            this.name = name;
+            return this;
+        }
+    
+        public Builder disableCulling() {
+            this.doCulling = false;
+            return this;
+        }
+    
+        public Model build() {
+            try {
+                return new Model(file, name, meshes, materials,
+                        new Vec3(0f), new Vec3(1f), 0f, new Vec3(0f), new Mat4(),
+                        doCulling);
+            } catch (IOException e) {
+                logger.debug("Exception while loading model, using default: ", e);
+                return ERROR_MODEL.get();
+            }
+        }
     }
     
-    public static Model ofFile(String file, String name) {
-        if (file.isBlank()) throw new IllegalArgumentException("File name cannot be blank");
-        if (file.contains("/")) throw new IllegalArgumentException("Custom folder structure not implemented yet: " + file);
-    
-        try {
-            return new Model(file, name, new Vector<>(), new Vector<>(),
-                    new Vec3(0f), new Vec3(1f), 0f, new Vec3(0f), new Mat4().identity());
-        } catch (IOException e) {
-            logger.debug("Exception while loading model, using default: ", e);
-            return ERROR_MODEL.get();
-        }
+    public static Model ofFile(String file) {
+        Model model = new Builder(file).build();
+        System.out.println(model.getName() + " " + model.getMeshes().size());
+        return model;
     }
     
     /**
@@ -75,10 +117,12 @@ public class Model implements Disposable {
         this.rotation = model.rotation;
         this.rotationAxis = new Vec3(model.rotationAxis);
         this.transform = new Mat4(model.transform);
+        this.doCulling = model.doCulling;
     }
     
     private Model(String file, String name, Vector<Mesh> meshes, Vector<Material> materials,
-                 Vec3 position, Vec3 scale, float rotation, Vec3 rotationAxis, Mat4 transform) throws IOException {
+                 Vec3 position, Vec3 scale, float rotation, Vec3 rotationAxis, Mat4 transform,
+                  boolean doCulling) throws IOException {
         this.meshes = meshes;
         this.materials = materials;
         this.file = file.split("\\.")[0];
@@ -91,6 +135,8 @@ public class Model implements Disposable {
         this.rotation = rotation;
         this.rotationAxis = rotationAxis.length() == 1f ? rotationAxis : new Vec3(1f, 0f, 0f);
         this.transform = transform;
+        
+        this.doCulling = doCulling;
     }
     
     private void loadModel(String file) throws IOException {
@@ -287,6 +333,10 @@ public class Model implements Disposable {
     public Mat4 getTransform() {
         updateTransform();
         return transform;
+    }
+    
+    public boolean doCulling() {
+        return doCulling;
     }
     
     private void updateTransform() {

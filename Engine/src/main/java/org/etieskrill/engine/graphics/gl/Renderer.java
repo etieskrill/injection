@@ -77,10 +77,12 @@ public class Renderer {
         shader.setUniform("uModel", model.getTransform());
         shader.setUniform("uNormal", model.getTransform().inverse().transpose().toMat3());
     
+        if (!model.doCulling()) glDisable(GL_CULL_FACE);
         shader.start();
         for (Mesh mesh : model.getMeshes())
             render(mesh, shader);
         shader.stop();
+        if (!model.doCulling()) glEnable(GL_CULL_FACE);
     }
     
     private void render(Mesh mesh, ShaderProgram shader) {
