@@ -104,7 +104,7 @@ void main()
     }
     for (int i = 0; i < NR_POINT_LIGHTS; i++) {
         vec4 pointLight = calculatePointLight(lights[i], tNormal, tFragPos, uViewPosition);
-        combinedLight += vec4(pointLight.rgb, pointLight.a);
+        combinedLight += vec4(pointLight.rgb, 0);
         combinedLight.a = (combinedLight.a + pointLight.a) / 2;
     }
 
@@ -113,7 +113,7 @@ void main()
         emission = texture(material.emissive0, tTextureCoords + vec2(0.0, uTime * 0.25));
         emission = emission.grba * 0.7;
     }
-    //combinedLight += emission;
+    combinedLight += vec4(emission.rgb, 0);
 
     oColour = combinedLight;
 }
