@@ -115,6 +115,7 @@ void main()
 vec4 calculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 fragPosition, vec3 viewPosition)
 {
     vec4 ambient = vec4(light.ambient, 1.0) * texture(material.diffuse0, tTextureCoords);
+    if (ambient.a < 0.01) discard;
 
     vec3 lightDirection = normalize(-light.direction);
     float diff = max(dot(normal, lightDirection), 0.0);
@@ -132,6 +133,7 @@ vec4 calculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 fragPos
 vec4 calculatePointLight(PointLight light, vec3 normal, vec3 fragPosition, vec3 viewPosition)
 {
     vec4 ambient = vec4(light.ambient, 1.0) * texture(material.diffuse0, tTextureCoords);
+    if (ambient.a < 0.01) discard;
 
     vec3 lightDirection = normalize(light.position - fragPosition);
     float diff = max(dot(normal, lightDirection), 0.0);

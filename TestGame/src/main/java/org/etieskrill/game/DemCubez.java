@@ -205,6 +205,20 @@ public class DemCubez {
                                     random.nextFloat(-1f, 1f))
                     );
         }
+    
+        Vec3[] grassPosition = {
+            new Vec3(-1.5f,  0.0f, -0.48f),
+            new Vec3( 1.5f,  0.0f,  0.51f),
+            new Vec3( 0.0f,  0.0f,  0.7f),
+            new Vec3(-0.3f,  0.0f, -2.3f),
+            new Vec3( 0.5f,  0.0f, -0.6f)
+        };
+        Model[] grassModels = new Model[grassPosition.length];
+        for (int i = 0; i < grassPosition.length; i++) {
+            grassModels[i] = ModelLoader.get().load("grass", () -> Model.ofFile("grass.obj"))
+                    .setPosition(grassPosition[i])
+                    .setRotation((float) Math.toRadians(180f), new Vec3(0f, 0f, 1f));
+        }
         
         Model[] lightSources = new Model[2];
         for (int i = 0; i < lightSources.length; i++) {
@@ -360,8 +374,11 @@ public class DemCubez {
             containerShader.setUniform("uViewPosition", camera.getPosition());
             containerShader.setUniform("uTime", (float) pacer.getTime());
     
-            for (Model model : models) {
+            for (Model model : models)
                 renderer.render(model, containerShader, camera.getCombined());
+            
+            for (Model grass : grassModels) {
+                renderer.render(grass, containerShader, camera.getCombined());
             }
             
             swordShader.setUniform("uViewPosition", camera.getPosition());
