@@ -82,7 +82,9 @@ public class Shaders {
     
     private static class ContainerShader extends StaticShader {
         @Override
-        protected void init() {}
+        protected void init() {
+            disableStrictUniformChecking();
+        }
     
         @Override
         protected String[] getShaderFileNames() {

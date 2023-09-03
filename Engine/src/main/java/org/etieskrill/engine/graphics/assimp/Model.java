@@ -105,7 +105,8 @@ public class Model implements Disposable {
             aiProcess_GenUVCoords |
             aiProcess_TransformUVCoords |
             aiProcess_FindInstances |
-            aiProcess_PreTransformVertices
+            aiProcess_PreTransformVertices //|
+            //aiProcess_FlipWindingOrder
         ;
         
         AIScene scene = aiImportFile(DIRECTORY + file, processFlags);

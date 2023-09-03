@@ -28,7 +28,7 @@ public class Renderer {
     
     public void render(Model model, ShaderProgram shader, Mat4 combined) {
         if (shader.isPlaceholder()) { //TODO qol feature, should have no performance implications
-            renderOutline(model, shader, combined);
+            renderOutline(model, shader, combined, 1f, new Vec4(1, 0, 1, 1), true);
             return;
         }
         
@@ -59,6 +59,17 @@ public class Renderer {
         glStencilFunc(GL_ALWAYS, 0, 0xFF);
         glStencilMask(0xFF);
         if (writeToFront) glEnable(GL_DEPTH_TEST);
+    }
+    
+    public void renderTransparent(Model model, ShaderProgram shader, Mat4 combined) {
+        if (shader.isPlaceholder()) { //TODO qol feature, should have no performance implications
+            renderOutline(model, shader, combined, 1f, new Vec4(1, 0, 1, 1), true);
+            return;
+        }
+        
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        _render(model, shader, combined);
+        glBlendFunc(GL_ONE, GL_ZERO);
     }
     
     private void _render(Model model, ShaderProgram shader, Mat4 combined) {

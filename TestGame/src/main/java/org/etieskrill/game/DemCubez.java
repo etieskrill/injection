@@ -21,7 +21,7 @@ import org.lwjgl.opengl.GL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Random;
+import java.util.*;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL33C.*;
@@ -84,6 +84,7 @@ public class DemCubez {
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LESS);
         glEnable(GL_STENCIL_TEST);
+        glEnable(GL_BLEND);
         
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST); //GL_<mipmap level selection>_MIPMAP_<mipmap texture sampling>
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); //GL_<mipmap texture sampling>
@@ -174,8 +175,6 @@ public class DemCubez {
     }
 
     private void loop() {
-        ModelFactory factory = new ModelFactory();
-
         Vec3[] cubePositions = {
             //new Vec3( 0.0f,  0.0f,  0.0f),
             new Vec3( 2.0f,  5.0f, -15.0f),
@@ -188,15 +187,11 @@ public class DemCubez {
             new Vec3( 1.5f,  0.2f, -1.5f),
             new Vec3(-1.3f,  1.0f, -1.5f)
         };
-    
-        ModelLoader.get().load("cube", () ->
-                Model.ofFile("cube.obj")
-                        .setScale(1.0f)
-        );
+        
         Model[] models = new Model[cubePositions.length];
         Random random = new Random(69420);
         for (int i = 0; i < cubePositions.length; i++) {
-            models[i] = ModelLoader.get().get("cube")
+            models[i] = ModelLoader.get().load("cube", () -> Model.ofFile("cube.obj"))
                     .setPosition(cubePositions[i])
                     .setRotation(random.nextFloat(),
                             new Vec3(
@@ -213,11 +208,12 @@ public class DemCubez {
             new Vec3(-0.3f,  0.0f, -2.3f),
             new Vec3( 0.5f,  0.0f, -0.6f)
         };
-        Model[] grassModels = new Model[grassPosition.length];
-        for (int i = 0; i < grassPosition.length; i++) {
-            grassModels[i] = ModelLoader.get().load("grass", () -> Model.ofFile("grass.obj"))
-                    .setPosition(grassPosition[i])
-                    .setRotation((float) Math.toRadians(180f), new Vec3(0f, 0f, 1f));
+        Vector<Model> grassModels = new Vector<>(grassPosition.length);
+        for (Vec3 position : grassPosition) {
+            grassModels.add(ModelLoader.get().load("grass", () -> Model.ofFile("grass.obj"))
+                    .setPosition(position)
+                    .setRotation((float) Math.toRadians(180f), new Vec3(0f, 0f, 1f))
+            );
         }
         
         Model[] lightSources = new Model[2];
@@ -287,7 +283,7 @@ public class DemCubez {
                 escPressedPrev = false;
             }
     
-            if (!escPressed) {
+            if (!paused) {
                 camera.orient(dPitch, dYaw, 0f);
                 dPitch = 0f;
                 dYaw = 0f;
@@ -302,7 +298,7 @@ public class DemCubez {
                     0f,
                     radius * Math.sin(Math.toRadians(time))
             );
-            if (!escPressed) {
+            if (!paused) {
                 lightSources[0].setPosition(newLightSourcePos.plus(offset));
                 lightSources[1].setPosition(newLightSourcePos.negate().plus(offset));
             }
@@ -377,10 +373,6 @@ public class DemCubez {
             for (Model model : models)
                 renderer.render(model, containerShader, camera.getCombined());
             
-            for (Model grass : grassModels) {
-                renderer.render(grass, containerShader, camera.getCombined());
-            }
-            
             swordShader.setUniform("uViewPosition", camera.getPosition());
             swordShader.setUniform("uTime", (float) pacer.getTime());
             renderer.render(sword, swordShader, camera.getCombined());
@@ -395,6 +387,15 @@ public class DemCubez {
                 lightShader.setUniform("light.specular", pointLightSpecular);
     
                 renderer.render(lightSources[i], lightShader, camera.getCombined());
+            }
+    
+            //TODO 1. draw opaque, 2. sort transparent by decreasing distance to viewer, 3. draw sorted transparent
+            grassModels.sort((model1, model2) -> Float.compare(
+                            camera.getPosition().minus(model2.getPosition()).length(),
+                            camera.getPosition().minus(model1.getPosition()).length())
+            );
+            for (Model grass : grassModels) {
+                renderer.renderTransparent(grass, containerShader, camera.getCombined());
             }
             
             window.update(pacer.getDeltaTimeSeconds());
@@ -426,7 +427,7 @@ public class DemCubez {
     
         float delta = (float) pacer.getDeltaTimeSeconds();
         deltaPosition = deltaPosition.times(camSpeed).times(delta);
-        if (!escPressed) camera.translate(deltaPosition);
+        if (!paused) camera.translate(deltaPosition);
     
         float camRollSpeed = 1f, camRoll = 0;
         if (qPressed) camRoll -= camRollSpeed;

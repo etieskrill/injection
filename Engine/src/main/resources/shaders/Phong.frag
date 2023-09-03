@@ -64,6 +64,8 @@ uniform PointLight lights[NR_POINT_LIGHTS];
 
 vec4 calculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 fragPosition, vec3 viewPosition);
 vec4 calculatePointLight(PointLight light, vec3 normal, vec3 fragPosition, vec3 viewPosition);
+vec4 getAmbientAndDiffuse(vec3 lightDirection, vec3 normal, vec3 lightAmbient, vec3 lightDiffuse);
+vec4 getSpecular(vec3 lightDirection, vec3 normal, vec3 fragPosition, vec3 viewPosition, vec3 lightSpecular);
 
 void main()
 {
@@ -82,9 +84,9 @@ void main()
 vec4 calculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 fragPosition, vec3 viewPosition)
 {
     vec3 lightDirection = normalize(-light.direction);
-    vec4 ambientAndDiffuse = getAmbientAndDiffuse(lightDirection, light.ambient, light.diffuse);
+    vec4 ambientAndDiffuse = getAmbientAndDiffuse(lightDirection, normal, light.ambient, light.diffuse);
 
-    vec4 specular = getSpecular(lightDirection, normal, fragPosition, viewPosition);
+    vec4 specular = getSpecular(lightDirection, normal, fragPosition, viewPosition, light.specular);
 
     return ambientAndDiffuse + specular;
 }
@@ -92,9 +94,9 @@ vec4 calculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 fragPos
 vec4 calculatePointLight(PointLight light, vec3 normal, vec3 fragPosition, vec3 viewPosition)
 {
     vec3 lightDirection = normalize(light.position - fragPosition);
-    vec4 ambientAndDiffuse = getAmbientAndDiffuse(lightDirection, light.ambient, light.diffuse);
+    vec4 ambientAndDiffuse = getAmbientAndDiffuse(lightDirection, normal, light.ambient, light.diffuse);
 
-    vec4 specular = getSpecular(lightDirection, normal, fragPosition, viewPosition);
+    vec4 specular = getSpecular(lightDirection, normal, fragPosition, viewPosition, light.specular);
 
     float distance = length(lightDirection);
     float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * distance * distance);
@@ -103,7 +105,7 @@ vec4 calculatePointLight(PointLight light, vec3 normal, vec3 fragPosition, vec3 
     return (ambientAndDiffuse + specular) * attenuation;
 }
 
-vec4 getAmbientAndDiffuse(vec3 lightDirection, vec3 lightAmbient, vec3 lightDiffuse)
+vec4 getAmbientAndDiffuse(vec3 lightDirection, vec3 normal, vec3 lightAmbient, vec3 lightDiffuse)
 {
     vec4 texel = texture(material.diffuse0, tTextureCoords);
     if (texel.a < 0.01) discard;
@@ -116,10 +118,10 @@ vec4 getAmbientAndDiffuse(vec3 lightDirection, vec3 lightAmbient, vec3 lightDiff
     return ambient + diffuse;
 }
 
-vec4 getSpecular(vec3 lightDirection, vec3 normal, vec3 fragPosition, vec3 viewPosition)
+vec4 getSpecular(vec3 lightDirection, vec3 normal, vec3 fragPosition, vec3 viewPosition, vec3 lightSpecular)
 {
     vec3 reflectionDirection = reflect(-lightDirection, normal);
     vec3 viewDirection = normalize(viewPosition - fragPosition);
     float spec = material.specularity * pow(max(dot(viewDirection, reflectionDirection), 0.0), material.shininess);
-    return vec4(light.specular, 1.0) * spec * texture(material.specular0, tTextureCoords);
+    return vec4(lightSpecular, 1.0) * spec * texture(material.specular0, tTextureCoords);
 }

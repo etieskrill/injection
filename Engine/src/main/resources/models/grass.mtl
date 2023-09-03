@@ -5,5 +5,5 @@ newmtl grass
     Ns 256.000000
     Ni 1.000000
     d 1.000000
-    map_Kd grass.png
+    map_Kd window.png
     illum 1
