@@ -327,7 +327,7 @@ public class DemCubez {
             Vec3 pointLightColour = new Vec3(1f);
             Vec3 pointLightAmbient = pointLightColour.times(0.1f);
             Vec3 pointLightDiffuse = pointLightColour.times(0.3f);
-            Vec3 pointLightSpecular = pointLightColour.times(0.2f);
+            Vec3 pointLightSpecular = pointLightColour.times(0.5f);
             
             for (int i = 0; i < lightSources.length; i++) {
                 containerShader.setUniformArray("lights[$].position", i, lightSources[i].getPosition());

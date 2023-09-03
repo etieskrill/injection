@@ -43,6 +43,7 @@ struct SpotLight {
 struct Material {
     sampler2D diffuse0;
     sampler2D specular0;
+    sampler2D shininess0;
     float shininess;
     float specularity;
     sampler2D emissive0;
@@ -73,7 +74,7 @@ void main()
     for (int i = 0; i < NR_POINT_LIGHTS; i++)
         combinedLight += calculatePointLight(lights[i], tNormal, tFragPos, uViewPosition);
 
-    vec4 emission = texture(material.emissive0, tTextureCoords);
+    vec4 emission = texture(material.emissive0, tTextureCoords) * material.shininess * (1 / material.shininess);
     combinedLight += emission * (sin(2 * uTime) * 0.1 + 0.5);
 
     oColour = combinedLight;
@@ -89,7 +90,8 @@ vec4 calculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 fragPos
 
     vec3 reflectionDirection = reflect(-lightDirection, normal);
     vec3 viewDirection = normalize(viewPosition - fragPosition);
-    float spec = material.specularity * pow(max(dot(viewDirection, reflectionDirection), 0.0), material.shininess);
+    float specularExponent = texture(material.shininess0, tTextureCoords).r * 256; //a somewhat arbitray factor, wavefront specifies an exponent range from 0 to 1000, but this changes from format to format, and what feels like from model to model
+    float spec = material.specularity * pow(max(dot(viewDirection, reflectionDirection), 0.0), specularExponent);
     vec4 specTex = texture(material.specular0, tTextureCoords);
     vec4 specular = vec4(light.specular, 1.0) * spec * specTex;
 
@@ -106,7 +108,8 @@ vec4 calculatePointLight(PointLight light, vec3 normal, vec3 fragPosition, vec3 
 
     vec3 reflectionDirection = reflect(-lightDirection, normal);
     vec3 viewDirection = normalize(viewPosition - fragPosition);
-    float spec = material.specularity * pow(max(dot(viewDirection, reflectionDirection), 0.0), material.shininess);
+    float specularExponent = texture(material.shininess0, tTextureCoords).r * 256;
+    float spec = material.specularity * pow(max(dot(viewDirection, reflectionDirection), 0.0), specularExponent);
     vec4 specTex = texture(material.specular0, tTextureCoords);
     vec4 specular = vec4(light.specular, 1.0) * spec * specTex;
 

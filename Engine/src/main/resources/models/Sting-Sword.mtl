@@ -12,4 +12,5 @@ newmtl Sting
     map_Kd Sting_Base_Color.png
     map_Ks Sting_Metallic.png
     map_Ke Sting_Emissive.png
+    map_Ns Sting_Roughness.png
     illum 2
