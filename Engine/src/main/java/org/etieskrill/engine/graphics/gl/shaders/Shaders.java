@@ -38,9 +38,7 @@ public class Shaders {
 
     private static class StaticShader extends ShaderProgram {
         @Override
-        protected void init() {
-            disableStrictUniformChecking();
-        }
+        protected void init() {}
     
         @Override
         protected String[] getShaderFileNames() {
@@ -62,19 +60,25 @@ public class Shaders {
             addUniform("material.shininess", FLOAT);
             addUniform("material.specularity", FLOAT);
             
-            addUniform("globalLights[$].direction", VEC3);
-            addUniform("globalLights[$].ambient", VEC3);
-            addUniform("globalLights[$].diffuse", VEC3);
-            addUniform("globalLights[$].specular", VEC3);
+            addUniformArray("globalLights[$].direction", 1, VEC3);
+            addUniformArray("globalLights[$].ambient", 1, VEC3);
+            addUniformArray("globalLights[$].diffuse", 1, VEC3);
+            addUniformArray("globalLights[$].specular", 1, VEC3);
+    
+            addUniformArray("lights[$].position", 2, VEC3);
+            addUniformArray("lights[$].ambient", 2, VEC3);
+            addUniformArray("lights[$].diffuse", 2, VEC3);
+            addUniformArray("lights[$].specular", 2, VEC3);
+            addUniformArray("lights[$].constant", 2, FLOAT);
+            addUniformArray("lights[$].linear", 2, FLOAT);
+            addUniformArray("lights[$].quadratic", 2, FLOAT);
         }
         
     }
     
     private static class ContainerShader extends StaticShader {
         @Override
-        protected void init() {
-            disableStrictUniformChecking();
-        }
+        protected void init() {}
     
         @Override
         protected String[] getShaderFileNames() {

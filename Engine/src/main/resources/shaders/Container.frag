@@ -98,10 +98,9 @@ void main()
 
     vec3 combinedLight = vec3(0.0);
     for (int i = 0; i < NR_DIRECTIONAL_LIGHTS; i++)
-        combinedLight += calculateDirectionalLight(globalLights[i], tNormal, tFragPos, uViewDirection);
-    for (int i = 0; i < NR_POINT_LIGHTS; i++) {
-        combinedLight += calculatePointLight(lights[i], tNormal, tFragPos, uViewDirection);
-    }
+        combinedLight += calculateDirectionalLight(globalLights[i], tNormal, tFragPos, uViewPosition);
+    for (int i = 0; i < NR_POINT_LIGHTS; i++)
+        combinedLight += calculatePointLight(lights[i], tNormal, tFragPos, uViewPosition);
 
     vec3 emission;
     if (length(texture(material.specular0, tTextureCoords).rgb) == 0.0) {
