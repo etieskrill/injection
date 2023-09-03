@@ -42,7 +42,8 @@ public class Model implements Disposable {
     
     private final Mat4 transform;
     
-    private final boolean doCulling;
+    private final boolean culling;
+    private final boolean transparency;
     
     public static class Builder {
         private final Vector<Mesh> meshes = new Vector<>();
@@ -51,7 +52,8 @@ public class Model implements Disposable {
         private final String file;
         private String name;
     
-        private boolean doCulling = true;
+        private boolean culling = true;
+        private boolean transparency = false;
         
         public Builder(String file) {
             if (file.isBlank()) throw new IllegalArgumentException("File name cannot be blank");
@@ -79,7 +81,12 @@ public class Model implements Disposable {
         }
     
         public Builder disableCulling() {
-            this.doCulling = false;
+            this.culling = false;
+            return this;
+        }
+    
+        public Builder hasTransparency() {
+            transparency = true;
             return this;
         }
     
@@ -87,7 +94,7 @@ public class Model implements Disposable {
             try {
                 return new Model(file, name, meshes, materials,
                         new Vec3(0f), new Vec3(1f), 0f, new Vec3(0f), new Mat4(),
-                        doCulling);
+                        culling, transparency);
             } catch (IOException e) {
                 logger.debug("Exception while loading model, using default: ", e);
                 return ERROR_MODEL.get();
@@ -117,12 +124,13 @@ public class Model implements Disposable {
         this.rotation = model.rotation;
         this.rotationAxis = new Vec3(model.rotationAxis);
         this.transform = new Mat4(model.transform);
-        this.doCulling = model.doCulling;
+        this.culling = model.culling;
+        this.transparency = model.transparency;
     }
     
     private Model(String file, String name, Vector<Mesh> meshes, Vector<Material> materials,
                  Vec3 position, Vec3 scale, float rotation, Vec3 rotationAxis, Mat4 transform,
-                  boolean doCulling) throws IOException {
+                  boolean culling, boolean transparency) throws IOException {
         this.meshes = meshes;
         this.materials = materials;
         this.file = file.split("\\.")[0];
@@ -136,7 +144,8 @@ public class Model implements Disposable {
         this.rotationAxis = rotationAxis.length() == 1f ? rotationAxis : new Vec3(1f, 0f, 0f);
         this.transform = transform;
         
-        this.doCulling = doCulling;
+        this.culling = culling;
+        this.transparency = transparency;
     }
     
     private void loadModel(String file) throws IOException {
@@ -336,7 +345,11 @@ public class Model implements Disposable {
     }
     
     public boolean doCulling() {
-        return doCulling;
+        return culling;
+    }
+    
+    public boolean hasTransparency() {
+        return transparency;
     }
     
     private void updateTransform() {

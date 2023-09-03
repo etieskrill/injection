@@ -214,7 +214,7 @@ public class DemCubez {
         Vector<Model> grassModels = new Vector<>(grassPosition.length);
         for (Vec3 position : grassPosition) {
             grassModels.add(ModelLoader.get().load("grass", () ->
-                            new Model.Builder("grass.obj").disableCulling().build())
+                            new Model.Builder("grass.obj").disableCulling().hasTransparency().build())
                     .setPosition(position)
                     .setRotation((float) Math.toRadians(180f), new Vec3(0f, 0f, 1f))
             );
@@ -400,7 +400,7 @@ public class DemCubez {
                             camera.getPosition().minus(model1.getPosition()).length())
             );
             for (Model grass : grassModels) {
-                renderer.renderTransparent(grass, containerShader, camera.getCombined());
+                renderer.render(grass, containerShader, camera.getCombined());
             }
             
             window.update(pacer.getDeltaTimeSeconds());

@@ -61,28 +61,19 @@ public class Renderer {
         if (writeToFront) glEnable(GL_DEPTH_TEST);
     }
     
-    public void renderTransparent(Model model, ShaderProgram shader, Mat4 combined) {
-        if (shader.isPlaceholder()) { //TODO qol feature, should have no performance implications
-            renderOutline(model, shader, combined, 1f, new Vec4(1, 0, 1, 1), true);
-            return;
-        }
-        
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        _render(model, shader, combined);
-        glBlendFunc(GL_ONE, GL_ZERO);
-    }
-    
     private void _render(Model model, ShaderProgram shader, Mat4 combined) {
         shader.setUniform("uCombined", combined);
         shader.setUniform("uModel", model.getTransform());
         shader.setUniform("uNormal", model.getTransform().inverse().transpose().toMat3());
     
         if (!model.doCulling()) glDisable(GL_CULL_FACE);
+        if (model.hasTransparency()) glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         shader.start();
         for (Mesh mesh : model.getMeshes())
             render(mesh, shader);
         shader.stop();
         if (!model.doCulling()) glEnable(GL_CULL_FACE);
+        if (model.hasTransparency()) glBlendFunc(GL_ONE, GL_ZERO);
     }
     
     private void render(Mesh mesh, ShaderProgram shader) {
