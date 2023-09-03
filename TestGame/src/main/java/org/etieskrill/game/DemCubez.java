@@ -229,7 +229,7 @@ public class DemCubez {
         ShaderProgram containerShader = Shaders.getContainerShader();
         ShaderProgram lightShader = Shaders.getLightSourceShader();
         ShaderProgram swordShader = Shaders.getSwordShader();
-        ShaderProgram backpackShader = Shaders.getStandardShader();
+        ShaderProgram backpackShader = Shaders.getBackpackShader();
         
         camera = (PerspectiveCamera) new PerspectiveCamera(window.getSize().getVector())
                 .setPosition(new Vec3(0f, 0f, 3f))
@@ -366,8 +366,9 @@ public class DemCubez {
             
             swordShader.setUniform("uViewPosition", camera.getPosition());
             swordShader.setUniform("uTime", (float) pacer.getTime());
-            renderer.renderOutline(sword, swordShader, camera.getCombined());
+            renderer.render(sword, swordShader, camera.getCombined());
             
+            //TODO this is gonna look weird no matter what, since here a phong shader attempts to render a pbr model
             backpackShader.setUniform("uViewPosition", camera.getPosition());
             renderer.render(backpack, backpackShader, camera.getCombined());
             

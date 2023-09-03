@@ -27,14 +27,12 @@ public class Renderer {
     }
     
     public void render(Model model, ShaderProgram shader, Mat4 combined) {
-        shader.setUniform("uCombined", combined);
-        shader.setUniform("uModel", model.getTransform());
-        shader.setUniform("uNormal", model.getTransform().inverse().transpose().toMat3());
-    
-        shader.start();
-        for (Mesh mesh : model.getMeshes())
-            render(mesh, shader);
-        shader.stop();
+        if (shader.isPlaceholder()) { //TODO qol feature, should have no performance implications
+            renderOutline(model, shader, combined);
+            return;
+        }
+        
+        _render(model, shader, combined);
     }
     
     private final ShaderProgram outlineShader = Shaders.getOutlineShader();
@@ -51,16 +49,27 @@ public class Renderer {
     
         glStencilFunc(GL_ALWAYS, 1, 0xFF);
         glStencilMask(0xFF);
-        render(model, shader, combined);
+        _render(model, shader, combined);
     
         glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
         glStencilMask(0x00);
         if (writeToFront) glDisable(GL_DEPTH_TEST);
-        render(model, outlineShader, combined);
+        _render(model, outlineShader, combined);
     
         glStencilFunc(GL_ALWAYS, 0, 0xFF);
         glStencilMask(0xFF);
         if (writeToFront) glEnable(GL_DEPTH_TEST);
+    }
+    
+    private void _render(Model model, ShaderProgram shader, Mat4 combined) {
+        shader.setUniform("uCombined", combined);
+        shader.setUniform("uModel", model.getTransform());
+        shader.setUniform("uNormal", model.getTransform().inverse().transpose().toMat3());
+    
+        shader.start();
+        for (Mesh mesh : model.getMeshes())
+            render(mesh, shader);
+        shader.stop();
     }
     
     private void render(Mesh mesh, ShaderProgram shader) {
@@ -78,6 +87,7 @@ public class Renderer {
     }
     
     private void bindMaterial(Material material, ShaderProgram shader) {
+        //TODO here the renderer could decide what kind of shader to use, based off of the material given
         int diffuse = 0, specular = 0, emissive = 0, height = 0, shininess = 0;
         Vector<Texture> textures = material.getTextures();
     
@@ -95,8 +105,12 @@ public class Renderer {
             texture.bind(validTextures);
             shader.setUniform("material." + texture.getType().name().toLowerCase() + number, validTextures);
         }
+    
+        boolean shininessMap = shininess > 0;
+        shader.setUniform("uShininessMap", shininessMap);
         
-        shader.setUniform("material.shininess", material.getShininess());
+        if (!shininessMap)
+            shader.setUniform("material.shininess", material.getShininess());
         shader.setUniform("material.specularity", material.getShininessStrength());
     }
     

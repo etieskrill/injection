@@ -14,7 +14,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static org.etieskrill.engine.graphics.gl.shaders.ShaderProgram.ShaderType.*;
-import static org.lwjgl.opengl.GL33C.*;
+import static org.lwjgl.opengl.GL46C.*;
 
 public abstract class ShaderProgram implements Disposable {
     
@@ -25,13 +25,15 @@ public abstract class ShaderProgram implements Disposable {
     private static final String DEFAULT_VERTEX_FILE = "shaders/Phong.vert";
     private static final String DEFAULT_FRAGMENT_FILE = "shaders/Phong.frag";
     
-    private final Logger logger = LoggerFactory.getLogger(getClass());
-    
     private boolean STRICT_UNIFORM_DETECTION = true;
+    
+    private final Logger logger = LoggerFactory.getLogger(getClass());
     
     private int programID, vertID, fragID;
     private final Map<Uniform, Integer> uniforms;
     private final Map<ArrayUniform, List<Integer>> arrayUniforms;
+    
+    private final boolean placeholder;
     
     public enum ShaderType {
         VERTEX,
@@ -78,6 +80,7 @@ public abstract class ShaderProgram implements Disposable {
         this.uniforms = new HashMap<>();
         this.arrayUniforms = new HashMap<>();
         
+        boolean placeholder = false;
         try {
             createShader(vertexFile, fragmentFile);
         } catch (IllegalStateException e) {
@@ -86,7 +89,10 @@ public abstract class ShaderProgram implements Disposable {
             STRICT_UNIFORM_DETECTION = false; //TODO quick and dirty solution bcs faulty shader's uniforms are still added
             createShader(DEFAULT_VERTEX_FILE, DEFAULT_FRAGMENT_FILE);
             STRICT_UNIFORM_DETECTION = prevStrictState;
+            placeholder = true;
         }
+        
+        this.placeholder = placeholder;
     }
     
     private void createShader(String vertFile, String fragFile) {
@@ -122,7 +128,11 @@ public abstract class ShaderProgram implements Disposable {
             throw new IllegalStateException("Error while creating shader: %d".formatted(errorCode));
     }
     
+    //TODO add loader for shader objects and wrap calls to this method in said loader
+    //TODO use named string arbs to modularise shaders
     private int loadShader(String file, int shaderType) {
+        //glNamedStringARB(); //so i don't forget about the import once the above to do is in doing
+        
         String shaderTypeName = switch (shaderType) {
             case GL_VERTEX_SHADER -> "vertex";
             case GL_FRAGMENT_SHADER -> "fragment";
@@ -221,6 +231,7 @@ public abstract class ShaderProgram implements Disposable {
         switch (uniform.getType()) {
             case INT, SAMPLER2D -> glUniform1i(location, (Integer) value);
             case FLOAT -> glUniform1f(location, (Float) value);
+            case BOOLEAN -> glUniform1f(location, (boolean) value ? 1 : 0);
             case VEC3 -> glUniform3fv(location, ((Vec3) value).toFloatArray());
             case VEC4 -> glUniform4fv(location, ((Vec4) value).toFloatArray());
             case MAT3 -> glUniformMatrix3fv(location, false, ((Mat3) value).toFloatArray());
@@ -232,6 +243,7 @@ public abstract class ShaderProgram implements Disposable {
         protected enum Type {
             INT(Integer.class),
             FLOAT(Float.class),
+            BOOLEAN(Boolean.class),
             VEC3(Vec3.class),
             VEC4(Vec4.class),
             MAT3(Mat3.class),
@@ -427,5 +439,9 @@ public abstract class ShaderProgram implements Disposable {
         glDetachShader(programID, fragID);
         glDeleteProgram(programID);
     }
-
+    
+    public boolean isPlaceholder() {
+        return placeholder;
+    }
+    
 }

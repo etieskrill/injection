@@ -6,6 +6,7 @@ import org.etieskrill.engine.graphics.gl.Texture;
 import java.util.List;
 import java.util.Vector;
 
+//TODO separate phong/pbr via inheritance
 public class Material implements Disposable {
     
     //TODO number max gl texture units check

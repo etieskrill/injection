@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
+import java.util.Arrays;
 import java.util.MissingResourceException;
 import java.util.function.Supplier;
 
@@ -36,6 +37,8 @@ public class Texture implements Disposable {
     private final int pixelWidth, pixelHeight, colourChannels;
     private final TextureType type;
     
+    //TODO implementing phong/pbr: add toggle and have monolithic texture class, or separate them,
+    // actually, the type should be outsourced into a composite class such as MaterialTexture
     public enum TextureType {
         UNKNOWN,
         DIFFUSE,
@@ -130,6 +133,16 @@ public class Texture implements Disposable {
             case 4 -> GL_RGBA;
             default -> throw new IllegalStateException("Unexpected colour format: " + colourChannels + " channels");
         };
+    
+        //TODO adjust this if weird colour mappings happen to textures in shaders
+        int[] swizzleMask = switch (colourChannels) {
+            case 1 -> new int[] {GL_RED, GL_RED, GL_RED, GL_ONE};
+            case 2 -> new int[] {GL_RED, GL_RED, GL_RED, GL_GREEN};
+            case 3, 4 -> new int[] {GL_RED, GL_GREEN, GL_BLUE, GL_ALPHA};
+            default -> throw new IllegalStateException("Unexpected colour format: " + colourChannels + " channels");
+        };
+        
+        glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
         
         glTexImage2D(GL_TEXTURE_2D, 0, format, pixelWidth, pixelHeight,
                 0, format, GL_UNSIGNED_BYTE, textureData);

@@ -1,6 +1,7 @@
 #version 330 core
 
 #define LIMIT_ATTENUATION true
+#define SINGLE_CHANNEL_SPECULAR true
 
 #define NR_DIRECTIONAL_LIGHTS 1
 #define NR_POINT_LIGHTS 2
@@ -43,7 +44,7 @@ struct SpotLight {
 struct Material {
     sampler2D diffuse0;
     sampler2D specular0;
-    float shininess;
+    sampler2D shininess0;
     float specularity;
     sampler2D emissive0;
 };
@@ -74,7 +75,7 @@ void main()
         combinedLight += calculatePointLight(lights[i], tNormal, tFragPos, uViewPosition);
 
     vec4 emission = texture(material.emissive0, tTextureCoords);
-    combinedLight += emission;
+//    combinedLight += emission;
 
     oColour = combinedLight;
 }
@@ -89,7 +90,8 @@ vec4 calculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 fragPos
 
     vec3 reflectionDirection = reflect(-lightDirection, normal);
     vec3 viewDirection = normalize(viewPosition - fragPosition);
-    float spec = material.specularity * pow(max(dot(viewDirection, reflectionDirection), 0.0), material.shininess);
+    float specularExponent = texture(material.shininess0, tTextureCoords).r;
+    float spec = material.specularity * pow(max(dot(viewDirection, reflectionDirection), 0.0), specularExponent);
     vec4 specTex = texture(material.specular0, tTextureCoords);
     vec4 specular = vec4(light.specular, 1.0) * spec * specTex;
 
@@ -106,7 +108,8 @@ vec4 calculatePointLight(PointLight light, vec3 normal, vec3 fragPosition, vec3 
 
     vec3 reflectionDirection = reflect(-lightDirection, normal);
     vec3 viewDirection = normalize(viewPosition - fragPosition);
-    float spec = material.specularity * pow(max(dot(viewDirection, reflectionDirection), 0.0), material.shininess);
+    float specularExponent = texture(material.shininess0, tTextureCoords).r;
+    float spec = material.specularity * pow(max(dot(viewDirection, reflectionDirection), 0.0), specularExponent);
     vec4 specTex = texture(material.specular0, tTextureCoords);
     vec4 specular = vec4(light.specular, 1.0) * spec * specTex;
 

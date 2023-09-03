@@ -35,6 +35,10 @@ public class Shaders {
     public static OutlineShader getOutlineShader() {
         return new OutlineShader();
     }
+    
+    public static PhongShininessMapShader getBackpackShader() {
+        return new PhongShininessMapShader();
+    }
 
     private static class StaticShader extends ShaderProgram {
         @Override
@@ -93,6 +97,11 @@ public class Shaders {
     }
     
     private static class SwordShader extends StaticShader {
+        @Override
+        protected void init() {
+            disableStrictUniformChecking();
+        }
+    
         @Override
         protected String[] getShaderFileNames() {
             return new String[]{"Sword.vert", "Sword.frag"};
@@ -195,6 +204,25 @@ public class Shaders {
             addUniform("uThicknessFactor", FLOAT);
             
             addUniform("uColour", VEC4);
+        }
+    }
+    
+    private static class PhongShininessMapShader extends StaticShader {
+        @Override
+        protected void init() {
+            disableStrictUniformChecking();
+        }
+    
+        @Override
+        protected String[] getShaderFileNames() {
+            return new String[]{"PhongShininessMap.vert", "PhongShininessMap.frag"};
+        }
+    
+        @Override
+        protected void getUniformLocations() {
+            super.getUniformLocations();
+            
+            addUniform("material.shininess0", SAMPLER2D);
         }
     }
 
