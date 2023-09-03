@@ -96,17 +96,17 @@ public class Model implements Disposable {
     private void loadModel(String file) throws IOException {
         //TODO properly set these
         int processFlags =
-                aiProcess_Triangulate |
-                        //aiProcess_FlipUVs |
-                        aiProcess_OptimizeMeshes |
-                        aiProcess_JoinIdenticalVertices |
-                        aiProcess_RemoveRedundantMaterials |
-                        aiProcess_FindInvalidData |
-                        aiProcess_GenUVCoords |
-                        aiProcess_TransformUVCoords |
-                        aiProcess_FindInstances |
-                        aiProcess_PreTransformVertices
-                ;
+            aiProcess_Triangulate |
+            aiProcess_FlipUVs |
+            aiProcess_OptimizeMeshes |
+            aiProcess_JoinIdenticalVertices |
+            aiProcess_RemoveRedundantMaterials |
+            aiProcess_FindInvalidData |
+            aiProcess_GenUVCoords |
+            aiProcess_TransformUVCoords |
+            aiProcess_FindInstances |
+            aiProcess_PreTransformVertices
+        ;
         
         AIScene scene = aiImportFile(DIRECTORY + file, processFlags);
     

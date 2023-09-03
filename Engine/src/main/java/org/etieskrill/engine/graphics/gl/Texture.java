@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
-import java.util.Arrays;
 import java.util.MissingResourceException;
 import java.util.function.Supplier;
 
@@ -17,11 +16,11 @@ import static org.lwjgl.stb.STBImage.*;
 
 /**
  * As this class makes use of the stb_image library, it can decode from all the image formats specified in the
- * official documentation: <a href="https://github.com/nothings/stb/blob/master/stb_image.h">stb_image</a>
+ * official documentation: <a href="https://github.com/nothings/stb/blob/5736b15f7ea0ffb08dd38af21067c314d6a3aae9/stb_image.h#L23-L33">stb_image</a>
  */
 public class Texture implements Disposable {
     
-    public static final int NR_BYTES_PER_COLOUR_CHANNEL = 8;
+    public static final int NR_BITS_PER_COLOUR_CHANNEL = 8;
     
     private static final String directory = "Engine/src/main/resources/textures/";
     //TODO what to do if not all textures could be loaded; only load single diffuse placeholder,
@@ -115,7 +114,7 @@ public class Texture implements Disposable {
                 bufferHeight = BufferUtils.createIntBuffer(1),
                 bufferColourChannels = BufferUtils.createIntBuffer(1);
 
-        stbi_set_flip_vertically_on_load(true);
+        //stbi_set_flip_vertically_on_load(true); the uv coords are already flipped while loading the models
         ByteBuffer textureData = stbi_load(file, bufferWidth, bufferHeight, bufferColourChannels, 0);
         if (textureData == null || !textureData.hasRemaining()) {
             throw new MissingResourceException(stbi_failure_reason(), getClass().getSimpleName(), file);
@@ -147,7 +146,7 @@ public class Texture implements Disposable {
         glTexImage2D(GL_TEXTURE_2D, 0, format, pixelWidth, pixelHeight,
                 0, format, GL_UNSIGNED_BYTE, textureData);
         logger.debug("Loaded {}x{} {}-bit {} texture from {}",
-                pixelWidth, pixelHeight, NR_BYTES_PER_COLOUR_CHANNEL * colourChannels, type.name().toLowerCase(), file);
+                pixelWidth, pixelHeight, NR_BITS_PER_COLOUR_CHANNEL * colourChannels, type.name().toLowerCase(), file);
 
         stbi_image_free(textureData);
 
