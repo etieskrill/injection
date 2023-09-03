@@ -57,10 +57,10 @@ in vec3 tFragPos;
 //TODO implement this in view space to mitigate passing such variables anyway
 uniform vec3 uViewPosition;
 
+uniform Material material;
+
 uniform DirectionalLight globalLights[NR_DIRECTIONAL_LIGHTS];
 uniform PointLight lights[NR_POINT_LIGHTS];
-uniform SpotLight flashlight;
-uniform Material material;
 
 vec4 calculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 fragPosition, vec3 viewPosition);
 vec4 calculatePointLight(PointLight light, vec3 normal, vec3 fragPosition, vec3 viewPosition);
@@ -81,38 +81,45 @@ void main()
 
 vec4 calculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 fragPosition, vec3 viewPosition)
 {
-    vec4 ambient = vec4(light.ambient, 1.0) * texture(material.diffuse0, tTextureCoords);
-
     vec3 lightDirection = normalize(-light.direction);
-    float diff = max(dot(normal, lightDirection), 0.0);
-    vec4 diffuse = vec4(light.diffuse, 1.0) * diff * texture(material.diffuse0, tTextureCoords);
+    vec4 ambientAndDiffuse = getAmbientAndDiffuse(lightDirection, light.ambient, light.diffuse);
 
-    vec3 reflectionDirection = reflect(-lightDirection, normal);
-    vec3 viewDirection = normalize(viewPosition - fragPosition);
-    float spec = material.specularity * pow(max(dot(viewDirection, reflectionDirection), 0.0), material.shininess);
-    vec4 specTex = texture(material.specular0, tTextureCoords);
-    vec4 specular = vec4(light.specular, 1.0) * spec * specTex;
+    vec4 specular = getSpecular(lightDirection, normal, fragPosition, viewPosition);
 
-    return ambient + diffuse + specular;
+    return ambientAndDiffuse + specular;
 }
 
 vec4 calculatePointLight(PointLight light, vec3 normal, vec3 fragPosition, vec3 viewPosition)
 {
-    vec4 ambient = vec4(light.ambient, 1.0) * texture(material.diffuse0, tTextureCoords);
-
     vec3 lightDirection = normalize(light.position - fragPosition);
-    float diff = max(dot(normal, lightDirection), 0.0);
-    vec4 diffuse = vec4(light.diffuse, 1.0) * diff * texture(material.diffuse0, tTextureCoords);
+    vec4 ambientAndDiffuse = getAmbientAndDiffuse(lightDirection, light.ambient, light.diffuse);
 
-    vec3 reflectionDirection = reflect(-lightDirection, normal);
-    vec3 viewDirection = normalize(viewPosition - fragPosition);
-    float spec = material.specularity * pow(max(dot(viewDirection, reflectionDirection), 0.0), material.shininess);
-    vec4 specTex = texture(material.specular0, tTextureCoords);
-    vec4 specular = vec4(light.specular, 1.0) * spec * specTex;
+    vec4 specular = getSpecular(lightDirection, normal, fragPosition, viewPosition);
 
     float distance = length(lightDirection);
     float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * distance * distance);
     if (LIMIT_ATTENUATION) attenuation = min(attenuation, 1.0);
 
-    return (ambient + diffuse + specular) * attenuation;
+    return (ambientAndDiffuse + specular) * attenuation;
+}
+
+vec4 getAmbientAndDiffuse(vec3 lightDirection, vec3 lightAmbient, vec3 lightDiffuse)
+{
+    vec4 texel = texture(material.diffuse0, tTextureCoords);
+    if (texel.a < 0.01) discard;
+
+    vec4 ambient = vec4(lightAmbient, 1.0) * texel;
+
+    float diff = max(dot(normal, lightDirection), 0.0);
+    vec4 diffuse = vec4(lightDiffuse, 1.0) * diff * texel;
+
+    return ambient + diffuse;
+}
+
+vec4 getSpecular(vec3 lightDirection, vec3 normal, vec3 fragPosition, vec3 viewPosition)
+{
+    vec3 reflectionDirection = reflect(-lightDirection, normal);
+    vec3 viewDirection = normalize(viewPosition - fragPosition);
+    float spec = material.specularity * pow(max(dot(viewDirection, reflectionDirection), 0.0), material.shininess);
+    return vec4(light.specular, 1.0) * spec * texture(material.specular0, tTextureCoords);
 }
