@@ -1,14 +1,17 @@
 package org.etieskrill.game;
 
 import glm_.vec2.Vec2;
+import glm_.vec2.Vec2i;
 import glm_.vec3.Vec3;
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.OrthographicCamera;
 import org.etieskrill.engine.graphics.PerspectiveCamera;
+import org.etieskrill.engine.graphics.assimp.Material;
+import org.etieskrill.engine.graphics.assimp.Mesh;
 import org.etieskrill.engine.graphics.assimp.Model;
+import org.etieskrill.engine.graphics.assimp.Vertex;
+import org.etieskrill.engine.graphics.gl.*;
 import org.etieskrill.engine.graphics.gl.Loaders.ModelLoader;
-import org.etieskrill.engine.graphics.gl.ModelFactory;
-import org.etieskrill.engine.graphics.gl.Renderer;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
 import org.etieskrill.engine.scene._2d.*;
@@ -204,6 +207,29 @@ public class DemCubez {
         pacer = new SystemNanoTimePacer(1d / TARGET_FPS);
         pacer.start();
         
+        FrameBuffer frameBuffer = FrameBuffer.getStandard(new Vec2i(window.getSize().getVector()));
+        frameBuffer.unbind();
+        
+        ShaderProgram screenShader = Shaders.getScreenShader();
+    
+        FrameBufferAttachment attachment = frameBuffer.getAttachments().get(FrameBuffer.AttachmentType.COLOUR0);
+        Texture textureBuffer;
+        if (attachment instanceof Texture buffer) {
+            textureBuffer = buffer;
+            buffer.bind(0);
+        }
+        else throw new IllegalStateException("wack");
+    
+        Material mat = new Material.Builder().addTextures(textureBuffer).build();
+    
+        Vector<Vertex> vertices = new Vector<>();
+        vertices.add(new Vertex(new Vec3(-1f, -1f, 0f), new Vec3(), new Vec2(0f)));
+        vertices.add(new Vertex(new Vec3(-1f, 1f, 0f), new Vec3(), new Vec2(0f, 1f)));
+        vertices.add(new Vertex(new Vec3(1f, -1f, 0f), new Vec3(), new Vec2(1f, 0f)));
+        vertices.add(new Vertex(new Vec3(1f, 1f, 0f), new Vec3(), new Vec2(1f, 1f)));
+        Vector<Short> indices = new Vector<>(List.of(new Short[]{0, 2, 1, 3, 1, 2}));
+        Mesh mesh = Mesh.Loader.loadToVAO(vertices, indices, mat);
+        
         while (!window.shouldClose()) {
             //Toggle escape button and related behaviour
             if (escPressed && !escPressedPrev) {
@@ -223,27 +249,23 @@ public class DemCubez {
             }
     
             updatePlayerCamera();
-    
-            String timing = "";
-            long time = 0;
-            if (pacer.getFramesElapsed() > TARGET_FPS) {
-                time = System.nanoTime();
-                updateModels();
-                timing = ", update: %d ys,".formatted(System.nanoTime() - time);
-                
-                time = System.nanoTime();
-                renderModels();
-                timing += " render: %d ys".formatted(System.nanoTime() - time);
-            } else {
-                updateModels();
-                renderModels();
-            }
+            
+            updateModels();
+            
+            frameBuffer.bind();
+            renderModels();
+            frameBuffer.unbind();
+            
+            renderer.prepare();
+            screenShader.start();
+            screenShader.setUniform("uScreenTexture", 0);
+            
+            renderer.render(mesh, screenShader);
             
             window.update(pacer.getDeltaTimeSeconds());
             
             if (pacer.getFramesElapsed() > TARGET_FPS) {
-                timing = "fps: %.3f".formatted(pacer.getAverageFPS()) + timing;
-                System.out.println(timing);
+                System.out.println("%.3f".formatted(pacer.getAverageFPS()));
                 pacer.resetFrameCounter();
             }
             

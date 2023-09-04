@@ -76,7 +76,7 @@ public class Renderer {
         if (model.hasTransparency()) glBlendFunc(GL_ONE, GL_ZERO);
     }
     
-    private void render(Mesh mesh, ShaderProgram shader) {
+    public void render(Mesh mesh, ShaderProgram shader) {
         bindMaterial(mesh.getMaterial(), shader);
         glBindVertexArray(mesh.getVao());
         

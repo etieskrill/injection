@@ -1,5 +1,6 @@
 package org.etieskrill.engine.graphics.gl;
 
+import glm_.vec2.Vec2i;
 import org.etieskrill.engine.Disposable;
 import org.lwjgl.BufferUtils;
 import org.slf4j.Logger;
@@ -18,7 +19,7 @@ import static org.lwjgl.stb.STBImage.*;
  * As this class makes use of the stb_image library, it can decode from all the image formats specified in the
  * official documentation: <a href="https://github.com/nothings/stb/blob/5736b15f7ea0ffb08dd38af21067c314d6a3aae9/stb_image.h#L23-L33">stb_image</a>
  */
-public class Texture implements Disposable {
+public class Texture implements Disposable, FrameBufferAttachment {
     
     public static final int NR_BITS_PER_COLOUR_CHANNEL = 8;
     
@@ -32,7 +33,7 @@ public class Texture implements Disposable {
     
     private final String file;
     
-    private final int textureID;
+    private final int texture;
     private final int pixelWidth, pixelHeight, colourChannels;
     private final TextureType type;
     
@@ -96,6 +97,29 @@ public class Texture implements Disposable {
         return DEFAULT_TEXTURE.get();
     }
     
+    public static Texture getBlank(Vec2i size, int glTextureFormat) {
+        int colourChannels = switch (glTextureFormat) {
+            case GL_RGB -> 3;
+            case GL_DEPTH_COMPONENT, GL_STENCIL_INDEX -> 1;
+            default -> throw new IllegalArgumentException("Unsupported texture format: " + glTextureFormat);
+        };
+        Texture texture = new Texture(glGenTextures(), size.getX(), size.getY(), colourChannels, TextureType.DIFFUSE);
+        texture.bind(0);
+        glTexImage2D(GL_TEXTURE_2D, 0, glTextureFormat, size.getX(), size.getY(), 0, glTextureFormat, GL_UNSIGNED_BYTE, 0);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        return texture;
+    }
+    
+    private Texture(int texture, int pixelWidth, int pixelHeight, int colourChannels, TextureType type) {
+        this.file = null;
+        this.texture = texture;
+        this.pixelWidth = pixelWidth;
+        this.pixelHeight = pixelHeight;
+        this.colourChannels = colourChannels;
+        this.type = type;
+    }
+    
     private Texture(String file, TextureType type) {
         if (type == null) {
             type = TextureType.UNKNOWN;
@@ -107,8 +131,8 @@ public class Texture implements Disposable {
         
         file = directory + this.file;
         
-        textureID = generateGLTexture();
-        glBindTexture(GL_TEXTURE_2D, textureID);
+        texture = generateGLTexture();
+        glBindTexture(GL_TEXTURE_2D, texture);
 
         IntBuffer bufferWidth = BufferUtils.createIntBuffer(1),
                 bufferHeight = BufferUtils.createIntBuffer(1),
@@ -163,11 +187,27 @@ public class Texture implements Disposable {
     
     public void bind(int unit) {
         glActiveTexture(GL_TEXTURE0 + unit);
-        glBindTexture(GL_TEXTURE_2D, textureID);
+        glBindTexture(GL_TEXTURE_2D, texture);
+    }
+    
+    public void unbind(int unit) {
+        glActiveTexture(GL_TEXTURE0 + unit);
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
+    
+    public void unbindAllTextureUnits() {
+        for (int i = 0; i < 32; i++) {
+            glActiveTexture(GL_TEXTURE0 + i);
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
     }
     
     public String getFile() {
         return file;
+    }
+    
+    int getID() {
+        return texture;
     }
     
     public TextureType getType() {
@@ -192,7 +232,7 @@ public class Texture implements Disposable {
     @Override
     public void dispose() {
         if (wasAlreadyDisposed) return;
-        glDeleteTextures(textureID);
+        glDeleteTextures(texture);
         wasAlreadyDisposed = true;
     }
     
@@ -203,7 +243,7 @@ public class Texture implements Disposable {
         
         Texture texture = (Texture) o;
         
-        if (textureID != texture.textureID) return false;
+        if (this.texture != texture.texture) return false;
         if (pixelWidth != texture.pixelWidth) return false;
         if (pixelHeight != texture.pixelHeight) return false;
         return colourChannels == texture.colourChannels;
@@ -211,7 +251,7 @@ public class Texture implements Disposable {
     
     @Override
     public int hashCode() {
-        int result = textureID;
+        int result = texture;
         result = 31 * result + pixelWidth;
         result = 31 * result + pixelHeight;
         result = 31 * result + colourChannels;

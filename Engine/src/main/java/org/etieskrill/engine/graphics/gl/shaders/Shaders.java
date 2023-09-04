@@ -39,6 +39,10 @@ public class Shaders {
     public static PhongShininessMapShader getBackpackShader() {
         return new PhongShininessMapShader();
     }
+    
+    public static ScreenQuadShader getScreenShader() {
+        return new ScreenQuadShader();
+    }
 
     private static class StaticShader extends ShaderProgram {
         @Override
@@ -225,6 +229,21 @@ public class Shaders {
             super.getUniformLocations();
             
             addUniform("material.shininess0", SAMPLER2D);
+        }
+    }
+    
+    private static class ScreenQuadShader extends ShaderProgram {
+        @Override
+        protected void init() {}
+    
+        @Override
+        protected String[] getShaderFileNames() {
+            return new String[]{"ScreenQuad.vert", "ScreenQuad.frag"};
+        }
+    
+        @Override
+        protected void getUniformLocations() {
+            //addUniform("uScreenTexture", SAMPLER2D);
         }
     }
 

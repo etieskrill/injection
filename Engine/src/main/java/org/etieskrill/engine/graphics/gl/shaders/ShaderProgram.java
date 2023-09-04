@@ -93,6 +93,9 @@ public abstract class ShaderProgram implements Disposable {
         }
         
         this.placeholder = placeholder;
+        
+        int ret = glGetError();
+        if (ret != GL_NO_ERROR) logger.debug("OpenGL error during shader creation: 0x" + Integer.toHexString(ret));
     }
     
     private void createShader(String vertFile, String fragFile) {
