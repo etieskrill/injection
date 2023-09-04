@@ -480,7 +480,6 @@ public class DemCubez {
         renderer.render(backpack, backpackShader, camera.getCombined());
     
         for (int i = 0; i < lightSources.length; i++) {
-        
             renderer.render(lightSources[i], lightShader, camera.getCombined());
         }
     

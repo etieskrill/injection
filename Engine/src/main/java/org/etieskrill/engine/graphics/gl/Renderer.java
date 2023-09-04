@@ -61,6 +61,12 @@ public class Renderer {
         if (writeToFront) glEnable(GL_DEPTH_TEST);
     }
     
+    public void renderWireframe(Model model, ShaderProgram shader, Mat4 combined) {
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        _render(model, shader, combined);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    }
+    
     private void _render(Model model, ShaderProgram shader, Mat4 combined) {
         shader.setUniform("uCombined", combined);
         shader.setUniform("uModel", model.getTransform());
@@ -76,6 +82,8 @@ public class Renderer {
         if (model.hasTransparency()) glBlendFunc(GL_ONE, GL_ZERO);
     }
     
+    //TODO should once again be made private, so dont use anywhere else, even if you **could**
+    @Deprecated
     public void render(Mesh mesh, ShaderProgram shader) {
         bindMaterial(mesh.getMaterial(), shader);
         glBindVertexArray(mesh.getVao());
