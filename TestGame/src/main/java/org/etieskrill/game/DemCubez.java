@@ -210,15 +210,11 @@ public class DemCubez {
         FrameBuffer frameBuffer = FrameBuffer.getStandard(new Vec2i(window.getSize().getVector()));
         frameBuffer.unbind();
         
-        ShaderProgram screenShader = Shaders.getScreenShader();
+        ShaderProgram screenShader = Shaders.getPostprocessingShader();
     
         FrameBufferAttachment attachment = frameBuffer.getAttachments().get(FrameBuffer.AttachmentType.COLOUR0);
-        Texture textureBuffer;
-        if (attachment instanceof Texture buffer) {
-            textureBuffer = buffer;
-            buffer.bind(0);
-        }
-        else throw new IllegalStateException("wack");
+        Texture textureBuffer = (Texture) attachment;
+        textureBuffer.bind(0);
     
         Material mat = new Material.Builder().addTextures(textureBuffer).build();
     
@@ -228,7 +224,7 @@ public class DemCubez {
         vertices.add(new Vertex(new Vec3(1f, -1f, 0f), new Vec3(), new Vec2(1f, 0f)));
         vertices.add(new Vertex(new Vec3(1f, 1f, 0f), new Vec3(), new Vec2(1f, 1f)));
         Vector<Short> indices = new Vector<>(List.of(new Short[]{0, 2, 1, 3, 1, 2}));
-        Mesh mesh = Mesh.Loader.loadToVAO(vertices, indices, mat);
+        Mesh screenQuad = Mesh.Loader.loadToVAO(vertices, indices, mat);
         
         while (!window.shouldClose()) {
             //Toggle escape button and related behaviour
@@ -258,9 +254,10 @@ public class DemCubez {
             
             renderer.prepare();
             screenShader.start();
-            screenShader.setUniform("uScreenTexture", 0);
+            //screenShader.setUniform("uBlur", true);
+            //screenShader.setUniform("uBlurOffset", 1f / 500f);
             
-            renderer.render(mesh, screenShader);
+            renderer.render(screenQuad, screenShader);
             
             window.update(pacer.getDeltaTimeSeconds());
             

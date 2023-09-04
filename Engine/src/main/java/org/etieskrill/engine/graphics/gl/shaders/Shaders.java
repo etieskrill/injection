@@ -43,6 +43,10 @@ public class Shaders {
     public static ScreenQuadShader getScreenShader() {
         return new ScreenQuadShader();
     }
+    
+    public static PostprocessingShader getPostprocessingShader() {
+        return new PostprocessingShader();
+    }
 
     private static class StaticShader extends ShaderProgram {
         @Override
@@ -242,8 +246,29 @@ public class Shaders {
         }
     
         @Override
+        protected void getUniformLocations() {}
+    }
+    
+    private static class PostprocessingShader extends ShaderProgram {
+        @Override
+        protected void init() {}
+        
+        @Override
+        protected String[] getShaderFileNames() {
+            return new String[]{"Postprocessing.vert", "Postprocessing.frag"};
+        }
+        
+        @Override
         protected void getUniformLocations() {
-            //addUniform("uScreenTexture", SAMPLER2D);
+            addUniform("uInvert", BOOLEAN);
+            addUniform("uGrayscale", BOOLEAN);
+            addUniform("uSharpen", BOOLEAN);
+            addUniform("uSharpenOffset", FLOAT);
+            addUniform("uBlur", BOOLEAN);
+            addUniform("uBlurOffset", FLOAT);
+            addUniform("uEdgeDetection", BOOLEAN);
+            addUniform("uEmboss", BOOLEAN);
+            addUniform("uEmbossOffset", FLOAT);
         }
     }
 

@@ -418,7 +418,7 @@ public abstract class ShaderProgram implements Disposable {
     
     private void setStandardValue(Uniform uniform, int location) {
         switch (uniform.type) {
-            case INT, SAMPLER2D -> glUniform1i(location, 0);
+            case INT, BOOLEAN, SAMPLER2D -> glUniform1i(location, 0);
             case FLOAT -> glUniform1f(location, 0f);
             case VEC3 -> glUniform3fv(location, new Vec3(0f).toFloatArray());
             case VEC4 -> glUniform4fv(location, new Vec4(0f).toFloatArray());
