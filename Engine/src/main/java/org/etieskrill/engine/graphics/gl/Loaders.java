@@ -39,7 +39,7 @@ public class Loaders {
     public static final class ModelLoader extends Loader<Model> {
         private static ModelLoader instance;
     
-        public static ModelLoader get() {
+        public static ModelLoader getInstance() {
             if (instance == null)
                 instance = new ModelLoader();
             return instance;
