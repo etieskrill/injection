@@ -6,7 +6,7 @@ import glm_.vec3.Vec3;
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.graphics.gl.Loaders.TextureLoader;
 import org.etieskrill.engine.graphics.gl.Texture;
-import org.etieskrill.engine.graphics.gl.Texture.TextureType;
+import org.etieskrill.engine.graphics.gl.Texture.Type;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.assimp.*;
@@ -16,10 +16,11 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
+import java.util.List;
 import java.util.Vector;
 import java.util.function.Supplier;
 
-import static org.etieskrill.engine.graphics.gl.Texture.TextureType.*;
+import static org.etieskrill.engine.graphics.gl.Texture.Type.*;
 import static org.lwjgl.assimp.Assimp.*;
 
 public class Model implements Disposable {
@@ -63,15 +64,20 @@ public class Model implements Disposable {
             this.name = file.split("\\.")[0];
         }
     
-        public Builder setMeshes(Vector<Mesh> meshes) {
+        public Builder setMeshes(Mesh... meshes) {
             this.meshes.clear();
-            this.meshes.addAll(meshes);
+            this.meshes.addAll(new Vector<>(List.of(meshes)));
             return this;
         }
     
-        public Builder setMaterials(Vector<Material> materials) {
+        public Builder setMaterials(Material... materials) {
             this.materials.clear();
-            this.materials.addAll(materials);
+            this.materials.addAll(new Vector<>(List.of(materials)));
+            return this;
+        }
+        
+        public Builder removeMaterials() {
+            this.materials.clear();
             return this;
         }
     
@@ -96,7 +102,7 @@ public class Model implements Disposable {
                         new Vec3(0f), new Vec3(1f), 0f, new Vec3(0f), new Mat4(),
                         culling, transparency);
             } catch (IOException e) {
-                logger.debug("Exception while loading model, using default: ", e);
+                logger.info("Exception while loading model, using default: ", e);
                 return ERROR_MODEL.get();
             }
         }
@@ -126,9 +132,11 @@ public class Model implements Disposable {
         this.transparency = model.transparency;
     }
     
+    //TODO contemplate whether to pass on builders in cases like these
     private Model(String file, String name, Vector<Mesh> meshes, Vector<Material> materials,
                  Vec3 position, Vec3 scale, float rotation, Vec3 rotationAxis, Mat4 transform,
                   boolean culling, boolean transparency) throws IOException {
+        
         this.meshes = meshes;
         this.materials = materials;
         this.file = file.split("\\.")[0];
@@ -234,7 +242,7 @@ public class Model implements Disposable {
         AIColor4D color = AIColor4D.create();
         aiGetMaterialColor(aiMaterial, "", 0, 0, color);
         
-        for (TextureType type : new TextureType[] {
+        for (Type type : new Type[] {
                 DIFFUSE, SPECULAR, EMISSIVE, HEIGHT, SHININESS
         }) addTexturesToMaterial(material, aiMaterial, type);
         
@@ -245,29 +253,29 @@ public class Model implements Disposable {
         return mat;
     }
     
-    private void addTexturesToMaterial(Material.Builder material, AIMaterial aiMaterial, TextureType textureType) {
+    private void addTexturesToMaterial(Material.Builder material, AIMaterial aiMaterial, Type type) {
         AIString file = AIString.create();
     
-        int aiTextureType = textureType.toAITextureType();
+        int aiTextureType = type.toAI();
         int validTextures = 0;
         for (int i = 0; i < aiGetMaterialTextureCount(aiMaterial, aiTextureType); i++) {
             if (aiGetMaterialTexture(aiMaterial, aiTextureType, i, file,
                     new int[1], null, null, null, null, null)
                     != aiReturn_SUCCESS) {
-                System.err.println(aiGetErrorString());
+                logger.warn("Error while loading material texture: {}", aiGetErrorString());
                 continue;
             }
             
             //TODO i think using the loader by default here is warranted, since textures are separate files, and
             // more often than not the bulk redundant data (probably), i should add an option to switch this off tho
             Texture texture = TextureLoader.get().load(
-                    this.file + "_" + textureType.name().toLowerCase() + "_" + i,
-                    () -> Texture.ofFile(file.dataString(), textureType));
+                    this.file + "_" + type.name().toLowerCase() + "_" + i,
+                    () -> Texture.ofFile(file.dataString(), type));
             material.addTextures(texture);
             validTextures++;
         }
         
-        logger.trace("{} {} textures loaded", validTextures, textureType.name().toLowerCase());
+        logger.trace("{} {} textures loaded", validTextures, type.name().toLowerCase());
     }
     
     private int addPropertiesToMaterial(Material.Builder material, AIMaterial aiMaterial) {

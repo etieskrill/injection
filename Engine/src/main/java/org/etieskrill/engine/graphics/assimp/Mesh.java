@@ -20,6 +20,8 @@ public class Mesh implements Disposable {
     public static final class Loader {
         public static Mesh loadToVAO(Vector<Vertex> vertices, Vector<Short> indices, Material material) {
             int vao = createVAO();
+    
+            if (indices.size() == 0) System.out.println(vertices.size());
         
             List<Float> _data = vertices.stream()
                     .map(Vertex::toList)

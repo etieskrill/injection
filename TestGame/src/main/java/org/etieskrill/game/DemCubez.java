@@ -6,10 +6,7 @@ import glm_.vec3.Vec3;
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.OrthographicCamera;
 import org.etieskrill.engine.graphics.PerspectiveCamera;
-import org.etieskrill.engine.graphics.assimp.Material;
-import org.etieskrill.engine.graphics.assimp.Mesh;
-import org.etieskrill.engine.graphics.assimp.Model;
-import org.etieskrill.engine.graphics.assimp.Vertex;
+import org.etieskrill.engine.graphics.assimp.*;
 import org.etieskrill.engine.graphics.gl.*;
 import org.etieskrill.engine.graphics.gl.Loaders.ModelLoader;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
@@ -51,7 +48,9 @@ public class DemCubez {
     ShaderProgram lightShader;
     ShaderProgram swordShader;
     ShaderProgram backpackShader;
+    ShaderProgram skyboxShader;
     
+    CubeMapModel skybox;
     Model[] models;
     Vector<Model> grassModels;
     Model[] lightSources;
@@ -114,12 +113,6 @@ public class DemCubez {
         
         glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
-        
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST); //GL_<mipmap level selection>_MIPMAP_<mipmap texture sampling>
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); //GL_<mipmap texture sampling>
-        
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
         return glGetError() == GL_NO_ERROR;
     }
@@ -302,6 +295,8 @@ public class DemCubez {
     }
     
     private void loadModels() {
+        skybox = new CubeMapModel("space");
+        
         Vec3[] cubePositions = {
                 //new Vec3( 0.0f,  0.0f,  0.0f),
                 new Vec3( 2.0f,  5.0f, -15.0f),
@@ -373,6 +368,7 @@ public class DemCubez {
         lightShader = Shaders.getLightSourceShader();
         swordShader = Shaders.getSwordShader();
         backpackShader = Shaders.getBackpackShader();
+        skyboxShader = Shaders.getCubeMapShader();
     }
     
     private void initUI() {
@@ -402,8 +398,8 @@ public class DemCubez {
         //TODO isn't this kind of stupid? why would a light SOURCE have different kinds of intensities?
         Vec3 lightColour = new Vec3(1f);
         Vec3 ambient = lightColour.times(0.1f);
-        Vec3 diffuse = lightColour.times(0.25f);
-        Vec3 specular = lightColour.times(0.5f);
+        Vec3 diffuse = lightColour.times(0.0f);
+        Vec3 specular = lightColour.times(0.01f);
     
         for (ShaderProgram shader : doLighting) {
             shader.setUniformArray("globalLights[$].direction", 0, globalLightDirection);
@@ -424,7 +420,7 @@ public class DemCubez {
                 shader.setUniformArray("lights[$].diffuse", i, pointLightDiffuse);
                 shader.setUniformArray("lights[$].specular", i, pointLightSpecular);
                 shader.setUniformArray("lights[$].constant", i, 1f);
-                shader.setUniformArray("lights[$].linear", i, 0.01f);
+                shader.setUniformArray("lights[$].linear", i, 0.03f);
                 shader.setUniformArray("lights[$].quadratic", i, 0.005f);
             }
         }
@@ -465,21 +461,23 @@ public class DemCubez {
     
     private void renderModels() {
         renderer.prepare();
+        
+        renderer.render(skybox, skyboxShader, camera.getCombined().cleanTranslation().scale(50f));//.translate(camera.getDirection().times(3).negate()));
     
         setShaderUniforms();
-    
+
         for (Model model : models)
             renderer.render(model, containerShader, camera.getCombined());
-    
+
         renderer.render(sword, swordShader, camera.getCombined());
-    
+
         //TODO this is gonna look weird no matter what, since here a phong shader attempts to render a pbr model
         renderer.render(backpack, backpackShader, camera.getCombined());
-    
+
         for (int i = 0; i < lightSources.length; i++) {
             renderer.render(lightSources[i], lightShader, camera.getCombined());
         }
-    
+
         //TODO 1. draw opaque, 2. sort transparent by decreasing distance to viewer, 3. draw sorted transparent
         grassModels.sort((model1, model2) -> Float.compare(
                 camera.getPosition().minus(model2.getPosition()).length(),
@@ -495,10 +493,14 @@ public class DemCubez {
         swordShader.dispose();
         backpackShader.dispose();
         lightShader.dispose();
+        skyboxShader.dispose();
+    
         modelLoader.dispose();
+    
+        glfwTerminate();
         
         glFlush();
-        glfwTerminate();
+        GL.destroy();
     }
     
     public static void main(String[] args) {

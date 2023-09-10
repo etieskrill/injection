@@ -44,6 +44,10 @@ public class Shaders {
         return new ScreenQuadShader();
     }
     
+    public static CubeMapShader getCubeMapShader() {
+        return new CubeMapShader();
+    }
+    
     public static PostprocessingShader getPostprocessingShader() {
         return new PostprocessingShader();
     }
@@ -270,6 +274,19 @@ public class Shaders {
             addUniform("uEmboss", BOOLEAN);
             addUniform("uEmbossOffset", FLOAT);
         }
+    }
+    
+    private static class CubeMapShader extends ShaderProgram {
+        @Override
+        protected void init() {}
+    
+        @Override
+        protected String[] getShaderFileNames() {
+            return new String[]{"CubeMap.vert", "CubeMap.frag"};
+        }
+    
+        @Override
+        protected void getUniformLocations() {}
     }
 
 }

@@ -252,7 +252,8 @@ public abstract class ShaderProgram implements Disposable {
             MAT3(Mat3.class),
             MAT4(Mat4.class),
             
-            SAMPLER2D(Integer.class);
+            SAMPLER2D(Integer.class),
+            SAMPLER_CUBE_MAP(Integer.class);
             
             private final Class<?> type;
     

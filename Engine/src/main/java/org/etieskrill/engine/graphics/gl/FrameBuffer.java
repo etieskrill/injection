@@ -16,7 +16,7 @@ public class FrameBuffer implements Disposable {
     
     public static FrameBuffer getStandard(Vec2i size) {
         // Colour buffer as a texture attachment
-        Texture colourBufferTexture = Texture.getBlank(size, GL_RGB);
+        Texture colourBufferTexture = Texture.genBlank(size, Texture.Format.RGB);
     
         // Depth and stencil buffer as a renderbuffer attachment
         RenderBuffer depthStencilBuffer = new RenderBuffer(size, RenderBuffer.Type.DEPTH_STENCIL);
@@ -43,7 +43,7 @@ public class FrameBuffer implements Disposable {
         
         public FrameBuffer build() {
             glGetError();
-            int ret = 0;
+            int ret;
             
             FrameBuffer frameBuffer = new FrameBuffer(size);
             frameBuffer.bind();

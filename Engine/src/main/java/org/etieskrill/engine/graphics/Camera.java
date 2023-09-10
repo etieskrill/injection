@@ -20,6 +20,7 @@ public abstract class Camera {
     protected double pitch, yaw, roll;
     protected boolean clampPitch;
 
+    //TODO transform perform updates lazily instead of eagerly
     protected boolean autoUpdate;
     
     protected Camera() {
@@ -108,6 +109,10 @@ public abstract class Camera {
         this.view.put(glm
                 .lookAt(position, target, up)
         );
+//        System.out.println(position);
+//        System.out.println(target);
+//        System.out.println(view.get(3));
+//        System.out.println();
     }
 
     protected abstract void updatePerspective();
