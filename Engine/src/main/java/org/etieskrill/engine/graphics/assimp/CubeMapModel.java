@@ -1,8 +1,6 @@
 package org.etieskrill.engine.graphics.assimp;
 
-import org.etieskrill.engine.graphics.gl.Texture;
-
-import static org.etieskrill.engine.graphics.gl.CubeMapTexture.*;
+import org.etieskrill.engine.graphics.gl.CubeMapTexture;
 
 public class CubeMapModel extends Model {
     
@@ -12,13 +10,8 @@ public class CubeMapModel extends Model {
                 .setMaterials(
                         new Material.Builder()
                                 .addTextures(
-                                        CubemapTextureBuilder.get(name)
-                                                .setMipMapping(MinFilter.LINEAR, MagFilter.LINEAR)
-                                                .setWrapping(Texture.Wrapping.CLAMP_TO_EDGE)
-                                                .noMipMaps()
-                                                .build())
-                                .build()
-                )
+                                        CubeMapTexture.getSkybox(name))
+                                .build())
                 .disableCulling()
                 .build());
     }

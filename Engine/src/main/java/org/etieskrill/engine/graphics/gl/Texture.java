@@ -283,7 +283,7 @@ public class Texture implements Disposable, FrameBufferAttachment {
         protected final Type type;
         
         protected Target target = Target.TWO_D;
-        protected MinFilter minFilter = MinFilter.BILINEAR;
+        protected MinFilter minFilter = MinFilter.TRILINEAR;
         protected MagFilter magFilter = MagFilter.LINEAR;
         protected Wrapping wrapping = Wrapping.REPEAT;
     

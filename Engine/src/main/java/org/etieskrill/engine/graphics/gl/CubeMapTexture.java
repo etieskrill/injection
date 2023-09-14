@@ -19,6 +19,15 @@ public class CubeMapTexture extends Texture {
     
     private final String name;
     
+    public static CubeMapTexture getSkybox(String name) {
+        return (CubeMapTexture) Loaders.TextureLoader.get().load("skybox/" + name, () ->
+                CubemapTextureBuilder.get(name)
+                        .setMipMapping(Texture.MinFilter.LINEAR, Texture.MagFilter.LINEAR)
+                        .setWrapping(Texture.Wrapping.CLAMP_TO_EDGE)
+                        .noMipMaps()
+                        .build());
+    }
+    
     public static final class CubemapTextureBuilder extends Builder<CubeMapTexture> {
         private final List<TextureData> sides = new ArrayList<>(SIDES);
         
@@ -83,13 +92,6 @@ public class CubeMapTexture extends Texture {
                 break;
             }
     
-            for (int i = 0; i < sortedFiles.length; i++) {
-                for (int j = 0; j < sortedFiles.length; j++) {
-                    if (i == j) continue;
-                    if (sortedFiles[i].equals(sortedFiles[j])) System.out.println("collision");
-                }
-            }
-    
             for (String file : sortedFiles) {
                 TextureData data = Texture.loadFileOrDefault(DIRECTORY + name + "/" + file, Type.DIFFUSE);
                 if (format == null) format = data.getFormat();
@@ -139,9 +141,9 @@ public class CubeMapTexture extends Texture {
         return name;
     }
     
-    //TODO a lil' wonky, but how to more easily solve this?
     @Override
     public void bind(int unit) {
+        glActiveTexture(GL_TEXTURE0 + unit);
         glBindTexture(GL_TEXTURE_CUBE_MAP, getID());
     }
     

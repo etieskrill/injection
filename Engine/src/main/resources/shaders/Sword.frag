@@ -74,7 +74,7 @@ void main()
     for (int i = 0; i < NR_POINT_LIGHTS; i++)
         combinedLight += calculatePointLight(lights[i], tNormal, tFragPos, uViewPosition);
 
-    vec4 emission = texture(material.emissive0, tTextureCoords) * material.shininess * (1 / material.shininess);
+    vec4 emission = texture(material.emissive0, tTextureCoords);
     combinedLight += emission * (sin(2 * uTime) * 0.1 + 0.5);
 
     oColour = combinedLight;

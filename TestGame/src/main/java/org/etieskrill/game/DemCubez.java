@@ -247,8 +247,8 @@ public class DemCubez {
             
             renderer.prepare();
             screenShader.start();
-            //screenShader.setUniform("uBlur", true);
-            //screenShader.setUniform("uBlurOffset", 1f / 500f);
+//            screenShader.setUniform("uSharpen", true);
+//            screenShader.setUniform("uSharpenOffset", 1f / 10000f);
             
             renderer.render(screenQuad, screenShader);
             
@@ -312,7 +312,10 @@ public class DemCubez {
     
         models = new Model[cubePositions.length];
         Random random = new Random(69420);
-        ModelLoader.getInstance().load("cube", () -> Model.ofFile("cube.obj"));
+        ModelLoader.getInstance().load("cube", () -> Model.ofFile("cube.obj"))
+                .getMeshes().get(0).getMaterial().getTextures().add(
+                        CubeMapTexture.getSkybox("space")
+                );
         for (int i = 0; i < cubePositions.length; i++) {
             models[i] = ModelLoader.getInstance().get("cube")
                     .setPosition(cubePositions[i])
@@ -334,7 +337,10 @@ public class DemCubez {
         grassModels = new Vector<>(grassPosition.length);
         for (Vec3 position : grassPosition) {
             grassModels.add(ModelLoader.getInstance().load("grass", () ->
-                            new Model.Builder("grass.obj").disableCulling().hasTransparency().build())
+                            new Model.Builder("grass.obj")
+                                    .disableCulling()
+                                    .hasTransparency()
+                                    .build())
                     .setPosition(position)
                     .setRotation((float) Math.toRadians(180f), new Vec3(0f, 0f, 1f))
             );
@@ -343,7 +349,9 @@ public class DemCubez {
         lightSources = new Model[2];
         for (int i = 0; i < lightSources.length; i++) {
             lightSources[i] = ModelLoader.getInstance().load("light", () ->
-                            new Model.Builder("cube.obj").setName("light").build())
+                            new Model.Builder("cube.obj")
+                                    .setName("light")
+                                    .build())
                     .setScale(0.2f)
                     .setPosition(new Vec3(0f, 0f, -5f));
         }
@@ -364,7 +372,7 @@ public class DemCubez {
     }
     
     private void loadShaders() {
-        containerShader = Shaders.getContainerShader();
+        containerShader = Shaders.getStandardShader();//getContainerShader();
         lightShader = Shaders.getLightSourceShader();
         swordShader = Shaders.getSwordShader();
         backpackShader = Shaders.getBackpackShader();
@@ -428,10 +436,10 @@ public class DemCubez {
         //TODO consider passing fragment position to frag shader with view applied,
         // so this nonsense becomes unnecessary
         containerShader.setUniform("uViewPosition", camera.getPosition());
-        containerShader.setUniform("uTime", (float) pacer.getTime());
+        containerShader.setUniform("uTime", (float) pacer.getTime(), false);
     
         swordShader.setUniform("uViewPosition", camera.getPosition());
-        swordShader.setUniform("uTime", (float) pacer.getTime());
+        swordShader.setUniform("uTime", (float) pacer.getTime(), false);
     
         backpackShader.setUniform("uViewPosition", camera.getPosition());
     

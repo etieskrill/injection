@@ -95,6 +95,8 @@ public class Model implements Disposable {
             transparency = true;
             return this;
         }
+        
+        //TODO add refractive toggle/mode (NONE, GLASS, WATER etc.)
     
         public Model build() {
             try {

@@ -8,6 +8,6 @@ uniform mat4 uCombined;
 
 void main()
 {
-    tTextureDir = -iPos;
+    tTextureDir = normalize(-iPos);
     gl_Position = uCombined * vec4(iPos, 1.0);
 }

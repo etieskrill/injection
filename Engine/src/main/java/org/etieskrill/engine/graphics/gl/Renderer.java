@@ -8,11 +8,9 @@ import org.etieskrill.engine.graphics.assimp.Mesh;
 import org.etieskrill.engine.graphics.assimp.Model;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
-import org.lwjgl.BufferUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.ByteBuffer;
 import java.util.Vector;
 
 import static org.lwjgl.opengl.GL33C.*;
@@ -114,28 +112,31 @@ public class Renderer {
         Vector<Texture> textures = material.getTextures();
         
         for (Texture texture : textures) {
+            String uniform = "material.";
+            int number = -1;
+            
             switch (texture.getTarget()) {
-                case TWO_D -> tex2d++;
+                case TWO_D -> {
+                    uniform += texture.getType().name().toLowerCase();
+                    tex2d++;
+                    number = switch (texture.getType()) {
+                        case DIFFUSE -> diffuse++;
+                        case SPECULAR -> specular++; //TODO could pass texture colour channels here, but it is probs best to just finally define a standard for this whole shebang
+                        case EMISSIVE -> emissive++;
+                        case HEIGHT -> height++;
+                        case SHININESS -> shininess++;
+                        case UNKNOWN -> throw new IllegalStateException("Texture has invalid type");
+                    };
+                }
                 case CUBEMAP -> {
-                    if (cubemaps++ > 1) continue; //TODO add multi-cubemap warnings to MaterialTexture class once it actually exists
-                    texture.bind(0);
-                    //shader.setUniform("uCubeMap", 0, true); this is probably the only possible value anyway
-                    continue;
+                    uniform += "cubemap";
+                    number = cubemaps++;
                 }
             }
             
-            int number = switch (texture.getType()) {
-                case DIFFUSE -> diffuse++;
-                case SPECULAR -> specular++; //TODO could pass texture colour channels here, but it is probs best to just finally define a standard for this whole shebang
-                case EMISSIVE -> emissive++;
-                case HEIGHT -> height++;
-                case SHININESS -> shininess++;
-                case UNKNOWN -> throw new IllegalStateException("Texture has invalid type");
-            };
-        
-            int validTextures = (diffuse + specular + emissive + height + shininess) - 1;
+            int validTextures = (tex2d + cubemaps) - 1;
             texture.bind(validTextures);
-            shader.setUniform("material." + texture.getType().name().toLowerCase() + number, validTextures, false);
+            shader.setUniform(uniform + number, validTextures, false);
         }
     
         boolean shininessMap = shininess > 0;

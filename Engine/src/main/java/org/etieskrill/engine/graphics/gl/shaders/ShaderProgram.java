@@ -96,6 +96,7 @@ public abstract class ShaderProgram implements Disposable {
         
         int ret = glGetError();
         if (ret != GL_NO_ERROR) logger.debug("OpenGL error during shader creation: 0x" + Integer.toHexString(ret));
+        else logger.debug("Successfully created shader");
     }
     
     private void createShader(String vertFile, String fragFile) {
@@ -194,7 +195,12 @@ public abstract class ShaderProgram implements Disposable {
         Objects.requireNonNull(value, "Value must not be null");
     
         Uniform uniform = getUniform(uniforms, name, value, strict, type -> new Uniform(name, type));
-        if (uniform == null) return false;
+        if (uniform == null) {
+            if (STRICT_UNIFORM_DETECTION & strict)
+                throw new IllegalStateException("Attempted to set unregistered uniform: " + name);
+            logger.trace("wololoooo");
+            return false;
+        }
         
         //This is not a boxed Integer with a null check, because in strict mode, non-registered names are
         //already filtered out in the above statement, which intellisense somehow knows apparently
@@ -214,10 +220,6 @@ public abstract class ShaderProgram implements Disposable {
             Optional<T> optUniform = map.keySet().stream()
                     .filter(element -> name.equals(element.getName()))
                     .findAny();
-//            if (map == arrayUniforms) {
-//                System.out.println(getClass().getSimpleName() + " " + map.keySet());
-//                System.out.println(name + " " + optUniform.orElse(null));
-//            }
             if (optUniform.isEmpty()) return null;
             uniform = optUniform.get();
             if (!value.getClass().equals(uniform.getType().get())) return null;

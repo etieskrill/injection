@@ -64,17 +64,7 @@ public class Shaders {
         @Override
         protected void getUniformLocations() {
             //TODO theoretically, a sort of autodetect feature is entirely possible
-            addUniform("uModel", MAT4);
-            addUniform("uNormal", MAT3);
-            addUniform("uCombined", MAT4);
-            
             addUniform("uViewPosition", VEC3);
-            
-            addUniform("material.diffuse0", SAMPLER2D);
-            addUniform("material.specular0", SAMPLER2D);
-            addUniform("material.emissive0", SAMPLER2D);
-            addUniform("material.shininess", FLOAT);
-            addUniform("material.specularity", FLOAT);
             
             addUniformArray("globalLights[$].direction", 1, VEC3);
             addUniformArray("globalLights[$].ambient", 1, VEC3);
@@ -154,8 +144,6 @@ public class Shaders {
         
         @Override
         protected void getUniformLocations() {
-            addUniform("uModel", MAT4);
-            addUniform("uCombined", MAT4);
             addUniform("light.ambient", FLOAT);
             addUniform("light.diffuse", FLOAT);
             addUniform("light.specular", FLOAT);
@@ -173,8 +161,6 @@ public class Shaders {
         
         @Override
         protected void getUniformLocations() {
-            addUniform("uModel", MAT4);
-            addUniform("uCombined", MAT4);
             addUniform("diffuseMap", SAMPLER2D);
             addUniform("uColour", VEC3);
         }
@@ -192,10 +178,6 @@ public class Shaders {
         @Override
         protected void getUniformLocations() {
             //TODO i've forgotten about this thing waaaay to often, either enforce via enums soon or rework this goddamned system
-            addUniform("uModel", MAT4);
-            addUniform("uNormal", MAT3);
-            addUniform("uCombined", MAT4);
-            
             addUniform("uColour", VEC4);
         }
     }
@@ -211,10 +193,6 @@ public class Shaders {
     
         @Override
         protected void getUniformLocations() {
-            addUniform("uModel", MAT4);
-            addUniform("uNormal", MAT3);
-            addUniform("uCombined", MAT4);
-            
             addUniform("uThicknessFactor", FLOAT);
             
             addUniform("uColour", VEC4);
