@@ -121,11 +121,14 @@ public abstract class ShaderProgram implements Disposable {
                     .formatted(glGetProgramInfoLog(programID)));
     
         disposeShaders();
-    
-        glValidateProgram(programID);
-        if (glGetProgrami(programID, GL_VALIDATE_STATUS) != GL_TRUE)
-            throw new IllegalStateException("Shader program was not successfully validated\n%s"
-                    .formatted(glGetProgramInfoLog(programID)));
+
+        //TODO write test engine to validate shaders and such pre-launch/via a separate script (unit-test-esque)
+        //this actually validates based on the current OpenGL state, meaning that here, a completely uninitialised
+        //program is being tested, which will, in the majority of cases, fail.
+//        glValidateProgram(programID);
+//        if (glGetProgrami(programID, GL_VALIDATE_STATUS) != GL_TRUE)
+//            throw new IllegalStateException("Shader program was not successfully validated\n%s"
+//                    .formatted(glGetProgramInfoLog(programID)));
     
         int errorCode;
         if ((errorCode = glGetError()) != GL_NO_ERROR)
