@@ -2,6 +2,7 @@ package org.etieskrill.engine.graphics.gl;
 
 import glm_.vec2.Vec2i;
 import org.etieskrill.engine.Disposable;
+import org.etieskrill.engine.graphics.texture.Texture;
 
 import java.util.HashMap;
 import java.util.Map;

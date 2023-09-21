@@ -2,6 +2,7 @@ package org.etieskrill.engine.graphics.gl;
 
 import org.etieskrill.engine.graphics.assimp.Mesh;
 import org.etieskrill.engine.graphics.assimp.Model;
+import org.etieskrill.engine.graphics.texture.Texture;
 
 public class Loaders {
     

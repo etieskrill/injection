@@ -11,6 +11,8 @@ import org.etieskrill.engine.graphics.gl.*;
 import org.etieskrill.engine.graphics.gl.Loaders.ModelLoader;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
+import org.etieskrill.engine.graphics.texture.CubeMapTexture;
+import org.etieskrill.engine.graphics.texture.Texture;
 import org.etieskrill.engine.scene._2d.*;
 import org.etieskrill.engine.time.LoopPacer;
 import org.etieskrill.engine.time.SystemNanoTimePacer;
@@ -52,7 +54,7 @@ public class DemCubez {
     
     CubeMapModel skybox;
     Model[] models;
-    Vector<Model> grassModels;
+    List<Model> grassModels;
     Model[] lightSources;
     Model sword;
     Model backpack;
@@ -83,7 +85,7 @@ public class DemCubez {
         loadShaders();
     
         renderer = new Renderer();
-        camera = (PerspectiveCamera) new PerspectiveCamera(window.getSize().getVector())
+        camera = (PerspectiveCamera) new PerspectiveCamera(window.getSize().toVec())
                 .setPosition(new Vec3(0f, 0f, 3f))
                 .setOrientation(0f, -90f, 0f)
                 .setFar(-1000f);
@@ -200,7 +202,7 @@ public class DemCubez {
         pacer = new SystemNanoTimePacer(1d / TARGET_FPS);
         pacer.start();
         
-        FrameBuffer frameBuffer = FrameBuffer.getStandard(new Vec2i(window.getSize().getVector()));
+        FrameBuffer frameBuffer = FrameBuffer.getStandard(new Vec2i(window.getSize().toVec()));
         frameBuffer.unbind();
         
         ShaderProgram screenShader = Shaders.getPostprocessingShader();
@@ -210,13 +212,13 @@ public class DemCubez {
         textureBuffer.bind(0);
     
         Material mat = new Material.Builder().addTextures(textureBuffer).build();
-    
-        Vector<Vertex> vertices = new Vector<>();
+
+        List<Vertex> vertices = new ArrayList<>();
         vertices.add(new Vertex(new Vec3(-1f, -1f, 0f), new Vec3(), new Vec2(0f)));
         vertices.add(new Vertex(new Vec3(-1f, 1f, 0f), new Vec3(), new Vec2(0f, 1f)));
         vertices.add(new Vertex(new Vec3(1f, -1f, 0f), new Vec3(), new Vec2(1f, 0f)));
         vertices.add(new Vertex(new Vec3(1f, 1f, 0f), new Vec3(), new Vec2(1f, 1f)));
-        Vector<Short> indices = new Vector<>(List.of(new Short[]{0, 2, 1, 3, 1, 2}));
+        List<Short> indices = new ArrayList<>(List.of(new Short[]{0, 2, 1, 3, 1, 2}));
         Mesh screenQuad = Mesh.Loader.loadToVAO(vertices, indices, mat);
         
         while (!window.shouldClose()) {
@@ -334,7 +336,7 @@ public class DemCubez {
                 new Vec3(-0.3f,  0.0f, -2.3f),
                 new Vec3( 0.5f,  0.0f, -0.6f)
         };
-        grassModels = new Vector<>(grassPosition.length);
+        grassModels = new ArrayList<>(grassPosition.length);
         for (Vec3 position : grassPosition) {
             grassModels.add(ModelLoader.getInstance().load("grass", () ->
                             new Model.Builder("grass.obj")
@@ -393,7 +395,7 @@ public class DemCubez {
         //menu.getLayout().setAlignment(Layout.Alignment.CENTER);
         container.setChild(menu);
     
-        window.setStage(new Stage(new Batch(renderer, new ModelFactory()), container, new OrthographicCamera(window.getSize().getVector())));
+        window.setStage(new Stage(new Batch(renderer, new ModelFactory()), container, new OrthographicCamera(window.getSize().toVec())));
         window.getStage().hide();
     }
     

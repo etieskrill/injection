@@ -1,5 +1,6 @@
-package org.etieskrill.engine.graphics.gl;
+package org.etieskrill.engine.graphics.texture;
 
+import org.etieskrill.engine.graphics.gl.Loaders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -126,11 +127,6 @@ public class CubeMapTexture extends Texture {
             sides.forEach(side -> stbi_image_free(side.getTextureData()));
         }
     }
-    
-//    TODO !!!
-//    TODO okay, so apparently, vectors are fucking wack and should not be used anymore at all, especially in
-//    TODO single-threaded environments like this whole shebang
-//    TODO !!!
     
     private CubeMapTexture(String name, Builder<CubeMapTexture> builder) {
         super(builder.setTarget(Target.CUBEMAP));

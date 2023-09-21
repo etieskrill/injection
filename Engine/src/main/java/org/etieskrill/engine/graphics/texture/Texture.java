@@ -1,7 +1,8 @@
-package org.etieskrill.engine.graphics.gl;
+package org.etieskrill.engine.graphics.texture;
 
 import glm_.vec2.Vec2i;
 import org.etieskrill.engine.Disposable;
+import org.etieskrill.engine.graphics.gl.FrameBufferAttachment;
 import org.lwjgl.BufferUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,7 +11,7 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.MissingResourceException;
 
-import static org.etieskrill.engine.graphics.gl.Texture.Type.*;
+import static org.etieskrill.engine.graphics.texture.Texture.Type.*;
 import static org.lwjgl.assimp.Assimp.*;
 import static org.lwjgl.opengl.GL33C.*;
 import static org.lwjgl.stb.STBImage.*;
@@ -414,8 +415,10 @@ public class Texture implements Disposable, FrameBufferAttachment {
             glBindTexture(GL_TEXTURE_2D, 0);
         }
     }
-    
-    int getID() {
+
+    //TODO create private wrapper class which opens this to classes such as FrameBuffer
+    @Deprecated
+    public int getID() {
         return texture;
     }
     
