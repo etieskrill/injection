@@ -80,7 +80,7 @@ public class Window {
             return largestFit;
         }
         
-        public Vec2 toVec() {
+        public Vec2 getVector() {
             return new Vec2(width, height);
         }
         
@@ -270,7 +270,7 @@ public class Window {
     
     public void setStage(Stage stage) {
         this.stage = stage;
-        this.stage.setSize(this.size.toVec());
+        this.stage.setSize(this.size.getVector());
     }
     
     public static class Cursor {

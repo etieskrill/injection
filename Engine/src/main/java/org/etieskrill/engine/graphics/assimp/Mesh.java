@@ -1,8 +1,10 @@
 package org.etieskrill.engine.graphics.assimp;
 
+import glm_.mat4x4.Mat4;
 import org.etieskrill.engine.Disposable;
 
 import java.util.List;
+import java.util.Vector;
 
 import static org.etieskrill.engine.graphics.assimp.Vertex.*;
 import static org.etieskrill.engine.graphics.assimp.Vertex.COMPONENTS;
@@ -16,10 +18,10 @@ public class Mesh implements Disposable {
     private final int vao, numIndices, vbo, ebo;
     
     public static final class Loader {
-        public static Mesh loadToVAO(List<Vertex> vertices, List<Short> indices, Material material) {
+        public static Mesh loadToVAO(Vector<Vertex> vertices, Vector<Short> indices, Material material) {
             int vao = createVAO();
     
-            if (indices.isEmpty()) System.out.println(vertices.size());
+            if (indices.size() == 0) System.out.println(vertices.size());
         
             List<Float> _data = vertices.stream()
                     .map(Vertex::toList)

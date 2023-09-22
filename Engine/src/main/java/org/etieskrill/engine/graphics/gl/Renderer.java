@@ -8,12 +8,10 @@ import org.etieskrill.engine.graphics.assimp.Mesh;
 import org.etieskrill.engine.graphics.assimp.Model;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
-import org.etieskrill.engine.graphics.texture.AbstractTexture;
-import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
+import java.util.Vector;
 
 import static org.lwjgl.opengl.GL33C.*;
 
@@ -102,7 +100,7 @@ public class Renderer {
         
         glDrawElements(GL_TRIANGLES, mesh.getNumIndices(), GL_UNSIGNED_SHORT, 0);
     
-        Texture2D.unbindAllTextures();
+        Texture.unbindAllTextureUnits();
     
         glBindVertexArray(0);
     }
@@ -111,9 +109,9 @@ public class Renderer {
         //TODO here the renderer could decide what kind of shader to use, based off of the material given
         int tex2d = 0, cubemaps = 0;
         int diffuse = 0, specular = 0, emissive = 0, height = 0, shininess = 0;
-        List<AbstractTexture> textures = material.getTextures();
+        Vector<Texture> textures = material.getTextures();
         
-        for (AbstractTexture texture : textures) {
+        for (Texture texture : textures) {
             String uniform = "material.";
             int number = -1;
             

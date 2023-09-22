@@ -11,8 +11,8 @@ import org.etieskrill.engine.graphics.gl.*;
 import org.etieskrill.engine.graphics.gl.Loaders.ModelLoader;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
-import org.etieskrill.engine.graphics.texture.CubeMapTexture;
-import org.etieskrill.engine.graphics.texture.Texture2D;
+import org.etieskrill.engine.graphics.models.DirectionalLight;
+import org.etieskrill.engine.graphics.models.PointLight;
 import org.etieskrill.engine.scene._2d.*;
 import org.etieskrill.engine.time.LoopPacer;
 import org.etieskrill.engine.time.SystemNanoTimePacer;
@@ -54,7 +54,7 @@ public class DemCubez {
     
     CubeMapModel skybox;
     Model[] models;
-    List<Model> grassModels;
+    Vector<Model> grassModels;
     Model[] lightSources;
     Model sword;
     Model backpack;
@@ -85,7 +85,7 @@ public class DemCubez {
         loadShaders();
     
         renderer = new Renderer();
-        camera = (PerspectiveCamera) new PerspectiveCamera(window.getSize().toVec())
+        camera = (PerspectiveCamera) new PerspectiveCamera(window.getSize().getVector())
                 .setPosition(new Vec3(0f, 0f, 3f))
                 .setOrientation(0f, -90f, 0f)
                 .setFar(-1000f);
@@ -202,23 +202,23 @@ public class DemCubez {
         pacer = new SystemNanoTimePacer(1d / TARGET_FPS);
         pacer.start();
         
-        FrameBuffer frameBuffer = FrameBuffer.getStandard(new Vec2i(window.getSize().toVec()));
+        FrameBuffer frameBuffer = FrameBuffer.getStandard(new Vec2i(window.getSize().getVector()));
         frameBuffer.unbind();
         
         ShaderProgram screenShader = Shaders.getPostprocessingShader();
     
         FrameBufferAttachment attachment = frameBuffer.getAttachments().get(FrameBuffer.AttachmentType.COLOUR0);
-        Texture2D textureBuffer = (Texture2D) attachment;
+        Texture textureBuffer = (Texture) attachment;
         textureBuffer.bind(0);
     
         Material mat = new Material.Builder().addTextures(textureBuffer).build();
-
-        List<Vertex> vertices = new ArrayList<>();
+    
+        Vector<Vertex> vertices = new Vector<>();
         vertices.add(new Vertex(new Vec3(-1f, -1f, 0f), new Vec3(), new Vec2(0f)));
         vertices.add(new Vertex(new Vec3(-1f, 1f, 0f), new Vec3(), new Vec2(0f, 1f)));
         vertices.add(new Vertex(new Vec3(1f, -1f, 0f), new Vec3(), new Vec2(1f, 0f)));
         vertices.add(new Vertex(new Vec3(1f, 1f, 0f), new Vec3(), new Vec2(1f, 1f)));
-        List<Short> indices = new ArrayList<>(List.of(new Short[]{0, 2, 1, 3, 1, 2}));
+        Vector<Short> indices = new Vector<>(List.of(new Short[]{0, 2, 1, 3, 1, 2}));
         Mesh screenQuad = Mesh.Loader.loadToVAO(vertices, indices, mat);
         
         while (!window.shouldClose()) {
@@ -336,7 +336,7 @@ public class DemCubez {
                 new Vec3(-0.3f,  0.0f, -2.3f),
                 new Vec3( 0.5f,  0.0f, -0.6f)
         };
-        grassModels = new ArrayList<>(grassPosition.length);
+        grassModels = new Vector<>(grassPosition.length);
         for (Vec3 position : grassPosition) {
             grassModels.add(ModelLoader.getInstance().load("grass", () ->
                             new Model.Builder("grass.obj")
@@ -395,43 +395,29 @@ public class DemCubez {
         //menu.getLayout().setAlignment(Layout.Alignment.CENTER);
         container.setChild(menu);
     
-        window.setStage(new Stage(new Batch(renderer, new ModelFactory()), container, new OrthographicCamera(window.getSize().toVec())));
+        window.setStage(new Stage(new Batch(renderer, new ModelFactory()), container, new OrthographicCamera(window.getSize().getVector())));
         window.getStage().hide();
     }
     
     private void setShaderUniforms() {
         ShaderProgram[] doLighting = {containerShader, swordShader, backpackShader};
         
-        Vec3 globalLightDirection = new Vec3(1f);
-    
         //These are essentially intensity factors
         //TODO isn't this kind of stupid? why would a light SOURCE have different kinds of intensities?
-        Vec3 lightColour = new Vec3(1f);
-        Vec3 ambient = lightColour.times(0.1f);
-        Vec3 diffuse = lightColour.times(0.0f);
-        Vec3 specular = lightColour.times(0.01f);
+        DirectionalLight globalLight = new DirectionalLight(new Vec3(1),
+                new Vec3(0.2), new Vec3(0), new Vec3(0.01));
     
-        for (ShaderProgram shader : doLighting) {
-            shader.setUniformArray("globalLights[$].direction", 0, globalLightDirection);
-            shader.setUniformArray("globalLights[$].ambient", 0, ambient);
-            shader.setUniformArray("globalLights[$].diffuse", 0, diffuse);
-            shader.setUniformArray("globalLights[$].specular", 0, specular);
+        PointLight[] lights = new PointLight[lightSources.length];
+        for (int i = 0; i < lights.length; i++) {
+            lights[i] = new PointLight(lightSources[i].getPosition(),
+                    new Vec3(0.1), new Vec3(0.3), new Vec3(0.5),
+                    1f, 0.03f, 0.005f);
         }
-    
-        Vec3 pointLightColour = new Vec3(1f);
-        Vec3 pointLightAmbient = pointLightColour.times(0.1f);
-        Vec3 pointLightDiffuse = pointLightColour.times(0.3f);
-        Vec3 pointLightSpecular = pointLightColour.times(0.5f);
-    
+        
         for (ShaderProgram shader : doLighting) {
-            for (int i = 0; i < lightSources.length; i++) {
-                shader.setUniformArray("lights[$].position", i, lightSources[i].getPosition());
-                shader.setUniformArray("lights[$].ambient", i, pointLightAmbient);
-                shader.setUniformArray("lights[$].diffuse", i, pointLightDiffuse);
-                shader.setUniformArray("lights[$].specular", i, pointLightSpecular);
-                shader.setUniformArray("lights[$].constant", i, 1f);
-                shader.setUniformArray("lights[$].linear", i, 0.03f);
-                shader.setUniformArray("lights[$].quadratic", i, 0.005f);
+            shader.setUniformArray("globalLights[$]", 0, globalLight);
+            for (int i = 0; i < lights.length; i++) {
+                shader.setUniformArray("lights[$]", i, lights[i]);
             }
         }
     
@@ -445,6 +431,11 @@ public class DemCubez {
     
         backpackShader.setUniform("uViewPosition", camera.getPosition());
     
+        Vec3 pointLightColour = new Vec3(1f);
+        Vec3 pointLightAmbient = pointLightColour.times(0.1f);
+        Vec3 pointLightDiffuse = pointLightColour.times(0.3f);
+        Vec3 pointLightSpecular = pointLightColour.times(0.5f);
+        
         lightShader.setUniform("light.ambient", pointLightAmbient);
         lightShader.setUniform("light.diffuse", pointLightDiffuse);
         lightShader.setUniform("light.specular", pointLightSpecular);

@@ -2,12 +2,10 @@ package org.etieskrill.engine.graphics.gl;
 
 import org.etieskrill.engine.graphics.assimp.Mesh;
 import org.etieskrill.engine.graphics.assimp.Model;
-import org.etieskrill.engine.graphics.texture.AbstractTexture;
-import org.etieskrill.engine.graphics.texture.Texture2D;
 
 public class Loaders {
     
-    public static final class TextureLoader extends Loader<AbstractTexture> {
+    public static final class TextureLoader extends Loader<Texture> {
         private static TextureLoader instance;
         
         //TODO kinda-not-very-singleton-at-all, is this valid?

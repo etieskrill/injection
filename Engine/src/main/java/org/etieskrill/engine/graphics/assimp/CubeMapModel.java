@@ -1,6 +1,6 @@
 package org.etieskrill.engine.graphics.assimp;
 
-import org.etieskrill.engine.graphics.texture.CubeMapTexture;
+import org.etieskrill.engine.graphics.gl.CubeMapTexture;
 
 public class CubeMapModel extends Model {
     
