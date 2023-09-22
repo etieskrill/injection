@@ -7,14 +7,15 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.util.*;
 
+import static org.etieskrill.engine.graphics.texture.Textures.NR_BITS_PER_COLOUR_CHANNEL;
 import static org.lwjgl.opengl.GL33C.*;
 import static org.lwjgl.stb.STBImage.stbi_image_free;
 
 //TODO move these and Texture's builders and factory methods into a TextureFactory
-public class CubeMapTexture extends Texture {
+public class CubeMapTexture extends AbstractTexture {
     
     private static final int SIDES = 6;
-    private static final String DIRECTORY = Texture.DIRECTORY + "cubemaps/";
+    private static final String DIRECTORY = AbstractTexture.DIRECTORY + "cubemaps/";
     
     private static final Logger logger = LoggerFactory.getLogger(CubeMapTexture.class);
     
@@ -23,14 +24,14 @@ public class CubeMapTexture extends Texture {
     public static CubeMapTexture getSkybox(String name) {
         return (CubeMapTexture) Loaders.TextureLoader.get().load("skybox/" + name, () ->
                 CubemapTextureBuilder.get(name)
-                        .setMipMapping(Texture.MinFilter.LINEAR, Texture.MagFilter.LINEAR)
-                        .setWrapping(Texture.Wrapping.CLAMP_TO_EDGE)
+                        .setMipMapping(Texture2D.MinFilter.LINEAR, Texture2D.MagFilter.LINEAR)
+                        .setWrapping(Texture2D.Wrapping.CLAMP_TO_EDGE)
                         .noMipMaps()
                         .build());
     }
     
     public static final class CubemapTextureBuilder extends Builder<CubeMapTexture> {
-        private final List<TextureData> sides = new ArrayList<>(SIDES);
+        private final List<Textures.TextureData> sides = new ArrayList<>(SIDES);
         
         private String name;
     
@@ -67,7 +68,6 @@ public class CubeMapTexture extends Texture {
                     continue;
                 }
                 if (file.contains("left") || file.contains("nx")) {
-                    //sortedFiles[1] = "../skybox/back.jpg";
                     sortedFiles[1] = file;
                     continue;
                 }
@@ -94,7 +94,7 @@ public class CubeMapTexture extends Texture {
             }
     
             for (String file : sortedFiles) {
-                TextureData data = Texture.loadFileOrDefault(DIRECTORY + name + "/" + file, Type.DIFFUSE);
+                Textures.TextureData data = Textures.loadFileOrDefault(DIRECTORY + name + "/" + file, Type.DIFFUSE);
                 if (format == null) format = data.getFormat();
                 if (data.getFormat() != format)
                     throw new IllegalArgumentException("All textures must have the same colour format");
@@ -136,16 +136,5 @@ public class CubeMapTexture extends Texture {
     public String getName() {
         return name;
     }
-    
-    @Override
-    public void bind(int unit) {
-        glActiveTexture(GL_TEXTURE0 + unit);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, getID());
-    }
-    
-    @Override
-    public void unbind(int unit) {
-        glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
-    }
-    
+
 }

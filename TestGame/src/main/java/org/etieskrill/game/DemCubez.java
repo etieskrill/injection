@@ -12,7 +12,7 @@ import org.etieskrill.engine.graphics.gl.Loaders.ModelLoader;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
 import org.etieskrill.engine.graphics.texture.CubeMapTexture;
-import org.etieskrill.engine.graphics.texture.Texture;
+import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.scene._2d.*;
 import org.etieskrill.engine.time.LoopPacer;
 import org.etieskrill.engine.time.SystemNanoTimePacer;
@@ -208,7 +208,7 @@ public class DemCubez {
         ShaderProgram screenShader = Shaders.getPostprocessingShader();
     
         FrameBufferAttachment attachment = frameBuffer.getAttachments().get(FrameBuffer.AttachmentType.COLOUR0);
-        Texture textureBuffer = (Texture) attachment;
+        Texture2D textureBuffer = (Texture2D) attachment;
         textureBuffer.bind(0);
     
         Material mat = new Material.Builder().addTextures(textureBuffer).build();

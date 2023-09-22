@@ -5,8 +5,9 @@ import glm_.vec2.Vec2;
 import glm_.vec3.Vec3;
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.graphics.gl.Loaders.TextureLoader;
-import org.etieskrill.engine.graphics.texture.Texture;
-import org.etieskrill.engine.graphics.texture.Texture.Type;
+import org.etieskrill.engine.graphics.texture.Texture2D;
+import org.etieskrill.engine.graphics.texture.AbstractTexture.Type;
+import org.etieskrill.engine.graphics.texture.Textures;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.assimp.*;
@@ -21,7 +22,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Supplier;
 
-import static org.etieskrill.engine.graphics.texture.Texture.Type.*;
+import static org.etieskrill.engine.graphics.texture.AbstractTexture.Type.*;
 import static org.lwjgl.assimp.Assimp.*;
 
 public class Model implements Disposable {
@@ -273,9 +274,9 @@ public class Model implements Disposable {
             
             //TODO i think using the loader by default here is warranted, since textures are separate files, and
             // more often than not the bulk redundant data (probably), i should add an option to switch this off tho
-            Texture texture = TextureLoader.get().load(
+            Texture2D texture = (Texture2D) TextureLoader.get().load(
                     this.file + "_" + type.name().toLowerCase() + "_" + i,
-                    () -> Texture.ofFile(file.dataString(), type));
+                    () -> Textures.ofFile(file.dataString(), type));
             material.addTextures(texture);
             validTextures++;
         }
