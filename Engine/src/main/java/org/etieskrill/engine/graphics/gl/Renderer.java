@@ -140,11 +140,8 @@ public class Renderer {
             texture.bind(validTextures);
             shader.setUniform(uniform + number, validTextures, false);
         }
-    
-        boolean shininessMap = shininess > 0;
-        shader.setUniform("uShininessMap", shininessMap, false);
         
-        if (!shininessMap)
+        if (shininess == 0)
             shader.setUniform("material.shininess", material.getShininess(), false);
         shader.setUniform("material.specularity", material.getShininessStrength(), false);
     }
