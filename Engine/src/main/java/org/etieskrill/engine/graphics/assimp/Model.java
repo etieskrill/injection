@@ -5,8 +5,9 @@ import glm_.vec2.Vec2;
 import glm_.vec3.Vec3;
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.graphics.gl.Loaders.TextureLoader;
-import org.etieskrill.engine.graphics.gl.Texture;
-import org.etieskrill.engine.graphics.gl.Texture.Type;
+import org.etieskrill.engine.graphics.texture.Texture2D;
+import org.etieskrill.engine.graphics.texture.AbstractTexture.Type;
+import org.etieskrill.engine.graphics.texture.Textures;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.assimp.*;
@@ -16,11 +17,12 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
+import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Vector;
 import java.util.function.Supplier;
 
-import static org.etieskrill.engine.graphics.gl.Texture.Type.*;
+import static org.etieskrill.engine.graphics.texture.AbstractTexture.Type.*;
 import static org.lwjgl.assimp.Assimp.*;
 
 public class Model implements Disposable {
@@ -30,8 +32,8 @@ public class Model implements Disposable {
     
     private static final Logger logger = LoggerFactory.getLogger(Model.class);
     
-    private final Vector<Mesh> meshes; //TODO these should become immutable after model instantiation
-    private final Vector<Material> materials; //TODO since meshes know their materials, these here may not be necessary?
+    private final List<Mesh> meshes; //TODO these should become immutable after model instantiation
+    private final List<Material> materials; //TODO since meshes know their materials, these here may not be necessary?
     
     private final String file;
     private final String name;
@@ -47,8 +49,8 @@ public class Model implements Disposable {
     private final boolean transparency;
     
     public static class Builder {
-        private final Vector<Mesh> meshes = new Vector<>();
-        private final Vector<Material> materials = new Vector<>();
+        private final List<Mesh> meshes = new LinkedList<>();
+        private final List<Material> materials = new LinkedList<>();
     
         private final String file;
         private String name;
@@ -66,13 +68,13 @@ public class Model implements Disposable {
     
         public Builder setMeshes(Mesh... meshes) {
             this.meshes.clear();
-            this.meshes.addAll(new Vector<>(List.of(meshes)));
+            this.meshes.addAll(List.of(meshes));
             return this;
         }
     
         public Builder setMaterials(Material... materials) {
             this.materials.clear();
-            this.materials.addAll(new Vector<>(List.of(materials)));
+            this.materials.addAll(List.of(materials));
             return this;
         }
         
@@ -135,7 +137,7 @@ public class Model implements Disposable {
     }
     
     //TODO contemplate whether to pass on builders in cases like these
-    private Model(String file, String name, Vector<Mesh> meshes, Vector<Material> materials,
+    private Model(String file, String name, List<Mesh> meshes, List<Material> materials,
                  Vec3 position, Vec3 scale, float rotation, Vec3 rotationAxis, Mat4 transform,
                   boolean culling, boolean transparency) throws IOException {
         
@@ -204,26 +206,28 @@ public class Model implements Disposable {
     }
     
     private Mesh processMesh(AIMesh mesh) {
-        Vector<Vec3> positions = new Vector<>();
+        int numVertices = mesh.mNumVertices();
+        List<Vec3> positions = new ArrayList<>(numVertices);
         mesh.mVertices().forEach(vertex -> positions.add(new Vec3(vertex.x(), vertex.y(), vertex.z())));
-        
-        Vector<Vec3> normals = new Vector<>();
+
+        List<Vec3> normals = new ArrayList<>(numVertices);
         if (mesh.mNormals() != null)
             mesh.mNormals().forEach(normal -> normals.add(new Vec3(normal.x(), normal.y(), normal.z())));
-        
-        Vector<Vec2> texCoords = new Vector<>();
+
+        List<Vec2> texCoords = new ArrayList<>(numVertices);
         if (mesh.mTextureCoords(0) != null)
             mesh.mTextureCoords(0).forEach(texCoord -> texCoords.add(new Vec2(texCoord.x(), texCoord.y())));
-        
-        Vector<Vertex> vertices = new Vector<>();
+
+        List<Vertex> vertices = new ArrayList<>(numVertices);
         for (int i = 0; i < mesh.mNumVertices(); i++)
             vertices.add(new Vertex(
                     positions.get(i),
                     normals.size() > 0 ? normals.get(i) : new Vec3(),
                     texCoords.size() > 0 ?texCoords.get(i) : new Vec2())
             );
-        
-        Vector<Short> indices = new Vector<>();
+
+        //three because a face is usually a triangle, but this list is discarded at the first opportunity a/w
+        List<Short> indices = new ArrayList<>(mesh.mNumFaces() * 3);
         for (int i = 0; i < mesh.mNumFaces(); i++) {
             AIFace face = mesh.mFaces().get(i);
             IntBuffer buffer = face.mIndices();
@@ -270,9 +274,9 @@ public class Model implements Disposable {
             
             //TODO i think using the loader by default here is warranted, since textures are separate files, and
             // more often than not the bulk redundant data (probably), i should add an option to switch this off tho
-            Texture texture = TextureLoader.get().load(
+            Texture2D texture = (Texture2D) TextureLoader.get().load(
                     this.file + "_" + type.name().toLowerCase() + "_" + i,
-                    () -> Texture.ofFile(file.dataString(), type));
+                    () -> Textures.ofFile(file.dataString(), type));
             material.addTextures(texture);
             validTextures++;
         }
@@ -305,7 +309,7 @@ public class Model implements Disposable {
         return name;
     }
     
-    public Vector<Mesh> getMeshes() {
+    public List<Mesh> getMeshes() {
         return meshes;
     }
     

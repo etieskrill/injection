@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static org.etieskrill.engine.graphics.gl.shaders.ShaderProgram.ShaderType.*;
 import static org.etieskrill.engine.graphics.gl.shaders.ShaderProgram.Uniform.NESTED_UNIFORM_LOCATION;
@@ -22,18 +23,19 @@ public abstract class ShaderProgram implements Disposable {
     public static boolean CLEAR_ERROR_BEFORE_SHADER_CREATION = true;
     
     //TODO move placeholder shader here
-    protected static final String DEFAULT_VERTEX_FILE = "shaders/Phong.vert";
-    protected static final String DEFAULT_FRAGMENT_FILE = "shaders/Phong.frag";
+    private static final String DEFAULT_VERTEX_FILE = "shaders/Phong.vert";
+    private static final String DEFAULT_FRAGMENT_FILE = "shaders/Phong.frag";
     
-    protected boolean STRICT_UNIFORM_DETECTION = true;
+    private boolean STRICT_UNIFORM_DETECTION = true;
     
-    protected final Logger logger = LoggerFactory.getLogger(getClass());
+    private final Logger logger = LoggerFactory.getLogger(getClass());
     
-    protected int programID, vertID, fragID;
-    protected final Map<Uniform, Integer> uniforms;
-    protected final Map<ArrayUniform, List<Integer>> arrayUniforms;
+    protected int programID;
+    private int vertID, fragID;
+    private final Map<Uniform, Integer> uniforms;
+    private final Map<ArrayUniform, List<Integer>> arrayUniforms;
     
-    protected final boolean placeholder;
+    private final boolean placeholder;
     
     public enum ShaderType {
         VERTEX,
@@ -128,11 +130,14 @@ public abstract class ShaderProgram implements Disposable {
                     .formatted(glGetProgramInfoLog(programID)));
     
         disposeShaders();
-    
-        glValidateProgram(programID);
-        if (glGetProgrami(programID, GL_VALIDATE_STATUS) != GL_TRUE)
-            throw new IllegalStateException("Shader program was not successfully validated\n%s"
-                    .formatted(glGetProgramInfoLog(programID)));
+
+        //TODO write test engine to validate shaders and such pre-launch/via a separate script (unit-test-esque)
+        //this actually validates based on the current OpenGL state, meaning that here, a completely uninitialised
+        //program is being tested, which will, in the majority of cases, fail.
+//        glValidateProgram(programID);
+//        if (glGetProgrami(programID, GL_VALIDATE_STATUS) != GL_TRUE)
+//            throw new IllegalStateException("Shader program was not successfully validated\n%s"
+//                    .formatted(glGetProgramInfoLog(programID)));
     
         int errorCode;
         if ((errorCode = glGetError()) != GL_NO_ERROR)

@@ -2,6 +2,8 @@ package org.etieskrill.engine.graphics.gl;
 
 import glm_.vec2.Vec2i;
 import org.etieskrill.engine.Disposable;
+import org.etieskrill.engine.graphics.texture.Texture2D;
+import org.etieskrill.engine.graphics.texture.Textures;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -16,7 +18,7 @@ public class FrameBuffer implements Disposable {
     
     public static FrameBuffer getStandard(Vec2i size) {
         // Colour buffer as a texture attachment
-        Texture colourBufferTexture = Texture.genBlank(size, Texture.Format.RGB);
+        Texture2D colourBufferTexture = Textures.genBlank(size, Texture2D.Format.RGB);
     
         // Depth and stencil buffer as a renderbuffer attachment
         RenderBuffer depthStencilBuffer = new RenderBuffer(size, RenderBuffer.Type.DEPTH_STENCIL);
@@ -49,7 +51,7 @@ public class FrameBuffer implements Disposable {
             frameBuffer.bind();
             for (AttachmentType type : attachments.keySet()) {
                 FrameBufferAttachment attachment = attachments.get(type);
-                if (attachment instanceof Texture texture) {
+                if (attachment instanceof Texture2D texture) {
                     glFramebufferTexture2D(GL_FRAMEBUFFER, type.toGLAttachment(), GL_TEXTURE_2D, texture.getID(), 0);
                 } else if (attachment instanceof RenderBuffer buffer) {
                     buffer.bind();

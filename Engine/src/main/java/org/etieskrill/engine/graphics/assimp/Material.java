@@ -1,29 +1,30 @@
 package org.etieskrill.engine.graphics.assimp;
 
 import org.etieskrill.engine.Disposable;
-import org.etieskrill.engine.graphics.gl.Texture;
+import org.etieskrill.engine.graphics.texture.AbstractTexture;
+import org.etieskrill.engine.graphics.texture.Texture2D;
 
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Vector;
 
 //TODO separate phong/pbr via inheritance
 public class Material implements Disposable {
     
     //TODO number max gl texture units check
-    private final Vector<Texture> textures;
+    private final List<AbstractTexture> textures;
     
     private final float shininess, shininessStrength;
     
     public static final class Builder {
-        private Vector<Texture> textures = new Vector<>();
+        private List<AbstractTexture> textures = new LinkedList<>();
         private float shininess = 32f, shininessStrength = 1f;
         
-        public Builder addTextures(Texture... textures) {
+        public Builder addTextures(AbstractTexture... textures) {
             this.textures.addAll(List.of(textures));
             return this;
         }
         
-        public Builder addTextures(Vector<Texture> textures) {
+        public Builder addTextures(List<AbstractTexture> textures) {
             this.textures.addAll(textures);
             return this;
         }
@@ -45,13 +46,13 @@ public class Material implements Disposable {
         return new Material.Builder().build();
     }
     
-    private Material(Vector<Texture> textures, float shininess, float shininessStrength) {
-        this.textures = new Vector<>(textures);
+    private Material(List<AbstractTexture> textures, float shininess, float shininessStrength) {
+        this.textures = new LinkedList<>(textures);
         this.shininess = shininess;
         this.shininessStrength = shininessStrength;
     }
     
-    public Vector<Texture> getTextures() {
+    public List<AbstractTexture> getTextures() {
         return textures;
     }
     
@@ -68,7 +69,7 @@ public class Material implements Disposable {
     @Override
     public void dispose() {
         if (wasAlreadyDisposed) return;
-        textures.forEach(Texture::dispose);
+        textures.forEach(AbstractTexture::dispose);
         wasAlreadyDisposed = true;
     }
     
