@@ -1,6 +1,6 @@
 package org.etieskrill.engine.graphics.assimp;
 
-import org.etieskrill.engine.graphics.texture.CubeMapTexture;
+import org.etieskrill.engine.graphics.texture.Textures;
 
 public class CubeMapModel extends Model {
     
@@ -10,7 +10,7 @@ public class CubeMapModel extends Model {
                 .setMaterials(
                         new Material.Builder()
                                 .addTextures(
-                                        CubeMapTexture.getSkybox(name))
+                                        Textures.getSkybox(name))
                                 .build())
                 .disableCulling()
                 .build());

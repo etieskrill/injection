@@ -1,6 +1,5 @@
 package org.etieskrill.engine.graphics.texture;
 
-import org.etieskrill.engine.graphics.gl.Loaders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,19 +20,10 @@ public class CubeMapTexture extends AbstractTexture {
     
     private final String name;
     
-    public static CubeMapTexture getSkybox(String name) {
-        return (CubeMapTexture) Loaders.TextureLoader.get().load("skybox/" + name, () ->
-                CubemapTextureBuilder.get(name)
-                        .setMipMapping(Texture2D.MinFilter.LINEAR, Texture2D.MagFilter.LINEAR)
-                        .setWrapping(Texture2D.Wrapping.CLAMP_TO_EDGE)
-                        .noMipMaps()
-                        .build());
-    }
-    
     public static final class CubemapTextureBuilder extends Builder<CubeMapTexture> {
-        private final List<Textures.TextureData> sides = new ArrayList<>(SIDES);
+        private final List<TextureData> sides = new ArrayList<>(SIDES);
         
-        private String name;
+        private final String name;
     
         /**
          * Attempts to load all files from a directory with the given name to a {@code CubeMap}.
@@ -94,7 +84,7 @@ public class CubeMapTexture extends AbstractTexture {
             }
     
             for (String file : sortedFiles) {
-                Textures.TextureData data = Textures.loadFileOrDefault(DIRECTORY + name + "/" + file, Type.DIFFUSE);
+                TextureData data = Textures.loadFileOrDefault(DIRECTORY + name + "/" + file, Type.DIFFUSE);
                 if (format == null) format = data.getFormat();
                 if (data.getFormat() != format)
                     throw new IllegalArgumentException("All textures must have the same colour format");
@@ -106,7 +96,7 @@ public class CubeMapTexture extends AbstractTexture {
         }
     
         @Override
-        public CubeMapTexture build() {
+        protected CubeMapTexture bufferTextureData() {
             logger.debug("Loading {}x{} {}-bit cubemap texture from {}", pixelSize.s(), pixelSize.t(),
                     NR_BITS_PER_COLOUR_CHANNEL * format.getChannels(), name);
     

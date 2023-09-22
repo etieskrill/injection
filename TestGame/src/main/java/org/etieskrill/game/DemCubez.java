@@ -7,14 +7,17 @@ import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.OrthographicCamera;
 import org.etieskrill.engine.graphics.PerspectiveCamera;
 import org.etieskrill.engine.graphics.assimp.*;
-import org.etieskrill.engine.graphics.gl.*;
+import org.etieskrill.engine.graphics.gl.FrameBuffer;
+import org.etieskrill.engine.graphics.gl.FrameBufferAttachment;
 import org.etieskrill.engine.graphics.gl.Loaders.ModelLoader;
+import org.etieskrill.engine.graphics.gl.ModelFactory;
+import org.etieskrill.engine.graphics.gl.Renderer;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
 import org.etieskrill.engine.graphics.models.DirectionalLight;
 import org.etieskrill.engine.graphics.models.PointLight;
-import org.etieskrill.engine.graphics.texture.CubeMapTexture;
 import org.etieskrill.engine.graphics.texture.Texture2D;
+import org.etieskrill.engine.graphics.texture.Textures;
 import org.etieskrill.engine.scene._2d.*;
 import org.etieskrill.engine.time.LoopPacer;
 import org.etieskrill.engine.time.SystemNanoTimePacer;
@@ -25,7 +28,9 @@ import org.lwjgl.opengl.GL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL33C.*;
@@ -318,7 +323,7 @@ public class DemCubez {
         Random random = new Random(69420);
         ModelLoader.getInstance().load("cube", () -> Model.ofFile("cube.obj"))
                 .getMeshes().get(0).getMaterial().getTextures().add(
-                        CubeMapTexture.getSkybox("space")
+                        Textures.getSkybox("space")
                 );
         for (int i = 0; i < cubePositions.length; i++) {
             models[i] = ModelLoader.getInstance().get("cube")

@@ -262,7 +262,7 @@ public class Model implements Disposable {
     private void addTexturesToMaterial(Material.Builder material, AIMaterial aiMaterial, Type type) {
         AIString file = AIString.create();
     
-        int aiTextureType = type.toAI();
+        int aiTextureType = type.ai();
         int validTextures = 0;
         for (int i = 0; i < aiGetMaterialTextureCount(aiMaterial, aiTextureType); i++) {
             if (aiGetMaterialTexture(aiMaterial, aiTextureType, i, file,

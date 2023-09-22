@@ -1,6 +1,7 @@
 package org.etieskrill.engine.graphics.texture;
 
 import glm_.vec2.Vec2i;
+import org.etieskrill.engine.graphics.gl.Loaders;
 import org.lwjgl.BufferUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,8 +40,8 @@ public class Textures {
         return texture;
     }
 
-    static TextureData loadFileOrDefault(String file, AbstractTexture.Type type) {
-        TextureData data;
+    static AbstractTexture.TextureData loadFileOrDefault(String file, AbstractTexture.Type type) {
+        AbstractTexture.TextureData data;
         try {
             data = Textures.loadFile(file);
         } catch (MissingResourceException e) {
@@ -51,7 +52,7 @@ public class Textures {
         return data;
     }
 
-    static TextureData loadFile(String file) {
+    static AbstractTexture.TextureData loadFile(String file) {
         IntBuffer bufferWidth = BufferUtils.createIntBuffer(1),
                 bufferHeight = BufferUtils.createIntBuffer(1),
                 bufferColourChannels = BufferUtils.createIntBuffer(1);
@@ -66,35 +67,19 @@ public class Textures {
         int pixelHeight = bufferHeight.get();
         AbstractTexture.Format format = AbstractTexture.Format.fromPreferredColourChannels(bufferColourChannels.get());
 
-        return new TextureData(textureData, new Vec2i(pixelWidth, pixelHeight), format);
-    }
-
-    static class TextureData {
-        private final ByteBuffer textureData;
-        private final Vec2i pixelSize;
-        private final AbstractTexture.Format format;
-
-        public TextureData(ByteBuffer textureData, Vec2i pixelSize, AbstractTexture.Format format) {
-            this.textureData = textureData;
-            this.pixelSize = pixelSize;
-            this.format = format;
-        }
-
-        public ByteBuffer getTextureData() {
-            return textureData;
-        }
-
-        public Vec2i getPixelSize() {
-            return pixelSize;
-        }
-
-        public AbstractTexture.Format getFormat() {
-            return format;
-        }
+        return new AbstractTexture.TextureData(textureData, new Vec2i(pixelWidth, pixelHeight), format);
     }
 
     public static Texture2D ofFile(String file, AbstractTexture.Type type) {
         return new Texture2D.FileBuilder(file, type).build();
+    }
+    
+    public static CubeMapTexture getSkybox(String name) {
+        return (CubeMapTexture) Loaders.TextureLoader.get().load("cubemap/" + name, () ->
+                CubeMapTexture.CubemapTextureBuilder.get(name)
+                        .setMipMapping(Texture2D.MinFilter.LINEAR, Texture2D.MagFilter.LINEAR)
+                        .setWrapping(Texture2D.Wrapping.CLAMP_TO_EDGE)
+                        .build());
     }
 
 }

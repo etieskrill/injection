@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 import java.nio.ByteBuffer;
 import java.util.Objects;
 
-import static org.etieskrill.engine.graphics.texture.Textures.NR_BITS_PER_COLOUR_CHANNEL;
 import static org.lwjgl.assimp.Assimp.*;
 import static org.lwjgl.assimp.Assimp.aiTextureType_EMISSIVE;
 import static org.lwjgl.opengl.GL11C.*;
@@ -17,8 +16,13 @@ import static org.lwjgl.opengl.GL12C.GL_CLAMP_TO_EDGE;
 import static org.lwjgl.opengl.GL13C.*;
 import static org.lwjgl.opengl.GL13C.GL_TEXTURE0;
 import static org.lwjgl.opengl.GL30C.GL_RG;
+import static org.lwjgl.opengl.GL30C.glGenerateMipmap;
 import static org.lwjgl.opengl.GL33C.GL_TEXTURE_SWIZZLE_RGBA;
 
+/**
+ * As this class makes use of the stb_image library, it can decode from all the image formats specified in the
+ * official documentation: <a href="https://github.com/nothings/stb/blob/5736b15f7ea0ffb08dd38af21067c314d6a3aae9/stb_image.h#L23-L33">stb_image</a>
+ */
 public abstract class AbstractTexture implements Disposable {
 
     static final String DIRECTORY = "Engine/src/main/resources/textures/";
@@ -153,13 +157,13 @@ public abstract class AbstractTexture implements Disposable {
             this.aiType = aiType;
         }
 
-        public static Type fromAI(int aiTextureType) {
+        public static Type ai(int aiTextureType) {
             for (Type type : Type.values())
-                if (type.toAI() == aiTextureType) return type;
+                if (type.ai() == aiTextureType) return type;
             return UNKNOWN;
         }
 
-        public int toAI() {
+        public int ai() {
             return aiType;
         }
     }
@@ -167,14 +171,13 @@ public abstract class AbstractTexture implements Disposable {
     public static abstract class Builder<T extends AbstractTexture> {
         protected static final int INVALID_PIXEL_SIZE = -1;
 
+        //TODO inform whether type is truly part of all texture targets
         protected final Type type;
 
         protected Target target = Target.TWO_D;
         protected MinFilter minFilter = MinFilter.TRILINEAR;
         protected MagFilter magFilter = MagFilter.LINEAR;
         protected Wrapping wrapping = Wrapping.REPEAT;
-
-        protected ByteBuffer textureData;
 
         //TODO for inheriting builders it is kinda useful if properties are not set/have invalid values from here
         protected Vec2i pixelSize = new Vec2i(INVALID_PIXEL_SIZE);
@@ -197,20 +200,8 @@ public abstract class AbstractTexture implements Disposable {
             return this;
         }
 
-        public Builder<T> noMipMaps() {
-            if (!(minFilter == MinFilter.NEAREST || minFilter == MinFilter.LINEAR))
-                throw new IllegalStateException("minFilter setting " + minFilter.name() + " requires mipmaps");
-            this.mipMaps = false;
-            return this;
-        }
-
         public Builder<T> setMipMapping(MinFilter minFilter, MagFilter magFilter) {
-            if (!mipMaps && (minFilter == MinFilter.NEAREST || minFilter == MinFilter.LINEAR))
-                throw new IllegalArgumentException("Mipmapping was disabled (must use NEAREST or LINEAR for minFilter)");
-            if (mipMaps && (minFilter == MinFilter.NEAREST_NEAREST || minFilter == MinFilter.NEAREST_LINEAR
-                    || minFilter == MinFilter.BILINEAR || minFilter == MinFilter.TRILINEAR))
-                throw new IllegalArgumentException("Mipmapping is enabled (must use BILINEAR, TRILINEAR, " +
-                        "NEAREST_NEAREST or NEAREST_LINEAR for minFilter)");
+            this.mipMaps = minFilter == MinFilter.NEAREST || minFilter == MinFilter.LINEAR;
             this.minFilter = minFilter;
             this.magFilter = magFilter;
             return this;
@@ -221,9 +212,43 @@ public abstract class AbstractTexture implements Disposable {
             return this;
         }
 
-        public abstract T build();
+        public final T build() {
+            T texture = bufferTextureData();
+            
+            //Wack solution for post-creation method calls
+            if (mipMaps) glGenerateMipmap(target.gl());
+            
+            freeResources();
+            return texture;
+        }
+        
+        protected abstract T bufferTextureData();
 
         protected abstract void freeResources();
+    }
+    
+    static class TextureData {
+        private final ByteBuffer textureData;
+        private final Vec2i pixelSize;
+        private final AbstractTexture.Format format;
+        
+        public TextureData(ByteBuffer textureData, Vec2i pixelSize, AbstractTexture.Format format) {
+            this.textureData = textureData;
+            this.pixelSize = pixelSize;
+            this.format = format;
+        }
+        
+        public ByteBuffer getTextureData() {
+            return textureData;
+        }
+        
+        public Vec2i getPixelSize() {
+            return pixelSize;
+        }
+        
+        public AbstractTexture.Format getFormat() {
+            return format;
+        }
     }
 
     protected AbstractTexture(Builder<? extends AbstractTexture> builder) {
