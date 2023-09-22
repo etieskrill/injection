@@ -102,7 +102,7 @@ public class Renderer {
         
         glDrawElements(GL_TRIANGLES, mesh.getNumIndices(), GL_UNSIGNED_SHORT, 0);
     
-        Texture2D.unbindAllTextures();
+        AbstractTexture.unbindAllTextures();
     
         glBindVertexArray(0);
     }

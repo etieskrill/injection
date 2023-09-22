@@ -52,6 +52,7 @@ public class Shaders {
         return new PostprocessingShader();
     }
 
+    //TODO evaluate whether to put uniforms as variables
     private static class StaticShader extends ShaderProgram {
         @Override
         protected void init() {}
@@ -66,18 +67,8 @@ public class Shaders {
             //TODO theoretically, a sort of autodetect feature is entirely possible
             addUniform("uViewPosition", VEC3);
             
-            addUniformArray("globalLights[$].direction", 1, VEC3);
-            addUniformArray("globalLights[$].ambient", 1, VEC3);
-            addUniformArray("globalLights[$].diffuse", 1, VEC3);
-            addUniformArray("globalLights[$].specular", 1, VEC3);
-    
-            addUniformArray("lights[$].position", 2, VEC3);
-            addUniformArray("lights[$].ambient", 2, VEC3);
-            addUniformArray("lights[$].diffuse", 2, VEC3);
-            addUniformArray("lights[$].specular", 2, VEC3);
-            addUniformArray("lights[$].constant", 2, FLOAT);
-            addUniformArray("lights[$].linear", 2, FLOAT);
-            addUniformArray("lights[$].quadratic", 2, FLOAT);
+            addUniformArray("globalLights[$]", 1, STRUCT);
+            addUniformArray("lights[$]", 2, STRUCT);
         }
         
     }
@@ -201,9 +192,7 @@ public class Shaders {
     
     private static class PhongShininessMapShader extends StaticShader {
         @Override
-        protected void init() {
-            disableStrictUniformChecking();
-        }
+        protected void init() {}
     
         @Override
         protected String[] getShaderFileNames() {
@@ -213,8 +202,6 @@ public class Shaders {
         @Override
         protected void getUniformLocations() {
             super.getUniformLocations();
-            
-            addUniform("material.shininess0", SAMPLER2D);
         }
     }
     

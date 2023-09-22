@@ -1,12 +1,16 @@
 #version 330 core
 
+struct Material {
+    samplerCube cubemap0;
+};
+
 out vec4 oColour;
 
 in vec3 tTextureDir;
 
-uniform samplerCube uCubeMap;
+uniform Material material;
 
 void main()
 {
-    oColour = texture(uCubeMap, tTextureDir);
+    oColour = texture(material.cubemap0, tTextureDir);
 }

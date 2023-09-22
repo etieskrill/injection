@@ -11,6 +11,8 @@ import org.etieskrill.engine.graphics.gl.*;
 import org.etieskrill.engine.graphics.gl.Loaders.ModelLoader;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
+import org.etieskrill.engine.graphics.models.DirectionalLight;
+import org.etieskrill.engine.graphics.models.PointLight;
 import org.etieskrill.engine.graphics.texture.CubeMapTexture;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.scene._2d.*;
@@ -402,36 +404,22 @@ public class DemCubez {
     private void setShaderUniforms() {
         ShaderProgram[] doLighting = {containerShader, swordShader, backpackShader};
         
-        Vec3 globalLightDirection = new Vec3(1f);
-    
         //These are essentially intensity factors
         //TODO isn't this kind of stupid? why would a light SOURCE have different kinds of intensities?
-        Vec3 lightColour = new Vec3(1f);
-        Vec3 ambient = lightColour.times(0.1f);
-        Vec3 diffuse = lightColour.times(0.0f);
-        Vec3 specular = lightColour.times(0.01f);
+        DirectionalLight globalLight = new DirectionalLight(new Vec3(1),
+                new Vec3(0.2), new Vec3(0), new Vec3(0.01));
     
-        for (ShaderProgram shader : doLighting) {
-            shader.setUniformArray("globalLights[$].direction", 0, globalLightDirection);
-            shader.setUniformArray("globalLights[$].ambient", 0, ambient);
-            shader.setUniformArray("globalLights[$].diffuse", 0, diffuse);
-            shader.setUniformArray("globalLights[$].specular", 0, specular);
+        PointLight[] lights = new PointLight[lightSources.length];
+        for (int i = 0; i < lights.length; i++) {
+            lights[i] = new PointLight(lightSources[i].getPosition(),
+                    new Vec3(0.1), new Vec3(0.3), new Vec3(0.5),
+                    1f, 0.03f, 0.005f);
         }
-    
-        Vec3 pointLightColour = new Vec3(1f);
-        Vec3 pointLightAmbient = pointLightColour.times(0.1f);
-        Vec3 pointLightDiffuse = pointLightColour.times(0.3f);
-        Vec3 pointLightSpecular = pointLightColour.times(0.5f);
-    
+        
         for (ShaderProgram shader : doLighting) {
-            for (int i = 0; i < lightSources.length; i++) {
-                shader.setUniformArray("lights[$].position", i, lightSources[i].getPosition());
-                shader.setUniformArray("lights[$].ambient", i, pointLightAmbient);
-                shader.setUniformArray("lights[$].diffuse", i, pointLightDiffuse);
-                shader.setUniformArray("lights[$].specular", i, pointLightSpecular);
-                shader.setUniformArray("lights[$].constant", i, 1f);
-                shader.setUniformArray("lights[$].linear", i, 0.03f);
-                shader.setUniformArray("lights[$].quadratic", i, 0.005f);
+            shader.setUniformArray("globalLights[$]", 0, globalLight);
+            for (int i = 0; i < lights.length; i++) {
+                shader.setUniformArray("lights[$]", i, lights[i]);
             }
         }
     
@@ -445,6 +433,11 @@ public class DemCubez {
     
         backpackShader.setUniform("uViewPosition", camera.getPosition());
     
+        Vec3 pointLightColour = new Vec3(1f);
+        Vec3 pointLightAmbient = pointLightColour.times(0.1f);
+        Vec3 pointLightDiffuse = pointLightColour.times(0.3f);
+        Vec3 pointLightSpecular = pointLightColour.times(0.5f);
+        
         lightShader.setUniform("light.ambient", pointLightAmbient);
         lightShader.setUniform("light.diffuse", pointLightDiffuse);
         lightShader.setUniform("light.specular", pointLightSpecular);
