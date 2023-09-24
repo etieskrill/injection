@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 import static org.etieskrill.engine.graphics.gl.shaders.ShaderProgram.ShaderType.*;
 import static org.etieskrill.engine.graphics.gl.shaders.ShaderProgram.Uniform.NESTED_UNIFORM_LOCATION;
@@ -92,7 +91,7 @@ public abstract class ShaderProgram implements Disposable {
         boolean placeholder = false;
         try {
             createShader(vertexFile, fragmentFile);
-        } catch (IllegalStateException e) {
+        } catch (ShaderException e) {
             logger.warn("Exception during shader creation, using default shader", e);
             boolean prevStrictState = STRICT_UNIFORM_DETECTION;
             STRICT_UNIFORM_DETECTION = false; //TODO quick and dirty solution bcs faulty shader's uniforms are still added
@@ -126,8 +125,7 @@ public abstract class ShaderProgram implements Disposable {
     
         glLinkProgram(programID);
         if (glGetProgrami(programID, GL_LINK_STATUS) != GL_TRUE)
-            throw new IllegalStateException("Shader program could not be linked:\n%s"
-                    .formatted(glGetProgramInfoLog(programID)));
+            throw new ShaderCreationException("Shader porgram could not be linked", glGetProgramInfoLog(programID));
     
         disposeShaders();
 
@@ -141,7 +139,7 @@ public abstract class ShaderProgram implements Disposable {
     
         int errorCode;
         if ((errorCode = glGetError()) != GL_NO_ERROR)
-            throw new IllegalStateException("Error while creating shader: %d".formatted(errorCode));
+            throw new ShaderCreationException("Error while creating shader", errorCode);
     }
     
     //TODO add loader for shader objects and wrap calls to this method in said loader
@@ -161,9 +159,8 @@ public abstract class ShaderProgram implements Disposable {
         glCompileShader(shaderID);
     
         if (glGetShaderi(shaderID, GL_COMPILE_STATUS) != GL_TRUE) {
-            throw new IllegalStateException(
-                    "Failed to compile %s shader from %s:\n%s"
-                    .formatted(shaderTypeName, file, glGetShaderInfoLog(shaderID)));
+            throw new ShaderCreationException("Failed to compile %s shader from %s"
+                    .formatted(shaderTypeName, file), glGetShaderInfoLog(shaderID));
         }
         
         return shaderID;
@@ -198,13 +195,12 @@ public abstract class ShaderProgram implements Disposable {
             if (value instanceof UniformMappable mappable)
                 mappable.map(MapperShaderProgram.get(this, name, -1));
             else
-                throw new IllegalArgumentException("Struct uniform must implement UniformMappable interface");
+                throw new ShaderUniformException("Struct uniform must implement UniformMappable interface");
             return;
         }
         if (uniform == null) {
-            //TODO custom shader exceptions (ShaderException as super, inherit: ShaderInitialisationException, UniformNotRegisteredException, UniformNotFoundException etc.)
             if (STRICT_UNIFORM_DETECTION & strict)
-                throw new IllegalStateException("Attempted to set unregistered uniform: " + name);
+                throw new ShaderUniformException("Attempted to set unregistered uniform: " + name);
             if (missingUniforms.get(name) == null) logger.trace("Attempted to set unregistered uniform: " + name);
             missingUniforms.put(name, true);
             return;
@@ -241,7 +237,7 @@ public abstract class ShaderProgram implements Disposable {
             if (value instanceof UniformMappable mappable)
                 mappable.map(MapperShaderProgram.get(this, name, index));
             else
-                throw new IllegalArgumentException("Struct uniform must implement UniformMappable interface");
+                throw new ShaderUniformException("Struct uniform must implement UniformMappable interface");
             return;
         }
         
@@ -411,8 +407,8 @@ public abstract class ShaderProgram implements Disposable {
         public ArrayUniform(String name, int size, Type type) {
             super(name, type);
             
-            if (name.contains("*")) throw new IllegalArgumentException(
-                    "Uniform of array type may not contain any wildcard specifiers: " + name);
+            if (name.contains("*")) throw new ShaderUniformException(
+                    "Uniform of array type may not contain any wildcard specifiers", name);
     
             int numArrayIndices = 0;
             for (int i = 0; i < name.length(); i++) {
@@ -420,8 +416,8 @@ public abstract class ShaderProgram implements Disposable {
                     arrayIndex = i;
                     numArrayIndices++;
                 }
-                if (numArrayIndices > 1) throw new IllegalArgumentException(
-                        "Only a single array index placeholder may be specified: " + name);
+                if (numArrayIndices > 1) throw new ShaderUniformException(
+                        "Only a single array index placeholder may be specified", name);
             }
     
             this.size = size;
@@ -477,8 +473,8 @@ public abstract class ShaderProgram implements Disposable {
         }
     
         if (STRICT_UNIFORM_DETECTION)
-            throw new IllegalStateException(
-                    "Cannot register non-existent or non-used uniform \"%s\" in strict mode".formatted(uniform.getName()));
+            throw new ShaderUniformException(
+                    "Cannot register non-existent or non-used uniform in strict mode", uniform.getName());
         
         logger.debug("Could not find location of uniform {}", uniform);
     }
@@ -505,8 +501,8 @@ public abstract class ShaderProgram implements Disposable {
             }
             
             if (STRICT_UNIFORM_DETECTION)
-                throw new IllegalStateException(
-                        "Cannot register non-existent or unused uniform \"%s\" in strict mode".formatted(uniform.getName()));
+                throw new ShaderUniformException(
+                        "Cannot register non-existent or unused uniform in strict mode", uniform.getName());
             
             logger.debug("Could not find location of uniform {}", uniform);
         }
