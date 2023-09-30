@@ -8,7 +8,10 @@ import org.etieskrill.engine.scene._2d.Stage;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFWVidMode;
+import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.system.Platform;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
@@ -16,6 +19,8 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 public class Window implements Disposable {
     
     public static boolean USE_RAW_MOUSE_MOTION_IF_AVAILABLE = true;
+    
+    private static final Logger logger = LoggerFactory.getLogger(Window.class);
     
     private long window;
     
@@ -180,7 +185,14 @@ public class Window implements Disposable {
         
         init();
         
-        this.cursor = cursor.setWindow(window);
+        this.setCursor(cursor.setWindow(window));
+        
+        PointerBuffer description = BufferUtils.createPointerBuffer(1);
+        int err = glfwGetError(description);
+        if (err != GLFW_NO_ERROR) {
+            logger.warn("Error during window creation: 0x{} {}",
+                    Integer.toHexString(err), MemoryUtil.memASCII(description.get()));
+        }
     }
     
     private void init() {
@@ -343,6 +355,11 @@ public class Window implements Disposable {
     
     public Cursor getCursor() {
         return cursor;
+    }
+    
+    public void setCursor(Cursor cursor) {
+        glfwSetCursor(window, cursor.getId());
+        this.cursor = cursor;
     }
     
     public Stage getStage() {

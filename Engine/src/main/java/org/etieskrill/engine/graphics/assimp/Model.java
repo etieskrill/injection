@@ -4,7 +4,7 @@ import glm_.mat4x4.Mat4;
 import glm_.vec2.Vec2;
 import glm_.vec3.Vec3;
 import org.etieskrill.engine.Disposable;
-import org.etieskrill.engine.graphics.gl.Loaders.TextureLoader;
+import org.etieskrill.engine.util.Loaders.TextureLoader;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.texture.AbstractTexture.Type;
 import org.etieskrill.engine.graphics.texture.Textures;

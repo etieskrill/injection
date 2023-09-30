@@ -9,22 +9,25 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 //TODO should implement disposable once custom cursors are implemented
 public class Cursor implements Disposable {
     
-    private final long cursor;
+    protected final long cursor;
     
-    private long window = NULL;
+    protected long window = NULL;
     
     private boolean windowSet = false;
     
     public static Cursor getDefault() {
-        return new Cursor(NULL);
+        //TODO perhaps make loaded libraries more safe, for instance via a static init for window/cursor class
+        if (!glfwInit())
+            throw new IllegalStateException("Unable to initialize glfw library");
+        return new Cursor();
     }
     
     //TODO constructor which loads some cursor files, may require list of images for cursor modes
-    private Cursor() {
-        this.cursor = glfwCreateStandardCursor(GLFW_ARROW_CURSOR);
+    protected Cursor() {
+        this(glfwCreateStandardCursor(GLFW_ARROW_CURSOR));
     }
     
-    private Cursor(long cursor) {
+    protected Cursor(long cursor) {
         this.cursor = cursor;
     }
     
@@ -112,6 +115,10 @@ public class Cursor implements Disposable {
     
     private void checkWindow() {
         if (!windowSet) throw new IllegalStateException("Cursor is not assigned to window");
+    }
+    
+    long getId() {
+        return cursor;
     }
     
     Cursor setWindow(long window) {

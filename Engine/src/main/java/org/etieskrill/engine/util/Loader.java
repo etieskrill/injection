@@ -1,4 +1,4 @@
-package org.etieskrill.engine.graphics.gl;
+package org.etieskrill.engine.util;
 
 import org.etieskrill.engine.Disposable;
 import org.slf4j.Logger;
@@ -38,7 +38,7 @@ public abstract class Loader<T extends Disposable> implements Disposable {
     
     @Override
     public void dispose() {
-        map.values().forEach(T::dispose);
+        map.values().forEach(T::dispose); //putting T instead of Disposable is kind of cursed - which is exactly why it's there
     }
     
     protected static void checkIdentifier(String name) {

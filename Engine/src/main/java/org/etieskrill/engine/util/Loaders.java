@@ -1,11 +1,11 @@
-package org.etieskrill.engine.graphics.gl;
+package org.etieskrill.engine.util;
 
 import org.etieskrill.engine.graphics.assimp.Mesh;
 import org.etieskrill.engine.graphics.assimp.Model;
+import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
-import org.etieskrill.engine.graphics.texture.Texture2D;
 
-public class Loaders {
+public final class Loaders {
     
     public static final class TextureLoader extends Loader<AbstractTexture> {
         private static TextureLoader instance;
@@ -38,10 +38,14 @@ public class Loaders {
         }
     }
     
+    /**
+     * Creates a new instance for every call to {@link #get(String name)}, where data in graphics memory - such as model
+     * and material data - are shared between models, but not instance fields such as transform.
+     */
     public static final class ModelLoader extends Loader<Model> {
         private static ModelLoader instance;
     
-        public static ModelLoader getInstance() {
+        public static ModelLoader get() {
             if (instance == null)
                 instance = new ModelLoader();
             return instance;
@@ -57,6 +61,30 @@ public class Loaders {
         protected String getLoaderName() {
             return "Model";
         }
+    }
+    
+    /**
+     * Always returns the same instance for a given resource identifier.
+     */
+    public static final class ShaderLoader extends Loader<ShaderProgram> {
+        private static ShaderLoader instance;
+        
+        public static ShaderLoader get() {
+            if (instance == null)
+                instance = new ShaderLoader();
+            return instance;
+        }
+        
+        @Override
+        protected String getLoaderName() {
+            return "Shader";
+        }
+    }
+    
+    public static void disposeDefaultLoaders() {
+        TextureLoader.get().dispose();
+        MeshLoader.get().dispose();
+        ShaderLoader.get().dispose();
     }
     
 }

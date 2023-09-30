@@ -65,6 +65,19 @@ public abstract class ShaderProgram implements Disposable {
         }
     }
     
+    public ShaderProgram(ShaderProgram shader) {
+        this.STRICT_UNIFORM_DETECTION = shader.STRICT_UNIFORM_DETECTION;
+        
+        this.programID = shader.programID;
+        this.vertID = shader.vertID;
+        this.fragID = shader.fragID;
+        
+        this.uniforms = new HashMap<>(shader.uniforms);
+        this.arrayUniforms = new HashMap<>(shader.arrayUniforms);
+        
+        this.placeholder = shader.placeholder;
+    }
+    
     //TODO replace this by implementing main constructor with files argument
     protected ShaderProgram(boolean mock) {
         this.uniforms = null;

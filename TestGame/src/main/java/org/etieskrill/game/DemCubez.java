@@ -9,7 +9,6 @@ import org.etieskrill.engine.graphics.PerspectiveCamera;
 import org.etieskrill.engine.graphics.assimp.*;
 import org.etieskrill.engine.graphics.gl.FrameBuffer;
 import org.etieskrill.engine.graphics.gl.FrameBufferAttachment;
-import org.etieskrill.engine.graphics.gl.Loaders.ModelLoader;
 import org.etieskrill.engine.graphics.gl.ModelFactory;
 import org.etieskrill.engine.graphics.gl.Renderer;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
@@ -21,8 +20,9 @@ import org.etieskrill.engine.graphics.texture.Textures;
 import org.etieskrill.engine.scene._2d.*;
 import org.etieskrill.engine.time.LoopPacer;
 import org.etieskrill.engine.time.SystemNanoTimePacer;
-import org.etieskrill.engine.window.Window;
+import org.etieskrill.engine.util.Loaders.ModelLoader;
 import org.etieskrill.engine.window.Cursor.CursorMode;
+import org.etieskrill.engine.window.Window;
 import org.lwjgl.opengl.GL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,7 +82,9 @@ public class DemCubez {
                 .setTitle("DemCubez")
                 .build();
         logger.info("Window initialised");
-
+        
+        glfwSetErrorCallback(((error, description) -> System.out.printf("GLFW error %d: %s\n", error, description)));
+        
         if (!initGL()) throw new IllegalStateException("Could not initialise graphics settings");
         if (!initKeybinds()) throw new IllegalStateException("Could not initialise keybinds");
         if (!initMouse()) throw new IllegalStateException("Could not initialise mouse");
@@ -320,12 +322,12 @@ public class DemCubez {
     
         models = new Model[cubePositions.length];
         Random random = new Random(69420);
-        ModelLoader.getInstance().load("cube", () -> Model.ofFile("cube.obj"))
+        ModelLoader.get().load("cube", () -> Model.ofFile("cube.obj"))
                 .getMeshes().get(0).getMaterial().getTextures().add(
                         Textures.getSkybox("space")
                 );
         for (int i = 0; i < cubePositions.length; i++) {
-            models[i] = ModelLoader.getInstance().get("cube")
+            models[i] = ModelLoader.get().get("cube")
                     .setPosition(cubePositions[i])
                     .setRotation(random.nextFloat(),
                             new Vec3(
@@ -344,7 +346,7 @@ public class DemCubez {
         };
         grassModels = new ArrayList<>(grassPosition.length);
         for (Vec3 position : grassPosition) {
-            grassModels.add(ModelLoader.getInstance().load("grass", () ->
+            grassModels.add(ModelLoader.get().load("grass", () ->
                             new Model.Builder("grass.obj")
                                     .disableCulling()
                                     .hasTransparency()
@@ -356,7 +358,7 @@ public class DemCubez {
     
         lightSources = new Model[2];
         for (int i = 0; i < lightSources.length; i++) {
-            lightSources[i] = ModelLoader.getInstance().load("light", () ->
+            lightSources[i] = ModelLoader.get().load("light", () ->
                             new Model.Builder("cube.obj")
                                     .setName("light")
                                     .build())
@@ -364,14 +366,14 @@ public class DemCubez {
                     .setPosition(new Vec3(0f, 0f, -5f));
         }
     
-        sword = ModelLoader.getInstance().load("sword", () ->
+        sword = ModelLoader.get().load("sword", () ->
                 Model.ofFile("Sting-Sword.obj")
                         .setPosition(new Vec3(0, 0, -2))
                         .setScale(new Vec3(0.1f))
                         .setRotation((float) Math.toRadians(90f), new Vec3(1f, 0f, 0f))
         );
     
-        backpack = ModelLoader.getInstance().load("backpack", () ->
+        backpack = ModelLoader.get().load("backpack", () ->
                 Model.ofFile("backpack.obj")
                         .setPosition(new Vec3(-3, -1, -2))
                         .setScale(new Vec3(0.15f))

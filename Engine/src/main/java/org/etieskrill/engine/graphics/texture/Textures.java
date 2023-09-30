@@ -1,7 +1,7 @@
 package org.etieskrill.engine.graphics.texture;
 
 import glm_.vec2.Vec2i;
-import org.etieskrill.engine.graphics.gl.Loaders;
+import org.etieskrill.engine.util.Loaders;
 import org.lwjgl.BufferUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
