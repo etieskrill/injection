@@ -11,6 +11,7 @@ import org.etieskrill.engine.input.*;
 import org.etieskrill.engine.input.InputBinding.Trigger;
 import org.etieskrill.engine.time.LoopPacer;
 import org.etieskrill.engine.time.SystemNanoTimePacer;
+import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.window.Window;
 import org.lwjgl.opengl.GL;
 
@@ -46,6 +47,8 @@ public class Game {
                 .setInputManager(inputManager)
                 .build();
         
+        window.getCursor().disable();
+        
         GL.createCapabilities();
     
         glEnable(GL_DEPTH_TEST);
@@ -60,9 +63,9 @@ public class Game {
     private void loop() {
         LoopPacer pacer = new SystemNanoTimePacer(1 / 60f);
         
-        Model cube = Model.ofFile("cube.obj");
+        Model cube = Loaders.ModelLoader.get().load("cube", () -> Model.ofFile("cube.obj"));
         Renderer renderer = new Renderer();
-        ShaderProgram shader = Shaders.getStandardShader();
+        ShaderProgram shader = Loaders.ShaderLoader.get().load("standard", () -> Shaders.getStandardShader());
         
         camera = new PerspectiveCamera(window.getSize().toVec())
                 .setPosition(new Vec3(0, 0, -5))
@@ -80,6 +83,7 @@ public class Game {
     
     private void exit() {
         window.dispose();
+        Loaders.disposeDefaultLoaders();
         System.exit(0);
     }
     
