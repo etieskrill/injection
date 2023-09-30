@@ -1,19 +1,17 @@
 package org.etieskrill.engine.scene._2d;
 
 import org.etieskrill.engine.util.UniqueIDManager;
-import org.etieskrill.engine.input.KeyBind;
-import org.etieskrill.engine.input.KeyBindAPI;
 
 public class Scene {
     
     private static final UniqueIDManager idManager = new UniqueIDManager();
     
     private final int sceneID;
-    private final KeyBindAPI keyBinds;
+    // final KeyBindAPI keyBinds;
     
     public Scene() {
         this.sceneID = idManager.request();
-        this.keyBinds = new KeyBind();
+        //this.keyBinds = new KeyBind();
     }
     
     public int getSceneID() {

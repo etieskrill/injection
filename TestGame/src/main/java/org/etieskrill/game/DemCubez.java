@@ -22,8 +22,7 @@ import org.etieskrill.engine.scene._2d.*;
 import org.etieskrill.engine.time.LoopPacer;
 import org.etieskrill.engine.time.SystemNanoTimePacer;
 import org.etieskrill.engine.window.Window;
-import org.etieskrill.engine.window.Window.Cursor.CursorMode;
-import org.etieskrill.engine.window.WindowBuilder;
+import org.etieskrill.engine.window.Cursor.CursorMode;
 import org.lwjgl.opengl.GL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,7 +76,7 @@ public class DemCubez {
     private void init() {
         Window.USE_RAW_MOUSE_MOTION_IF_AVAILABLE = false;
         
-        this.window = WindowBuilder.create()
+        this.window = new Window.Builder()
                 .setMode(Window.WindowMode.BORDERLESS)
                 .setRefreshRate(TARGET_FPS)
                 .setTitle("DemCubez")

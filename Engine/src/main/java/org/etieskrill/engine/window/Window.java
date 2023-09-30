@@ -1,6 +1,9 @@
 package org.etieskrill.engine.window;
 
 import glm_.vec2.Vec2;
+import org.etieskrill.engine.Disposable;
+import org.etieskrill.engine.input.Input;
+import org.etieskrill.engine.input.InputManager;
 import org.etieskrill.engine.scene._2d.Stage;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.PointerBuffer;
@@ -10,7 +13,7 @@ import org.lwjgl.system.Platform;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
-public class Window {
+public class Window implements Disposable {
     
     public static boolean USE_RAW_MOUSE_MOTION_IF_AVAILABLE = true;
     
@@ -26,6 +29,7 @@ public class Window {
     
     private Cursor cursor;
     
+    private InputManager inputs;
     private Stage stage;
     
     private boolean built = false;
@@ -102,13 +106,77 @@ public class Window {
         }
     }
     
-    Window(WindowMode mode, WindowSize size, Vec2 position, float targetFrameRate, String title, Cursor cursor) {
+    public static class Builder {
+        
+        private Window.WindowMode mode;
+        private Window.WindowSize size;
+        private Vec2 position;
+        private float refreshRate;
+        private String title;
+        private Cursor cursor;
+        private InputManager inputs;
+        
+        public Builder() {}
+        
+        public Builder setMode(Window.WindowMode mode) {
+            this.mode = mode;
+            return this;
+        }
+        
+        public Builder setSize(Window.WindowSize size) {
+            this.size = size;
+            return this;
+        }
+        
+        public Builder setPosition(Vec2 position) {
+            this.position = position;
+            return this;
+        }
+        
+        public Builder setRefreshRate(float refreshRate) {
+            this.refreshRate = refreshRate;
+            return this;
+        }
+        
+        public Builder setTitle(String title) {
+            this.title = title;
+            return this;
+        }
+        
+        public Builder setCursor(Cursor cursor) {
+            this.cursor = cursor;
+            return this;
+        }
+    
+        public Builder setInputManager(InputManager inputs) {
+            this.inputs = inputs;
+            return this;
+        }
+    
+        public Window build() {
+            return new Window(
+                    mode != null ? mode : Window.WindowMode.WINDOWED,
+                    size != null ? size : Window.WindowSize.LARGEST_FIT,
+                    position != null ? position : new Vec2(),
+                    refreshRate != 0 ? refreshRate : GLFW_DONT_CARE,
+                    title != null ? title : "Window",
+                    cursor != null ? cursor : Cursor.getDefault(),
+                    inputs
+            );
+        }
+        
+    }
+    
+    Window(WindowMode mode, WindowSize size, Vec2 position, float targetFrameRate, String title, Cursor cursor,
+           InputManager inputs) {
         this.mode = mode;
         this.size = size;
         this.position = position;
         this.targetFrameRate = targetFrameRate;
         
         this.title = title;
+        
+        this.inputs = inputs;
         
         init();
         
@@ -179,6 +247,13 @@ public class Window {
     private void configInput() {
         if (USE_RAW_MOUSE_MOTION_IF_AVAILABLE && glfwRawMouseMotionSupported())
             glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+        
+        glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
+            if (inputs != null && window == this.window) inputs.invoke(Input.Type.KEY, key, action, mods);
+        });
+        glfwSetMouseButtonCallback(window, (window, button, action, mods) -> {
+            if (inputs != null && window == this.window) inputs.invoke(Input.Type.MOUSE, button, action, mods);
+        });
     }
     
     public void show() {
@@ -187,6 +262,10 @@ public class Window {
     
     public void hide() {
         glfwHideWindow(window);
+    }
+    
+    public void close() {
+        glfwSetWindowShouldClose(window, true);
     }
     
     public boolean shouldClose() {
@@ -199,11 +278,13 @@ public class Window {
             try {
                 stage.update(delta);
                 stage.render();
-            } catch (UnsupportedOperationException ignored) {}
+            //TODO caught due to single-thread lock for pacer implementation - perhaps nonsensical?
+            } catch (WrongThreadException ignored) {}
         }
         
         //glfwMakeContextCurrent(window);
         glfwSwapBuffers(window); //Buffers are usually swapped before polling events
+        if (inputs != null) inputs.update(delta);
         glfwPollEvents(); //Also proves to system that window has not frozen
     }
     
@@ -273,109 +354,10 @@ public class Window {
         this.stage.setSize(this.size.toVec());
     }
     
-    public static class Cursor {
-        
-        private long window = 0L;
-        
-        private boolean windowSet = false;
-        
-        public static Cursor getDefault() {
-            return new Cursor();
-        }
-        
-        private Cursor() {}
-        
-        public enum CursorMode {
-            /**
-             * Movement is not restricted and normal cursor is shown.
-             */
-            NORMAL,
-            /**
-             * Movement is not restricted, but the cursor is not visible.
-             */
-            HIDDEN,
-            /**
-             * Cursor movement is locked to the window, and movement is fed into a virtual unlimited cursor space. Use
-             * for mouse motion based camera control and the likes.
-             */
-            DISABLED,
-            /**
-             * Restricts cursor movement to the window, but otherwise behaves normally.
-             */
-            CAPTURED
-        }
-        
-        public void setMode(CursorMode mode) {
-            checkWindow();
-            int glfwMode = switch (mode) {
-                case NORMAL -> GLFW_CURSOR_NORMAL;
-                case HIDDEN -> GLFW_CURSOR_HIDDEN;
-                case DISABLED -> GLFW_CURSOR_DISABLED;
-                case CAPTURED -> GLFW_CURSOR_CAPTURED;
-            };
-            
-            glfwSetInputMode(window, GLFW_CURSOR, glfwMode);
-        }
-        
-        public void normal() {
-            setMode(CursorMode.NORMAL);
-        }
-        
-        public void hide() {
-            setMode(CursorMode.HIDDEN);
-        }
-        
-        public void disable() {
-            setMode(CursorMode.DISABLED);
-        }
-        
-        public void capture() {
-            setMode(CursorMode.CAPTURED);
-        }
-        
-        public enum CursorShape {
-            ARROW,
-            IBEAM,
-            CROSSHAIR,
-            POINTING_HAND,
-            RESIZE_EW,
-            RESIZE_NS,
-            RESIZE_NWSE,
-            RESIZE_NESW,
-            RESIZE_ALL,
-            NOT_ALLOWED
-        }
-        
-        public void setShape(CursorShape shape) {
-            checkWindow();
-            int glfwShape = switch (shape) {
-                case ARROW -> GLFW_ARROW_CURSOR;
-                case IBEAM -> GLFW_IBEAM_CURSOR;
-                case CROSSHAIR -> GLFW_CROSSHAIR_CURSOR;
-                case POINTING_HAND -> GLFW_POINTING_HAND_CURSOR;
-                case RESIZE_EW -> GLFW_RESIZE_EW_CURSOR;
-                case RESIZE_NS -> GLFW_RESIZE_NS_CURSOR;
-                case RESIZE_NWSE -> GLFW_RESIZE_NWSE_CURSOR;
-                case RESIZE_NESW -> GLFW_RESIZE_NESW_CURSOR;
-                case RESIZE_ALL -> GLFW_RESIZE_ALL_CURSOR;
-                case NOT_ALLOWED -> GLFW_NOT_ALLOWED_CURSOR;
-            };
-            
-            //glfwCreateStandardCursor(glfwShape);
-            //glfwSetInputMode(window, );
-        }
-        
-        private void checkWindow() {
-            if (!windowSet) throw new IllegalStateException("Cursor is not assigned to window");
-        }
-        
-        Cursor setWindow(long window) {
-            if (windowSet) throw new UnsupportedOperationException("Cursor is already assigned to window");
-            this.window = window;
-            windowSet = true;
-            return this;
-        }
-        
+    @Override
+    public void dispose() {
+        glfwDestroyWindow(window);
+        cursor.dispose();
     }
     
 }
