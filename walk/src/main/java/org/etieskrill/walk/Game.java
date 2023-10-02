@@ -25,21 +25,26 @@ public class Game {
     
     private Camera camera;
     
-    private final InputManager inputManager = InputBinds.of(
-            new InputBinding(new Input(Input.Type.KEY, GLFW_KEY_ESCAPE, GLFW_MOD_SHIFT), () -> window.close()),
-            new InputBinding(new Input(Input.Type.KEY, GLFW_KEY_W), Trigger.PRESSED, delta -> camera.translate(new Vec3(0, 0, 1).times(delta))),
-            new InputBinding(new Input(Input.Type.KEY, GLFW_KEY_S), Trigger.PRESSED, delta -> camera.translate(new Vec3(0, 0, -1).times(delta))),
-            new InputBinding(new Input(Input.Type.KEY, GLFW_KEY_A), Trigger.PRESSED, delta -> camera.translate(new Vec3(-1, 0, 0).times(delta))),
-            new InputBinding(new Input(Input.Type.KEY, GLFW_KEY_D), Trigger.PRESSED, delta -> camera.translate(new Vec3(1, 0, 0).times(delta)))
+    private double prevCursorPosX, prevCursorPosY;
+    
+    private InputManager inputManager = InputBinds.of(
+            new InputBinding(new KeyInput(KeyInput.Type.KEY, GLFW_KEY_ESCAPE, GLFW_MOD_SHIFT), () -> window.close()),
+            new InputBinding(new KeyInput(KeyInput.Type.KEY, GLFW_KEY_W), Trigger.PRESSED, delta -> camera.translate(new Vec3(0, 0, 1).times(delta))),
+            new InputBinding(new KeyInput(KeyInput.Type.KEY, GLFW_KEY_S), Trigger.PRESSED, delta -> camera.translate(new Vec3(0, 0, -1).times(delta))),
+            new InputBinding(new KeyInput(KeyInput.Type.KEY, GLFW_KEY_A), Trigger.PRESSED, delta -> camera.translate(new Vec3(-1, 0, 0).times(delta))),
+            new InputBinding(new KeyInput(KeyInput.Type.KEY, GLFW_KEY_D), Trigger.PRESSED, delta -> camera.translate(new Vec3(1, 0, 0).times(delta))),
+            new InputBinding(new KeyInput(KeyInput.Type.KEY, GLFW_KEY_SPACE), Trigger.PRESSED, delta -> camera.translate(new Vec3(0, -1, 0).times(delta))),
+            new InputBinding(new KeyInput(KeyInput.Type.KEY, GLFW_KEY_LEFT_SHIFT), Trigger.PRESSED, delta -> camera.translate(new Vec3(0, 1, 0).times(delta))),
+            new InputBinding(new KeyInput(KeyInput.Type.KEY, GLFW_KEY_E), Trigger.ON_PRESS, () -> System.out.println("*poof*"))
     );
     
     public Game() {
-        setup();
+        setupWindow();
         loop();
         exit();
     }
     
-    private void setup() {
+    private void setupWindow() {
         //TODO 1. figure out what this "context" actually is 2. make window creation disjoint from gl context creation
         window = new Window.Builder()
                 .setMode(Window.WindowMode.FULLSCREEN)
@@ -47,6 +52,7 @@ public class Game {
                 .setInputManager(inputManager)
                 .build();
         
+        setupCursor();
         window.getCursor().disable();
         
         GL.createCapabilities();
@@ -58,6 +64,19 @@ public class Game {
     
         glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
+    }
+    
+    private void setupCursor() {
+        glfwSetCursorPosCallback(window.getID(), ((window1, xpos, ypos) -> {
+            double dx = prevCursorPosX - xpos;
+            double dy = prevCursorPosY - ypos;
+
+            double sens = 0.04;
+            camera.orient(dy * sens, -dx * sens, 0);
+    
+            prevCursorPosX = xpos;
+            prevCursorPosY = ypos;
+        }));
     }
     
     private void loop() {

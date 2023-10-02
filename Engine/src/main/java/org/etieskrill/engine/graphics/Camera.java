@@ -59,8 +59,8 @@ public abstract class Camera {
     public Camera translate(Vec3 translation) {
         Vec3 delta = new Vec3()
                 .plus(front.times(translation.getZ()))
-                .plus(right.times(-translation.getX()))
-                .plus(up.times(-translation.getY()));
+                .plus(right.times(-translation.getX())) //TODO make positive
+                .plus(up.times(-translation.getY())); //TODO also make positive
         this.position.plusAssign(delta);
         if (autoUpdate) update();
         return this;

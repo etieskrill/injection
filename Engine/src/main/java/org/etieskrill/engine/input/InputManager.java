@@ -10,41 +10,41 @@ import static org.lwjgl.glfw.GLFW.*;
 
 public class InputManager implements InputHandler {
     
-    private final Map<Input, Pair<Trigger, Action>> bindings;
-    private final Set<Input> pressed;
-    private final Set<Input> toggledOn;
-    private final Queue<Input> events;
+    private final Map<KeyInput, Pair<Trigger, Action>> bindings;
+    private final Set<KeyInput> pressed;
+    private final Set<KeyInput> toggled;
+    private final Queue<KeyInput> events;
     
     public InputManager() {
         this(new HashMap<>());
     }
     
-    public InputManager(Map<Input, Pair<Trigger, Action>> bindings) {
+    public InputManager(Map<KeyInput, Pair<Trigger, Action>> bindings) {
         this.bindings = bindings;
         this.pressed = new HashSet<>();
-        this.toggledOn = new HashSet<>();
+        this.toggled = new HashSet<>();
         this.events = new ArrayDeque<>();
     }
     
-    public InputManager addBinding(Input input, Trigger trigger, Action action) {
-        this.bindings.put(input, new Pair<>(trigger, action));
+    public InputManager addBinding(KeyInput keyInput, Trigger trigger, Action action) {
+        this.bindings.put(keyInput, new Pair<>(trigger, action));
         return this;
     }
     
     public void update(double delta) {
-        for (Input input : pressed) {
-            Pair<Trigger, Action> triggerAction = bindings.get(input);
-            if (triggerAction.getFirst() == PRESSED)
+        for (KeyInput keyInput : pressed) {
+            Pair<Trigger, Action> triggerAction = bindings.get(keyInput);
+            if (triggerAction != null && triggerAction.getFirst() == PRESSED)
                 handleAction(triggerAction.getSecond(), delta);
         }
-        for (Input input : toggledOn) {
-            Pair<Trigger, Action> triggerAction = bindings.get(input);
-            if (triggerAction.getFirst() == TOGGLED)
+        for (KeyInput keyInput : toggled) {
+            Pair<Trigger, Action> triggerAction = bindings.get(keyInput);
+            if (triggerAction != null && triggerAction.getFirst() == TOGGLED)
                 handleAction(triggerAction.getSecond(), delta);
         }
         while (events.peek() != null) {
             Pair<Trigger, Action> triggerAction = bindings.get(events.poll());
-            handleAction(triggerAction.getSecond(), delta);
+            if (triggerAction != null) handleAction(triggerAction.getSecond(), delta);
         }
     }
     
@@ -54,40 +54,50 @@ public class InputManager implements InputHandler {
     }
     
     @Override
-    public boolean invoke(Input.Type type, int key, int action, int modifiers) {
-        Input input = new Input(type, key);
-        Pair<Trigger, Action> triggerAction = bindings.get(input);
-        if (triggerAction == null) return false;
+    public boolean invoke(KeyInput.Type type, int key, int action, int modifiers) {
+        if (action == GLFW_REPEAT) return false; //omitted for simplicity - for now
+        
+        //TODO this is waaaay to complicated, rework if any time, probs by introducing a mixed polling system for continuous binds and callbacks for triggers
+        KeyInput keyInput = new KeyInput(type, key, modifiers);
+        Pair<Trigger, Action> triggerAction = bindings.get(keyInput); //try lookup with exact modifiers
+        if (triggerAction == null) {
+            triggerAction = bindings.get(new KeyInput(type, key, 0)); //try lookup again without modifiers
+            if (triggerAction == null) return false;
+            if (triggerAction.getFirst() == PRESSED || triggerAction.getFirst() == TOGGLED) //if lookup succeeded with continuous bind, remove modifiers
+                keyInput = new KeyInput(type, key, 0);
+        }
         boolean handled = false;
     
+        //queue press trigger event
         if (triggerAction.getFirst() == ON_PRESS) {
-            if (action == GLFW_PRESS && !pressed.contains(input)) {
-                events.offer(input);
+            if (action == GLFW_PRESS && !pressed.contains(keyInput)) {
+                events.offer(keyInput);
                 handled = true;
             }
         }
         
-        if (action != GLFW_RELEASE) pressed.add(input);
-        else pressed.remove(input);
-    
-        { //TODO un-disgustify
-            if (action != GLFW_PRESS || pressed.contains(input)) {
-                if (!toggledOn.contains(input)) {
-                    toggledOn.add(input);
-                    if (triggerAction.getFirst() == ON_TOGGLE) {
-                        events.offer(input);
-                        handled = true;
-                    }
-                } else
-                    toggledOn.remove(input);
-            }
+        //update toggle status and queue toggle trigger event
+        if ((triggerAction.getFirst() == TOGGLED || triggerAction.getFirst() == ON_TOGGLE) &&
+                action == GLFW_PRESS && !pressed.contains(keyInput)) {
+            if (!toggled.contains(keyInput)) {
+                toggled.add(keyInput);
+                if (triggerAction.getFirst() == ON_TOGGLE) {
+                    events.offer(keyInput);
+                    handled = true;
+                }
+            } else
+                toggled.remove(keyInput);
         }
+        
+        //update press status
+        if (action != GLFW_RELEASE) pressed.add(keyInput);
+        else pressed.remove(keyInput);
         
         return handled;
     }
     
-    public boolean isToggled(Input input) {
-        return toggledOn.contains(input);
+    public boolean isToggled(KeyInput keyInput) {
+        return toggled.contains(keyInput);
     }
     
 }

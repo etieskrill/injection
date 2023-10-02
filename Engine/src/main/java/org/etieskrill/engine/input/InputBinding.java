@@ -4,7 +4,7 @@ import java.util.Objects;
 
 public class InputBinding {
     
-    private final Input input;
+    private final KeyInput keyInput;
     private final Trigger trigger;
     private final Action action;
     
@@ -15,28 +15,28 @@ public class InputBinding {
         TOGGLED
     }
     
-    public InputBinding(Input input, SimpleAction action) {
-        this(input, Trigger.ON_PRESS, action);
+    public InputBinding(KeyInput keyInput, SimpleAction action) {
+        this(keyInput, Trigger.ON_PRESS, action);
     }
     
-    public InputBinding(Input input, DeltaAction action) {
-        this(input, Trigger.ON_PRESS, action);
+    public InputBinding(KeyInput keyInput, DeltaAction action) {
+        this(keyInput, Trigger.ON_PRESS, action);
     }
     
-    public InputBinding(Input input, Trigger trigger, SimpleAction action) {
-        this.input = Objects.requireNonNull(input);
+    public InputBinding(KeyInput keyInput, Trigger trigger, SimpleAction action) {
+        this.keyInput = Objects.requireNonNull(keyInput);
         this.trigger = trigger;
         this.action = Objects.requireNonNull(action);
     }
     
-    public InputBinding(Input input, Trigger trigger, DeltaAction action) {
-        this.input = Objects.requireNonNull(input);
+    public InputBinding(KeyInput keyInput, Trigger trigger, DeltaAction action) {
+        this.keyInput = Objects.requireNonNull(keyInput);
         this.trigger = trigger;
         this.action = Objects.requireNonNull(action);
     }
     
-    public Input getInput() {
-        return input;
+    public KeyInput getInput() {
+        return keyInput;
     }
     
     public Trigger getTrigger() {

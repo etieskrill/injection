@@ -2,7 +2,7 @@ package org.etieskrill.engine.window;
 
 import glm_.vec2.Vec2;
 import org.etieskrill.engine.Disposable;
-import org.etieskrill.engine.input.Input;
+import org.etieskrill.engine.input.KeyInput;
 import org.etieskrill.engine.input.InputManager;
 import org.etieskrill.engine.scene._2d.Stage;
 import org.lwjgl.BufferUtils;
@@ -257,14 +257,16 @@ public class Window implements Disposable {
     }
     
     private void configInput() {
-        if (USE_RAW_MOUSE_MOTION_IF_AVAILABLE && glfwRawMouseMotionSupported())
+        if (USE_RAW_MOUSE_MOTION_IF_AVAILABLE && glfwRawMouseMotionSupported()) {
             glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+            System.out.println("active");
+        }
         
         glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
-            if (inputs != null && window == this.window) inputs.invoke(Input.Type.KEY, key, action, mods);
+            if (inputs != null && window == this.window) inputs.invoke(KeyInput.Type.KEY, key, action, mods);
         });
         glfwSetMouseButtonCallback(window, (window, button, action, mods) -> {
-            if (inputs != null && window == this.window) inputs.invoke(Input.Type.MOUSE, button, action, mods);
+            if (inputs != null && window == this.window) inputs.invoke(KeyInput.Type.MOUSE, button, action, mods);
         });
     }
     
