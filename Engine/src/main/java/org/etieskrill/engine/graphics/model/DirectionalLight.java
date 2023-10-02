@@ -1,4 +1,4 @@
-package org.etieskrill.engine.graphics.models;
+package org.etieskrill.engine.graphics.model;
 
 import glm_.vec3.Vec3;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
