@@ -257,10 +257,8 @@ public class Window implements Disposable {
     }
     
     private void configInput() {
-        if (USE_RAW_MOUSE_MOTION_IF_AVAILABLE && glfwRawMouseMotionSupported()) {
+        if (USE_RAW_MOUSE_MOTION_IF_AVAILABLE && glfwRawMouseMotionSupported())
             glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
-            System.out.println("active");
-        }
         
         glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
             if (inputs != null && window == this.window) inputs.invoke(KeyInput.Type.KEY, key, action, mods);

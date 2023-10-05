@@ -62,6 +62,8 @@ public class DemCubez {
     Model[] models;
     List<Model> grassModels;
     Model[] lightSources;
+    DirectionalLight globalLight;
+    PointLight[] lights;
     Model sword;
     Model backpack;
     
@@ -162,8 +164,8 @@ public class DemCubez {
         glfwSetCursorPosCallback(window.getID(), (window, xpos, ypos) -> {
             if (paused) return;
 
-            double dx = ((xpos - prevMouseX) * mouseSensitivity);
-            double dy = -((ypos - prevMouseY) * mouseSensitivity);
+            double dx = -((xpos - prevMouseX) * mouseSensitivity);
+            double dy = ((ypos - prevMouseY) * mouseSensitivity);
             
             dPitch = (float) dy;
             dYaw = (float) dx;
@@ -352,7 +354,6 @@ public class DemCubez {
                                     .hasTransparency()
                                     .build())
                     .setPosition(position)
-                    .setRotation((float) Math.toRadians(180f), new Vec3(0f, 0f, 1f))
             );
         }
     
@@ -375,10 +376,22 @@ public class DemCubez {
     
         backpack = ModelLoader.get().load("backpack", () ->
                 Model.ofFile("backpack.obj")
-                        .setPosition(new Vec3(-3, -1, -2))
+                        .setPosition(new Vec3(3, 0.5, -2))
                         .setScale(new Vec3(0.15f))
-                        .setRotation((float) Math.toRadians(180f), new Vec3(1f, 0f, 1f))
+                        .setRotation((float) Math.toRadians(-90), new Vec3(0, 1, 0))
         );
+    
+        //These are essentially intensity factors
+        //TODO isn't this kind of stupid? why would a light SOURCE have different kinds of intensities?
+        globalLight = new DirectionalLight(new Vec3(1),
+                new Vec3(0.2), new Vec3(0), new Vec3(0.01));
+    
+        lights = new PointLight[lightSources.length];
+        for (int i = 0; i < lights.length; i++) {
+            lights[i] = new PointLight(lightSources[i].getPosition(),
+                    new Vec3(0.1), new Vec3(0.3), new Vec3(0.5),
+                    1f, 0.03f, 0.005f);
+        }
     }
     
     private void loadShaders() {
@@ -410,23 +423,9 @@ public class DemCubez {
     private void setShaderUniforms() {
         ShaderProgram[] doLighting = {containerShader, swordShader, backpackShader};
         
-        //These are essentially intensity factors
-        //TODO isn't this kind of stupid? why would a light SOURCE have different kinds of intensities?
-        DirectionalLight globalLight = new DirectionalLight(new Vec3(1),
-                new Vec3(0.2), new Vec3(0), new Vec3(0.01));
-    
-        PointLight[] lights = new PointLight[lightSources.length];
-        for (int i = 0; i < lights.length; i++) {
-            lights[i] = new PointLight(lightSources[i].getPosition(),
-                    new Vec3(0.1), new Vec3(0.3), new Vec3(0.5),
-                    1f, 0.03f, 0.005f);
-        }
-        
         for (ShaderProgram shader : doLighting) {
             shader.setUniformArray("globalLights[$]", 0, globalLight);
-            for (int i = 0; i < lights.length; i++) {
-                shader.setUniformArray("lights[$]", i, lights[i]);
-            }
+            shader.setUniformArray("lights[$]", lights);
         }
     
         //TODO consider passing fragment position to frag shader with view applied,
@@ -438,15 +437,8 @@ public class DemCubez {
         swordShader.setUniform("uTime", (float) pacer.getTime(), false);
     
         backpackShader.setUniform("uViewPosition", camera.getPosition());
-    
-        Vec3 pointLightColour = new Vec3(1f);
-        Vec3 pointLightAmbient = pointLightColour.times(0.1f);
-        Vec3 pointLightDiffuse = pointLightColour.times(0.3f);
-        Vec3 pointLightSpecular = pointLightColour.times(0.5f);
         
-        lightShader.setUniform("light.ambient", pointLightAmbient);
-        lightShader.setUniform("light.diffuse", pointLightDiffuse);
-        lightShader.setUniform("light.specular", pointLightSpecular);
+        lightShader.setUniform("light", lights[0]);
     }
     
     private void updateModels() {
@@ -471,7 +463,7 @@ public class DemCubez {
     private void renderModels() {
         renderer.prepare();
         
-        renderer.render(skybox, skyboxShader, camera.getCombined().cleanTranslation().scale(50f));//.translate(camera.getDirection().times(3).negate()));
+        renderer.render(skybox, skyboxShader, camera.getCombined().cleanTranslation().scale(50f));
     
         setShaderUniforms();
 

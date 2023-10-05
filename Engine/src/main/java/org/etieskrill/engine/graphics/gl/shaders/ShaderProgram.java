@@ -230,8 +230,10 @@ public abstract class ShaderProgram implements Disposable {
         setUniformValue(uniform, location, value);
     }
     
-//    public boolean setUniformArray(String name, Object[] value) {
-//    }
+    public void setUniformArray(String name, Object[] values) {
+        for (int i = 0; i < values.length; i++)
+            setUniformArray(name, i, values[i]);
+    }
     
     public void setUniformArray(String name, int index, Object value) {
         if (name == null) throw new NullPointerException("Name must not be null");
@@ -437,6 +439,7 @@ public abstract class ShaderProgram implements Disposable {
         }
         
         public String getNameWith(int index) {
+            if (index > size) throw new ShaderUniformException("Array index out of bounds", super.name);
             return getName().replace("$", Integer.toString(index));
         }
     

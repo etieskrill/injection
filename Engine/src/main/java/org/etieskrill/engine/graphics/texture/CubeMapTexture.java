@@ -43,7 +43,6 @@ public class CubeMapTexture extends AbstractTexture {
          * here you go.
          */
         public CubemapTextureBuilder(String name, String[] files) {
-            super(Type.DIFFUSE);
             this.name = name;
             
             if (files == null || files.length != SIDES || Arrays.stream(files).anyMatch(Objects::isNull)) {
@@ -119,7 +118,7 @@ public class CubeMapTexture extends AbstractTexture {
     }
     
     private CubeMapTexture(String name, Builder<CubeMapTexture> builder) {
-        super(builder.setTarget(Target.CUBEMAP));
+        super(builder.setType(Type.DIFFUSE).setTarget(Target.CUBEMAP));
         this.name = name;
     }
     

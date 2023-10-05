@@ -84,6 +84,7 @@ public final class Loaders {
     public static void disposeDefaultLoaders() {
         TextureLoader.get().dispose();
         MeshLoader.get().dispose();
+        ModelLoader.get().dispose();
         ShaderLoader.get().dispose();
     }
     
