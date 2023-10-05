@@ -7,6 +7,7 @@ import org.etieskrill.engine.graphics.assimp.Model;
 import org.etieskrill.engine.graphics.gl.Renderer;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
+import org.etieskrill.engine.graphics.model.PointLight;
 import org.etieskrill.engine.input.*;
 import org.etieskrill.engine.input.InputBinding.Trigger;
 import org.etieskrill.engine.time.LoopPacer;
@@ -25,16 +26,20 @@ public class Game {
     
     private Camera camera;
     
+    private Model skelly;
+    private Vec3 deltaPos = new Vec3(0);
+    private float rotation, smoothRotation;
+    
     private double prevCursorPosX, prevCursorPosY;
     
     private InputManager inputManager = InputBinds.of(
             new InputBinding(new KeyInput(KeyInput.Type.KEY, GLFW_KEY_ESCAPE, GLFW_MOD_SHIFT), () -> window.close()),
-            new InputBinding(new KeyInput(KeyInput.Type.KEY, GLFW_KEY_W), Trigger.PRESSED, delta -> camera.translate(new Vec3(0, 0, 1).times(delta))),
-            new InputBinding(new KeyInput(KeyInput.Type.KEY, GLFW_KEY_S), Trigger.PRESSED, delta -> camera.translate(new Vec3(0, 0, -1).times(delta))),
-            new InputBinding(new KeyInput(KeyInput.Type.KEY, GLFW_KEY_A), Trigger.PRESSED, delta -> camera.translate(new Vec3(-1, 0, 0).times(delta))),
-            new InputBinding(new KeyInput(KeyInput.Type.KEY, GLFW_KEY_D), Trigger.PRESSED, delta -> camera.translate(new Vec3(1, 0, 0).times(delta))),
-            new InputBinding(new KeyInput(KeyInput.Type.KEY, GLFW_KEY_SPACE), Trigger.PRESSED, delta -> camera.translate(new Vec3(0, -1, 0).times(delta))),
-            new InputBinding(new KeyInput(KeyInput.Type.KEY, GLFW_KEY_LEFT_SHIFT), Trigger.PRESSED, delta -> camera.translate(new Vec3(0, 1, 0).times(delta))),
+            new InputBinding(new KeyInput(KeyInput.Type.KEY, GLFW_KEY_W), Trigger.PRESSED, delta -> deltaPos.plusAssign(new Vec3(0, 0, 1))),
+            new InputBinding(new KeyInput(KeyInput.Type.KEY, GLFW_KEY_S), Trigger.PRESSED, delta -> deltaPos.plusAssign(new Vec3(0, 0, -1))),
+            new InputBinding(new KeyInput(KeyInput.Type.KEY, GLFW_KEY_A), Trigger.PRESSED, delta -> deltaPos.plusAssign(new Vec3(-1, 0, 0))),
+            new InputBinding(new KeyInput(KeyInput.Type.KEY, GLFW_KEY_D), Trigger.PRESSED, delta -> deltaPos.plusAssign(new Vec3(1, 0, 0))),
+//            new InputBinding(new KeyInput(KeyInput.Type.KEY, GLFW_KEY_SPACE), Trigger.PRESSED, delta -> camera.translate(new Vec3(0, -1, 0).times(delta))),
+//            new InputBinding(new KeyInput(KeyInput.Type.KEY, GLFW_KEY_LEFT_SHIFT), Trigger.PRESSED, delta -> camera.translate(new Vec3(0, 1, 0).times(delta))),
             new InputBinding(new KeyInput(KeyInput.Type.KEY, GLFW_KEY_E), Trigger.ON_PRESS, () -> System.out.println("*poof*"))
     );
     
@@ -72,7 +77,7 @@ public class Game {
             double dy = prevCursorPosY - ypos;
 
             double sens = 0.04;
-            camera.orient(dy * sens, -dx * sens, 0);
+            camera.orient(-dy * sens, dx * sens, 0);
     
             prevCursorPosX = xpos;
             prevCursorPosY = ypos;
@@ -80,20 +85,51 @@ public class Game {
     }
     
     private void loop() {
+        //TODO figure out a smart way to link the pacer and window refresh rates
         LoopPacer pacer = new SystemNanoTimePacer(1 / 60f);
         
-        Model cube = Loaders.ModelLoader.get().load("cube", () -> Model.ofFile("cube.obj"));
+        Model cube = Loaders.ModelLoader.get().load("cube", () -> Model.ofFile("cube.obj")).setScale(50).setPosition(new Vec3(0, -25, 0));
+        Model light = Loaders.ModelLoader.get().get("cube").setScale(0.5f).setPosition(new Vec3(2, 5, -2));
+        skelly = Loaders.ModelLoader.get().load("skelly", () -> new Model.Builder("skeleton.glb").build().setScale(new Vec3(15, 15, 15)));
         Renderer renderer = new Renderer();
         ShaderProgram shader = Loaders.ShaderLoader.get().load("standard", () -> Shaders.getStandardShader());
+        ShaderProgram lightShader = Loaders.ShaderLoader.get().load("light", () -> Shaders.getLightSourceShader());
         
-        camera = new PerspectiveCamera(window.getSize().toVec())
-                .setPosition(new Vec3(0, 0, -5))
-                .setOrientation(0, 90, 0);
+        camera = new PerspectiveCamera(window.getSize().toVec());
+    
+        PointLight pointLight = new PointLight(light.getPosition(), new Vec3(1), new Vec3(1), new Vec3(1),
+                1f, 0.03f, 0.005f);
         
         pacer.start();
         while (!window.shouldClose()) {
+            skelly
+                    .translate(
+                            camera.relativeTranslation(deltaPos.length() != 0 ?
+                                    deltaPos.normalize().times((float) pacer.getDeltaTimeSeconds() * 4) :
+                                    new Vec3(0)).times(1, 0, 1));
+            if (deltaPos.anyNotEqual(0, 0.001f)) {
+                rotation = (float) (Math.atan2(deltaPos.getZ(), deltaPos.getX()) - Math.toRadians(camera.getYaw()));
+                rotation %= Math.toRadians(360);
+                //TODO fix shortest distance through wraparound
+                if (Math.abs(rotation - smoothRotation) > 0.001) smoothRotation += Math.toRadians(rotation - smoothRotation >= 0 ? 3 : -3);
+                smoothRotation %= Math.toRadians(360);
+                skelly.setRotation(
+                        smoothRotation,
+                        new Vec3(0, 1, 0));
+            }
+            deltaPos.put(0);
+    
+            Vec3 orbitPos = camera.getDirection().negate().times(3);
+            camera.setPosition(orbitPos.plus(0, 3, 0).plus(skelly.getPosition()));
+            
             renderer.prepare();
+            shader.setUniform("uViewPosition", camera.getPosition());
+            shader.setUniformArray("lights[$]", 0, pointLight);
             renderer.render(cube, shader, camera.getCombined());
+            renderer.render(skelly, shader, camera.getCombined());
+            
+            lightShader.setUniform("light", pointLight);
+            renderer.render(light, lightShader, camera.getCombined());
             
             window.update(pacer.getDeltaTimeSeconds());
             pacer.nextFrame();
