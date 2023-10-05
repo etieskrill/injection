@@ -313,7 +313,7 @@ public abstract class ShaderProgram implements Disposable {
             super(true);
         }
     
-        public MapperShaderProgram setUniformStructValue(String varName, Object value) {
+        public MapperShaderProgram map(String varName, Object value) {
             //TODO strict nested uniforms: probably hook into here for registration
             Uniform.Type type = Uniform.Type.getFromValue(value);
             if (type == null) return this;

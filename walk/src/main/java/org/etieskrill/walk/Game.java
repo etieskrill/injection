@@ -26,9 +26,11 @@ public class Game {
     
     private Camera camera;
     
-    private Model skelly;
-    private Vec3 deltaPos = new Vec3(0);
+    private final Vec3 deltaPos = new Vec3(0);
     private float rotation, smoothRotation;
+    private boolean jump = false;
+    private float jumpTime;
+    private boolean crouch = false;
     
     private double prevCursorPosX, prevCursorPosY;
     
@@ -38,8 +40,8 @@ public class Game {
             new InputBinding(new KeyInput(KeyInput.Type.KEY, GLFW_KEY_S), Trigger.PRESSED, delta -> deltaPos.plusAssign(new Vec3(0, 0, -1))),
             new InputBinding(new KeyInput(KeyInput.Type.KEY, GLFW_KEY_A), Trigger.PRESSED, delta -> deltaPos.plusAssign(new Vec3(-1, 0, 0))),
             new InputBinding(new KeyInput(KeyInput.Type.KEY, GLFW_KEY_D), Trigger.PRESSED, delta -> deltaPos.plusAssign(new Vec3(1, 0, 0))),
-//            new InputBinding(new KeyInput(KeyInput.Type.KEY, GLFW_KEY_SPACE), Trigger.PRESSED, delta -> camera.translate(new Vec3(0, -1, 0).times(delta))),
-//            new InputBinding(new KeyInput(KeyInput.Type.KEY, GLFW_KEY_LEFT_SHIFT), Trigger.PRESSED, delta -> camera.translate(new Vec3(0, 1, 0).times(delta))),
+            new InputBinding(new KeyInput(KeyInput.Type.KEY, GLFW_KEY_SPACE), Trigger.PRESSED, () -> jump = true),
+            new InputBinding(new KeyInput(KeyInput.Type.KEY, GLFW_KEY_LEFT_SHIFT), Trigger.PRESSED, () -> crouch = true),
             new InputBinding(new KeyInput(KeyInput.Type.KEY, GLFW_KEY_E), Trigger.ON_PRESS, () -> System.out.println("*poof*"))
     );
     
@@ -90,7 +92,7 @@ public class Game {
         
         Model cube = Loaders.ModelLoader.get().load("cube", () -> Model.ofFile("cube.obj")).setScale(50).setPosition(new Vec3(0, -25, 0));
         Model light = Loaders.ModelLoader.get().get("cube").setScale(0.5f).setPosition(new Vec3(2, 5, -2));
-        skelly = Loaders.ModelLoader.get().load("skelly", () -> new Model.Builder("skeleton.glb").build().setScale(new Vec3(15, 15, 15)));
+        Model skelly = Loaders.ModelLoader.get().load("skelly", () -> new Model.Builder("skeleton.glb").build().setScale(15));
         Renderer renderer = new Renderer();
         ShaderProgram shader = Loaders.ShaderLoader.get().load("standard", () -> Shaders.getStandardShader());
         ShaderProgram lightShader = Loaders.ShaderLoader.get().load("light", () -> Shaders.getLightSourceShader());
@@ -118,9 +120,22 @@ public class Game {
                         new Vec3(0, 1, 0));
             }
             deltaPos.put(0);
-    
+            
+            if (jump && jumpTime == 0)
+                jumpTime += 0.0001;
+            if (jumpTime != 0 && jumpTime < 1) {
+                double jumpHeight = -4 * (jumpTime - 0.5) * (jumpTime - 0.5) + 1;
+                skelly.getPosition().setY((float) jumpHeight);
+                jumpTime += pacer.getDeltaTimeSeconds();
+            } else jumpTime = 0;
+            jump = false;
+            
+            if (crouch) skelly.setScale(new Vec3(15, 9, 15));
+            else skelly.setScale(15);
+            crouch = false;
+            
             Vec3 orbitPos = camera.getDirection().negate().times(3);
-            camera.setPosition(orbitPos.plus(0, 3, 0).plus(skelly.getPosition()));
+            camera.setPosition(orbitPos.plus(0, 2.5, 0).plus(skelly.getPosition()));
             
             renderer.prepare();
             shader.setUniform("uViewPosition", camera.getPosition());
