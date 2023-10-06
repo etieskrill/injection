@@ -6,7 +6,7 @@ import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.glfw.GLFW.GLFW_NOT_ALLOWED_CURSOR;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
-//TODO should implement disposable once custom cursors are implemented
+//TODO update disposable once custom cursors are implemented
 public class Cursor implements Disposable {
     
     protected final long cursor;

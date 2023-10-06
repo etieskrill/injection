@@ -8,12 +8,17 @@ import org.etieskrill.engine.scene._2d.Stage;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFWVidMode;
+import org.lwjgl.opengl.GL;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.system.Platform;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
+
 import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.opengl.GL11C.*;
+import static org.lwjgl.opengl.GL11C.GL_BACK;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class Window implements Disposable {
@@ -163,7 +168,7 @@ public class Window implements Disposable {
                     mode != null ? mode : Window.WindowMode.WINDOWED,
                     size != null ? size : Window.WindowSize.LARGEST_FIT,
                     position != null ? position : new Vec2(),
-                    refreshRate != 0 ? refreshRate : GLFW_DONT_CARE,
+                    refreshRate >= 0 ? refreshRate : GLFW_DONT_CARE,
                     title != null ? title : "Window",
                     cursor != null ? cursor : Cursor.getDefault(),
                     inputs
@@ -211,29 +216,27 @@ public class Window implements Disposable {
         if (Platform.get() == Platform.MACOSX)
             glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
     
+        //TODO more sophisticated & consumer-controlled monitor choice / general window configuration
         monitor = glfwGetPrimaryMonitor();
         if (monitor == NULL)
             throw new IllegalStateException("Could not find primary monitor");
         
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
     
-        if (mode == null) throw new IllegalArgumentException("Window mode must not be null");
         videoMode = glfwGetVideoMode(monitor);
         if (videoMode == null) {
             System.err.println("Video mode for monitor could not be retrieved");
             size = size == null ? WindowSize.HD : size;
             targetFrameRate = targetFrameRate < 0 ? 60f : targetFrameRate;
         }
-
-        if (size == null)
-            throw new IllegalArgumentException("Window size must not be null");
-        else if (size == WindowSize.LARGEST_FIT)
+        
+        if (size == WindowSize.LARGEST_FIT)
             size = WindowSize.getLargestFit(videoMode.width(), videoMode.height());
         
-        if (targetFrameRate < 0) targetFrameRate = videoMode.refreshRate();
+        if (targetFrameRate == GLFW_DONT_CARE) targetFrameRate = videoMode.refreshRate();
     
         setMode(mode);
-        setRefreshRate(targetFrameRate);//144);
+        setRefreshRate(targetFrameRate);
 
         this.window = glfwCreateWindow(size.getWidth(), size.getHeight(), title,
                 switch (mode) {
@@ -244,8 +247,9 @@ public class Window implements Disposable {
         if (this.window == NULL)
             throw new IllegalStateException("Could not create glfw window");
     
-        //glfwGetWindowMonitor()
         glfwMakeContextCurrent(window);
+        initGl();
+        
         glfwSwapInterval(1); //TODO why does it break when 4<?
         
         configInput();
@@ -268,6 +272,19 @@ public class Window implements Disposable {
         });
     }
     
+    private void initGl() {
+        //TODO 1. figure out what this "context" actually is 2. make window creation disjoint from gl context creation
+        GL.createCapabilities();
+    
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LESS);
+        glEnable(GL_STENCIL_TEST);
+        glEnable(GL_BLEND);
+    
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
+    }
+    
     public void show() {
         glfwShowWindow(window);
     }
@@ -287,11 +304,8 @@ public class Window implements Disposable {
     //TODO should probably be named more appropriately
     public void update(double delta) {
         if (stage != null) {
-            try {
-                stage.update(delta);
-                stage.render();
-            //TODO caught due to single-thread lock for pacer implementation - perhaps nonsensical?
-            } catch (WrongThreadException ignored) {}
+            stage.update(delta);
+            stage.render();
         }
         
         //glfwMakeContextCurrent(window);

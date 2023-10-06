@@ -2,13 +2,16 @@ package org.etieskrill.engine.input;
 
 import kotlin.Pair;
 import org.etieskrill.engine.input.InputBinding.Trigger;
+import org.etieskrill.engine.input.action.Action;
+import org.etieskrill.engine.input.action.DeltaAction;
+import org.etieskrill.engine.input.action.SimpleAction;
 
 import java.util.*;
 
 import static org.etieskrill.engine.input.InputBinding.Trigger.*;
 import static org.lwjgl.glfw.GLFW.*;
 
-public class InputManager implements InputHandler {
+public class InputManager implements KeyInputHandler {
     
     private final Map<KeyInput, Pair<Trigger, Action>> bindings;
     private final Set<KeyInput> pressed;
@@ -62,31 +65,33 @@ public class InputManager implements InputHandler {
         Pair<Trigger, Action> triggerAction = bindings.get(keyInput); //try lookup with exact modifiers
         if (triggerAction == null) {
             triggerAction = bindings.get(new KeyInput(type, key, 0)); //try lookup again without modifiers
-            if (triggerAction == null) return false;
-            if (triggerAction.getFirst() == PRESSED || triggerAction.getFirst() == TOGGLED) //if lookup succeeded with continuous bind, remove modifiers
+            if (triggerAction != null &&
+                    (triggerAction.getFirst() == PRESSED || triggerAction.getFirst() == TOGGLED)) //if lookup succeeded with continuous bind, remove modifiers
                 keyInput = new KeyInput(type, key, 0);
         }
         boolean handled = false;
     
         //queue press trigger event
-        if (triggerAction.getFirst() == ON_PRESS) {
+        if (triggerAction != null && triggerAction.getFirst() == ON_PRESS) {
             if (action == GLFW_PRESS && !pressed.contains(keyInput)) {
                 events.offer(keyInput);
                 handled = true;
             }
         }
         
-        //update toggle status and queue toggle trigger event
-        if ((triggerAction.getFirst() == TOGGLED || triggerAction.getFirst() == ON_TOGGLE) &&
-                action == GLFW_PRESS && !pressed.contains(keyInput)) {
-            if (!toggled.contains(keyInput)) {
-                toggled.add(keyInput);
-                if (triggerAction.getFirst() == ON_TOGGLE) {
-                    events.offer(keyInput);
-                    handled = true;
-                }
-            } else
-                toggled.remove(keyInput);
+        //queue toggle trigger event
+        if (triggerAction != null) {
+            if (triggerAction.getFirst() == ON_TOGGLE &&
+                    action == GLFW_PRESS && !toggled.contains(keyInput)) {
+                events.offer(keyInput);
+                handled = true;
+            }
+        }
+    
+        //update toggle status
+        if ( action == GLFW_PRESS && !pressed.contains(keyInput)) {
+            if (!toggled.contains(keyInput)) toggled.add(keyInput);
+            else toggled.remove(keyInput);
         }
         
         //update press status
@@ -96,8 +101,16 @@ public class InputManager implements InputHandler {
         return handled;
     }
     
-    public boolean isToggled(KeyInput keyInput) {
-        return toggled.contains(keyInput);
+    public boolean isPressed(KeyInput input) {
+        return pressed.contains(input);
+    }
+    
+    public boolean isPressed(KeyInput.Keys input) {
+        return pressed.contains(input.getInput());
+    }
+    
+    public boolean isToggled(KeyInput input) {
+        return toggled.contains(input);
     }
     
 }

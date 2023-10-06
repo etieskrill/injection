@@ -1,5 +1,9 @@
 package org.etieskrill.engine.input;
 
+import org.etieskrill.engine.input.action.Action;
+import org.etieskrill.engine.input.action.DeltaAction;
+import org.etieskrill.engine.input.action.SimpleAction;
+
 import java.util.Objects;
 
 public class InputBinding {
@@ -15,23 +19,43 @@ public class InputBinding {
         TOGGLED
     }
     
-    public InputBinding(KeyInput keyInput, SimpleAction action) {
-        this(keyInput, Trigger.ON_PRESS, action);
+    public InputBinding(KeyInput.Keys input, SimpleAction action) {
+        this(input.getInput(), Trigger.ON_PRESS, action);
     }
     
-    public InputBinding(KeyInput keyInput, DeltaAction action) {
-        this(keyInput, Trigger.ON_PRESS, action);
+    public InputBinding(KeyInput input, SimpleAction action) {
+        this(input, Trigger.ON_PRESS, action);
     }
     
-    public InputBinding(KeyInput keyInput, Trigger trigger, SimpleAction action) {
-        this.keyInput = Objects.requireNonNull(keyInput);
-        this.trigger = trigger;
+    public InputBinding(KeyInput.Keys input, Trigger trigger, SimpleAction action) {
+        this.keyInput = Objects.requireNonNull(input).getInput();
+        this.trigger = Objects.requireNonNull(trigger);
         this.action = Objects.requireNonNull(action);
     }
     
-    public InputBinding(KeyInput keyInput, Trigger trigger, DeltaAction action) {
-        this.keyInput = Objects.requireNonNull(keyInput);
-        this.trigger = trigger;
+    public InputBinding(KeyInput input, Trigger trigger, SimpleAction action) {
+        this.keyInput = Objects.requireNonNull(input);
+        this.trigger = Objects.requireNonNull(trigger);
+        this.action = Objects.requireNonNull(action);
+    }
+    
+    public InputBinding(KeyInput.Keys input, DeltaAction action) {
+        this(input.getInput(), Trigger.ON_PRESS, action);
+    }
+    
+    public InputBinding(KeyInput input, DeltaAction action) {
+        this(input, Trigger.ON_PRESS, action);
+    }
+    
+    public InputBinding(KeyInput.Keys input, Trigger trigger, DeltaAction action) {
+        this.keyInput = Objects.requireNonNull(input).getInput();
+        this.trigger = Objects.requireNonNull(trigger);
+        this.action = Objects.requireNonNull(action);
+    }
+    
+    public InputBinding(KeyInput input, Trigger trigger, DeltaAction action) {
+        this.keyInput = Objects.requireNonNull(input);
+        this.trigger = Objects.requireNonNull(trigger);
         this.action = Objects.requireNonNull(action);
     }
     

@@ -1,4 +1,4 @@
-package org.etieskrill.engine.input;
+package org.etieskrill.engine.input.action;
 
 import java.util.function.Consumer;
 
