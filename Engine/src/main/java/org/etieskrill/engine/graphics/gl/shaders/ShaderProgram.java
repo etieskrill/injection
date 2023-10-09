@@ -68,6 +68,19 @@ public abstract class ShaderProgram implements Disposable {
         }
     }
     
+    public ShaderProgram(ShaderProgram shader) {
+        this.STRICT_UNIFORM_DETECTION = shader.STRICT_UNIFORM_DETECTION;
+        
+        this.programID = shader.programID;
+        this.vertID = shader.vertID;
+        this.fragID = shader.fragID;
+        
+        this.uniforms = new HashMap<>(shader.uniforms);
+        this.arrayUniforms = new HashMap<>(shader.arrayUniforms);
+        
+        this.placeholder = shader.placeholder;
+    }
+    
     //TODO replace this by implementing main constructor with files argument
     protected ShaderProgram(boolean mock) {
         this.uniforms = null;
@@ -226,8 +239,10 @@ public abstract class ShaderProgram implements Disposable {
         setUniformValue(uniform, location, value);
     }
     
-//    public boolean setUniformArray(String name, Object[] value) {
-//    }
+    public void setUniformArray(String name, Object[] values) {
+        for (int i = 0; i < values.length; i++)
+            setUniformArray(name, i, values[i]);
+    }
     
     public void setUniformArray(String name, int index, Object value) {
         if (name == null) throw new NullPointerException("Name must not be null");
@@ -307,7 +322,7 @@ public abstract class ShaderProgram implements Disposable {
             super(true);
         }
     
-        public MapperShaderProgram setUniformStructValue(String varName, Object value) {
+        public MapperShaderProgram map(String varName, Object value) {
             //TODO strict nested uniforms: probably hook into here for registration
             Uniform.Type type = Uniform.Type.getFromValue(value);
             if (type == null) return this;
@@ -433,6 +448,7 @@ public abstract class ShaderProgram implements Disposable {
         }
         
         public String getNameWith(int index) {
+            if (index > size) throw new ShaderUniformException("Array index out of bounds", super.name);
             return getName().replace("$", Integer.toString(index));
         }
     

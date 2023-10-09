@@ -22,10 +22,10 @@ public class DirectionalLight implements UniformMappable {
     @Override
     public boolean map(ShaderProgram.MapperShaderProgram shader) {
         shader
-                .setUniformStructValue("direction", direction)
-                .setUniformStructValue("ambient", ambient)
-                .setUniformStructValue("diffuse", diffuse)
-                .setUniformStructValue("specular", specular);
+                .map("direction", direction)
+                .map("ambient", ambient)
+                .map("diffuse", diffuse)
+                .map("specular", specular);
         return true;
     }
     

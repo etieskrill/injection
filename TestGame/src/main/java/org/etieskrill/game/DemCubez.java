@@ -9,7 +9,6 @@ import org.etieskrill.engine.graphics.PerspectiveCamera;
 import org.etieskrill.engine.graphics.assimp.*;
 import org.etieskrill.engine.graphics.gl.FrameBuffer;
 import org.etieskrill.engine.graphics.gl.FrameBufferAttachment;
-import org.etieskrill.engine.graphics.gl.Loaders.ModelLoader;
 import org.etieskrill.engine.graphics.gl.ModelFactory;
 import org.etieskrill.engine.graphics.gl.Renderer;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
@@ -21,9 +20,9 @@ import org.etieskrill.engine.graphics.texture.Textures;
 import org.etieskrill.engine.scene._2d.*;
 import org.etieskrill.engine.time.LoopPacer;
 import org.etieskrill.engine.time.SystemNanoTimePacer;
+import org.etieskrill.engine.util.Loaders.ModelLoader;
+import org.etieskrill.engine.window.Cursor.CursorMode;
 import org.etieskrill.engine.window.Window;
-import org.etieskrill.engine.window.Window.Cursor.CursorMode;
-import org.etieskrill.engine.window.WindowBuilder;
 import org.lwjgl.opengl.GL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,6 +62,8 @@ public class DemCubez {
     Model[] models;
     List<Model> grassModels;
     Model[] lightSources;
+    DirectionalLight globalLight;
+    PointLight[] lights;
     Model sword;
     Model backpack;
     
@@ -77,13 +78,15 @@ public class DemCubez {
     private void init() {
         Window.USE_RAW_MOUSE_MOTION_IF_AVAILABLE = false;
         
-        this.window = WindowBuilder.create()
+        this.window = new Window.Builder()
                 .setMode(Window.WindowMode.BORDERLESS)
                 .setRefreshRate(TARGET_FPS)
                 .setTitle("DemCubez")
                 .build();
         logger.info("Window initialised");
-
+        
+        glfwSetErrorCallback(((error, description) -> System.out.printf("GLFW error %d: %s\n", error, description)));
+        
         if (!initGL()) throw new IllegalStateException("Could not initialise graphics settings");
         if (!initKeybinds()) throw new IllegalStateException("Could not initialise keybinds");
         if (!initMouse()) throw new IllegalStateException("Could not initialise mouse");
@@ -161,8 +164,8 @@ public class DemCubez {
         glfwSetCursorPosCallback(window.getID(), (window, xpos, ypos) -> {
             if (paused) return;
 
-            double dx = ((xpos - prevMouseX) * mouseSensitivity);
-            double dy = -((ypos - prevMouseY) * mouseSensitivity);
+            double dx = -((xpos - prevMouseX) * mouseSensitivity);
+            double dy = ((ypos - prevMouseY) * mouseSensitivity);
             
             dPitch = (float) dy;
             dYaw = (float) dx;
@@ -321,12 +324,12 @@ public class DemCubez {
     
         models = new Model[cubePositions.length];
         Random random = new Random(69420);
-        ModelLoader.getInstance().load("cube", () -> Model.ofFile("cube.obj"))
+        ModelLoader.get().load("cube", () -> Model.ofFile("cube.obj"))
                 .getMeshes().get(0).getMaterial().getTextures().add(
                         Textures.getSkybox("space")
                 );
         for (int i = 0; i < cubePositions.length; i++) {
-            models[i] = ModelLoader.getInstance().get("cube")
+            models[i] = ModelLoader.get().get("cube")
                     .setPosition(cubePositions[i])
                     .setRotation(random.nextFloat(),
                             new Vec3(
@@ -345,19 +348,18 @@ public class DemCubez {
         };
         grassModels = new ArrayList<>(grassPosition.length);
         for (Vec3 position : grassPosition) {
-            grassModels.add(ModelLoader.getInstance().load("grass", () ->
+            grassModels.add(ModelLoader.get().load("grass", () ->
                             new Model.Builder("grass.obj")
                                     .disableCulling()
                                     .hasTransparency()
                                     .build())
                     .setPosition(position)
-                    .setRotation((float) Math.toRadians(180f), new Vec3(0f, 0f, 1f))
             );
         }
     
         lightSources = new Model[2];
         for (int i = 0; i < lightSources.length; i++) {
-            lightSources[i] = ModelLoader.getInstance().load("light", () ->
+            lightSources[i] = ModelLoader.get().load("light", () ->
                             new Model.Builder("cube.obj")
                                     .setName("light")
                                     .build())
@@ -365,19 +367,31 @@ public class DemCubez {
                     .setPosition(new Vec3(0f, 0f, -5f));
         }
     
-        sword = ModelLoader.getInstance().load("sword", () ->
+        sword = ModelLoader.get().load("sword", () ->
                 Model.ofFile("Sting-Sword.obj")
                         .setPosition(new Vec3(0, 0, -2))
                         .setScale(new Vec3(0.1f))
                         .setRotation((float) Math.toRadians(90f), new Vec3(1f, 0f, 0f))
         );
     
-        backpack = ModelLoader.getInstance().load("backpack", () ->
+        backpack = ModelLoader.get().load("backpack", () ->
                 Model.ofFile("backpack.obj")
-                        .setPosition(new Vec3(-3, -1, -2))
+                        .setPosition(new Vec3(3, 0.5, -2))
                         .setScale(new Vec3(0.15f))
-                        .setRotation((float) Math.toRadians(180f), new Vec3(1f, 0f, 1f))
+                        .setRotation((float) Math.toRadians(-90), new Vec3(0, 1, 0))
         );
+    
+        //These are essentially intensity factors
+        //TODO isn't this kind of stupid? why would a light SOURCE have different kinds of intensities?
+        globalLight = new DirectionalLight(new Vec3(1),
+                new Vec3(0.2), new Vec3(0), new Vec3(0.01));
+    
+        lights = new PointLight[lightSources.length];
+        for (int i = 0; i < lights.length; i++) {
+            lights[i] = new PointLight(lightSources[i].getPosition(),
+                    new Vec3(0.1), new Vec3(0.3), new Vec3(0.5),
+                    1f, 0.03f, 0.005f);
+        }
     }
     
     private void loadShaders() {
@@ -409,23 +423,9 @@ public class DemCubez {
     private void setShaderUniforms() {
         ShaderProgram[] doLighting = {containerShader, swordShader, backpackShader};
         
-        //These are essentially intensity factors
-        //TODO isn't this kind of stupid? why would a light SOURCE have different kinds of intensities?
-        DirectionalLight globalLight = new DirectionalLight(new Vec3(1),
-                new Vec3(0.2), new Vec3(0), new Vec3(0.01));
-    
-        PointLight[] lights = new PointLight[lightSources.length];
-        for (int i = 0; i < lights.length; i++) {
-            lights[i] = new PointLight(lightSources[i].getPosition(),
-                    new Vec3(0.1), new Vec3(0.3), new Vec3(0.5),
-                    1f, 0.03f, 0.005f);
-        }
-        
         for (ShaderProgram shader : doLighting) {
             shader.setUniformArray("globalLights[$]", 0, globalLight);
-            for (int i = 0; i < lights.length; i++) {
-                shader.setUniformArray("lights[$]", i, lights[i]);
-            }
+            shader.setUniformArray("lights[$]", lights);
         }
     
         //TODO consider passing fragment position to frag shader with view applied,
@@ -437,15 +437,8 @@ public class DemCubez {
         swordShader.setUniform("uTime", (float) pacer.getTime(), false);
     
         backpackShader.setUniform("uViewPosition", camera.getPosition());
-    
-        Vec3 pointLightColour = new Vec3(1f);
-        Vec3 pointLightAmbient = pointLightColour.times(0.1f);
-        Vec3 pointLightDiffuse = pointLightColour.times(0.3f);
-        Vec3 pointLightSpecular = pointLightColour.times(0.5f);
         
-        lightShader.setUniform("light.ambient", pointLightAmbient);
-        lightShader.setUniform("light.diffuse", pointLightDiffuse);
-        lightShader.setUniform("light.specular", pointLightSpecular);
+        lightShader.setUniform("light", lights[0]);
     }
     
     private void updateModels() {
@@ -470,7 +463,7 @@ public class DemCubez {
     private void renderModels() {
         renderer.prepare();
         
-        renderer.render(skybox, skyboxShader, camera.getCombined().cleanTranslation().scale(50f));//.translate(camera.getDirection().times(3).negate()));
+        renderer.render(skybox, skyboxShader, camera.getCombined().cleanTranslation().scale(50f));
     
         setShaderUniforms();
 

@@ -27,8 +27,8 @@ public class Texture2D extends AbstractTexture implements FrameBufferAttachment 
          * @param type the type of texture, if any
          */
         public FileBuilder(String file, Type type) {
-            super(type);
             this.file = file;
+            this.type = type;
             
             file = DIRECTORY + file;
             
@@ -45,10 +45,21 @@ public class Texture2D extends AbstractTexture implements FrameBufferAttachment 
         }
     }
     
+    public static final class BufferBuilder extends Builder {
+        public BufferBuilder(ByteBuffer buffer, Vec2i pixelSize, Format format) {
+            this.textureData = buffer;
+            this.pixelSize = pixelSize;
+            this.format = format;
+        }
+    
+        @Override
+        protected void freeResources() {
+            //TODO free buffer if possible
+        }
+    }
+    
     public static final class BlankBuilder extends Builder {
-        BlankBuilder(Vec2i pixelSize, Type type) {
-            super(type);
-            
+        BlankBuilder(Vec2i pixelSize) {
             this.textureData = null;
             
             this.pixelSize = pixelSize;
@@ -62,9 +73,7 @@ public class Texture2D extends AbstractTexture implements FrameBufferAttachment 
     public abstract static class Builder extends AbstractTexture.Builder<Texture2D> {
         protected ByteBuffer textureData;
         
-        Builder(Type type) {
-            super(type);
-        }
+        Builder() {}
     
         @Override
         protected Texture2D bufferTextureData() {
@@ -86,20 +95,8 @@ public class Texture2D extends AbstractTexture implements FrameBufferAttachment 
         }
     }
     
-    //TODO this is specifically for tex2d, so declare it as such
-    private Texture2D(Builder builder, Integer asdf) {
-        this(builder);
-    
-        int glFormat = format.toGLFormat();
-        
-        bind(0);
-        //TODO currently, the internal format and the format are set to the same value, which seems to work so far
-        glTexImage2D(GL_TEXTURE_2D, 0, glFormat, pixelSize.getX(), pixelSize.getY(),
-                0, glFormat, GL_UNSIGNED_BYTE, builder.textureData);
-    }
-    
     Texture2D(Builder builder) {
-        super(builder);
+        super(builder.setTarget(Target.TWO_D));
         this.pixelSize = builder.pixelSize;
     }
 

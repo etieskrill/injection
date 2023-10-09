@@ -172,7 +172,7 @@ public abstract class AbstractTexture implements Disposable {
         protected static final int INVALID_PIXEL_SIZE = -1;
 
         //TODO inform whether type is truly part of all texture targets
-        protected final Type type;
+        protected Type type;
 
         protected Target target = Target.TWO_D;
         protected MinFilter minFilter = MinFilter.TRILINEAR;
@@ -186,10 +186,13 @@ public abstract class AbstractTexture implements Disposable {
         protected boolean autoSwizzleMask = true;
         protected boolean mipMaps = true;
 
-        Builder(Type type) {
+        Builder() {}
+    
+        public Builder<T> setType(Type type) {
             this.type = type;
+            return this;
         }
-
+    
         public Builder<T> setTarget(Target target) {
             this.target = target;
             return this;
@@ -213,6 +216,8 @@ public abstract class AbstractTexture implements Disposable {
         }
 
         public final T build() {
+            if (type == null) type = Type.UNKNOWN;
+            
             T texture = bufferTextureData();
             
             //Wack solution for post-creation method calls

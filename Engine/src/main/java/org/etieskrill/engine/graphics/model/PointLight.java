@@ -29,13 +29,13 @@ public class PointLight implements UniformMappable {
     @Override
     public boolean map(ShaderProgram.MapperShaderProgram shader) {
         shader
-                .setUniformStructValue("position", position)
-                .setUniformStructValue("ambient", ambient)
-                .setUniformStructValue("diffuse", diffuse)
-                .setUniformStructValue("specular", specular)
-                .setUniformStructValue("constant", constant)
-                .setUniformStructValue("linear", linear)
-                .setUniformStructValue("quadratic", quadratic);
+                .map("position", position)
+                .map("ambient", ambient)
+                .map("diffuse", diffuse)
+                .map("specular", specular)
+                .map("constant", constant)
+                .map("linear", linear)
+                .map("quadratic", quadratic);
         return true;
     }
     

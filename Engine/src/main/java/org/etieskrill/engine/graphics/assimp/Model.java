@@ -2,24 +2,27 @@ package org.etieskrill.engine.graphics.assimp;
 
 import glm_.mat4x4.Mat4;
 import glm_.vec2.Vec2;
+import glm_.vec2.Vec2i;
 import glm_.vec3.Vec3;
 import org.etieskrill.engine.Disposable;
-import org.etieskrill.engine.graphics.gl.Loaders.TextureLoader;
-import org.etieskrill.engine.graphics.texture.Texture2D;
+import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.etieskrill.engine.graphics.texture.AbstractTexture.Type;
+import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.texture.Textures;
+import org.etieskrill.engine.util.Loaders.TextureLoader;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.assimp.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.function.Supplier;
 
 import static org.etieskrill.engine.graphics.texture.AbstractTexture.Type.*;
@@ -34,10 +37,11 @@ public class Model implements Disposable {
     
     private final List<Mesh> meshes; //TODO these should become immutable after model instantiation
     private final List<Material> materials; //TODO since meshes know their materials, these here may not be necessary?
+    private final Map<String, Texture2D.Builder> embeddedTextures = new HashMap<>();
     
-    private final String file;
     private final String name;
     
+    //TODO create transform wrapper class
     private final Vec3 position;
     private final Vec3 scale;
     private float rotation;
@@ -45,6 +49,8 @@ public class Model implements Disposable {
     
     private final Mat4 transform;
     
+    private boolean flipUVs;
+    private boolean flipWinding;
     private final boolean culling;
     private final boolean transparency;
     
@@ -55,6 +61,8 @@ public class Model implements Disposable {
         private final String file;
         private String name;
     
+        private boolean flipUVs = true;
+        private boolean flipWinding = false;
         private boolean culling = true;
         private boolean transparency = false;
         
@@ -87,6 +95,16 @@ public class Model implements Disposable {
             this.name = name;
             return this;
         }
+        
+        public Builder setFlipUVs(boolean flipUVs) {
+            this.flipUVs = flipUVs;
+            return this;
+        }
+    
+        public Builder setFlipWinding(boolean flipWinding) {
+            this.flipWinding = flipWinding;
+            return this;
+        }
     
         public Builder disableCulling() {
             this.culling = false;
@@ -102,9 +120,7 @@ public class Model implements Disposable {
     
         public Model build() {
             try {
-                return new Model(file, name, meshes, materials,
-                        new Vec3(0f), new Vec3(1f), 0f, new Vec3(0f), new Mat4(),
-                        culling, transparency);
+                return new Model(this);
             } catch (IOException e) {
                 logger.info("Exception while loading model, using default: ", e);
                 return ERROR_MODEL.get();
@@ -113,7 +129,11 @@ public class Model implements Disposable {
     }
     
     public static Model ofFile(String file) {
-        return new Builder(file).build();
+        return ofFile(file, true);
+    }
+    
+    public static Model ofFile(String file, boolean flipUVs) {
+        return new Builder(file).setFlipUVs(flipUVs).build();
     }
     
     /**
@@ -124,7 +144,6 @@ public class Model implements Disposable {
         // and should effectively be immutable, consider encapsulating them into another class
         this.meshes = model.meshes;
         this.materials = model.materials;
-        this.file = model.file;
         this.name = model.name;
         logger.trace("Creating copy of model {}", name);
         this.position = new Vec3(model.position);
@@ -132,37 +151,37 @@ public class Model implements Disposable {
         this.rotation = model.rotation;
         this.rotationAxis = new Vec3(model.rotationAxis);
         this.transform = new Mat4(model.transform);
+        this.flipUVs = model.flipUVs;
+        this.flipWinding = model.flipWinding;
         this.culling = model.culling;
         this.transparency = model.transparency;
     }
     
-    //TODO contemplate whether to pass on builders in cases like these
-    private Model(String file, String name, List<Mesh> meshes, List<Material> materials,
-                 Vec3 position, Vec3 scale, float rotation, Vec3 rotationAxis, Mat4 transform,
-                  boolean culling, boolean transparency) throws IOException {
+    private Model(Builder builder) throws IOException {
+        this.meshes = builder.meshes;
+        this.materials = builder.materials;
+        this.name = builder.name;
+    
+        this.flipUVs = builder.flipUVs;
+        this.flipWinding = builder.flipWinding;
+        this.culling = builder.culling;
+        this.transparency = builder.transparency;
+    
+        logger.debug("Loading model {} from file {}", name, builder.file);
+        loadModel(builder.file);
         
-        this.meshes = meshes;
-        this.materials = materials;
-        this.file = file.split("\\.")[0];
-        this.name = name;
-        logger.debug("Loading model {} from file {}", name, file);
-        loadModel(file);
-        
-        this.position = position;
-        this.scale = scale;
-        this.rotation = rotation;
-        this.rotationAxis = rotationAxis.length() == 1f ? rotationAxis : new Vec3(1f, 0f, 0f);
-        this.transform = transform;
-        
-        this.culling = culling;
-        this.transparency = transparency;
+        this.position = new Vec3(0);
+        this.scale = new Vec3(1);
+        this.rotation = 0;
+        this.rotationAxis = new Vec3(1, 0, 0);
+        this.transform = new Mat4(1);
     }
     
     private void loadModel(String file) throws IOException {
         //TODO properly set these
         int processFlags =
             aiProcess_Triangulate |
-            aiProcess_FlipUVs |
+            (flipUVs ? aiProcess_FlipUVs : 0) |
             aiProcess_OptimizeMeshes |
             aiProcess_JoinIdenticalVertices |
             aiProcess_RemoveRedundantMaterials |
@@ -170,8 +189,8 @@ public class Model implements Disposable {
             aiProcess_GenUVCoords |
             aiProcess_TransformUVCoords |
             aiProcess_FindInstances |
-            aiProcess_PreTransformVertices //|
-            //aiProcess_FlipWindingOrder
+            aiProcess_PreTransformVertices |
+            (flipWinding ? aiProcess_FlipWindingOrder : 0)
         ;
         
         AIScene scene = aiImportFile(DIRECTORY + file, processFlags);
@@ -180,6 +199,8 @@ public class Model implements Disposable {
                 || scene.mRootNode() == null) {
             throw new IOException(aiGetErrorString());
         }
+        
+        loadEmbeddedTextures(scene);
     
         logger.trace("{} materials found", scene.mNumMaterials());
         PointerBuffer mMaterials = scene.mMaterials();
@@ -242,6 +263,44 @@ public class Model implements Disposable {
         return Mesh.Loader.loadToVAO(vertices, indices, material);
     }
     
+    private void loadEmbeddedTextures(AIScene scene) {
+        PointerBuffer textures = scene.mTextures();
+        for (int i = 0; i < scene.mNumTextures(); i++) {
+            AITexture texture = AITexture.create(textures.get());
+            
+            //TODO data should really always be compressed, but at least add a warning or something in case it is not
+            // also "texture data is always ARGB8888 to make the implementation for user of the library as easy as possible" my arse, thats just inefficient
+//            if (texture.mHeight() != 0) is uncompressed;
+//            else is compressed;
+            
+            ByteBuffer compressedBuffer = texture.pcDataCompressed();
+            byte[] compressedData = new byte[compressedBuffer.remaining()];
+            compressedBuffer.get(compressedData);
+            
+            BufferedImage image;
+            try {
+                image = ImageIO.read(new ByteArrayInputStream(compressedData)); //TODO dunno if i like depending on plugins, but isss brobably fiiine
+            } catch (IOException e) {
+                logger.warn("Failed to decode embedded texture {}:\n{}", i, e.getMessage());
+                continue;
+            }
+            
+            //TODO validate colour channels if not compressed
+//            System.out.println(image.getType());
+            
+            int[] data = image.getData().getPixels(0, 0, image.getWidth(), image.getHeight(), (int[]) null);
+            ByteBuffer buffer = BufferUtils.createByteBuffer(data.length);
+            for (int pixel : data) buffer.put((byte) pixel);
+            buffer.rewind();
+            
+            Texture2D.Builder tex = new Texture2D.BufferBuilder(buffer,
+                    new Vec2i(image.getWidth(), image.getHeight()), AbstractTexture.Format.RGBA);
+            embeddedTextures.put("*" + i, tex);
+        }
+        
+        logger.debug("{} of {} embedded textures loaded", embeddedTextures.size(), scene.mNumTextures());
+    }
+    
     private Material processMaterial(AIMaterial aiMaterial) {
         Material.Builder material = new Material.Builder();
         
@@ -255,7 +314,8 @@ public class Model implements Disposable {
         int numProperties = addPropertiesToMaterial(material, aiMaterial);
         
         Material mat = material.build();
-        logger.trace("Added {} textures and {} properties to material", mat.getTextures().size(), numProperties);
+        logger.trace("Added {} texture{} and {} propert{} to material", mat.getTextures().size(),
+                mat.getTextures().size() == 1 ? "" : "s", numProperties, numProperties == 1 ? "y" : "ies");
         return mat;
     }
     
@@ -274,9 +334,17 @@ public class Model implements Disposable {
             
             //TODO i think using the loader by default here is warranted, since textures are separate files, and
             // more often than not the bulk redundant data (probably), i should add an option to switch this off tho
-            Texture2D texture = (Texture2D) TextureLoader.get().load(
-                    this.file + "_" + type.name().toLowerCase() + "_" + i,
-                    () -> Textures.ofFile(file.dataString(), type));
+            String textureName = this.name + "_" + type.name().toLowerCase() + "_" + i;
+            String textureFile = file.dataString();
+            
+            Texture2D.Builder builder = embeddedTextures.get(textureFile);
+            Supplier<AbstractTexture> supplier;
+            if (builder != null)
+                supplier = () -> builder.setType(type).build();
+            else
+                supplier = () -> Textures.ofFile(textureFile, type);
+            
+            Texture2D texture = (Texture2D) TextureLoader.get().load(textureName, supplier);
             material.addTextures(texture);
             validTextures++;
         }
@@ -322,16 +390,22 @@ public class Model implements Disposable {
         return this;
     }
     
+    public Model translate(Vec3 vec) {
+        this.position.plusAssign(vec);
+        return this;
+    }
+    
     public Vec3 getScale() {
         return scale;
     }
     
     public Model setScale(float scale) {
-        this.scale.put(scale);
-        return this;
+        return setScale(new Vec3(scale));
     }
     
     public Model setScale(Vec3 scale) {
+        if (scale.anyLessThan(0))
+            throw new IllegalArgumentException("Cannot apply negative scaling factor");
         this.scale.put(scale);
         return this;
     }

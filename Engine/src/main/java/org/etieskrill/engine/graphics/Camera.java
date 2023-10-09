@@ -38,7 +38,7 @@ public abstract class Camera {
         this.front = new Vec3();
         this.right = new Vec3();
         this.up = new Vec3();
-        this.worldUp = new Vec3(0f, 1f, 0f);
+        this.worldUp = new Vec3(0f, -1f, 0f);
         
         this.clampPitch = true;
         this.autoUpdate = true;
@@ -57,13 +57,17 @@ public abstract class Camera {
      */
     //TODO optimise
     public Camera translate(Vec3 translation) {
-        Vec3 delta = new Vec3()
-                .plus(front.times(translation.getZ()))
-                .plus(right.times(-translation.getX()))
-                .plus(up.times(-translation.getY()));
+        Vec3 delta = relativeTranslation(translation);
         this.position.plusAssign(delta);
         if (autoUpdate) update();
         return this;
+    }
+    
+    public Vec3 relativeTranslation(Vec3 translation) {
+        return new Vec3()
+                .plus(front.times(translation.getZ()))
+                .plus(right.times(-translation.getX())) //TODO make positive
+                .plus(up.times(-translation.getY())); //TODO also make positive
     }
     
     public Camera setPosition(Vec3 position) {
@@ -133,9 +137,10 @@ public abstract class Camera {
     
     public Vec3 getDirection() {
         return new Vec3(
-                Math.sin(Math.toRadians(pitch)) * Math.cos(Math.toRadians(yaw)),
-                Math.sin(Math.toRadians(pitch)) * Math.sin(Math.toRadians(yaw)),
-                Math.cos(Math.toRadians(pitch)));
+                Math.cos(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch)),
+                Math.sin(Math.toRadians(pitch)),
+                Math.sin(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch)))
+            .normalize();
     }
     
     public Mat4 getCombined() {

@@ -1,7 +1,7 @@
 package org.etieskrill.engine.graphics.texture;
 
 import glm_.vec2.Vec2i;
-import org.etieskrill.engine.graphics.gl.Loaders;
+import org.etieskrill.engine.util.Loaders;
 import org.lwjgl.BufferUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +28,7 @@ public class Textures {
     private static final Logger logger = LoggerFactory.getLogger(Textures.class);
 
     public static Texture2D genBlank(Vec2i size, AbstractTexture.Format format) {
-        Texture2D texture = new Texture2D.BlankBuilder(size, DIFFUSE).build();
+        Texture2D texture = new Texture2D.BlankBuilder(size).setType(DIFFUSE).build();
 
         texture.bind(0);
         glTexImage2D(GL_TEXTURE_2D, 0, format.toGLFormat(), size.getX(), size.getY(),

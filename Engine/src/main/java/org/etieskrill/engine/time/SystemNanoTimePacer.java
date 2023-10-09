@@ -46,7 +46,7 @@ public class SystemNanoTimePacer implements LoopPacer {
     public void nextFrame() {
         if (!started) throw new IllegalStateException("Pacer must be started before call to nextFrame");
         if ((thread = Thread.currentThread().threadId()) != lastThread && lastThread != 0)
-            throw new UnsupportedOperationException("nextFrame should not be called from more than one thread");
+            throw new WrongThreadException("nextFrame must not be called from more than one thread");
         else lastThread = thread;
         
         updateTime();
