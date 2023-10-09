@@ -12,8 +12,11 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.function.Function;
 
-import static org.etieskrill.engine.graphics.gl.shaders.ShaderProgram.ShaderType.*;
+import static org.etieskrill.engine.graphics.gl.shaders.ShaderProgram.ShaderType.FRAGMENT;
+import static org.etieskrill.engine.graphics.gl.shaders.ShaderProgram.ShaderType.VERTEX;
 import static org.etieskrill.engine.graphics.gl.shaders.ShaderProgram.Uniform.NESTED_UNIFORM_LOCATION;
+import static org.lwjgl.opengl.ARBShadingLanguageInclude.GL_SHADER_INCLUDE_ARB;
+import static org.lwjgl.opengl.ARBShadingLanguageInclude.glNamedStringARB;
 import static org.lwjgl.opengl.GL46C.*;
 
 public abstract class ShaderProgram implements Disposable {
@@ -39,6 +42,7 @@ public abstract class ShaderProgram implements Disposable {
     public enum ShaderType {
         VERTEX,
         FRAGMENT,
+        LIBRARY
     }
     
     private static class ShaderFile {
@@ -70,6 +74,9 @@ public abstract class ShaderProgram implements Disposable {
         this.arrayUniforms = null;
         this.placeholder = false;
     }
+
+//    protected ShaderProgram(String vertexSource, String fragmentSource, String[] libs) {
+//    }
     
     protected ShaderProgram() {
         String[] shaderFiles = getShaderFileNames();
@@ -143,10 +150,7 @@ public abstract class ShaderProgram implements Disposable {
     }
     
     //TODO add loader for shader objects and wrap calls to this method in said loader
-    //TODO use named string arbs to modularise shaders
     private int loadShader(String file, int shaderType) {
-        //glNamedStringARB(); //so i don't forget about the import once the above to do is in doing
-        
         String shaderTypeName = switch (shaderType) {
             case GL_VERTEX_SHADER -> "vertex";
             case GL_FRAGMENT_SHADER -> "fragment";
@@ -164,6 +168,11 @@ public abstract class ShaderProgram implements Disposable {
         }
         
         return shaderID;
+    }
+
+    //TODO use named string arbs to modularise shaders
+    private void loadLibrary(String file) {
+        glNamedStringARB(GL_SHADER_INCLUDE_ARB, file.split("\\.")[0], ResourceReader.getRaw(file));
     }
     
     private void disposeShaders() {
