@@ -12,8 +12,11 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.function.Function;
 
-import static org.etieskrill.engine.graphics.gl.shaders.ShaderProgram.ShaderType.*;
+import static org.etieskrill.engine.graphics.gl.shaders.ShaderProgram.ShaderType.FRAGMENT;
+import static org.etieskrill.engine.graphics.gl.shaders.ShaderProgram.ShaderType.VERTEX;
 import static org.etieskrill.engine.graphics.gl.shaders.ShaderProgram.Uniform.NESTED_UNIFORM_LOCATION;
+import static org.lwjgl.opengl.ARBShadingLanguageInclude.GL_SHADER_INCLUDE_ARB;
+import static org.lwjgl.opengl.ARBShadingLanguageInclude.glNamedStringARB;
 import static org.lwjgl.opengl.GL46C.*;
 
 public abstract class ShaderProgram implements Disposable {
@@ -39,9 +42,10 @@ public abstract class ShaderProgram implements Disposable {
     public enum ShaderType {
         VERTEX,
         FRAGMENT,
+        LIBRARY
     }
     
-    private static class ShaderFile {
+    protected static class ShaderFile {
         private final String file;
         private final ShaderType type;
         
@@ -64,25 +68,27 @@ public abstract class ShaderProgram implements Disposable {
         }
     }
     
-    public ShaderProgram(ShaderProgram shader) {
-        this.STRICT_UNIFORM_DETECTION = shader.STRICT_UNIFORM_DETECTION;
-        
-        this.programID = shader.programID;
-        this.vertID = shader.vertID;
-        this.fragID = shader.fragID;
-        
-        this.uniforms = new HashMap<>(shader.uniforms);
-        this.arrayUniforms = new HashMap<>(shader.arrayUniforms);
-        
-        this.placeholder = shader.placeholder;
-    }
-    
     //TODO replace this by implementing main constructor with files argument
     protected ShaderProgram(boolean mock) {
         this.uniforms = null;
         this.arrayUniforms = null;
         this.placeholder = false;
     }
+
+//    protected ShaderProgram(ShaderFile[] shaderFiles) {
+//        int vertex = 0, fragment = 0, libs = 0;
+//        for (ShaderFile file : shaderFiles) {
+//            switch (file.getType()) {
+//                case VERTEX -> { if (vertex++ > 1)
+//                    throw new IllegalArgumentException("Only one vertex shader file may be specified."); }
+//                case FRAGMENT -> { if (fragment++ > 1)
+//                    throw new IllegalArgumentException("Only one fragment shader file may be specified."); }
+//                case LIBRARY -> libs++;
+//            }
+//        }
+//
+//        if (vertex == 0 && fragment == 0) logger.info("Exactly one vertex and one fragment shader must be given.");
+//    }
     
     protected ShaderProgram() {
         String[] shaderFiles = getShaderFileNames();
@@ -138,7 +144,7 @@ public abstract class ShaderProgram implements Disposable {
     
         glLinkProgram(programID);
         if (glGetProgrami(programID, GL_LINK_STATUS) != GL_TRUE)
-            throw new ShaderCreationException("Shader porgram could not be linked", glGetProgramInfoLog(programID));
+            throw new ShaderCreationException("Shader program could not be linked", glGetProgramInfoLog(programID));
     
         disposeShaders();
 
@@ -156,10 +162,7 @@ public abstract class ShaderProgram implements Disposable {
     }
     
     //TODO add loader for shader objects and wrap calls to this method in said loader
-    //TODO use named string arbs to modularise shaders
     private int loadShader(String file, int shaderType) {
-        //glNamedStringARB(); //so i don't forget about the import once the above to do is in doing
-        
         String shaderTypeName = switch (shaderType) {
             case GL_VERTEX_SHADER -> "vertex";
             case GL_FRAGMENT_SHADER -> "fragment";
@@ -177,6 +180,11 @@ public abstract class ShaderProgram implements Disposable {
         }
         
         return shaderID;
+    }
+
+    //TODO use named string arbs to modularise shaders
+    private void loadLibrary(String file) {
+        glNamedStringARB(GL_SHADER_INCLUDE_ARB, file.split("\\.")[0], ResourceReader.getRaw(file));
     }
     
     private void disposeShaders() {

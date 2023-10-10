@@ -83,7 +83,7 @@ public class Game {
         Shaders.LightSourceShader lightShader = (Shaders.LightSourceShader) Loaders.ShaderLoader.get().load("light", Shaders::getLightSourceShader);
         
         camera = new PerspectiveCamera(window.getSize().toVec());
-    
+
         PointLight pointLight = new PointLight(light.getPosition(), new Vec3(1), new Vec3(1), new Vec3(1),
                 1f, 0.03f, 0.005f);
         PointLight[] pointLights = {pointLight};
@@ -127,6 +127,20 @@ public class Game {
             
             Vec3 orbitPos = camera.getDirection().negate().times(3);
             camera.setPosition(orbitPos.plus(0, 2.5, 0).plus(skelly.getPosition()));
+
+            //TODO add collidable border wall
+            //     add collectible orbs
+            //     add pause menu
+            //     add start menu
+            //     add victory screen / with score
+            //     add animation, fixed / skeletal
+            //     create component system
+            //     pack common components
+            //     create "world" for updateable objects
+            //     abstract all gl/ram resources from objects and share accordingly
+
+            //TODO meta
+            //     editorconfig
             
             renderer.prepare();
             shader.setViewPosition(camera.getPosition());

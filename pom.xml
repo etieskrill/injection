@@ -28,6 +28,7 @@
     <modules>
         <module>Engine</module>
         <module>TestGame</module>
+        <module>walk</module>
     </modules>
 
     <profiles>
