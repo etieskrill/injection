@@ -45,7 +45,7 @@ public abstract class ShaderProgram implements Disposable {
         LIBRARY
     }
     
-    private static class ShaderFile {
+    protected static class ShaderFile {
         private final String file;
         private final ShaderType type;
         
@@ -68,19 +68,6 @@ public abstract class ShaderProgram implements Disposable {
         }
     }
     
-    public ShaderProgram(ShaderProgram shader) {
-        this.STRICT_UNIFORM_DETECTION = shader.STRICT_UNIFORM_DETECTION;
-        
-        this.programID = shader.programID;
-        this.vertID = shader.vertID;
-        this.fragID = shader.fragID;
-        
-        this.uniforms = new HashMap<>(shader.uniforms);
-        this.arrayUniforms = new HashMap<>(shader.arrayUniforms);
-        
-        this.placeholder = shader.placeholder;
-    }
-    
     //TODO replace this by implementing main constructor with files argument
     protected ShaderProgram(boolean mock) {
         this.uniforms = null;
@@ -88,7 +75,19 @@ public abstract class ShaderProgram implements Disposable {
         this.placeholder = false;
     }
 
-//    protected ShaderProgram(String vertexSource, String fragmentSource, String[] libs) {
+//    protected ShaderProgram(ShaderFile[] shaderFiles) {
+//        int vertex = 0, fragment = 0, libs = 0;
+//        for (ShaderFile file : shaderFiles) {
+//            switch (file.getType()) {
+//                case VERTEX -> { if (vertex++ > 1)
+//                    throw new IllegalArgumentException("Only one vertex shader file may be specified."); }
+//                case FRAGMENT -> { if (fragment++ > 1)
+//                    throw new IllegalArgumentException("Only one fragment shader file may be specified."); }
+//                case LIBRARY -> libs++;
+//            }
+//        }
+//
+//        if (vertex == 0 && fragment == 0) logger.info("Exactly one vertex and one fragment shader must be given.");
 //    }
     
     protected ShaderProgram() {
@@ -145,7 +144,7 @@ public abstract class ShaderProgram implements Disposable {
     
         glLinkProgram(programID);
         if (glGetProgrami(programID, GL_LINK_STATUS) != GL_TRUE)
-            throw new ShaderCreationException("Shader porgram could not be linked", glGetProgramInfoLog(programID));
+            throw new ShaderCreationException("Shader program could not be linked", glGetProgramInfoLog(programID));
     
         disposeShaders();
 

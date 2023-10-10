@@ -9,6 +9,7 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
+import org.lwjgl.opengl.GLCapabilities;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.system.Platform;
 import org.slf4j.Logger;
@@ -274,8 +275,9 @@ public class Window implements Disposable {
     
     private void initGl() {
         //TODO 1. figure out what this "context" actually is 2. make window creation disjoint from gl context creation
-        GL.createCapabilities();
-    
+        GLCapabilities caps = GL.createCapabilities();
+//        System.out.println("woooo " + caps.GL_ARB_shading_language_include);
+
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LESS);
         glEnable(GL_STENCIL_TEST);
