@@ -5,7 +5,6 @@ import org.etieskrill.engine.graphics.Camera;
 import org.etieskrill.engine.graphics.PerspectiveCamera;
 import org.etieskrill.engine.graphics.assimp.Model;
 import org.etieskrill.engine.graphics.gl.Renderer;
-import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
 import org.etieskrill.engine.graphics.model.PointLight;
 import org.etieskrill.engine.input.InputBinding;
@@ -18,7 +17,7 @@ import org.etieskrill.engine.time.SystemNanoTimePacer;
 import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.window.Window;
 
-import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.glfw.GLFW.glfwSetCursorPosCallback;
 
 public class Game {
     
@@ -50,7 +49,7 @@ public class Game {
     
     private void setupWindow() {
         window = new Window.Builder()
-                .setMode(Window.WindowMode.FULLSCREEN)
+                .setMode(Window.WindowMode.BORDERLESS)
                 .setTitle("Walk")
                 .setInputManager(inputManager)
                 .build();
@@ -80,21 +79,26 @@ public class Game {
         Model light = Loaders.ModelLoader.get().get("cube").setScale(0.5f).setPosition(new Vec3(2, 5, -2));
         Model skelly = Loaders.ModelLoader.get().load("skelly", () -> new Model.Builder("skeleton.glb").build().setScale(15));
         Renderer renderer = new Renderer();
-        ShaderProgram shader = Loaders.ShaderLoader.get().load("standard", () -> Shaders.getStandardShader());
-        ShaderProgram lightShader = Loaders.ShaderLoader.get().load("light", () -> Shaders.getLightSourceShader());
+        Shaders.StaticShader shader = (Shaders.StaticShader) Loaders.ShaderLoader.get().load("standard", Shaders::getStandardShader);
+        Shaders.LightSourceShader lightShader = (Shaders.LightSourceShader) Loaders.ShaderLoader.get().load("light", Shaders::getLightSourceShader);
         
         camera = new PerspectiveCamera(window.getSize().toVec());
     
         PointLight pointLight = new PointLight(light.getPosition(), new Vec3(1), new Vec3(1), new Vec3(1),
                 1f, 0.03f, 0.005f);
+        PointLight[] pointLights = {pointLight};
         
         pacer.start();
         while (!window.shouldClose()) {
-            skelly
-                    .translate(
-                            camera.relativeTranslation(deltaPos.length() != 0 ?
-                                    deltaPos.normalize().times((float) pacer.getDeltaTimeSeconds() * 4) :
-                                    new Vec3(0)).times(1, 0, 1));
+            Vec3 skellyTranslate = camera
+                    .relativeTranslation(deltaPos)
+                    .times(1, 0, 1);
+            if (skellyTranslate.length2() > 0) skellyTranslate.normalizeAssign();
+            skellyTranslate = skellyTranslate
+                    .times(pacer.getDeltaTimeSeconds())
+                    .times(5);
+            skelly.translate(skellyTranslate);
+            
             if (deltaPos.anyNotEqual(0, 0.001f)) {
                 rotation = (float) (Math.atan2(deltaPos.getZ(), deltaPos.getX()) - Math.toRadians(camera.getYaw()));
                 rotation %= Math.toRadians(360);
@@ -117,6 +121,7 @@ public class Game {
                 skelly.getPosition().setY((float) jumpHeight);
                 jumpTime += pacer.getDeltaTimeSeconds();
             } else jumpTime = 0;
+            
             if (inputManager.isPressed(Keys.LEFT_SHIFT)) skelly.setScale(new Vec3(15, 9, 15));
             else skelly.setScale(15);
             
@@ -124,12 +129,13 @@ public class Game {
             camera.setPosition(orbitPos.plus(0, 2.5, 0).plus(skelly.getPosition()));
             
             renderer.prepare();
-            shader.setUniform("uViewPosition", camera.getPosition());
-            shader.setUniformArray("lights[$]", 0, pointLight);
+            shader.setViewPosition(camera.getPosition());
+            shader.setLights(pointLights);
+            
             renderer.render(cube, shader, camera.getCombined());
             renderer.render(skelly, shader, camera.getCombined());
             
-            lightShader.setUniform("light", pointLight);
+            lightShader.setLight(pointLight);
             renderer.render(light, lightShader, camera.getCombined());
             
             window.update(pacer.getDeltaTimeSeconds());

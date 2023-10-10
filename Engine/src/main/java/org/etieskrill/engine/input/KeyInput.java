@@ -127,17 +127,15 @@ public class KeyInput {
          * Does nothing if {@code key} is not a modifier.
          */
         //TODO modifier key combining & chaining
-        public KeyInput withMods(Keys key) {
-            if (key.modifierKey == null) return key.getInput();
-            return withMods(key.modifierKey);
+        public KeyInput withMods(Keys... keys) {
+            Mod[] mods = Arrays.stream(keys).filter(key -> key != null && key.modifierKey != null).map(key -> key.modifierKey).toArray(Mod[]::new);
+            return withMods(mods);
         }
         
         public KeyInput withMods(Mod... mods) {
             Map<Mod, KeyInput> input = keyCache.computeIfAbsent(this.input, k -> new HashMap<>(4));
-            int glfwMods = 0;
-            for (Mod mod : mods)
-                glfwMods |= mod.glfwKey; //both adding and or-ing would work, since the modifiers are flags
-            return input.computeIfAbsent(Mod.fromGlfw(glfwMods), k -> new KeyInput(Type.KEY, this.input.getValue(), 2));
+            int glfwMods = Arrays.stream(mods).distinct().mapToInt(mod -> mod.glfwKey).sum(); //both adding and or-ing would work, since the modifiers are flags
+            return input.computeIfAbsent(Mod.fromGlfw(glfwMods), k -> new KeyInput(this.input.getType(), this.input.getValue(), glfwMods));
         }
     
         public KeyInput getInput() {
@@ -190,6 +188,16 @@ public class KeyInput {
         result = 31 * result + value;
         if (!isModifier()) result = 31 * result + modifiers;
         return result;
+    }
+    
+    @Override
+    public String toString() {
+        return "KeyInput{" +
+                "type=" + type +
+                ", value=" + value +
+                ", modifiers=" + modifiers +
+                ", modifier=" + modifier +
+                '}';
     }
     
 }

@@ -1,5 +1,9 @@
 package org.etieskrill.engine.graphics.gl.shaders;
 
+import glm_.vec3.Vec3;
+import org.etieskrill.engine.graphics.model.DirectionalLight;
+import org.etieskrill.engine.graphics.model.PointLight;
+
 import static org.etieskrill.engine.graphics.gl.shaders.ShaderProgram.Uniform.Type.*;
 
 public class Shaders {
@@ -53,7 +57,7 @@ public class Shaders {
     }
 
     //TODO evaluate whether to put uniforms as variables
-    private static class StaticShader extends ShaderProgram {
+    public static class StaticShader extends ShaderProgram {
         @Override
         protected void init() {}
     
@@ -71,9 +75,20 @@ public class Shaders {
             addUniformArray("lights[$]", 2, STRUCT);
         }
         
+        public void setViewPosition(Vec3 viewPosition) {
+            setUniform("uViewPosition", viewPosition);
+        }
+        
+        public void setGlobalLights(DirectionalLight[] lights) {
+            setUniformArray("globalLights[$]", lights);
+        }
+        
+        public void setLights(PointLight[] pointLights) {
+            setUniformArray("lights[$]", pointLights);
+        }
     }
     
-    private static class ContainerShader extends StaticShader {
+    public static class ContainerShader extends StaticShader {
         @Override
         protected void init() {
             disableStrictUniformChecking();
@@ -91,7 +106,7 @@ public class Shaders {
         }
     }
     
-    private static class SwordShader extends StaticShader {
+    public static class SwordShader extends StaticShader {
         @Override
         protected void init() {
             disableStrictUniformChecking();
@@ -108,8 +123,8 @@ public class Shaders {
             addUniform("uTime", FLOAT);
         }
     }
-
-    private static class RoundedBoxShader extends ShaderProgram {
+    
+    public static class RoundedBoxShader extends ShaderProgram {
         @Override
         protected void init() {}
     
@@ -121,8 +136,8 @@ public class Shaders {
         @Override
         protected void getUniformLocations() {}
     }
-
-    private static class LightSourceShader extends ShaderProgram {
+    
+    public static class LightSourceShader extends ShaderProgram {
         @Override
         protected void init() {
             disableStrictUniformChecking();
@@ -135,13 +150,15 @@ public class Shaders {
         
         @Override
         protected void getUniformLocations() {
-            addUniform("light.ambient", FLOAT);
-            addUniform("light.diffuse", FLOAT);
-            addUniform("light.specular", FLOAT);
+            addUniform("light", STRUCT);
+        }
+        
+        public void setLight(PointLight light) {
+            setUniform("light", light);
         }
     }
     
-    private static class TextureShader extends ShaderProgram {
+    public static class TextureShader extends ShaderProgram {
         @Override
         protected void init() {}
         
@@ -157,7 +174,7 @@ public class Shaders {
         }
     }
     
-    private static class SingleColourShader extends ShaderProgram {
+    public static class SingleColourShader extends ShaderProgram {
         @Override
         protected void init() {}
         
@@ -173,7 +190,7 @@ public class Shaders {
         }
     }
     
-    private static class OutlineShader extends ShaderProgram {
+    public static class OutlineShader extends ShaderProgram {
         @Override
         protected void init() {}
     
@@ -190,7 +207,7 @@ public class Shaders {
         }
     }
     
-    private static class PhongShininessMapShader extends StaticShader {
+    public static class PhongShininessMapShader extends StaticShader {
         @Override
         protected void init() {}
     
@@ -205,7 +222,7 @@ public class Shaders {
         }
     }
     
-    private static class ScreenQuadShader extends ShaderProgram {
+    public static class ScreenQuadShader extends ShaderProgram {
         @Override
         protected void init() {}
     
@@ -218,7 +235,7 @@ public class Shaders {
         protected void getUniformLocations() {}
     }
     
-    private static class PostprocessingShader extends ShaderProgram {
+    public static class PostprocessingShader extends ShaderProgram {
         @Override
         protected void init() {}
         

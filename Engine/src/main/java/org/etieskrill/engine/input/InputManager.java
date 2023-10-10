@@ -65,9 +65,7 @@ public class InputManager implements KeyInputHandler {
         Pair<Trigger, Action> triggerAction = bindings.get(keyInput); //try lookup with exact modifiers
         if (triggerAction == null) {
             triggerAction = bindings.get(new KeyInput(type, key, 0)); //try lookup again without modifiers
-            if (triggerAction != null &&
-                    (triggerAction.getFirst() == PRESSED || triggerAction.getFirst() == TOGGLED)) //if lookup succeeded with continuous bind, remove modifiers
-                keyInput = new KeyInput(type, key, 0);
+            keyInput = new KeyInput(type, key, 0);
         }
         boolean handled = false;
     
