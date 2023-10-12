@@ -1,9 +1,11 @@
 package org.etieskrill.walk;
 
+import glm_.vec2.Vec2;
 import glm_.vec3.Vec3;
 import org.etieskrill.engine.graphics.Camera;
 import org.etieskrill.engine.graphics.PerspectiveCamera;
 import org.etieskrill.engine.graphics.assimp.Model;
+import org.etieskrill.engine.graphics.gl.ModelFactory;
 import org.etieskrill.engine.graphics.gl.Renderer;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
 import org.etieskrill.engine.graphics.model.PointLight;
@@ -15,7 +17,11 @@ import org.etieskrill.engine.input.KeyInput.Keys;
 import org.etieskrill.engine.time.LoopPacer;
 import org.etieskrill.engine.time.SystemNanoTimePacer;
 import org.etieskrill.engine.util.Loaders;
+import org.etieskrill.engine.util.Loaders.ModelLoader;
+import org.etieskrill.engine.util.Loaders.ShaderLoader;
 import org.etieskrill.engine.window.Window;
+
+import java.util.Random;
 
 import static org.lwjgl.glfw.GLFW.glfwSetCursorPosCallback;
 
@@ -28,17 +34,20 @@ public class Game {
     private final Vec3 deltaPos = new Vec3(0);
     private float rotation, smoothRotation;
     private float jumpTime;
+    private float smoothSkellyHeight;
     
     private double prevCursorPosX, prevCursorPosY;
     
+    private int orbsCollected;
+    
     private final InputManager inputManager = InputBinds.of(
             new InputBinding(Keys.ESC.withMods(Keys.SHIFT), () -> window.close()),
-            new InputBinding(Keys.W, Trigger.PRESSED, () -> deltaPos.plusAssign(new Vec3(0, 0, deltaPos.getZ() < 0 ? 2 : 1))),
-            new InputBinding(Keys.S, Trigger.PRESSED, () -> deltaPos.plusAssign(new Vec3(0, 0, deltaPos.getZ() > 0 ? -2 : -1))),
+            new InputBinding(Keys.W, Trigger.PRESSED, () -> deltaPos.plusAssign(new Vec3(0, 0, 1))),
+            new InputBinding(Keys.S, Trigger.PRESSED, () -> deltaPos.plusAssign(new Vec3(0, 0, -1))),
             new InputBinding(Keys.A, Trigger.PRESSED, () -> deltaPos.plusAssign(new Vec3(-1, 0, 0))),
             new InputBinding(Keys.D, Trigger.PRESSED, () -> deltaPos.plusAssign(new Vec3(1, 0, 0))),
             new InputBinding(Keys.Q, Trigger.ON_TOGGLE, () -> System.out.println("*bang*")),
-            new InputBinding(Keys.E, Trigger.ON_PRESS, () -> System.out.println("*poof*"))
+            new InputBinding(Keys.E, Trigger.ON_PRESS, () -> System.out.println("orbs collected: " + orbsCollected))
     );
     
     public Game() {
@@ -75,16 +84,47 @@ public class Game {
         //TODO figure out a smart way to link the pacer and window refresh rates
         LoopPacer pacer = new SystemNanoTimePacer(1 / 60f);
         
-        Model cube = Loaders.ModelLoader.get().load("cube", () -> Model.ofFile("cube.obj")).setScale(50).setPosition(new Vec3(0, -25, 0));
-        Model light = Loaders.ModelLoader.get().get("cube").setScale(0.5f).setPosition(new Vec3(2, 5, -2));
-        Model skelly = Loaders.ModelLoader.get().load("skelly", () -> new Model.Builder("skeleton.glb").build().setScale(15));
+        Model cube = ModelLoader.get().load("cube", () -> Model.ofFile("cube.obj"));
+        cube.getTransform().setScale(50).setPosition(new Vec3(0, -25, 0));
+        Model light = ModelLoader.get().get("cube");
+        light.getTransform().setScale(0.5f).setPosition(new Vec3(2, 5, -2));
+        Model skelly = ModelLoader.get().load("skelly", () -> Model.ofFile("skeleton.glb"));
+        skelly.getTransform().setScale(15);
+        
+        Model skellyBBModel = ModelFactory.box(skelly.getBoundingBox().getMax().minus(skelly.getBoundingBox().getMin()));
+        skellyBBModel.getTransform()
+                .setInitialPosition(
+                        skelly.getBoundingBox().getCenter().times(skelly.getTransform().getScale())
+                );
+        
+        final int NUM_ORBS = 10;
+        Model[] orbs = new Model[NUM_ORBS];
+        Random random = new Random(69420);
+        for (int i = 0; i < NUM_ORBS; i++) {
+            orbs[i] = ModelLoader.get().load("orb", () -> Model.ofFile("Sphere.obj"));
+            orbs[i].getTransform()
+                    .setScale(new Vec3(0.02))
+                    .setPosition(new Vec3(
+                            random.nextFloat() * 50 - 25,
+                            random.nextFloat() * 4.5 + 0.5,
+                            random.nextFloat() * 50 - 25
+                    ));
+        }
+        Model orbBBModel = ModelFactory.box(orbs[0].getBoundingBox().getMax().minus(orbs[0].getBoundingBox().getMin()));
+        orbBBModel.getTransform().setInitialPosition(
+                orbBBModel.getBoundingBox().getCenter()
+        );
+        
         Renderer renderer = new Renderer();
-        Shaders.StaticShader shader = (Shaders.StaticShader) Loaders.ShaderLoader.get().load("standard", Shaders::getStandardShader);
-        Shaders.LightSourceShader lightShader = (Shaders.LightSourceShader) Loaders.ShaderLoader.get().load("light", Shaders::getLightSourceShader);
+        
+        Shaders.StaticShader shader = (Shaders.StaticShader) ShaderLoader.get().load("standard", Shaders::getStandardShader);
+        Shaders.LightSourceShader lightShader = (Shaders.LightSourceShader) ShaderLoader.get().load("light", Shaders::getLightSourceShader);
         
         camera = new PerspectiveCamera(window.getSize().toVec());
+        camera.setZoom(4.81f);
 
-        PointLight pointLight = new PointLight(light.getPosition(), new Vec3(1), new Vec3(1), new Vec3(1),
+        PointLight pointLight = new PointLight(light.getTransform().getPosition(),
+                new Vec3(1), new Vec3(1), new Vec3(1),
                 1f, 0.03f, 0.005f);
         PointLight[] pointLights = {pointLight};
         
@@ -96,40 +136,63 @@ public class Game {
             if (skellyTranslate.length2() > 0) skellyTranslate.normalizeAssign();
             skellyTranslate = skellyTranslate
                     .times(pacer.getDeltaTimeSeconds())
-                    .times(5);
-            skelly.translate(skellyTranslate);
+                    .times(5 * (inputManager.isPressed(Keys.CTRL) ? 1.5 : 1));
+            skelly.getTransform().translate(skellyTranslate);
             
             if (deltaPos.anyNotEqual(0, 0.001f)) {
                 rotation = (float) (Math.atan2(deltaPos.getZ(), deltaPos.getX()) - Math.toRadians(camera.getYaw()));
                 rotation %= Math.toRadians(360);
                 //TODO fix shortest distance through wraparound
+                //TODO include delta time
                 if (Math.abs(rotation - smoothRotation) > 0.001) {
                     double falloff = -0.5 * (1 / (2 * Math.abs(rotation - smoothRotation) + 0.5)) + 1;
                     smoothRotation += Math.toRadians(rotation - smoothRotation >= 0 ? 5 * falloff : -5 * falloff);
                 }
                 smoothRotation %= Math.toRadians(360);
-                skelly.setRotation(
+                skelly.getTransform().setRotation(
                         smoothRotation,
                         new Vec3(0, 1, 0));
             }
             deltaPos.put(0);
             
+            skelly.getTransform().getPosition().setX(Math.max(-25, Math.min(25, skelly.getTransform().getPosition().getX()))); //why not use Math#clamp? try it, smartass
+            skelly.getTransform().getPosition().setZ(Math.max(-25, Math.min(25, skelly.getTransform().getPosition().getZ())));
+            
             if (inputManager.isPressed(Keys.SPACE) && jumpTime == 0)
                 jumpTime += 0.0001;
             if (jumpTime != 0 && jumpTime < 1) {
                 double jumpHeight = -4 * (jumpTime - 0.5) * (jumpTime - 0.5) + 1;
-                skelly.getPosition().setY((float) jumpHeight);
+                skelly.getTransform().getPosition().setY((float) jumpHeight);
                 jumpTime += pacer.getDeltaTimeSeconds();
             } else jumpTime = 0;
+    
+            float skellyHeight;
+            if (inputManager.isPressed(Keys.LEFT_SHIFT)) skellyHeight = 9;
+            else skellyHeight = 15;
             
-            if (inputManager.isPressed(Keys.LEFT_SHIFT)) skelly.setScale(new Vec3(15, 9, 15));
-            else skelly.setScale(15);
+            double falloff = -0.5 * (1 / (2 * Math.abs(skellyHeight - smoothSkellyHeight) + 0.5)) + 1;
+            falloff = 20 * falloff * pacer.getDeltaTimeSeconds();
+            smoothSkellyHeight += skellyHeight > smoothSkellyHeight ? falloff : -falloff;
+            
+            skelly.getTransform().setScale(new Vec3(15, smoothSkellyHeight, 15));
+            
+//            skellyBBModel.getTransform().set(skelly.getTransform());
+    
+            for (int i = 0; i < orbs.length; i++) {
+                Model orb = orbs[i];
+                if (!orb.isEnabled()) continue;
+    
+                Vec3 direction = orb.getTransform().getPosition().minus(skelly.getTransform().getPosition());
+                if (new Vec2(direction.getX(), direction.getZ()).length() < 1 && direction.getY() > 0 && direction.getY() < 4) {
+                    orb.disable();
+                    orbsCollected++;
+                }
+            }
             
             Vec3 orbitPos = camera.getDirection().negate().times(3);
-            camera.setPosition(orbitPos.plus(0, 2.5, 0).plus(skelly.getPosition()));
+            camera.setPosition(orbitPos.plus(0, skelly.getWorldBoundingBox().getSize().getY() - 0.5, 0).plus(skelly.getTransform().getPosition()));
 
-            //TODO add collidable border wall
-            //     add collectible orbs
+            //TODO add ui: score counter
             //     add pause menu
             //     add start menu
             //     add victory screen / with score
@@ -148,6 +211,14 @@ public class Game {
             
             renderer.render(cube, shader, camera.getCombined());
             renderer.render(skelly, shader, camera.getCombined());
+//            renderer.renderWireframe(skellyBBModel, shader, camera.getCombined());
+            
+            for (Model orb : orbs) {
+                if (!orb.isEnabled()) continue;
+                renderer.render(orb, shader, camera.getCombined());
+//                orbBBModel.getTransform().set(orb.getTransform());
+//                renderer.renderWireframe(orbBBModel, shader, camera.getCombined());
+            }
             
             lightShader.setLight(pointLight);
             renderer.render(light, lightShader, camera.getCombined());

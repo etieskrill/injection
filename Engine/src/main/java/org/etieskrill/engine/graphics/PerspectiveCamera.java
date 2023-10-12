@@ -1,6 +1,5 @@
 package org.etieskrill.engine.graphics;
 
-import glm_.mat4x4.Mat4;
 import glm_.vec2.Vec2;
 
 import static glm_.Java.glm;
@@ -38,6 +37,7 @@ public class PerspectiveCamera extends Camera {
         return fov;
     }
     
+    //TODO make fov and the whole zoom mechanic actually usable
     public void setFov(float fov) {
         this.fov = fov;
     }

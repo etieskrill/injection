@@ -9,7 +9,6 @@ import org.etieskrill.engine.graphics.assimp.Model;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
-import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,9 +66,11 @@ public class Renderer {
     }
     
     public void renderWireframe(Model model, ShaderProgram shader, Mat4 combined) {
+        glDisable(GL_CULL_FACE);
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         _render(model, shader, combined);
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        glEnable(GL_CULL_FACE);
     }
     
     public void render(CubeMapModel cubemap, ShaderProgram shader, Mat4 combined) {
@@ -81,8 +82,8 @@ public class Renderer {
     
     private void _render(Model model, ShaderProgram shader, Mat4 combined) {
         shader.setUniform("uCombined", combined, false);
-        shader.setUniform("uModel", model.getTransform(), false);
-        shader.setUniform("uNormal", model.getTransform().inverse().transpose().toMat3(), false);
+        shader.setUniform("uModel", model.getTransform().toMat(), false);
+        shader.setUniform("uNormal", model.getTransform().toMat().inverseTranspose().toMat3(), false);
     
         if (!model.doCulling()) glDisable(GL_CULL_FACE);
         if (model.hasTransparency()) glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

@@ -13,6 +13,8 @@ import static org.lwjgl.glfw.GLFW.*;
 
 public class InputManager implements KeyInputHandler {
     
+    //TODO add <name,action> map to allow for rebinding and structural streamlining
+    //TODO allow for keys to overrule/bind each other with activation policies; latest, oldest, all, none
     private final Map<KeyInput, Pair<Trigger, Action>> bindings;
     private final Set<KeyInput> pressed;
     private final Set<KeyInput> toggled;

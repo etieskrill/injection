@@ -3,6 +3,7 @@ package org.etieskrill.game;
 import glm_.vec2.Vec2;
 import glm_.vec2.Vec2i;
 import glm_.vec3.Vec3;
+import org.etieskrill.engine.entity.data.Transform;
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.OrthographicCamera;
 import org.etieskrill.engine.graphics.PerspectiveCamera;
@@ -329,7 +330,8 @@ public class DemCubez {
                         Textures.getSkybox("space")
                 );
         for (int i = 0; i < cubePositions.length; i++) {
-            models[i] = ModelLoader.get().get("cube")
+            models[i] = ModelLoader.get().get("cube");
+            models[i].getTransform()
                     .setPosition(cubePositions[i])
                     .setRotation(random.nextFloat(),
                             new Vec3(
@@ -348,37 +350,44 @@ public class DemCubez {
         };
         grassModels = new ArrayList<>(grassPosition.length);
         for (Vec3 position : grassPosition) {
-            grassModels.add(ModelLoader.get().load("grass", () ->
-                            new Model.Builder("grass.obj")
-                                    .disableCulling()
-                                    .hasTransparency()
-                                    .build())
-                    .setPosition(position)
-            );
+            //TODO contemplate how to make copy on repeated load (so e.g. no individual transform) more obvious
+            Model grassModel = ModelLoader.get().load("grass", () ->
+                    new Model.Builder("grass.obj")
+                            .disableCulling()
+                            .hasTransparency()
+                            .build());
+            grassModel.getTransform().setPosition(position);
+            grassModels.add(grassModel);
         }
+        grassModels.forEach(model -> System.out.println(model.getTransform().getPosition()));
     
         lightSources = new Model[2];
         for (int i = 0; i < lightSources.length; i++) {
             lightSources[i] = ModelLoader.get().load("light", () ->
                             new Model.Builder("cube.obj")
                                     .setName("light")
-                                    .build())
-                    .setScale(0.2f)
-                    .setPosition(new Vec3(0f, 0f, -5f));
+                                    .setTransform(Transform.getBlank()
+                                            .setScale(0.2f)
+                                            .setPosition(new Vec3(0f, 0f, -5f)))
+                                    .build());
         }
     
         sword = ModelLoader.get().load("sword", () ->
-                Model.ofFile("Sting-Sword.obj")
-                        .setPosition(new Vec3(0, 0, -2))
-                        .setScale(new Vec3(0.1f))
-                        .setRotation((float) Math.toRadians(90f), new Vec3(1f, 0f, 0f))
+                new Model.Builder("Sting-Sword.obj")
+                        .setTransform(new Transform(
+                                new Vec3(0, 0, -2),
+                                (float) Math.toRadians(90f), new Vec3(1f, 0f, 0f),
+                                new Vec3(0.1f)))
+                        .build()
         );
     
         backpack = ModelLoader.get().load("backpack", () ->
-                Model.ofFile("backpack.obj")
-                        .setPosition(new Vec3(3, 0.5, -2))
-                        .setScale(new Vec3(0.15f))
-                        .setRotation((float) Math.toRadians(-90), new Vec3(0, 1, 0))
+                new Model.Builder("backpack.obj")
+                        .setTransform(new Transform(
+                                new Vec3(3, 0.5, -2),
+                                (float) Math.toRadians(-90), new Vec3(0, 1, 0),
+                                new Vec3(0.15f)))
+                        .build()
         );
     
         //These are essentially intensity factors
@@ -388,7 +397,7 @@ public class DemCubez {
     
         lights = new PointLight[lightSources.length];
         for (int i = 0; i < lights.length; i++) {
-            lights[i] = new PointLight(lightSources[i].getPosition(),
+            lights[i] = new PointLight(lightSources[i].getTransform().getPosition(),
                     new Vec3(0.1), new Vec3(0.3), new Vec3(0.5),
                     1f, 0.03f, 0.005f);
         }
@@ -450,13 +459,13 @@ public class DemCubez {
                 radius * Math.sin(Math.toRadians(time))
         );
         if (!paused) {
-            lightSources[0].setPosition(newLightSourcePos.plus(offset));
-            lightSources[1].setPosition(newLightSourcePos.negate().plus(offset));
+            lightSources[0].getTransform().setPosition(newLightSourcePos.plus(offset));
+            lightSources[1].getTransform().setPosition(newLightSourcePos.negate().plus(offset));
         }
     
         if (!paused) {
             for (Model cube : models)
-                cube.setRotation(cube.getRotation() + 0.01f, cube.getRotationAxis());
+                cube.getTransform().setRotation(cube.getTransform().getRotation() + 0.01f, cube.getTransform().getRotationAxis());
         }
     }
     
@@ -481,8 +490,8 @@ public class DemCubez {
 
         //TODO 1. draw opaque, 2. sort transparent by decreasing distance to viewer, 3. draw sorted transparent
         grassModels.sort((model1, model2) -> Float.compare(
-                camera.getPosition().minus(model2.getPosition()).length(),
-                camera.getPosition().minus(model1.getPosition()).length())
+                camera.getPosition().minus(model2.getTransform().getPosition()).length(),
+                camera.getPosition().minus(model1.getTransform().getPosition()).length())
         );
         for (Model grass : grassModels) {
             renderer.render(grass, containerShader, camera.getCombined());

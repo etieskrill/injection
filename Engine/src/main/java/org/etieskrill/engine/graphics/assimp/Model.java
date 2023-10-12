@@ -4,7 +4,10 @@ import glm_.mat4x4.Mat4;
 import glm_.vec2.Vec2;
 import glm_.vec2.Vec2i;
 import glm_.vec3.Vec3;
+import glm_.vec4.Vec4;
 import org.etieskrill.engine.Disposable;
+import org.etieskrill.engine.entity.data.AABB;
+import org.etieskrill.engine.entity.data.Transform;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.etieskrill.engine.graphics.texture.AbstractTexture.Type;
 import org.etieskrill.engine.graphics.texture.Texture2D;
@@ -37,27 +40,31 @@ public class Model implements Disposable {
     
     private final List<Mesh> meshes; //TODO these should become immutable after model instantiation
     private final List<Material> materials; //TODO since meshes know their materials, these here may not be necessary?
+    
+    //TODO this really does not belong here, loading should FINALLY be transferred to a loader...
+    // throw together with the ModelLoader? nah, better write a separate one, though that is a bit disgusting
     private final Map<String, Texture2D.Builder> embeddedTextures = new HashMap<>();
+    
+    private AABB boundingBox;
     
     private final String name;
     
-    //TODO create transform wrapper class
-    private final Vec3 position;
-    private final Vec3 scale;
-    private float rotation;
-    private final Vec3 rotationAxis;
-    
-    private final Mat4 transform;
+    private final Transform transform;
     
     private boolean flipUVs;
     private boolean flipWinding;
     private final boolean culling;
     private final boolean transparency;
     
+    //TODO move to entity eventually
+    private boolean enabled;
+    
     public static class Builder {
         private final List<Mesh> meshes = new LinkedList<>();
         private final List<Material> materials = new LinkedList<>();
     
+        public AABB boundingBox;
+        
         private final String file;
         private String name;
     
@@ -65,6 +72,8 @@ public class Model implements Disposable {
         private boolean flipWinding = false;
         private boolean culling = true;
         private boolean transparency = false;
+        
+        private Transform transform = Transform.getBlank();
         
         public Builder(String file) {
             if (file.isBlank()) throw new IllegalArgumentException("File name cannot be blank");
@@ -74,6 +83,7 @@ public class Model implements Disposable {
             this.name = file.split("\\.")[0];
         }
     
+        //TODO actually integrate this & material setter into loading process
         public Builder setMeshes(Mesh... meshes) {
             this.meshes.clear();
             this.meshes.addAll(List.of(meshes));
@@ -117,6 +127,11 @@ public class Model implements Disposable {
         }
         
         //TODO add refractive toggle/mode (NONE, GLASS, WATER etc.)
+        
+        public Builder setTransform(Transform transform) {
+            this.transform = transform;
+            return this;
+        }
     
         public Model build() {
             try {
@@ -144,22 +159,24 @@ public class Model implements Disposable {
         // and should effectively be immutable, consider encapsulating them into another class
         this.meshes = model.meshes;
         this.materials = model.materials;
+        this.boundingBox = model.boundingBox;
         this.name = model.name;
+        
         logger.trace("Creating copy of model {}", name);
-        this.position = new Vec3(model.position);
-        this.scale = new Vec3(model.scale);
-        this.rotation = model.rotation;
-        this.rotationAxis = new Vec3(model.rotationAxis);
-        this.transform = new Mat4(model.transform);
+        
+        this.transform = new Transform(model.transform);
         this.flipUVs = model.flipUVs;
         this.flipWinding = model.flipWinding;
         this.culling = model.culling;
         this.transparency = model.transparency;
+        
+        this.enabled = model.enabled;
     }
     
     private Model(Builder builder) throws IOException {
         this.meshes = builder.meshes;
         this.materials = builder.materials;
+        
         this.name = builder.name;
     
         this.flipUVs = builder.flipUVs;
@@ -170,11 +187,9 @@ public class Model implements Disposable {
         logger.debug("Loading model {} from file {}", name, builder.file);
         loadModel(builder.file);
         
-        this.position = new Vec3(0);
-        this.scale = new Vec3(1);
-        this.rotation = 0;
-        this.rotationAxis = new Vec3(1, 0, 0);
-        this.transform = new Mat4(1);
+        this.transform = builder.transform;
+        
+        enable();
     }
     
     private void loadModel(String file) throws IOException {
@@ -201,15 +216,9 @@ public class Model implements Disposable {
         }
         
         loadEmbeddedTextures(scene);
-    
-        logger.trace("{} materials found", scene.mNumMaterials());
-        PointerBuffer mMaterials = scene.mMaterials();
-        for (int i = 0; i < scene.mNumMaterials(); i++) {
-            logger.trace("Processing material {}", i);
-            materials.add(processMaterial(AIMaterial.create(mMaterials.get())));
-        }
-    
+        loadMaterials(scene);
         processNode(scene.mRootNode(), scene);
+        calculateModelBoundingBox();
         
         aiReleaseImport(scene);
     }
@@ -227,6 +236,8 @@ public class Model implements Disposable {
     }
     
     private Mesh processMesh(AIMesh mesh) {
+        //TODO add AABB loading but oh FUCK each goddamn mesh has a separate one FFS
+        
         int numVertices = mesh.mNumVertices();
         List<Vec3> positions = new ArrayList<>(numVertices);
         mesh.mVertices().forEach(vertex -> positions.add(new Vec3(vertex.x(), vertex.y(), vertex.z())));
@@ -256,11 +267,39 @@ public class Model implements Disposable {
                 indices.add((short) buffer.get());
         }
         
-        logger.trace("Loaded mesh with {} vertices {} normals and {} uv coordinates", vertices.size(),
+        AIVector3D min = mesh.mAABB().mMin();
+        AIVector3D max = mesh.mAABB().mMax();
+        AABB boundingBox = new AABB(new Vec3(min.x(), min.y(), min.z()),
+                                    new Vec3(max.x(), max.y(), max.z()));
+        
+        if (boundingBox.getMin().allEqual(0f, 0.00001f)
+                || boundingBox.getMax().allEqual(0f, 0.00001f))
+            boundingBox = calculateBoundingBox(vertices);
+        
+        logger.trace("Loaded mesh with {} vertices {} normals, {} uv coordinates", vertices.size(),
                 normals.size() > 0 ? "with" : "without", texCoords.size() > 0 ? "with" : "without");
         
         Material material = materials.get(mesh.mMaterialIndex());
-        return Mesh.Loader.loadToVAO(vertices, indices, material);
+        return Mesh.Loader.loadToVAO(vertices, indices, material, boundingBox);
+    }
+    
+    private AABB calculateBoundingBox(List<Vertex> vertices) {
+        float minX = 0, maxX = 0, minY = 0, maxY = 0, minZ = 0, maxZ = 0;
+        
+        //for models as complicated as the skeleton, a stream variant presents a slight improvement in performance,
+        //measurable in the single milliseconds, which is not worth the cost of initialising a stream for a model with
+        //very few vertices
+        for (Vertex vertex : vertices) {
+            Vec3 pos = vertex.getPosition();
+            minX = Math.min(pos.getX(), minX);
+            minY = Math.min(pos.getY(), minY);
+            minZ = Math.min(pos.getZ(), minZ);
+            maxX = Math.max(pos.getX(), maxX);
+            maxY = Math.max(pos.getY(), maxY);
+            maxZ = Math.max(pos.getZ(), maxZ);
+        }
+        
+        return new AABB(new Vec3(minX, minY, minZ), new Vec3(maxX, maxY, maxZ));
     }
     
     private void loadEmbeddedTextures(AIScene scene) {
@@ -268,7 +307,7 @@ public class Model implements Disposable {
         for (int i = 0; i < scene.mNumTextures(); i++) {
             AITexture texture = AITexture.create(textures.get());
             
-            //TODO data should really always be compressed, but at least add a warning or something in case it is not
+            //TODO data should really always be compressed when embedded, but at least add a warning or something in case it is not
             // also "texture data is always ARGB8888 to make the implementation for user of the library as easy as possible" my arse, thats just inefficient
 //            if (texture.mHeight() != 0) is uncompressed;
 //            else is compressed;
@@ -299,6 +338,15 @@ public class Model implements Disposable {
         }
         
         logger.debug("{} of {} embedded textures loaded", embeddedTextures.size(), scene.mNumTextures());
+    }
+    
+    private void loadMaterials(AIScene scene) {
+        logger.trace("{} materials found", scene.mNumMaterials());
+        PointerBuffer mMaterials = scene.mMaterials();
+        for (int i = 0; i < scene.mNumMaterials(); i++) {
+            logger.trace("Processing material {}", i);
+            materials.add(processMaterial(AIMaterial.create(mMaterials.get())));
+        }
     }
     
     private Material processMaterial(AIMaterial aiMaterial) {
@@ -373,6 +421,27 @@ public class Model implements Disposable {
         return validProperties;
     }
     
+    private void calculateModelBoundingBox() {
+        Vec3 min = new Vec3(), max = new Vec3();
+        for (Mesh mesh : meshes) {
+            Vec3 meshMin = mesh.getBoundingBox().getMin();
+            Vec3 meshMax = mesh.getBoundingBox().getMax();
+            min.put(Math.min(meshMin.getX(), min.getX()), Math.min(meshMin.getY(), min.getY()), Math.min(meshMin.getZ(), min.getZ()));
+            max.put(Math.max(meshMax.getX(), max.getX()), Math.max(meshMax.getY(), max.getY()), Math.max(meshMax.getZ(), max.getZ()));
+        }
+        this.boundingBox = new AABB(min, max);
+    }
+    
+    public AABB getBoundingBox() {
+        return boundingBox;
+    }
+    
+    public AABB getWorldBoundingBox() {
+        Mat4 transform = this.transform.toMat();
+        return new AABB(transform.times(new Vec4(boundingBox.getMin())).toVec3(),
+                        transform.times(new Vec4(boundingBox.getMax())).toVec3());
+    }
+    
     public String getName() {
         return name;
     }
@@ -381,52 +450,7 @@ public class Model implements Disposable {
         return meshes;
     }
     
-    public Vec3 getPosition() {
-        return position;
-    }
-    
-    public Model setPosition(Vec3 vec) {
-        this.position.put(vec);
-        return this;
-    }
-    
-    public Model translate(Vec3 vec) {
-        this.position.plusAssign(vec);
-        return this;
-    }
-    
-    public Vec3 getScale() {
-        return scale;
-    }
-    
-    public Model setScale(float scale) {
-        return setScale(new Vec3(scale));
-    }
-    
-    public Model setScale(Vec3 scale) {
-        if (scale.anyLessThan(0))
-            throw new IllegalArgumentException("Cannot apply negative scaling factor");
-        this.scale.put(scale);
-        return this;
-    }
-    
-    public float getRotation() {
-        return rotation;
-    }
-    
-    public Vec3 getRotationAxis() {
-        return rotationAxis;
-    }
-    
-    public Model setRotation(float rotation, Vec3 rotationAxis) {
-        this.rotation = rotation;
-        this.rotationAxis.put(rotationAxis.normalize());
-        return this;
-    }
-    
-    //Transform is lazily updated
-    public Mat4 getTransform() {
-        updateTransform();
+    public Transform getTransform() {
         return transform;
     }
     
@@ -438,12 +462,16 @@ public class Model implements Disposable {
         return transparency;
     }
     
-    private void updateTransform() {
-        this.transform.put(this.transform.identity()
-                .translate(position)
-                .scale(scale)
-                .rotate(rotation, rotationAxis)
-        );
+    public boolean isEnabled() {
+        return enabled;
+    }
+    
+    public void enable() {
+        enabled = true;
+    }
+    
+    public void disable() {
+        enabled = false;
     }
     
     private static Mat4 toMat4(AIMatrix4x4 mat) {

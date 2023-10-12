@@ -10,8 +10,8 @@ public class KeyInput {
     
     private final Type type;
     private final int value;
-    private final int modifiers;
     private final boolean modifier;
+    private final int modifiers;
     
     public static final int[] modifierKeys = {
             GLFW_KEY_LEFT_SHIFT,
@@ -150,12 +150,8 @@ public class KeyInput {
     public KeyInput(Type type, int value, int modifiers) {
         this.type = type;
         this.value = value;
-        this.modifiers = isModifier() ? 0 : modifiers;
         this.modifier = Arrays.stream(modifierKeys).anyMatch(key -> key == this.value);
-    }
-    
-    public boolean isModifier() {
-        return modifier;
+        this.modifiers = isModifier() ? 0 : modifiers;
     }
     
     public Type getType() {
@@ -164,6 +160,10 @@ public class KeyInput {
     
     public int getValue() {
         return value;
+    }
+    
+    public boolean isModifier() {
+        return modifier;
     }
     
     public int getModifiers() {

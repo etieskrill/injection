@@ -1,11 +1,11 @@
 package org.etieskrill.engine.graphics.assimp;
 
 import org.etieskrill.engine.Disposable;
+import org.etieskrill.engine.entity.data.AABB;
 
 import java.util.List;
 
 import static org.etieskrill.engine.graphics.assimp.Vertex.*;
-import static org.etieskrill.engine.graphics.assimp.Vertex.COMPONENTS;
 import static org.lwjgl.opengl.GL33C.*;
 
 public class Mesh implements Disposable {
@@ -14,9 +14,14 @@ public class Mesh implements Disposable {
     
     private final Material material;
     private final int vao, numIndices, vbo, ebo;
+    private final AABB boundingBox;
     
     public static final class Loader {
         public static Mesh loadToVAO(List<Vertex> vertices, List<Short> indices, Material material) {
+            return loadToVAO(vertices, indices, material, null);
+        }
+        
+        public static Mesh loadToVAO(List<Vertex> vertices, List<Short> indices, Material material, AABB boundingBox) {
             int vao = createVAO();
     
             if (indices.isEmpty()) System.out.println(vertices.size());
@@ -34,7 +39,7 @@ public class Mesh implements Disposable {
             int ebo = prepareIndexBuffer(_indices);
         
             unbindVAO();
-            return new Mesh(material, vao, indices.size(), vbo, ebo);
+            return new Mesh(material, vao, indices.size(), vbo, ebo, boundingBox);
         }
     
         private static int createVAO() {
@@ -77,13 +82,16 @@ public class Mesh implements Disposable {
     }
     
     public Mesh(Material material,
-                int vao, int numIndices, int vbo, int ebo) {
+                int vao, int numIndices, int vbo, int ebo,
+                AABB boundingBox) {
         this.material = material;
         
         this.vao = vao;
         this.numIndices = numIndices;
         this.vbo = vbo;
         this.ebo = ebo;
+        
+        this.boundingBox = boundingBox;
     }
     
     public Material getMaterial() {
@@ -96,6 +104,10 @@ public class Mesh implements Disposable {
     
     public int getVao() {
         return vao;
+    }
+    
+    public AABB getBoundingBox() {
+        return boundingBox;
     }
     
     @Override

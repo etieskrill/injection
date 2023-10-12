@@ -289,7 +289,7 @@ public abstract class ShaderProgram implements Disposable {
     void setUniformValue(Uniform uniform, int location, Object value) {
         if (AUTO_START_ON_VARIABLE_SET) start();
         switch (uniform.getType()) {
-            case INT, SAMPLER2D -> glUniform1i(location, (Integer) value);
+            case INT, SAMPLER2D, SAMPLER_CUBE_MAP -> glUniform1i(location, (Integer) value);
             case FLOAT -> glUniform1f(location, (Float) value);
             case BOOLEAN -> glUniform1f(location, (boolean) value ? 1 : 0);
             case VEC3 -> glUniform3fv(location, ((Vec3) value).toFloatArray());
