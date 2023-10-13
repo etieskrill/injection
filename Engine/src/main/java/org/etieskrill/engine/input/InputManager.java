@@ -5,34 +5,60 @@ import org.etieskrill.engine.input.InputBinding.Trigger;
 import org.etieskrill.engine.input.action.Action;
 import org.etieskrill.engine.input.action.DeltaAction;
 import org.etieskrill.engine.input.action.SimpleAction;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.etieskrill.engine.input.InputBinding.Trigger.*;
 import static org.lwjgl.glfw.GLFW.*;
 
 public class InputManager implements KeyInputHandler {
     
+    private static final Logger logger = LoggerFactory.getLogger(InputManager.class);
+    
     //TODO add <name,action> map to allow for rebinding and structural streamlining
     //TODO allow for keys to overrule/bind each other with activation policies; latest, oldest, all, none
     private final Map<KeyInput, Pair<Trigger, Action>> bindings;
+    private final Map<KeyInput, OverruleGroup> groups;
+    private final Map<OverruleGroup, Integer> groupKeysActive;
+    
     private final Set<KeyInput> pressed;
     private final Set<KeyInput> toggled;
     private final Queue<KeyInput> events;
     
     public InputManager() {
-        this(new HashMap<>());
+        this(new HashMap<>(), new HashMap<>());
     }
     
-    public InputManager(Map<KeyInput, Pair<Trigger, Action>> bindings) {
-        this.bindings = bindings;
+    public InputManager(Map<KeyInput, Pair<Trigger, Action>> bindings, Map<KeyInput, OverruleGroup> groups) {
+        this.bindings = Objects.requireNonNull(bindings);
+        this.groups = Objects.requireNonNull(groups);
+        this.groupKeysActive = new HashMap<>();
         this.pressed = new HashSet<>();
         this.toggled = new HashSet<>();
         this.events = new ArrayDeque<>();
     }
     
-    public InputManager addBinding(KeyInput keyInput, Trigger trigger, Action action) {
-        this.bindings.put(keyInput, new Pair<>(trigger, action));
+    public InputManager addBindings(InputBinding... bindings) {
+        for (InputBinding binding : bindings) {
+            this.bindings.put(binding.getInput(), new Pair<>(binding.getTrigger(), binding.getAction()));
+            if (binding.getGroup() != null) addGroups(binding.getGroup());
+        }
+        return this;
+    }
+    
+    public InputManager addGroups(OverruleGroup... groups) {
+        for (OverruleGroup group : groups) {
+            for (KeyInput input : group.getGroup()) {
+                if (this.groups.put(input, group) != null) {
+                    logger.warn("The binding {} is present in multiple groups, only the last group registered will be respected.",
+                            Keys.fromKeyInput(input).name());
+                }
+            } //ik ik, this makes me puke too
+        }
+        
         return this;
     }
     
@@ -62,7 +88,7 @@ public class InputManager implements KeyInputHandler {
     public boolean invoke(KeyInput.Type type, int key, int action, int modifiers) {
         if (action == GLFW_REPEAT) return false; //omitted for simplicity - for now
         
-        //TODO this is waaaay to complicated, rework if any time, probs by introducing a mixed polling system for continuous binds and callbacks for triggers
+        //TODO introduce a mixed polling system for continuous binds and callbacks for triggers
         KeyInput keyInput = new KeyInput(type, key, modifiers);
         Pair<Trigger, Action> triggerAction = bindings.get(keyInput); //try lookup with exact modifiers
         if (triggerAction == null) {
@@ -89,24 +115,58 @@ public class InputManager implements KeyInputHandler {
         }
     
         //update toggle status
-        if ( action == GLFW_PRESS && !pressed.contains(keyInput)) {
+        if (action == GLFW_PRESS && !pressed.contains(keyInput)) {
             if (!toggled.contains(keyInput)) toggled.add(keyInput);
             else toggled.remove(keyInput);
         }
         
         //update press status
-        if (action != GLFW_RELEASE) pressed.add(keyInput);
-        else pressed.remove(keyInput);
+        if (action != GLFW_RELEASE) {
+            OverruleGroup group = groups.get(keyInput);
+            if (group == null) {
+                pressed.add(keyInput);
+            } else {
+                handleOverrule(group, keyInput);
+            }
+        } else {
+            pressed.remove(keyInput);
+        }
+        
+        //TODO finish implementation of OverruleGroup.Mode#NONE
+        OverruleGroup overruleGroup = groups.get(keyInput);
+        if (overruleGroup != null) {
+            groupKeysActive.compute(overruleGroup, (group, count) -> {
+                if (count == null) count = 0;
+                return action != GLFW_RELEASE ? count+1 : count-1;
+            });
+        }
         
         return handled;
     }
     
+    private void handleOverrule(OverruleGroup group, KeyInput keyInput) {
+        switch (group.getMode()) {
+            case YOUNGEST -> {
+                pressed.removeAll(group.getGroup());
+                pressed.add(keyInput);
+            }
+            case OLDEST -> {
+                AtomicBoolean contained = new AtomicBoolean(false);
+                group.getGroup().forEach(g -> { if (pressed.contains(g)) contained.set(true); }); //groups will be tiny, so this should be okay
+                if (!contained.get()) pressed.add(keyInput);
+            }
+            default -> pressed.add(keyInput);
+        }
+    }
+    
     public boolean isPressed(KeyInput input) {
+        //TODO is this efficient at all, or would something like a HashMap<KeyInput, Boolean> (even with value = null)
+        // be faster? these methods need to be optimised since they will be called every frame for certain keybinds
         return pressed.contains(input);
     }
     
-    public boolean isPressed(KeyInput.Keys input) {
-        return pressed.contains(input.getInput());
+    public boolean isPressed(Keys input) {
+        return isPressed(input.getInput());
     }
     
     public boolean isToggled(KeyInput input) {

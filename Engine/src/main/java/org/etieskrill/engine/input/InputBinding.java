@@ -1,8 +1,6 @@
 package org.etieskrill.engine.input;
 
 import org.etieskrill.engine.input.action.Action;
-import org.etieskrill.engine.input.action.DeltaAction;
-import org.etieskrill.engine.input.action.SimpleAction;
 
 import java.util.Objects;
 
@@ -11,6 +9,7 @@ public class InputBinding {
     private final KeyInput keyInput;
     private final Trigger trigger;
     private final Action action;
+    private final OverruleGroup group;
     
     public enum Trigger {
         ON_PRESS,
@@ -19,44 +18,11 @@ public class InputBinding {
         TOGGLED
     }
     
-    public InputBinding(KeyInput.Keys input, SimpleAction action) {
-        this(input.getInput(), Trigger.ON_PRESS, action);
-    }
-    
-    public InputBinding(KeyInput input, SimpleAction action) {
-        this(input, Trigger.ON_PRESS, action);
-    }
-    
-    public InputBinding(KeyInput.Keys input, Trigger trigger, SimpleAction action) {
-        this.keyInput = Objects.requireNonNull(input).getInput();
-        this.trigger = Objects.requireNonNull(trigger);
-        this.action = Objects.requireNonNull(action);
-    }
-    
-    public InputBinding(KeyInput input, Trigger trigger, SimpleAction action) {
+    public InputBinding(KeyInput input, Trigger trigger, Action action, OverruleGroup group) {
         this.keyInput = Objects.requireNonNull(input);
         this.trigger = Objects.requireNonNull(trigger);
         this.action = Objects.requireNonNull(action);
-    }
-    
-    public InputBinding(KeyInput.Keys input, DeltaAction action) {
-        this(input.getInput(), Trigger.ON_PRESS, action);
-    }
-    
-    public InputBinding(KeyInput input, DeltaAction action) {
-        this(input, Trigger.ON_PRESS, action);
-    }
-    
-    public InputBinding(KeyInput.Keys input, Trigger trigger, DeltaAction action) {
-        this.keyInput = Objects.requireNonNull(input).getInput();
-        this.trigger = Objects.requireNonNull(trigger);
-        this.action = Objects.requireNonNull(action);
-    }
-    
-    public InputBinding(KeyInput input, Trigger trigger, DeltaAction action) {
-        this.keyInput = Objects.requireNonNull(input);
-        this.trigger = Objects.requireNonNull(trigger);
-        this.action = Objects.requireNonNull(action);
+        this.group = group;
     }
     
     public KeyInput getInput() {
@@ -69,6 +35,10 @@ public class InputBinding {
     
     public Action getAction() {
         return action;
+    }
+    
+    public OverruleGroup getGroup() {
+        return group;
     }
     
 }

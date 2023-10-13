@@ -2,7 +2,6 @@ package org.etieskrill.engine.graphics.assimp;
 
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
-import org.etieskrill.engine.graphics.texture.Texture2D;
 
 import java.util.LinkedList;
 import java.util.List;

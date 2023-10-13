@@ -9,11 +9,11 @@ import org.etieskrill.engine.graphics.gl.ModelFactory;
 import org.etieskrill.engine.graphics.gl.Renderer;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
 import org.etieskrill.engine.graphics.model.PointLight;
-import org.etieskrill.engine.input.InputBinding;
+import org.etieskrill.engine.input.Input;
 import org.etieskrill.engine.input.InputBinding.Trigger;
-import org.etieskrill.engine.input.InputBinds;
 import org.etieskrill.engine.input.InputManager;
-import org.etieskrill.engine.input.KeyInput.Keys;
+import org.etieskrill.engine.input.Keys;
+import org.etieskrill.engine.input.OverruleGroup;
 import org.etieskrill.engine.time.LoopPacer;
 import org.etieskrill.engine.time.SystemNanoTimePacer;
 import org.etieskrill.engine.util.Loaders;
@@ -40,14 +40,14 @@ public class Game {
     
     private int orbsCollected;
     
-    private final InputManager inputManager = InputBinds.of(
-            new InputBinding(Keys.ESC.withMods(Keys.SHIFT), () -> window.close()),
-            new InputBinding(Keys.W, Trigger.PRESSED, () -> deltaPos.plusAssign(new Vec3(0, 0, 1))),
-            new InputBinding(Keys.S, Trigger.PRESSED, () -> deltaPos.plusAssign(new Vec3(0, 0, -1))),
-            new InputBinding(Keys.A, Trigger.PRESSED, () -> deltaPos.plusAssign(new Vec3(-1, 0, 0))),
-            new InputBinding(Keys.D, Trigger.PRESSED, () -> deltaPos.plusAssign(new Vec3(1, 0, 0))),
-            new InputBinding(Keys.Q, Trigger.ON_TOGGLE, () -> System.out.println("*bang*")),
-            new InputBinding(Keys.E, Trigger.ON_PRESS, () -> System.out.println("orbs collected: " + orbsCollected))
+    private final InputManager inputManager = Input.of(
+            Input.bind(Keys.ESC.withMods(Keys.SHIFT)).to(() -> window.close()),
+            Input.bind(Keys.W).on(Trigger.PRESSED).group(OverruleGroup.Mode.YOUNGEST, Keys.S).to(() -> deltaPos.plusAssign(0, 0, 1)),
+            Input.bind(Keys.S).on(Trigger.PRESSED).to(() -> deltaPos.plusAssign(0, 0, -1)),
+            Input.bind(Keys.A).on(Trigger.PRESSED).group(OverruleGroup.Mode.YOUNGEST, Keys.D).group(OverruleGroup.Mode.NONE, Keys.W).to(() -> deltaPos.plusAssign(-1, 0, 0)),
+            Input.bind(Keys.D).on(Trigger.PRESSED).to(() -> deltaPos.plusAssign(1, 0, 0)),
+            Input.bind(Keys.Q).on(Trigger.ON_TOGGLE).to(() -> System.out.println("*bang*")),
+            Input.bind(Keys.E).to(() -> System.out.println("orbs collected: " + orbsCollected))
     );
     
     public Game() {
@@ -199,7 +199,7 @@ public class Game {
             //     add animation, fixed / skeletal
             //     create component system
             //     pack common components
-            //     create "world" for updateable objects
+            //     create "world" for updateable objects    mfw when i learned about entity systems: *surprised pikachu*
             //     abstract all gl/ram resources from objects and share accordingly
 
             //TODO meta
