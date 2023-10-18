@@ -2,14 +2,16 @@ package org.etieskrill.engine.graphics.texture;
 
 import glm_.vec2.Vec2i;
 import org.etieskrill.engine.graphics.gl.FrameBufferAttachment;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 
-import static org.etieskrill.engine.graphics.texture.Textures.*;
+import static org.etieskrill.engine.graphics.texture.Textures.NR_BITS_PER_COLOUR_CHANNEL;
+import static org.etieskrill.engine.graphics.texture.Textures.loadFileOrDefault;
 import static org.lwjgl.opengl.GL33C.*;
-import static org.lwjgl.stb.STBImage.*;
+import static org.lwjgl.stb.STBImage.stbi_image_free;
 
 public class Texture2D extends AbstractTexture implements FrameBufferAttachment {
     
@@ -46,7 +48,7 @@ public class Texture2D extends AbstractTexture implements FrameBufferAttachment 
     }
     
     public static final class BufferBuilder extends Builder {
-        public BufferBuilder(ByteBuffer buffer, Vec2i pixelSize, Format format) {
+        public BufferBuilder(@Nullable ByteBuffer buffer, Vec2i pixelSize, Format format) {
             this.textureData = buffer;
             this.pixelSize = pixelSize;
             this.format = format;
@@ -61,7 +63,6 @@ public class Texture2D extends AbstractTexture implements FrameBufferAttachment 
     public static final class BlankBuilder extends Builder {
         BlankBuilder(Vec2i pixelSize) {
             this.textureData = null;
-            
             this.pixelSize = pixelSize;
             this.format = Format.RGB;
         }
@@ -73,15 +74,13 @@ public class Texture2D extends AbstractTexture implements FrameBufferAttachment 
     public abstract static class Builder extends AbstractTexture.Builder<Texture2D> {
         protected ByteBuffer textureData;
         
-        Builder() {}
+        private Builder() {}
     
         @Override
         protected Texture2D bufferTextureData() {
-            String source = "unknown source";
-            if (this instanceof Texture2D.FileBuilder builder) source = builder.file;
-            else if (this instanceof Texture2D.BlankBuilder) source = "generator";
             logger.debug("Loading {}x{} {}-bit {} texture from {}", pixelSize.getX(), pixelSize.getY(),
-                    NR_BITS_PER_COLOUR_CHANNEL * format.getChannels(), type.name().toLowerCase(), source);
+                    NR_BITS_PER_COLOUR_CHANNEL * format.getChannels(), type.name().toLowerCase(),
+                    getClass().getSimpleName());
             
             int glFormat = format.toGLFormat();
     

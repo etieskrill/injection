@@ -1,6 +1,5 @@
 package org.etieskrill.engine.graphics;
 
-import glm_.mat4x4.Mat4;
 import glm_.vec2.Vec2;
 import glm_.vec3.Vec3;
 
@@ -47,10 +46,10 @@ public class OrthographicCamera extends Camera {
     }
 
     private void updateDimensions() {
-        bottom = position.getY();
-        top = -size.getY() + bottom; //negative because ... reasons
-        left = position.getX();
-        right = size.getX() + left;
+        right = 0.5f * size.getX();
+        left = -right;
+        bottom = 0.5f * size.getY();
+        top = -bottom;
     }
     
 }

@@ -53,7 +53,7 @@ public final class Loaders {
     
         @Override
         public Model get(String name) {
-            logger.debug("Creating new instance of model {} via copy", name);
+            logger.debug("Creating new instance of model {}", name);
             return new Model(super.get(name));
         }
     

@@ -9,12 +9,9 @@ import java.nio.ByteBuffer;
 import java.util.Objects;
 
 import static org.lwjgl.assimp.Assimp.*;
-import static org.lwjgl.assimp.Assimp.aiTextureType_EMISSIVE;
 import static org.lwjgl.opengl.GL11C.*;
-import static org.lwjgl.opengl.GL11C.GL_REPEAT;
 import static org.lwjgl.opengl.GL12C.GL_CLAMP_TO_EDGE;
 import static org.lwjgl.opengl.GL13C.*;
-import static org.lwjgl.opengl.GL13C.GL_TEXTURE0;
 import static org.lwjgl.opengl.GL30C.GL_RG;
 import static org.lwjgl.opengl.GL30C.glGenerateMipmap;
 import static org.lwjgl.opengl.GL33C.GL_TEXTURE_SWIZZLE_RGBA;
@@ -301,7 +298,7 @@ public abstract class AbstractTexture implements Disposable {
         }
     }
 
-    //TODO create private wrapper class which opens this to classes such as FrameBuffer
+    //TODO create private wrapper class which opens this to classes such as FrameBuffer (this would not even work bozo)
     @Deprecated
     public int getID() {
         return texture;
@@ -333,12 +330,12 @@ public abstract class AbstractTexture implements Disposable {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof AbstractTexture that)) return false;
-        return texture == that.texture && wasAlreadyDisposed == that.wasAlreadyDisposed && format == that.format && type == that.type && target == that.target;
+        return texture == that.texture && format == that.format && type == that.type && target == that.target;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(texture, format, type, target, wasAlreadyDisposed);
+        return Objects.hash(texture, format, type, target);
     }
 
 }

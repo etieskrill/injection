@@ -3,12 +3,15 @@ package org.etieskrill.walk;
 import glm_.vec2.Vec2;
 import glm_.vec3.Vec3;
 import org.etieskrill.engine.graphics.Camera;
+import org.etieskrill.engine.graphics.OrthographicCamera;
 import org.etieskrill.engine.graphics.PerspectiveCamera;
 import org.etieskrill.engine.graphics.assimp.Model;
 import org.etieskrill.engine.graphics.gl.ModelFactory;
 import org.etieskrill.engine.graphics.gl.Renderer;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
 import org.etieskrill.engine.graphics.model.PointLight;
+import org.etieskrill.engine.graphics.texture.font.Font;
+import org.etieskrill.engine.graphics.texture.font.TrueTypeFont;
 import org.etieskrill.engine.input.Input;
 import org.etieskrill.engine.input.InputBinding.Trigger;
 import org.etieskrill.engine.input.InputManager;
@@ -20,12 +23,17 @@ import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.util.Loaders.ModelLoader;
 import org.etieskrill.engine.util.Loaders.ShaderLoader;
 import org.etieskrill.engine.window.Window;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.Random;
 
 import static org.lwjgl.glfw.GLFW.glfwSetCursorPosCallback;
 
 public class Game {
+    
+    private static final Logger logger = LoggerFactory.getLogger(Game.class);
     
     private Window window;
     
@@ -38,15 +46,18 @@ public class Game {
     
     private double prevCursorPosX, prevCursorPosY;
     
-    private int orbsCollected;
+    private int orbsCollected, currentChar = 33;
     
     private final InputManager inputManager = Input.of(
             Input.bind(Keys.ESC.withMods(Keys.SHIFT)).to(() -> window.close()),
             Input.bind(Keys.W).on(Trigger.PRESSED).group(OverruleGroup.Mode.YOUNGEST, Keys.S).to(() -> deltaPos.plusAssign(0, 0, 1)),
             Input.bind(Keys.S).on(Trigger.PRESSED).to(() -> deltaPos.plusAssign(0, 0, -1)),
-            Input.bind(Keys.A).on(Trigger.PRESSED).group(OverruleGroup.Mode.YOUNGEST, Keys.D).group(OverruleGroup.Mode.NONE, Keys.W).to(() -> deltaPos.plusAssign(-1, 0, 0)),
+            Input.bind(Keys.A).on(Trigger.PRESSED).group(OverruleGroup.Mode.YOUNGEST, Keys.D).to(() -> deltaPos.plusAssign(-1, 0, 0)),
             Input.bind(Keys.D).on(Trigger.PRESSED).to(() -> deltaPos.plusAssign(1, 0, 0)),
-            Input.bind(Keys.Q).on(Trigger.ON_TOGGLE).to(() -> System.out.println("*bang*")),
+            Input.bind(Keys.Q).to(() -> {
+                currentChar = currentChar <= 126 ? ++currentChar : 33;
+                System.out.println("current letter: " + (char) currentChar);
+            }),
             Input.bind(Keys.E).to(() -> System.out.println("orbs collected: " + orbsCollected))
     );
     
@@ -119,6 +130,7 @@ public class Game {
         
         Shaders.StaticShader shader = (Shaders.StaticShader) ShaderLoader.get().load("standard", Shaders::getStandardShader);
         Shaders.LightSourceShader lightShader = (Shaders.LightSourceShader) ShaderLoader.get().load("light", Shaders::getLightSourceShader);
+        Shaders.TextShader fontShader = (Shaders.TextShader) ShaderLoader.get().load("font", Shaders::getTextShader);
         
         camera = new PerspectiveCamera(window.getSize().toVec());
         camera.setZoom(4.81f);
@@ -127,6 +139,36 @@ public class Game {
                 new Vec3(1), new Vec3(1), new Vec3(1),
                 1f, 0.03f, 0.005f);
         PointLight[] pointLights = {pointLight};
+        Font font = null;
+        try {
+            TrueTypeFont generatorFont = new TrueTypeFont("agencyb.ttf");
+            font = generatorFont.generateBitmapFont(48);
+        } catch (IOException e) {
+            logger.warn("Failed to load font");
+        }
+
+        //TODO this here section causes some rather flaky behaviour in relation to the size of the above generated
+        // bitmap, sometimes when shrinking the font to a size < 14 it will randomly cause a STATUS_HEAP_CORRUPTION,
+        // and i haven't a single clue as to why :>
+//        if (font != null) {
+//            Glyph glyphE = font.getGlyph('E');
+//            Texture2D texE = glyphE.getTexture();
+//            ByteBuffer bufferE = BufferUtils.createByteBuffer(texE.getPixelSize().getX() * texE.getPixelSize().getY());
+//            glReadPixels(0, 0, texE.getPixelSize().getX(), texE.getPixelSize().getY(), GL_RED, GL_UNSIGNED_BYTE, bufferE);
+//            StringBuilder builder = new StringBuilder();
+//            for (int i = 0; i < bufferE.remaining(); i++) {
+//                //bufferE.get() > 0 ? "x " : "  "
+//                builder.append(bufferE.get()).append(" ");
+//                if ((i + 1) % glyphE.getSize().getX() == 0) builder.append("\n");
+//            }
+//            System.out.println(builder);
+//        }
+        
+        Vec2 windowSize = window.getSize().toVec();
+        Camera uiCamera = new OrthographicCamera(windowSize)
+                .setOrientation(0, -90, 0)
+                .setPosition(new Vec3(windowSize.times(0.5), 0))
+        ;
         
         pacer.start();
         while (!window.shouldClose()) {
@@ -192,8 +234,7 @@ public class Game {
             Vec3 orbitPos = camera.getDirection().negate().times(3);
             camera.setPosition(orbitPos.plus(0, skelly.getWorldBoundingBox().getSize().getY() - 0.5, 0).plus(skelly.getTransform().getPosition()));
 
-            //TODO add ui: score counter
-            //     add pause menu
+            //TODO add pause menu
             //     add start menu
             //     add victory screen / with score
             //     add animation, fixed / skeletal
@@ -206,6 +247,16 @@ public class Game {
             //     editorconfig
             
             renderer.prepare();
+            
+            if (font != null) {
+                renderer.render(
+                        font.getGlyphs("Orbes collectered: " + orbsCollected),
+                        new Vec2(0),
+                        fontShader,
+                        uiCamera.getCombined()
+                );
+            }
+            
             shader.setViewPosition(camera.getPosition());
             shader.setLights(pointLights);
             
@@ -226,11 +277,14 @@ public class Game {
             window.update(pacer.getDeltaTimeSeconds());
             pacer.nextFrame();
         }
+        
+        if (font != null) font.dispose();
     }
     
     private void exit() {
         window.dispose();
         Loaders.disposeDefaultLoaders();
+        TrueTypeFont.disposeLibrary();
         System.exit(0);
     }
     

@@ -1,6 +1,8 @@
 package org.etieskrill.engine.graphics.gl;
 
 import glm_.mat4x4.Mat4;
+import glm_.vec2.Vec2;
+import glm_.vec3.Vec3;
 import glm_.vec4.Vec4;
 import org.etieskrill.engine.graphics.assimp.CubeMapModel;
 import org.etieskrill.engine.graphics.assimp.Material;
@@ -9,6 +11,7 @@ import org.etieskrill.engine.graphics.assimp.Model;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
+import org.etieskrill.engine.graphics.texture.font.Glyph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -78,6 +81,30 @@ public class Renderer {
         glDepthMask(false);
         _render(cubemap, shader, combined);
         glDepthMask(true);
+    }
+    
+    private final Model quad = ModelFactory
+            .rectangle(new Vec2(0), new Vec2(1))
+            .hasTransparency() //TODO when antialiasing is used, this could be disabled, depending on how aa works
+            .disableCulling()
+            .build();
+    
+    public void render(Glyph glyph, Vec2 position, ShaderProgram shader, Mat4 combined) {
+        quad.getTransform()
+                .setScale(new Vec3(glyph.getSize(), 1).times(1))
+                .setPosition(new Vec3(position.plus(glyph.getPosition())))
+        ;
+        glyph.getTexture().bind(0); //TODO rework model to better allow for these hotswap cases
+        _render(quad, shader, combined);
+    }
+    
+    //TODO can be improved by rendering to some framebuffer and reusing unchanged sections instead of rendering every single glyph with a separate render call
+    public void render(Glyph[] glyphs, Vec2 position, ShaderProgram shader, Mat4 combined) {
+        Vec2 pen = new Vec2(0);
+        for (Glyph glyph : glyphs) {
+            render(glyph, position.plus(pen), shader, combined);
+            pen.plusAssign(glyph.getAdvance().times(1 / 64f));
+        }
     }
     
     private void _render(Model model, ShaderProgram shader, Mat4 combined) {

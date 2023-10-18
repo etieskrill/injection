@@ -23,7 +23,7 @@ public class Textures {
     public static final int NR_BITS_PER_COLOUR_CHANNEL = 8;
 
     static final String DEFAULT_TEXTURE = "pepega.png";
-    static final String TRANSPARENT_TEXTURE = "transparent.png";
+    static final String TRANSPARENT_TEXTURE = "transparent.png"; //TODO replace with blank generated texture
 
     private static final Logger logger = LoggerFactory.getLogger(Textures.class);
 

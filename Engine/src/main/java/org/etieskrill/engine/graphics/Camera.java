@@ -147,6 +147,10 @@ public abstract class Camera {
         return combined;
     }
     
+    public Mat4 getPerspective() {
+        return perspective;
+    }
+    
     public Camera setNear(float near) {
         this.near = near;
         if (autoUpdate) update();
@@ -213,4 +217,23 @@ public abstract class Camera {
         this.autoUpdate = autoUpdate;
     }
 
+    @Override
+    public String toString() {
+        return "Camera{" +
+                "position=" + position +
+                ", rotation=" + rotation +
+                ", rotationAxis=" + rotationAxis +
+                ", zoom=" + zoom +
+                ", near=" + near +
+                ", far=" + far +
+                ", front=" + front +
+                ", right=" + right +
+                ", up=" + up +
+                ", worldUp=" + worldUp +
+                ", pitch=" + pitch +
+                ", yaw=" + yaw +
+                ", roll=" + roll +
+                '}';
+    }
+    
 }

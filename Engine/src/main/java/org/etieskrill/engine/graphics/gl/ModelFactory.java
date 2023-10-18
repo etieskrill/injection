@@ -1,17 +1,27 @@
 package org.etieskrill.engine.graphics.gl;
 
+import glm_.vec2.Vec2;
 import glm_.vec3.Vec3;
+import org.etieskrill.engine.graphics.assimp.Material;
+import org.etieskrill.engine.graphics.assimp.Mesh;
 import org.etieskrill.engine.graphics.assimp.Model;
+import org.etieskrill.engine.graphics.assimp.Vertex;
 import org.etieskrill.engine.util.Loaders;
 import org.lwjgl.BufferUtils;
 
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 public class ModelFactory {
 
-    public Model rectangle(float x, float y, float width, float height) {
+    public static Model.Builder rectangle(Vec2 position, Vec2 size) {
+        return rectangle(position.getX(), position.getY(), size.getX(), size.getY());
+    }
+    
+    public static Model.Builder rectangle(float x, float y, float width, float height) {
         if (width < 0) {
             float tmp = x;
             x = width;
@@ -24,31 +34,19 @@ public class ModelFactory {
             height = tmp;
         }
 
-        float[] vertices = {
-                x, y, 0f,
-                x + width, y, 0f,
-                x, y + height, 0f,
-                x + width, y + height, 0f
-        };
+        List<Vertex> vertices = new ArrayList<>();
+        vertices.add(new Vertex(new Vec3(x, y, 0f), new Vec3(), new Vec2(0f)));
+        vertices.add(new Vertex(new Vec3(x, y + height, 0f), new Vec3(), new Vec2(0f, 1f)));
+        vertices.add(new Vertex(new Vec3(x + width, y, 0f), new Vec3(), new Vec2(1f, 0f)));
+        vertices.add(new Vertex(new Vec3(x + width, y + height, 0f), new Vec3(), new Vec2(1f, 1f)));
         
-        float[] colours = new float[] {
-                1f, 0f, 0f, 1f,
-                0f, 1f, 0f, 1f,
-                0f, 0f, 1f, 1f,
-                1f, 1f, 0f, 1f
-        };
-
-        float[] textures = new float[] {
-                0f, 0f,
-                1f, 0f,
-                0f, 1f,
-                1f, 1f
-        };
-
-        short[] indices = {0, 1, 2, 2, 1, 3};
-
-        //return loader.loadToVAO(vertices, colours, textures, indices, GL11C.GL_TRIANGLES);
-        throw new UnsupportedOperationException("Currently under major reconstruction");
+        List<Short> indices = new ArrayList<>(List.of(new Short[]{0, 2, 1, 3, 1, 2}));
+        
+        Material mat = Material.getBlank();
+    
+        Model.MemoryBuilder builder = new Model.MemoryBuilder("internal_model_factory:quad");
+        builder.setMeshes(Mesh.Loader.loadToVAO(vertices, indices, mat));
+        return builder;
     }
 
     /**

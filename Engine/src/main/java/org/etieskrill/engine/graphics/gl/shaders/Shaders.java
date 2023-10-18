@@ -55,6 +55,10 @@ public class Shaders {
     public static PostprocessingShader getPostprocessingShader() {
         return new PostprocessingShader();
     }
+    
+    public static TextShader getTextShader() {
+        return new TextShader();
+    }
 
     //TODO evaluate whether to put uniforms as variables
     public static class StaticShader extends ShaderProgram {
@@ -267,6 +271,19 @@ public class Shaders {
             return new String[]{"CubeMap.vert", "CubeMap.frag"};
         }
     
+        @Override
+        protected void getUniformLocations() {}
+    }
+    
+    public static class TextShader extends ShaderProgram {
+        @Override
+        protected void init() {}
+    
+        @Override
+        protected String[] getShaderFileNames() {
+            return new String[]{"Font.vert", "Font.frag"};
+        }
+        
         @Override
         protected void getUniformLocations() {}
     }

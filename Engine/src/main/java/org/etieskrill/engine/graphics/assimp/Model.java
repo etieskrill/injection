@@ -31,6 +31,9 @@ import java.util.function.Supplier;
 import static org.etieskrill.engine.graphics.texture.AbstractTexture.Type.*;
 import static org.lwjgl.assimp.Assimp.*;
 
+//TODO refactor: loading in separate class / classes
+//               reduce to data in anticipation of ces
+//               find most comprehensive solution for multi-entry-point builders
 public class Model implements Disposable {
     
     private static final String DIRECTORY = "Engine/src/main/resources/models/";
@@ -60,20 +63,20 @@ public class Model implements Disposable {
     private boolean enabled;
     
     public static class Builder {
-        private final List<Mesh> meshes = new LinkedList<>();
-        private final List<Material> materials = new LinkedList<>();
+        protected final List<Mesh> meshes = new LinkedList<>();
+        protected final List<Material> materials = new LinkedList<>();
     
         public AABB boundingBox;
         
-        private final String file;
-        private String name;
+        protected final String file;
+        protected String name;
     
-        private boolean flipUVs = true;
-        private boolean flipWinding = false;
-        private boolean culling = true;
-        private boolean transparency = false;
+        protected boolean flipUVs = true;
+        protected boolean flipWinding = false;
+        protected boolean culling = true;
+        protected boolean transparency = false;
         
-        private Transform transform = Transform.getBlank();
+        protected Transform transform = Transform.getBlank();
         
         public Builder(String file) {
             if (file.isBlank()) throw new IllegalArgumentException("File name cannot be blank");
@@ -143,6 +146,18 @@ public class Model implements Disposable {
         }
     }
     
+    //TODO this is a very very very Very VERY temporary solution, i can hardly look at it
+    public static class MemoryBuilder extends Builder {
+        public MemoryBuilder(String name) {
+            super(name);
+        }
+    
+        @Override
+        public Model build() {
+            return new Model(this);
+        }
+    }
+    
     public static Model ofFile(String file) {
         return ofFile(file, true);
     }
@@ -186,6 +201,24 @@ public class Model implements Disposable {
     
         logger.debug("Loading model {} from file {}", name, builder.file);
         loadModel(builder.file);
+        
+        this.transform = builder.transform;
+        
+        enable();
+    }
+    
+    private Model(MemoryBuilder builder) {
+        this.meshes = builder.meshes;
+        this.materials = builder.materials;
+        
+        this.name = builder.name;
+        
+        this.flipUVs = builder.flipUVs;
+        this.flipWinding = builder.flipWinding;
+        this.culling = builder.culling;
+        this.transparency = builder.transparency;
+        
+        logger.debug("Loading model {} from memory", name);
         
         this.transform = builder.transform;
         
