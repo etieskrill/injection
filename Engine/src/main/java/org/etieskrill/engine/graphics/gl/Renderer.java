@@ -26,13 +26,12 @@ public class Renderer {
     private final Logger logger = LoggerFactory.getLogger(getClass());
     
     public void prepare() {
-        //logger.debug("New render cycle");
         glClearColor(clearColour, clearColour, clearColour, 1f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     }
     
     public void render(Model model, ShaderProgram shader, Mat4 combined) {
-        if (shader.isPlaceholder()) { //TODO qol feature, should have no performance implications
+        if (shader.isPlaceholder()) {
             renderOutline(model, shader, combined, 1f, new Vec4(1, 0, 1, 1), true);
             return;
         }

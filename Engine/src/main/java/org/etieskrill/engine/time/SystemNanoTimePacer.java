@@ -1,6 +1,7 @@
 package org.etieskrill.engine.time;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class SystemNanoTimePacer implements LoopPacer {
@@ -97,6 +98,11 @@ public class SystemNanoTimePacer implements LoopPacer {
     @Override
     public void resumeTimer() {
         this.timerPaused = false;
+    }
+    
+    @Override
+    public boolean isPaused() {
+        return this.timerPaused;
     }
 
     @Override

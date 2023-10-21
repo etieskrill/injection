@@ -231,6 +231,7 @@ public class Model implements Disposable {
             aiProcess_Triangulate |
             (flipUVs ? aiProcess_FlipUVs : 0) |
             aiProcess_OptimizeMeshes |
+            aiProcess_OptimizeGraph |
             aiProcess_JoinIdenticalVertices |
             aiProcess_RemoveRedundantMaterials |
             aiProcess_FindInvalidData |
@@ -254,6 +255,10 @@ public class Model implements Disposable {
         calculateModelBoundingBox();
         
         aiReleaseImport(scene);
+        
+        logger.debug("Loaded model {} with {} mesh{} and {} material{}", name,
+                meshes.size(), meshes.size() == 1 ? "" : "es",
+                materials.size(), materials.size() == 1 ? "" : "s");
     }
     
     private void processNode(AINode node, AIScene scene) {

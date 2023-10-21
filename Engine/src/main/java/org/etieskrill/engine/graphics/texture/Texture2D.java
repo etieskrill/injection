@@ -17,7 +17,7 @@ public class Texture2D extends AbstractTexture implements FrameBufferAttachment 
     
     private static final Logger logger = LoggerFactory.getLogger(Texture2D.class);
 
-    private final Vec2i pixelSize;
+    private final Vec2i size;
     
     public static final class FileBuilder extends Builder {
         private final String file;
@@ -96,11 +96,12 @@ public class Texture2D extends AbstractTexture implements FrameBufferAttachment 
     
     Texture2D(Builder builder) {
         super(builder.setTarget(Target.TWO_D));
-        this.pixelSize = builder.pixelSize;
+        this.size = builder.pixelSize;
     }
 
-    public Vec2i getPixelSize() {
-        return pixelSize;
+    @Override
+    public Vec2i getSize() {
+        return size;
     }
 
 }

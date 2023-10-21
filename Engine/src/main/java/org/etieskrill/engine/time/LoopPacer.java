@@ -14,6 +14,7 @@ public interface LoopPacer {
 
     void pauseTimer();
     void resumeTimer();
+    boolean isPaused();
     void resetTimer();
     double getTime();
 

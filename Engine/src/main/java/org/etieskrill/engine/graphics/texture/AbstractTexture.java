@@ -194,7 +194,12 @@ public abstract class AbstractTexture implements Disposable {
             this.target = target;
             return this;
         }
-
+    
+        public Builder<T> setFormat(Format format) {
+            this.format = format;
+            return this;
+        }
+    
         public Builder<T> disableAutoSwizzleMask() {
             this.autoSwizzleMask = false;
             return this;
@@ -298,8 +303,6 @@ public abstract class AbstractTexture implements Disposable {
         }
     }
 
-    //TODO create private wrapper class which opens this to classes such as FrameBuffer (this would not even work bozo)
-    @Deprecated
     public int getID() {
         return texture;
     }

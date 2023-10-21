@@ -2,8 +2,8 @@ package org.etieskrill.engine.window;
 
 import glm_.vec2.Vec2;
 import org.etieskrill.engine.Disposable;
-import org.etieskrill.engine.input.KeyInput;
 import org.etieskrill.engine.input.InputManager;
+import org.etieskrill.engine.input.KeyInput;
 import org.etieskrill.engine.scene._2d.Stage;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.PointerBuffer;
@@ -15,11 +15,8 @@ import org.lwjgl.system.Platform;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Objects;
-
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11C.*;
-import static org.lwjgl.opengl.GL11C.GL_BACK;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class Window implements Disposable {
@@ -191,7 +188,7 @@ public class Window implements Disposable {
         
         init();
         
-        this.setCursor(cursor.setWindow(window));
+        this.setCursor(cursor.setWindow(this));
         
         PointerBuffer description = BufferUtils.createPointerBuffer(1);
         int err = glfwGetError(description);
@@ -316,6 +313,7 @@ public class Window implements Disposable {
         glfwPollEvents(); //Also proves to system that window has not frozen
     }
     
+    //TODO make package-private
     @Deprecated
     public long getID() {
         return window;

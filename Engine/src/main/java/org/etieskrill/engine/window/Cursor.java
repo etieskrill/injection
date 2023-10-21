@@ -3,7 +3,6 @@ package org.etieskrill.engine.window;
 import org.etieskrill.engine.Disposable;
 
 import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.glfw.GLFW.GLFW_NOT_ALLOWED_CURSOR;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 //TODO update disposable once custom cursors are implemented
@@ -11,7 +10,7 @@ public class Cursor implements Disposable {
     
     protected final long cursor;
     
-    protected long window = NULL;
+    protected Window window;
     
     private boolean windowSet = false;
     
@@ -37,7 +36,7 @@ public class Cursor implements Disposable {
          */
         NORMAL,
         /**
-         * Movement is not restricted, but the cursor is not visible.
+         * Movement is not restricted, but the cursor is not visible while hovering over the window.
          */
         HIDDEN,
         /**
@@ -62,10 +61,10 @@ public class Cursor implements Disposable {
     
     public void setMode(CursorMode mode) {
         checkWindow();
-        glfwSetInputMode(window, GLFW_CURSOR, mode.glfw());
+        glfwSetInputMode(window.getID(), GLFW_CURSOR, mode.glfw());
     }
     
-    public void normal() {
+    public void enable() {
         setMode(CursorMode.NORMAL);
     }
     
@@ -121,7 +120,7 @@ public class Cursor implements Disposable {
         return cursor;
     }
     
-    Cursor setWindow(long window) {
+    Cursor setWindow(Window window) {
         if (windowSet) throw new UnsupportedOperationException("Cursor is already assigned to window");
         this.window = window;
         windowSet = true;

@@ -18,10 +18,10 @@ import java.util.List;
 public class ModelFactory {
 
     public static Model.Builder rectangle(Vec2 position, Vec2 size) {
-        return rectangle(position.getX(), position.getY(), size.getX(), size.getY());
+        return rectangle(position.getX(), position.getY(), size.getX(), size.getY(), null);
     }
     
-    public static Model.Builder rectangle(float x, float y, float width, float height) {
+    public static Model.Builder rectangle(float x, float y, float width, float height, Material material) {
         if (width < 0) {
             float tmp = x;
             x = width;
@@ -42,10 +42,12 @@ public class ModelFactory {
         
         List<Short> indices = new ArrayList<>(List.of(new Short[]{0, 2, 1, 3, 1, 2}));
         
-        Material mat = Material.getBlank();
+        Material mat = material != null ? material : Material.getBlank();
     
         Model.MemoryBuilder builder = new Model.MemoryBuilder("internal_model_factory:quad");
-        builder.setMeshes(Mesh.Loader.loadToVAO(vertices, indices, mat));
+        builder
+                .setMaterials(mat)
+                .setMeshes(Mesh.Loader.loadToVAO(vertices, indices, mat));
         return builder;
     }
 

@@ -13,8 +13,6 @@ import java.util.MissingResourceException;
 import static org.etieskrill.engine.graphics.texture.AbstractTexture.DIRECTORY;
 import static org.etieskrill.engine.graphics.texture.AbstractTexture.Type.DIFFUSE;
 import static org.etieskrill.engine.graphics.texture.AbstractTexture.Type.UNKNOWN;
-import static org.lwjgl.opengl.GL11C.*;
-import static org.lwjgl.opengl.GL12C.GL_CLAMP_TO_EDGE;
 import static org.lwjgl.stb.STBImage.stbi_failure_reason;
 import static org.lwjgl.stb.STBImage.stbi_load;
 
@@ -28,16 +26,12 @@ public class Textures {
     private static final Logger logger = LoggerFactory.getLogger(Textures.class);
 
     public static Texture2D genBlank(Vec2i size, AbstractTexture.Format format) {
-        Texture2D texture = new Texture2D.BlankBuilder(size).setType(DIFFUSE).build();
-
-        texture.bind(0);
-        glTexImage2D(GL_TEXTURE_2D, 0, format.toGLFormat(), size.getX(), size.getY(),
-                0, format.toGLFormat(), GL_UNSIGNED_BYTE, 0);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        return texture;
+        return new Texture2D.BlankBuilder(size)
+                .setType(DIFFUSE)
+                .setFormat(format)
+                .setMipMapping(AbstractTexture.MinFilter.LINEAR, AbstractTexture.MagFilter.LINEAR)
+                .setWrapping(AbstractTexture.Wrapping.CLAMP_TO_EDGE)
+                .build();
     }
 
     static AbstractTexture.TextureData loadFileOrDefault(String file, AbstractTexture.Type type) {

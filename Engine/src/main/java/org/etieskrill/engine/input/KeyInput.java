@@ -56,6 +56,10 @@ public class KeyInput {
         return modifiers;
     }
     
+    public KeyInput withoutModifiers() {
+        return new KeyInput(type, value);
+    }
+    
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

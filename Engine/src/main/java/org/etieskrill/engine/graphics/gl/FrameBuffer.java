@@ -4,6 +4,8 @@ import glm_.vec2.Vec2i;
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.texture.Textures;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -11,6 +13,8 @@ import java.util.Map;
 import static org.lwjgl.opengl.GL33C.*;
 
 public class FrameBuffer implements Disposable {
+    
+    private static final Logger logger = LoggerFactory.getLogger(FrameBuffer.class);
     
     private final int fbo;
     private final Vec2i size;
@@ -51,15 +55,22 @@ public class FrameBuffer implements Disposable {
             frameBuffer.bind();
             for (AttachmentType type : attachments.keySet()) {
                 FrameBufferAttachment attachment = attachments.get(type);
-                if (attachment instanceof Texture2D texture) {
-                    glFramebufferTexture2D(GL_FRAMEBUFFER, type.toGLAttachment(), GL_TEXTURE_2D, texture.getID(), 0);
-                } else if (attachment instanceof RenderBuffer buffer) {
-                    buffer.bind();
-                    glFramebufferRenderbuffer(GL_FRAMEBUFFER, type.toGLAttachment(), GL_RENDERBUFFER, buffer.getID());
-                    buffer.unbind();
+                if (attachment == null) continue;
+                if (!attachment.getSize().equals(this.size)) {
+                    logger.warn("Skipping attachment because sizes do not match; buffer size: {}, attachment size: {}",
+                            this.size, attachment.getSize());
+                    continue;
                 }
-                if ((ret = glCheckFramebufferStatus(GL_FRAMEBUFFER)) == GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT)
-                    throw new IllegalStateException("Incomplete framebuffer attachment: " + attachment.toString());
+                
+                if (attachment instanceof Texture2D) {
+                    glFramebufferTexture2D(GL_FRAMEBUFFER, type.toGLAttachment(), GL_TEXTURE_2D, attachment.getID(), 0);
+                } else if (attachment instanceof RenderBuffer) {
+                    glFramebufferRenderbuffer(GL_FRAMEBUFFER, type.toGLAttachment(), GL_RENDERBUFFER, attachment.getID());
+                }
+                
+                if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT)
+                    throw new IllegalStateException("Incomplete framebuffer attachment for " +
+                            type.name() + ": " + attachment);
             }
             
             if ((ret = glCheckFramebufferStatus(GL_FRAMEBUFFER)) != GL_FRAMEBUFFER_COMPLETE)
@@ -79,7 +90,7 @@ public class FrameBuffer implements Disposable {
     private FrameBuffer(Vec2i size) {
         this.fbo = glGenFramebuffers();
         this.size = size;
-        this.attachments = new HashMap<>(2);
+        this.attachments = new HashMap<>(3);
     }
     
     public enum Binding {
@@ -132,6 +143,10 @@ public class FrameBuffer implements Disposable {
     
     public Map<AttachmentType, FrameBufferAttachment> getAttachments() {
         return attachments;
+    }
+    
+    public FrameBufferAttachment getAttachment(AttachmentType type) {
+        return attachments.get(type);
     }
     
     @Override

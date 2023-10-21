@@ -208,8 +208,7 @@ public abstract class ShaderProgram implements Disposable {
     
     //TODO this is so-called bullshit spaghetti code. fix it.
     public void setUniform(String name, Object value, boolean strict) {
-        Objects.requireNonNull(name, "Name must not be null");
-        Objects.requireNonNull(value, "Value must not be null");
+        if (value == null || name == null || name.isBlank()) return;
         
         Uniform uniform = getUniform(uniforms, name, value, strict, type -> new Uniform(name, type));
         if (uniform != null && uniform.getType() == Uniform.Type.STRUCT) {

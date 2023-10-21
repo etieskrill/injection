@@ -6,10 +6,10 @@ import org.etieskrill.engine.Disposable;
 import static org.lwjgl.opengl.GL11C.GL_DEPTH_COMPONENT;
 import static org.lwjgl.opengl.GL11C.GL_RGBA8;
 import static org.lwjgl.opengl.GL30C.*;
-import static org.lwjgl.opengl.GL30C.glDeleteRenderbuffers;
 
 public class RenderBuffer implements Disposable, FrameBufferAttachment {
     
+    private final Vec2i size;
     private final int rbo;
     private final Type type;
     
@@ -34,6 +34,8 @@ public class RenderBuffer implements Disposable, FrameBufferAttachment {
     }
     
     public RenderBuffer(Vec2i size, Type type) {
+        this.size = size;
+        
         int ret;
         glGetError();
         
@@ -55,7 +57,13 @@ public class RenderBuffer implements Disposable, FrameBufferAttachment {
         glBindRenderbuffer(GL_RENDERBUFFER, 0);
     }
     
-    int getID() {
+    @Override
+    public Vec2i getSize() {
+        return size;
+    }
+    
+    @Override
+    public int getID() {
         return rbo;
     }
     

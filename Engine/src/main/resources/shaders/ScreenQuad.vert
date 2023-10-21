@@ -8,5 +8,5 @@ out vec2 tTextureCoords;
 void main()
 {
     tTextureCoords = iTextureCoords;
-    gl_Position = vec4(iPosition, 1.0); //vec4(iPosition.x, iPosition.y, 0.0, 1.0);
+    gl_Position = vec4(iPosition.x, iPosition.y, 0.0, 1.0);
 }

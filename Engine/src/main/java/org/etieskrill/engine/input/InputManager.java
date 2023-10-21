@@ -1,6 +1,7 @@
 package org.etieskrill.engine.input;
 
 import kotlin.Pair;
+import org.etieskrill.engine.EveryFrame;
 import org.etieskrill.engine.input.InputBinding.Trigger;
 import org.etieskrill.engine.input.action.Action;
 import org.etieskrill.engine.input.action.DeltaAction;
@@ -62,6 +63,7 @@ public class InputManager implements KeyInputHandler {
         return this;
     }
     
+    @EveryFrame
     public void update(double delta) {
         for (KeyInput keyInput : pressed) {
             Pair<Trigger, Action> triggerAction = bindings.get(keyInput);
@@ -130,6 +132,7 @@ public class InputManager implements KeyInputHandler {
             }
         } else {
             pressed.remove(keyInput);
+            pressed.remove(keyInput.withoutModifiers());
         }
         
         //TODO finish implementation of OverruleGroup.Mode#NONE

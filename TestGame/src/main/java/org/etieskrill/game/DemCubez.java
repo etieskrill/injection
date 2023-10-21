@@ -237,7 +237,7 @@ public class DemCubez {
             if (escPressed && !escPressedPrev) {
                 paused = true;
                 pacer.pauseTimer();
-                window.getCursor().normal();
+                window.getCursor().enable();
                 window.getStage().show();
                 escPressedPrev = true;
             }
