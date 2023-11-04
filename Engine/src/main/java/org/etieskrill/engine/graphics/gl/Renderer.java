@@ -11,12 +11,14 @@ import org.etieskrill.engine.graphics.assimp.Model;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
+import org.etieskrill.engine.graphics.texture.font.Font;
 import org.etieskrill.engine.graphics.texture.font.Glyph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
+import static java.util.Objects.requireNonNullElse;
 import static org.lwjgl.opengl.GL33C.*;
 
 public class Renderer {
@@ -40,7 +42,12 @@ public class Renderer {
     }
     
     //TODO update spec: all factory methods use loaders by default, constructors/builders do not
-    private final ShaderProgram outlineShader = Shaders.getOutlineShader();
+    private static ShaderProgram outlineShader;
+    private static ShaderProgram getOutlineShader() {
+        if (outlineShader == null)
+            outlineShader = Shaders.getOutlineShader();
+        return outlineShader;
+    }
     
     //TODO add outline & wireframe as flag in render
     public void renderOutline(Model model, ShaderProgram shader, Mat4 combined) {
@@ -48,8 +55,8 @@ public class Renderer {
     }
     
     public void renderOutline(Model model, ShaderProgram shader, Mat4 combined, float thickness, Vec4 colour, boolean writeToFront) {
-        outlineShader.setUniform("uThicknessFactor", thickness);
-        outlineShader.setUniform("uColour", colour);
+        getOutlineShader().setUniform("uThicknessFactor", thickness);
+        getOutlineShader().setUniform("uColour", colour);
         
         glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
     
@@ -60,7 +67,7 @@ public class Renderer {
         glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
         glStencilMask(0x00);
         if (writeToFront) glDisable(GL_DEPTH_TEST);
-        _render(model, outlineShader, combined);
+        _render(model, getOutlineShader(), combined);
     
         glStencilFunc(GL_ALWAYS, 0, 0xFF);
         glStencilMask(0xFF);
@@ -82,27 +89,39 @@ public class Renderer {
         glDepthMask(true);
     }
     
-    private final Model quad = ModelFactory
-            .rectangle(new Vec2(0), new Vec2(1))
-            .hasTransparency() //TODO when antialiasing is used, this could be disabled, depending on how aa works
-            .disableCulling()
-            .build();
+    private static Model quad;
+    private static Model getQuad() {
+        if (quad == null)
+            quad = ModelFactory
+                    .rectangle(new Vec2(0), new Vec2(1))
+                    .hasTransparency() //TODO when antialiasing is used, this could be disabled, depending on how aa works
+                    .disableCulling()
+                    .build();
+        return quad;
+    }
     
     public void render(Glyph glyph, Vec2 position, ShaderProgram shader, Mat4 combined) {
-        quad.getTransform()
-                .setScale(new Vec3(glyph.getSize(), 1).times(1))
+        getQuad().getTransform()
+                .setScale(new Vec3(glyph.getSize(), 1))
                 .setPosition(new Vec3(position.plus(glyph.getPosition())))
         ;
         glyph.getTexture().bind(0); //TODO rework model to better allow for these hotswap cases
-        _render(quad, shader, combined);
+        _render(getQuad(), shader, combined);
     }
     
     //TODO can be improved by rendering to some framebuffer and reusing unchanged sections instead of rendering every single glyph with a separate render call
-    public void render(Glyph[] glyphs, Vec2 position, ShaderProgram shader, Mat4 combined) {
+    public void render(String chars, Font font, Vec2 position, ShaderProgram shader, Mat4 combined) {
         Vec2 pen = new Vec2(0);
-        for (Glyph glyph : glyphs) {
+        for (Glyph glyph : font.getGlyphs(chars)) {
+            switch (requireNonNullElse(glyph.getCharacter(), (char) 0)) {
+                case '\n' -> {
+                    pen.put(0, pen.getY() + font.getLineHeight());
+                    continue;
+                }
+            }
+            
             render(glyph, position.plus(pen), shader, combined);
-            pen.plusAssign(glyph.getAdvance().times(1 / 64f));
+            pen.plusAssign(glyph.getAdvance());
         }
     }
     

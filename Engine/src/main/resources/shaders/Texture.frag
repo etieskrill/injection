@@ -1,18 +1,18 @@
-#version 420 core
+#version 330 core
 
 out vec4 oColour;
 
-in vec3 tColour;
 in vec2 tTextureCoords;
 
-layout (binding = 0) uniform sampler2D diffuseMap;
+struct Material {
+    sampler2D diffuse0;
+};
 
-uniform vec3 uColour;
-uniform float uTime;
+uniform Material material;
 
-void main() {
-
-    //oColour = vec4(uColour, 1.0);
-    oColour = vec4(mix(texture(diffuseMap, tTextureCoords).rgb, uColour, 0.5), 1.0);
-
+void main()
+{
+    vec4 texel = texture(material.diffuse0, tTextureCoords);
+    if (texel.a < 0.1) discard;
+    oColour = texel;
 }

@@ -172,10 +172,7 @@ public class Shaders {
         }
         
         @Override
-        protected void getUniformLocations() {
-            addUniform("diffuseMap", SAMPLER2D);
-            addUniform("uColour", VEC3);
-        }
+        protected void getUniformLocations() {}
     }
     
     public static class SingleColourShader extends ShaderProgram {

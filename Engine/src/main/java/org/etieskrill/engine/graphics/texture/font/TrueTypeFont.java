@@ -32,8 +32,6 @@ public class TrueTypeFont implements Font {
     private final boolean scalable;
     private int[] sizes;
     
-    private final int lineHeight;
-    
     private String family;
     private String style;
     
@@ -65,8 +63,6 @@ public class TrueTypeFont implements Font {
                     sizes[i++] = buffer.get().height();
             }
         }
-    
-        this.lineHeight = face.height();
         
         this.family = face.family_nameString();
         this.style = face.style_nameString();
@@ -105,32 +101,32 @@ public class TrueTypeFont implements Font {
             
             Vec2 size = new Vec2(bitmap.width(), bitmap.rows());
             Vec2 position = new Vec2(ftGlyph.bitmap_left(), ftGlyph.bitmap_top());
-            if (!verticalUp) position.timesAssign(1, -1).plusAssign(0, face.height() / 64f);
-            Vec2 advance = new Vec2(adv.x(), adv.y());
+            if (!verticalUp) position.timesAssign(1, -1).plusAssign(0, getMinLineHeight());
+            Vec2 advance = new Vec2(adv.x(), adv.y()).times(1 / 64f);
             if (!verticalUp) advance.timesAssign(1, -1);
-    
+            
             ByteBuffer buffer = bitmap.buffer((int) (2 * size.getX() * size.getY()));
             if (buffer == null) logger.trace("Encountered glyph ({}) without buffer, proceeding with blank bitmap", (char) i);
-    
+            
             glPixelStorei(GL_UNPACK_ALIGNMENT, 1); //TODO more permanent solution
             Texture2D texture = new Texture2D.BufferBuilder(
                     buffer,
                     new Vec2i(size),
-                    AbstractTexture.Format.GRAY
+                    AbstractTexture.Format.ALPHA
             )
                     .setMipMapping(AbstractTexture.MinFilter.LINEAR, AbstractTexture.MagFilter.LINEAR)
                     .setWrapping(AbstractTexture.Wrapping.CLAMP_TO_EDGE)
                     .build();
             glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
             
-            Glyph glyph = new Glyph(size, position, advance, texture);
+            Glyph glyph = new Glyph(size, position, advance, texture, (char) i);
             
             glyphs.put((char) i, glyph);
         }
         
         //TODO figure out whether the face height is actually scaled via FT_Set_Pixel_Sizes or the like
         // alr it seems like it does not, but how to get the height then?
-        return new BitmapFont(glyphs, face.height(), face.family_nameString(), face.style_nameString());
+        return new BitmapFont(glyphs, getLineHeight(), getMinLineHeight(), face.family_nameString(), face.style_nameString());
     }
     
     public BitmapFont generateBitmapFont(int pixelWidth, int pixelHeight) throws IOException {
@@ -161,7 +157,13 @@ public class TrueTypeFont implements Font {
     
     @Override
     public int getLineHeight() {
-        return lineHeight;
+        return (int) face.size().metrics().height() / 64;
+    }
+    
+    @Override
+    public int getMinLineHeight() {
+        FT_Size_Metrics metrics = face.size().metrics();
+        return (int) ((metrics.ascender() - metrics.descender()) / 64f);
     }
     
     public boolean isScalable() {

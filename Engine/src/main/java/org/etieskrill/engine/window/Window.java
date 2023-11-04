@@ -4,7 +4,7 @@ import glm_.vec2.Vec2;
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.input.InputManager;
 import org.etieskrill.engine.input.KeyInput;
-import org.etieskrill.engine.scene._2d.Stage;
+import org.etieskrill.engine.scene.Scene;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFWVidMode;
@@ -28,17 +28,18 @@ public class Window implements Disposable {
     private long window;
     
     private WindowMode mode;
+    //TODO provide methods to change primary monitor
     private long monitor;
-    private GLFWVidMode videoMode;
     private WindowSize size;
     private Vec2 position;
     private float targetFrameRate;
+    private boolean vSyncEnabled;
     private String title;
     
     private Cursor cursor;
     
     private InputManager inputs;
-    private Stage stage;
+    private Scene scene;
     
     private boolean built = false;
     
@@ -120,6 +121,7 @@ public class Window implements Disposable {
         private Window.WindowSize size;
         private Vec2 position;
         private float refreshRate;
+        private boolean vSyncEnabled;
         private String title;
         private Cursor cursor;
         private InputManager inputs;
@@ -146,6 +148,11 @@ public class Window implements Disposable {
             return this;
         }
         
+        public Builder setVSyncEnabled(boolean vSyncEnabled) {
+            this.vSyncEnabled = vSyncEnabled;
+            return this;
+        }
+        
         public Builder setTitle(String title) {
             this.title = title;
             return this;
@@ -167,6 +174,7 @@ public class Window implements Disposable {
                     size != null ? size : Window.WindowSize.LARGEST_FIT,
                     position != null ? position : new Vec2(),
                     refreshRate >= 0 ? refreshRate : GLFW_DONT_CARE,
+                    vSyncEnabled,
                     title != null ? title : "Window",
                     cursor != null ? cursor : Cursor.getDefault(),
                     inputs
@@ -175,12 +183,14 @@ public class Window implements Disposable {
         
     }
     
-    Window(WindowMode mode, WindowSize size, Vec2 position, float targetFrameRate, String title, Cursor cursor,
+    Window(WindowMode mode, WindowSize size, Vec2 position, float targetFrameRate, boolean vSyncEnabled,
+           String title, Cursor cursor,
            InputManager inputs) {
         this.mode = mode;
         this.size = size;
         this.position = position;
         this.targetFrameRate = targetFrameRate;
+        this.vSyncEnabled = vSyncEnabled;
         
         this.title = title;
         
@@ -202,6 +212,7 @@ public class Window implements Disposable {
         if (!glfwInit())
             throw new IllegalStateException("Unable to initialize glfw library");
         
+        //TODO perhaps DON'T throw an exception in a callback
         glfwSetErrorCallback((retVal, argv) -> {
             PointerBuffer errorMessage = BufferUtils.createPointerBuffer(1);
             throw new IllegalStateException(String.format("GLFW error occurred: %d\nMessage: %s",
@@ -221,7 +232,7 @@ public class Window implements Disposable {
         
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
     
-        videoMode = glfwGetVideoMode(monitor);
+        GLFWVidMode videoMode = glfwGetVideoMode(monitor);
         if (videoMode == null) {
             System.err.println("Video mode for monitor could not be retrieved");
             size = size == null ? WindowSize.HD : size;
@@ -248,7 +259,7 @@ public class Window implements Disposable {
         glfwMakeContextCurrent(window);
         initGl();
         
-        glfwSwapInterval(1); //TODO why does it break when 4<?
+        glfwSwapInterval(vSyncEnabled ? 1 : 0);
         
         configInput();
         
@@ -302,9 +313,9 @@ public class Window implements Disposable {
     
     //TODO should probably be named more appropriately
     public void update(double delta) {
-        if (stage != null) {
-            stage.update(delta);
-            stage.render();
+        if (scene != null) {
+            scene.update(delta);
+            scene.render();
         }
         
         //glfwMakeContextCurrent(window);
@@ -376,13 +387,13 @@ public class Window implements Disposable {
         this.cursor = cursor;
     }
     
-    public Stage getStage() {
-        return stage;
+    public Scene getScene() {
+        return scene;
     }
     
-    public void setStage(Stage stage) {
-        this.stage = stage;
-        this.stage.setSize(this.size.toVec());
+    public void setScene(Scene scene) {
+        this.scene = scene;
+        this.scene.setSize(this.size.toVec());
     }
     
     @Override

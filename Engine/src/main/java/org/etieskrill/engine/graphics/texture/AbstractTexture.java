@@ -54,6 +54,7 @@ public abstract class AbstractTexture implements Disposable {
 
     public enum Format {
         NONE(GL_NONE, 0),
+        ALPHA(GL_RED, 1),
         GRAY(GL_RED, 1),
         GA(GL_RG, 2), //TODO GA == gray/alpha not very intuitive, find better name
         RGB(GL_RGB, 3),
@@ -274,11 +275,12 @@ public abstract class AbstractTexture implements Disposable {
         glTexParameteri(target.gl(), GL_TEXTURE_WRAP_R, builder.wrapping.gl());
 
         if (builder.autoSwizzleMask) {
-            int[] swizzleMask = switch (builder.format.getChannels()) {
-                case 1 -> new int[] {GL_RED, GL_RED, GL_RED, GL_ONE};
-                case 2 -> new int[] {GL_RED, GL_RED, GL_RED, GL_GREEN};
-                case 3, 4 -> new int[] {GL_RED, GL_GREEN, GL_BLUE, GL_ALPHA};
-                default -> throw new IllegalStateException("Unexpected colour format: " + builder.format.getChannels() + " channels");
+            int[] swizzleMask = switch (builder.format) {
+                case GRAY, DEPTH, STENCIL -> new int[] {GL_RED, GL_RED, GL_RED, GL_ONE};
+                case ALPHA -> new int[] {GL_ONE, GL_ONE, GL_ALPHA, GL_RED};
+                case GA -> new int[] {GL_RED, GL_RED, GL_RED, GL_GREEN};
+                case RGB, RGBA -> new int[] {GL_RED, GL_GREEN, GL_BLUE, GL_ALPHA};
+                case NONE -> throw new IllegalStateException("No swizzle mask for colour format: " + builder.format.name());
             };
 
             glTexParameteriv(target.gl(), GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);

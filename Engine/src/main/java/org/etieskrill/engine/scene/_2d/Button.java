@@ -1,9 +1,7 @@
 package org.etieskrill.engine.scene._2d;
 
 import glm_.vec2.Vec2;
-import glm_.vec3.Vec3;
 import org.etieskrill.engine.graphics.Batch;
-import org.etieskrill.engine.graphics.assimp.Model;
 
 public class Button extends Group {
     
@@ -29,11 +27,11 @@ public class Button extends Group {
 
         //System.out.println("[" + toString() + "] " + position + " " + size);
 
-        Model _model = batch.getModelFactory().roundedRect(
-                position.getX(), position.getY(), size.getX(), size.getY(),
-                size.getX() > size.getY() ? size.getY() / 4f : size.getX() / 4f, 10);
-        batch.getShader().start();
-        batch.getShader().setUniform("uColour", new Vec3(1f, 0f, 0f));
+//        Model _model = batch.getModelFactory().roundedRect(
+//                position.getX(), position.getY(), size.getX(), size.getY(),
+//                size.getX() > size.getY() ? size.getY() / 4f : size.getX() / 4f, 10);
+//        batch.getShader().start();
+//        batch.getShader().setUniform("uColour", new Vec3(1f, 0f, 0f));
         //batch.render(_model);
     }
     

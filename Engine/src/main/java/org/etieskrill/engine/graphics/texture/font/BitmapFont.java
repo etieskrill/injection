@@ -9,13 +9,15 @@ public class BitmapFont implements Font {
     private final Map<Character, Glyph> glyphs;
     
     private final int lineHeight;
+    private final int minLineHeight;
     
     private final String family;
     private final String style;
     
-    public BitmapFont(Map<Character, Glyph> glyphs, int lineHeight, String family, String style) {
+    public BitmapFont(Map<Character, Glyph> glyphs, int lineHeight, int minLineHeight, String family, String style) {
         this.glyphs = glyphs;
         this.lineHeight = lineHeight;
+        this.minLineHeight = minLineHeight;
         this.family = family;
         this.style = style;
     }
@@ -33,6 +35,11 @@ public class BitmapFont implements Font {
     @Override
     public int getLineHeight() {
         return lineHeight;
+    }
+    
+    @Override
+    public int getMinLineHeight() {
+        return minLineHeight;
     }
     
     public String getFamily() {

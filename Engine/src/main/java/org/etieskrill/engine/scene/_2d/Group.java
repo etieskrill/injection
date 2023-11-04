@@ -24,26 +24,9 @@ public abstract class Group extends LayoutNode {
     public void addChild(Group child) {
         if (child.getParent() == this) return;
         if (child == this) throw new IllegalArgumentException("a group cannot be its own child");
-        //if (child.hasParent(this) || child.hasChild(this))
-        //    throw new IllegalArgumentException("adding child would cause circular graph");
         child.setParent(this);
         children.add(child);
     }
-    
-    /*private boolean hasParent(Group group) {
-        if (group.getParent() == null) return false;
-        else if (this == group) return true;
-        return group.getParent().hasParent(group);
-    }
-    
-    private boolean hasChild(Group group) {
-        if (children.size() == 0) return false;
-        for (Node child : children) {
-            if (child == group) return true;
-            if (child.hasChild(group)) return true;
-        }
-        return false;
-    }*/
     
     public boolean removeChild(Group child) {
         if (!children.contains(child)) return false;

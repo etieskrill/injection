@@ -3,6 +3,8 @@ package org.etieskrill.walk;
 import glm_.vec2.Vec2;
 import glm_.vec2.Vec2i;
 import glm_.vec3.Vec3;
+import glm_.vec4.Vec4;
+import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.Camera;
 import org.etieskrill.engine.graphics.OrthographicCamera;
 import org.etieskrill.engine.graphics.PerspectiveCamera;
@@ -15,12 +17,17 @@ import org.etieskrill.engine.graphics.gl.shaders.Shaders;
 import org.etieskrill.engine.graphics.model.PointLight;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.texture.font.Font;
+import org.etieskrill.engine.graphics.texture.font.Fonts;
 import org.etieskrill.engine.graphics.texture.font.TrueTypeFont;
 import org.etieskrill.engine.input.Input;
 import org.etieskrill.engine.input.InputBinding.Trigger;
 import org.etieskrill.engine.input.InputManager;
 import org.etieskrill.engine.input.Keys;
 import org.etieskrill.engine.input.OverruleGroup;
+import org.etieskrill.engine.scene.Scene;
+import org.etieskrill.engine.scene.component.Label;
+import org.etieskrill.engine.scene.component.Node.Alignment;
+import org.etieskrill.engine.scene.component.Stack;
 import org.etieskrill.engine.time.LoopPacer;
 import org.etieskrill.engine.time.SystemNanoTimePacer;
 import org.etieskrill.engine.util.Loaders;
@@ -31,9 +38,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Random;
 
 import static org.lwjgl.glfw.GLFW.glfwSetCursorPosCallback;
+import static org.lwjgl.opengl.GL11C.*;
 
 public class Game {
     
@@ -43,9 +52,16 @@ public class Game {
     
     private Window window;
     
-    private Camera camera;
+    private Camera camera, uiCamera;
+    private Renderer renderer = new Renderer();
+    
+    private Label scoreLabel;
+    private Label fpsLabel;
     
     private Model skelly, skellyBBModel;
+    private Model cube, light;
+    private PointLight pointLight;
+    private PointLight[] pointLights;
     private Model[] orbs;
     
     private final Vec3 deltaPos = new Vec3(0);
@@ -75,14 +91,20 @@ public class Game {
             Input.bind(Keys.D).on(Trigger.PRESSED).to(() -> deltaPos.plusAssign(1, 0, 0))
     );
     
+    Shaders.StaticShader shader;
+    Shaders.LightSourceShader lightShader;
+    Shaders.TextShader fontShader;
+    
     public Game() {
         setupWindow();
+        setupUI();
         loop();
         exit();
     }
     
     private void setupWindow() {
         window = new Window.Builder()
+                .setRefreshRate(0)
                 .setMode(Window.WindowMode.BORDERLESS)
                 .setTitle("Walk")
                 .setInputManager(inputManager)
@@ -105,15 +127,38 @@ public class Game {
         }));
     }
     
+    private void setupUI() {
+        Vec2 windowSize = window.getSize().toVec();
+        uiCamera = new OrthographicCamera(windowSize)
+                .setOrientation(0, -90, 0)
+                .setPosition(new Vec3(windowSize.times(0.5), 0));
+        
+        scoreLabel = new Label("", Fonts.getDefault(48));
+        scoreLabel.setAlignment(Alignment.TOP).setMargin(new Vec4(20));
+        
+        fpsLabel = new Label("", Fonts.getDefault(36));
+        fpsLabel.setAlignment(Alignment.TOP_LEFT).setMargin(new Vec4(10));
+        
+        Stack stack = new Stack(List.of(scoreLabel, fpsLabel));
+        
+        Scene scene = new Scene(
+                new Batch(renderer).setShader(Shaders.getTextShader()),
+                stack,
+                uiCamera);
+        window.setScene(scene);
+    }
+    
     private void loop() {
         //TODO figure out a smart way to link the pacer and window refresh rates
         pacer = new SystemNanoTimePacer(1 / 60f);
         
-        Model cube = ModelLoader.get().load("cube", () -> Model.ofFile("cube.obj"));
+        ModelLoader models = ModelLoader.get();
+        
+        cube = models.load("cube", () -> Model.ofFile("cube.obj"));
         cube.getTransform().setScale(50).setPosition(new Vec3(0, -25, 0));
-        Model light = ModelLoader.get().get("cube");
+        light = models.get("cube");
         light.getTransform().setScale(0.5f).setPosition(new Vec3(2, 5, -2));
-        skelly = ModelLoader.get().load("skelly", () -> Model.ofFile("skeleton.glb"));
+        skelly = models.load("skelly", () -> Model.ofFile("skeleton.glb"));
         skelly.getTransform().setScale(15);
         
         skellyBBModel = ModelFactory.box(skelly.getBoundingBox().getMax().minus(skelly.getBoundingBox().getMin()));
@@ -126,7 +171,7 @@ public class Game {
         orbs = new Model[NUM_ORBS];
         Random random = new Random(69420);
         for (int i = 0; i < NUM_ORBS; i++) {
-            orbs[i] = ModelLoader.get().load("orb", () -> Model.ofFile("Sphere.obj"));
+            orbs[i] = models.load("orb", () -> Model.ofFile("Sphere.obj"));
             orbs[i].getTransform()
                     .setScale(new Vec3(0.02))
                     .setPosition(new Vec3(
@@ -140,19 +185,17 @@ public class Game {
                 orbBBModel.getBoundingBox().getCenter()
         );
         
-        Renderer renderer = new Renderer();
-        
-        Shaders.StaticShader shader = (Shaders.StaticShader) ShaderLoader.get().load("standard", Shaders::getStandardShader);
-        Shaders.LightSourceShader lightShader = (Shaders.LightSourceShader) ShaderLoader.get().load("light", Shaders::getLightSourceShader);
-        Shaders.TextShader fontShader = (Shaders.TextShader) ShaderLoader.get().load("font", Shaders::getTextShader);
+        shader = (Shaders.StaticShader) ShaderLoader.get().load("standard", Shaders::getStandardShader);
+        lightShader = (Shaders.LightSourceShader) ShaderLoader.get().load("light", Shaders::getLightSourceShader);
+        fontShader = (Shaders.TextShader) ShaderLoader.get().load("font", Shaders::getTextShader);
         
         camera = new PerspectiveCamera(window.getSize().toVec());
         camera.setZoom(4.81f);
 
-        PointLight pointLight = new PointLight(light.getTransform().getPosition(),
+        pointLight = new PointLight(light.getTransform().getPosition(),
                 new Vec3(1), new Vec3(1), new Vec3(1),
                 1f, 0.03f, 0.005f);
-        PointLight[] pointLights = {pointLight};
+        pointLights = new PointLight[]{pointLight};
         Font font = null;
         try {
             TrueTypeFont generatorFont = new TrueTypeFont("agencyb.ttf");
@@ -177,12 +220,6 @@ public class Game {
 //            }
 //            System.out.println(builder);
 //        }
-        
-        Vec2 windowSize = window.getSize().toVec();
-        Camera uiCamera = new OrthographicCamera(windowSize)
-                .setOrientation(0, -90, 0)
-                .setPosition(new Vec3(windowSize.times(0.5), 0))
-        ;
     
 //        TODO funny how these return completely inaccurate results
 //         test isolated with kotlin, java, and play back to https://github.com/kotlin-graphics/glm if necessary
@@ -190,14 +227,16 @@ public class Game {
 //        System.out.println(new Vec2i(1000));
 //        System.out.println(new Vec2i(1000).times(1.5f));
 //        System.out.println(new Vec2i(1000).times(2f));
-        
+    
+        Vec2 windowSize = window.getSize().toVec();
         FrameBuffer postBuffer = FrameBuffer.getStandard(new Vec2i(windowSize));
         Material mat = new Material.Builder() //TODO okay, the fact models, or rather meshes simply ignore these mats is getting frustrating now, that builder needs some serious rework
                 .addTextures((Texture2D) postBuffer.getAttachment(FrameBuffer.AttachmentType.COLOUR0))
                 .build();
         Model screenQuad = ModelFactory.rectangle(-1, -1, 2, 2, mat) //Hey hey people, these, are in fact, regular    screeeeen coordinates, not viewport, meaning, for post processing, these effectively *always* need to be    (-1, -1) and (2, 2).
                 .build();
-        Shaders.ScreenQuadShader screenShader = Shaders.getScreenShader();
+        screenQuad.getTransform().setPosition(new Vec3(0, 0, 1));
+        Shaders.PostprocessingShader screenShader = Shaders.getPostprocessingShader();
         
         pacer.start();
         while (!window.shouldClose()) {
@@ -224,39 +263,20 @@ public class Game {
             //     editorconfig
     
             postBuffer.bind();
-            
             renderer.prepare();
-            
-            if (font != null) {
-                renderer.render(
-                        font.getGlyphs("Orbes collectered: " + orbsCollected),
-                        new Vec2(0),
-                        fontShader,
-                        uiCamera.getCombined()
-                );
-            }
-            
-            shader.setViewPosition(camera.getPosition());
-            shader.setLights(pointLights);
-            
-            renderer.render(cube, shader, camera.getCombined());
-            renderer.render(skelly, shader, camera.getCombined());
-//            renderer.renderWireframe(skellyBBModel, shader, camera.getCombined());
-            
-            for (Model orb : orbs) {
-                if (!orb.isEnabled()) continue;
-                renderer.render(orb, shader, camera.getCombined());
-//                orbBBModel.getTransform().set(orb.getTransform());
-//                renderer.renderWireframe(orbBBModel, shader, camera.getCombined());
-            }
-            
-            lightShader.setLight(pointLight);
-            renderer.render(light, lightShader, camera.getCombined());
-            
+            render();
             postBuffer.unbind();
             
             renderer.prepare();
+            screenShader.setUniform("uEmboss", true);
             renderer.render(screenQuad, screenShader, null);
+            
+            glDisable(GL_DEPTH_TEST);
+            
+            scoreLabel.setText("Orbes collectered: " + orbsCollected);
+            fpsLabel.setText("%5.3f\n%7.6f".formatted(pacer.getAverageFPS(), pacer.getDeltaTimeSeconds()));
+            
+            glEnable(GL_DEPTH_TEST);
             
             window.update(pacer.getDeltaTimeSeconds());
             pacer.nextFrame();
@@ -282,7 +302,8 @@ public class Game {
             //TODO include delta time
             if (Math.abs(rotation - smoothRotation) > 0.001) {
                 double falloff = -0.5 * (1 / (2 * Math.abs(rotation - smoothRotation) + 0.5)) + 1;
-                smoothRotation += Math.toRadians(rotation - smoothRotation >= 0 ? 5 * falloff : -5 * falloff);
+                falloff *= 500 * pacer.getDeltaTimeSeconds();
+                smoothRotation += Math.toRadians(rotation - smoothRotation >= 0 ? falloff : -falloff);
             }
             smoothRotation %= Math.toRadians(360);
             skelly.getTransform().setRotation(
@@ -330,6 +351,25 @@ public class Game {
     private void updateCamera() {
         Vec3 orbitPos = camera.getDirection().negate().times(3);
         camera.setPosition(orbitPos.plus(0, skelly.getWorldBoundingBox().getSize().getY() - 0.5, 0).plus(skelly.getTransform().getPosition()));
+    }
+    
+    private void render() {
+        shader.setViewPosition(camera.getPosition());
+        shader.setLights(pointLights);
+    
+        renderer.render(cube, shader, camera.getCombined());
+        renderer.render(skelly, shader, camera.getCombined());
+//            renderer.renderWireframe(skellyBBModel, shader, camera.getCombined());
+    
+        for (Model orb : orbs) {
+            if (!orb.isEnabled()) continue;
+            renderer.render(orb, shader, camera.getCombined());
+//                orbBBModel.getTransform().set(orb.getTransform());
+//                renderer.renderWireframe(orbBBModel, shader, camera.getCombined());
+        }
+    
+        lightShader.setLight(pointLight);
+        renderer.render(light, lightShader, camera.getCombined());
     }
     
     private void exit() {

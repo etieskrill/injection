@@ -10,7 +10,6 @@ import org.etieskrill.engine.graphics.PerspectiveCamera;
 import org.etieskrill.engine.graphics.assimp.*;
 import org.etieskrill.engine.graphics.gl.FrameBuffer;
 import org.etieskrill.engine.graphics.gl.FrameBufferAttachment;
-import org.etieskrill.engine.graphics.gl.ModelFactory;
 import org.etieskrill.engine.graphics.gl.Renderer;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
@@ -18,7 +17,11 @@ import org.etieskrill.engine.graphics.model.DirectionalLight;
 import org.etieskrill.engine.graphics.model.PointLight;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.texture.Textures;
-import org.etieskrill.engine.scene._2d.*;
+import org.etieskrill.engine.scene.Scene;
+import org.etieskrill.engine.scene._2d.Button;
+import org.etieskrill.engine.scene._2d.Container;
+import org.etieskrill.engine.scene._2d.Layout;
+import org.etieskrill.engine.scene._2d.VerticalGroup;
 import org.etieskrill.engine.time.LoopPacer;
 import org.etieskrill.engine.time.SystemNanoTimePacer;
 import org.etieskrill.engine.util.Loaders.ModelLoader;
@@ -238,7 +241,7 @@ public class DemCubez {
                 paused = true;
                 pacer.pauseTimer();
                 window.getCursor().enable();
-                window.getStage().show();
+                window.getScene().show();
                 escPressedPrev = true;
             }
             else if (!escPressed && escPressedPrev) {
@@ -246,7 +249,7 @@ public class DemCubez {
                 pacer.resumeTimer();
                 resetPreviousMousePosition();
                 window.getCursor().disable();
-                window.getStage().hide();
+                window.getScene().hide();
                 escPressedPrev = false;
             }
     
@@ -425,8 +428,8 @@ public class DemCubez {
         //menu.getLayout().setAlignment(Layout.Alignment.CENTER);
         container.setChild(menu);
     
-        window.setStage(new Stage(new Batch(renderer, new ModelFactory()), container, new OrthographicCamera(window.getSize().toVec())));
-        window.getStage().hide();
+        window.setScene(new Scene(new Batch(renderer), container, new OrthographicCamera(window.getSize().toVec())));
+        window.getScene().hide();
     }
     
     private void setShaderUniforms() {

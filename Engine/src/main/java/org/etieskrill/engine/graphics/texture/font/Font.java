@@ -8,5 +8,6 @@ public interface Font extends Disposable {
     Glyph[] getGlyphs(String s);
     
     int getLineHeight();
+    int getMinLineHeight();
     
 }
