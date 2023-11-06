@@ -4,6 +4,7 @@ import org.etieskrill.engine.graphics.assimp.Mesh;
 import org.etieskrill.engine.graphics.assimp.Model;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
+import org.etieskrill.engine.graphics.texture.font.Font;
 
 public final class Loaders {
     
@@ -80,12 +81,28 @@ public final class Loaders {
             return "Shader";
         }
     }
+
+    public static final class FontLoader extends Loader<Font> {
+        private static FontLoader instance;
+
+        public static FontLoader get() {
+            if (instance == null)
+                instance = new FontLoader();
+            return instance;
+        }
+
+        @Override
+        protected String getLoaderName() {
+            return "Font";
+        }
+    }
     
     public static void disposeDefaultLoaders() {
         TextureLoader.get().dispose();
         MeshLoader.get().dispose();
         ModelLoader.get().dispose();
         ShaderLoader.get().dispose();
+        FontLoader.get().dispose();
     }
     
 }
