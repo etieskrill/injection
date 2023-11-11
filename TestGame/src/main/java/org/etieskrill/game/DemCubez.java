@@ -4,8 +4,6 @@ import glm_.vec2.Vec2;
 import glm_.vec2.Vec2i;
 import glm_.vec3.Vec3;
 import org.etieskrill.engine.entity.data.Transform;
-import org.etieskrill.engine.graphics.Batch;
-import org.etieskrill.engine.graphics.OrthographicCamera;
 import org.etieskrill.engine.graphics.PerspectiveCamera;
 import org.etieskrill.engine.graphics.assimp.*;
 import org.etieskrill.engine.graphics.gl.FrameBuffer;
@@ -17,11 +15,6 @@ import org.etieskrill.engine.graphics.model.DirectionalLight;
 import org.etieskrill.engine.graphics.model.PointLight;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.texture.Textures;
-import org.etieskrill.engine.scene.Scene;
-import org.etieskrill.engine.scene._2d.Button;
-import org.etieskrill.engine.scene._2d.Container;
-import org.etieskrill.engine.scene._2d.Layout;
-import org.etieskrill.engine.scene._2d.VerticalGroup;
 import org.etieskrill.engine.time.LoopPacer;
 import org.etieskrill.engine.time.SystemNanoTimePacer;
 import org.etieskrill.engine.util.Loaders.ModelLoader;
@@ -265,7 +258,8 @@ public class DemCubez {
             screenShader.start();
 //            screenShader.setUniform("uSharpen", true);
 //            screenShader.setUniform("uSharpenOffset", 1f / 10000f);
-            
+
+            screenShader.setUniform("uColour", new Vec3(1.0));
             renderer.render(screenQuad, screenShader);
             
             window.update(pacer.getDeltaTimeSeconds());
@@ -415,21 +409,21 @@ public class DemCubez {
     }
     
     private void initUI() {
-        Container container = new Container();
-        //container.getLayout().setAlignment(Layout.Alignment.BOTTOM_RIGHT);
-        Layout layout = Layout.get()
-                .setPrefSize(new Vec2(400f, 100f))
-                .setMinSize(new Vec2(250f, 50f));
-        Button button1 = new Button(layout);
-        Button button2 = new Button(layout);
-        Button button3 = new Button(layout);
-        VerticalGroup menu = new VerticalGroup(button1, button2, button3);
-        //menu.layout();
-        //menu.getLayout().setAlignment(Layout.Alignment.CENTER);
-        container.setChild(menu);
-    
-        window.setScene(new Scene(new Batch(renderer), container, new OrthographicCamera(window.getSize().toVec())));
-        window.getScene().hide();
+//        Container container = new Container();
+//        //container.getLayout().setAlignment(Layout.Alignment.BOTTOM_RIGHT);
+//        Layout layout = Layout.get()
+//                .setPrefSize(new Vec2(400f, 100f))
+//                .setMinSize(new Vec2(250f, 50f));
+//        Button button1 = new Button(layout);
+//        Button button2 = new Button(layout);
+//        Button button3 = new Button(layout);
+//        VerticalGroup menu = new VerticalGroup(button1, button2, button3);
+//        //menu.layout();
+//        //menu.getLayout().setAlignment(Layout.Alignment.CENTER);
+//        container.setChild(menu);
+//
+//        window.setScene(new Scene(new Batch(renderer), container, new OrthographicCamera(window.getSize().toVec())));
+//        window.getScene().hide();
     }
     
     private void setShaderUniforms() {
