@@ -172,7 +172,9 @@ public class Shaders {
         }
         
         @Override
-        protected void getUniformLocations() {}
+        protected void getUniformLocations() {
+            addUniform("uColour", VEC4);
+        }
     }
     
     public static class SingleColourShader extends ShaderProgram {
@@ -248,6 +250,7 @@ public class Shaders {
         @Override
         protected void getUniformLocations() {
             addUniform("uInvert", BOOLEAN);
+            addUniform("uColour", VEC3);
             addUniform("uGrayscale", BOOLEAN);
             addUniform("uSharpen", BOOLEAN);
             addUniform("uSharpenOffset", FLOAT);

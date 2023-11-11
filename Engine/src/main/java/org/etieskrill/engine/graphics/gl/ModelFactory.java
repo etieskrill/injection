@@ -130,7 +130,7 @@ public class ModelFactory {
     }
 
     public static Model box(Vec3 size) {
-        Model box = Loaders.ModelLoader.get().load("internal_model_factory:cube", () -> Model.ofFile("cube.obj"));
+        Model box = Loaders.ModelLoader.get().load("internal-model-factory:box", () -> Model.ofFile("box.obj"));
         box.getTransform().setInitialScale(size);
         return box;
     }

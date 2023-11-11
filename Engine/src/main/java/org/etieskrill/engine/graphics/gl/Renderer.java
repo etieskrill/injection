@@ -40,6 +40,18 @@ public class Renderer {
         
         _render(model, shader, combined);
     }
+
+    private Model box;
+
+    private Model getBox() {
+        if (box == null) box = ModelFactory.box(new Vec3(1));
+        return box;
+    }
+
+    public void renderBox(Vec3 position, Vec3 size, ShaderProgram shader, Mat4 combined) {
+        getBox().getTransform().setPosition(position).setScale(size);
+        _render(getBox(), shader, combined);
+    }
     
     //TODO update spec: all factory methods use loaders by default, constructors/builders do not
     private static ShaderProgram outlineShader;
@@ -103,9 +115,12 @@ public class Renderer {
     public void render(Glyph glyph, Vec2 position, ShaderProgram shader, Mat4 combined) {
         getQuad().getTransform()
                 .setScale(new Vec3(glyph.getSize(), 1))
-                .setPosition(new Vec3(position.plus(glyph.getPosition())))
-        ;
-        glyph.getTexture().bind(0); //TODO rework model to better allow for these hotswap cases
+                .setPosition(new Vec3(position.plus(glyph.getPosition())));
+
+        List<AbstractTexture> textures = getQuad().getMeshes().get(0).getMaterial().getTextures();
+        textures.clear();
+        textures.add(glyph.getTexture());
+
         _render(getQuad(), shader, combined);
     }
     
@@ -190,6 +205,9 @@ public class Renderer {
         if (shininess == 0)
             shader.setUniform("material.shininess", material.getShininess(), false);
         shader.setUniform("material.specularity", material.getShininessStrength(), false);
+
+        //Optional information
+        shader.setUniform("material.numTextures", tex2d + cubemaps, false);
     }
     
 }

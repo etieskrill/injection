@@ -7,8 +7,8 @@ import java.util.Set;
  */
 //TODO define release behaviour
 public class OverruleGroup {
-    
-    private final Set<KeyInput> group;
+
+    private final Set<Key> group;
     private final Mode mode;
     
     /**
@@ -33,13 +33,13 @@ public class OverruleGroup {
          */
         NONE
     }
-    
-    public OverruleGroup(Set<KeyInput> group, Mode mode) {
+
+    public OverruleGroup(Set<Key> group, Mode mode) {
         this.group = group;
         this.mode = mode;
     }
-    
-    public Set<KeyInput> getGroup() {
+
+    public Set<Key> getGroup() {
         return group;
     }
     

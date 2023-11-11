@@ -13,6 +13,7 @@ vec4 applyKernel(float[9] kernel, float offset);
 uniform Material material;
 
 uniform bool uInvert;
+uniform vec3 uColour;
 uniform bool uGrayscale;
 uniform bool uSharpen;
 uniform float uSharpenOffset;
@@ -62,7 +63,7 @@ void main()
     );
     if (uEmboss) texel = applyKernel(embossKernel, uEmbossOffset);
 
-    oColour = texel;
+    oColour = texel * vec4(uColour, 1.0);
 }
 
 vec4 applyKernel(float[9] kernel, float offset) {

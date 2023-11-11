@@ -2,8 +2,9 @@ package org.etieskrill.engine.window;
 
 import glm_.vec2.Vec2;
 import org.etieskrill.engine.Disposable;
-import org.etieskrill.engine.input.InputManager;
-import org.etieskrill.engine.input.KeyInput;
+import org.etieskrill.engine.input.Key;
+import org.etieskrill.engine.input.KeyInputManager;
+import org.etieskrill.engine.input.Keys;
 import org.etieskrill.engine.scene.Scene;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.PointerBuffer;
@@ -37,8 +38,8 @@ public class Window implements Disposable {
     private String title;
     
     private Cursor cursor;
-    
-    private InputManager inputs;
+
+    private KeyInputManager inputs;
     private Scene scene;
     
     private boolean built = false;
@@ -124,7 +125,7 @@ public class Window implements Disposable {
         private boolean vSyncEnabled;
         private String title;
         private Cursor cursor;
-        private InputManager inputs;
+        private KeyInputManager inputs;
         
         public Builder() {}
         
@@ -162,8 +163,8 @@ public class Window implements Disposable {
             this.cursor = cursor;
             return this;
         }
-    
-        public Builder setInputManager(InputManager inputs) {
+
+        public Builder setInputManager(KeyInputManager inputs) {
             this.inputs = inputs;
             return this;
         }
@@ -185,7 +186,7 @@ public class Window implements Disposable {
     
     Window(WindowMode mode, WindowSize size, Vec2 position, float targetFrameRate, boolean vSyncEnabled,
            String title, Cursor cursor,
-           InputManager inputs) {
+           KeyInputManager inputs) {
         this.mode = mode;
         this.size = size;
         this.position = position;
@@ -268,16 +269,31 @@ public class Window implements Disposable {
         
         setTitle(title);
     }
-    
+
     private void configInput() {
         if (USE_RAW_MOUSE_MOTION_IF_AVAILABLE && glfwRawMouseMotionSupported())
             glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
         
         glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
-            if (inputs != null && window == this.window) inputs.invoke(KeyInput.Type.KEY, key, action, mods);
+            if (inputs != null && window == this.window) inputs.invoke(Key.Type.KEYBOARD, key, action, mods);
         });
-        glfwSetMouseButtonCallback(window, (window, button, action, mods) -> {
-            if (inputs != null && window == this.window) inputs.invoke(KeyInput.Type.MOUSE, button, action, mods);
+        final double[] posX = new double[1], posY = new double[1]; //does this cause this method's stack to persist?
+        glfwSetMouseButtonCallback(window, (window, button, action, glfwMods) -> {
+            if (inputs != null && window == this.window) inputs.invoke(Key.Type.MOUSE, button, action, glfwMods);
+            if (scene != null && window == this.window) {
+                Keys key = Keys.fromGlfw(button);
+                if (key == null) return;
+                Key keyWithMods = key.withMods(Keys.Mod.fromGlfw(glfwMods));
+
+                glfwGetCursorPos(window, posX, posY);
+                scene.invokeClick(keyWithMods, action, posX[0], posY[0]);
+            }
+        });
+        glfwSetCursorPosCallback(window, (window, xpos, ypos) -> {
+            if (scene != null && window == this.window) scene.invokeMove(xpos, ypos);
+        });
+        glfwSetScrollCallback(window, (window, xoffset, yoffset) -> {
+            if (scene != null && window == this.window) scene.invokeScroll(xoffset, yoffset);
         });
     }
     

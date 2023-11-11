@@ -5,6 +5,7 @@ import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.texture.font.Font;
 import org.etieskrill.engine.graphics.texture.font.Fonts;
 import org.etieskrill.engine.graphics.texture.font.Glyph;
+import org.etieskrill.engine.input.Key;
 
 import java.util.Objects;
 
@@ -25,13 +26,9 @@ public class Label extends Node {
     }
     
     @Override
-    public void update(double delta) {
-    }
-    
-    @Override
     public void format() {
         if (!shouldFormat()) return;
-        
+
         int width = 0, height = font.getMinLineHeight();
         for (Glyph glyph : font.getGlyphs(text)) {
             width += glyph.getAdvance().getX();
@@ -41,12 +38,11 @@ public class Label extends Node {
         }
         
         setSize(new Vec2(width, height));
-        System.out.println(getSize());
     }
     
     @Override
     public void render(Batch batch) {
-        if (text != null) batch.render(text, font, getPosition());
+        if (text != null) batch.render(text, font, getAbsolutePosition());
     }
     
     public String getText() {
@@ -57,5 +53,11 @@ public class Label extends Node {
         if (!this.text.equals(text)) invalidate();
         this.text = text;
     }
-    
+
+    @Override
+    public boolean hit(Key button, int action, double posX, double posY) {
+        System.out.println("label");
+        return false;
+    }
+
 }

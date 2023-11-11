@@ -1,9 +1,17 @@
 package org.etieskrill.engine.scene.component;
 
 import glm_.vec2.Vec2;
+import glm_.vec4.Vec4;
 
 public class LayoutUtils {
-    
+
+    static Vec2 getMinNodeSize(Node node) {
+        Vec4 margin = node.getMargin();
+        return node.getSize().plus(
+                new Vec2(margin.getZ() + margin.getW(), margin.getX() + margin.getY())
+        );
+    }
+
     static Vec2 getPreferredNodePosition(Vec2 size, Node node) {
         Vec2 nodeSize = node.getSize().plus(
                 new Vec2(node.getMargin().getW(), node.getMargin().getY())

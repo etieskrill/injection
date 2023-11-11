@@ -1,6 +1,7 @@
 package org.etieskrill.engine.scene.component;
 
 import org.etieskrill.engine.graphics.Batch;
+import org.etieskrill.engine.input.Key;
 import org.jetbrains.annotations.NotNull;
 
 import static java.util.Objects.requireNonNull;
@@ -26,8 +27,8 @@ public class Container extends Node {
     
     @Override
     public void format() {
-        if (!shouldFormat()) return;
-        
+        if (!shouldFormat() || child == null) return;
+
         child.format();
         child.setPosition(getPreferredNodePosition(getSize(), child));
     }
@@ -42,7 +43,14 @@ public class Container extends Node {
     }
     
     public void setChild(@NotNull Node child) {
+        invalidate();
         this.child = requireNonNull(child).setParent(this);
     }
-    
+
+    @Override
+    public boolean hit(Key button, int action, double posX, double posY) {
+        if (!doesHit(posX, posY)) return false;
+        return child.hit(button, action, posX, posY); //container itself is not hittable
+    }
+
 }

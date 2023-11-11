@@ -5,7 +5,7 @@ package org.etieskrill.engine.input;
  */
 @FunctionalInterface
 public interface KeyInputHandler {
-    
-    boolean invoke(KeyInput.Type type, int key, int action, int modifiers);
+
+    boolean invoke(Key.Type type, int key, int action, int modifiers);
     
 }

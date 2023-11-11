@@ -476,7 +476,8 @@ public abstract class ShaderProgram implements Disposable {
     protected abstract String[] getShaderFileNames();
     
     protected abstract void getUniformLocations();
-    
+
+    //TODO add setting of default value here
     protected void addUniform(String name, Uniform.Type type) {
         Uniform uniform = new Uniform(name, type);
         if (uniforms.containsKey(uniform)) return;

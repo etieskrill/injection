@@ -3,6 +3,7 @@ package org.etieskrill.engine.scene.component;
 import glm_.vec2.Vec2;
 import glm_.vec4.Vec4;
 import org.etieskrill.engine.graphics.Batch;
+import org.etieskrill.engine.input.Key;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -48,6 +49,11 @@ public abstract class Node {
     protected Node setPosition(@NotNull Vec2 position) {
         this.position.put(requireNonNull(position));
         return this;
+    }
+
+    public Vec2 getAbsolutePosition() {
+        if (parent == null) return new Vec2(position);
+        return position.plus(parent.getAbsolutePosition());
     }
     
     public Vec2 getSize() {
@@ -113,6 +119,15 @@ public abstract class Node {
     public void invalidate() {
         this.shouldFormat = true;
         if (parent != null) parent.invalidate();
+    }
+
+    //TODO consider turning scene into entity system to alleviate this responsibility from nodes
+    public abstract boolean hit(Key button, int action, double posX, double posY);
+
+    final boolean doesHit(double posX, double posY) {
+        Vec2 absPos = getAbsolutePosition();
+        return absPos.getX() + getSize().getX() >= posX && posX >= absPos.getX() &&
+                absPos.getY() + getSize().getY() >= posY && posY >= absPos.getY();
     }
     
 }

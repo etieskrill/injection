@@ -9,15 +9,15 @@ import java.util.*;
 public class Input {
     
     //TODO i do not trust working with such annotations, since i haven't even been able to find a plugin for vscode which processes these like intellij does
-    public static InputManager of(@NotNull InputBinding... bindings) {
+    public static KeyInputManager of(@NotNull InputBinding... bindings) {
         if (Arrays.stream(bindings).anyMatch(Objects::isNull))
             throw new NullPointerException("Invalid list of inputs");
-        InputManager manager = new InputManager();
+        KeyInputManager manager = new KeyInputManager();
         for (InputBinding binding : bindings) manager.addBindings(binding);
         return manager;
     }
-    
-    public static BindPassOn bind(KeyInput binding) {
+
+    public static BindPassOn bind(Key binding) {
         return new BindPassOn(binding);
     }
     
@@ -27,12 +27,12 @@ public class Input {
     
     //TODO this is basically a builder, so label it as such
     public static final class BindPassOn {
-        private final KeyInput binding;
+        private final Key binding;
         
         private InputBinding.Trigger trigger = InputBinding.Trigger.ON_PRESS;
         private OverruleGroup group;
-        
-        private BindPassOn(KeyInput binding) {
+
+        private BindPassOn(Key binding) {
             this.binding = binding;
         }
         
@@ -40,16 +40,16 @@ public class Input {
             this.trigger = trigger;
             return this;
         }
-        
-        public BindPassOn group(OverruleGroup.Mode mode, KeyInput... bindings) {
-            Set<KeyInput> binds = new HashSet<>(List.of(bindings));
+
+        public BindPassOn group(OverruleGroup.Mode mode, Key... bindings) {
+            Set<Key> binds = new HashSet<>(List.of(bindings));
             binds.add(binding); //if you know a prettier solution to this, then please, feel free
             this.group = new OverruleGroup(binds, mode);
             return this;
         }
         
         public BindPassOn group(OverruleGroup.Mode mode, Keys... bindings) {
-            return group(mode, Arrays.stream(bindings).map(Keys::getInput).toArray(KeyInput[]::new));
+            return group(mode, Arrays.stream(bindings).map(Keys::getInput).toArray(Key[]::new));
         }
         
         public InputBinding to(SimpleAction action) {

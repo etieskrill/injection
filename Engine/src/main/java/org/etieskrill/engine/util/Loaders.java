@@ -5,6 +5,7 @@ import org.etieskrill.engine.graphics.assimp.Model;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.etieskrill.engine.graphics.texture.font.Font;
+import org.jetbrains.annotations.Nullable;
 
 public final class Loaders {
     
@@ -53,9 +54,11 @@ public final class Loaders {
         }
     
         @Override
-        public Model get(String name) {
+        public @Nullable Model get(String name) {
+            Model model = super.get(name);
+            if (model == null) return null;
             logger.debug("Creating new instance of model {}", name);
-            return new Model(super.get(name));
+            return new Model(model);
         }
     
         @Override

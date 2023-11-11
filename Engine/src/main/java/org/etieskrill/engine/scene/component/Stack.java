@@ -1,6 +1,7 @@
 package org.etieskrill.engine.scene.component;
 
 import org.etieskrill.engine.graphics.Batch;
+import org.etieskrill.engine.input.Key;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -59,5 +60,13 @@ public class Stack extends Container {
         children.clear();
         return this;
     }
-    
+
+    @Override
+    public boolean hit(Key button, int action, double posX, double posY) {
+        if (!doesHit(posX, posY)) return false;
+        for (Node child : children)
+            if (child.hit(button, action, posX, posY)) return true;
+        return false;
+    }
+
 }

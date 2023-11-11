@@ -21,10 +21,12 @@ import org.etieskrill.engine.graphics.texture.font.Fonts;
 import org.etieskrill.engine.graphics.texture.font.TrueTypeFont;
 import org.etieskrill.engine.input.Input;
 import org.etieskrill.engine.input.InputBinding.Trigger;
-import org.etieskrill.engine.input.InputManager;
+import org.etieskrill.engine.input.KeyInputManager;
 import org.etieskrill.engine.input.Keys;
 import org.etieskrill.engine.input.OverruleGroup;
 import org.etieskrill.engine.scene.Scene;
+import org.etieskrill.engine.scene.component.Button;
+import org.etieskrill.engine.scene.component.Container;
 import org.etieskrill.engine.scene.component.Label;
 import org.etieskrill.engine.scene.component.Node.Alignment;
 import org.etieskrill.engine.scene.component.Stack;
@@ -54,6 +56,8 @@ public class Game {
     
     private Camera camera, uiCamera;
     private Renderer renderer = new Renderer();
+
+    private Scene gameScene, pauseScene;
     
     private Label scoreLabel;
     private Label fpsLabel;
@@ -72,17 +76,11 @@ public class Game {
     private double prevCursorPosX, prevCursorPosY;
     
     private int orbsCollected;
-    
-    private final InputManager inputManager = Input.of(
+
+    private final KeyInputManager keyInputManager = Input.of(
             Input.bind(Keys.ESC).to(() -> {
-                if (pacer.isPaused()) {
-                    pacer.resumeTimer();
-                    window.getCursor().disable();
-                }
-                else {
-                    pacer.pauseTimer();
-                    window.getCursor().enable();
-                }
+                if (pacer.isPaused()) unpause();
+                else pause();
             }),
             Input.bind(Keys.ESC.withMods(Keys.SHIFT)).to(() -> window.close()),
             Input.bind(Keys.W).on(Trigger.PRESSED).group(OverruleGroup.Mode.YOUNGEST, Keys.S).to(() -> deltaPos.plusAssign(0, 0, 1)),
@@ -107,7 +105,7 @@ public class Game {
                 .setRefreshRate(0)
                 .setMode(Window.WindowMode.BORDERLESS)
                 .setTitle("Walk")
-                .setInputManager(inputManager)
+                .setInputManager(keyInputManager)
                 .build();
         
         setupCursor();
@@ -140,12 +138,28 @@ public class Game {
         fpsLabel.setAlignment(Alignment.TOP_LEFT).setMargin(new Vec4(10));
         
         Stack stack = new Stack(List.of(scoreLabel, fpsLabel));
-        
-        Scene scene = new Scene(
+
+        gameScene = new Scene(
                 new Batch(renderer).setShader(Shaders.getTextShader()),
                 stack,
                 uiCamera);
-        window.setScene(scene);
+        window.setScene(gameScene);
+
+        Label labelContinue = new Label("Continue", Fonts.getDefault(48));
+        labelContinue.setAlignment(Alignment.CENTER).setMargin(new Vec4(10));
+        Button buttonContinue = new Button(labelContinue);
+        buttonContinue.setSize(new Vec2(300, 100));
+        buttonContinue.setAlignment(Alignment.CENTER);
+        buttonContinue.setAction(this::unpause);
+
+        Container container = new Container();
+        container.setChild(buttonContinue);
+
+        pauseScene = new Scene(
+                new Batch(renderer),
+                container,
+                uiCamera
+        );
     }
     
     private void loop() {
@@ -237,6 +251,7 @@ public class Game {
                 .build();
         screenQuad.getTransform().setPosition(new Vec3(0, 0, 1));
         Shaders.PostprocessingShader screenShader = Shaders.getPostprocessingShader();
+        Vec3 unpauseColour = new Vec3(1.0), pauseColour = new Vec3(0.65);
         
         pacer.start();
         while (!window.shouldClose()) {
@@ -269,6 +284,7 @@ public class Game {
             
             renderer.prepare();
             screenShader.setUniform("uEmboss", true);
+            screenShader.setUniform("uColour", pacer.isPaused() ? pauseColour : unpauseColour);
             renderer.render(screenQuad, screenShader, null);
             
             glDisable(GL_DEPTH_TEST);
@@ -284,6 +300,18 @@ public class Game {
         
         if (font != null) font.dispose();
     }
+
+    private void unpause() {
+        pacer.resumeTimer();
+        window.getCursor().disable();
+        window.setScene(gameScene);
+    }
+
+    private void pause() {
+        pacer.pauseTimer();
+        window.getCursor().capture();
+        window.setScene(pauseScene);
+    }
     
     private void transformSkelly() {
         Vec3 skellyTranslate = camera
@@ -292,7 +320,7 @@ public class Game {
         if (skellyTranslate.length2() > 0) skellyTranslate.normalizeAssign();
         skellyTranslate = skellyTranslate
                 .times(pacer.getDeltaTimeSeconds())
-                .times(5 * (inputManager.isPressed(Keys.CTRL) ? 1.5 : 1));
+                .times(5 * (keyInputManager.isPressed(Keys.CTRL) ? 1.5 : 1));
         skelly.getTransform().translate(skellyTranslate);
     
         if (deltaPos.anyNotEqual(0, 0.001f)) {
@@ -314,8 +342,8 @@ public class Game {
     
         skelly.getTransform().getPosition().setX(Math.max(-25, Math.min(25, skelly.getTransform().getPosition().getX()))); //why not use Math#clamp? try it, smartass
         skelly.getTransform().getPosition().setZ(Math.max(-25, Math.min(25, skelly.getTransform().getPosition().getZ())));
-    
-        if (inputManager.isPressed(Keys.SPACE) && jumpTime == 0)
+
+        if (keyInputManager.isPressed(Keys.SPACE) && jumpTime == 0)
             jumpTime += 0.0001;
         if (jumpTime != 0 && jumpTime < 1) {
             double jumpHeight = -4 * (jumpTime - 0.5) * (jumpTime - 0.5) + 1;
@@ -324,7 +352,7 @@ public class Game {
         } else jumpTime = 0;
     
         float skellyHeight;
-        if (inputManager.isPressed(Keys.LEFT_SHIFT)) skellyHeight = 9;
+        if (keyInputManager.isPressed(Keys.LEFT_SHIFT)) skellyHeight = 9;
         else skellyHeight = 15;
     
         double falloff = -0.5 * (1 / (2 * Math.abs(skellyHeight - smoothSkellyHeight) + 0.5)) + 1;

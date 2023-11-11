@@ -3,6 +3,8 @@ package org.etieskrill.engine.scene;
 import glm_.vec2.Vec2;
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.Camera;
+import org.etieskrill.engine.input.CursorInputHandler;
+import org.etieskrill.engine.input.Key;
 import org.etieskrill.engine.scene.component.Node;
 import org.jetbrains.annotations.NotNull;
 
@@ -10,7 +12,7 @@ import java.util.Objects;
 
 import static org.lwjgl.opengl.GL11C.*;
 
-public class Scene {
+public class Scene implements CursorInputHandler {
     
     private Batch batch;
     private Node root;
@@ -80,6 +82,21 @@ public class Scene {
     public void setSize(Vec2 size) {
         this.size.put(size);
         if (root != null) root.invalidate();
+    }
+
+    @Override
+    public boolean invokeClick(Key button, int action, double posX, double posY) {
+        return root.hit(button, action, posX, posY);
+    }
+
+    @Override
+    public boolean invokeMove(double deltaX, double deltaY) {
+        return false;
+    }
+
+    @Override
+    public boolean invokeScroll(double deltaX, double deltaY) {
+        return false;
     }
 
 }

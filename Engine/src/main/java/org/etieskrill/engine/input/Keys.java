@@ -1,5 +1,7 @@
 package org.etieskrill.engine.input;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -17,6 +19,11 @@ public enum Keys {
     
     ESCAPE(GLFW_KEY_ESCAPE),
     ESC(ESCAPE),
+
+    LEFT_MOUSE(GLFW_MOUSE_BUTTON_LEFT, Key.Type.MOUSE),
+    RIGHT_MOUSE(GLFW_MOUSE_BUTTON_RIGHT, Key.Type.MOUSE),
+    MIDDLE_MOUSE(GLFW_MOUSE_BUTTON_MIDDLE, Key.Type.MOUSE),
+    MOUSE_4(GLFW_MOUSE_BUTTON_4, Key.Type.MOUSE), MOUSE_5(GLFW_MOUSE_BUTTON_5, Key.Type.MOUSE),
     
     LEFT_SHIFT(GLFW_KEY_LEFT_SHIFT, Mod.SHIFT), RIGHT_SHIFT(GLFW_KEY_RIGHT_SHIFT, Mod.SHIFT),
     SHIFT(GLFW_KEY_LEFT_SHIFT, Mod.SHIFT),
@@ -30,9 +37,9 @@ public enum Keys {
     NUMLOCK(GLFW_KEY_NUM_LOCK);
     
     private final Mod modifierKey;
-    
-    private static final Map<KeyInput, Map<Mod, KeyInput>> keyCache = new HashMap<>(256);
-    private final KeyInput input;
+
+    private static final Map<Key, Map<Mod, Key>> keyCache = new HashMap<>(256);
+    private final Key input;
     
     public enum Mod {
         SHIFT(GLFW_MOD_SHIFT, Keys.SHIFT),
@@ -41,7 +48,8 @@ public enum Keys {
         SUPER(GLFW_MOD_SUPER, Keys.SUPER),
         CAPSLOCK(GLFW_MOD_CAPS_LOCK, Keys.CAPSLOCK),
         NUMLOCK(GLFW_KEY_NUM_LOCK, Keys.NUMLOCK),
-        
+        NONE(0),
+
         //TODO add remaining combinations or think of a smarter solution for this
         CONTROL_SHIFT(GLFW_MOD_CONTROL | GLFW_MOD_SHIFT),
         CONTROL_ALT(GLFW_MOD_CONTROL | GLFW_MOD_ALT),
@@ -67,8 +75,8 @@ public enum Keys {
         public Keys toKey() {
             return key;
         }
-        
-        public static Mod fromGlfw(int glfwMods) {
+
+        public static @NotNull Mod fromGlfw(int glfwMods) {
             return switch (glfwMods) {
                 case GLFW_MOD_SHIFT -> SHIFT;
                 case GLFW_MOD_CONTROL -> CONTROL;
@@ -80,38 +88,46 @@ public enum Keys {
                 case GLFW_MOD_CONTROL | GLFW_MOD_ALT -> CONTROL_ALT;
                 case GLFW_MOD_ALT | GLFW_MOD_SHIFT -> ALT_SHIFT;
                 case GLFW_MOD_CONTROL | GLFW_MOD_ALT | GLFW_MOD_SHIFT -> CONTROL_ALT_SHIFT;
-                default -> null;
+                default -> NONE;
             };
         }
     }
     
     Keys(int glfwKey) {
-        this(glfwKey, null);
+        this(glfwKey, (Mod) null);
     }
     
     Keys(int glfwKey, Mod modifierKey) {
+        this(glfwKey, modifierKey, Key.Type.KEYBOARD);
+    }
+
+    Keys(int glfwKey, Key.Type type) {
+        this(glfwKey, null, type);
+    }
+
+    Keys(int glfwKey, Mod modifierKey, Key.Type type) {
         this.modifierKey = modifierKey;
-        this.input = new KeyInput(KeyInput.Type.KEY, glfwKey);
+        this.input = new Key(type, glfwKey);
     }
     
     Keys(Keys key) {
         this.modifierKey = key.modifierKey;
         this.input = key.input;
     }
-    
+
     /**
      * Convenience overload to also allow for {@link Keys} to be used. </br>
      * Does nothing if {@code key} is not a modifier.
      */
-    public KeyInput withMods(Keys... keys) {
+    public Key withMods(Keys... keys) {
         Mod[] mods = Arrays.stream(keys).filter(key -> key != null && key.modifierKey != null).map(key -> key.modifierKey).toArray(Mod[]::new);
         return withMods(mods);
     }
-    
-    public KeyInput withMods(Mod... mods) {
-        Map<Mod, KeyInput> input = keyCache.computeIfAbsent(this.input, k -> new HashMap<>(4));
+
+    public Key withMods(Mod... mods) {
+        Map<Mod, Key> input = keyCache.computeIfAbsent(this.input, k -> new HashMap<>(4));
         int glfwMods = Arrays.stream(mods).distinct().mapToInt(mod -> mod.glfwKey).sum(); //both adding and or-ing would work, since the modifiers are flags
-        return input.computeIfAbsent(Mod.fromGlfw(glfwMods), k -> new KeyInput(this.input.getType(), this.input.getValue(), glfwMods));
+        return input.computeIfAbsent(Mod.fromGlfw(glfwMods), k -> new Key(this.input.getType(), this.input.getValue(), glfwMods));
     }
     
     public static Keys fromGlfw(int glfwKey) {
@@ -121,12 +137,12 @@ public enum Keys {
         }
         return null;
     }
-    
-    public static Keys fromKeyInput(KeyInput key) {
+
+    public static Keys fromKeyInput(Key key) {
         return fromGlfw(key.getValue());
     }
-    
-    public KeyInput getInput() {
+
+    public Key getInput() {
         return input;
     }
 }

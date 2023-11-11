@@ -114,6 +114,7 @@ public class TrueTypeFont implements Font {
                     new Vec2i(size),
                     AbstractTexture.Format.ALPHA
             )
+                    .setType(AbstractTexture.Type.DIFFUSE)
                     .setMipMapping(AbstractTexture.MinFilter.LINEAR, AbstractTexture.MagFilter.LINEAR)
                     .setWrapping(AbstractTexture.Wrapping.CLAMP_TO_EDGE)
                     .build();

@@ -23,9 +23,7 @@ public class Mesh implements Disposable {
         
         public static Mesh loadToVAO(List<Vertex> vertices, List<Short> indices, Material material, AABB boundingBox) {
             int vao = createVAO();
-    
-            if (indices.isEmpty()) System.out.println(vertices.size());
-        
+
             List<Float> _data = vertices.stream()
                     .map(Vertex::toList)
                     .flatMap(List::stream)
