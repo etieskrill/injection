@@ -29,6 +29,7 @@
         <module>Engine</module>
         <module>TestGame</module>
         <module>walk</module>
+        <module>orbes</module>
     </modules>
 
     <profiles>

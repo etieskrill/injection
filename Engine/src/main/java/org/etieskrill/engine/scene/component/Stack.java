@@ -13,7 +13,7 @@ import static org.etieskrill.engine.scene.component.LayoutUtils.getPreferredNode
 /**
  * A node with multiple children, whose {@link Node.Layout layouts} are respected independently of each other.
  */
-public class Stack extends Container {
+public class Stack extends Node {
     
     private final List<Node> children;
     
@@ -44,7 +44,11 @@ public class Stack extends Container {
     public void render(Batch batch) {
         children.forEach(child -> child.render(batch));
     }
-    
+
+    protected List<Node> getChildren() {
+        return children;
+    }
+
     public Stack addChildren(@NotNull Node... children) {
         List.of(children).forEach(child -> this.children.add(child.setParent(child)));
         return this;

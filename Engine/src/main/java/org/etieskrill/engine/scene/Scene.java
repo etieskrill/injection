@@ -8,8 +8,7 @@ import org.etieskrill.engine.input.Key;
 import org.etieskrill.engine.scene.component.Node;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Objects;
-
+import static java.util.Objects.requireNonNull;
 import static org.lwjgl.opengl.GL11C.*;
 
 public class Scene implements CursorInputHandler {
@@ -21,9 +20,9 @@ public class Scene implements CursorInputHandler {
     private final Vec2 size;
     
     public Scene(Batch batch, Node root, Camera camera) {
-        this.batch = Objects.requireNonNull(batch);
-        this.root = Objects.requireNonNull(root);
-        this.camera = Objects.requireNonNull(camera);
+        this.batch = requireNonNull(batch);
+        this.root = requireNonNull(root);
+        this.camera = requireNonNull(camera);
         
         this.size = new Vec2(0);
     

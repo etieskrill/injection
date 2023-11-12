@@ -402,7 +402,11 @@ public class Window implements Disposable {
         glfwSetCursor(window, cursor.getId());
         this.cursor = cursor;
     }
-    
+
+    public void setInputs(KeyInputManager inputs) {
+        this.inputs = inputs;
+    }
+
     public Scene getScene() {
         return scene;
     }

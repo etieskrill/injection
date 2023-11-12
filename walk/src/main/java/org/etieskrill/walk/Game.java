@@ -261,8 +261,7 @@ public class Game {
                 updateCamera();
             }
 
-            //TODO add pause menu
-            //     add start menu
+            //TODO add start menu
             //     add victory screen / with score
             //     add animation, fixed / skeletal
             //     create component system

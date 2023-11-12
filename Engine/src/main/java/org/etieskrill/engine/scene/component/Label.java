@@ -56,7 +56,6 @@ public class Label extends Node {
 
     @Override
     public boolean hit(Key button, int action, double posX, double posY) {
-        System.out.println("label");
         return false;
     }
 

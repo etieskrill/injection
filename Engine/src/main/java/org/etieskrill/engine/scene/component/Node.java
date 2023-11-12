@@ -103,7 +103,7 @@ public abstract class Node {
     public Node getParent() {
         return parent;
     }
-    
+
     Node setParent(@Nullable Node parent) {
         this.parent = parent;
         if (parent != null) invalidate();
