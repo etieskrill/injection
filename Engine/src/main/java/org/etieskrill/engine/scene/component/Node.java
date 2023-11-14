@@ -109,14 +109,14 @@ public abstract class Node {
         if (parent != null) invalidate();
         return this;
     }
-    
-    protected boolean shouldFormat() {
+
+    protected final boolean shouldFormat() {
         if (shouldFormat) shouldFormat = false;
         else return false;
         return true;
     }
-    
-    public void invalidate() {
+
+    public final void invalidate() {
         this.shouldFormat = true;
         if (parent != null) parent.invalidate();
     }

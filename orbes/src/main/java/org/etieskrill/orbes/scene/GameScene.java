@@ -36,6 +36,7 @@ public class GameScene {
     private float jumpTime;
     private float smoothSkellyHeight;
 
+    public static final int NUM_ORBS = 10;
     private int orbsCollected;
 
     Shaders.StaticShader shader;
@@ -83,7 +84,6 @@ public class GameScene {
                         skelly.getBoundingBox().getCenter().times(skelly.getTransform().getScale())
                 );
 
-        final int NUM_ORBS = 10;
         orbs = new Model[NUM_ORBS];
         Random random = new Random(69420);
         for (int i = 0; i < NUM_ORBS; i++) {

@@ -18,15 +18,11 @@ import org.etieskrill.engine.time.LoopPacer;
 import org.etieskrill.engine.time.SystemNanoTimePacer;
 import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.window.Window;
-import org.etieskrill.orbes.scene.GameScene;
-import org.etieskrill.orbes.scene.GameUIPauseScene;
-import org.etieskrill.orbes.scene.GameUIScene;
-import org.etieskrill.orbes.scene.MainMenuUIScene;
+import org.etieskrill.orbes.scene.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.etieskrill.orbes.Game.Stage.GAME;
-import static org.etieskrill.orbes.Game.Stage.MAIN_MENU;
+import static org.etieskrill.orbes.Game.Stage.*;
 
 public class Game {
 
@@ -42,6 +38,7 @@ public class Game {
     private MainMenuUIScene mainMenuScene;
     private GameUIScene gameUIScene;
     private GameUIPauseScene pauseUIScene;
+    private EndScene endScene;
 
     private Stage stage;
 
@@ -116,6 +113,12 @@ public class Game {
                 new OrthographicCamera(windowSize).setPosition(new Vec3(windowSize.times(0.5))),
                 this
         );
+
+        endScene = new EndScene(
+                new Batch(renderer),
+                new OrthographicCamera(windowSize).setPosition(new Vec3(windowSize.times(0.5))),
+                this
+        );
     }
 
     private void loop() {
@@ -167,6 +170,10 @@ public class Game {
             if (stage == GAME) {
                 gameUIScene.getScoreLabel().setText("Orbes collectered: " + gameScene.getOrbsCollected());
                 gameUIScene.getFpsLabel().setText("%5.3f\n%7.6f".formatted(pacer.getAverageFPS(), pacer.getDeltaTimeSeconds()));
+
+                if (gameScene.getOrbsCollected() == GameScene.NUM_ORBS) {
+                    showEndScreen(EndScene.Status.VICTORY);
+                }
             }
 
             window.update(pacer.getDeltaTimeSeconds());
@@ -176,7 +183,7 @@ public class Game {
 
     private void update(double delta) {
         switch (stage) {
-            case MAIN_MENU -> {
+            case MAIN_MENU, END -> {
                 Camera camera = gameScene.getCamera();
                 double time = pacer.getTime() * 0.25;
 
@@ -205,6 +212,13 @@ public class Game {
         window.setInputs(gameScene.getKeyInputManager());
         this.stage = GAME;
         unpause();
+    }
+
+    public void showEndScreen(EndScene.Status status) {
+        window.setInputs(null);
+        window.setScene(endScene.setStatus(status));
+        window.getCursor().capture();
+        this.stage = END;
     }
 
     private void exit() {

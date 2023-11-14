@@ -32,7 +32,7 @@ public class Stack extends Node {
     
     @Override
     public void format() {
-        if (!shouldFormat() || children.stream().noneMatch(child -> child.shouldFormat)) return;
+        if (!shouldFormat()) return;
         
         for (Node child : children) {
             child.format();
