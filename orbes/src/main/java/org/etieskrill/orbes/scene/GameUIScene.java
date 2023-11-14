@@ -18,6 +18,7 @@ public class GameUIScene extends Scene {
 
     private Label scoreLabel;
     private Label fpsLabel;
+    private Label timerLabel;
 
     public GameUIScene(Batch batch, Camera camera, Vec2 windowSize) {
         super(batch, new Container(), camera);
@@ -33,7 +34,10 @@ public class GameUIScene extends Scene {
         fpsLabel = new Label("", Fonts.getDefault(36));
         fpsLabel.setAlignment(Node.Alignment.TOP_LEFT).setMargin(new Vec4(10));
 
-        Stack stack = new Stack(List.of(scoreLabel, fpsLabel));
+        timerLabel = new Label("", Fonts.getDefault(64));
+        timerLabel.setAlignment(Node.Alignment.BOTTOM).setMargin(new Vec4(50));
+
+        Stack stack = new Stack(List.of(scoreLabel, fpsLabel, timerLabel));
 
         setRoot(stack);
     }
@@ -44,6 +48,10 @@ public class GameUIScene extends Scene {
 
     public Label getFpsLabel() {
         return fpsLabel;
+    }
+
+    public Label getTimerLabel() {
+        return timerLabel;
     }
 
 }

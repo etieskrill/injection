@@ -34,6 +34,8 @@ public class Game {
 
     private Renderer renderer = new Renderer();
 
+    private static final double MAX_TIME = 40.0;
+
     private GameScene gameScene;
     private MainMenuUIScene mainMenuScene;
     private GameUIScene gameUIScene;
@@ -142,9 +144,7 @@ public class Game {
         while (!window.shouldClose()) {
             update(pacer.getDeltaTimeSeconds());
 
-            //TODO add start menu
-            //     add victory screen / with score
-            //     add animation, fixed / skeletal
+            //TODO add animation, fixed / skeletal
             //     create component system
             //     pack common components
             //     create "world" for updateable objects    mfw when i learned about entity systems: *surprised pikachu*
@@ -171,8 +171,10 @@ public class Game {
                 gameUIScene.getScoreLabel().setText("Orbes collectered: " + gameScene.getOrbsCollected());
                 gameUIScene.getFpsLabel().setText("%5.3f\n%7.6f".formatted(pacer.getAverageFPS(), pacer.getDeltaTimeSeconds()));
 
-                if (gameScene.getOrbsCollected() == GameScene.NUM_ORBS) {
-                    showEndScreen(EndScene.Status.VICTORY);
+                if (pacer.getTime() > MAX_TIME) {
+                    showEndScreen(EndScene.Status.TIMEOUT, gameScene.getOrbsCollected());
+                } else if (gameScene.getOrbsCollected() == GameScene.NUM_ORBS) {
+                    showEndScreen(EndScene.Status.VICTORY, gameScene.getOrbsCollected());
                 }
             }
 
@@ -185,7 +187,7 @@ public class Game {
         switch (stage) {
             case MAIN_MENU, END -> {
                 Camera camera = gameScene.getCamera();
-                double time = pacer.getTime() * 0.25;
+                double time = pacer.getSecondsElapsedTotal() * 0.25;
 
                 Vec3 pos = new Vec3(Math.cos(time), 0.5, Math.sin(time)).times(15);
                 camera.setPosition(pos);
@@ -195,6 +197,7 @@ public class Game {
                 if (!pacer.isPaused()) {
                     gameScene.updateScene(pacer.getDeltaTimeSeconds());
                     gameScene.updateCamera();
+                    gameUIScene.getTimerLabel().setText("%.1f".formatted(MAX_TIME - pacer.getTime()));
                 }
             }
         }
@@ -204,21 +207,21 @@ public class Game {
         gameScene.reset();
         window.setInputs(null);
         window.setScene(mainMenuScene);
-        this.stage = MAIN_MENU;
-        pacer.resumeTimer();
+        stage = MAIN_MENU;
     }
 
     public void showGame() {
         window.setInputs(gameScene.getKeyInputManager());
-        this.stage = GAME;
+        pacer.resetTimer();
+        stage = GAME;
         unpause();
     }
 
-    public void showEndScreen(EndScene.Status status) {
+    public void showEndScreen(EndScene.Status status, int score) {
         window.setInputs(null);
-        window.setScene(endScene.setStatus(status));
+        window.setScene(endScene.setStatus(status).setScore(score));
         window.getCursor().capture();
-        this.stage = END;
+        stage = END;
     }
 
     private void exit() {
