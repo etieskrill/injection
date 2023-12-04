@@ -94,7 +94,7 @@ public class DemCubez {
         renderer = new Renderer();
         camera = (PerspectiveCamera) new PerspectiveCamera(window.getSize().toVec())
                 .setPosition(new Vec3(0f, 0f, 3f))
-                .setOrientation(0f, -90f, 0f)
+                .setRotation(0f, -90f, 0f)
                 .setFar(-1000f);
         
         initUI();

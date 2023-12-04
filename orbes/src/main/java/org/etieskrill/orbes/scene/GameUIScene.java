@@ -20,14 +20,12 @@ public class GameUIScene extends Scene {
     private Label fpsLabel;
     private Label timerLabel;
 
-    public GameUIScene(Batch batch, Camera camera, Vec2 windowSize) {
+    public GameUIScene(Batch batch, Camera camera) {
         super(batch, new Container(), camera);
-        init(windowSize);
+        init();
     }
 
-    private void init(Vec2 windowSize) {
-        getCamera().setPosition(new Vec3(windowSize.times(0.5), 0));
-
+    private void init() {
         scoreLabel = new Label("", Fonts.getDefault(48));
         scoreLabel.setAlignment(Node.Alignment.TOP).setMargin(new Vec4(20));
 

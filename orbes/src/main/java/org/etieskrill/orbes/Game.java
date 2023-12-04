@@ -1,5 +1,6 @@
 package org.etieskrill.orbes;
 
+import glm_.quat.Quat;
 import glm_.vec2.Vec2;
 import glm_.vec2.Vec2i;
 import glm_.vec3.Vec3;
@@ -22,6 +23,7 @@ import org.etieskrill.orbes.scene.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static java.lang.Math.*;
 import static org.etieskrill.orbes.Game.Stage.*;
 
 public class Game {
@@ -91,7 +93,7 @@ public class Game {
     private void setupWindow() {
         window = new Window.Builder()
                 .setRefreshRate(0)
-                .setMode(Window.WindowMode.BORDERLESS)
+                .setMode(Window.WindowMode.WINDOWED)
                 .setTitle("Walk")
                 .build();
     }
@@ -102,25 +104,21 @@ public class Game {
         mainMenuScene = new MainMenuUIScene(
                 new Batch(renderer),
                 new OrthographicCamera(windowSize).setPosition(new Vec3(windowSize.times(0.5))),
-                this
-        );
+                this);
 
         gameUIScene = new GameUIScene(
                 new Batch(renderer).setShader(Shaders.getTextShader()),
-                new OrthographicCamera(windowSize),
-                windowSize);
+                new OrthographicCamera(windowSize).setPosition(new Vec3(windowSize.times(0.5))));
 
         pauseUIScene = new GameUIPauseScene(
                 new Batch(renderer),
                 new OrthographicCamera(windowSize).setPosition(new Vec3(windowSize.times(0.5))),
-                this
-        );
+                this);
 
         endScene = new EndScene(
                 new Batch(renderer),
                 new OrthographicCamera(windowSize).setPosition(new Vec3(windowSize.times(0.5))),
-                this
-        );
+                this);
     }
 
     private void loop() {
@@ -163,7 +161,7 @@ public class Game {
             postBuffer.unbind();
 
             renderer.prepare();
-            screenShader.setUniform("uEmboss", true);
+//            screenShader.setUniform("uEmboss", true);
             screenShader.setUniform("uColour", pacer.isPaused() ? pauseColour : unpauseColour);
             renderer.render(screenQuad, screenShader, null);
 
@@ -191,7 +189,10 @@ public class Game {
 
                 Vec3 pos = new Vec3(Math.cos(time), 0.5, Math.sin(time)).times(15);
                 camera.setPosition(pos);
-                camera.setOrientation(-20, Math.toDegrees(Math.atan2(-pos.getZ(), -pos.getX())), 0); //TODO camera utils for orbiting / lookat (literally is the implementation already)
+                camera.setRotation(
+                        (float) -20,
+                        ((float) -(toDegrees(atan2(-pos.getZ(), -pos.getX())) + 90)),
+                        0); //TODO camera utils for orbiting / lookat (literally is the implementation already)
             }
             case GAME -> {
                 if (!pacer.isPaused()) {
@@ -211,6 +212,7 @@ public class Game {
     }
 
     public void showGame() {
+        gameScene.getCamera().setRotation(0, 0, 0);
         window.setInputs(gameScene.getKeyInputManager());
         pacer.resetTimer();
         stage = GAME;
@@ -234,5 +236,25 @@ public class Game {
     public static void main(String[] args) {
         new Game();
     }
+
+//    public static void main(String[] args) {
+//
+////        Quat a = new Quat(new Vec3(Math.toRadians(90), 0, 0));
+////        System.out.println(a);
+////        System.out.println(a.angle());
+////        System.out.println(a.eulerAngles());
+////        Quat b = new Quat(new Vec3(Math.toRadians(90), 0, 0));
+////        System.out.println(a.times(b).eulerAngles());
+////        System.out.println(a.times(a).times(new Vec3(0, 1, 0)));
+////        System.out.println(a.times(a).toMat3().times(new Vec3(0, 1, 0)));
+//
+//        Quat a = new Quat(new Vec3(toRadians(90), 0, toRadians(45)));
+//        System.out.println(a.eulerAngles());
+//        Quat b = new Quat(new Vec3(0, 0, toRadians(45)));
+//        System.out.println(b.eulerAngles());
+//        System.out.println(a.times(b).eulerAngles());
+//        System.out.println(b.times(a).eulerAngles());
+//
+//    }
 
 }

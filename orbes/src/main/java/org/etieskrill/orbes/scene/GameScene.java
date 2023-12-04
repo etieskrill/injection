@@ -1,5 +1,7 @@
 package org.etieskrill.orbes.scene;
 
+import glm_.mat3x3.Mat3;
+import glm_.quat.Quat;
 import glm_.vec2.Vec2;
 import glm_.vec3.Vec3;
 import org.etieskrill.engine.graphics.Camera;
@@ -10,6 +12,7 @@ import org.etieskrill.engine.graphics.gl.Renderer;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
 import org.etieskrill.engine.graphics.model.PointLight;
 import org.etieskrill.engine.input.*;
+import org.etieskrill.engine.input.InputBinding.Trigger;
 import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.orbes.Game;
 import org.slf4j.Logger;
@@ -33,6 +36,7 @@ public class GameScene {
 
     private final Vec3 deltaPos = new Vec3(0);
     private float rotation, smoothRotation;
+    private double deltaRoll;
     private float jumpTime;
     private float smoothSkellyHeight;
 
@@ -56,7 +60,7 @@ public class GameScene {
         shader = (Shaders.StaticShader) Loaders.ShaderLoader.get().load("standard", Shaders::getStandardShader);
         lightShader = (Shaders.LightSourceShader) Loaders.ShaderLoader.get().load("light", Shaders::getLightSourceShader);
 
-        camera = new PerspectiveCamera(game.getWindow().getSize().toVec());
+        camera = new PerspectiveCamera(game.getWindow().getSize().toVec()).setClampPitch(true).setUseWorldUp(false);
         camera.setZoom(4.81f);
 
         pointLight = new PointLight(light.getTransform().getPosition(),
@@ -109,10 +113,12 @@ public class GameScene {
                     else game.pause();
                 }),
                 Input.bind(Keys.ESC.withMods(Keys.SHIFT)).to(() -> game.getWindow().close()),
-                Input.bind(Keys.W).on(InputBinding.Trigger.PRESSED).group(OverruleGroup.Mode.YOUNGEST, Keys.S).to(() -> deltaPos.plusAssign(0, 0, 1)),
-                Input.bind(Keys.S).on(InputBinding.Trigger.PRESSED).to(() -> deltaPos.plusAssign(0, 0, -1)),
-                Input.bind(Keys.A).on(InputBinding.Trigger.PRESSED).group(OverruleGroup.Mode.YOUNGEST, Keys.D).to(() -> deltaPos.plusAssign(-1, 0, 0)),
-                Input.bind(Keys.D).on(InputBinding.Trigger.PRESSED).to(() -> deltaPos.plusAssign(1, 0, 0))
+                Input.bind(Keys.W).on(Trigger.PRESSED).group(OverruleGroup.Mode.YOUNGEST, Keys.S).to(() -> deltaPos.plusAssign(0, 0, 1)),
+                Input.bind(Keys.S).on(Trigger.PRESSED).to(() -> deltaPos.plusAssign(0, 0, -1)),
+                Input.bind(Keys.A).on(Trigger.PRESSED).group(OverruleGroup.Mode.YOUNGEST, Keys.D).to(() -> deltaPos.plusAssign(-1, 0, 0)),
+                Input.bind(Keys.D).on(Trigger.PRESSED).to(() -> deltaPos.plusAssign(1, 0, 0)),
+                Input.bind(Keys.Q).on(Trigger.PRESSED).to(delta -> deltaRoll = delta),
+                Input.bind(Keys.E).on(Trigger.PRESSED).group(OverruleGroup.Mode.YOUNGEST, Keys.Q).to(delta -> deltaRoll = -delta)
         );
     }
 
@@ -123,7 +129,7 @@ public class GameScene {
 
             double sens = 0.04;
             if (!game.getPacer().isPaused() && game.getStage() == Game.Stage.GAME)
-                camera.orient(-dy * sens, dx * sens, 0);
+                camera.orient(dy * sens, dx * sens, 0);
 
             prevCursorPosX = xpos;
             prevCursorPosY = ypos;
@@ -146,7 +152,7 @@ public class GameScene {
         skelly.getTransform().translate(skellyTranslate);
 
         if (deltaPos.anyNotEqual(0, 0.001f)) {
-            rotation = (float) (Math.atan2(deltaPos.getZ(), deltaPos.getX()) - Math.toRadians(camera.getYaw()));
+            rotation = (float) (Math.atan2(deltaPos.getZ(), deltaPos.getX()) + Math.toRadians(camera.getYaw()) + Math.toRadians(90));
             rotation %= Math.toRadians(360);
             //TODO fix shortest distance through wraparound
             //TODO include delta time
@@ -199,6 +205,8 @@ public class GameScene {
     public void updateCamera() {
         Vec3 orbitPos = camera.getDirection().negate().times(3);
         camera.setPosition(orbitPos.plus(0, skelly.getWorldBoundingBox().getSize().getY() - 0.5, 0).plus(skelly.getTransform().getPosition()));
+        camera.orient(0, 0, 10 * deltaRoll);
+        deltaRoll = 0;
     }
 
     public void render(Renderer renderer) {

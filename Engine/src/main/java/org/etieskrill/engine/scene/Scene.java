@@ -26,7 +26,7 @@ public class Scene implements CursorInputHandler {
         
         this.size = new Vec2(0);
     
-        camera.setOrientation(0f, -90f, 0f);
+        camera.setRotation(0f, -90f, 0f);
     }
     
     public void update(double delta) {

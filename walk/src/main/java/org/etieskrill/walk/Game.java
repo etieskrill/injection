@@ -128,7 +128,7 @@ public class Game {
     private void setupUI() {
         Vec2 windowSize = window.getSize().toVec();
         uiCamera = new OrthographicCamera(windowSize)
-                .setOrientation(0, -90, 0)
+                .setRotation(0, -90, 0)
                 .setPosition(new Vec3(windowSize.times(0.5), 0));
         
         scoreLabel = new Label("", Fonts.getDefault(48));
