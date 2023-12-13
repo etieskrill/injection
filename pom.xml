@@ -30,6 +30,7 @@
         <module>TestGame</module>
         <module>walk</module>
         <module>orbes</module>
+        <module>some-shader-buggery</module>
     </modules>
 
     <profiles>
