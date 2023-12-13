@@ -11,9 +11,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
-import static org.etieskrill.engine.graphics.gl.shaders.ShaderProgram.ShaderType.FRAGMENT;
-import static org.etieskrill.engine.graphics.gl.shaders.ShaderProgram.ShaderType.VERTEX;
+import static org.etieskrill.engine.graphics.gl.shaders.ShaderProgram.ShaderType.*;
 import static org.etieskrill.engine.graphics.gl.shaders.ShaderProgram.Uniform.NESTED_UNIFORM_LOCATION;
 import static org.lwjgl.opengl.ARBShadingLanguageInclude.GL_SHADER_INCLUDE_ARB;
 import static org.lwjgl.opengl.ARBShadingLanguageInclude.glNamedStringARB;
@@ -23,17 +23,19 @@ public abstract class ShaderProgram implements Disposable {
     
     public static boolean AUTO_START_ON_VARIABLE_SET = true;
     public static boolean CLEAR_ERROR_BEFORE_SHADER_CREATION = true;
+
+    private static final String DIRECTORY = "shaders/";
     
     //TODO move placeholder shader here
-    private static final String DEFAULT_VERTEX_FILE = "shaders/Phong.vert";
-    private static final String DEFAULT_FRAGMENT_FILE = "shaders/Phong.frag";
+    private static final String DEFAULT_VERTEX_FILE = DIRECTORY + "Phong.vert";
+    private static final String DEFAULT_FRAGMENT_FILE = DIRECTORY + "Phong.frag";
     
     private boolean STRICT_UNIFORM_DETECTION = true;
     
     private final Logger logger = LoggerFactory.getLogger(getClass());
     
     protected int programID;
-    private int vertID, fragID;
+    private int vertID, geomID = -1, fragID;
     private final Map<Uniform, Integer> uniforms;
     private final Map<ArrayUniform, List<Integer>> arrayUniforms;
     
@@ -41,8 +43,9 @@ public abstract class ShaderProgram implements Disposable {
     
     public enum ShaderType {
         VERTEX,
+        GEOMETRY,
         FRAGMENT,
-        LIBRARY
+        //LIBRARY
     }
     
     protected static class ShaderFile {
@@ -61,7 +64,15 @@ public abstract class ShaderProgram implements Disposable {
         public ShaderType getType() {
             return type;
         }
-    
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            ShaderFile that = (ShaderFile) o;
+            return Objects.equals(file, that.file) && type == that.type;
+        }
+
         @Override
         public String toString() {
             return "[%s, %s]".formatted(file, type.name().toLowerCase());
@@ -74,47 +85,40 @@ public abstract class ShaderProgram implements Disposable {
         this.arrayUniforms = null;
         this.placeholder = false;
     }
-
-//    protected ShaderProgram(ShaderFile[] shaderFiles) {
-//        int vertex = 0, fragment = 0, libs = 0;
-//        for (ShaderFile file : shaderFiles) {
-//            switch (file.getType()) {
-//                case VERTEX -> { if (vertex++ > 1)
-//                    throw new IllegalArgumentException("Only one vertex shader file may be specified."); }
-//                case FRAGMENT -> { if (fragment++ > 1)
-//                    throw new IllegalArgumentException("Only one fragment shader file may be specified."); }
-//                case LIBRARY -> libs++;
-//            }
-//        }
-//
-//        if (vertex == 0 && fragment == 0) logger.info("Exactly one vertex and one fragment shader must be given.");
-//    }
     
     protected ShaderProgram() {
-        String[] shaderFiles = getShaderFileNames();
-        String
-                vertexFile = "shaders/" + shaderFiles[0],
-                fragmentFile = "shaders/" + shaderFiles[1];
-        ShaderFile[] files = {
-                new ShaderFile(shaderFiles[0], VERTEX),
-                new ShaderFile(shaderFiles[1], FRAGMENT)
-        };
+        Set<ShaderFile> files = Arrays.stream(getShaderFileNames()).map(file -> {
+            String[] parts = file.split("\\.");
+            ShaderType type = switch (parts[parts.length - 1]) {
+                case "vert" -> VERTEX;
+                case "geom" -> GEOMETRY;
+                case "frag" -> FRAGMENT;
+                default -> throw new ShaderCreationException("Cannot load shader with unknown file extension: " + file);
+            };
+            return new ShaderFile(file, type);
+        }).collect(Collectors.toSet());
+
+        if (!files.stream().map(ShaderFile::getType).collect(Collectors.toSet()).containsAll(Set.of(VERTEX, FRAGMENT)))
+            throw new ShaderCreationException("Shader must have one vertex and one fragment shader");
         //TODO create spec for other shader types and shader programs split across multiple files
         // consider just creating a standard, such that only a single unique identifier must be passed
-        
-        logger.debug("Creating shader from files: {}", Arrays.toString(files));
+
+        logger.debug("Creating shader from files: {}", files);
     
         this.uniforms = new HashMap<>();
         this.arrayUniforms = new HashMap<>();
         
         boolean placeholder = false;
         try {
-            createShader(vertexFile, fragmentFile);
+            createShader(files);
         } catch (ShaderException e) {
             logger.warn("Exception during shader creation, using default shader", e);
             boolean prevStrictState = STRICT_UNIFORM_DETECTION;
             STRICT_UNIFORM_DETECTION = false; //TODO quick and dirty solution bcs faulty shader's uniforms are still added
-            createShader(DEFAULT_VERTEX_FILE, DEFAULT_FRAGMENT_FILE);
+            createShader(Set.of(
+                    new ShaderFile(DEFAULT_VERTEX_FILE, VERTEX),
+                    new ShaderFile(DEFAULT_FRAGMENT_FILE, FRAGMENT)
+            ));
             STRICT_UNIFORM_DETECTION = prevStrictState;
             placeholder = true;
         }
@@ -125,21 +129,26 @@ public abstract class ShaderProgram implements Disposable {
         if (ret != GL_NO_ERROR) logger.debug("OpenGL error during shader creation: 0x" + Integer.toHexString(ret));
         else logger.debug("Successfully created shader");
     }
-    
-    private void createShader(String vertFile, String fragFile) {
+
+    private void createShader(Set<ShaderFile> files) {
         if (CLEAR_ERROR_BEFORE_SHADER_CREATION) clearGlErrorStatus();
-        createProgram(vertFile, fragFile);
+        createProgram(files);
         init();
         getUniformLocations();
     }
-    
-    private void createProgram(String vertFile, String fragFile) {
+
+    private void createProgram(Set<ShaderFile> files) {
         programID = glCreateProgram();
-    
-        vertID = loadShader(vertFile, GL_VERTEX_SHADER);
+
+        vertID = loadShader(files, VERTEX);
         glAttachShader(programID, vertID);
-        
-        fragID = loadShader(fragFile, GL_FRAGMENT_SHADER);
+
+        if (files.stream().map(ShaderFile::getType).anyMatch(type -> type == GEOMETRY)) {
+            geomID = loadShader(files, GEOMETRY);
+            glAttachShader(programID, geomID);
+        }
+
+        fragID = loadShader(files, FRAGMENT);
         glAttachShader(programID, fragID);
     
         glLinkProgram(programID);
@@ -162,22 +171,25 @@ public abstract class ShaderProgram implements Disposable {
     }
     
     //TODO add loader for shader objects and wrap calls to this method in said loader
-    private int loadShader(String file, int shaderType) {
-        String shaderTypeName = switch (shaderType) {
-            case GL_VERTEX_SHADER -> "vertex";
-            case GL_FRAGMENT_SHADER -> "fragment";
-            default -> "unknown";
-        };
-        
-        logger.trace("Loading {} shader from file: {}", shaderTypeName, file);
-        int shaderID = glCreateShader(shaderType);
-        glShaderSource(shaderID, ResourceReader.getRaw(file));
+    private int loadShader(Set<ShaderFile> files, ShaderType type) {
+        ShaderFile file = files.stream()
+                .filter(shaderFile -> shaderFile.getType() == type)
+                .findAny()
+                .orElseThrow(() -> new ShaderCreationException("No " + type.name().toLowerCase() + " shader file was found"));
+
+        logger.trace("Loading {} shader from file: {}", file.getType().name().toLowerCase(), file);
+
+        int shaderID = glCreateShader(switch (file.getType()) {
+            case VERTEX -> GL_VERTEX_SHADER;
+            case GEOMETRY -> GL_GEOMETRY_SHADER;
+            case FRAGMENT -> GL_FRAGMENT_SHADER;
+        });
+        glShaderSource(shaderID, ResourceReader.getRaw(DIRECTORY + file.getFile()));
         glCompileShader(shaderID);
-    
-        if (glGetShaderi(shaderID, GL_COMPILE_STATUS) != GL_TRUE) {
+
+        if (glGetShaderi(shaderID, GL_COMPILE_STATUS) != GL_TRUE)
             throw new ShaderCreationException("Failed to compile %s shader from %s"
-                    .formatted(shaderTypeName, file), glGetShaderInfoLog(shaderID));
-        }
+                    .formatted(file.getType().name().toLowerCase(), file), glGetShaderInfoLog(shaderID));
         
         return shaderID;
     }
@@ -219,9 +231,19 @@ public abstract class ShaderProgram implements Disposable {
             return;
         }
         if (uniform == null) {
-            if (STRICT_UNIFORM_DETECTION & strict)
-                throw new ShaderUniformException("Attempted to set unregistered uniform: " + name);
-            if (missingUniforms.get(name) == null) logger.trace("Attempted to set unregistered uniform: " + name);
+            StringBuilder message = new StringBuilder("Attempted to set unregistered uniform: ").append(name);
+            uniforms.keySet().stream()
+                    .filter(u -> u.getName().equals(name))
+                    .findAny()
+                    .ifPresent(
+                            uniform1 -> message.delete(0, message.length()).append("Uniform ").append(name)
+                                    .append(" is present but type does not match, expected ")
+                                    .append(uniform1.getType().name()).append(" but got ")
+                                    .append(value.getClass().getSimpleName())
+                    );
+
+            if (STRICT_UNIFORM_DETECTION & strict) throw new ShaderUniformException(message.toString());
+            if (missingUniforms.get(name) == null) logger.warn(message.toString());
             missingUniforms.put(name, true);
             return;
         }
@@ -345,8 +367,8 @@ public abstract class ShaderProgram implements Disposable {
         private final String name;
         private final Type type;
 //        private final boolean wildcard;
-        
-        protected enum Type {
+
+        public enum Type {
             INT(Integer.class),
             FLOAT(Float.class),
             BOOLEAN(Boolean.class),
