@@ -302,6 +302,10 @@ public class Window implements Disposable {
         GLCapabilities caps = GL.createCapabilities();
 //        System.out.println("woooo " + caps.GL_ARB_shading_language_include);
 
+//        int[] buf = new int[1];
+//        glGetIntegerv(GL_MAX_GEOMETRY_OUTPUT_VERTICES, buf);
+//        System.out.println("max vertices: " + buf[0]); //TODO this kinda stuff needs to be worked into e.g. the geometry shader, but how best to do that?
+
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LESS);
         glEnable(GL_STENCIL_TEST);

@@ -1,5 +1,6 @@
 package org.etieskrill.engine.window;
 
+import glm_.vec2.Vec2;
 import org.etieskrill.engine.Disposable;
 
 import static org.lwjgl.glfw.GLFW.*;
@@ -110,6 +111,13 @@ public class Cursor implements Disposable {
         
         //glfwCreateStandardCursor(glfwShape);
         //glfwSetInputMode(window, );
+    }
+
+    public Vec2 getPosition() {
+        checkWindow();
+        double[] posx = new double[1], posy = new double[1];
+        glfwGetCursorPos(window.getID(), posx, posy);
+        return new Vec2(posx[0], posy[0]);
     }
     
     private void checkWindow() {
