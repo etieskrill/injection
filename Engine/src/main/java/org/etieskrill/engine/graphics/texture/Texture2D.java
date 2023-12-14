@@ -64,7 +64,7 @@ public class Texture2D extends AbstractTexture implements FrameBufferAttachment 
         BlankBuilder(Vec2i pixelSize) {
             this.textureData = null;
             this.pixelSize = pixelSize;
-            this.format = Format.RGB;
+            this.format = Format.SRGB;
         }
     
         @Override
@@ -81,14 +81,11 @@ public class Texture2D extends AbstractTexture implements FrameBufferAttachment 
             logger.debug("Loading {}x{} {}-bit {} texture from {}", pixelSize.getX(), pixelSize.getY(),
                     NR_BITS_PER_COLOUR_CHANNEL * format.getChannels(), type.name().toLowerCase(),
                     getClass().getSimpleName());
-            
-            int glFormat = format.toGLFormat();
-    
+
             Texture2D texture = new Texture2D(this);
             texture.bind(0);
-            //TODO currently, the internal format and the format are set to the same value, which seems to work so far
-            glTexImage2D(GL_TEXTURE_2D, 0, glFormat, pixelSize.getX(), pixelSize.getY(),
-                    0, glFormat, GL_UNSIGNED_BYTE, textureData);
+            glTexImage2D(GL_TEXTURE_2D, 0, format.toGlInternalFormat(), pixelSize.getX(), pixelSize.getY(),
+                    0, format.toGLFormat(), GL_UNSIGNED_BYTE, textureData);
             
             return texture;
         }

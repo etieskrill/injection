@@ -259,6 +259,56 @@ public class Shaders {
             addUniform("uEdgeDetection", BOOLEAN);
             addUniform("uEmboss", BOOLEAN);
             addUniform("uEmbossOffset", FLOAT);
+            addUniform("uGammaCorrection", BOOLEAN);
+            addUniform("uGammaFactor", FLOAT);
+        }
+
+        public void doInvert(boolean invert) {
+            setUniform("uInvert", invert);
+        }
+
+        public void setColour(Vec3 colour) {
+            setUniform("uColour", colour);
+        }
+
+        public void doGrayscale(boolean grayscale) {
+            setUniform("uGrayscale", grayscale);
+        }
+
+        public void doSharpen(boolean sharpen) {
+            setUniform("uSharpen", sharpen);
+        }
+
+        public void setSharpenOffset(float sharpenOffset) {
+            setUniform("uSharpenOffset", sharpenOffset);
+        }
+
+        public void doBlur(boolean blur) {
+            setUniform("uBlur", blur);
+        }
+
+        public void setBlurOffset(float blurOffset) {
+            setUniform("uBlurOffset", blurOffset);
+        }
+
+        public void doEdgeDetection(boolean edgeDetection) {
+            setUniform("uEdgeDetection", edgeDetection);
+        }
+
+        public void doEmboss(boolean emboss) {
+            setUniform("uEmboss", emboss);
+        }
+
+        public void setEmbossOffset(float embossOffset) {
+            setUniform("uEmbossOffset", embossOffset);
+        }
+
+        public void doGammaCorrection(boolean gammaCorrection) {
+            setUniform("uGammaCorrection", gammaCorrection);
+        }
+
+        public void setGammaFactor(float gammaFactor) {
+            setUniform("uGammaFactor", gammaFactor);
         }
     }
     

@@ -164,7 +164,33 @@ public class Renderer {
         glDrawElements(mesh.getDrawMode().gl(), mesh.getNumIndices(), GL_UNSIGNED_INT, 0);
 
         AbstractTexture.unbindAllTextures();
-    
+
+        glBindVertexArray(0);
+    }
+
+    public void renderInstances(Model model, int numInstances, ShaderProgram shader, Mat4 combined) {
+        shader.setUniform("uCombined", combined, false);
+        shader.setUniform("uModel", model.getTransform().toMat(), false);
+        shader.setUniform("uNormal", model.getTransform().toMat().inverseTranspose().toMat3(), false);
+
+        if (!model.doCulling()) glDisable(GL_CULL_FACE);
+        if (model.hasTransparency()) glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        shader.start();
+        for (Mesh mesh : model.getMeshes())
+            renderInstances(mesh, numInstances, shader);
+        shader.stop();
+        if (!model.doCulling()) glEnable(GL_CULL_FACE);
+        if (model.hasTransparency()) glBlendFunc(GL_ONE, GL_ZERO);
+    }
+
+    public void renderInstances(Mesh mesh, int numInstances, ShaderProgram shader) {
+        bindMaterial(mesh.getMaterial(), shader);
+        glBindVertexArray(mesh.getVao());
+
+        glDrawElementsInstanced(mesh.getDrawMode().gl(), mesh.getNumIndices(), GL_UNSIGNED_INT, 0, numInstances);
+
+        AbstractTexture.unbindAllTextures();
+
         glBindVertexArray(0);
     }
     

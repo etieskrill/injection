@@ -163,8 +163,10 @@ public class Game {
             postBuffer.unbind();
 
             renderer.prepare();
-            screenShader.setUniform("uEmboss", true);
-            screenShader.setUniform("uColour", pacer.isPaused() ? pauseColour : unpauseColour);
+            screenShader.doEmboss(false);
+            screenShader.setColour(pacer.isPaused() ? pauseColour : unpauseColour);
+            screenShader.doGammaCorrection(true);
+
             renderer.render(screenQuad, screenShader, null);
 
             if (stage == GAME) {
