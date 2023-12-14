@@ -22,6 +22,8 @@ uniform float uBlurOffset;
 uniform bool uEdgeDetection;
 uniform bool uEmboss;
 uniform float uEmbossOffset;
+uniform bool uGammaCorrection;
+uniform float uGammaFactor;
 
 void main()
 {
@@ -64,21 +66,24 @@ void main()
     if (uEmboss) texel = applyKernel(embossKernel, uEmbossOffset);
 
     oColour = texel * vec4(uColour, 1.0);
+
+    if (uGammaCorrection)
+    oColour.rgb = pow(oColour.rgb, vec3(1 / (uGammaFactor == 0 ? 2.2 : uGammaFactor)));
 }
 
 vec4 applyKernel(float[9] kernel, float offset) {
     if (offset == 0.0) offset = 1.0 / 1000.0;
 
     vec2 offsets[9] = vec2[](
-    vec2(-offset,  offset), // top-left
-    vec2( 0.0f,    offset), // top-center
-    vec2( offset,  offset), // top-right
-    vec2(-offset,  0.0f),   // center-left
-    vec2( 0.0f,    0.0f),   // center-center
-    vec2( offset,  0.0f),   // center-right
-    vec2(-offset, -offset), // bottom-left
-    vec2( 0.0f,   -offset), // bottom-center
-    vec2( offset, -offset)  // bottom-right
+        vec2(-offset, offset), // top-left
+        vec2(0.0f, offset), // top-center
+        vec2(offset, offset), // top-right
+        vec2(-offset, 0.0f), // center-left
+        vec2(0.0f, 0.0f), // center-center
+        vec2(offset, 0.0f), // center-right
+        vec2(-offset, -offset), // bottom-left
+        vec2(0.0f, -offset), // bottom-center
+        vec2(offset, -offset)  // bottom-right
     );
 
     vec3 sampleTex[9];

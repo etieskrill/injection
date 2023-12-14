@@ -60,7 +60,7 @@ public class GameScene {
         camera.setZoom(4.81f);
 
         pointLight = new PointLight(light.getTransform().getPosition(),
-                new Vec3(1), new Vec3(1), new Vec3(1),
+                new Vec3(.1), new Vec3(.3), new Vec3(.5),
                 1f, 0.03f, 0.005f);
         pointLights = new PointLight[]{pointLight};
 

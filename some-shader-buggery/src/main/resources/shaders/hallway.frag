@@ -36,4 +36,5 @@ void main()
 
     oColour = material.colour + diffuse + material.emissiveColour * material.emissiveIntensity;
     oColour *= material.opacity;
+    oColour.rgb = pow(oColour.rgb, vec3(1 / 2.2));
 }

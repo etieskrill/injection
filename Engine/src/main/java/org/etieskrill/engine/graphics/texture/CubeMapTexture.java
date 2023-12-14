@@ -100,12 +100,12 @@ public class CubeMapTexture extends AbstractTexture {
                     NR_BITS_PER_COLOUR_CHANNEL * format.getChannels(), name);
     
             CubeMapTexture texture = new CubeMapTexture(name, this);
-            int glFormat = format.toGLFormat();
-            
+
             texture.bind(0);
             for (int i = 0; i < sides.size(); i++) {
-                glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, glFormat, pixelSize.s(), pixelSize.t(),
-                        0, glFormat, GL_UNSIGNED_BYTE, sides.get(i).getTextureData());
+                glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, format.toGlInternalFormat(),
+                        pixelSize.s(), pixelSize.t(), 0, format.toGLFormat(), GL_UNSIGNED_BYTE,
+                        sides.get(i).getTextureData());
             }
             
             return texture;

@@ -142,11 +142,10 @@ public class Transform {
     
     private void updateTransform() {
         this.transform.invoke(1)
+                .translateAssign(initialPosition.plus(position))
                 .rotateAssign(initialRotation, initialRotationAxis)
-                .translateAssign(initialPosition)
                 .rotateAssign(rotation, rotationAxis)
-                .translateAssign(position)
-                .scale(scale.times(initialScale));
+                .scaleAssign(scale.times(initialScale));
     }
     
     private void dirty() {

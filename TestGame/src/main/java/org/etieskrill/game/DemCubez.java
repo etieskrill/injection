@@ -225,7 +225,7 @@ public class DemCubez {
         vertices.add(new Vertex(new Vec3(-1f, 1f, 0f), new Vec3(), new Vec2(0f, 1f)));
         vertices.add(new Vertex(new Vec3(1f, -1f, 0f), new Vec3(), new Vec2(1f, 0f)));
         vertices.add(new Vertex(new Vec3(1f, 1f, 0f), new Vec3(), new Vec2(1f, 1f)));
-        List<Short> indices = new ArrayList<>(List.of(new Short[]{0, 2, 1, 3, 1, 2}));
+        List<Integer> indices = new ArrayList<>(List.of(new Integer[]{0, 2, 1, 3, 1, 2}));
         Mesh screenQuad = Mesh.Loader.loadToVAO(vertices, indices, mat);
         
         while (!window.shouldClose()) {
@@ -260,8 +260,10 @@ public class DemCubez {
 //            screenShader.setUniform("uSharpenOffset", 1f / 10000f);
 
             screenShader.setUniform("uColour", new Vec3(1.0));
+            glEnable(GL_FRAMEBUFFER_SRGB); //manual gamma correction for funsies
             renderer.render(screenQuad, screenShader);
-            
+            glDisable(GL_FRAMEBUFFER_SRGB);
+
             window.update(pacer.getDeltaTimeSeconds());
             
             if (pacer.getFramesElapsed() > TARGET_FPS) {
@@ -390,12 +392,12 @@ public class DemCubez {
         //These are essentially intensity factors
         //TODO isn't this kind of stupid? why would a light SOURCE have different kinds of intensities?
         globalLight = new DirectionalLight(new Vec3(1),
-                new Vec3(0.2), new Vec3(0), new Vec3(0.01));
+                new Vec3(0.01), new Vec3(0.1), new Vec3(0.2));
     
         lights = new PointLight[lightSources.length];
         for (int i = 0; i < lights.length; i++) {
             lights[i] = new PointLight(lightSources[i].getTransform().getPosition(),
-                    new Vec3(0.1), new Vec3(0.3), new Vec3(0.5),
+                    new Vec3(0.01), new Vec3(0.4), new Vec3(1),
                     1f, 0.03f, 0.005f);
         }
     }

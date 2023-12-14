@@ -9,12 +9,7 @@ import java.nio.ByteBuffer;
 import java.util.Objects;
 
 import static org.lwjgl.assimp.Assimp.*;
-import static org.lwjgl.opengl.GL11C.*;
-import static org.lwjgl.opengl.GL12C.GL_CLAMP_TO_EDGE;
-import static org.lwjgl.opengl.GL13C.*;
-import static org.lwjgl.opengl.GL30C.GL_RG;
-import static org.lwjgl.opengl.GL30C.glGenerateMipmap;
-import static org.lwjgl.opengl.GL33C.GL_TEXTURE_SWIZZLE_RGBA;
+import static org.lwjgl.opengl.GL33C.*;
 
 /**
  * As this class makes use of the stb_image library, it can decode from all the image formats specified in the
@@ -53,20 +48,24 @@ public abstract class AbstractTexture implements Disposable {
     }
 
     public enum Format {
-        NONE(GL_NONE, 0),
-        ALPHA(GL_RED, 1),
-        GRAY(GL_RED, 1),
-        GA(GL_RG, 2), //TODO GA == gray/alpha not very intuitive, find better name
-        RGB(GL_RGB, 3),
-        RGBA(GL_RGBA, 4),
-        DEPTH(GL_DEPTH_COMPONENT, 1),
-        STENCIL(GL_STENCIL_INDEX, 1);
+        NONE(GL_NONE, GL_NONE, 0),
+        ALPHA(GL_RED, GL_RED, 1),
+        GRAY(GL_RED, GL_RED, 1),
+        GA(GL_RG, GL_RG, 2), //TODO GA == gray/alpha not very intuitive, find better name,
+        RGB(GL_RGB, GL_RGB, 3),
+        RGBA(GL_RGBA, GL_RGBA, 4),
+        SRGB(GL_RGB, GL_SRGB, 3),
+        SRGBA(GL_RGBA, GL_SRGB_ALPHA, 4),
+        DEPTH(GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, 1),
+        STENCIL(GL_STENCIL_INDEX, GL_STENCIL_INDEX, 1);
 
         private final int glFormat;
+        private final int glInternalFormat;
         private final int channels;
 
-        Format(int glFormat, int channels) {
+        Format(int glFormat, int glInternalFormat, int channels) {
             this.glFormat = glFormat;
+            this.glInternalFormat = glInternalFormat;
             this.channels = channels;
         }
 
@@ -74,14 +73,18 @@ public abstract class AbstractTexture implements Disposable {
             return switch (colourChannels) {
                 case 1 -> GRAY;
                 case 2 -> GA;
-                case 3 -> RGB;
-                case 4 -> RGBA;
+                case 3 -> SRGB;
+                case 4 -> SRGBA;
                 default -> throw new IllegalStateException("Unexpected colour format: " + colourChannels + " channels");
             };
         }
 
         public int toGLFormat() {
             return glFormat;
+        }
+
+        public int toGlInternalFormat() {
+            return glInternalFormat;
         }
 
         public int getChannels() {
@@ -279,7 +282,7 @@ public abstract class AbstractTexture implements Disposable {
                 case GRAY, DEPTH, STENCIL -> new int[] {GL_RED, GL_RED, GL_RED, GL_ONE};
                 case ALPHA -> new int[] {GL_ONE, GL_ONE, GL_ALPHA, GL_RED};
                 case GA -> new int[] {GL_RED, GL_RED, GL_RED, GL_GREEN};
-                case RGB, RGBA -> new int[] {GL_RED, GL_GREEN, GL_BLUE, GL_ALPHA};
+                case RGB, RGBA, SRGB, SRGBA -> new int[]{GL_RED, GL_GREEN, GL_BLUE, GL_ALPHA};
                 case NONE -> throw new IllegalStateException("No swizzle mask for colour format: " + builder.format.name());
             };
 

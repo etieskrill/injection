@@ -17,7 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.opengl.GL11C.*;
+import static org.lwjgl.opengl.GL33C.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class Window implements Disposable {
@@ -35,6 +35,7 @@ public class Window implements Disposable {
     private Vec2 position;
     private float targetFrameRate;
     private boolean vSyncEnabled;
+    private int samples;
     private String title;
     
     private Cursor cursor;
@@ -123,6 +124,7 @@ public class Window implements Disposable {
         private Vec2 position;
         private float refreshRate;
         private boolean vSyncEnabled;
+        private int samples;
         private String title;
         private Cursor cursor;
         private KeyInputManager inputs;
@@ -153,6 +155,11 @@ public class Window implements Disposable {
             this.vSyncEnabled = vSyncEnabled;
             return this;
         }
+
+        public Builder setSamples(int samples) {
+            this.samples = samples;
+            return this;
+        }
         
         public Builder setTitle(String title) {
             this.title = title;
@@ -176,6 +183,7 @@ public class Window implements Disposable {
                     position != null ? position : new Vec2(),
                     refreshRate >= 0 ? refreshRate : GLFW_DONT_CARE,
                     vSyncEnabled,
+                    Math.max(samples, 0),
                     title != null ? title : "Window",
                     cursor != null ? cursor : Cursor.getDefault(),
                     inputs
@@ -183,8 +191,8 @@ public class Window implements Disposable {
         }
         
     }
-    
-    Window(WindowMode mode, WindowSize size, Vec2 position, float targetFrameRate, boolean vSyncEnabled,
+
+    Window(WindowMode mode, WindowSize size, Vec2 position, float targetFrameRate, boolean vSyncEnabled, int samples,
            String title, Cursor cursor,
            KeyInputManager inputs) {
         this.mode = mode;
@@ -192,6 +200,7 @@ public class Window implements Disposable {
         this.position = position;
         this.targetFrameRate = targetFrameRate;
         this.vSyncEnabled = vSyncEnabled;
+        this.samples = samples;
         
         this.title = title;
         
@@ -247,6 +256,8 @@ public class Window implements Disposable {
     
         setMode(mode);
         setRefreshRate(targetFrameRate);
+
+        glfwWindowHint(GLFW_SAMPLES, samples);
 
         this.window = glfwCreateWindow(size.getWidth(), size.getHeight(), title,
                 switch (mode) {
@@ -313,6 +324,8 @@ public class Window implements Disposable {
     
         glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
+
+        if (samples > 0) glEnable(GL_MULTISAMPLE);
     }
     
     public void show() {

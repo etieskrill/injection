@@ -373,7 +373,7 @@ public class Model implements Disposable {
             buffer.rewind();
             
             Texture2D.Builder tex = new Texture2D.BufferBuilder(buffer,
-                    new Vec2i(image.getWidth(), image.getHeight()), AbstractTexture.Format.RGBA);
+                    new Vec2i(image.getWidth(), image.getHeight()), AbstractTexture.Format.SRGBA);
             embeddedTextures.put("*" + i, tex);
         }
         
