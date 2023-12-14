@@ -15,13 +15,44 @@ public class Mesh implements Disposable {
     private final Material material;
     private final int vao, numIndices, vbo, ebo;
     private final AABB boundingBox;
+    private final DrawMode drawMode;
+
+    public enum DrawMode {
+        POINTS(GL_POINTS),
+        LINES(GL_LINES),
+        LINE_LOOP(GL_LINE_LOOP),
+        LINE_STRIP(GL_LINE_STRIP),
+        TRIANGLES(GL_TRIANGLES),
+        TRIANGLE_STRIP(GL_TRIANGLE_STRIP),
+        TRIANGLE_FAN(GL_TRIANGLE_FAN),
+        QUADS(GL_QUADS);
+
+        private final int glDrawMode;
+
+        DrawMode(int glDrawMode) {
+            this.glDrawMode = glDrawMode;
+        }
+
+        public int gl() {
+            return glDrawMode;
+        }
+    }
     
     public static final class Loader {
-        public static Mesh loadToVAO(List<Vertex> vertices, List<Short> indices, Material material) {
-            return loadToVAO(vertices, indices, material, null);
+        //TODO builder
+        public static Mesh loadToVAO(List<Vertex> vertices, List<Integer> indices, Material material) {
+            return loadToVAO(vertices, indices, material, null, null);
         }
-        
-        public static Mesh loadToVAO(List<Vertex> vertices, List<Short> indices, Material material, AABB boundingBox) {
+
+        public static Mesh loadToVAO(List<Vertex> vertices, List<Integer> indices, Material material, AABB boundingBox) {
+            return loadToVAO(vertices, indices, material, boundingBox, null);
+        }
+
+        public static Mesh loadToVAO(List<Vertex> vertices, List<Integer> indices, Material material, DrawMode drawMode) {
+            return loadToVAO(vertices, indices, material, null, drawMode);
+        }
+
+        public static Mesh loadToVAO(List<Vertex> vertices, List<Integer> indices, Material material, AABB boundingBox, DrawMode drawMode) {
             int vao = createVAO();
 
             List<Float> _data = vertices.stream()
@@ -31,13 +62,13 @@ public class Mesh implements Disposable {
             float[] data = new float[_data.size()];
             for (int i = 0; i < _data.size(); i++) data[i] = _data.get(i);
             int vbo = prepareVBO(data);
-        
-            short[] _indices = new short[indices.size()];
+
+            int[] _indices = new int[indices.size()];
             for (int i = 0; i < indices.size(); i++) _indices[i] = indices.get(i);
             int ebo = prepareIndexBuffer(_indices);
         
             unbindVAO();
-            return new Mesh(material, vao, indices.size(), vbo, ebo, boundingBox);
+            return new Mesh(material, vao, indices.size(), vbo, ebo, boundingBox, drawMode != null ? drawMode : DrawMode.TRIANGLES);
         }
     
         private static int createVAO() {
@@ -66,8 +97,8 @@ public class Mesh implements Disposable {
             int totalStride = COMPONENTS * GL_FLOAT_BYTE_SIZE;
             glVertexAttribPointer(index, numComponents, GL_FLOAT, normalised, totalStride, offset);
         }
-    
-        private static int prepareIndexBuffer(short[] indices) {
+
+        private static int prepareIndexBuffer(int[] indices) {
             int ebo = glGenBuffers();
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices, GL_DYNAMIC_DRAW);
@@ -81,7 +112,8 @@ public class Mesh implements Disposable {
     
     public Mesh(Material material,
                 int vao, int numIndices, int vbo, int ebo,
-                AABB boundingBox) {
+                AABB boundingBox,
+                DrawMode drawMode) {
         this.material = material;
         
         this.vao = vao;
@@ -90,6 +122,8 @@ public class Mesh implements Disposable {
         this.ebo = ebo;
         
         this.boundingBox = boundingBox;
+
+        this.drawMode = drawMode;
     }
     
     public Material getMaterial() {
@@ -107,7 +141,11 @@ public class Mesh implements Disposable {
     public AABB getBoundingBox() {
         return boundingBox;
     }
-    
+
+    public DrawMode getDrawMode() {
+        return drawMode;
+    }
+
     @Override
     public void dispose() {
         material.dispose();

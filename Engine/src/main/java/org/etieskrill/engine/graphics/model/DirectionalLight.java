@@ -18,6 +18,10 @@ public class DirectionalLight implements UniformMappable {
         this.diffuse = diffuse;
         this.specular = specular;
     }
+
+    public void setDirection(Vec3 direction) {
+        this.direction.put(direction);
+    }
     
     @Override
     public boolean map(ShaderProgram.MapperShaderProgram shader) {

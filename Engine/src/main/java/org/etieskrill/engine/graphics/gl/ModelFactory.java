@@ -39,8 +39,8 @@ public class ModelFactory {
         vertices.add(new Vertex(new Vec3(x, y + height, 0f), new Vec3(), new Vec2(0f, 1f)));
         vertices.add(new Vertex(new Vec3(x + width, y, 0f), new Vec3(), new Vec2(1f, 0f)));
         vertices.add(new Vertex(new Vec3(x + width, y + height, 0f), new Vec3(), new Vec2(1f, 1f)));
-        
-        List<Short> indices = new ArrayList<>(List.of(new Short[]{0, 2, 1, 3, 1, 2}));
+
+        List<Integer> indices = new ArrayList<>(List.of(new Integer[]{0, 2, 1, 3, 1, 2}));
         
         Material mat = material != null ? material : Material.getBlank();
     
@@ -133,6 +133,12 @@ public class ModelFactory {
         Model box = Loaders.ModelLoader.get().load("internal-model-factory:box", () -> Model.ofFile("box.obj"));
         box.getTransform().setInitialScale(size);
         return box;
+    }
+
+    public static Model quadBox(Vec3 size) {
+        Model quadBox = Loaders.ModelLoader.get().load("internal-model-loader:quad-box", () -> new Model.Builder("quad-box.obj").build());
+        quadBox.getTransform().setInitialScale(size);
+        return quadBox;
     }
 
     //TODO probs fibonacci or subdivision, test with phong, gouraud and flat shading

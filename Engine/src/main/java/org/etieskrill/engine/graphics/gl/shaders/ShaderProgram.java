@@ -9,6 +9,7 @@ import org.etieskrill.engine.util.ResourceReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -24,16 +25,16 @@ public abstract class ShaderProgram implements Disposable {
     public static boolean AUTO_START_ON_VARIABLE_SET = true;
     public static boolean CLEAR_ERROR_BEFORE_SHADER_CREATION = true;
 
-    private static final String DIRECTORY = "shaders/";
+    private static final String DIRECTORY = "shaders";
     
     //TODO move placeholder shader here
-    private static final String DEFAULT_VERTEX_FILE = DIRECTORY + "Phong.vert";
-    private static final String DEFAULT_FRAGMENT_FILE = DIRECTORY + "Phong.frag";
+    private static final String DEFAULT_VERTEX_FILE = DIRECTORY + "/Phong.vert";
+    private static final String DEFAULT_FRAGMENT_FILE = DIRECTORY + "/Phong.frag";
     
     private boolean STRICT_UNIFORM_DETECTION = true;
     
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    
+
     protected int programID;
     private int vertID, geomID = -1, fragID;
     private final Map<Uniform, Integer> uniforms;
@@ -184,7 +185,7 @@ public abstract class ShaderProgram implements Disposable {
             case GEOMETRY -> GL_GEOMETRY_SHADER;
             case FRAGMENT -> GL_FRAGMENT_SHADER;
         });
-        glShaderSource(shaderID, ResourceReader.getRaw(DIRECTORY + file.getFile()));
+        glShaderSource(shaderID, ResourceReader.getRaw(getShaderFileBasePath() + "/" + file.getFile()));
         glCompileShader(shaderID);
 
         if (glGetShaderi(shaderID, GL_COMPILE_STATUS) != GL_TRUE)
@@ -494,6 +495,10 @@ public abstract class ShaderProgram implements Disposable {
     }
     
     protected abstract void init();
+
+    protected String getShaderFileBasePath() {
+        return Path.of("./Engine/src/main/resources/" + DIRECTORY).toAbsolutePath().toString();
+    }
     
     protected abstract String[] getShaderFileNames();
     

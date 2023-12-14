@@ -3,31 +3,19 @@ package org.etieskrill.engine.util;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.MissingResourceException;
-import java.util.Objects;
 
 public class ResourceReader {
 
     public static String getRaw(String name) {
-        String resource;
-
         try {
-            byte[] bytes = Objects.requireNonNull(
-                    ResourceReader.class.getClassLoader().getResourceAsStream(name))
-                    .readAllBytes();
-            resource = new String(bytes, StandardCharsets.UTF_8);
+            return Files.readString(Path.of(name));
         } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (NullPointerException e) {
-            //TODO that constructor is a bit wack
-
-            throw new MissingResourceException("Plaintext resource %s could not be located".formatted(name), "File", name);
+            throw new RuntimeException("Plaintext resource %s could not be located".formatted(name), e);
         }
-
-        return resource;
     }
 
     public static boolean requestRaw(String name, StringBuffer resource) {
