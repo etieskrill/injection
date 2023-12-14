@@ -160,9 +160,9 @@ public class Renderer {
     public void render(Mesh mesh, ShaderProgram shader) {
         bindMaterial(mesh.getMaterial(), shader);
         glBindVertexArray(mesh.getVao());
-        
-        glDrawElements(GL_TRIANGLES, mesh.getNumIndices(), GL_UNSIGNED_SHORT, 0);
-    
+
+        glDrawElements(mesh.getDrawMode().gl(), mesh.getNumIndices(), GL_UNSIGNED_INT, 0);
+
         AbstractTexture.unbindAllTextures();
     
         glBindVertexArray(0);
@@ -201,10 +201,17 @@ public class Renderer {
             texture.bind(validTextures);
             shader.setUniform(uniform + number, validTextures, false);
         }
-        
+
+        //TODO add a way to map all available material props automatically
+        shader.setUniform("material.colour", material.getColourProperty(Material.Property.COLOUR_BASE), false);
+        shader.setUniform("material.diffuseColour", material.getColourProperty(Material.Property.COLOUR_DIFFUSE), false);
+        shader.setUniform("material.emissiveColour", material.getColourProperty(Material.Property.COLOUR_EMISSIVE), false);
+        shader.setUniform("material.emissiveIntensity", material.getValueProperty(Material.Property.INTENSITY_EMISSIVE), false);
+        shader.setUniform("material.opacity", material.getValueProperty(Material.Property.OPACITY), false);
+
         if (shininess == 0)
-            shader.setUniform("material.shininess", material.getShininess(), false);
-        shader.setUniform("material.specularity", material.getShininessStrength(), false);
+            shader.setUniform("material.shininess", material.getValueProperty(Material.Property.SHININESS), false);
+        shader.setUniform("material.specularity", material.getValueProperty(Material.Property.SHININESS_STRENGTH), false);
 
         //Optional information
         shader.setUniform("material.numTextures", tex2d + cubemaps, false);

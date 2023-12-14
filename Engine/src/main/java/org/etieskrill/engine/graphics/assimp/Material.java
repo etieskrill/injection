@@ -1,68 +1,102 @@
 package org.etieskrill.engine.graphics.assimp;
 
+import glm_.vec4.Vec4;
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+
+import static java.util.Objects.requireNonNullElse;
+import static org.lwjgl.assimp.Assimp.*;
 
 //TODO separate phong/pbr via inheritance
 public class Material implements Disposable {
     
     //TODO number max gl texture units check
     private final List<AbstractTexture> textures;
-    
-    private final float shininess, shininessStrength;
+
+    private final Map<Property, Object> properties;
+
+    public enum Property {
+        NAME(AI_MATKEY_NAME),
+
+        COLOUR_BASE(AI_MATKEY_BASE_COLOR),
+        COLOUR_AMBIENT(AI_MATKEY_COLOR_AMBIENT),
+        COLOUR_DIFFUSE(AI_MATKEY_COLOR_DIFFUSE),
+        COLOUR_SPECULAR(AI_MATKEY_COLOR_SPECULAR),
+        COLOUR_EMISSIVE(AI_MATKEY_COLOR_EMISSIVE),
+
+        INTENSITY_EMISSIVE(AI_MATKEY_EMISSIVE_INTENSITY),
+
+        SHININESS(AI_MATKEY_SHININESS),
+        SHININESS_STRENGTH(AI_MATKEY_SHININESS_STRENGTH),
+        METALLIC_FACTOR(AI_MATKEY_METALLIC_FACTOR),
+        OPACITY(AI_MATKEY_OPACITY);
+
+        private final String aiPropertyName;
+
+        Property(String aiPropertyName) {
+            this.aiPropertyName = aiPropertyName;
+        }
+
+        public String ai() {
+            return aiPropertyName;
+        }
+    }
     
     public static final class Builder {
         private List<AbstractTexture> textures = new LinkedList<>();
-        private float shininess = 32f, shininessStrength = 1f;
-        
+        private Map<Property, Object> properties = new HashMap<>();
+
         public Builder addTextures(AbstractTexture... textures) {
             this.textures.addAll(List.of(textures));
             return this;
         }
-        
-        public Builder addTextures(List<AbstractTexture> textures) {
-            this.textures.addAll(textures);
+
+        public Builder setTextures(AbstractTexture... textures) {
+            this.textures.clear();
+            this.textures.addAll(List.of(textures));
             return this;
         }
-    
-        public void setShininess(float shininess) {
-            this.shininess = shininess;
+
+        public Builder setProperty(Property property, Object value) {
+            this.properties.put(property, value);
+            return this;
         }
-    
-        public void setShininessStrength(float shininessStrength) {
-            this.shininessStrength = shininessStrength;
-        }
-    
+
         public Material build() {
-            return new Material(textures, shininess, shininessStrength);
+            return new Material(textures, properties);
         }
     }
     
     public static Material getBlank() {
         return new Material.Builder().build();
     }
-    
-    private Material(List<AbstractTexture> textures, float shininess, float shininessStrength) {
+
+    private Material(List<AbstractTexture> textures, Map<Property, Object> properties) {
         this.textures = new LinkedList<>(textures);
-        this.shininess = shininess;
-        this.shininessStrength = shininessStrength;
+        this.properties = new HashMap<>(properties);
     }
     
     public List<AbstractTexture> getTextures() {
         return textures;
     }
-    
-    public float getShininess() {
-        return shininess;
+
+    public Object getProperty(Property property) {
+        return properties.get(property);
     }
-    
-    public float getShininessStrength() {
-        return shininessStrength;
+
+    public Vec4 getColourProperty(Property colourProperty) {
+        return (Vec4) requireNonNullElse(properties.get(colourProperty), new Vec4(0));
     }
-    
+
+    public Number getValueProperty(Property valueProperty) {
+        return (Number) requireNonNullElse(properties.get(valueProperty), 0);
+    }
+
     private boolean wasAlreadyDisposed = false;
     
     @Override

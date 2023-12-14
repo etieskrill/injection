@@ -7,6 +7,8 @@ import org.etieskrill.engine.graphics.PerspectiveCamera;
 import org.etieskrill.engine.graphics.assimp.Model;
 import org.etieskrill.engine.graphics.gl.Renderer;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
+import org.etieskrill.engine.graphics.gl.shaders.Shaders;
+import org.etieskrill.engine.graphics.model.DirectionalLight;
 import org.etieskrill.engine.input.Input;
 import org.etieskrill.engine.input.Keys;
 import org.etieskrill.engine.time.LoopPacer;
@@ -25,9 +27,12 @@ public class Game {
     private final Vec2 prevCursorPos;
 
     private Model hallway;
+    private Model sun;
+    private DirectionalLight sunLight;
 
     private Renderer renderer = new Renderer();
     private final ShaderProgram shader = new HallwayShader();
+    private final ShaderProgram sunShader = Shaders.getLightSourceShader();
 
     private LoopPacer pacer = new SystemNanoTimePacer(1 / 60f);
 
@@ -46,8 +51,13 @@ public class Game {
             prevCursorPos.put(xpos, ypos);
         });
 
-        this.hallway = new Model.Builder("box.obj").disableCulling().build();
-        hallway.getTransform().setInitialScale(new Vec3(5, 5, 20)).setInitialPosition(new Vec3(-6, -5, -5));
+        hallway = new Model.Builder("scifi-hallway.glb").build();
+        sun = Model.ofFile("box.obj");
+        sun.getTransform().setScale(0).setPosition(new Vec3(0, 10, 0));
+        sunLight = new DirectionalLight(sun.getTransform().getPosition().normalize(), new Vec3(1), new Vec3(1), new Vec3(1));
+
+        camera.orient(0, 0, 0);
+        camera.setPosition(new Vec3(-6, 3, 0));
 
         loop();
     }
@@ -55,7 +65,8 @@ public class Game {
     private void loop() {
         pacer.start();
         while (!window.shouldClose()) {
-//            hallway.getTransform().setRotation((float) (hallway.getTransform().getRotation() + pacer.getDeltaTimeSeconds()), new Vec3(0, 1, 0));
+            sun.getTransform().setPosition(new Vec3(10 * Math.cos(pacer.getTime()), 10, 10 * Math.sin(pacer.getTime())));
+            sunLight.setDirection(sun.getTransform().getPosition().negate().normalize());
 
             render();
 
@@ -67,10 +78,12 @@ public class Game {
     private void render() {
         renderer.prepare();
 
-        shader.setUniform("uTime", (float) pacer.getTime());
+        shader.setUniform("uTime", (float) pacer.getTime(), false);
+        shader.setUniform("sun", sunLight);
+        sunShader.setUniform("light", sunLight);
 
-//        renderer.render(hallway, shader, camera.getCombined());
-        renderer.renderWireframe(hallway, shader, camera.getCombined());
+        renderer.render(sun, sunShader, camera.getCombined());
+        renderer.render(hallway, shader, camera.getCombined());
     }
 
     public static void main(String[] args) {

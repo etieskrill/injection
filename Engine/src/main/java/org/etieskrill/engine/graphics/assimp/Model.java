@@ -28,6 +28,8 @@ import java.nio.IntBuffer;
 import java.util.*;
 import java.util.function.Supplier;
 
+import static org.etieskrill.engine.graphics.assimp.Material.Property.SHININESS;
+import static org.etieskrill.engine.graphics.assimp.Material.Property.*;
 import static org.etieskrill.engine.graphics.texture.AbstractTexture.Type.*;
 import static org.lwjgl.assimp.Assimp.*;
 
@@ -65,9 +67,7 @@ public class Model implements Disposable {
     public static class Builder {
         protected final List<Mesh> meshes = new LinkedList<>();
         protected final List<Material> materials = new LinkedList<>();
-    
-        public AABB boundingBox;
-        
+
         protected final String file;
         protected String name;
     
@@ -229,6 +229,7 @@ public class Model implements Disposable {
         //TODO properly set these
         int processFlags =
             aiProcess_Triangulate |
+                    aiProcess_SortByPType |
             (flipUVs ? aiProcess_FlipUVs : 0) |
             aiProcess_OptimizeMeshes |
             aiProcess_OptimizeGraph |
@@ -241,7 +242,7 @@ public class Model implements Disposable {
             aiProcess_PreTransformVertices |
             (flipWinding ? aiProcess_FlipWindingOrder : 0)
         ;
-        
+
         AIScene scene = aiImportFile(DIRECTORY + file, processFlags);
     
         if (scene == null || (scene.mFlags() & AI_SCENE_FLAGS_INCOMPLETE) != 0
@@ -253,7 +254,7 @@ public class Model implements Disposable {
         loadMaterials(scene);
         processNode(scene.mRootNode(), scene);
         calculateModelBoundingBox();
-        
+
         aiReleaseImport(scene);
         
         logger.debug("Loaded model {} with {} mesh{} and {} material{}", name,
@@ -266,16 +267,16 @@ public class Model implements Disposable {
         if (mMeshes == null) return;
         for (int i = 0; i < node.mNumMeshes(); i++)
             meshes.add(processMesh(AIMesh.create(mMeshes.get(node.mMeshes().get(i)))));
-        
+
         PointerBuffer mChildren = node.mChildren();
         if (mChildren == null) return;
         for (int i = 0; i < node.mNumChildren(); i++)
             processNode(AINode.create(mChildren.get()), scene);
     }
-    
+
     private Mesh processMesh(AIMesh mesh) {
         //TODO add AABB loading but oh FUCK each goddamn mesh has a separate one FFS
-        
+
         int numVertices = mesh.mNumVertices();
         List<Vec3> positions = new ArrayList<>(numVertices);
         mesh.mVertices().forEach(vertex -> positions.add(new Vec3(vertex.x(), vertex.y(), vertex.z())));
@@ -297,12 +298,13 @@ public class Model implements Disposable {
             );
 
         //three because a face is usually a triangle, but this list is discarded at the first opportunity a/w
-        List<Short> indices = new ArrayList<>(mesh.mNumFaces() * 3);
+        //TODO add loader versions which transmit the minimal amount of data (shorts for indices, smaller vectors)
+        List<Integer> indices = new ArrayList<>(mesh.mNumFaces() * 3);
         for (int i = 0; i < mesh.mNumFaces(); i++) {
             AIFace face = mesh.mFaces().get(i);
             IntBuffer buffer = face.mIndices();
             for (int j = 0; j < face.mNumIndices(); j++)
-                indices.add((short) buffer.get());
+                indices.add(buffer.get());
         }
         
         AIVector3D min = mesh.mAABB().mMin();
@@ -313,9 +315,9 @@ public class Model implements Disposable {
         if (boundingBox.getMin().allEqual(0f, 0.00001f)
                 || boundingBox.getMax().allEqual(0f, 0.00001f))
             boundingBox = calculateBoundingBox(vertices);
-        
-        logger.trace("Loaded mesh with {} vertices {} normals, {} uv coordinates", vertices.size(),
-                normals.size() > 0 ? "with" : "without", texCoords.size() > 0 ? "with" : "without");
+
+        logger.trace("Loaded mesh with {} vertices and {} indices, {} normals, {} uv coordinates", vertices.size(),
+                indices.size(), !normals.isEmpty() ? "with" : "without", !texCoords.isEmpty() ? "with" : "without");
         
         Material material = materials.get(mesh.mMaterialIndex());
         return Mesh.Loader.loadToVAO(vertices, indices, material, boundingBox);
@@ -390,11 +392,8 @@ public class Model implements Disposable {
     private Material processMaterial(AIMaterial aiMaterial) {
         Material.Builder material = new Material.Builder();
         
-        AIColor4D color = AIColor4D.create();
-        aiGetMaterialColor(aiMaterial, "", 0, 0, color);
-        
         for (Type type : new Type[] {
-                DIFFUSE, SPECULAR, EMISSIVE, HEIGHT, SHININESS
+                DIFFUSE, SPECULAR, EMISSIVE, HEIGHT, Type.SHININESS
         }) addTexturesToMaterial(material, aiMaterial, type);
         
         int numProperties = addPropertiesToMaterial(material, aiMaterial);
@@ -407,7 +406,7 @@ public class Model implements Disposable {
     
     private void addTexturesToMaterial(Material.Builder material, AIMaterial aiMaterial, Type type) {
         AIString file = AIString.create();
-    
+
         int aiTextureType = type.ai();
         int validTextures = 0;
         for (int i = 0; i < aiGetMaterialTextureCount(aiMaterial, aiTextureType); i++) {
@@ -440,22 +439,38 @@ public class Model implements Disposable {
     
     private int addPropertiesToMaterial(Material.Builder material, AIMaterial aiMaterial) {
         int validProperties = 0;
+
+        //String properties
+        AIString matName = AIString.create();
+        if (aiReturn_SUCCESS == aiGetMaterialString(aiMaterial, AI_MATKEY_NAME, aiTextureType_NONE, 0, matName)) {
+            material.setProperty(Material.Property.NAME, matName.dataString());
+            validProperties++;
+        }
+
+        //Vec4 properties
+        AIColor4D colour = AIColor4D.calloc();
+        for (Material.Property property : new Material.Property[]{
+                COLOUR_BASE, COLOUR_AMBIENT, COLOUR_DIFFUSE, COLOUR_SPECULAR, COLOUR_EMISSIVE
+        }) {
+            if (aiReturn_SUCCESS == aiGetMaterialColor(aiMaterial, property.ai(), aiTextureType_NONE, 0, colour)) {
+                Vec4 colourProperty = new Vec4(colour.r(), colour.g(), colour.b(), colour.a());
+                material.setProperty(property, colourProperty);
+                validProperties++;
+            }
+        }
+
+        //Single value properties
         PointerBuffer propBuffer = BufferUtils.createPointerBuffer(1);
-        
-        if (aiReturn_SUCCESS == aiGetMaterialProperty(aiMaterial, AI_MATKEY_SHININESS, propBuffer)) {
-            logger.trace("Material shininess property found");
-            ByteBuffer buffer = AIMaterialProperty.create(propBuffer.get()).mData();
-            material.setShininess(buffer.getFloat());
-            validProperties++;
+        for (Material.Property property : new Material.Property[]{
+                INTENSITY_EMISSIVE, SHININESS, SHININESS_STRENGTH, METALLIC_FACTOR, OPACITY
+        }) {
+            if (aiReturn_SUCCESS == aiGetMaterialProperty(aiMaterial, property.ai(), aiTextureType_NONE, 0, propBuffer)) {
+                material.setProperty(property, AIMaterialProperty.create(propBuffer.get()).mData().getFloat());
+                propBuffer.rewind();
+                validProperties++;
+            }
         }
-        
-        if (aiReturn_SUCCESS == aiGetMaterialProperty(aiMaterial, AI_MATKEY_SHININESS_STRENGTH, propBuffer.clear())) {
-            logger.trace("Material shininess strength property found");
-            ByteBuffer buffer = AIMaterialProperty.create(propBuffer.get()).mData();
-            material.setShininessStrength(buffer.getFloat());
-            validProperties++;
-        }
-        
+
         return validProperties;
     }
     

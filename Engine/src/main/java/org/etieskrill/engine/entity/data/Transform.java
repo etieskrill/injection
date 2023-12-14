@@ -141,12 +141,12 @@ public class Transform {
     }
     
     private void updateTransform() {
-        this.transform
-                .invoke(1) //This may not be the optimal solution, but there is no Mat4#identityAssign, soo...
-                .translateAssign(position.plus(initialPosition))
-                .rotateAssign(initialRotation, rotationAxis)
+        this.transform.invoke(1)
+                .rotateAssign(initialRotation, initialRotationAxis)
+                .translateAssign(initialPosition)
                 .rotateAssign(rotation, rotationAxis)
-                .scaleAssign(scale.times(initialScale));
+                .translateAssign(position)
+                .scale(scale.times(initialScale));
     }
     
     private void dirty() {
