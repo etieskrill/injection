@@ -25,11 +25,12 @@ public class GameScene {
 
     private Camera camera;
 
-    private Model skelly, skellyBBModel;
+    private Model skelly, skellyBB;
     private Model cube, light;
     private PointLight pointLight;
     private PointLight[] pointLights;
     private Model[] orbs;
+    private Model orbBB;
 
     private final Vec3 deltaPos = new Vec3(0);
     private float rotation, smoothRotation;
@@ -78,8 +79,8 @@ public class GameScene {
         skelly = models.load("skelly", () -> Model.ofFile("skeleton.glb"));
         skelly.getTransform().setScale(15);
 
-        skellyBBModel = ModelFactory.box(skelly.getBoundingBox().getMax().minus(skelly.getBoundingBox().getMin()));
-        skellyBBModel.getTransform()
+        skellyBB = ModelFactory.box(skelly.getBoundingBox().getMax().minus(skelly.getBoundingBox().getMin()));
+        skellyBB.getTransform()
                 .setInitialPosition(
                         skelly.getBoundingBox().getCenter().times(skelly.getTransform().getScale())
                 );
@@ -96,9 +97,9 @@ public class GameScene {
                             random.nextFloat() * 50 - 25
                     ));
         }
-        Model orbBBModel = ModelFactory.box(orbs[0].getBoundingBox().getMax().minus(orbs[0].getBoundingBox().getMin()));
-        orbBBModel.getTransform().setInitialPosition(
-                orbBBModel.getBoundingBox().getCenter()
+        orbBB = ModelFactory.box(orbs[0].getBoundingBox().getMax().minus(orbs[0].getBoundingBox().getMin()));
+        orbBB.getTransform().setInitialPosition(
+                orbBB.getBoundingBox().getCenter()
         );
     }
 
@@ -182,6 +183,9 @@ public class GameScene {
         smoothSkellyHeight += skellyHeight > smoothSkellyHeight ? falloff : -falloff;
 
         skelly.getTransform().setScale(new Vec3(15, smoothSkellyHeight, 15));
+        skellyBB.getTransform().set(skelly.getTransform());
+        System.out.println(skelly.getBoundingBox().toString() + " " + skelly.getWorldBoundingBox().toString());
+        System.out.println(skellyBB.getTransform());
     }
 
     private void collideOrbs() {
@@ -207,10 +211,13 @@ public class GameScene {
 
         renderer.render(cube, shader, camera.getCombined());
         renderer.render(skelly, shader, camera.getCombined());
+        skelly.getWorldBoundingBox();
+        renderer.renderWireframe(skellyBB, shader, camera.getCombined());
 
         for (Model orb : orbs) {
             if (!orb.isEnabled()) continue;
             renderer.render(orb, shader, camera.getCombined());
+            renderer.renderWireframe(orbBB, shader, camera.getCombined());
         }
 
         lightShader.setLight(pointLight);

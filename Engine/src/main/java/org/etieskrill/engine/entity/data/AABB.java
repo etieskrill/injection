@@ -2,7 +2,7 @@ package org.etieskrill.engine.entity.data;
 
 import glm_.vec3.Vec3;
 
-public class AABB {
+public class AABB implements Component {
     
     private final Vec3 min;
     private final Vec3 max;

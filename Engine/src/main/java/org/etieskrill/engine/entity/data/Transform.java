@@ -3,7 +3,7 @@ package org.etieskrill.engine.entity.data;
 import glm_.mat4x4.Mat4;
 import glm_.vec3.Vec3;
 
-public class Transform {
+public class Transform implements Component {
     
     private final Vec3 position;
     private float rotation;
