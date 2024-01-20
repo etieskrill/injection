@@ -71,7 +71,7 @@ public class Game {
 
         sun = Model.ofFile("box.obj");
         sun.getTransform().setScale(0).setPosition(new Vec3(0, 10, 0));
-        sunLight = new DirectionalLight(sun.getTransform().getPosition().normalize(), new Vec3(1), new Vec3(1), new Vec3(1));
+        sunLight = new DirectionalLight(sun.getTransform().getPosition().normalize(), new Vec3(0.2), new Vec3(0.5), new Vec3(0.5));
 
         camera.setFar(500);
         camera.orient(0, 0, 0);

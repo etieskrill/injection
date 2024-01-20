@@ -59,7 +59,7 @@ public class Textures {
 
         int pixelWidth = bufferWidth.get();
         int pixelHeight = bufferHeight.get();
-        AbstractTexture.Format format = AbstractTexture.Format.fromPreferredColourChannels(bufferColourChannels.get());
+        AbstractTexture.Format format = AbstractTexture.Format.fromChannels(bufferColourChannels.get());
 
         return new AbstractTexture.TextureData(textureData, new Vec2i(pixelWidth, pixelHeight), format);
     }
