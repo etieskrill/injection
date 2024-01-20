@@ -69,12 +69,22 @@ public abstract class AbstractTexture implements Disposable {
             this.channels = channels;
         }
 
-        public static Format fromPreferredColourChannels(int colourChannels) {
+        public static Format fromChannels(int colourChannels) {
             return switch (colourChannels) {
                 case 1 -> GRAY;
                 case 2 -> GA;
                 case 3 -> SRGB;
                 case 4 -> SRGBA;
+                default -> throw new IllegalStateException("Unexpected colour format: " + colourChannels + " channels");
+            };
+        }
+
+        public static Format fromChannelsAndType(int colourChannels, Type type) {
+            return switch (colourChannels) {
+                case 1 -> GRAY;
+                case 2 -> GA;
+                case 3 -> type == Type.DIFFUSE ? SRGB : RGB;
+                case 4 -> type == Type.DIFFUSE ? SRGBA : RGBA;
                 default -> throw new IllegalStateException("Unexpected colour format: " + colourChannels + " channels");
             };
         }
