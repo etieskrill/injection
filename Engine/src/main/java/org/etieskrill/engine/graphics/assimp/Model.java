@@ -306,6 +306,8 @@ public class Model implements Disposable {
             for (int j = 0; j < face.mNumIndices(); j++)
                 indices.add(buffer.get());
         }
+
+        List<Bone> bones = getBones(mesh);
         
         AIVector3D min = mesh.mAABB().mMin();
         AIVector3D max = mesh.mAABB().mMax();
@@ -321,6 +323,30 @@ public class Model implements Disposable {
         
         Material material = materials.get(mesh.mMaterialIndex());
         return Mesh.Loader.loadToVAO(vertices, indices, material, boundingBox);
+    }
+
+    private static class Bone {
+    }
+
+    private List<Bone> getBones(AIMesh mesh) {
+        List<Bone> bones = new ArrayList<>(mesh.mNumBones());
+        for (int i = 0; i < mesh.mNumBones(); i++) {
+            AIBone aiBone = AIBone.create(mesh.mBones().get());
+            String name = aiBone.mName().dataString();
+
+//            aiBone.
+//            bones.add();
+        }
+        return bones;
+    }
+
+    private static Mat4 fromAI(AIMatrix4x4 mat) {
+        return new Mat4(new float[]{
+                mat.a1(), mat.b1(), mat.c1(), mat.d1(),
+                mat.a2(), mat.b2(), mat.c2(), mat.d2(),
+                mat.a3(), mat.b3(), mat.c3(), mat.d3(),
+                mat.a4(), mat.b4(), mat.c4(), mat.d4()
+        });
     }
     
     private AABB calculateBoundingBox(List<Vertex> vertices) {
