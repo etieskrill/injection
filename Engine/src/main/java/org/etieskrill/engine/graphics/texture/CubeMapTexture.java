@@ -96,7 +96,7 @@ public class CubeMapTexture extends AbstractTexture {
     
         @Override
         protected CubeMapTexture bufferTextureData() {
-            logger.debug("Loading {}x{} {}-bit cubemap texture from {}", pixelSize.s(), pixelSize.t(),
+            logger.debug("Loading {}x{} {}-bit cubemap texture from {}", pixelSize.getS(), pixelSize.getT(),
                     NR_BITS_PER_COLOUR_CHANNEL * format.getChannels(), name);
     
             CubeMapTexture texture = new CubeMapTexture(name, this);
@@ -104,7 +104,7 @@ public class CubeMapTexture extends AbstractTexture {
             texture.bind(0);
             for (int i = 0; i < sides.size(); i++) {
                 glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, format.toGlInternalFormat(),
-                        pixelSize.s(), pixelSize.t(), 0, format.toGLFormat(), GL_UNSIGNED_BYTE,
+                        pixelSize.getS(), pixelSize.getT(), 0, format.toGLFormat(), GL_UNSIGNED_BYTE,
                         sides.get(i).getTextureData());
             }
             

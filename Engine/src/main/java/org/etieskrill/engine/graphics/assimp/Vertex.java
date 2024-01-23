@@ -41,7 +41,7 @@ public class Vertex {
     
     public List<Float> toList() { //TODO optimise this
         List<Float> data = new ArrayList<>();
-        for (float[] arr : new float[][]{position.getArray(), normal.getArray(), textureCoords.getArray()})
+        for (float[] arr : new float[][]{position.array, normal.array, textureCoords.array})
             for (Float f : arr) data.add(f);
         return data;
     }

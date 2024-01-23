@@ -1,0 +1,24 @@
+plugins {
+    id 'application'
+    id 'java'
+}
+
+repositories {
+    mavenCentral()
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+application {
+    mainClass = 'org.etieskrill.orbes.Game'
+}
+
+dependencies {
+    implementation project(':engine')
+    implementation "org.lwjgl:lwjgl-glfw:3.3.3"
+    runtimeOnly "org.lwjgl:lwjgl-glfw::natives-windows"
+}
