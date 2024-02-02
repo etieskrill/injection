@@ -1,14 +1,17 @@
 package org.etieskrill.engine.graphics.gl.shaders;
 
-import glm_.mat3x3.Mat3;
-import glm_.mat4x4.Mat4;
-import glm_.vec3.Vec3;
-import glm_.vec4.Vec4;
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.util.ResourceReader;
+import org.joml.Matrix3f;
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
+import org.lwjgl.system.MemoryStack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Function;
@@ -50,16 +53,16 @@ public abstract class ShaderProgram implements Disposable {
     }
     
     protected static class ShaderFile {
-        private final String file;
+        private final String name;
         private final ShaderType type;
-        
-        public ShaderFile(String file, ShaderType type) {
-            this.file = file;
+
+        public ShaderFile(String name, ShaderType type) {
+            this.name = name;
             this.type = type;
         }
-        
-        public String getFile() {
-            return file;
+
+        public String getName() {
+            return name;
         }
         
         public ShaderType getType() {
@@ -71,12 +74,12 @@ public abstract class ShaderProgram implements Disposable {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             ShaderFile that = (ShaderFile) o;
-            return Objects.equals(file, that.file) && type == that.type;
+            return Objects.equals(name, that.name) && type == that.type;
         }
 
         @Override
         public String toString() {
-            return "[%s, %s]".formatted(file, type.name().toLowerCase());
+            return "[%s, %s]".formatted(name, type.name().toLowerCase());
         }
     }
     
@@ -185,7 +188,8 @@ public abstract class ShaderProgram implements Disposable {
             case GEOMETRY -> GL_GEOMETRY_SHADER;
             case FRAGMENT -> GL_FRAGMENT_SHADER;
         });
-        glShaderSource(shaderID, ResourceReader.getRaw(getShaderFileBasePath() + "/" + file.getFile()));
+
+        glShaderSource(shaderID, getShaderSource(file));
         glCompileShader(shaderID);
 
         if (glGetShaderi(shaderID, GL_COMPILE_STATUS) != GL_TRUE)
@@ -193,6 +197,25 @@ public abstract class ShaderProgram implements Disposable {
                     .formatted(file.getType().name().toLowerCase(), file), glGetShaderInfoLog(shaderID));
         
         return shaderID;
+    }
+
+    private String getShaderSource(ShaderFile file) {
+        System.out.println(getClass().getModule().getName());
+        System.out.println(getClass().getResource(file.getName()).getFile());
+
+        Path modulePath = Path.of(getShaderFileBasePath() + "/" + file.getName());
+        if (Files.exists(modulePath)) {
+            try {
+                return Files.readString(modulePath);
+            } catch (IOException e) {
+                throw new ShaderCreationException(e);
+            }
+        }
+
+//        Path enginePath = Path.of()
+
+//        return Files.readString(Path.of(getShaderFileBasePath() + "/" + file.getName()));
+        return null;
     }
 
     //TODO use named string arbs to modularise shaders
@@ -310,14 +333,17 @@ public abstract class ShaderProgram implements Disposable {
     
     void setUniformValue(Uniform uniform, int location, Object value) {
         if (AUTO_START_ON_VARIABLE_SET) start();
-        switch (uniform.getType()) {
-            case INT, SAMPLER2D, SAMPLER_CUBE_MAP -> glUniform1i(location, (Integer) value);
-            case FLOAT -> glUniform1f(location, (Float) value);
-            case BOOLEAN -> glUniform1f(location, (boolean) value ? 1 : 0);
-            case VEC3 -> glUniform3fv(location, ((Vec3) value).toFloatArray());
-            case VEC4 -> glUniform4fv(location, ((Vec4) value).toFloatArray());
-            case MAT3 -> glUniformMatrix3fv(location, false, ((Mat3) value).toFloatArray());
-            case MAT4 -> glUniformMatrix4fv(location, false, ((Mat4) value).toFloatArray());
+
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            switch (uniform.getType()) {
+                case INT, SAMPLER2D, SAMPLER_CUBE_MAP -> glUniform1i(location, (Integer) value);
+                case FLOAT -> glUniform1f(location, (Float) value);
+                case BOOLEAN -> glUniform1f(location, (boolean) value ? 1 : 0);
+                case VEC3 -> glUniform3fv(location, ((Vector3f) value).get(stack.callocFloat(3)));
+                case VEC4 -> glUniform4fv(location, ((Vector4f) value).get(stack.callocFloat(4)));
+                case MAT3 -> glUniformMatrix3fv(location, false, ((Matrix3f) value).get(stack.callocFloat(9)));
+                case MAT4 -> glUniformMatrix4fv(location, false, ((Matrix4f) value).get(stack.callocFloat(16)));
+            }
         }
     }
     
@@ -373,10 +399,10 @@ public abstract class ShaderProgram implements Disposable {
             INT(Integer.class),
             FLOAT(Float.class),
             BOOLEAN(Boolean.class),
-            VEC3(Vec3.class),
-            VEC4(Vec4.class),
-            MAT3(Mat3.class),
-            MAT4(Mat4.class),
+            VEC3(Vector3f.class),
+            VEC4(Vector4f.class),
+            MAT3(Matrix3f.class),
+            MAT4(Matrix4f.class),
             
             SAMPLER2D(Integer.class),
             SAMPLER_CUBE_MAP(Integer.class),
@@ -562,13 +588,15 @@ public abstract class ShaderProgram implements Disposable {
     }
     
     private void setStandardValue(Uniform uniform, int location) {
-        switch (uniform.type) {
-            case INT, BOOLEAN, SAMPLER2D -> glUniform1i(location, 0);
-            case FLOAT -> glUniform1f(location, 0f);
-            case VEC3 -> glUniform3fv(location, new Vec3(0f).toFloatArray());
-            case VEC4 -> glUniform4fv(location, new Vec4(0f).toFloatArray());
-            case MAT3 -> glUniformMatrix3fv(location, false, new Mat3().identity().toFloatArray());
-            case MAT4 -> glUniformMatrix4fv(location, false, new Mat4().identity().toFloatArray());
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            switch (uniform.type) {
+                case INT, BOOLEAN, SAMPLER2D -> glUniform1i(location, 0);
+                case FLOAT -> glUniform1f(location, 0f);
+                case VEC3 -> glUniform3fv(location, stack.callocFloat(3));
+                case VEC4 -> glUniform4fv(location, stack.callocFloat(4));
+                case MAT3 -> glUniformMatrix3fv(location, false, new Matrix3f().identity().get(stack.callocFloat(9)));
+                case MAT4 -> glUniformMatrix4fv(location, false, new Matrix4f().identity().get(stack.callocFloat(16)));
+            }
         }
     }
     

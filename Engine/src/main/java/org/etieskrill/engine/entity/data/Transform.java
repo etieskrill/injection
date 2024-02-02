@@ -1,56 +1,56 @@
 package org.etieskrill.engine.entity.data;
 
-import glm_.mat4x4.Mat4;
-import glm_.vec3.Vec3;
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
 
 public class Transform {
-    
-    private final Vec3 position;
+
+    private final Vector3f position;
     private float rotation;
-    private final Vec3 rotationAxis;
-    private final Vec3 scale;
-    
-    private final Vec3 initialPosition;
+    private final Vector3f rotationAxis;
+    private final Vector3f scale;
+
+    private final Vector3f initialPosition;
     private float initialRotation;
-    private final Vec3 initialRotationAxis;
-    private final Vec3 initialScale;
-    
-    private final Mat4 transform;
+    private final Vector3f initialRotationAxis;
+    private final Vector3f initialScale;
+
+    private final Matrix4f transform;
     
     private boolean dirty = true;
     
     public static Transform getBlank() {
-        return new Transform(new Vec3(), 0, new Vec3(1, 0, 0), new Vec3(1));
+        return new Transform(new Vector3f(), 0, new Vector3f(1, 0, 0), new Vector3f(1));
     }
-    
-    public Transform(Vec3 position, float rotation, Vec3 rotationAxis, Vec3 scale) {
+
+    public Transform(Vector3f position, float rotation, Vector3f rotationAxis, Vector3f scale) {
         this.position = position;
         this.rotation = rotation;
         this.rotationAxis = rotationAxis;
         this.scale = scale;
-        
-        this.initialPosition = new Vec3(0);
+
+        this.initialPosition = new Vector3f(0);
         this.initialRotation = 0;
-        this.initialRotationAxis = new Vec3(1, 0, 0);
-        this.initialScale = new Vec3(1);
-        
-        this.transform = new Mat4(1);
+        this.initialRotationAxis = new Vector3f(1, 0, 0);
+        this.initialScale = new Vector3f(1);
+
+        this.transform = new Matrix4f().identity();
     }
     
     public Transform(Transform transform) {
-        this(new Vec3(transform.position), transform.rotation, new Vec3(transform.rotationAxis), new Vec3(transform.scale));
+        this(new Vector3f(transform.position), transform.rotation, new Vector3f(transform.rotationAxis), new Vector3f(transform.scale));
         setInitialPosition(transform.initialPosition);
-        setInitialRotation(transform.initialRotation, new Vec3(transform.initialRotationAxis));
+        setInitialRotation(transform.initialRotation, new Vector3f(transform.initialRotationAxis));
         setInitialScale(transform.initialScale);
         this.dirty = transform.dirty;
     }
-    
-    public Vec3 getPosition() {
+
+    public Vector3f getPosition() {
         return position;
     }
-    
-    public Transform setPosition(Vec3 vec) {
-        this.position.put(vec);
+
+    public Transform setPosition(Vector3f vec) {
+        this.position.set(vec);
         dirty();
         return this;
     }
@@ -58,9 +58,9 @@ public class Transform {
     public Transform setPosition(Transform transform) {
         return setPosition(transform.getPosition());
     }
-    
-    public Transform translate(Vec3 vec) {
-        this.position.plusAssign(vec);
+
+    public Transform translate(Vector3f vec) {
+        this.position.add(vec);
         dirty();
         return this;
     }
@@ -68,21 +68,21 @@ public class Transform {
     public Transform translate(Transform transform) {
         return translate(transform.getPosition());
     }
-    
-    public Vec3 getScale() {
+
+    public Vector3f getScale() {
         return scale;
     }
-    
-    public Transform setScale(Vec3 scale) {
-        if (scale.anyLessThan(0))
+
+    public Transform setScale(Vector3f scale) {
+        if (scale.x() < 0 || scale.y() < 0 || scale.z() < 0)
             throw new IllegalArgumentException("Cannot apply negative scaling factor");
-        this.scale.put(scale);
+        this.scale.set(scale);
         dirty();
         return this;
     }
     
     public Transform setScale(float scale) {
-        return setScale(new Vec3(scale));
+        return setScale(new Vector3f(scale));
     }
     
     public Transform setScale(Transform transform) {
@@ -92,14 +92,14 @@ public class Transform {
     public float getRotation() {
         return rotation;
     }
-    
-    public Vec3 getRotationAxis() {
+
+    public Vector3f getRotationAxis() {
         return rotationAxis;
     }
-    
-    public Transform setRotation(float rotation, Vec3 rotationAxis) {
+
+    public Transform setRotation(float rotation, Vector3f rotationAxis) {
         this.rotation = rotation;
-        this.rotationAxis.put(rotationAxis.normalize());
+        this.rotationAxis.set(rotationAxis.normalize());
         dirty();
         return this;
     }
@@ -109,7 +109,7 @@ public class Transform {
     }
     
     //Transform is lazily updated
-    public Mat4 toMat() {
+    public Matrix4f toMat() {
         if (isDirty()) updateTransform();
         return transform;
     }
@@ -120,32 +120,32 @@ public class Transform {
         setScale(transform);
         return this;
     }
-    
-    public Transform setInitialPosition(Vec3 position) {
-        this.initialPosition.put(position);
+
+    public Transform setInitialPosition(Vector3f position) {
+        this.initialPosition.set(position);
         dirty();
         return this;
     }
-    
-    public Transform setInitialRotation(float rotation, Vec3 rotationAxis) {
+
+    public Transform setInitialRotation(float rotation, Vector3f rotationAxis) {
         this.initialRotation = rotation;
-        this.initialRotationAxis.put(rotationAxis);
+        this.initialRotationAxis.set(rotationAxis);
         dirty();
         return this;
     }
-    
-    public Transform setInitialScale(Vec3 scale) {
-        this.initialScale.put(scale);
+
+    public Transform setInitialScale(Vector3f scale) {
+        this.initialScale.set(scale);
         dirty();
         return this;
     }
     
     private void updateTransform() {
-        this.transform.invoke(1)
-                .translateAssign(initialPosition.plus(position))
-                .rotateAssign(initialRotation, initialRotationAxis)
-                .rotateAssign(rotation, rotationAxis)
-                .scaleAssign(scale.times(initialScale));
+        this.transform.identity()
+                .translate(initialPosition.add(position))
+                .rotate(initialRotation, initialRotationAxis)
+                .rotate(rotation, rotationAxis)
+                .scale(scale.mul(initialScale));
     }
     
     private void dirty() {
@@ -167,8 +167,8 @@ public class Transform {
                 ", scale=" + scale +
                 '}';
     }
-    
-    public Vec3 getInitialPosition() {
+
+    public Vector3f getInitialPosition() {
         return initialPosition;
     }
     

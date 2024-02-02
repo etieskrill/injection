@@ -6,6 +6,10 @@ public class ShaderException extends RuntimeException {
         super(message);
     }
 
+    public ShaderException(Throwable cause) {
+        super(cause);
+    }
+
     public ShaderException(String message, Throwable cause) {
         super(message, cause);
     }

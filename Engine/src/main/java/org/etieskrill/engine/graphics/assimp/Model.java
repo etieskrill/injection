@@ -1,10 +1,5 @@
 package org.etieskrill.engine.graphics.assimp;
 
-import glm_.mat4x4.Mat4;
-import glm_.vec2.Vec2;
-import glm_.vec2.Vec2i;
-import glm_.vec3.Vec3;
-import glm_.vec4.Vec4;
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.entity.data.AABB;
 import org.etieskrill.engine.entity.data.Transform;
@@ -13,6 +8,7 @@ import org.etieskrill.engine.graphics.texture.AbstractTexture.Type;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.texture.Textures;
 import org.etieskrill.engine.util.Loaders.TextureLoader;
+import org.joml.*;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.assimp.*;
@@ -23,6 +19,7 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.lang.Math;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.*;
@@ -278,23 +275,23 @@ public class Model implements Disposable {
         //TODO add AABB loading but oh FUCK each goddamn mesh has a separate one FFS
 
         int numVertices = mesh.mNumVertices();
-        List<Vec3> positions = new ArrayList<>(numVertices);
-        mesh.mVertices().forEach(vertex -> positions.add(new Vec3(vertex.x(), vertex.y(), vertex.z())));
+        List<Vector3fc> positions = new ArrayList<>(numVertices);
+        mesh.mVertices().forEach(vertex -> positions.add(new Vector3f(vertex.x(), vertex.y(), vertex.z())));
 
-        List<Vec3> normals = new ArrayList<>(numVertices);
+        List<Vector3fc> normals = new ArrayList<>(numVertices);
         if (mesh.mNormals() != null)
-            mesh.mNormals().forEach(normal -> normals.add(new Vec3(normal.x(), normal.y(), normal.z())));
+            mesh.mNormals().forEach(normal -> normals.add(new Vector3f(normal.x(), normal.y(), normal.z())));
 
-        List<Vec2> texCoords = new ArrayList<>(numVertices);
+        List<Vector2fc> texCoords = new ArrayList<>(numVertices);
         if (mesh.mTextureCoords(0) != null)
-            mesh.mTextureCoords(0).forEach(texCoord -> texCoords.add(new Vec2(texCoord.x(), texCoord.y())));
+            mesh.mTextureCoords(0).forEach(texCoord -> texCoords.add(new Vector2f(texCoord.x(), texCoord.y())));
 
         List<Vertex> vertices = new ArrayList<>(numVertices);
         for (int i = 0; i < mesh.mNumVertices(); i++)
             vertices.add(new Vertex(
                     positions.get(i),
-                    normals.size() > 0 ? normals.get(i) : new Vec3(),
-                    texCoords.size() > 0 ?texCoords.get(i) : new Vec2())
+                    normals.size() > 0 ? normals.get(i) : new Vector3f(),
+                    texCoords.size() > 0 ? texCoords.get(i) : new Vector2f())
             );
 
         //three because a face is usually a triangle, but this list is discarded at the first opportunity a/w
@@ -311,11 +308,11 @@ public class Model implements Disposable {
         
         AIVector3D min = mesh.mAABB().mMin();
         AIVector3D max = mesh.mAABB().mMax();
-        AABB boundingBox = new AABB(new Vec3(min.x(), min.y(), min.z()),
-                                    new Vec3(max.x(), max.y(), max.z()));
-        
-        if (boundingBox.getMin().allEqual(0f, 0.00001f)
-                || boundingBox.getMax().allEqual(0f, 0.00001f))
+        AABB boundingBox = new AABB(new Vector3f(min.x(), min.y(), min.z()),
+                new Vector3f(max.x(), max.y(), max.z()));
+
+        if (boundingBox.getMin().equals(new Vector3f(), 0.00001f)
+                || boundingBox.getMax().equals(new Vector3f(), 0.00001f))
             boundingBox = calculateBoundingBox(vertices);
 
         logger.trace("Loaded mesh with {} vertices and {} indices, {} normals, {} uv coordinates", vertices.size(),
@@ -340,13 +337,13 @@ public class Model implements Disposable {
         return bones;
     }
 
-    private static Mat4 fromAI(AIMatrix4x4 mat) {
-        return new Mat4(new float[]{
+    private static Matrix4f fromAI(AIMatrix4x4 mat) {
+        return new Matrix4f(
                 mat.a1(), mat.b1(), mat.c1(), mat.d1(),
                 mat.a2(), mat.b2(), mat.c2(), mat.d2(),
                 mat.a3(), mat.b3(), mat.c3(), mat.d3(),
                 mat.a4(), mat.b4(), mat.c4(), mat.d4()
-        });
+        );
     }
     
     private AABB calculateBoundingBox(List<Vertex> vertices) {
@@ -356,16 +353,16 @@ public class Model implements Disposable {
         //measurable in the single milliseconds, which is not worth the cost of initialising a stream for a model with
         //very few vertices
         for (Vertex vertex : vertices) {
-            Vec3 pos = vertex.getPosition();
-            minX = Math.min(pos.getX(), minX);
-            minY = Math.min(pos.getY(), minY);
-            minZ = Math.min(pos.getZ(), minZ);
-            maxX = Math.max(pos.getX(), maxX);
-            maxY = Math.max(pos.getY(), maxY);
-            maxZ = Math.max(pos.getZ(), maxZ);
+            Vector3fc pos = vertex.getPosition();
+            minX = Math.min(pos.x(), minX);
+            minY = Math.min(pos.y(), minY);
+            minZ = Math.min(pos.z(), minZ);
+            maxX = Math.max(pos.x(), maxX);
+            maxY = Math.max(pos.y(), maxY);
+            maxZ = Math.max(pos.z(), maxZ);
         }
-        
-        return new AABB(new Vec3(minX, minY, minZ), new Vec3(maxX, maxY, maxZ));
+
+        return new AABB(new Vector3f(minX, minY, minZ), new Vector3f(maxX, maxY, maxZ));
     }
     
     private void loadEmbeddedTextures(AIScene scene) {
@@ -397,9 +394,9 @@ public class Model implements Disposable {
             ByteBuffer buffer = BufferUtils.createByteBuffer(data.length);
             for (int pixel : data) buffer.put((byte) pixel);
             buffer.rewind();
-            
+
             Texture2D.Builder tex = new Texture2D.BufferBuilder(buffer,
-                    new Vec2i(image.getWidth(), image.getHeight()), AbstractTexture.Format.SRGBA);
+                    new Vector2i(image.getWidth(), image.getHeight()), AbstractTexture.Format.SRGBA);
             embeddedTextures.put("*" + i, tex);
         }
         
@@ -479,7 +476,7 @@ public class Model implements Disposable {
                 COLOUR_BASE, COLOUR_AMBIENT, COLOUR_DIFFUSE, COLOUR_SPECULAR, COLOUR_EMISSIVE
         }) {
             if (aiReturn_SUCCESS == aiGetMaterialColor(aiMaterial, property.ai(), aiTextureType_NONE, 0, colour)) {
-                Vec4 colourProperty = new Vec4(colour.r(), colour.g(), colour.b(), colour.a());
+                Vector4fc colourProperty = new Vector4f(colour.r(), colour.g(), colour.b(), colour.a());
                 material.setProperty(property, colourProperty);
                 validProperties++;
             }
@@ -501,12 +498,10 @@ public class Model implements Disposable {
     }
     
     private void calculateModelBoundingBox() {
-        Vec3 min = new Vec3(), max = new Vec3();
+        Vector3f min = new Vector3f(), max = new Vector3f();
         for (Mesh mesh : meshes) {
-            Vec3 meshMin = mesh.getBoundingBox().getMin();
-            Vec3 meshMax = mesh.getBoundingBox().getMax();
-            min.put(Math.min(meshMin.getX(), min.getX()), Math.min(meshMin.getY(), min.getY()), Math.min(meshMin.getZ(), min.getZ()));
-            max.put(Math.max(meshMax.getX(), max.getX()), Math.max(meshMax.getY(), max.getY()), Math.max(meshMax.getZ(), max.getZ()));
+            min.set(mesh.getBoundingBox().getMin().min(min, min));
+            max.set(mesh.getBoundingBox().getMax().max(max, min));
         }
         this.boundingBox = new AABB(min, max);
     }
@@ -516,9 +511,9 @@ public class Model implements Disposable {
     }
     
     public AABB getWorldBoundingBox() {
-        Mat4 transform = this.transform.toMat();
-        return new AABB(transform.times(new Vec4(boundingBox.getMin())).toVec3(),
-                        transform.times(new Vec4(boundingBox.getMax())).toVec3());
+        Matrix4f transform = this.transform.toMat();
+        return new AABB(transform.transformDirection(new Vector3f(boundingBox.getMin())),
+                transform.transformDirection(new Vector3f(boundingBox.getMax())));
     }
     
     public String getName() {
@@ -552,15 +547,14 @@ public class Model implements Disposable {
     public void disable() {
         enabled = false;
     }
-    
-    private static Mat4 toMat4(AIMatrix4x4 mat) {
-        float[] values = new float[] {
+
+    private static Matrix4f toMatrix4f(AIMatrix4x4 mat) {
+        return new Matrix4f(
                 mat.a1(), mat.a2(), mat.a3(), mat.a4(),
                 mat.b1(), mat.b2(), mat.b4(), mat.b4(),
                 mat.c1(), mat.c2(), mat.c3(), mat.c4(),
                 mat.d1(), mat.d2(), mat.d3(), mat.d4()
-        };
-        return new Mat4(values).transpose();
+        ).transpose();
     }
     
     @Override

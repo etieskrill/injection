@@ -1,31 +1,32 @@
 package org.etieskrill.engine.entity.data;
 
-import glm_.vec3.Vec3;
+import org.joml.Vector3f;
+import org.joml.Vector3fc;
 
 public class AABB {
-    
-    private final Vec3 min;
-    private final Vec3 max;
-    
-    public AABB(Vec3 min, Vec3 max) {
+
+    private final Vector3fc min;
+    private final Vector3fc max;
+
+    public AABB(Vector3fc min, Vector3fc max) {
         this.min = min;
         this.max = max;
     }
-    
-    public Vec3 getMin() {
+
+    public Vector3fc getMin() {
         return min;
     }
-    
-    public Vec3 getMax() {
+
+    public Vector3fc getMax() {
         return max;
     }
-    
-    public Vec3 getCenter() {
-        return max.minus(min).times(0.5).plus(min);
+
+    public Vector3f getCenter() {
+        return max.sub(min, new Vector3f()).mul(0.5f).add(min);
     }
-    
-    public Vec3 getSize() {
-        return max.minus(min);
+
+    public Vector3f getSize() {
+        return max.sub(min, new Vector3f());
     }
     
     @Override

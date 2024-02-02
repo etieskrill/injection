@@ -20,6 +20,7 @@ import org.etieskrill.engine.time.SystemNanoTimePacer;
 import org.etieskrill.engine.util.Loaders.ModelLoader;
 import org.etieskrill.engine.window.Cursor.CursorMode;
 import org.etieskrill.engine.window.Window;
+import org.joml.Vector3f;
 import org.lwjgl.opengl.GL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -93,7 +94,7 @@ public class DemCubez {
     
         renderer = new Renderer();
         camera = (PerspectiveCamera) new PerspectiveCamera(window.getSize().toVec())
-                .setPosition(new Vec3(0f, 0f, 3f))
+                .setPosition(new Vector3f(0f, 0f, 3f))
                 .setOrientation(0f, -90f, 0f)
                 .setFar(-1000f);
         

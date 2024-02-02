@@ -1,21 +1,21 @@
 package org.etieskrill.engine.graphics;
 
-import glm_.mat4x4.Mat4;
-import glm_.vec3.Vec3;
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
 
 import static glm_.Java.glm;
 
 public abstract class Camera {
-    
-    protected final Vec3 position;
+
+    protected final Vector3f position;
     protected float rotation;
-    protected final Vec3 rotationAxis;
+    protected final Vector3f rotationAxis;
     protected float zoom;
-    
-    protected final Mat4 view, perspective, combined;
+
+    protected final Matrix4f view, perspective, combined;
     
     protected float near, far;
-    protected final Vec3 front, right, up, worldUp;
+    protected final Vector3f front, right, up, worldUp;
 
     protected double pitch, yaw, roll;
     protected boolean clampPitch;
@@ -24,21 +24,21 @@ public abstract class Camera {
     protected boolean autoUpdate;
     
     protected Camera() {
-        this.position = new Vec3();
+        this.position = new Vector3f();
         this.rotation = 0f;
-        this.rotationAxis = new Vec3();
+        this.rotationAxis = new Vector3f();
         this.zoom = 1f;
-        this.view = new Mat4();
-        this.perspective = new Mat4();
-        this.combined = new Mat4();
+        this.view = new Matrix4f();
+        this.perspective = new Matrix4f();
+        this.combined = new Matrix4f();
 
         //the near fucking clipping plane needs to be positive in order for the z-buffer to work, but only for perspective projection?
         this.near = 0.1f;
         this.far = -100f;
-        this.front = new Vec3();
-        this.right = new Vec3();
-        this.up = new Vec3();
-        this.worldUp = new Vec3(0f, -1f, 0f);
+        this.front = new Vector3f();
+        this.right = new Vector3f();
+        this.up = new Vector3f();
+        this.worldUp = new Vector3f(0f, -1f, 0f);
         
         this.clampPitch = true;
         this.autoUpdate = true;
@@ -56,21 +56,21 @@ public abstract class Camera {
      * @return itself for chaining
      */
     //TODO optimise
-    public Camera translate(Vec3 translation) {
-        Vec3 delta = relativeTranslation(translation);
+    public Camera translate(Vector3f translation) {
+        Vector3f delta = relativeTranslation(translation);
         this.position.plusAssign(delta);
         if (autoUpdate) update();
         return this;
     }
-    
-    public Vec3 relativeTranslation(Vec3 translation) {
-        return new Vec3()
+
+    public Vector3f relativeTranslation(Vector3f translation) {
+        return new Vector3f()
                 .plus(front.times(translation.getZ()))
                 .plus(right.times(-translation.getX())) //TODO make positive
                 .plus(up.times(-translation.getY())); //TODO also make positive
     }
-    
-    public Camera setPosition(Vec3 position) {
+
+    public Camera setPosition(Vector3f position) {
         this.position.put(position);
         if (autoUpdate) update();
         return this;
@@ -83,7 +83,7 @@ public abstract class Camera {
     }
 
     @Deprecated
-    public Camera setRotationAxis(Vec3 rotationAxis) {
+    public Camera setRotationAxis(Vector3f rotationAxis) {
         this.rotationAxis.put(rotationAxis);
         return this;
     }
@@ -99,18 +99,19 @@ public abstract class Camera {
     }
     
     protected void updateView() {
-        front.put(
+        front.set(
                  Math.cos(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch)),
                     Math.sin(Math.toRadians(pitch)),
                  Math.sin(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch)));
-        front.normalizeAssign();
+        front.normalize();
 
-        right.put(front.cross(worldUp).normalize());
-        up.put(front.cross(right).normalize());
-        
-        Vec3 target = position.plus(front);
-        
-        this.view.put(glm
+        right.set(front.cross(worldUp).normalize());
+        up.set(front.cross(right).normalize());
+
+        Vector3f target = position.add(front);
+
+        Matrix3f
+        this.view.set(glm
                 .lookAt(position, target, up)
         );
 //        System.out.println(position);
@@ -120,34 +121,34 @@ public abstract class Camera {
     }
 
     protected abstract void updatePerspective();
-    
-    protected Camera setPerspective(Mat4 perspective) {
-        this.perspective.put(perspective);
+
+    protected Camera setPerspective(Matrix4f perspective) {
+        this.perspective.set(perspective);
         if (autoUpdate) update();
         return this;
     }
     
     private void updateCombined() {
-        this.combined.put(perspective.times(view));
+        this.combined.set(perspective.mul(view));
     }
-    
-    public Vec3 getPosition() {
+
+    public Vector3f getPosition() {
         return position;
     }
-    
-    public Vec3 getDirection() {
-        return new Vec3(
-                Math.cos(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch)),
-                Math.sin(Math.toRadians(pitch)),
-                Math.sin(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch)))
+
+    public Vector3f getDirection() {
+        return new Vector3f(
+                (float) (Math.cos(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch))),
+                (float) Math.sin(Math.toRadians(pitch)),
+                (float) (Math.sin(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch))))
             .normalize();
     }
-    
-    public Mat4 getCombined() {
+
+    public Matrix4f getCombined() {
         return combined;
     }
-    
-    public Mat4 getPerspective() {
+
+    public Matrix4f getPerspective() {
         return perspective;
     }
     
@@ -162,9 +163,9 @@ public abstract class Camera {
         if (autoUpdate) update();
         return this;
     }
-    
-    public Camera setWorldUp(Vec3 worldUp) {
-        this.worldUp.put(worldUp);
+
+    public Camera setWorldUp(Vector3f worldUp) {
+        this.worldUp.set(worldUp);
         if (autoUpdate) update();
         return this;
     }

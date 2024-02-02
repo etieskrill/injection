@@ -1,8 +1,8 @@
 package org.etieskrill.engine.graphics.texture;
 
-import glm_.vec2.Vec2i;
 import org.etieskrill.engine.graphics.gl.FrameBufferAttachment;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Vector2i;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,7 +17,7 @@ public class Texture2D extends AbstractTexture implements FrameBufferAttachment 
     
     private static final Logger logger = LoggerFactory.getLogger(Texture2D.class);
 
-    private final Vec2i size;
+    private final Vector2i size;
     
     public static final class FileBuilder extends Builder {
         private final String file;
@@ -48,7 +48,7 @@ public class Texture2D extends AbstractTexture implements FrameBufferAttachment 
     }
     
     public static final class BufferBuilder extends Builder {
-        public BufferBuilder(@Nullable ByteBuffer buffer, Vec2i pixelSize, Format format) {
+        public BufferBuilder(@Nullable ByteBuffer buffer, Vector2i pixelSize, Format format) {
             this.textureData = buffer;
             this.pixelSize = pixelSize;
             this.format = format;
@@ -61,7 +61,7 @@ public class Texture2D extends AbstractTexture implements FrameBufferAttachment 
     }
     
     public static final class BlankBuilder extends Builder {
-        BlankBuilder(Vec2i pixelSize) {
+        BlankBuilder(Vector2i pixelSize) {
             this.textureData = null;
             this.pixelSize = pixelSize;
             this.format = Format.SRGB;
@@ -78,13 +78,13 @@ public class Texture2D extends AbstractTexture implements FrameBufferAttachment 
     
         @Override
         protected Texture2D bufferTextureData() {
-            logger.debug("Loading {}x{} {}-bit {} texture from {}", pixelSize.getX(), pixelSize.getY(),
+            logger.debug("Loading {}x{} {}-bit {} texture from {}", pixelSize.x(), pixelSize.y(),
                     NR_BITS_PER_COLOUR_CHANNEL * format.getChannels(), type.name().toLowerCase(),
                     getClass().getSimpleName());
 
             Texture2D texture = new Texture2D(this);
             texture.bind(0);
-            glTexImage2D(GL_TEXTURE_2D, 0, format.toGlInternalFormat(), pixelSize.getX(), pixelSize.getY(),
+            glTexImage2D(GL_TEXTURE_2D, 0, format.toGlInternalFormat(), pixelSize.x(), pixelSize.y(),
                     0, format.toGLFormat(), GL_UNSIGNED_BYTE, textureData);
             
             return texture;
@@ -97,7 +97,7 @@ public class Texture2D extends AbstractTexture implements FrameBufferAttachment 
     }
 
     @Override
-    public Vec2i getSize() {
+    public Vector2i getSize() {
         return size;
     }
 
