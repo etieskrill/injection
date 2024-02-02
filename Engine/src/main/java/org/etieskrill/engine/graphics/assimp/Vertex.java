@@ -1,13 +1,9 @@
 package org.etieskrill.engine.graphics.assimp;
 
-import glm_.vec2.Vec2;
-import glm_.vec3.Vec3;
+import org.joml.Vector2fc;
+import org.joml.Vector3fc;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.stream.Stream;
 
 public class Vertex {
     
@@ -16,34 +12,35 @@ public class Vertex {
             NORMAL_COMPONENTS = 3,
             TEXTURE_COMPONENTS = 2,
             COMPONENTS = 8;
-    
-    private final Vec3 position;
-    private final Vec3 normal;
-    private final Vec2 textureCoords;
-    
-    public Vertex(Vec3 position, Vec3 normal, Vec2 textureCoords) {
+
+    private final Vector3fc position;
+    private final Vector3fc normal;
+    private final Vector2fc textureCoords;
+
+    public Vertex(Vector3fc position, Vector3fc normal, Vector2fc textureCoords) {
         this.position = position;
         this.normal = normal;
         this.textureCoords = textureCoords;
     }
-    
-    public Vec3 getPosition() {
+
+    public Vector3fc getPosition() {
         return position;
     }
-    
-    public Vec3 getNormal() {
+
+    public Vector3fc getNormal() {
         return normal;
     }
-    
-    public Vec2 getTextureCoords() {
+
+    public Vector2fc getTextureCoords() {
         return textureCoords;
     }
     
     public List<Float> toList() { //TODO optimise this
-        List<Float> data = new ArrayList<>();
-        for (float[] arr : new float[][]{position.array, normal.array, textureCoords.array})
-            for (Float f : arr) data.add(f);
-        return data;
+        return List.of(
+                position.x(), position.y(), position.z(),
+                normal.x(), normal.y(), normal.z(),
+                textureCoords.x(), textureCoords.y()
+        );
     }
     
     @Override

@@ -1,10 +1,10 @@
 package org.etieskrill.engine.graphics.gl;
 
-import glm_.vec2.Vec2i;
+import org.joml.Vector2i;
 
 public interface FrameBufferAttachment {
-    
-    Vec2i getSize();
+
+    Vector2i getSize();
     int getID();
     
 }

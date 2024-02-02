@@ -1,7 +1,7 @@
 package org.etieskrill.engine.graphics.texture;
 
-import glm_.vec2.Vec2i;
 import org.etieskrill.engine.Disposable;
+import org.joml.Vector2i;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -191,7 +191,7 @@ public abstract class AbstractTexture implements Disposable {
         protected Wrapping wrapping = Wrapping.REPEAT;
 
         //TODO for inheriting builders it is kinda useful if properties are not set/have invalid values from here
-        protected Vec2i pixelSize = new Vec2i(INVALID_PIXEL_SIZE);
+        protected Vector2i pixelSize = new Vector2i(INVALID_PIXEL_SIZE);
         protected Format format = null;
 
         protected boolean autoSwizzleMask = true;
@@ -250,10 +250,10 @@ public abstract class AbstractTexture implements Disposable {
     
     static class TextureData {
         private final ByteBuffer textureData;
-        private final Vec2i pixelSize;
+        private final Vector2i pixelSize;
         private final AbstractTexture.Format format;
-        
-        public TextureData(ByteBuffer textureData, Vec2i pixelSize, AbstractTexture.Format format) {
+
+        public TextureData(ByteBuffer textureData, Vector2i pixelSize, AbstractTexture.Format format) {
             this.textureData = textureData;
             this.pixelSize = pixelSize;
             this.format = format;
@@ -262,8 +262,8 @@ public abstract class AbstractTexture implements Disposable {
         public ByteBuffer getTextureData() {
             return textureData;
         }
-        
-        public Vec2i getPixelSize() {
+
+        public Vector2i getPixelSize() {
             return pixelSize;
         }
         

@@ -9,6 +9,10 @@ public class ShaderCreationException extends ShaderException {
         super(message);
     }
 
+    public ShaderCreationException(Throwable cause) {
+        super(cause);
+    }
+
     public ShaderCreationException(String message, String infoLog) {
         super(message);
         this.infoLog = infoLog;
