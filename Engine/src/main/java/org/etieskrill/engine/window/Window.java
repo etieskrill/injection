@@ -1,11 +1,12 @@
 package org.etieskrill.engine.window;
 
-import glm_.vec2.Vec2;
+import org.joml.Vector2f;
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.input.Key;
 import org.etieskrill.engine.input.KeyInputManager;
 import org.etieskrill.engine.input.Keys;
 import org.etieskrill.engine.scene.Scene;
+import org.joml.Vector2fc;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFWVidMode;
@@ -32,7 +33,7 @@ public class Window implements Disposable {
     //TODO provide methods to change primary monitor
     private long monitor;
     private WindowSize size;
-    private Vec2 position;
+    private Vector2f position;
     private float targetFrameRate;
     private boolean vSyncEnabled;
     private int samples;
@@ -95,8 +96,8 @@ public class Window implements Disposable {
             return largestFit;
         }
         
-        public Vec2 toVec() {
-            return new Vec2(width, height);
+        public Vector2f toVec() {
+            return new Vector2f(width, height);
         }
         
         public float getAspectRatio() {
@@ -121,7 +122,7 @@ public class Window implements Disposable {
         
         private Window.WindowMode mode;
         private Window.WindowSize size;
-        private Vec2 position;
+        private Vector2f position;
         private float refreshRate;
         private boolean vSyncEnabled;
         private int samples;
@@ -141,7 +142,7 @@ public class Window implements Disposable {
             return this;
         }
         
-        public Builder setPosition(Vec2 position) {
+        public Builder setPosition(Vector2f position) {
             this.position = position;
             return this;
         }
@@ -180,7 +181,7 @@ public class Window implements Disposable {
             return new Window(
                     mode != null ? mode : Window.WindowMode.WINDOWED,
                     size != null ? size : Window.WindowSize.LARGEST_FIT,
-                    position != null ? position : new Vec2(),
+                    position != null ? position : new Vector2f(),
                     refreshRate >= 0 ? refreshRate : GLFW_DONT_CARE,
                     vSyncEnabled,
                     Math.max(samples, 0),
@@ -192,7 +193,7 @@ public class Window implements Disposable {
         
     }
 
-    Window(WindowMode mode, WindowSize size, Vec2 position, float targetFrameRate, boolean vSyncEnabled, int samples,
+    Window(WindowMode mode, WindowSize size, Vector2f position, float targetFrameRate, boolean vSyncEnabled, int samples,
            String title, Cursor cursor,
            KeyInputManager inputs) {
         this.mode = mode;
@@ -407,8 +408,8 @@ public class Window implements Disposable {
     }
     
     //on Windows, will only succeed if entire window is still within screen space after translation
-    public void setPos(Vec2 pos) {
-        glfwSetWindowPos(this.window, (int)(float) pos.getX(), (int)(float) pos.getY());
+    public void setPos(Vector2f pos) {
+        glfwSetWindowPos(this.window, (int) pos.x(), (int) pos.y());
     }
     
     public Cursor getCursor() {

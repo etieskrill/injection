@@ -1,7 +1,7 @@
 package org.etieskrill.orbes.scene;
 
-import glm_.vec2.Vec2;
-import glm_.vec3.Vec3;
+import org.joml.Vector2f;
+import org.joml.Vector3f;
 import org.etieskrill.engine.graphics.Camera;
 import org.etieskrill.engine.graphics.PerspectiveCamera;
 import org.etieskrill.engine.graphics.assimp.Model;
@@ -31,7 +31,7 @@ public class GameScene {
     private PointLight[] pointLights;
     private Model[] orbs;
 
-    private final Vec3 deltaPos = new Vec3(0);
+    private final Vector3f deltaPos = new Vector3f(0);
     private float rotation, smoothRotation;
     private float jumpTime;
     private float smoothSkellyHeight;
@@ -60,7 +60,7 @@ public class GameScene {
         camera.setZoom(4.81f);
 
         pointLight = new PointLight(light.getTransform().getPosition(),
-                new Vec3(.1), new Vec3(.3), new Vec3(.5),
+                new Vector3f(.1f), new Vector3f(.3f), new Vector3f(.5f),
                 1f, 0.03f, 0.005f);
         pointLights = new PointLight[]{pointLight};
 
@@ -72,16 +72,16 @@ public class GameScene {
         Loaders.ModelLoader models = Loaders.ModelLoader.get();
 
         cube = models.load("cube", () -> Model.ofFile("cube.obj"));
-        cube.getTransform().setScale(50).setPosition(new Vec3(0, -25, 0));
+        cube.getTransform().setScale(50).setPosition(new Vector3f(0, -25, 0));
         light = models.get("cube");
-        light.getTransform().setScale(0.5f).setPosition(new Vec3(2, 5, -2));
+        light.getTransform().setScale(0.5f).setPosition(new Vector3f(2, 5, -2));
         skelly = models.load("skelly", () -> Model.ofFile("skeleton.glb"));
         skelly.getTransform().setScale(15);
 
-        skellyBBModel = ModelFactory.box(skelly.getBoundingBox().getMax().minus(skelly.getBoundingBox().getMin()));
+        skellyBBModel = ModelFactory.box(skelly.getBoundingBox().getMax().sub(skelly.getBoundingBox().getMin(), new Vector3f()));
         skellyBBModel.getTransform()
                 .setInitialPosition(
-                        skelly.getBoundingBox().getCenter().times(skelly.getTransform().getScale())
+                        skelly.getBoundingBox().getCenter().mul(skelly.getTransform().getScale())
                 );
 
         orbs = new Model[NUM_ORBS];
@@ -89,14 +89,14 @@ public class GameScene {
         for (int i = 0; i < NUM_ORBS; i++) {
             orbs[i] = models.load("orb", () -> Model.ofFile("Sphere.obj"));
             orbs[i].getTransform()
-                    .setScale(new Vec3(0.02))
-                    .setPosition(new Vec3(
+                    .setScale(new Vector3f(0.02f))
+                    .setPosition(new Vector3f(
                             random.nextFloat() * 50 - 25,
-                            random.nextFloat() * 4.5 + 0.5,
+                            random.nextFloat() * 4.5f + 0.5f,
                             random.nextFloat() * 50 - 25
                     ));
         }
-        Model orbBBModel = ModelFactory.box(orbs[0].getBoundingBox().getMax().minus(orbs[0].getBoundingBox().getMin()));
+        Model orbBBModel = ModelFactory.box(orbs[0].getBoundingBox().getMax().sub(orbs[0].getBoundingBox().getMin(), new Vector3f()));
         orbBBModel.getTransform().setInitialPosition(
                 orbBBModel.getBoundingBox().getCenter()
         );
@@ -109,10 +109,10 @@ public class GameScene {
                     else game.pause();
                 }),
                 Input.bind(Keys.ESC.withMods(Keys.SHIFT)).to(() -> game.getWindow().close()),
-                Input.bind(Keys.W).on(InputBinding.Trigger.PRESSED).group(OverruleGroup.Mode.YOUNGEST, Keys.S).to(() -> deltaPos.plusAssign(0, 0, 1)),
-                Input.bind(Keys.S).on(InputBinding.Trigger.PRESSED).to(() -> deltaPos.plusAssign(0, 0, -1)),
-                Input.bind(Keys.A).on(InputBinding.Trigger.PRESSED).group(OverruleGroup.Mode.YOUNGEST, Keys.D).to(() -> deltaPos.plusAssign(-1, 0, 0)),
-                Input.bind(Keys.D).on(InputBinding.Trigger.PRESSED).to(() -> deltaPos.plusAssign(1, 0, 0))
+                Input.bind(Keys.W).on(InputBinding.Trigger.PRESSED).group(OverruleGroup.Mode.YOUNGEST, Keys.S).to(() -> deltaPos.add(0, 0, 1)),
+                Input.bind(Keys.S).on(InputBinding.Trigger.PRESSED).to(() -> deltaPos.add(0, 0, -1)),
+                Input.bind(Keys.A).on(InputBinding.Trigger.PRESSED).group(OverruleGroup.Mode.YOUNGEST, Keys.D).to(() -> deltaPos.add(-1, 0, 0)),
+                Input.bind(Keys.D).on(InputBinding.Trigger.PRESSED).to(() -> deltaPos.add(1, 0, 0))
         );
     }
 
@@ -136,17 +136,18 @@ public class GameScene {
     }
 
     private void transformSkelly(double delta) {
-        Vec3 skellyTranslate = camera
+        Vector3f skellyTranslate = camera
                 .relativeTranslation(deltaPos)
-                .times(1, 0, 1);
-        if (skellyTranslate.length2() > 0) skellyTranslate.normalizeAssign();
+                .mul(1, 0, 1);
+        if (skellyTranslate.lengthSquared() > 0) skellyTranslate.normalize();
         skellyTranslate = skellyTranslate
-                .times(delta)
-                .times(5 * (keyInputManager.isPressed(Keys.CTRL) ? 1.5 : 1));
+                .mul((float) delta)
+                .mul(5f * (keyInputManager.isPressed(Keys.CTRL) ? 1.5f : 1));
         skelly.getTransform().translate(skellyTranslate);
 
-        if (deltaPos.anyNotEqual(0, 0.001f)) {
-            rotation = (float) (Math.atan2(deltaPos.getZ(), deltaPos.getX()) - Math.toRadians(camera.getYaw()));
+
+        if (!deltaPos.equals(0, 0, 0)) {
+            rotation = (float) (Math.atan2(deltaPos.z(), deltaPos.x()) - Math.toRadians(camera.getYaw()));
             rotation %= Math.toRadians(360);
             //TODO fix shortest distance through wraparound
             //TODO include delta time
@@ -158,18 +159,18 @@ public class GameScene {
             smoothRotation %= Math.toRadians(360);
             skelly.getTransform().setRotation(
                     smoothRotation,
-                    new Vec3(0, 1, 0));
+                    new Vector3f(0, 1, 0));
         }
-        deltaPos.put(0);
+        deltaPos.set(0);
 
-        skelly.getTransform().getPosition().setX(Math.max(-25, Math.min(25, skelly.getTransform().getPosition().getX()))); //why not use Math#clamp? try it, smartass
-        skelly.getTransform().getPosition().setZ(Math.max(-25, Math.min(25, skelly.getTransform().getPosition().getZ())));
+        skelly.getTransform().getPosition().x = Math.max(-25, Math.min(25, skelly.getTransform().getPosition().x())); //why not use Math#clamp? try it, smartass
+        skelly.getTransform().getPosition().z = Math.max(-25, Math.min(25, skelly.getTransform().getPosition().z()));
 
         if (keyInputManager.isPressed(Keys.SPACE) && jumpTime == 0)
-            jumpTime += 0.0001;
+            jumpTime += 0.0001f;
         if (jumpTime != 0 && jumpTime < 1) {
             double jumpHeight = -4 * (jumpTime - 0.5) * (jumpTime - 0.5) + 1;
-            skelly.getTransform().getPosition().setY((float) jumpHeight);
+            skelly.getTransform().getPosition().y = (float) jumpHeight;
             jumpTime += delta;
         } else jumpTime = 0;
 
@@ -181,15 +182,15 @@ public class GameScene {
         falloff = 20 * falloff * delta;
         smoothSkellyHeight += skellyHeight > smoothSkellyHeight ? falloff : -falloff;
 
-        skelly.getTransform().setScale(new Vec3(15, smoothSkellyHeight, 15));
+        skelly.getTransform().setScale(new Vector3f(15, smoothSkellyHeight, 15));
     }
 
     private void collideOrbs() {
         for (Model orb : orbs) {
             if (!orb.isEnabled()) continue;
 
-            Vec3 direction = orb.getTransform().getPosition().minus(skelly.getTransform().getPosition());
-            if (new Vec2(direction.getX(), direction.getZ()).length() < 1 && direction.getY() > 0 && direction.getY() < 4) {
+            Vector3f direction = new Vector3f(orb.getTransform().getPosition()).sub(skelly.getTransform().getPosition());
+            if (new Vector2f(direction.x(), direction.z()).length() < 1 && direction.y() > 0 && direction.y() < 4) {
                 orb.disable();
                 orbsCollected++;
             }
@@ -197,14 +198,18 @@ public class GameScene {
     }
 
     public void updateCamera() {
-        Vec3 orbitPos = camera.getDirection().negate().times(3);
-        camera.setPosition(orbitPos.plus(0, skelly.getWorldBoundingBox().getSize().getY() - 0.5, 0).plus(skelly.getTransform().getPosition()));
+        Vector3f orbitPos = camera.getDirection().negate().mul(3);
+        float skellyVerticalCentre = skelly.getWorldBoundingBox().getSize().y() - 0.5f;
+        camera.setPosition(
+                orbitPos.add(0, skellyVerticalCentre, 0)
+                        .add(skelly.getTransform().getPosition()));
     }
 
     public void render(Renderer renderer) {
         shader.setViewPosition(camera.getPosition());
         shader.setLights(pointLights);
 
+        System.out.println("---- little combined:\n" + camera.getCombined().toString());
         renderer.render(cube, shader, camera.getCombined());
         renderer.render(skelly, shader, camera.getCombined());
 
@@ -232,7 +237,7 @@ public class GameScene {
     public void reset() {
         for (Model orb : orbs) orb.enable();
         orbsCollected = 0;
-        skelly.getTransform().setPosition(new Vec3(0));
+        skelly.getTransform().setPosition(new Vector3f(0));
     }
 
 }

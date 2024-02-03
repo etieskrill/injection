@@ -8,10 +8,12 @@ import org.etieskrill.engine.graphics.texture.AbstractTexture.Type;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.texture.Textures;
 import org.etieskrill.engine.util.Loaders.TextureLoader;
+import org.etieskrill.engine.util.ResourceReader;
 import org.joml.*;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.assimp.*;
+import org.lwjgl.system.MemoryUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,17 +27,19 @@ import java.nio.IntBuffer;
 import java.util.*;
 import java.util.function.Supplier;
 
+import static org.etieskrill.engine.config.ResourcePaths.MODEL_PATH;
 import static org.etieskrill.engine.graphics.assimp.Material.Property.SHININESS;
 import static org.etieskrill.engine.graphics.assimp.Material.Property.*;
 import static org.etieskrill.engine.graphics.texture.AbstractTexture.Type.*;
 import static org.lwjgl.assimp.Assimp.*;
+import static org.lwjgl.system.MemoryUtil.memAddress;
+import static org.lwjgl.system.MemoryUtil.memCopy;
 
 //TODO refactor: loading in separate class / classes
 //               reduce to data in anticipation of ces
 //               find most comprehensive solution for multi-entry-point builders
 public class Model implements Disposable {
     
-    private static final String DIRECTORY = "Engine/src/main/resources/models/";
     private static final Supplier<Model> ERROR_MODEL = () -> new Builder("cube.obj").build();
     
     private static final Logger logger = LoggerFactory.getLogger(Model.class);
@@ -78,7 +82,6 @@ public class Model implements Disposable {
         public Builder(String file) {
             if (file.isBlank()) throw new IllegalArgumentException("File name cannot be blank");
             if (file.contains("/")) throw new IllegalArgumentException("Custom folder structure not implemented yet: " + file);
-            
             this.file = file;
             this.name = file.split("\\.")[0];
         }
@@ -240,8 +243,33 @@ public class Model implements Disposable {
             (flipWinding ? aiProcess_FlipWindingOrder : 0)
         ;
 
-        AIScene scene = aiImportFile(DIRECTORY + file, processFlags);
-    
+        AIFileIO fileIO = AIFileIO.create().OpenProc((pFileIO, fileName, openMode) -> {
+            String name = MemoryUtil.memUTF8(fileName);
+            ByteBuffer buffer = ResourceReader.getRawClassPathResource(MODEL_PATH + name);
+
+            AIFile aiFile = AIFile.create().ReadProc((pFile, pBuffer, size, count) -> {
+                long blocksRead = Math.min(buffer.remaining() / size, count);
+                memCopy(memAddress(buffer), pBuffer, blocksRead * size);
+                buffer.position((int) (buffer.position() + (blocksRead * size)));
+                return blocksRead;
+            }).SeekProc((pFile, offset, origin) -> {
+                switch (origin) {
+                    case aiOrigin_SET -> buffer.position((int) offset);
+                    case aiOrigin_CUR -> buffer.position(buffer.position() + (int) offset);
+                    case aiOrigin_END -> buffer.position(buffer.limit() + (int) offset);
+                }
+                return 0;
+            }).FileSizeProc(pFile -> buffer.limit());
+
+            return aiFile.address();
+        }).CloseProc((pFileIO, pFile) -> {
+            AIFile aiFile = AIFile.create(pFile);
+            aiFile.ReadProc().free();
+            aiFile.SeekProc().free();
+            aiFile.FileSizeProc().free();
+            //TODO shouldn't the buffer from OpenProc also be freed here?
+        });
+        AIScene scene = aiImportFileEx(file, processFlags, fileIO);
         if (scene == null || (scene.mFlags() & AI_SCENE_FLAGS_INCOMPLETE) != 0
                 || scene.mRootNode() == null) {
             throw new IOException(aiGetErrorString());
@@ -470,7 +498,7 @@ public class Model implements Disposable {
             validProperties++;
         }
 
-        //Vec4 properties
+        //Vector4f properties
         AIColor4D colour = AIColor4D.calloc();
         for (Material.Property property : new Material.Property[]{
                 COLOUR_BASE, COLOUR_AMBIENT, COLOUR_DIFFUSE, COLOUR_SPECULAR, COLOUR_EMISSIVE

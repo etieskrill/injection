@@ -1,8 +1,8 @@
 package org.etieskrill.orbes.scene;
 
-import glm_.vec2.Vec2;
-import glm_.vec3.Vec3;
-import glm_.vec4.Vec4;
+import org.joml.Vector2f;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.Camera;
 import org.etieskrill.engine.graphics.texture.font.Fonts;
@@ -20,22 +20,22 @@ public class GameUIScene extends Scene {
     private Label fpsLabel;
     private Label timerLabel;
 
-    public GameUIScene(Batch batch, Camera camera, Vec2 windowSize) {
+    public GameUIScene(Batch batch, Camera camera, Vector2f windowSize) {
         super(batch, new Container(), camera);
         init(windowSize);
     }
 
-    private void init(Vec2 windowSize) {
-        getCamera().setPosition(new Vec3(windowSize.times(0.5), 0));
+    private void init(Vector2f windowSize) {
+        getCamera().setPosition(new Vector3f(windowSize.mul(.5f), 0));
 
         scoreLabel = new Label("", Fonts.getDefault(48));
-        scoreLabel.setAlignment(Node.Alignment.TOP).setMargin(new Vec4(20));
+        scoreLabel.setAlignment(Node.Alignment.TOP).setMargin(new Vector4f(20));
 
         fpsLabel = new Label("", Fonts.getDefault(36));
-        fpsLabel.setAlignment(Node.Alignment.TOP_LEFT).setMargin(new Vec4(10));
+        fpsLabel.setAlignment(Node.Alignment.TOP_LEFT).setMargin(new Vector4f(10));
 
         timerLabel = new Label("", Fonts.getDefault(64));
-        timerLabel.setAlignment(Node.Alignment.BOTTOM).setMargin(new Vec4(50));
+        timerLabel.setAlignment(Node.Alignment.BOTTOM).setMargin(new Vector4f(50));
 
         Stack stack = new Stack(List.of(scoreLabel, fpsLabel, timerLabel));
 

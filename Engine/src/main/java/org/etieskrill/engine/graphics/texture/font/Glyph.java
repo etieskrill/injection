@@ -1,19 +1,20 @@
 package org.etieskrill.engine.graphics.texture.font;
 
-import glm_.vec2.Vec2;
+import org.joml.Vector2f;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Vector2fc;
 
 public class Glyph {
     
-    private final Vec2 size;
-    private final Vec2 position;
-    private final Vec2 advance;
+    private final Vector2fc size;
+    private final Vector2fc position;
+    private final Vector2fc advance;
     private final Texture2D texture;
     
     private final Character character;
     
-    public Glyph(Vec2 size, Vec2 position, Vec2 advance, Texture2D texture, @Nullable Character character) {
+    public Glyph(Vector2fc size, Vector2fc position, Vector2fc advance, Texture2D texture, @Nullable Character character) {
         this.size = size;
         this.position = position;
         this.advance = advance;
@@ -21,15 +22,15 @@ public class Glyph {
         this.character = character;
     }
     
-    public Vec2 getSize() {
+    public Vector2fc getSize() {
         return size;
     }
     
-    public Vec2 getPosition() {
+    public Vector2fc getPosition() {
         return position;
     }
     
-    public Vec2 getAdvance() {
+    public Vector2fc getAdvance() {
         return advance;
     }
     

@@ -1,7 +1,8 @@
 package org.etieskrill.engine.graphics.gl;
 
-import glm_.vec2.Vec2i;
+import org.joml.Vector2i;
 import org.etieskrill.engine.Disposable;
+import org.joml.Vector2ic;
 
 import static org.lwjgl.opengl.GL11C.GL_DEPTH_COMPONENT;
 import static org.lwjgl.opengl.GL11C.GL_RGBA8;
@@ -9,7 +10,7 @@ import static org.lwjgl.opengl.GL30C.*;
 
 public class RenderBuffer implements Disposable, FrameBufferAttachment {
     
-    private final Vec2i size;
+    private final Vector2ic size;
     private final int rbo;
     private final Type type;
     
@@ -33,7 +34,7 @@ public class RenderBuffer implements Disposable, FrameBufferAttachment {
         }
     }
     
-    public RenderBuffer(Vec2i size, Type type) {
+    public RenderBuffer(Vector2ic size, Type type) {
         this.size = size;
         
         int ret;
@@ -43,7 +44,7 @@ public class RenderBuffer implements Disposable, FrameBufferAttachment {
         bind();
         
         this.type = type;
-        glRenderbufferStorage(GL_RENDERBUFFER, type.toGLType(), size.getX(), size.getY());
+        glRenderbufferStorage(GL_RENDERBUFFER, type.toGLType(), size.x(), size.y());
         
         if ((ret = glGetError()) != GL_NO_ERROR)
             throw new IllegalStateException("Error during renderbuffer creation: 0x" + Integer.toHexString(ret));
@@ -58,7 +59,7 @@ public class RenderBuffer implements Disposable, FrameBufferAttachment {
     }
     
     @Override
-    public Vec2i getSize() {
+    public Vector2ic getSize() {
         return size;
     }
     

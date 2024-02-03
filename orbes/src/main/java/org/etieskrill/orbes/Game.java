@@ -1,8 +1,9 @@
 package org.etieskrill.orbes;
 
-import glm_.vec2.Vec2;
-import glm_.vec2.Vec2i;
-import glm_.vec3.Vec3;
+import org.joml.Vector2f;
+import org.joml.Vector2fc;
+import org.joml.Vector2i;
+import org.joml.Vector3f;
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.Camera;
 import org.etieskrill.engine.graphics.OrthographicCamera;
@@ -97,28 +98,28 @@ public class Game {
     }
 
     private void setupUI() {
-        Vec2 windowSize = window.getSize().toVec();
+        Vector2fc windowSize = window.getSize().toVec();
 
         mainMenuScene = new MainMenuUIScene(
                 new Batch(renderer),
-                new OrthographicCamera(windowSize).setPosition(new Vec3(windowSize.times(0.5))),
+                new OrthographicCamera(new Vector2f(windowSize)).setPosition(new Vector3f(windowSize, 0).mul(0.5f)),
                 this
         );
 
         gameUIScene = new GameUIScene(
                 new Batch(renderer).setShader(Shaders.getTextShader()),
-                new OrthographicCamera(windowSize),
-                windowSize);
+                new OrthographicCamera(new Vector2f(windowSize)),
+                new Vector2f(windowSize));
 
         pauseUIScene = new GameUIPauseScene(
                 new Batch(renderer),
-                new OrthographicCamera(windowSize).setPosition(new Vec3(windowSize.times(0.5))),
+                new OrthographicCamera(new Vector2f(windowSize)).setPosition(new Vector3f(windowSize, 0).mul(0.5f)),
                 this
         );
 
         endScene = new EndScene(
                 new Batch(renderer),
-                new OrthographicCamera(windowSize).setPosition(new Vec3(windowSize.times(0.5))),
+                new OrthographicCamera(new Vector2f(windowSize)).setPosition(new Vector3f(windowSize, 0).mul(0.5f)),
                 this
         );
     }
@@ -127,16 +128,16 @@ public class Game {
         //TODO figure out a smart way to link the pacer and window refresh rates
         pacer = new SystemNanoTimePacer(1 / 60f);
 
-        Vec2 windowSize = window.getSize().toVec();
-        FrameBuffer postBuffer = FrameBuffer.getStandard(new Vec2i(windowSize));
+        Vector2fc windowSize = window.getSize().toVec();
+        FrameBuffer postBuffer = FrameBuffer.getStandard(windowSize.get(0, new Vector2i()));
         Material mat = new Material.Builder() //TODO okay, the fact models, or rather meshes simply ignore these mats is getting frustrating now, that builder needs some serious rework
                 .addTextures((Texture2D) postBuffer.getAttachment(FrameBuffer.AttachmentType.COLOUR0))
                 .build();
         Model screenQuad = ModelFactory.rectangle(-1, -1, 2, 2, mat) //Hey hey people, these, are in fact, regular    screeeeen coordinates, not viewport, meaning, for post processing, these effectively *always* need to be    (-1, -1) and (2, 2).
                 .build();
-        screenQuad.getTransform().setPosition(new Vec3(0, 0, 1));
+        screenQuad.getTransform().setPosition(new Vector3f(0, 0, 1));
         Shaders.PostprocessingShader screenShader = Shaders.getPostprocessingShader();
-        Vec3 unpauseColour = new Vec3(1.0), pauseColour = new Vec3(0.65);
+        Vector3f unpauseColour = new Vector3f(1.0f), pauseColour = new Vector3f(0.65f);
 
         showMainMenu();
 
@@ -191,9 +192,9 @@ public class Game {
                 Camera camera = gameScene.getCamera();
                 double time = pacer.getSecondsElapsedTotal() * 0.25;
 
-                Vec3 pos = new Vec3(Math.cos(time), 0.5, Math.sin(time)).times(15);
+                Vector3f pos = new Vector3f((float) Math.cos(time), 0.5f, (float) Math.sin(time)).mul(15);
                 camera.setPosition(pos);
-                camera.setOrientation(-20, Math.toDegrees(Math.atan2(-pos.getZ(), -pos.getX())), 0); //TODO camera utils for orbiting / lookat (literally is the implementation already)
+                camera.setOrientation(-20, Math.toDegrees(Math.atan2(-pos.z(), -pos.x())), 0); //TODO camera utils for orbiting / lookat (literally is the implementation already)
             }
             case GAME -> {
                 if (!pacer.isPaused()) {

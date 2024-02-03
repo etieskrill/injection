@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.util.*;
 
+import static org.etieskrill.engine.config.ResourcePaths.CUBEMAP_PATH;
 import static org.etieskrill.engine.graphics.texture.Textures.NR_BITS_PER_COLOUR_CHANNEL;
 import static org.lwjgl.opengl.GL33C.*;
 import static org.lwjgl.stb.STBImage.stbi_image_free;
@@ -14,8 +15,7 @@ import static org.lwjgl.stb.STBImage.stbi_image_free;
 public class CubeMapTexture extends AbstractTexture {
     
     private static final int SIDES = 6;
-    private static final String DIRECTORY = AbstractTexture.DIRECTORY + "cubemaps/";
-    
+
     private static final Logger logger = LoggerFactory.getLogger(CubeMapTexture.class);
     
     private final String name;
@@ -29,7 +29,7 @@ public class CubeMapTexture extends AbstractTexture {
          * Attempts to load all files from a directory with the given name to a {@code CubeMap}.
          */
         public static CubemapTextureBuilder get(String name) {
-            File cubemapDir = new File(DIRECTORY + name);
+            File cubemapDir = new File(CUBEMAP_PATH + name);
             if (!cubemapDir.isDirectory())
                 throw new MissingResourceException("Invalid name", CubeMapTexture.class.getSimpleName(), name);
             return new CubemapTextureBuilder(name,
@@ -83,11 +83,11 @@ public class CubeMapTexture extends AbstractTexture {
             }
     
             for (String file : sortedFiles) {
-                TextureData data = Textures.loadFileOrDefault(DIRECTORY + name + "/" + file, Type.DIFFUSE);
+                TextureData data = Textures.loadFileOrDefault(CUBEMAP_PATH + name + "/" + file, Type.DIFFUSE);
                 if (format == null) format = data.getFormat();
                 if (data.getFormat() != format)
                     throw new IllegalArgumentException("All textures must have the same colour format");
-                if (pixelSize.anyEqual(INVALID_PIXEL_SIZE)) pixelSize = data.getPixelSize();
+                if (pixelSize.equals(INVALID_PIXEL_SIZE, INVALID_PIXEL_SIZE)) pixelSize = data.getPixelSize();
                 if (!data.getPixelSize().equals(pixelSize))
                     throw new IllegalArgumentException("All textures must be equally sized");
                 sides.add(data);
@@ -96,7 +96,7 @@ public class CubeMapTexture extends AbstractTexture {
     
         @Override
         protected CubeMapTexture bufferTextureData() {
-            logger.debug("Loading {}x{} {}-bit cubemap texture from {}", pixelSize.getS(), pixelSize.getT(),
+            logger.debug("Loading {}x{} {}-bit cubemap texture from {}", pixelSize.x(), pixelSize.y(),
                     NR_BITS_PER_COLOUR_CHANNEL * format.getChannels(), name);
     
             CubeMapTexture texture = new CubeMapTexture(name, this);
@@ -104,7 +104,7 @@ public class CubeMapTexture extends AbstractTexture {
             texture.bind(0);
             for (int i = 0; i < sides.size(); i++) {
                 glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, format.toGlInternalFormat(),
-                        pixelSize.getS(), pixelSize.getT(), 0, format.toGLFormat(), GL_UNSIGNED_BYTE,
+                        pixelSize.x(), pixelSize.y(), 0, format.toGLFormat(), GL_UNSIGNED_BYTE,
                         sides.get(i).getTextureData());
             }
             

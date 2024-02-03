@@ -1,5 +1,6 @@
 package org.etieskrill.engine.entity.data;
 
+import org.jetbrains.annotations.Contract;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
@@ -21,10 +22,12 @@ public class AABB {
         return max;
     }
 
+    @Contract("-> new")
     public Vector3f getCenter() {
         return max.sub(min, new Vector3f()).mul(0.5f).add(min);
     }
 
+    @Contract("-> new")
     public Vector3f getSize() {
         return max.sub(min, new Vector3f());
     }

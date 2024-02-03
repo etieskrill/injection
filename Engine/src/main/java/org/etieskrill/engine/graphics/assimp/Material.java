@@ -1,6 +1,5 @@
 package org.etieskrill.engine.graphics.assimp;
 
-import glm_.vec4.Vec4;
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
 
@@ -8,6 +7,8 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+
+import org.joml.Vector4f;
 
 import static java.util.Objects.requireNonNullElse;
 import static org.lwjgl.assimp.Assimp.*;
@@ -89,8 +90,8 @@ public class Material implements Disposable {
         return properties.get(property);
     }
 
-    public Vec4 getColourProperty(Property colourProperty) {
-        return (Vec4) requireNonNullElse(properties.get(colourProperty), new Vec4(0));
+    public Vector4f getColourProperty(Property colourProperty) {
+        return (Vector4f) requireNonNullElse(properties.get(colourProperty), new Vector4f(0));
     }
 
     public Number getValueProperty(Property valueProperty) {

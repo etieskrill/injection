@@ -1,7 +1,7 @@
 package org.etieskrill.engine.scene.component;
 
-import glm_.vec3.Vec3;
-import glm_.vec4.Vec4;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.input.Key;
 import org.etieskrill.engine.input.Keys;
@@ -40,7 +40,11 @@ public class Button extends Node {
 
     @Override
     public void render(Batch batch) {
-        batch.render(new Vec3(getPosition().plus(getSize().times(0.5))), new Vec3(getSize()), new Vec4(0.0, 0.0, 0.0, 1.0));
+        batch.render(
+                new Vector3f(getPosition(), 0).add(new Vector3f(getSize(), 0).mul(0.5f)),
+                new Vector3f(getSize(), 0),
+                new Vector4f(0, 0, 0, 1)
+        );
 
         label.render(batch);
     }

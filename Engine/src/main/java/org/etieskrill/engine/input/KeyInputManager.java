@@ -1,6 +1,5 @@
 package org.etieskrill.engine.input;
 
-import kotlin.Pair;
 import org.etieskrill.engine.EveryFrame;
 import org.etieskrill.engine.input.InputBinding.Trigger;
 import org.etieskrill.engine.input.action.Action;
@@ -21,7 +20,7 @@ public class KeyInputManager implements KeyInputHandler {
     
     //TODO add <name,action> map to allow for rebinding and structural streamlining
     //TODO allow for keys to overrule/bind each other with activation policies; latest, oldest, all, none
-    private final Map<Key, Pair<Trigger, Action>> bindings;
+    private final Map<Key, TriggerAction> bindings;
     private final Map<Key, OverruleGroup> groups;
     private final Map<OverruleGroup, Integer> groupKeysActive;
 
@@ -33,7 +32,7 @@ public class KeyInputManager implements KeyInputHandler {
         this(new HashMap<>(), new HashMap<>());
     }
 
-    public KeyInputManager(Map<Key, Pair<Trigger, Action>> bindings, Map<Key, OverruleGroup> groups) {
+    public KeyInputManager(Map<Key, TriggerAction> bindings, Map<Key, OverruleGroup> groups) {
         this.bindings = Objects.requireNonNull(bindings);
         this.groups = Objects.requireNonNull(groups);
         this.groupKeysActive = new HashMap<>();
@@ -42,9 +41,14 @@ public class KeyInputManager implements KeyInputHandler {
         this.events = new ArrayDeque<>();
     }
 
+    public record TriggerAction(
+            Trigger trigger,
+            Action action
+    ) {}
+
     public KeyInputManager addBindings(InputBinding... bindings) {
         for (InputBinding binding : bindings) {
-            this.bindings.put(binding.getInput(), new Pair<>(binding.getTrigger(), binding.getAction()));
+            this.bindings.put(binding.getInput(), new TriggerAction(binding.getTrigger(), binding.getAction()));
             if (binding.getGroup() != null) addGroups(binding.getGroup());
         }
         return this;
@@ -66,18 +70,18 @@ public class KeyInputManager implements KeyInputHandler {
     @EveryFrame
     public void update(double delta) {
         for (Key key : pressed) {
-            Pair<Trigger, Action> triggerAction = bindings.get(key);
-            if (triggerAction != null && triggerAction.getFirst() == PRESSED)
-                handleAction(triggerAction.getSecond(), delta);
+            TriggerAction triggerAction = bindings.get(key);
+            if (triggerAction != null && triggerAction.trigger() == PRESSED)
+                handleAction(triggerAction.action(), delta);
         }
         for (Key key : toggled) {
-            Pair<Trigger, Action> triggerAction = bindings.get(key);
-            if (triggerAction != null && triggerAction.getFirst() == TOGGLED)
-                handleAction(triggerAction.getSecond(), delta);
+            TriggerAction triggerAction = bindings.get(key);
+            if (triggerAction != null && triggerAction.trigger() == TOGGLED)
+                handleAction(triggerAction.action(), delta);
         }
         while (events.peek() != null) {
-            Pair<Trigger, Action> triggerAction = bindings.get(events.poll());
-            if (triggerAction != null) handleAction(triggerAction.getSecond(), delta);
+            TriggerAction triggerAction = bindings.get(events.poll());
+            if (triggerAction != null) handleAction(triggerAction.action(), delta);
         }
     }
     
@@ -92,7 +96,7 @@ public class KeyInputManager implements KeyInputHandler {
         
         //TODO introduce a mixed polling system for continuous binds and callbacks for triggers
         Key keyInput = new Key(type, key, modifiers);
-        Pair<Trigger, Action> triggerAction = bindings.get(keyInput); //try lookup with exact modifiers
+        TriggerAction triggerAction = bindings.get(keyInput); //try lookup with exact modifiers
         if (triggerAction == null) {
             triggerAction = bindings.get(new Key(type, key, 0)); //try lookup again without modifiers
             keyInput = new Key(type, key, 0);
@@ -100,7 +104,7 @@ public class KeyInputManager implements KeyInputHandler {
         boolean handled = false;
     
         //queue press trigger event
-        if (triggerAction != null && triggerAction.getFirst() == ON_PRESS) {
+        if (triggerAction != null && triggerAction.trigger() == ON_PRESS) {
             if (action == GLFW_PRESS && !pressed.contains(keyInput)) {
                 events.offer(keyInput);
                 handled = true;
@@ -109,7 +113,7 @@ public class KeyInputManager implements KeyInputHandler {
         
         //queue toggle trigger event
         if (triggerAction != null) {
-            if (triggerAction.getFirst() == ON_TOGGLE &&
+            if (triggerAction.trigger() == ON_TOGGLE &&
                     action == GLFW_PRESS && !toggled.contains(keyInput)) {
                 events.offer(keyInput);
                 handled = true;

@@ -1,7 +1,9 @@
 package org.etieskrill.engine.graphics.texture.font;
 
-import glm_.vec2.Vec2;
-import glm_.vec2.Vec2i;
+import org.etieskrill.engine.util.ResourceReader;
+import org.joml.RoundingMode;
+import org.joml.Vector2f;
+import org.joml.Vector2i;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.lwjgl.BufferUtils;
@@ -15,15 +17,13 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.etieskrill.engine.config.ResourcePaths.FONT_PATH;
 import static org.lwjgl.opengl.GL11C.GL_UNPACK_ALIGNMENT;
 import static org.lwjgl.opengl.GL11C.glPixelStorei;
 import static org.lwjgl.util.freetype.FreeType.*;
 
 public class TrueTypeFont implements Font {
-    
-    private static final String DIRECTORY = "Engine/src/main/resources/fonts/";
-    private static final String DEFAULT = "AGENCYR.ttf";
-    
+
     private static final Logger logger = LoggerFactory.getLogger(TrueTypeFont.class);
     
     private static long library;
@@ -45,11 +45,12 @@ public class TrueTypeFont implements Font {
     
     public TrueTypeFont(String file) throws IOException {
         if (library == 0) initLibrary();
-        
+
         PointerBuffer faceBuffer = BufferUtils.createPointerBuffer(1);
-        check(FT_New_Face(library, DIRECTORY + file, 0, faceBuffer),
+        ByteBuffer fontFile = ResourceReader.getRawClassPathResource(FONT_PATH + file);
+        check(FT_New_Memory_Face(library, fontFile, 0, faceBuffer),
                 "Font could not be loaded from file \"" + file + "\"");
-    
+
         face = FT_Face.create(faceBuffer.get());
         
         scalable = (face.face_flags() & FT_FACE_FLAG_SCALABLE) != 0;
@@ -99,19 +100,19 @@ public class TrueTypeFont implements Font {
             FT_Bitmap bitmap = ftGlyph.bitmap();
             FT_Vector adv = ftGlyph.advance();
             
-            Vec2 size = new Vec2(bitmap.width(), bitmap.rows());
-            Vec2 position = new Vec2(ftGlyph.bitmap_left(), ftGlyph.bitmap_top());
-            if (!verticalUp) position.timesAssign(1, -1).plusAssign(0, getMinLineHeight());
-            Vec2 advance = new Vec2(adv.x(), adv.y()).times(1 / 64f);
-            if (!verticalUp) advance.timesAssign(1, -1);
+            Vector2f size = new Vector2f(bitmap.width(), bitmap.rows());
+            Vector2f position = new Vector2f(ftGlyph.bitmap_left(), ftGlyph.bitmap_top());
+            if (!verticalUp) position.mul(1, -1).add(0, getMinLineHeight());
+            Vector2f advance = new Vector2f(adv.x(), adv.y()).mul(1 / 64f);
+            if (!verticalUp) advance.mul(1, -1);
             
-            ByteBuffer buffer = bitmap.buffer((int) (2 * size.getX() * size.getY()));
+            ByteBuffer buffer = bitmap.buffer((int) (2 * size.x() * size.y()));
             if (buffer == null) logger.trace("Encountered glyph ({}) without buffer, proceeding with blank bitmap", (char) i);
             
             glPixelStorei(GL_UNPACK_ALIGNMENT, 1); //TODO more permanent solution
             Texture2D texture = new Texture2D.BufferBuilder(
                     buffer,
-                    new Vec2i(size),
+                    size.get(RoundingMode.TRUNCATE, new Vector2i()),
                     AbstractTexture.Format.ALPHA
             )
                     .setType(AbstractTexture.Type.DIFFUSE)
