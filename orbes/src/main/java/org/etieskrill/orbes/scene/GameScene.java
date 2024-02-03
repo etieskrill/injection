@@ -1,7 +1,5 @@
 package org.etieskrill.orbes.scene;
 
-import org.joml.Vector2f;
-import org.joml.Vector3f;
 import org.etieskrill.engine.graphics.Camera;
 import org.etieskrill.engine.graphics.PerspectiveCamera;
 import org.etieskrill.engine.graphics.assimp.Model;
@@ -12,6 +10,8 @@ import org.etieskrill.engine.graphics.model.PointLight;
 import org.etieskrill.engine.input.*;
 import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.orbes.Game;
+import org.joml.Vector2f;
+import org.joml.Vector3f;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

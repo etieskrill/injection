@@ -1,5 +1,6 @@
 package org.etieskrill.engine.entity.data;
 
+import org.jetbrains.annotations.Contract;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
@@ -40,7 +41,7 @@ public class Transform {
     public Transform(Transform transform) {
         this(new Vector3f(transform.position), transform.rotation, new Vector3f(transform.rotationAxis), new Vector3f(transform.scale));
         setInitialPosition(transform.initialPosition);
-        setInitialRotation(transform.initialRotation, new Vector3f(transform.initialRotationAxis));
+        setInitialRotation(transform.initialRotation, transform.initialRotationAxis);
         setInitialScale(transform.initialScale);
         this.dirty = transform.dirty;
     }
@@ -99,7 +100,7 @@ public class Transform {
 
     public Transform setRotation(float rotation, Vector3f rotationAxis) {
         this.rotation = rotation;
-        this.rotationAxis.set(rotationAxis.normalize());
+        this.rotationAxis.set(rotationAxis).normalize();
         dirty();
         return this;
     }
@@ -107,13 +108,14 @@ public class Transform {
     public Transform setRotation(Transform transform) {
         return setRotation(transform.getRotation(), transform.getRotationAxis());
     }
-    
-    //Transform is lazily updated
+
+    @Contract("-> new")
     public Matrix4f toMat() {
+        //Transform is lazily updated
         if (isDirty()) updateTransform();
-        return transform;
+        return new Matrix4f(transform);
     }
-    
+
     public Transform set(Transform transform) {
         setPosition(transform);
         setRotation(transform);
@@ -142,10 +144,10 @@ public class Transform {
     
     private void updateTransform() {
         this.transform.identity()
-                .translate(initialPosition.add(position))
+                .translate(new Vector3f(initialPosition).add(position))
                 .rotate(initialRotation, initialRotationAxis)
                 .rotate(rotation, rotationAxis)
-                .scale(scale.mul(initialScale));
+                .scale(new Vector3f(scale).mul(initialScale));
     }
     
     private void dirty() {
@@ -162,9 +164,13 @@ public class Transform {
     public String toString() {
         return "Transform{" +
                 "position=" + position +
+                ", initialPosition=" + initialPosition +
                 ", rotation=" + rotation +
+                ", initialRotation=" + initialRotation +
                 ", rotationAxis=" + rotationAxis +
+                ", initialRotationAxis=" + initialRotationAxis +
                 ", scale=" + scale +
+                ", initialScale=" + initialScale +
                 '}';
     }
 
