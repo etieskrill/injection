@@ -528,8 +528,8 @@ public class Model implements Disposable {
     private void calculateModelBoundingBox() {
         Vector3f min = new Vector3f(), max = new Vector3f();
         for (Mesh mesh : meshes) {
-            min.set(mesh.getBoundingBox().getMin().min(min, min));
-            max.set(mesh.getBoundingBox().getMax().max(max, min));
+            mesh.getBoundingBox().getMin().min(min, min);
+            mesh.getBoundingBox().getMax().max(max, max);
         }
         this.boundingBox = new AABB(min, max);
     }
@@ -539,9 +539,9 @@ public class Model implements Disposable {
     }
     
     public AABB getWorldBoundingBox() {
-        Matrix4f transform = this.transform.toMat();
-        return new AABB(transform.transformDirection(new Vector3f(boundingBox.getMin())),
-                transform.transformDirection(new Vector3f(boundingBox.getMax())));
+        Matrix4f worldTransform = this.transform.toMat();
+        return new AABB(worldTransform.transformPosition(new Vector3f(boundingBox.getMin())),
+                worldTransform.transformPosition(new Vector3f(boundingBox.getMax())));
     }
     
     public String getName() {
