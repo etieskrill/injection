@@ -209,7 +209,6 @@ public class GameScene {
         shader.setViewPosition(camera.getPosition());
         shader.setLights(pointLights);
 
-        System.out.println("---- little combined:\n" + camera.getCombined().toString());
         renderer.render(cube, shader, camera.getCombined());
         renderer.render(skelly, shader, camera.getCombined());
 

@@ -112,13 +112,7 @@ public abstract class Camera {
 
         Vector3f target = new Vector3f(position).add(front);
 
-        System.out.println("view calc: " + position + ", " + target + ", " + up);
         this.view.setLookAt(position, target, up);
-        System.out.println("view res:\n" + view);
-//        System.out.println(position);
-//        System.out.println(target);
-//        System.out.println(view.get(3));
-//        System.out.println();
     }
 
     protected abstract void updatePerspective();
@@ -130,9 +124,7 @@ public abstract class Camera {
     }
     
     private void updateCombined() {
-        System.out.println("------------ perspective:\n" + perspective + "\nview:\n" + view);
         this.combined = new Matrix4f(perspective).mul(view);
-        System.out.println("------------ combined:\n" + combined + "\n------------");
     }
 
     public Vector3f getPosition() {

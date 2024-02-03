@@ -81,7 +81,7 @@ public class DemCubez {
                 .build();
         logger.info("Window initialised");
         
-        glfwSetErrorCallback(((error, description) -> System.out.printf("GLFW error %d: %s\n", error, description)));
+        glfwSetErrorCallback(((error, description) -> logger.warn("GLFW error {}: {}", error, description)));
         
         if (!initGL()) throw new IllegalStateException("Could not initialise graphics settings");
         if (!initKeybinds()) throw new IllegalStateException("Could not initialise keybinds");
@@ -267,7 +267,8 @@ public class DemCubez {
             window.update(pacer.getDeltaTimeSeconds());
             
             if (pacer.getFramesElapsed() > TARGET_FPS) {
-                System.out.println("%.3f".formatted(pacer.getAverageFPS()));
+                String fpsString = "%.3f".formatted(pacer.getAverageFPS());
+                logger.info("Current fps: {}", fpsString);
                 pacer.resetFrameCounter();
             }
             
@@ -358,8 +359,7 @@ public class DemCubez {
             grassModel.getTransform().setPosition(position);
             grassModels.add(grassModel);
         }
-        grassModels.forEach(model -> System.out.println(model.getTransform().getPosition()));
-    
+
         lightSources = new Model[2];
         for (int i = 0; i < lightSources.length; i++) {
             lightSources[i] = ModelLoader.get().load("light", () ->
