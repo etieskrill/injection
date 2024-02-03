@@ -1,9 +1,6 @@
 package org.etieskrill.engine.graphics.gl;
 
-import glm_.mat4x4.Mat4;
-import glm_.vec2.Vec2;
-import glm_.vec3.Vec3;
-import glm_.vec4.Vec4;
+import org.joml.*;
 import org.etieskrill.engine.graphics.assimp.CubeMapModel;
 import org.etieskrill.engine.graphics.assimp.Material;
 import org.etieskrill.engine.graphics.assimp.Mesh;
@@ -32,9 +29,9 @@ public class Renderer {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     }
     
-    public void render(Model model, ShaderProgram shader, Mat4 combined) {
+    public void render(Model model, ShaderProgram shader, Matrix4fc combined) {
         if (shader.isPlaceholder()) {
-            renderOutline(model, shader, combined, 1f, new Vec4(1, 0, 1, 1), true);
+            renderOutline(model, shader, combined, 1f, new Vector4f(1, 0, 1, 1), true);
             return;
         }
         
@@ -44,11 +41,11 @@ public class Renderer {
     private Model box;
 
     private Model getBox() {
-        if (box == null) box = ModelFactory.box(new Vec3(1));
+        if (box == null) box = ModelFactory.box(new Vector3f(1));
         return box;
     }
 
-    public void renderBox(Vec3 position, Vec3 size, ShaderProgram shader, Mat4 combined) {
+    public void renderBox(Vector3f position, Vector3f size, ShaderProgram shader, Matrix4fc combined) {
         getBox().getTransform().setPosition(position).setScale(size);
         _render(getBox(), shader, combined);
     }
@@ -62,11 +59,11 @@ public class Renderer {
     }
     
     //TODO add outline & wireframe as flag in render
-    public void renderOutline(Model model, ShaderProgram shader, Mat4 combined) {
-        renderOutline(model, shader, combined, 0.5f, new Vec4(1f, 0f, 0f, 1f), false);
+    public void renderOutline(Model model, ShaderProgram shader, Matrix4fc combined) {
+        renderOutline(model, shader, combined, 0.5f, new Vector4f(1f, 0f, 0f, 1f), false);
     }
     
-    public void renderOutline(Model model, ShaderProgram shader, Mat4 combined, float thickness, Vec4 colour, boolean writeToFront) {
+    public void renderOutline(Model model, ShaderProgram shader, Matrix4fc combined, float thickness, Vector4fc colour, boolean writeToFront) {
         getOutlineShader().setUniform("uThicknessFactor", thickness);
         getOutlineShader().setUniform("uColour", colour);
         
@@ -86,7 +83,7 @@ public class Renderer {
         if (writeToFront) glEnable(GL_DEPTH_TEST);
     }
     
-    public void renderWireframe(Model model, ShaderProgram shader, Mat4 combined) {
+    public void renderWireframe(Model model, ShaderProgram shader, Matrix4fc combined) {
         glDisable(GL_CULL_FACE);
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         _render(model, shader, combined);
@@ -94,7 +91,7 @@ public class Renderer {
         glEnable(GL_CULL_FACE);
     }
     
-    public void render(CubeMapModel cubemap, ShaderProgram shader, Mat4 combined) {
+    public void render(CubeMapModel cubemap, ShaderProgram shader, Matrix4fc combined) {
         //TODO perf increase use early depth test to discard instead of this
         glDepthMask(false);
         _render(cubemap, shader, combined);
@@ -105,17 +102,17 @@ public class Renderer {
     private static Model getQuad() {
         if (quad == null)
             quad = ModelFactory
-                    .rectangle(new Vec2(0), new Vec2(1))
+                    .rectangle(new Vector2f(0), new Vector2f(1))
                     .hasTransparency() //TODO when antialiasing is used, this could be disabled, depending on how aa works
                     .disableCulling()
                     .build();
         return quad;
     }
     
-    public void render(Glyph glyph, Vec2 position, ShaderProgram shader, Mat4 combined) {
+    public void render(Glyph glyph, Vector2fc position, ShaderProgram shader, Matrix4fc combined) {
         getQuad().getTransform()
-                .setScale(new Vec3(glyph.getSize(), 1))
-                .setPosition(new Vec3(position.plus(glyph.getPosition())));
+                .setScale(new Vector3f(glyph.getSize(), 1))
+                .setPosition(new Vector3f(position.add(glyph.getPosition(), new Vector2f()), 0));
 
         List<AbstractTexture> textures = getQuad().getMeshes().get(0).getMaterial().getTextures();
         textures.clear();
@@ -125,26 +122,26 @@ public class Renderer {
     }
     
     //TODO can be improved by rendering to some framebuffer and reusing unchanged sections instead of rendering every single glyph with a separate render call
-    public void render(String chars, Font font, Vec2 position, ShaderProgram shader, Mat4 combined) {
-        Vec2 pen = new Vec2(0);
+    public void render(String chars, Font font, Vector2fc position, ShaderProgram shader, Matrix4fc combined) {
+        Vector2f pen = new Vector2f(0);
         for (Glyph glyph : font.getGlyphs(chars)) {
             switch (requireNonNullElse(glyph.getCharacter(), (char) 0)) {
                 case '\n' -> {
-                    pen.put(0, pen.getY() + font.getLineHeight());
+                    pen.set(0, pen.y() + font.getLineHeight());
                     continue;
                 }
             }
             
-            render(glyph, position.plus(pen), shader, combined);
-            pen.plusAssign(glyph.getAdvance());
+            render(glyph, new Vector2f(position).add(pen), shader, combined);
+            pen.add(glyph.getAdvance());
         }
     }
     
-    private void _render(Model model, ShaderProgram shader, Mat4 combined) {
+    private void _render(Model model, ShaderProgram shader, Matrix4fc combined) {
         shader.setUniform("uCombined", combined, false);
         shader.setUniform("uModel", model.getTransform().toMat(), false);
-        shader.setUniform("uNormal", model.getTransform().toMat().inverseTranspose().toMat3(), false);
-    
+        shader.setUniform("uNormal", model.getTransform().toMat().invert().transpose().get3x3(new Matrix3f()), false);
+
         if (!model.doCulling()) glDisable(GL_CULL_FACE);
         if (model.hasTransparency()) glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         shader.start();
@@ -168,10 +165,10 @@ public class Renderer {
         glBindVertexArray(0);
     }
 
-    public void renderInstances(Model model, int numInstances, ShaderProgram shader, Mat4 combined) {
+    public void renderInstances(Model model, int numInstances, ShaderProgram shader, Matrix4f combined) {
         shader.setUniform("uCombined", combined, false);
         shader.setUniform("uModel", model.getTransform().toMat(), false);
-        shader.setUniform("uNormal", model.getTransform().toMat().inverseTranspose().toMat3(), false);
+        shader.setUniform("uNormal", model.getTransform().toMat().invert().transpose().get3x3(new Matrix3f()), false);
 
         if (!model.doCulling()) glDisable(GL_CULL_FACE);
         if (model.hasTransparency()) glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

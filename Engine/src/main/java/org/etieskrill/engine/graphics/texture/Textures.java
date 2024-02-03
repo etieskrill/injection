@@ -1,7 +1,9 @@
 package org.etieskrill.engine.graphics.texture;
 
-import glm_.vec2.Vec2i;
 import org.etieskrill.engine.util.Loaders;
+import org.etieskrill.engine.util.ResourceReader;
+import org.joml.Vector2i;
+import org.joml.Vector2ic;
 import org.lwjgl.BufferUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,11 +12,11 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.MissingResourceException;
 
-import static org.etieskrill.engine.graphics.texture.AbstractTexture.DIRECTORY;
+import static org.etieskrill.engine.config.ResourcePaths.TEXTURE_PATH;
 import static org.etieskrill.engine.graphics.texture.AbstractTexture.Type.DIFFUSE;
 import static org.etieskrill.engine.graphics.texture.AbstractTexture.Type.UNKNOWN;
 import static org.lwjgl.stb.STBImage.stbi_failure_reason;
-import static org.lwjgl.stb.STBImage.stbi_load;
+import static org.lwjgl.stb.STBImage.stbi_load_from_memory;
 
 public class Textures {
 
@@ -25,7 +27,7 @@ public class Textures {
 
     private static final Logger logger = LoggerFactory.getLogger(Textures.class);
 
-    public static Texture2D genBlank(Vec2i size, AbstractTexture.Format format) {
+    public static Texture2D genBlank(Vector2ic size, AbstractTexture.Format format) {
         return new Texture2D.BlankBuilder(size)
                 .setType(DIFFUSE)
                 .setFormat(format)
@@ -40,8 +42,12 @@ public class Textures {
             data = Textures.loadFile(file);
         } catch (MissingResourceException e) {
             logger.info("Texture {} could not be loaded, using placeholder:\n{}", file, stbi_failure_reason());
-            file = DIRECTORY + (type == DIFFUSE || type == UNKNOWN ? DEFAULT_TEXTURE : TRANSPARENT_TEXTURE);
-            data = Textures.loadFile(file);
+            file = TEXTURE_PATH + (type == DIFFUSE || type == UNKNOWN ? DEFAULT_TEXTURE : TRANSPARENT_TEXTURE);
+            try {
+                data = Textures.loadFile(file);
+            } catch (MissingResourceException ex) {
+                throw new RuntimeException("Failed to load default texture: this is an engine-internal error", ex);
+            }
         }
         return data;
     }
@@ -52,7 +58,9 @@ public class Textures {
                 bufferColourChannels = BufferUtils.createIntBuffer(1);
 
         //stbi_set_flip_vertically_on_load(true); the uv coords are already flipped while loading the models
-        ByteBuffer textureData = stbi_load(file, bufferWidth, bufferHeight, bufferColourChannels, 0);
+        ByteBuffer textureData = stbi_load_from_memory(
+                ResourceReader.getRawClassPathResource(TEXTURE_PATH + file),
+                bufferWidth, bufferHeight, bufferColourChannels, 0);
         if (textureData == null || !textureData.hasRemaining())
             throw new MissingResourceException("Texture %s could not be loaded:\n%s".formatted(file, stbi_failure_reason()),
                     Texture2D.class.getSimpleName(), file);
@@ -61,7 +69,7 @@ public class Textures {
         int pixelHeight = bufferHeight.get();
         AbstractTexture.Format format = AbstractTexture.Format.fromChannels(bufferColourChannels.get());
 
-        return new AbstractTexture.TextureData(textureData, new Vec2i(pixelWidth, pixelHeight), format);
+        return new AbstractTexture.TextureData(textureData, new Vector2i(pixelWidth, pixelHeight), format);
     }
 
     public static Texture2D ofFile(String file, AbstractTexture.Type type) {

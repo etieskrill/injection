@@ -1,6 +1,6 @@
 package org.etieskrill.engine.scene.component;
 
-import glm_.vec2.Vec2;
+import org.joml.Vector2f;
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.texture.font.Font;
 import org.etieskrill.engine.graphics.texture.font.Fonts;
@@ -31,13 +31,13 @@ public class Label extends Node {
 
         int width = 0, height = font.getMinLineHeight();
         for (Glyph glyph : font.getGlyphs(text)) {
-            width += glyph.getAdvance().getX();
+            width += glyph.getAdvance().x();
             switch (requireNonNullElse(glyph.getCharacter(), (char) 0)) {
                 case '\n' -> height += font.getLineHeight();
             }
         }
         
-        setSize(new Vec2(width, height));
+        setSize(new Vector2f(width, height));
     }
     
     @Override

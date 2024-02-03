@@ -1,27 +1,45 @@
 package org.etieskrill.engine.util;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.io.*;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ResourceReader {
 
-    public static String getRaw(String name) {
-        try {
-            return Files.readString(Path.of(name));
+    public static String getClasspathResource(String name) {
+        try (InputStream inputStream = ResourceReader.class.getClassLoader().getResourceAsStream(name)) {
+            if (inputStream == null)
+                throw new RuntimeException("Resource %s could not be located or access was denied".formatted(name));
+            try (BufferedInputStream bis = new BufferedInputStream(inputStream)) {
+                ByteArrayOutputStream buf = new ByteArrayOutputStream();
+                for (int result = bis.read(); result != -1; result = bis.read()) {
+                    buf.write((byte) result);
+                }
+                return buf.toString(StandardCharsets.UTF_8);
+            }
         } catch (IOException e) {
-            throw new RuntimeException("Plaintext resource %s could not be located".formatted(name), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static ByteBuffer getRawClassPathResource(String name) {
+        try (InputStream inputStream = ResourceReader.class.getClassLoader().getResourceAsStream(name)) {
+            if (inputStream == null)
+                throw new RuntimeException("Resource %s could not be located or access was denied".formatted(name));
+            byte[] bytes = inputStream.readAllBytes();
+            ByteBuffer buffer = ByteBuffer.allocateDirect(bytes.length);
+            return buffer.put(bytes).rewind();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
     public static boolean requestRaw(String name, StringBuffer resource) {
         resource.delete(0, resource.length());
         try {
-            resource.append(getRaw(name));
+            resource.append(getClasspathResource(name));
         } catch (Exception e) {
             return false;
         }

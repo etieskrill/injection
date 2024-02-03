@@ -6,7 +6,7 @@ import java.io.IOException;
 
 public final class Fonts {
 
-    public static final String DEFAULT_FONT = "agencyb.ttf";
+    public static final String DEFAULT_FONT = "AGENCYB.TTF";
     
     public static Font getFixedSize(String file, int size) {
         //return generated bitmap font
@@ -24,7 +24,7 @@ public final class Fonts {
     public static Font getFontOrDefault(String path, int pixelHeight) {
         String[] file = path.split("\\.");
         String fileType = file[file.length - 1];
-        if (!"ttf".equals(fileType))
+        if (!"ttf".equalsIgnoreCase(fileType))
             throw new IllegalArgumentException("Must be TrueType file, but was " + file[1]);
 
         TrueTypeFont generatorFont = (TrueTypeFont) Loaders.FontLoader.get().load(

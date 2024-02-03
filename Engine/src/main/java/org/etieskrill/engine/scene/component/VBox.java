@@ -1,6 +1,6 @@
 package org.etieskrill.engine.scene.component;
 
-import glm_.vec2.Vec2;
+import org.joml.Vector2f;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -22,7 +22,7 @@ public class VBox extends Stack {
         if (!shouldFormat()) return;
 
         //Pre-calculate the size of the smallest fitting box around the children and position cursors accordingly
-        float topPointer = 0, centerPointer = getSize().getY() / 2, bottomPointer = getSize().getY();
+        float topPointer = 0, centerPointer = getSize().y() / 2, bottomPointer = getSize().y();
         for (int i = 0; i < getChildren().size(); i++) {
             Node child = getChildren().get(i);
             child.format();
@@ -30,22 +30,22 @@ public class VBox extends Stack {
             float margin = 0;
             Node nextChild;
             if (getChildren().size() - 1 > i && (nextChild = getChildren().get(i + 1)) != null) {
-                margin = Math.max(nextChild.getMargin().getY(), child.getMargin().getX());
+                margin = Math.max(nextChild.getMargin().y(), child.getMargin().x());
             }
 
             switch (child.getAlignment()) {
-                case CENTER, CENTER_LEFT, CENTER_RIGHT -> centerPointer -= child.getSize().getY() / 2;
-                case BOTTOM, BOTTOM_LEFT, BOTTOM_RIGHT -> bottomPointer -= getMinNodeSize(child).getY() - margin;
+                case CENTER, CENTER_LEFT, CENTER_RIGHT -> centerPointer -= child.getSize().y() / 2;
+                case BOTTOM, BOTTOM_LEFT, BOTTOM_RIGHT -> bottomPointer -= getMinNodeSize(child).y() - margin;
             }
         }
 
         //Place children ignoring vertical preference and adjust cursors
         for (int i = 0; i < getChildren().size(); i++) {
             Node child = getChildren().get(i);
-            Vec2 newPos = getPreferredNodePosition(getSize(), child).times(1, 0);
+            Vector2f newPos = getPreferredNodePosition(getSize(), child).mul(1, 0);
 
-            child.setPosition(newPos.plus(0,
-                    (float) switch (child.getAlignment()) {
+            child.setPosition(newPos.add(0,
+                    switch (child.getAlignment()) {
                         case TOP, TOP_LEFT, TOP_RIGHT -> topPointer;
                         case CENTER, CENTER_LEFT, CENTER_RIGHT -> centerPointer;
                         case BOTTOM, BOTTOM_LEFT, BOTTOM_RIGHT -> bottomPointer;
@@ -54,10 +54,10 @@ public class VBox extends Stack {
             float margin = 0;
             Node nextChild;
             if (getChildren().size() - 1 > i && (nextChild = getChildren().get(i + 1)) != null) {
-                margin = Math.max(nextChild.getMargin().getY(), child.getMargin().getX());
+                margin = Math.max(nextChild.getMargin().y(), child.getMargin().x());
             }
 
-            float childHeight = child.getSize().getY();
+            float childHeight = child.getSize().y();
             switch (child.getAlignment()) {
                 case TOP, TOP_LEFT, TOP_RIGHT -> topPointer += childHeight + margin;
                 case CENTER, CENTER_LEFT, CENTER_RIGHT -> centerPointer += childHeight + margin;

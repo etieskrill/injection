@@ -17,6 +17,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static org.etieskrill.engine.config.ResourcePaths.SHADER_PATH;
 import static org.etieskrill.engine.graphics.gl.shaders.ShaderProgram.ShaderType.*;
 import static org.etieskrill.engine.graphics.gl.shaders.ShaderProgram.Uniform.NESTED_UNIFORM_LOCATION;
 import static org.lwjgl.opengl.ARBShadingLanguageInclude.GL_SHADER_INCLUDE_ARB;
@@ -28,11 +29,9 @@ public abstract class ShaderProgram implements Disposable {
     public static boolean AUTO_START_ON_VARIABLE_SET = true;
     public static boolean CLEAR_ERROR_BEFORE_SHADER_CREATION = true;
 
-    private static final String DIRECTORY = "shaders";
-    
     //TODO move placeholder shader here
-    private static final String DEFAULT_VERTEX_FILE = DIRECTORY + "/Phong.vert";
-    private static final String DEFAULT_FRAGMENT_FILE = DIRECTORY + "/Phong.frag";
+    private static final String DEFAULT_VERTEX_FILE = SHADER_PATH + "Phong.vert";
+    private static final String DEFAULT_FRAGMENT_FILE = SHADER_PATH + "Phong.frag";
     
     private boolean STRICT_UNIFORM_DETECTION = true;
     
@@ -200,27 +199,13 @@ public abstract class ShaderProgram implements Disposable {
     }
 
     private String getShaderSource(ShaderFile file) {
-        System.out.println(getClass().getModule().getName());
-        System.out.println(getClass().getResource(file.getName()).getFile());
-
-        Path modulePath = Path.of(getShaderFileBasePath() + "/" + file.getName());
-        if (Files.exists(modulePath)) {
-            try {
-                return Files.readString(modulePath);
-            } catch (IOException e) {
-                throw new ShaderCreationException(e);
-            }
-        }
-
-//        Path enginePath = Path.of()
-
-//        return Files.readString(Path.of(getShaderFileBasePath() + "/" + file.getName()));
-        return null;
+        String qualifiedName = SHADER_PATH + file.getName();
+        return ResourceReader.getClasspathResource(qualifiedName);
     }
 
     //TODO use named string arbs to modularise shaders
     private void loadLibrary(String file) {
-        glNamedStringARB(GL_SHADER_INCLUDE_ARB, file.split("\\.")[0], ResourceReader.getRaw(file));
+        glNamedStringARB(GL_SHADER_INCLUDE_ARB, file.split("\\.")[0], ResourceReader.getClasspathResource(file));
     }
     
     private void disposeShaders() {
@@ -272,7 +257,7 @@ public abstract class ShaderProgram implements Disposable {
             return;
         }
         
-        int location = STRICT_UNIFORM_DETECTION & strict ?
+        int location = STRICT_UNIFORM_DETECTION && strict ?
                 uniforms.get(uniform) :
                 glGetUniformLocation(programID, uniform.getName());
         if (location == -1) {
@@ -522,10 +507,6 @@ public abstract class ShaderProgram implements Disposable {
     
     protected abstract void init();
 
-    protected String getShaderFileBasePath() {
-        return Path.of("./Engine/src/main/resources/" + DIRECTORY).toAbsolutePath().toString();
-    }
-    
     protected abstract String[] getShaderFileNames();
     
     protected abstract void getUniformLocations();

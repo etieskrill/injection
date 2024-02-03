@@ -1,9 +1,9 @@
 package org.etieskrill.engine.graphics;
 
+import org.jetbrains.annotations.Contract;
 import org.joml.Matrix4f;
+import org.joml.Matrix4fc;
 import org.joml.Vector3f;
-
-import static glm_.Java.glm;
 
 public abstract class Camera {
 
@@ -12,7 +12,8 @@ public abstract class Camera {
     protected final Vector3f rotationAxis;
     protected float zoom;
 
-    protected final Matrix4f view, perspective, combined;
+    protected final Matrix4f view, perspective;
+    protected Matrix4fc combined;
     
     protected float near, far;
     protected final Vector3f front, right, up, worldUp;
@@ -58,20 +59,21 @@ public abstract class Camera {
     //TODO optimise
     public Camera translate(Vector3f translation) {
         Vector3f delta = relativeTranslation(translation);
-        this.position.plusAssign(delta);
+        this.position.add(delta);
         if (autoUpdate) update();
         return this;
     }
 
+    @Contract("_ -> new")
     public Vector3f relativeTranslation(Vector3f translation) {
         return new Vector3f()
-                .plus(front.times(translation.getZ()))
-                .plus(right.times(-translation.getX())) //TODO make positive
-                .plus(up.times(-translation.getY())); //TODO also make positive
+                .add(front.mul(translation.z()))
+                .add(right.mul(-translation.x())) //TODO make positive
+                .add(up.mul(-translation.y())); //TODO also make positive
     }
 
     public Camera setPosition(Vector3f position) {
-        this.position.put(position);
+        this.position.set(position);
         if (autoUpdate) update();
         return this;
     }
@@ -84,7 +86,7 @@ public abstract class Camera {
 
     @Deprecated
     public Camera setRotationAxis(Vector3f rotationAxis) {
-        this.rotationAxis.put(rotationAxis);
+        this.rotationAxis.set(rotationAxis);
         return this;
     }
 
@@ -105,15 +107,14 @@ public abstract class Camera {
                  Math.sin(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch)));
         front.normalize();
 
-        right.set(front.cross(worldUp).normalize());
-        up.set(front.cross(right).normalize());
+        right.set(front.cross(worldUp, new Vector3f()).normalize());
+        up.set(front.cross(right, new Vector3f()).normalize());
 
-        Vector3f target = position.add(front);
+        Vector3f target = new Vector3f(position).add(front);
 
-        Matrix3f
-        this.view.set(glm
-                .lookAt(position, target, up)
-        );
+        System.out.println("view calc: " + position + ", " + target + ", " + up);
+        this.view.setLookAt(position, target, up);
+        System.out.println("view res:\n" + view);
 //        System.out.println(position);
 //        System.out.println(target);
 //        System.out.println(view.get(3));
@@ -129,13 +130,16 @@ public abstract class Camera {
     }
     
     private void updateCombined() {
-        this.combined.set(perspective.mul(view));
+        System.out.println("------------ perspective:\n" + perspective + "\nview:\n" + view);
+        this.combined = new Matrix4f(perspective).mul(view);
+        System.out.println("------------ combined:\n" + combined + "\n------------");
     }
 
     public Vector3f getPosition() {
         return position;
     }
 
+    @Contract("-> new")
     public Vector3f getDirection() {
         return new Vector3f(
                 (float) (Math.cos(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch))),
@@ -144,12 +148,9 @@ public abstract class Camera {
             .normalize();
     }
 
-    public Matrix4f getCombined() {
+    public Matrix4fc getCombined() {
+        updateCombined();
         return combined;
-    }
-
-    public Matrix4f getPerspective() {
-        return perspective;
     }
     
     public Camera setNear(float near) {

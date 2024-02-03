@@ -2,6 +2,7 @@ package org.etieskrill.engine.graphics.texture;
 
 import org.etieskrill.engine.Disposable;
 import org.joml.Vector2i;
+import org.joml.Vector2ic;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,8 +17,6 @@ import static org.lwjgl.opengl.GL33C.*;
  * official documentation: <a href="https://github.com/nothings/stb/blob/5736b15f7ea0ffb08dd38af21067c314d6a3aae9/stb_image.h#L23-L33">stb_image</a>
  */
 public abstract class AbstractTexture implements Disposable {
-
-    static final String DIRECTORY = "Engine/src/main/resources/textures/";
 
     protected final int texture;
     protected final Format format;
@@ -191,7 +190,7 @@ public abstract class AbstractTexture implements Disposable {
         protected Wrapping wrapping = Wrapping.REPEAT;
 
         //TODO for inheriting builders it is kinda useful if properties are not set/have invalid values from here
-        protected Vector2i pixelSize = new Vector2i(INVALID_PIXEL_SIZE);
+        protected Vector2ic pixelSize = new Vector2i(INVALID_PIXEL_SIZE);
         protected Format format = null;
 
         protected boolean autoSwizzleMask = true;

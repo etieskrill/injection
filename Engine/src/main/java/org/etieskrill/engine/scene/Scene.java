@@ -1,12 +1,13 @@
 package org.etieskrill.engine.scene;
 
-import glm_.vec2.Vec2;
+import org.joml.Vector2f;
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.Camera;
 import org.etieskrill.engine.input.CursorInputHandler;
 import org.etieskrill.engine.input.Key;
 import org.etieskrill.engine.scene.component.Node;
 import org.jetbrains.annotations.NotNull;
+import org.joml.Vector2fc;
 
 import static java.util.Objects.requireNonNull;
 import static org.lwjgl.opengl.GL11C.*;
@@ -17,21 +18,21 @@ public class Scene implements CursorInputHandler {
     private Node root;
     private Camera camera;
 
-    private final Vec2 size;
+    private final Vector2f size;
     
     public Scene(Batch batch, Node root, Camera camera) {
         this.batch = requireNonNull(batch);
         this.root = requireNonNull(root);
         this.camera = requireNonNull(camera);
         
-        this.size = new Vec2(0);
+        this.size = new Vector2f(0);
     
         camera.setOrientation(0f, -90f, 0f);
     }
     
     public void update(double delta) {
-        root.getPosition().put(0);
-        root.getSize().put(size);
+        root.getPosition().set(0);
+        root.getSize().set(size);
         root.update(delta);
         
         root.format();
@@ -78,8 +79,8 @@ public class Scene implements CursorInputHandler {
         this.root.hide();
     }
 
-    public void setSize(Vec2 size) {
-        this.size.put(size);
+    public void setSize(Vector2fc size) {
+        this.size.set(size);
         if (root != null) root.invalidate();
     }
 

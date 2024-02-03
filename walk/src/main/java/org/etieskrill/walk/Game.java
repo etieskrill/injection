@@ -1,9 +1,9 @@
 package org.etieskrill.walk;
 
-import glm_.vec2.Vec2;
-import glm_.vec2.Vec2i;
-import glm_.vec3.Vec3;
-import glm_.vec4.Vec4;
+import org.joml.Vector2f;
+import org.joml.Vector2i;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.Camera;
 import org.etieskrill.engine.graphics.OrthographicCamera;
@@ -68,7 +68,7 @@ public class Game {
     private PointLight[] pointLights;
     private Model[] orbs;
     
-    private final Vec3 deltaPos = new Vec3(0);
+    private final Vector3f deltaPos = new Vector3f(0);
     private float rotation, smoothRotation;
     private float jumpTime;
     private float smoothSkellyHeight;
@@ -126,16 +126,16 @@ public class Game {
     }
     
     private void setupUI() {
-        Vec2 windowSize = window.getSize().toVec();
+        Vector2f windowSize = window.getSize().toVec();
         uiCamera = new OrthographicCamera(windowSize)
                 .setOrientation(0, -90, 0)
-                .setPosition(new Vec3(windowSize.times(0.5), 0));
+                .setPosition(new Vector3f(windowSize.times(0.5), 0));
         
         scoreLabel = new Label("", Fonts.getDefault(48));
-        scoreLabel.setAlignment(Alignment.TOP).setMargin(new Vec4(20));
+        scoreLabel.setAlignment(Alignment.TOP).setMargin(new Vector4f(20));
         
         fpsLabel = new Label("", Fonts.getDefault(36));
-        fpsLabel.setAlignment(Alignment.TOP_LEFT).setMargin(new Vec4(10));
+        fpsLabel.setAlignment(Alignment.TOP_LEFT).setMargin(new Vector4f(10));
         
         Stack stack = new Stack(List.of(scoreLabel, fpsLabel));
 
@@ -146,9 +146,9 @@ public class Game {
         window.setScene(gameScene);
 
         Label labelContinue = new Label("Continue", Fonts.getDefault(48));
-        labelContinue.setAlignment(Alignment.CENTER).setMargin(new Vec4(10));
+        labelContinue.setAlignment(Alignment.CENTER).setMargin(new Vector4f(10));
         Button buttonContinue = new Button(labelContinue);
-        buttonContinue.setSize(new Vec2(300, 100));
+        buttonContinue.setSize(new Vector2f(300, 100));
         buttonContinue.setAlignment(Alignment.CENTER);
         buttonContinue.setAction(this::unpause);
 
@@ -169,9 +169,9 @@ public class Game {
         ModelLoader models = ModelLoader.get();
         
         cube = models.load("cube", () -> Model.ofFile("cube.obj"));
-        cube.getTransform().setScale(50).setPosition(new Vec3(0, -25, 0));
+        cube.getTransform().setScale(50).setPosition(new Vector3f(0, -25, 0));
         light = models.get("cube");
-        light.getTransform().setScale(0.5f).setPosition(new Vec3(2, 5, -2));
+        light.getTransform().setScale(0.5f).setPosition(new Vector3f(2, 5, -2));
         skelly = models.load("skelly", () -> Model.ofFile("skeleton.glb"));
         skelly.getTransform().setScale(15);
         
@@ -187,8 +187,8 @@ public class Game {
         for (int i = 0; i < NUM_ORBS; i++) {
             orbs[i] = models.load("orb", () -> Model.ofFile("Sphere.obj"));
             orbs[i].getTransform()
-                    .setScale(new Vec3(0.02))
-                    .setPosition(new Vec3(
+                    .setScale(new Vector3f(0.02))
+                    .setPosition(new Vector3f(
                             random.nextFloat() * 50 - 25,
                             random.nextFloat() * 4.5 + 0.5,
                             random.nextFloat() * 50 - 25
@@ -207,7 +207,7 @@ public class Game {
         camera.setZoom(4.81f);
 
         pointLight = new PointLight(light.getTransform().getPosition(),
-                new Vec3(1), new Vec3(1), new Vec3(1),
+                new Vector3f(1), new Vector3f(1), new Vector3f(1),
                 1f, 0.03f, 0.005f);
         pointLights = new PointLight[]{pointLight};
         Font font = null;
@@ -237,21 +237,21 @@ public class Game {
     
 //        TODO funny how these return completely inaccurate results
 //         test isolated with kotlin, java, and play back to https://github.com/kotlin-graphics/glm if necessary
-//        System.out.println(new Vec2i(1000).times(0.5f));
-//        System.out.println(new Vec2i(1000));
-//        System.out.println(new Vec2i(1000).times(1.5f));
-//        System.out.println(new Vec2i(1000).times(2f));
+//        System.out.println(new Vector2i(1000).times(0.5f));
+//        System.out.println(new Vector2i(1000));
+//        System.out.println(new Vector2i(1000).times(1.5f));
+//        System.out.println(new Vector2i(1000).times(2f));
     
-        Vec2 windowSize = window.getSize().toVec();
-        FrameBuffer postBuffer = FrameBuffer.getStandard(new Vec2i(windowSize));
+        Vector2f windowSize = window.getSize().toVec();
+        FrameBuffer postBuffer = FrameBuffer.getStandard(new Vector2i(windowSize));
         Material mat = new Material.Builder() //TODO okay, the fact models, or rather meshes simply ignore these mats is getting frustrating now, that builder needs some serious rework
                 .addTextures((Texture2D) postBuffer.getAttachment(FrameBuffer.AttachmentType.COLOUR0))
                 .build();
         Model screenQuad = ModelFactory.rectangle(-1, -1, 2, 2, mat) //Hey hey people, these, are in fact, regular    screeeeen coordinates, not viewport, meaning, for post processing, these effectively *always* need to be    (-1, -1) and (2, 2).
                 .build();
-        screenQuad.getTransform().setPosition(new Vec3(0, 0, 1));
+        screenQuad.getTransform().setPosition(new Vector3f(0, 0, 1));
         Shaders.PostprocessingShader screenShader = Shaders.getPostprocessingShader();
-        Vec3 unpauseColour = new Vec3(1.0), pauseColour = new Vec3(0.65);
+        Vector3f unpauseColour = new Vector3f(1.0), pauseColour = new Vector3f(0.65);
         
         pacer.start();
         while (!window.shouldClose()) {
@@ -313,7 +313,7 @@ public class Game {
     }
     
     private void transformSkelly() {
-        Vec3 skellyTranslate = camera
+        Vector3f skellyTranslate = camera
                 .relativeTranslation(deltaPos)
                 .times(1, 0, 1);
         if (skellyTranslate.length2() > 0) skellyTranslate.normalizeAssign();
@@ -335,7 +335,7 @@ public class Game {
             smoothRotation %= Math.toRadians(360);
             skelly.getTransform().setRotation(
                     smoothRotation,
-                    new Vec3(0, 1, 0));
+                    new Vector3f(0, 1, 0));
         }
         deltaPos.put(0);
     
@@ -358,7 +358,7 @@ public class Game {
         falloff = 20 * falloff * pacer.getDeltaTimeSeconds();
         smoothSkellyHeight += skellyHeight > smoothSkellyHeight ? falloff : -falloff;
     
-        skelly.getTransform().setScale(new Vec3(15, smoothSkellyHeight, 15));
+        skelly.getTransform().setScale(new Vector3f(15, smoothSkellyHeight, 15));
 
 //            skellyBBModel.getTransform().set(skelly.getTransform());
     }
@@ -367,8 +367,8 @@ public class Game {
         for (Model orb : orbs) {
             if (!orb.isEnabled()) continue;
             
-            Vec3 direction = orb.getTransform().getPosition().minus(skelly.getTransform().getPosition());
-            if (new Vec2(direction.getX(), direction.getZ()).length() < 1 && direction.getY() > 0 && direction.getY() < 4) {
+            Vector3f direction = orb.getTransform().getPosition().minus(skelly.getTransform().getPosition());
+            if (new Vector2f(direction.getX(), direction.getZ()).length() < 1 && direction.getY() > 0 && direction.getY() < 4) {
                 orb.disable();
                 orbsCollected++;
             }
@@ -376,7 +376,7 @@ public class Game {
     }
     
     private void updateCamera() {
-        Vec3 orbitPos = camera.getDirection().negate().times(3);
+        Vector3f orbitPos = camera.getDirection().negate().times(3);
         camera.setPosition(orbitPos.plus(0, skelly.getWorldBoundingBox().getSize().getY() - 0.5, 0).plus(skelly.getTransform().getPosition()));
     }
     

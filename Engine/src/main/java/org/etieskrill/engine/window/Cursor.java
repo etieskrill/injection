@@ -1,7 +1,7 @@
 package org.etieskrill.engine.window;
 
-import glm_.vec2.Vec2;
 import org.etieskrill.engine.Disposable;
+import org.joml.Vector2d;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
@@ -9,7 +9,7 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 //TODO update disposable once custom cursors are implemented
 public class Cursor implements Disposable {
     
-    protected final long cursor;
+    protected final long cursorId;
     
     protected Window window;
     
@@ -27,8 +27,8 @@ public class Cursor implements Disposable {
         this(glfwCreateStandardCursor(GLFW_ARROW_CURSOR));
     }
     
-    protected Cursor(long cursor) {
-        this.cursor = cursor;
+    protected Cursor(long cursorId) {
+        this.cursorId = cursorId;
     }
     
     public enum CursorMode {
@@ -57,7 +57,7 @@ public class Cursor implements Disposable {
                 case DISABLED -> GLFW_CURSOR_DISABLED;
                 case CAPTURED -> GLFW_CURSOR_CAPTURED;
             };
-        };
+        }
     }
     
     public void setMode(CursorMode mode) {
@@ -95,29 +95,31 @@ public class Cursor implements Disposable {
     }
     
     public void setShape(CursorShape shape) {
-        checkWindow();
-        int glfwShape = switch (shape) {
-            case ARROW -> GLFW_ARROW_CURSOR;
-            case IBEAM -> GLFW_IBEAM_CURSOR;
-            case CROSSHAIR -> GLFW_CROSSHAIR_CURSOR;
-            case POINTING_HAND -> GLFW_POINTING_HAND_CURSOR;
-            case RESIZE_EW -> GLFW_RESIZE_EW_CURSOR;
-            case RESIZE_NS -> GLFW_RESIZE_NS_CURSOR;
-            case RESIZE_NWSE -> GLFW_RESIZE_NWSE_CURSOR;
-            case RESIZE_NESW -> GLFW_RESIZE_NESW_CURSOR;
-            case RESIZE_ALL -> GLFW_RESIZE_ALL_CURSOR;
-            case NOT_ALLOWED -> GLFW_NOT_ALLOWED_CURSOR;
-        };
-        
-        //glfwCreateStandardCursor(glfwShape);
-        //glfwSetInputMode(window, );
+        throw new UnsupportedOperationException("Not implemented yet");
+
+//        checkWindow();
+//        int glfwShape = switch (shape) {
+//            case ARROW -> GLFW_ARROW_CURSOR;
+//            case IBEAM -> GLFW_IBEAM_CURSOR;
+//            case CROSSHAIR -> GLFW_CROSSHAIR_CURSOR;
+//            case POINTING_HAND -> GLFW_POINTING_HAND_CURSOR;
+//            case RESIZE_EW -> GLFW_RESIZE_EW_CURSOR;
+//            case RESIZE_NS -> GLFW_RESIZE_NS_CURSOR;
+//            case RESIZE_NWSE -> GLFW_RESIZE_NWSE_CURSOR;
+//            case RESIZE_NESW -> GLFW_RESIZE_NESW_CURSOR;
+//            case RESIZE_ALL -> GLFW_RESIZE_ALL_CURSOR;
+//            case NOT_ALLOWED -> GLFW_NOT_ALLOWED_CURSOR;
+//        };
+//
+//        glfwCreateStandardCursor(glfwShape);
+//        glfwSetInputMode(window, );
     }
 
-    public Vec2 getPosition() {
+    public Vector2d getPosition() {
         checkWindow();
         double[] posx = new double[1], posy = new double[1];
         glfwGetCursorPos(window.getID(), posx, posy);
-        return new Vec2(posx[0], posy[0]);
+        return new Vector2d(posx[0], posy[0]);
     }
     
     private void checkWindow() {
@@ -125,7 +127,7 @@ public class Cursor implements Disposable {
     }
     
     long getId() {
-        return cursor;
+        return cursorId;
     }
     
     Cursor setWindow(Window window) {
@@ -137,7 +139,7 @@ public class Cursor implements Disposable {
     
     @Override
     public void dispose() {
-        if (cursor != NULL) glfwDestroyCursor(cursor);
+        if (cursorId != NULL) glfwDestroyCursor(cursorId);
     }
     
 }

@@ -1,22 +1,22 @@
 package org.etieskrill.engine.graphics.model;
 
-import glm_.vec3.Vec3;
+import org.joml.Vector3f;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shaders.UniformMappable;
 
 public class PointLight implements UniformMappable {
     
-    private final Vec3 position;
+    private final Vector3f position;
     
-    private final Vec3 ambient;
-    private final Vec3 diffuse;
-    private final Vec3 specular;
+    private final Vector3f ambient;
+    private final Vector3f diffuse;
+    private final Vector3f specular;
     
     private final float constant;
     private final float linear;
     private final float quadratic;
     
-    public PointLight(Vec3 position, Vec3 ambient, Vec3 diffuse, Vec3 specular, float constant, float linear, float quadratic) {
+    public PointLight(Vector3f position, Vector3f ambient, Vector3f diffuse, Vector3f specular, float constant, float linear, float quadratic) {
         this.position = position;
         this.ambient = ambient;
         this.diffuse = diffuse;

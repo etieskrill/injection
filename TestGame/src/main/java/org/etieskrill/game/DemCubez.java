@@ -1,8 +1,6 @@
 package org.etieskrill.game;
 
-import glm_.vec2.Vec2;
-import glm_.vec2.Vec2i;
-import glm_.vec3.Vec3;
+import org.joml.*;
 import org.etieskrill.engine.entity.data.Transform;
 import org.etieskrill.engine.graphics.PerspectiveCamera;
 import org.etieskrill.engine.graphics.assimp.*;
@@ -20,11 +18,11 @@ import org.etieskrill.engine.time.SystemNanoTimePacer;
 import org.etieskrill.engine.util.Loaders.ModelLoader;
 import org.etieskrill.engine.window.Cursor.CursorMode;
 import org.etieskrill.engine.window.Window;
-import org.joml.Vector3f;
 import org.lwjgl.opengl.GL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.Math;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -210,7 +208,8 @@ public class DemCubez {
         pacer = new SystemNanoTimePacer(1d / TARGET_FPS);
         pacer.start();
         
-        FrameBuffer frameBuffer = FrameBuffer.getStandard(new Vec2i(window.getSize().toVec()));
+        FrameBuffer frameBuffer = FrameBuffer.getStandard(
+                new Vector2i(window.getSize().toVec().get(RoundingMode.TRUNCATE, new Vector2i())));
         frameBuffer.unbind();
         
         ShaderProgram screenShader = Shaders.getPostprocessingShader();
@@ -222,10 +221,10 @@ public class DemCubez {
         Material mat = new Material.Builder().addTextures(textureBuffer).build();
 
         List<Vertex> vertices = new ArrayList<>();
-        vertices.add(new Vertex(new Vec3(-1f, -1f, 0f), new Vec3(), new Vec2(0f)));
-        vertices.add(new Vertex(new Vec3(-1f, 1f, 0f), new Vec3(), new Vec2(0f, 1f)));
-        vertices.add(new Vertex(new Vec3(1f, -1f, 0f), new Vec3(), new Vec2(1f, 0f)));
-        vertices.add(new Vertex(new Vec3(1f, 1f, 0f), new Vec3(), new Vec2(1f, 1f)));
+        vertices.add(new Vertex(new Vector3f(-1f, -1f, 0f), new Vector3f(), new Vector2f(0f)));
+        vertices.add(new Vertex(new Vector3f(-1f, 1f, 0f), new Vector3f(), new Vector2f(0f, 1f)));
+        vertices.add(new Vertex(new Vector3f(1f, -1f, 0f), new Vector3f(), new Vector2f(1f, 0f)));
+        vertices.add(new Vertex(new Vector3f(1f, 1f, 0f), new Vector3f(), new Vector2f(1f, 1f)));
         List<Integer> indices = new ArrayList<>(List.of(new Integer[]{0, 2, 1, 3, 1, 2}));
         Mesh screenQuad = Mesh.Loader.loadToVAO(vertices, indices, mat);
         
@@ -260,7 +259,7 @@ public class DemCubez {
 //            screenShader.setUniform("uSharpen", true);
 //            screenShader.setUniform("uSharpenOffset", 1f / 10000f);
 
-            screenShader.setUniform("uColour", new Vec3(1.0));
+            screenShader.setUniform("uColour", new Vector3f(1.0f));
             glEnable(GL_FRAMEBUFFER_SRGB); //manual gamma correction for funsies
             renderer.render(screenQuad, screenShader);
             glDisable(GL_FRAMEBUFFER_SRGB);
@@ -283,20 +282,20 @@ public class DemCubez {
             dYaw = 0f;
         }
         
-        Vec3 deltaPosition = new Vec3();
+        Vector3f deltaPosition = new Vector3f();
     
         float camSpeed = !ctrlPressed ? 2f : 4f;
-        if (wPressed) deltaPosition.plusAssign(new Vec3(0f, 0f, 1f));
-        if (sPressed) deltaPosition.plusAssign(new Vec3(0f, 0f, -1f));
-        if (aPressed) deltaPosition.plusAssign(new Vec3(-1f, 0f, 0f));
-        if (dPressed) deltaPosition.plusAssign(new Vec3(1f, 0f, 0f));
-        if (spacePressed) deltaPosition.plusAssign(new Vec3(0f, -1f, 0f));
-        if (shiftPressed) deltaPosition.plusAssign(new Vec3(0f, 1f, 0f));
+        if (wPressed) deltaPosition.add(new Vector3f(0f, 0f, 1f));
+        if (sPressed) deltaPosition.add(new Vector3f(0f, 0f, -1f));
+        if (aPressed) deltaPosition.add(new Vector3f(-1f, 0f, 0f));
+        if (dPressed) deltaPosition.add(new Vector3f(1f, 0f, 0f));
+        if (spacePressed) deltaPosition.add(new Vector3f(0f, -1f, 0f));
+        if (shiftPressed) deltaPosition.add(new Vector3f(0f, 1f, 0f));
     
         deltaPosition.normalize();
     
         float delta = (float) pacer.getDeltaTimeSeconds();
-        deltaPosition = deltaPosition.times(camSpeed).times(delta);
+        deltaPosition.mul(camSpeed).mul(delta);
         if (!paused) camera.translate(deltaPosition);
     
         float camRollSpeed = 1f, camRoll = 0;
@@ -304,23 +303,23 @@ public class DemCubez {
         if (ePressed) camRoll += camRollSpeed;
     
         dRoll = camRoll % 360;
-        //up.set(new Mat3().rotateZ(Math.toRadians(roll)).mul(new Vec3(0f, 1f, 0f)));
+        //up.set(new Mat3().rotateZ(Math.toRadians(roll)).mul(new Vector3f(0f, 1f, 0f)));
     }
     
     private void loadModels() {
         skybox = new CubeMapModel("space");
         
-        Vec3[] cubePositions = {
-                //new Vec3( 0.0f,  0.0f,  0.0f),
-                new Vec3( 2.0f,  5.0f, -15.0f),
-                new Vec3(-1.5f, -2.2f, -2.5f),
-                new Vec3(-3.8f, -2.0f, -12.3f),
-                new Vec3( 2.4f, -0.4f, -3.5f),
-                new Vec3(-1.7f,  3.0f, -7.5f),
-                new Vec3( 1.3f, -2.0f, -2.5f),
-                new Vec3( 1.5f,  2.0f, -2.5f),
-                new Vec3( 1.5f,  0.2f, -1.5f),
-                new Vec3(-1.3f,  1.0f, -1.5f)
+        Vector3f[] cubePositions = {
+                //new Vector3f( 0.0f,  0.0f,  0.0f),
+                new Vector3f( 2.0f,  5.0f, -15.0f),
+                new Vector3f(-1.5f, -2.2f, -2.5f),
+                new Vector3f(-3.8f, -2.0f, -12.3f),
+                new Vector3f( 2.4f, -0.4f, -3.5f),
+                new Vector3f(-1.7f,  3.0f, -7.5f),
+                new Vector3f( 1.3f, -2.0f, -2.5f),
+                new Vector3f( 1.5f,  2.0f, -2.5f),
+                new Vector3f( 1.5f,  0.2f, -1.5f),
+                new Vector3f(-1.3f,  1.0f, -1.5f)
         };
     
         models = new Model[cubePositions.length];
@@ -334,22 +333,22 @@ public class DemCubez {
             models[i].getTransform()
                     .setPosition(cubePositions[i])
                     .setRotation(random.nextFloat(),
-                            new Vec3(
+                            new Vector3f(
                                     random.nextFloat(-1f, 1f),
                                     random.nextFloat(-1f, 1f),
                                     random.nextFloat(-1f, 1f))
                     );
         }
     
-        Vec3[] grassPosition = {
-                new Vec3(-1.5f,  0.0f, -0.48f),
-                new Vec3( 1.5f,  0.0f,  0.51f),
-                new Vec3( 0.0f,  0.0f,  0.7f),
-                new Vec3(-0.3f,  0.0f, -2.3f),
-                new Vec3( 0.5f,  0.0f, -0.6f)
+        Vector3f[] grassPosition = {
+                new Vector3f(-1.5f,  0.0f, -0.48f),
+                new Vector3f( 1.5f,  0.0f,  0.51f),
+                new Vector3f( 0.0f,  0.0f,  0.7f),
+                new Vector3f(-0.3f,  0.0f, -2.3f),
+                new Vector3f( 0.5f,  0.0f, -0.6f)
         };
         grassModels = new ArrayList<>(grassPosition.length);
-        for (Vec3 position : grassPosition) {
+        for (Vector3f position : grassPosition) {
             //TODO contemplate how to make copy on repeated load (so e.g. no individual transform) more obvious
             Model grassModel = ModelLoader.get().load("grass", () ->
                     new Model.Builder("grass.obj")
@@ -368,38 +367,38 @@ public class DemCubez {
                                     .setName("light")
                                     .setTransform(Transform.getBlank()
                                             .setScale(0.2f)
-                                            .setPosition(new Vec3(0f, 0f, -5f)))
+                                            .setPosition(new Vector3f(0f, 0f, -5f)))
                                     .build());
         }
     
         sword = ModelLoader.get().load("sword", () ->
                 new Model.Builder("Sting-Sword.obj")
                         .setTransform(new Transform(
-                                new Vec3(0, 0, -2),
-                                (float) Math.toRadians(90f), new Vec3(1f, 0f, 0f),
-                                new Vec3(0.1f)))
+                                new Vector3f(0, 0, -2),
+                                (float) Math.toRadians(90f), new Vector3f(1f, 0f, 0f),
+                                new Vector3f(0.1f)))
                         .build()
         );
     
         backpack = ModelLoader.get().load("backpack", () ->
                 new Model.Builder("backpack.obj")
                         .setTransform(new Transform(
-                                new Vec3(3, 0.5, -2),
-                                (float) Math.toRadians(-90), new Vec3(0, 1, 0),
-                                new Vec3(0.15f)))
+                                new Vector3f(3, .5f, -2),
+                                (float) Math.toRadians(-90), new Vector3f(0, 1, 0),
+                                new Vector3f(0.15f)))
                         .build()
         );
     
         //These are essentially intensity factors
         //TODO isn't this kind of stupid? why would a light SOURCE have different kinds of intensities?
-        globalLight = new DirectionalLight(new Vec3(1),
-                new Vec3(0.01), new Vec3(0.1), new Vec3(0.2));
+        globalLight = new DirectionalLight(new Vector3f(1),
+                new Vector3f(.01f), new Vector3f(.1f), new Vector3f(.2f));
     
         lights = new PointLight[lightSources.length];
         for (int i = 0; i < lights.length; i++) {
             lights[i] = new PointLight(lightSources[i].getTransform().getPosition(),
-                    new Vec3(0.01), new Vec3(0.4), new Vec3(1),
-                    1f, 0.03f, 0.005f);
+                    new Vector3f(.01f), new Vector3f(.4f), new Vector3f(1),
+                    1f, .03f, .005f);
         }
     }
     
@@ -415,8 +414,8 @@ public class DemCubez {
 //        Container container = new Container();
 //        //container.getLayout().setAlignment(Layout.Alignment.BOTTOM_RIGHT);
 //        Layout layout = Layout.get()
-//                .setPrefSize(new Vec2(400f, 100f))
-//                .setMinSize(new Vec2(250f, 50f));
+//                .setPrefSize(new Vector2f(400f, 100f))
+//                .setMinSize(new Vector2f(250f, 50f));
 //        Button button1 = new Button(layout);
 //        Button button2 = new Button(layout);
 //        Button button3 = new Button(layout);
@@ -452,27 +451,28 @@ public class DemCubez {
     
     private void updateModels() {
         double radius = 4f, speed = 50f, time = speed * pacer.getTime();
-        Vec3 offset = new Vec3(0f, 0f, -2f);
-        Vec3 newLightSourcePos = new Vec3(
-                radius * Math.cos(Math.toRadians(time)),
+        Vector3f offset = new Vector3f(0f, 0f, -2f);
+        Vector3f newLightSourcePos = new Vector3f(
+                (float) (radius * Math.cos(Math.toRadians(time))),
                 0f,
-                radius * Math.sin(Math.toRadians(time))
+                (float) (radius * Math.sin(Math.toRadians(time)))
         );
         if (!paused) {
-            lightSources[0].getTransform().setPosition(newLightSourcePos.plus(offset));
-            lightSources[1].getTransform().setPosition(newLightSourcePos.negate().plus(offset));
+            lightSources[0].getTransform().setPosition(new Vector3f(newLightSourcePos).add(offset));
+            lightSources[1].getTransform().setPosition(newLightSourcePos.negate().add(offset));
         }
     
         if (!paused) {
             for (Model cube : models)
-                cube.getTransform().setRotation(cube.getTransform().getRotation() + 0.01f, cube.getTransform().getRotationAxis());
+                cube.getTransform().setRotation(cube.getTransform().getRotation() + .01f, cube.getTransform().getRotationAxis());
         }
     }
     
     private void renderModels() {
         renderer.prepare();
-        
-        renderer.render(skybox, skyboxShader, camera.getCombined().cleanTranslation().scale(50f));
+
+        Vector3f translation = camera.getCombined().getTranslation(new Vector3f());
+        renderer.render(skybox, skyboxShader, camera.getCombined().translate(translation.negate(), new Matrix4f()).scale(50f));
     
         setShaderUniforms();
 
@@ -489,9 +489,10 @@ public class DemCubez {
         }
 
         //TODO 1. draw opaque, 2. sort transparent by decreasing distance to viewer, 3. draw sorted transparent
+        Vector3f camPos = camera.getPosition();
         grassModels.sort((model1, model2) -> Float.compare(
-                camera.getPosition().minus(model2.getTransform().getPosition()).length(),
-                camera.getPosition().minus(model1.getTransform().getPosition()).length())
+                new Vector3f(camPos).sub(model2.getTransform().getPosition()).length(),
+                new Vector3f(camPos).sub(model1.getTransform().getPosition()).length())
         );
         for (Model grass : grassModels) {
             renderer.render(grass, containerShader, camera.getCombined());

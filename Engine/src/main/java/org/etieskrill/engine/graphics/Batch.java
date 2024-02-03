@@ -1,9 +1,6 @@
 package org.etieskrill.engine.graphics;
 
-import glm_.mat4x4.Mat4;
-import glm_.vec2.Vec2;
-import glm_.vec3.Vec3;
-import glm_.vec4.Vec4;
+import org.joml.*;
 import org.etieskrill.engine.graphics.gl.Renderer;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
@@ -17,28 +14,28 @@ public class Batch {
     //TODO declare this as a pure ui rendering batch (or make subclass) and hardcode shaders here, with a colour stack n stuff
     private ShaderProgram shader;
 
-    private final Mat4 combined;
+    private final Matrix4f combined;
 
     public Batch(@NotNull Renderer renderer) {
         this.renderer = renderer;
         this.shader = Shaders.getTextureShader();
-        this.combined = new Mat4(1f);
+        this.combined = new Matrix4f().identity();
     }
 
-    private static final Vec4 resetColour = new Vec4(1);
+    private static final Vector4f resetColour = new Vector4f(1);
 
-    public void render(Vec3 position, Vec3 size, Vec4 colour) {
+    public void render(Vector3f position, Vector3f size, Vector4f colour) {
         shader.setUniform("uColour", colour, false);
         renderer.renderBox(position, size, shader, combined);
         shader.setUniform("uColour", resetColour, false);
     }
 
-    public void render(String text, Font font, Vec2 position) {
+    public void render(String text, Font font, Vector2f position) {
         renderer.render(text, font, position, shader, combined);
     }
 
-    public Batch setCombined(Mat4 mat) {
-        this.combined.put(mat);
+    public Batch setCombined(Matrix4fc mat) {
+        this.combined.set(mat);
         return this;
     }
 

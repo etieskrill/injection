@@ -1,9 +1,10 @@
 package org.etieskrill.engine.graphics.gl;
 
-import glm_.vec2.Vec2i;
+import org.joml.Vector2i;
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.texture.Textures;
+import org.joml.Vector2ic;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,10 +18,10 @@ public class FrameBuffer implements Disposable {
     private static final Logger logger = LoggerFactory.getLogger(FrameBuffer.class);
     
     private final int fbo;
-    private final Vec2i size;
+    private final Vector2ic size;
     private final Map<AttachmentType, FrameBufferAttachment> attachments;
     
-    public static FrameBuffer getStandard(Vec2i size) {
+    public static FrameBuffer getStandard(Vector2ic size) {
         // Colour buffer as a texture attachment
         Texture2D colourBufferTexture = Textures.genBlank(size, Texture2D.Format.RGB);
     
@@ -34,11 +35,11 @@ public class FrameBuffer implements Disposable {
     }
     
     public static final class Builder {
-        private final Vec2i size;
+        private Vector2ic size;
         
         private final Map<AttachmentType, FrameBufferAttachment> attachments = new HashMap<>();
         
-        public Builder(Vec2i size) {
+        public Builder(Vector2ic size) {
             this.size = size;
         }
     
@@ -87,7 +88,7 @@ public class FrameBuffer implements Disposable {
         }
     }
     
-    private FrameBuffer(Vec2i size) {
+    private FrameBuffer(Vector2ic size) {
         this.fbo = glGenFramebuffers();
         this.size = size;
         this.attachments = new HashMap<>(3);
@@ -137,7 +138,7 @@ public class FrameBuffer implements Disposable {
         }
     }
     
-    public Vec2i getSize() {
+    public Vector2ic getSize() {
         return size;
     }
     

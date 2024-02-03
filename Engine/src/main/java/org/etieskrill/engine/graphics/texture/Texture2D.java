@@ -3,6 +3,7 @@ package org.etieskrill.engine.graphics.texture;
 import org.etieskrill.engine.graphics.gl.FrameBufferAttachment;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2i;
+import org.joml.Vector2ic;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,7 +18,7 @@ public class Texture2D extends AbstractTexture implements FrameBufferAttachment 
     
     private static final Logger logger = LoggerFactory.getLogger(Texture2D.class);
 
-    private final Vector2i size;
+    private final Vector2ic size;
     
     public static final class FileBuilder extends Builder {
         private final String file;
@@ -31,9 +32,7 @@ public class Texture2D extends AbstractTexture implements FrameBufferAttachment 
         public FileBuilder(String file, Type type) {
             this.file = file;
             this.type = type;
-            
-            file = DIRECTORY + file;
-            
+
             TextureData data = loadFileOrDefault(file, type);
             
             textureData = data.getTextureData();
@@ -61,7 +60,7 @@ public class Texture2D extends AbstractTexture implements FrameBufferAttachment 
     }
     
     public static final class BlankBuilder extends Builder {
-        BlankBuilder(Vector2i pixelSize) {
+        BlankBuilder(Vector2ic pixelSize) {
             this.textureData = null;
             this.pixelSize = pixelSize;
             this.format = Format.SRGB;
@@ -97,7 +96,7 @@ public class Texture2D extends AbstractTexture implements FrameBufferAttachment 
     }
 
     @Override
-    public Vector2i getSize() {
+    public Vector2ic getSize() {
         return size;
     }
 
