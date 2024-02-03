@@ -245,7 +245,7 @@ public class Window implements Disposable {
     
         GLFWVidMode videoMode = glfwGetVideoMode(monitor);
         if (videoMode == null) {
-            System.err.println("Video mode for monitor could not be retrieved");
+            logger.warn("Video mode for monitor could not be retrieved");
             size = size == null ? WindowSize.HD : size;
             targetFrameRate = targetFrameRate < 0 ? 60f : targetFrameRate;
         }

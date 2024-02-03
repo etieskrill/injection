@@ -1,11 +1,17 @@
 package org.etieskrill.engine.time;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.concurrent.atomic.AtomicLong;
 
+
 public class SystemNanoTimePacer implements LoopPacer {
-    
+
+    private static final Logger logger = LoggerFactory.getLogger(SystemNanoTimePacer.class);
+
     private static final long NANO_FACTOR = 1000000000, MILLI_FACTOR = 1000000;
     private static final int AVERAGE_FRAMERATE_SPAN = 20;
     
@@ -57,7 +63,7 @@ public class SystemNanoTimePacer implements LoopPacer {
         try {
             Thread.sleep((int) Math.max(targetDelta - delta, 0) / MILLI_FACTOR);
         } catch (InterruptedException e) {
-            System.err.printf("[%s] Could not sleep", Thread.currentThread().getName());
+            logger.warn("Could not sleep", e);
         }
 
         if (totalFrames > ignoredInitialReadings) updateAverageFPS(System.nanoTime() - timeLast);
