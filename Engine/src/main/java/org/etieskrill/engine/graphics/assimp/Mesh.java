@@ -13,6 +13,7 @@ public class Mesh implements Disposable {
     public static final int GL_FLOAT_BYTE_SIZE = Float.BYTES;
     
     private final Material material;
+    private final List<AnimationLoader.Bone> bones;
     private final int vao, numIndices, vbo, ebo;
     private final AABB boundingBox;
     private final DrawMode drawMode;
@@ -41,18 +42,18 @@ public class Mesh implements Disposable {
     public static final class Loader {
         //TODO builder
         public static Mesh loadToVAO(List<Vertex> vertices, List<Integer> indices, Material material) {
-            return loadToVAO(vertices, indices, material, null, null);
+            return loadToVAO(vertices, indices, material, null, null, null);
         }
 
         public static Mesh loadToVAO(List<Vertex> vertices, List<Integer> indices, Material material, AABB boundingBox) {
-            return loadToVAO(vertices, indices, material, boundingBox, null);
+            return loadToVAO(vertices, indices, material, null, boundingBox, null);
         }
 
         public static Mesh loadToVAO(List<Vertex> vertices, List<Integer> indices, Material material, DrawMode drawMode) {
-            return loadToVAO(vertices, indices, material, null, drawMode);
+            return loadToVAO(vertices, indices, material, null, null, drawMode);
         }
 
-        public static Mesh loadToVAO(List<Vertex> vertices, List<Integer> indices, Material material, AABB boundingBox, DrawMode drawMode) {
+        public static Mesh loadToVAO(List<Vertex> vertices, List<Integer> indices, Material material, List<AnimationLoader.Bone> bones, AABB boundingBox, DrawMode drawMode) {
             int vao = createVAO();
 
             List<Float> _data = vertices.stream()
@@ -68,7 +69,10 @@ public class Mesh implements Disposable {
             int ebo = prepareIndexBuffer(_indices);
         
             unbindVAO();
-            return new Mesh(material, vao, indices.size(), vbo, ebo, boundingBox, drawMode != null ? drawMode : DrawMode.TRIANGLES);
+            return new Mesh(material, bones != null ? bones : List.of(),
+                    vao, indices.size(), vbo, ebo, boundingBox,
+                    drawMode != null ? drawMode : DrawMode.TRIANGLES
+            );
         }
     
         private static int createVAO() {
@@ -111,10 +115,12 @@ public class Mesh implements Disposable {
     }
     
     public Mesh(Material material,
+                List<AnimationLoader.Bone> bones,
                 int vao, int numIndices, int vbo, int ebo,
                 AABB boundingBox,
                 DrawMode drawMode) {
         this.material = material;
+        this.bones = bones;
         
         this.vao = vao;
         this.numIndices = numIndices;
@@ -129,7 +135,11 @@ public class Mesh implements Disposable {
     public Material getMaterial() {
         return material;
     }
-    
+
+    public List<AnimationLoader.Bone> getBones() {
+        return bones;
+    }
+
     public int getNumIndices() {
         return numIndices;
     }
