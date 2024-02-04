@@ -1,5 +1,6 @@
 package org.etieskrill.engine.window;
 
+import org.jetbrains.annotations.Contract;
 import org.joml.Vector2f;
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.input.Key;
@@ -95,7 +96,8 @@ public class Window implements Disposable {
             }
             return largestFit;
         }
-        
+
+        @Contract("-> new")
         public Vector2f toVec() {
             return new Vector2f(width, height);
         }

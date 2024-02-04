@@ -27,6 +27,10 @@ public class Textures {
 
     private static final Logger logger = LoggerFactory.getLogger(Textures.class);
 
+    private Textures() {
+        //Not intended for instantiation
+    }
+
     public static Texture2D genBlank(Vector2ic size, AbstractTexture.Format format) {
         return new Texture2D.BlankBuilder(size)
                 .setType(DIFFUSE)
@@ -53,16 +57,16 @@ public class Textures {
     }
 
     static AbstractTexture.TextureData loadFile(String file) {
-        IntBuffer bufferWidth = BufferUtils.createIntBuffer(1),
-                bufferHeight = BufferUtils.createIntBuffer(1),
-                bufferColourChannels = BufferUtils.createIntBuffer(1);
+        IntBuffer bufferWidth = BufferUtils.createIntBuffer(1);
+        IntBuffer bufferHeight = BufferUtils.createIntBuffer(1);
+        IntBuffer bufferColourChannels = BufferUtils.createIntBuffer(1);
 
         //stbi_set_flip_vertically_on_load(true); the uv coords are already flipped while loading the models
         ByteBuffer textureData = stbi_load_from_memory(
                 ResourceReader.getRawClassPathResource(TEXTURE_PATH + file),
                 bufferWidth, bufferHeight, bufferColourChannels, 0);
         if (textureData == null || !textureData.hasRemaining())
-            throw new MissingResourceException("Texture %s could not be loaded:\n%s".formatted(file, stbi_failure_reason()),
+            throw new MissingResourceException("Texture %s could not be loaded:%n%s".formatted(file, stbi_failure_reason()),
                     Texture2D.class.getSimpleName(), file);
 
         int pixelWidth = bufferWidth.get();
@@ -79,8 +83,8 @@ public class Textures {
     public static CubeMapTexture getSkybox(String name) {
         return (CubeMapTexture) Loaders.TextureLoader.get().load("cubemap/" + name, () ->
                 CubeMapTexture.CubemapTextureBuilder.get(name)
-                        .setMipMapping(Texture2D.MinFilter.LINEAR, Texture2D.MagFilter.LINEAR)
-                        .setWrapping(Texture2D.Wrapping.CLAMP_TO_EDGE)
+                        .setMipMapping(AbstractTexture.MinFilter.LINEAR, AbstractTexture.MagFilter.LINEAR)
+                        .setWrapping(AbstractTexture.Wrapping.CLAMP_TO_EDGE)
                         .build());
     }
 

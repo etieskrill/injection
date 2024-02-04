@@ -72,6 +72,8 @@ public class DemCubez {
     }
     
     private void init() {
+        if (true) throw new RuntimeException("Will compile and run, but is currently broken"); //TODO fix
+
         Window.USE_RAW_MOUSE_MOTION_IF_AVAILABLE = false;
         
         this.window = new Window.Builder()

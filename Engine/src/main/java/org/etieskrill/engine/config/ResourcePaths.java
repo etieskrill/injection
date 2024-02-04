@@ -13,7 +13,8 @@ public class ResourcePaths {
     public static final String SHADER_PATH = "shaders/";
 
     public static final String TEXTURE_PATH = "textures/";
-    public static final String CUBEMAP_PATH = TEXTURE_PATH + "cubemaps/";
+    public static final String TEXTURE_CUBEMAP_PATH = "cubemaps/";
+    public static final String CUBEMAP_PATH = TEXTURE_PATH + TEXTURE_CUBEMAP_PATH;
 
     private ResourcePaths() {}
 

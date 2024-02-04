@@ -9,14 +9,6 @@ java {
     }
 }
 
-sourceSets {
-    main {
-        resources {
-            srcDirs "src/main/resources"
-        }
-    }
-}
-
 ext {
     lwjglVersion = "3.3.3"
     lwjglNatives = "natives-windows"
