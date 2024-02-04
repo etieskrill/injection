@@ -12,11 +12,6 @@ public class HallwayShader extends ShaderProgram {
     }
 
     @Override
-    protected String getShaderFileBasePath() {
-        return Path.of("./some-shader-buggery/src/main/resources/shaders").toAbsolutePath().toString();
-    }
-
-    @Override
     protected String[] getShaderFileNames() {
         return new String[]{"hallway.vert", "hallway.frag"};
     }

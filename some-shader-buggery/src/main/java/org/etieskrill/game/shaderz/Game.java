@@ -1,9 +1,6 @@
 package org.etieskrill.game.shaderz;
 
-import org.joml.Matrix4f;
-import org.joml.Vector2f;
-import org.joml.Vector3f;
-import org.joml.Vector4f;
+import org.joml.*;
 import org.etieskrill.engine.entity.data.Transform;
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.Camera;
@@ -26,6 +23,7 @@ import org.etieskrill.engine.time.SystemNanoTimePacer;
 import org.etieskrill.engine.window.Window;
 import org.lwjgl.glfw.GLFW;
 
+import java.lang.Math; //TODO look into JOML's fast math stuff
 import java.util.Arrays;
 
 public class Game {
@@ -50,7 +48,7 @@ public class Game {
 
     private LoopPacer pacer = new SystemNanoTimePacer(1 / 60f);
 
-    private Label fpsLabel, verticesDrawnLabel, primitivesDrawnLabel;
+    private Label fpsLabel, verticesDrawnLabel, primitivesDrawnLabel; //TODO use these for performance evaluation
 
     public Game() {
         window.setInputs(Input.of(
@@ -59,11 +57,11 @@ public class Game {
         window.getCursor().disable();
 
         final double sensitivity = 0.05;
-        prevCursorPos = window.getCursor().getPosition();
+        prevCursorPos = window.getCursor().getPosition().get(new Vector2f());
         GLFW.glfwSetCursorPosCallback(window.getID(), (window, xpos, ypos) -> {
             camera.orient(
-                    -sensitivity * (prevCursorPos.getY() - ypos),
-                    sensitivity * (prevCursorPos.getX() - xpos), 0);
+                    -sensitivity * (prevCursorPos.y() - ypos),
+                    sensitivity * (prevCursorPos.x() - xpos), 0);
             prevCursorPos.set(xpos, ypos);
         });
 
@@ -71,7 +69,7 @@ public class Game {
 
         sun = Model.ofFile("box.obj");
         sun.getTransform().setScale(0).setPosition(new Vector3f(0, 10, 0));
-        sunLight = new DirectionalLight(sun.getTransform().getPosition().normalize(), new Vector3f(0.2), new Vector3f(0.5), new Vector3f(0.5));
+        sunLight = new DirectionalLight(sun.getTransform().getPosition().normalize(), new Vector3f(.2f), new Vector3f(.5f), new Vector3f(.5f));
 
         camera.setFar(500);
         camera.orient(0, 0, 0);
@@ -81,7 +79,7 @@ public class Game {
         window.setScene(new Scene(
                 new Batch(renderer).setShader(Shaders.getTextShader()),
                 new VBox(fpsLabel).setAlignment(Node.Alignment.TOP_LEFT),
-                new OrthographicCamera(window.getSize().toVec()).setPosition(new Vector3f(window.getSize().toVec().mul(0.5), 0)))
+                new OrthographicCamera(window.getSize().toVec()).setPosition(new Vector3f(window.getSize().toVec().mul(.5f), 0)))
         );
 
         loop();
@@ -93,22 +91,21 @@ public class Game {
     private void loop() {
         pacer.start();
         while (!window.shouldClose()) {
-            sun.getTransform().setPosition(new Vector3f(10 * Math.cos(pacer.getTime()), 10, 10 * Math.sin(pacer.getTime())));
+            sun.getTransform().setPosition(new Vector3f((float) (10 * Math.cos(pacer.getTime())), 10, (float) (10 * Math.sin(pacer.getTime()))));
             sunLight.setDirection(sun.getTransform().getPosition().negate().normalize());
 
             Matrix4f[] hallwaySegments = new Matrix4f[NUM_SECTORS];
             hallwaySegments[0] = hallway.getTransform().toMat();
             for (int i = 1; i < hallwaySegments.length; i++) {
                 Vector3f translation = hallwaySegments[i - 1]
-                        .mul(new Vector4f((float) hallway.getBoundingBox().getSize().getX(), 0, 0, 1))
-                        .toVector3f();
+                        .transformPosition(new Vector3f(hallway.getBoundingBox().getSize().x(), 0, 0));
                 hallwaySegments[i] = new Transform(hallway.getTransform())
                         .translate(translation)
                         .setRotation((float) (i * Math.toRadians(ANGLE)), new Vector3f(0, 0, 1))
                         .toMat();
             }
             shader.setUniformArray("uModels[$]", hallwaySegments);
-            shader.setUniformArray("uNormals[$]", Arrays.stream(hallwaySegments).map(mat4 -> mat4.inverseTranspose().toMat3()).toArray());
+            shader.setUniformArray("uNormals[$]", Arrays.stream(hallwaySegments).map(mat4 -> mat4.invert().transpose().get3x3(new Matrix3f())).toArray());
 
             fpsLabel.setText(String.valueOf((int) pacer.getAverageFPS()));
 

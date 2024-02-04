@@ -3,10 +3,15 @@ package org.etieskrill.engine.graphics.texture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.*;
 import java.util.*;
+import java.util.stream.Stream;
 
 import static org.etieskrill.engine.config.ResourcePaths.CUBEMAP_PATH;
+import static org.etieskrill.engine.config.ResourcePaths.TEXTURE_CUBEMAP_PATH;
 import static org.etieskrill.engine.graphics.texture.Textures.NR_BITS_PER_COLOUR_CHANNEL;
 import static org.lwjgl.opengl.GL33C.*;
 import static org.lwjgl.stb.STBImage.stbi_image_free;
@@ -29,13 +34,31 @@ public class CubeMapTexture extends AbstractTexture {
          * Attempts to load all files from a directory with the given name to a {@code CubeMap}.
          */
         public static CubemapTextureBuilder get(String name) {
-            File cubemapDir = new File(CUBEMAP_PATH + name);
-            if (!cubemapDir.isDirectory())
-                throw new MissingResourceException("Invalid name", CubeMapTexture.class.getSimpleName(), name);
-            return new CubemapTextureBuilder(name,
-                    Arrays.stream(cubemapDir.listFiles())
-                    .map(File::getName)
-                    .toArray(String[]::new));
+            //TODO (for all external/classpath resources) first search in external facility (some folder/s, which is/are
+            // specified via config), then fall back to classpath which should contain standard/error resource, then
+            // throw exception
+            List<String> cubemapFiles;
+            URL cubemapUrl = CubeMapTexture.class.getClassLoader().getResource(CUBEMAP_PATH + name);
+            if (cubemapUrl == null)
+                throw new MissingResourceException("Cubemap could not be found",
+                    CubeMapTexture.class.getSimpleName(), name);
+            try (FileSystem fs = FileSystems.newFileSystem(cubemapUrl.toURI(), Map.of())) {
+                Path cubemapPath = fs.getPath(CUBEMAP_PATH + name);
+                PathMatcher matcher = fs.getPathMatcher("glob:**/*.{png,jpg}");
+                try (Stream<Path> files = Files.find(cubemapPath, 5, (path, attributes) ->
+                        !attributes.isDirectory() && attributes.isRegularFile() && matcher.matches(path)
+                )) {
+                    cubemapFiles = files
+                            .map(Path::getFileName)
+                            .map(Path::toString)
+                            .toList();
+                }
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to list files from classpath", e);
+            } catch (URISyntaxException e) {
+                throw new RuntimeException("Internal exception", e);
+            }
+            return new CubemapTextureBuilder(name, cubemapFiles.toArray(String[]::new));
         }
     
         /**
@@ -83,7 +106,7 @@ public class CubeMapTexture extends AbstractTexture {
             }
     
             for (String file : sortedFiles) {
-                TextureData data = Textures.loadFileOrDefault(CUBEMAP_PATH + name + "/" + file, Type.DIFFUSE);
+                TextureData data = Textures.loadFileOrDefault(TEXTURE_CUBEMAP_PATH + name + "/" + file, Type.DIFFUSE);
                 if (format == null) format = data.getFormat();
                 if (data.getFormat() != format)
                     throw new IllegalArgumentException("All textures must have the same colour format");

@@ -1,9 +1,6 @@
 package org.etieskrill.walk;
 
-import org.joml.Vector2f;
-import org.joml.Vector2i;
-import org.joml.Vector3f;
-import org.joml.Vector4f;
+import org.joml.*;
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.Camera;
 import org.etieskrill.engine.graphics.OrthographicCamera;
@@ -40,6 +37,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.lang.Math;
 import java.util.List;
 import java.util.Random;
 
@@ -83,10 +81,10 @@ public class Game {
                 else pause();
             }),
             Input.bind(Keys.ESC.withMods(Keys.SHIFT)).to(() -> window.close()),
-            Input.bind(Keys.W).on(Trigger.PRESSED).group(OverruleGroup.Mode.YOUNGEST, Keys.S).to(() -> deltaPos.plusAssign(0, 0, 1)),
-            Input.bind(Keys.S).on(Trigger.PRESSED).to(() -> deltaPos.plusAssign(0, 0, -1)),
-            Input.bind(Keys.A).on(Trigger.PRESSED).group(OverruleGroup.Mode.YOUNGEST, Keys.D).to(() -> deltaPos.plusAssign(-1, 0, 0)),
-            Input.bind(Keys.D).on(Trigger.PRESSED).to(() -> deltaPos.plusAssign(1, 0, 0))
+            Input.bind(Keys.W).on(Trigger.PRESSED).group(OverruleGroup.Mode.YOUNGEST, Keys.S).to(() -> deltaPos.add(0, 0, 1)),
+            Input.bind(Keys.S).on(Trigger.PRESSED).to(() -> deltaPos.add(0, 0, -1)),
+            Input.bind(Keys.A).on(Trigger.PRESSED).group(OverruleGroup.Mode.YOUNGEST, Keys.D).to(() -> deltaPos.add(-1, 0, 0)),
+            Input.bind(Keys.D).on(Trigger.PRESSED).to(() -> deltaPos.add(1, 0, 0))
     );
     
     Shaders.StaticShader shader;
@@ -129,7 +127,7 @@ public class Game {
         Vector2f windowSize = window.getSize().toVec();
         uiCamera = new OrthographicCamera(windowSize)
                 .setOrientation(0, -90, 0)
-                .setPosition(new Vector3f(windowSize.times(0.5), 0));
+                .setPosition(new Vector3f(windowSize.mul(.5f), 0));
         
         scoreLabel = new Label("", Fonts.getDefault(48));
         scoreLabel.setAlignment(Alignment.TOP).setMargin(new Vector4f(20));
@@ -175,10 +173,10 @@ public class Game {
         skelly = models.load("skelly", () -> Model.ofFile("skeleton.glb"));
         skelly.getTransform().setScale(15);
         
-        skellyBBModel = ModelFactory.box(skelly.getBoundingBox().getMax().minus(skelly.getBoundingBox().getMin()));
+        skellyBBModel = ModelFactory.box(skelly.getBoundingBox().getMax().sub(skelly.getBoundingBox().getMin(), new Vector3f()));
         skellyBBModel.getTransform()
                 .setInitialPosition(
-                        skelly.getBoundingBox().getCenter().times(skelly.getTransform().getScale())
+                        skelly.getBoundingBox().getCenter().mul(skelly.getTransform().getScale())
                 );
         
         final int NUM_ORBS = 10;
@@ -187,14 +185,14 @@ public class Game {
         for (int i = 0; i < NUM_ORBS; i++) {
             orbs[i] = models.load("orb", () -> Model.ofFile("Sphere.obj"));
             orbs[i].getTransform()
-                    .setScale(new Vector3f(0.02))
+                    .setScale(new Vector3f(.02f))
                     .setPosition(new Vector3f(
                             random.nextFloat() * 50 - 25,
-                            random.nextFloat() * 4.5 + 0.5,
+                            random.nextFloat() * 4.5f + .5f,
                             random.nextFloat() * 50 - 25
                     ));
         }
-        Model orbBBModel = ModelFactory.box(orbs[0].getBoundingBox().getMax().minus(orbs[0].getBoundingBox().getMin()));
+        Model orbBBModel = ModelFactory.box(orbs[0].getBoundingBox().getMax().sub(orbs[0].getBoundingBox().getMin(), new Vector3f()));
         orbBBModel.getTransform().setInitialPosition(
                 orbBBModel.getBoundingBox().getCenter()
         );
@@ -212,7 +210,7 @@ public class Game {
         pointLights = new PointLight[]{pointLight};
         Font font = null;
         try {
-            TrueTypeFont generatorFont = new TrueTypeFont("agencyb.ttf");
+            TrueTypeFont generatorFont = new TrueTypeFont("AGENCYB.TTF");
             font = generatorFont.generateBitmapFont(48);
         } catch (IOException e) {
             logger.warn("Failed to load font");
@@ -243,7 +241,7 @@ public class Game {
 //        System.out.println(new Vector2i(1000).times(2f));
     
         Vector2f windowSize = window.getSize().toVec();
-        FrameBuffer postBuffer = FrameBuffer.getStandard(new Vector2i(windowSize));
+        FrameBuffer postBuffer = FrameBuffer.getStandard(windowSize.get(RoundingMode.TRUNCATE, new Vector2i()));
         Material mat = new Material.Builder() //TODO okay, the fact models, or rather meshes simply ignore these mats is getting frustrating now, that builder needs some serious rework
                 .addTextures((Texture2D) postBuffer.getAttachment(FrameBuffer.AttachmentType.COLOUR0))
                 .build();
@@ -251,7 +249,7 @@ public class Game {
                 .build();
         screenQuad.getTransform().setPosition(new Vector3f(0, 0, 1));
         Shaders.PostprocessingShader screenShader = Shaders.getPostprocessingShader();
-        Vector3f unpauseColour = new Vector3f(1.0), pauseColour = new Vector3f(0.65);
+        Vector3f unpauseColour = new Vector3f(1), pauseColour = new Vector3f(.65f);
         
         pacer.start();
         while (!window.shouldClose()) {
@@ -315,15 +313,15 @@ public class Game {
     private void transformSkelly() {
         Vector3f skellyTranslate = camera
                 .relativeTranslation(deltaPos)
-                .times(1, 0, 1);
-        if (skellyTranslate.length2() > 0) skellyTranslate.normalizeAssign();
-        skellyTranslate = skellyTranslate
-                .times(pacer.getDeltaTimeSeconds())
-                .times(5 * (keyInputManager.isPressed(Keys.CTRL) ? 1.5 : 1));
+                .mul(1, 0, 1);
+        if (skellyTranslate.lengthSquared() > 0) skellyTranslate.normalize();
+        skellyTranslate
+                .mul((float) pacer.getDeltaTimeSeconds())
+                .mul(5f * (keyInputManager.isPressed(Keys.CTRL) ? 1.5f : 1f));
         skelly.getTransform().translate(skellyTranslate);
-    
-        if (deltaPos.anyNotEqual(0, 0.001f)) {
-            rotation = (float) (Math.atan2(deltaPos.getZ(), deltaPos.getX()) - Math.toRadians(camera.getYaw()));
+
+        if (!deltaPos.equals(0, 0, 0)) {
+            rotation = (float) (Math.atan2(deltaPos.z(), deltaPos.x()) - Math.toRadians(camera.getYaw()));
             rotation %= Math.toRadians(360);
             //TODO fix shortest distance through wraparound
             //TODO include delta time
@@ -337,16 +335,16 @@ public class Game {
                     smoothRotation,
                     new Vector3f(0, 1, 0));
         }
-        deltaPos.put(0);
+        deltaPos.set(0);
     
-        skelly.getTransform().getPosition().setX(Math.max(-25, Math.min(25, skelly.getTransform().getPosition().getX()))); //why not use Math#clamp? try it, smartass
-        skelly.getTransform().getPosition().setZ(Math.max(-25, Math.min(25, skelly.getTransform().getPosition().getZ())));
+        skelly.getTransform().getPosition().x = Math.max(-25, Math.min(25, skelly.getTransform().getPosition().x())); //why not use Math#clamp? try it, smartass
+        skelly.getTransform().getPosition().z = Math.max(-25, Math.min(25, skelly.getTransform().getPosition().z()));
 
         if (keyInputManager.isPressed(Keys.SPACE) && jumpTime == 0)
             jumpTime += 0.0001;
         if (jumpTime != 0 && jumpTime < 1) {
             double jumpHeight = -4 * (jumpTime - 0.5) * (jumpTime - 0.5) + 1;
-            skelly.getTransform().getPosition().setY((float) jumpHeight);
+            skelly.getTransform().getPosition().y = (float) jumpHeight;
             jumpTime += pacer.getDeltaTimeSeconds();
         } else jumpTime = 0;
     
@@ -367,8 +365,8 @@ public class Game {
         for (Model orb : orbs) {
             if (!orb.isEnabled()) continue;
             
-            Vector3f direction = orb.getTransform().getPosition().minus(skelly.getTransform().getPosition());
-            if (new Vector2f(direction.getX(), direction.getZ()).length() < 1 && direction.getY() > 0 && direction.getY() < 4) {
+            Vector3f direction = orb.getTransform().getPosition().sub(skelly.getTransform().getPosition(), new Vector3f());
+            if (new Vector2f(direction.x(), direction.z()).length() < 1 && direction.y() > 0 && direction.y() < 4) {
                 orb.disable();
                 orbsCollected++;
             }
@@ -376,8 +374,8 @@ public class Game {
     }
     
     private void updateCamera() {
-        Vector3f orbitPos = camera.getDirection().negate().times(3);
-        camera.setPosition(orbitPos.plus(0, skelly.getWorldBoundingBox().getSize().getY() - 0.5, 0).plus(skelly.getTransform().getPosition()));
+        Vector3f orbitPos = camera.getDirection().negate().mul(3);
+        camera.setPosition(orbitPos.add(0, skelly.getWorldBoundingBox().getSize().y() - .5f, 0).add(skelly.getTransform().getPosition()));
     }
     
     private void render() {

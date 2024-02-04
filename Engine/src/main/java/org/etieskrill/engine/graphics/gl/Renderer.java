@@ -165,7 +165,7 @@ public class Renderer {
         glBindVertexArray(0);
     }
 
-    public void renderInstances(Model model, int numInstances, ShaderProgram shader, Matrix4f combined) {
+    public void renderInstances(Model model, int numInstances, ShaderProgram shader, Matrix4fc combined) {
         shader.setUniform("uCombined", combined, false);
         shader.setUniform("uModel", model.getTransform().toMat(), false);
         shader.setUniform("uNormal", model.getTransform().toMat().invert().transpose().get3x3(new Matrix3f()), false);
