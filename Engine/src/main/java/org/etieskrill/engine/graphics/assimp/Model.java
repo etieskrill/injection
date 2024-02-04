@@ -28,6 +28,8 @@ import java.util.*;
 import java.util.function.Supplier;
 
 import static org.etieskrill.engine.config.ResourcePaths.MODEL_PATH;
+import static org.etieskrill.engine.graphics.assimp.AnimationLoader.getBones;
+import static org.etieskrill.engine.graphics.assimp.AnimationLoader.loadAnimations;
 import static org.etieskrill.engine.graphics.assimp.Material.Property.SHININESS;
 import static org.etieskrill.engine.graphics.assimp.Material.Property.*;
 import static org.etieskrill.engine.graphics.texture.AbstractTexture.Type.*;
@@ -46,6 +48,8 @@ public class Model implements Disposable {
     
     private final List<Mesh> meshes; //TODO these should become immutable after model instantiation
     private final List<Material> materials; //TODO since meshes know their materials, these here may not be necessary?
+
+    private final List<AnimationLoader.Animation> animations;
     
     //TODO this really does not belong here, loading should FINALLY be transferred to a loader...
     // throw together with the ModelLoader? nah, better write a separate one, though that is a bit disgusting
@@ -174,6 +178,7 @@ public class Model implements Disposable {
         // and should effectively be immutable, consider encapsulating them into another class
         this.meshes = model.meshes;
         this.materials = model.materials;
+        this.animations = model.animations;
         this.boundingBox = model.boundingBox;
         this.name = model.name;
         
@@ -191,6 +196,7 @@ public class Model implements Disposable {
     private Model(Builder builder) throws IOException {
         this.meshes = builder.meshes;
         this.materials = builder.materials;
+        this.animations = new ArrayList<>();
         
         this.name = builder.name;
     
@@ -210,6 +216,7 @@ public class Model implements Disposable {
     private Model(MemoryBuilder builder) {
         this.meshes = builder.meshes;
         this.materials = builder.materials;
+        this.animations = new ArrayList<>();
         
         this.name = builder.name;
         
@@ -277,6 +284,7 @@ public class Model implements Disposable {
         
         loadEmbeddedTextures(scene);
         loadMaterials(scene);
+        loadAnimations(scene, animations);
         processNode(scene.mRootNode(), scene);
         calculateModelBoundingBox();
 
@@ -299,23 +307,23 @@ public class Model implements Disposable {
             processNode(AINode.create(mChildren.get()), scene);
     }
 
-    private Mesh processMesh(AIMesh mesh) {
+    private Mesh processMesh(AIMesh aiMesh) {
         //TODO add AABB loading but oh FUCK each goddamn mesh has a separate one FFS
 
-        int numVertices = mesh.mNumVertices();
+        int numVertices = aiMesh.mNumVertices();
         List<Vector3fc> positions = new ArrayList<>(numVertices);
-        mesh.mVertices().forEach(vertex -> positions.add(new Vector3f(vertex.x(), vertex.y(), vertex.z())));
+        aiMesh.mVertices().forEach(vertex -> positions.add(new Vector3f(vertex.x(), vertex.y(), vertex.z())));
 
         List<Vector3fc> normals = new ArrayList<>(numVertices);
-        if (mesh.mNormals() != null)
-            mesh.mNormals().forEach(normal -> normals.add(new Vector3f(normal.x(), normal.y(), normal.z())));
+        if (aiMesh.mNormals() != null)
+            aiMesh.mNormals().forEach(normal -> normals.add(new Vector3f(normal.x(), normal.y(), normal.z())));
 
         List<Vector2fc> texCoords = new ArrayList<>(numVertices);
-        if (mesh.mTextureCoords(0) != null)
-            mesh.mTextureCoords(0).forEach(texCoord -> texCoords.add(new Vector2f(texCoord.x(), texCoord.y())));
+        if (aiMesh.mTextureCoords(0) != null)
+            aiMesh.mTextureCoords(0).forEach(texCoord -> texCoords.add(new Vector2f(texCoord.x(), texCoord.y())));
 
         List<Vertex> vertices = new ArrayList<>(numVertices);
-        for (int i = 0; i < mesh.mNumVertices(); i++)
+        for (int i = 0; i < aiMesh.mNumVertices(); i++)
             vertices.add(new Vertex(
                     positions.get(i),
                     normals.size() > 0 ? normals.get(i) : new Vector3f(),
@@ -324,18 +332,18 @@ public class Model implements Disposable {
 
         //three because a face is usually a triangle, but this list is discarded at the first opportunity a/w
         //TODO add loader versions which transmit the minimal amount of data (shorts for indices, smaller vectors)
-        List<Integer> indices = new ArrayList<>(mesh.mNumFaces() * 3);
-        for (int i = 0; i < mesh.mNumFaces(); i++) {
-            AIFace face = mesh.mFaces().get(i);
+        List<Integer> indices = new ArrayList<>(aiMesh.mNumFaces() * 3);
+        for (int i = 0; i < aiMesh.mNumFaces(); i++) {
+            AIFace face = aiMesh.mFaces().get(i);
             IntBuffer buffer = face.mIndices();
             for (int j = 0; j < face.mNumIndices(); j++)
                 indices.add(buffer.get());
         }
 
-        List<Bone> bones = getBones(mesh);
+        List<AnimationLoader.Bone> bones = getBones(aiMesh);
         
-        AIVector3D min = mesh.mAABB().mMin();
-        AIVector3D max = mesh.mAABB().mMax();
+        AIVector3D min = aiMesh.mAABB().mMin();
+        AIVector3D max = aiMesh.mAABB().mMax();
         AABB boundingBox = new AABB(new Vector3f(min.x(), min.y(), min.z()),
                 new Vector3f(max.x(), max.y(), max.z()));
 
@@ -343,29 +351,28 @@ public class Model implements Disposable {
                 || boundingBox.getMax().equals(new Vector3f(), 0.00001f))
             boundingBox = calculateBoundingBox(vertices);
 
+        Material material = materials.get(aiMesh.mMaterialIndex());
+
+        Mesh.DrawMode drawMode = switch (aiMesh.mPrimitiveTypes()) {
+            case aiPrimitiveType_POINT -> Mesh.DrawMode.POINTS;
+            case aiPrimitiveType_LINE -> Mesh.DrawMode.LINES;
+            case aiPrimitiveType_TRIANGLE -> Mesh.DrawMode.TRIANGLES;
+            default -> {
+                logger.warn("Cannot draw primitives of type 0x{}, using default of TRIANGLES",
+                        Integer.toHexString(aiMesh.mPrimitiveTypes()));
+                yield Mesh.DrawMode.TRIANGLES;
+            }
+        };
+
+        Mesh ret = Mesh.Loader.loadToVAO(vertices, indices, material, bones, boundingBox, drawMode);
+
         logger.trace("Loaded mesh with {} vertices and {} indices, {} normals, {} uv coordinates", vertices.size(),
                 indices.size(), !normals.isEmpty() ? "with" : "without", !texCoords.isEmpty() ? "with" : "without");
-        
-        Material material = materials.get(mesh.mMaterialIndex());
-        return Mesh.Loader.loadToVAO(vertices, indices, material, boundingBox);
+        return ret;
     }
 
-    private static class Bone {
-    }
-
-    private List<Bone> getBones(AIMesh mesh) {
-        List<Bone> bones = new ArrayList<>(mesh.mNumBones());
-        for (int i = 0; i < mesh.mNumBones(); i++) {
-            AIBone aiBone = AIBone.create(mesh.mBones().get());
-            String name = aiBone.mName().dataString();
-
-//            aiBone.
-//            bones.add();
-        }
-        return bones;
-    }
-
-    private static Matrix4f fromAI(AIMatrix4x4 mat) {
+    //TODO move utils to separate class to reduce cyclic dependencies
+    static Matrix4f fromAI(AIMatrix4x4 mat) {
         return new Matrix4f(
                 mat.a1(), mat.b1(), mat.c1(), mat.d1(),
                 mat.a2(), mat.b2(), mat.c2(), mat.d2(),
