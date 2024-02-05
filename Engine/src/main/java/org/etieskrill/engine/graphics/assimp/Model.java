@@ -284,8 +284,8 @@ public class Model implements Disposable {
         
         loadEmbeddedTextures(scene);
         loadMaterials(scene);
-        loadAnimations(scene, animations);
         processNode(scene.mRootNode(), scene);
+        loadAnimations(scene, animations, meshes); //animations reference bones, which need first be loaded from the nodes
         calculateModelBoundingBox();
 
         aiReleaseImport(scene);
@@ -340,7 +340,7 @@ public class Model implements Disposable {
                 indices.add(buffer.get());
         }
 
-        List<AnimationLoader.Bone> bones = getBones(aiMesh);
+        List<AnimationLoader.Bone> bones = getBones(aiMesh, vertices);
         
         AIVector3D min = aiMesh.mAABB().mMin();
         AIVector3D max = aiMesh.mAABB().mMax();
@@ -558,7 +558,11 @@ public class Model implements Disposable {
     public List<Mesh> getMeshes() {
         return meshes;
     }
-    
+
+    public List<AnimationLoader.Animation> getAnimations() {
+        return animations;
+    }
+
     public Transform getTransform() {
         return transform;
     }
