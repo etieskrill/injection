@@ -8,22 +8,32 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.etieskrill.engine.graphics.assimp.AnimationLoader.AnimBehaviour.from;
 import static org.etieskrill.engine.graphics.assimp.Model.fromAI;
 import static org.lwjgl.assimp.Assimp.*;
 
 class AnimationLoader {
 
+    /**
+     * Holds a specific animation for a model. It has an identifying name, a duration, and a speed at which it plays.
+     * <p>
+     * Confusingly, bones are called '{@link AINodeAnim Nodes}' in Assimp.
+     *
+     * @param name an identifying name
+     * @param duration the total duration
+     * @param ticksPerSecond how many frames play every second
+     * @param boneAnimations
+     * @param meshChannels
+     */
     public record Animation(
             String name,
             double duration,
             double ticksPerSecond,
-            List<NodeAnimation> channels,
+            List<BoneAnimation> boneAnimations,
             List<MeshAnimation> meshChannels
     ) {}
 
-    public record NodeAnimation(
-            String nodeName,
+    public record BoneAnimation(
+            Bone bone,
             List<Double> timestamps, //entry 0 in timetamps corresponds to 0 in pos, rot and scaling; etc.
             List<Vector3fc> positions, //TODO probably store in transform
             List<Quaternionfc> rotations,
@@ -59,23 +69,34 @@ class AnimationLoader {
         }
     }
 
-    static void loadAnimations(AIScene scene, List<Animation> animations) {
+    static void loadAnimations(AIScene scene, List<Animation> animations, List<Mesh> meshes) {
         for (int i = 0; i < scene.mNumAnimations(); i++) {
             AIAnimation aiAnimation = AIAnimation.create(scene.mAnimations().get());
             animations.add(new Animation(
                     aiAnimation.mName().dataString(),
                     aiAnimation.mDuration(),
                     aiAnimation.mTicksPerSecond(),
-                    loadNodeAnimations(aiAnimation.mNumChannels(), aiAnimation.mChannels()),
+                    loadNodeAnimations(aiAnimation.mNumChannels(), aiAnimation.mChannels(), meshes),
                     null
                     ));
         }
     }
 
-    private static List<NodeAnimation> loadNodeAnimations(int numAnims, PointerBuffer animBuffer) {
-        List<NodeAnimation> nodeAnims = new ArrayList<>(numAnims);
+    private static List<BoneAnimation> loadNodeAnimations(int numAnims, PointerBuffer animBuffer, List<Mesh> meshes) {
+        List<BoneAnimation> boneAnims = new ArrayList<>(numAnims);
         for (int i = 0; i < numAnims; i++) {
             AINodeAnim nodeAnim = AINodeAnim.create(animBuffer.get());
+
+            String name = nodeAnim.mNodeName().dataString();
+            //since there should be comparatively few bones in a model, extracting them every time should be fine
+            Bone bone = meshes
+                    .stream()
+                    .map(Mesh::getBones)
+                    .flatMap(List::stream)
+                    .filter(meshBone -> meshBone.name().equals(name))
+                    .findAny()
+                    .orElseThrow(() -> new IllegalStateException(
+                            "Failed to load animation because no bone '" + name + "' was found"));
 
             List<Double> timestamps = new ArrayList<>(nodeAnim.mNumPositionKeys());
             List<Vector3fc> positions = nodeAnim.mPositionKeys().stream().limit(nodeAnim.mNumPositionKeys())
@@ -91,44 +112,59 @@ class AnimationLoader {
                     .map(AIVectorKey::mValue)
                     .map(vector -> (Vector3fc) new Vector3f(vector.x(), vector.y(), vector.z()))
                     .toList();
-            nodeAnims.add(new NodeAnimation(
-                    nodeAnim.mNodeName().dataString(),
+            boneAnims.add(new BoneAnimation(
+                    bone,
                     timestamps, positions, rotations, scalings,
-                    from(nodeAnim.mPreState()), from(nodeAnim.mPostState())
+                    AnimBehaviour.from(nodeAnim.mPreState()), AnimBehaviour.from(nodeAnim.mPostState())
             ));
         }
-        return nodeAnims;
+        return boneAnims;
     }
 
+    /**
+     * A singular bone in a mesh. It has a human-readable name (e.g. 'hip', 'left_thigh'), a set of vertices
+     * ({@code weights}) it influences, and an offset transformation, of which - to be honest - I have no fucking clue
+     * what it does.
+     *
+     * @param name an identifying name for the bone
+     * @param weights a list of the influenced vertices
+     * @param offset some tranformation of infinite hoopla
+     */
     public record Bone(
             String name,
             List<BoneWeight> weights,
             Matrix4fc offset
     ) {}
 
+    /**
+     * A singular vertex, and how much it is influenced by the bone holding it.
+     *
+     * @param vertex the influenced vertex
+     * @param weight the factor of influence
+     */
     public record BoneWeight(
-            int vertexId,
+            Vertex vertex,
             float weight
     ) {}
 
-    static List<Bone> getBones(AIMesh mesh) {
+    static List<Bone> getBones(AIMesh mesh, List<Vertex> vertices) {
         List<Bone> bones = new ArrayList<>(mesh.mNumBones());
         for (int i = 0; i < mesh.mNumBones(); i++) {
             AIBone aiBone = AIBone.create(mesh.mBones().get());
             bones.add(new Bone(
                     aiBone.mName().dataString(),
-                    loadBoneWeights(aiBone.mNumWeights(), aiBone.mWeights()),
+                    loadBoneWeights(aiBone.mNumWeights(), aiBone.mWeights(), vertices),
                     fromAI(aiBone.mOffsetMatrix())
             ));
         }
         return bones;
     }
 
-    private static List<BoneWeight> loadBoneWeights(int numWeights, AIVertexWeight.Buffer weightBuffer) {
+    private static List<BoneWeight> loadBoneWeights(int numWeights, AIVertexWeight.Buffer weightBuffer, List<Vertex> vertices) {
         return weightBuffer
                 .stream()
                 .limit(numWeights)
-                .map(aiWeight -> new BoneWeight(aiWeight.mVertexId(), aiWeight.mWeight()))
+                .map(aiWeight -> new BoneWeight(vertices.get(aiWeight.mVertexId()), aiWeight.mWeight()))
                 .toList();
     }
 

@@ -1,0 +1,28 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'org.etieskrill.game.animeshun'
+version = '1.0.0-SNAPSHOT'
+
+dependencies {
+    implementation project(':engine')
+
+    testImplementation platform('org.junit:junit-bom:5.9.1')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+application {
+    mainClass = 'org.etieskrill.game.animeshun.Game'
+}
+
+test {
+    useJUnitPlatform()
+}
