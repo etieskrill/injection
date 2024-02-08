@@ -6,6 +6,8 @@ plugins {
 group = 'org.etieskrill.game.animeshun'
 version = '1.0.0-SNAPSHOT'
 
+applicationDefaultJvmArgs = ["-Dorg.slf4j.simpleLogger.defaultLogLevel=trace"]
+
 dependencies {
     implementation project(':engine')
 

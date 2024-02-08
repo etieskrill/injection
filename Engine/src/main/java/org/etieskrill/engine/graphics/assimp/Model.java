@@ -1,14 +1,17 @@
 package org.etieskrill.engine.graphics.assimp;
 
 import org.etieskrill.engine.Disposable;
+import org.etieskrill.engine.common.ResourceLoadException;
 import org.etieskrill.engine.entity.data.AABB;
 import org.etieskrill.engine.entity.data.Transform;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
+import org.etieskrill.engine.graphics.texture.AbstractTexture.Format;
 import org.etieskrill.engine.graphics.texture.AbstractTexture.Type;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.texture.Textures;
 import org.etieskrill.engine.util.Loaders.TextureLoader;
 import org.etieskrill.engine.util.ResourceReader;
+import org.jetbrains.annotations.NotNull;
 import org.joml.*;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.PointerBuffer;
@@ -399,7 +402,7 @@ public class Model implements Disposable {
 
         return new AABB(new Vector3f(minX, minY, minZ), new Vector3f(maxX, maxY, maxZ));
     }
-    
+
     private void loadEmbeddedTextures(AIScene scene) {
         PointerBuffer textures = scene.mTextures();
         for (int i = 0; i < scene.mNumTextures(); i++) {
@@ -409,11 +412,11 @@ public class Model implements Disposable {
             // also "texture data is always ARGB8888 to make the implementation for user of the library as easy as possible" my arse, thats just inefficient
 //            if (texture.mHeight() != 0) is uncompressed;
 //            else is compressed;
-            
+
             ByteBuffer compressedBuffer = texture.pcDataCompressed();
             byte[] compressedData = new byte[compressedBuffer.remaining()];
             compressedBuffer.get(compressedData);
-            
+
             BufferedImage image;
             try {
                 image = ImageIO.read(new ByteArrayInputStream(compressedData)); //TODO dunno if i like depending on plugins, but isss brobably fiiine
@@ -421,23 +424,45 @@ public class Model implements Disposable {
                 logger.warn("Failed to decode embedded texture {}:\n{}", i, e.getMessage());
                 continue;
             }
-            
-            //TODO validate colour channels if not compressed
-//            System.out.println(image.getType());
-            
+
+            Format format = switch (image.getType()) {
+                case 5 -> Format.RGB; //TODO these are not the S* variants, i think, but this needs some more pondering
+                case 6 -> Format.RGBA;
+                //if this fails, refer to java.awt.image.BufferedImage#getType(), the formats are a bit cryptic, and i'd rather throw an exception than try to guess formats
+                default -> throw new ResourceLoadException("Unknown texture format: '" + image.getType() + "'");
+            };
+
+            String filePath = texture.mFilename().dataString();
+
             int[] data = image.getData().getPixels(0, 0, image.getWidth(), image.getHeight(), (int[]) null);
             ByteBuffer buffer = BufferUtils.createByteBuffer(data.length);
             for (int pixel : data) buffer.put((byte) pixel);
             buffer.rewind();
 
             Texture2D.Builder tex = new Texture2D.BufferBuilder(buffer,
-                    new Vector2i(image.getWidth(), image.getHeight()), AbstractTexture.Format.SRGBA);
+                    new Vector2i(image.getWidth(), image.getHeight()), format);
+            tex.setType(determineType(filePath)); //take a guess at the type, since there is no way i see to get the type otherwise. the type is overridden when an embedded texture is loaded anyway
             embeddedTextures.put("*" + i, tex);
+            embeddedTextures.put(filePath, tex); //materials usually reference the standard form of embedded textures (*0, *1 etc.) but some formats sometimes just use the path
+            //TODO it's probably more correct to translate paths - if they exist - to the embedded format using a separate map, but this should do fine for now
         }
         
         logger.debug("{} of {} embedded textures loaded", embeddedTextures.size(), scene.mNumTextures());
     }
-    
+
+    @NotNull
+    private static Type determineType(String filePath) {
+        String[] splitFilePath = filePath.split("/");
+        String fileName = splitFilePath[splitFilePath.length - 1];
+
+        Type type = UNKNOWN;
+        if (fileName.contains("diffuse")) type = DIFFUSE;
+        else if (fileName.contains("specular")) type = SPECULAR;
+        else if (fileName.contains("emissive") || fileName.contains("emission")) type = EMISSIVE;
+        else if (fileName.contains("normal")) type = NORMAL;
+        return type;
+    }
+
     private void loadMaterials(AIScene scene) {
         logger.trace("{} materials found", scene.mNumMaterials());
         PointerBuffer mMaterials = scene.mMaterials();
@@ -479,14 +504,28 @@ public class Model implements Disposable {
             // more often than not the bulk redundant data (probably), i should add an option to switch this off tho
             String textureName = this.name + "_" + type.name().toLowerCase() + "_" + i;
             String textureFile = file.dataString();
-            
-            Texture2D.Builder builder = embeddedTextures.get(textureFile);
+
             Supplier<AbstractTexture> supplier;
-            if (builder != null)
-                supplier = () -> builder.setType(type).build();
-            else
+            if (embeddedTextures.containsKey(textureFile)) {
+                logger.info("Texture '{}' is loaded from embedded textures", textureName);
+                supplier = () -> embeddedTextures.get(textureFile).setType(type).build();
+            } else if (Textures.exists(textureFile)) {
+                logger.info("Texture '{}' is loaded from file {}", textureName, textureFile);
                 supplier = () -> Textures.ofFile(textureFile, type);
-            
+            } else if (embeddedTextures.values().stream()
+                    .map(AbstractTexture.Builder::getType)
+                    .anyMatch(builderType -> builderType == type)) {
+                logger.info("Texture '{}' is loaded as fallback from embedded textures", textureName);
+                supplier = () -> embeddedTextures.values().stream()
+                        .filter(texture -> texture.getType() == type)
+                        .findFirst()
+                        .get()
+                        .build();
+            } else {
+                logger.warn("Failed to find any texture for '{}'", textureName);
+                continue;
+            }
+
             Texture2D texture = (Texture2D) TextureLoader.get().load(textureName, supplier);
             material.addTextures(texture);
             validTextures++;

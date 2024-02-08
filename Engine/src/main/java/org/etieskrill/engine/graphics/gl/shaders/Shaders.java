@@ -1,8 +1,8 @@
 package org.etieskrill.engine.graphics.gl.shaders;
 
-import org.joml.Vector3f;
 import org.etieskrill.engine.graphics.model.DirectionalLight;
 import org.etieskrill.engine.graphics.model.PointLight;
+import org.joml.Vector3f;
 
 import static org.etieskrill.engine.graphics.gl.shaders.ShaderProgram.Uniform.Type.*;
 
@@ -82,8 +82,8 @@ public class Shaders {
         public void setViewPosition(Vector3f viewPosition) {
             setUniform("uViewPosition", viewPosition);
         }
-        
-        public void setGlobalLights(DirectionalLight[] lights) {
+
+        public void setGlobalLights(DirectionalLight... lights) {
             setUniformArray("globalLights[$]", lights);
         }
         

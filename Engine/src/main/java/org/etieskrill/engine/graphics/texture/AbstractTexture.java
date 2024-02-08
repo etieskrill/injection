@@ -1,6 +1,7 @@
 package org.etieskrill.engine.graphics.texture;
 
 import org.etieskrill.engine.Disposable;
+import org.jetbrains.annotations.NotNull;
 import org.joml.Vector2i;
 import org.joml.Vector2ic;
 import org.slf4j.Logger;
@@ -101,6 +102,27 @@ public abstract class AbstractTexture implements Disposable {
         }
     }
 
+    /**
+     * The minification filtering mode describes the way textures are sampled if a fragment contains several texels.
+     * <p>
+     * The general process differs from magnification due to the existence of mipmaps. There are now two parameters we
+     * can decide on how to interpolate between values; both mipmaps and texels.
+     * <p>
+     * The {@link MinFilter#NEAREST} and {@link MinFilter#LINEAR} modes ignore mipmapping entirely, and work as their
+     * {@link MagFilter MagFilter} equivalents do.
+     * <p>
+     * Other than those, the following combinations can be achieved:
+     * <ul>
+     *     <li>{@link MinFilter#NEAREST_NEAREST}, which samples the closest texel from the closest mipmap. This is going
+     *         to look both grainy, and give sharp edges when the mipmapping level switches.
+     *     <li>{@link MinFilter#BILINEAR}, which interpolates between nearby texels sampled from the closest mipmap.
+     *         Textures will look smooth, but the sharp edges on the mipmap borders remain.
+     *     <li>{@link MinFilter#NEAREST_LINEAR}, which samples the closest texels from each of the surrounding mipmaps,
+     *         and interpolates between those samples. Not used very often, unless grainy textures are intentional.
+     *     <li>{@link MinFilter#TRILINEAR}, which interpolates the nearby texels sampled from each of the relevant
+     *         mipmaps, and interpolates between the mipmap levels. This is the standard option for most use cases.
+     * </ul>
+     */
     public enum MinFilter {
         NEAREST(GL_NEAREST),
         LINEAR(GL_LINEAR),
@@ -122,7 +144,13 @@ public abstract class AbstractTexture implements Disposable {
     }
 
     /**
-     * Nearest is said to generally be faster, though linear is in most cases worth the cost.
+     * The magnification filtering mode dictates how textures are sampled if one texel takes up more than one fragment.
+     * <ul>
+     *     <li>{@link MagFilter#NEAREST} simply samples the closest texel, and will look very grainy, while
+     *     <li>{@link MagFilter#LINEAR} interpolates between the closest texels.
+     * </ul>
+     * Though {@link  MagFilter#NEAREST} is generally going to be slightly faster, {@link MagFilter#LINEAR} is worth
+     * the cost in most cases, and is the gold standard.
      */
     public enum MagFilter {
         NEAREST(GL_NEAREST),
@@ -159,7 +187,8 @@ public abstract class AbstractTexture implements Disposable {
     // actually, the type should be outsourced into a composite class such as MaterialTexture
     public enum Type {
         UNKNOWN(aiTextureType_UNKNOWN), DIFFUSE(aiTextureType_DIFFUSE), SPECULAR(aiTextureType_SPECULAR),
-        SHININESS(aiTextureType_SHININESS), HEIGHT(aiTextureType_HEIGHT), EMISSIVE(aiTextureType_EMISSIVE);
+        SHININESS(aiTextureType_SHININESS), HEIGHT(aiTextureType_HEIGHT), EMISSIVE(aiTextureType_EMISSIVE),
+        NORMAL(aiTextureType_NORMALS);
 
         private final int aiType;
 
@@ -182,7 +211,7 @@ public abstract class AbstractTexture implements Disposable {
         protected static final int INVALID_PIXEL_SIZE = -1;
 
         //TODO inform whether type is truly part of all texture targets
-        protected Type type;
+        protected Type type = Type.UNKNOWN;
 
         protected Target target = Target.TWO_D;
         protected MinFilter minFilter = MinFilter.TRILINEAR;
@@ -197,12 +226,16 @@ public abstract class AbstractTexture implements Disposable {
         protected boolean mipMaps = true;
 
         Builder() {}
-    
-        public Builder<T> setType(Type type) {
+
+        public Builder<T> setType(@NotNull Type type) {
             this.type = type;
             return this;
         }
-    
+
+        public Type getType() {
+            return type;
+        }
+
         public Builder<T> setTarget(Target target) {
             this.target = target;
             return this;
@@ -231,10 +264,8 @@ public abstract class AbstractTexture implements Disposable {
         }
 
         public final T build() {
-            if (type == null) type = Type.UNKNOWN;
-            
             T texture = bufferTextureData();
-            
+
             //Wack solution for post-creation method calls
             if (mipMaps) glGenerateMipmap(target.gl());
             
@@ -246,29 +277,8 @@ public abstract class AbstractTexture implements Disposable {
 
         protected abstract void freeResources();
     }
-    
-    static class TextureData {
-        private final ByteBuffer textureData;
-        private final Vector2i pixelSize;
-        private final AbstractTexture.Format format;
 
-        public TextureData(ByteBuffer textureData, Vector2i pixelSize, AbstractTexture.Format format) {
-            this.textureData = textureData;
-            this.pixelSize = pixelSize;
-            this.format = format;
-        }
-        
-        public ByteBuffer getTextureData() {
-            return textureData;
-        }
-
-        public Vector2i getPixelSize() {
-            return pixelSize;
-        }
-        
-        public AbstractTexture.Format getFormat() {
-            return format;
-        }
+    record TextureData(ByteBuffer textureData, Vector2i pixelSize, Format format) {
     }
 
     protected AbstractTexture(Builder<? extends AbstractTexture> builder) {
