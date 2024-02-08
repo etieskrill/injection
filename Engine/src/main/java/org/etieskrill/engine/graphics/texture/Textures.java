@@ -1,5 +1,6 @@
 package org.etieskrill.engine.graphics.texture;
 
+import org.etieskrill.engine.common.ResourceLoadException;
 import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.util.ResourceReader;
 import org.joml.Vector2i;
@@ -44,12 +45,14 @@ public class Textures {
         AbstractTexture.TextureData data;
         try {
             data = Textures.loadFile(file);
-        } catch (MissingResourceException e) {
-            logger.info("Texture {} could not be loaded, using placeholder:\n{}", file, stbi_failure_reason());
-            file = TEXTURE_PATH + (type == DIFFUSE || type == UNKNOWN ? DEFAULT_TEXTURE : TRANSPARENT_TEXTURE);
+        } catch (MissingResourceException | ResourceLoadException e) {
+            String reason = stbi_failure_reason();
+            logger.info("Texture {} could not be loaded, using placeholder because:\n{}",
+                    file, reason != null ? reason : "Unspecified error");
+            file = type == DIFFUSE || type == UNKNOWN ? DEFAULT_TEXTURE : TRANSPARENT_TEXTURE;
             try {
                 data = Textures.loadFile(file);
-            } catch (MissingResourceException ex) {
+            } catch (MissingResourceException | ResourceLoadException ex) {
                 throw new RuntimeException("Failed to load default texture: this is an engine-internal error", ex);
             }
         }
@@ -74,6 +77,10 @@ public class Textures {
         AbstractTexture.Format format = AbstractTexture.Format.fromChannels(bufferColourChannels.get());
 
         return new AbstractTexture.TextureData(textureData, new Vector2i(pixelWidth, pixelHeight), format);
+    }
+
+    public static boolean exists(String file) {
+        return null != Textures.class.getClassLoader().getResource(TEXTURE_PATH + file);
     }
 
     public static Texture2D ofFile(String file, AbstractTexture.Type type) {

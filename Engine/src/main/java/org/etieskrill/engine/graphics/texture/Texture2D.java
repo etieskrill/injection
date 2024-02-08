@@ -34,10 +34,10 @@ public class Texture2D extends AbstractTexture implements FrameBufferAttachment 
             this.type = type;
 
             TextureData data = loadFileOrDefault(file, type);
-            
-            textureData = data.getTextureData();
-            pixelSize = data.getPixelSize();
-            format = data.getFormat();
+
+            textureData = data.textureData();
+            pixelSize = data.pixelSize();
+            format = data.format();
         }
         
         @Override
@@ -85,7 +85,7 @@ public class Texture2D extends AbstractTexture implements FrameBufferAttachment 
             texture.bind(0);
             glTexImage2D(GL_TEXTURE_2D, 0, format.toGlInternalFormat(), pixelSize.x(), pixelSize.y(),
                     0, format.toGLFormat(), GL_UNSIGNED_BYTE, textureData);
-            
+
             return texture;
         }
     }

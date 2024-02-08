@@ -75,7 +75,8 @@ void main()
     vec4 combinedLight = vec4(0.0);
     for (int i = 0; i < NR_DIRECTIONAL_LIGHTS; i++) {
         vec4 dirLight = calculateDirectionalLight(globalLights[i], tNormal, tFragPos, uViewPosition);
-        combinedLight = mix(combinedLight, dirLight, 0.5);
+        //        combinedLight = mix(combinedLight, dirLight, 0.5);
+        combinedLight += dirLight;
     }
     for (int i = 0; i < NR_POINT_LIGHTS; i++) {
         vec4 pointLight = calculatePointLight(lights[i], tNormal, tFragPos, uViewPosition);
@@ -83,8 +84,8 @@ void main()
     }
 
     vec4 emission = vec4(0.0);
-    if (length(texture(material.specular0, tTextureCoords).rgb) == 0.0)
-        emission = texture(material.emissive0, tTextureCoords);
+    //    if (length(texture(material.specular0, tTextureCoords).rgb) == 0.0) //sometimes causes weird artifacts, and tbh, i do not remember what this was for
+    emission = texture(material.emissive0, tTextureCoords);
     combinedLight += vec4(emission.rgb, 0);
 
     //TODO pack reflection mix factor into material property. until reflection maps are a thing, anyway

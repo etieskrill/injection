@@ -107,11 +107,11 @@ public class CubeMapTexture extends AbstractTexture {
     
             for (String file : sortedFiles) {
                 TextureData data = Textures.loadFileOrDefault(TEXTURE_CUBEMAP_PATH + name + "/" + file, Type.DIFFUSE);
-                if (format == null) format = data.getFormat();
-                if (data.getFormat() != format)
+                if (format == null) format = data.format();
+                if (data.format() != format)
                     throw new IllegalArgumentException("All textures must have the same colour format");
-                if (pixelSize.equals(INVALID_PIXEL_SIZE, INVALID_PIXEL_SIZE)) pixelSize = data.getPixelSize();
-                if (!data.getPixelSize().equals(pixelSize))
+                if (pixelSize.equals(INVALID_PIXEL_SIZE, INVALID_PIXEL_SIZE)) pixelSize = data.pixelSize();
+                if (!data.pixelSize().equals(pixelSize))
                     throw new IllegalArgumentException("All textures must be equally sized");
                 sides.add(data);
             }
@@ -128,7 +128,7 @@ public class CubeMapTexture extends AbstractTexture {
             for (int i = 0; i < sides.size(); i++) {
                 glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, format.toGlInternalFormat(),
                         pixelSize.x(), pixelSize.y(), 0, format.toGLFormat(), GL_UNSIGNED_BYTE,
-                        sides.get(i).getTextureData());
+                        sides.get(i).textureData());
             }
             
             return texture;
@@ -136,7 +136,7 @@ public class CubeMapTexture extends AbstractTexture {
     
         @Override
         protected void freeResources() {
-            sides.forEach(side -> stbi_image_free(side.getTextureData()));
+            sides.forEach(side -> stbi_image_free(side.textureData()));
         }
     }
     

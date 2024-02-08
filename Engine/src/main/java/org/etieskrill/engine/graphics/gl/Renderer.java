@@ -1,6 +1,5 @@
 package org.etieskrill.engine.graphics.gl;
 
-import org.joml.*;
 import org.etieskrill.engine.graphics.assimp.CubeMapModel;
 import org.etieskrill.engine.graphics.assimp.Material;
 import org.etieskrill.engine.graphics.assimp.Mesh;
@@ -10,6 +9,7 @@ import org.etieskrill.engine.graphics.gl.shaders.Shaders;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.etieskrill.engine.graphics.texture.font.Font;
 import org.etieskrill.engine.graphics.texture.font.Glyph;
+import org.joml.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -192,9 +192,9 @@ public class Renderer {
     }
     
     private void bindMaterial(Material material, ShaderProgram shader) {
-        //TODO here the renderer could decide what kind of shader to use, based off of the material given
+        //TODO here the renderer could decide what kind of shader to use, based on the material given
         int tex2d = 0, cubemaps = 0;
-        int diffuse = 0, specular = 0, emissive = 0, height = 0, shininess = 0;
+        int diffuse = 0, specular = 0, normal = 0, emissive = 0, height = 0, shininess = 0;
         List<AbstractTexture> textures = material.getTextures();
         
         for (AbstractTexture texture : textures) {
@@ -208,6 +208,7 @@ public class Renderer {
                     number = switch (texture.getType()) {
                         case DIFFUSE -> diffuse++;
                         case SPECULAR -> specular++; //TODO could pass texture colour channels here, but it is probs best to just finally define a standard for this whole shebang
+                        case NORMAL -> normal++;
                         case EMISSIVE -> emissive++;
                         case HEIGHT -> height++;
                         case SHININESS -> shininess++;

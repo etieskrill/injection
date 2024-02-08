@@ -1,5 +1,7 @@
 package org.etieskrill.engine.util;
 
+import org.etieskrill.engine.common.ResourceLoadException;
+
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -27,7 +29,7 @@ public class ResourceReader {
     public static ByteBuffer getRawClassPathResource(String name) {
         try (InputStream inputStream = ResourceReader.class.getClassLoader().getResourceAsStream(name)) {
             if (inputStream == null)
-                throw new RuntimeException("Resource %s could not be located or access was denied".formatted(name));
+                throw new ResourceLoadException("Resource %s could not be located or access was denied".formatted(name));
             byte[] bytes = inputStream.readAllBytes();
             ByteBuffer buffer = ByteBuffer.allocateDirect(bytes.length);
             return buffer.put(bytes).rewind();
