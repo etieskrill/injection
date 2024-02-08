@@ -89,11 +89,12 @@ public class Game {
             window.update(pacer.getDeltaTimeSeconds());
             pacer.nextFrame();
         }
+
+        window.dispose();
     }
 
     private void terminate() {
         window.close();
-        window.dispose();
         Loaders.disposeDefaultLoaders();
     }
 
