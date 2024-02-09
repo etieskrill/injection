@@ -1,11 +1,11 @@
 package org.etieskrill.engine.graphics.gl;
 
-import org.etieskrill.engine.graphics.assimp.CubeMapModel;
-import org.etieskrill.engine.graphics.assimp.Material;
-import org.etieskrill.engine.graphics.assimp.Mesh;
-import org.etieskrill.engine.graphics.assimp.Model;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
+import org.etieskrill.engine.graphics.model.CubeMapModel;
+import org.etieskrill.engine.graphics.model.Material;
+import org.etieskrill.engine.graphics.model.Mesh;
+import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.etieskrill.engine.graphics.texture.font.Font;
 import org.etieskrill.engine.graphics.texture.font.Glyph;

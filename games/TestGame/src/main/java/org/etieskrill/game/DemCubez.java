@@ -1,16 +1,16 @@
 package org.etieskrill.game;
 
-import org.joml.*;
 import org.etieskrill.engine.entity.data.Transform;
 import org.etieskrill.engine.graphics.PerspectiveCamera;
-import org.etieskrill.engine.graphics.assimp.*;
+import org.etieskrill.engine.graphics.data.DirectionalLight;
+import org.etieskrill.engine.graphics.data.PointLight;
 import org.etieskrill.engine.graphics.gl.FrameBuffer;
 import org.etieskrill.engine.graphics.gl.FrameBufferAttachment;
 import org.etieskrill.engine.graphics.gl.Renderer;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
-import org.etieskrill.engine.graphics.model.DirectionalLight;
-import org.etieskrill.engine.graphics.model.PointLight;
+import org.etieskrill.engine.graphics.model.*;
+import org.etieskrill.engine.graphics.model.loader.MeshLoader;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.texture.Textures;
 import org.etieskrill.engine.time.LoopPacer;
@@ -18,6 +18,7 @@ import org.etieskrill.engine.time.SystemNanoTimePacer;
 import org.etieskrill.engine.util.Loaders.ModelLoader;
 import org.etieskrill.engine.window.Cursor.CursorMode;
 import org.etieskrill.engine.window.Window;
+import org.joml.*;
 import org.lwjgl.opengl.GL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -228,7 +229,7 @@ public class DemCubez {
         vertices.add(new Vertex(new Vector3f(1f, -1f, 0f), new Vector3f(), new Vector2f(1f, 0f)));
         vertices.add(new Vertex(new Vector3f(1f, 1f, 0f), new Vector3f(), new Vector2f(1f, 1f)));
         List<Integer> indices = new ArrayList<>(List.of(new Integer[]{0, 2, 1, 3, 1, 2}));
-        Mesh screenQuad = Mesh.Loader.loadToVAO(vertices, indices, mat);
+        Mesh screenQuad = MeshLoader.loadToVAO(vertices, indices, mat);
         
         while (!window.shouldClose()) {
             //Toggle escape button and related behaviour

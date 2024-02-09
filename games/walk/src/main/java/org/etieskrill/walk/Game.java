@@ -1,17 +1,16 @@
 package org.etieskrill.walk;
 
-import org.joml.*;
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.Camera;
 import org.etieskrill.engine.graphics.OrthographicCamera;
 import org.etieskrill.engine.graphics.PerspectiveCamera;
-import org.etieskrill.engine.graphics.assimp.Material;
-import org.etieskrill.engine.graphics.assimp.Model;
+import org.etieskrill.engine.graphics.data.PointLight;
 import org.etieskrill.engine.graphics.gl.FrameBuffer;
 import org.etieskrill.engine.graphics.gl.ModelFactory;
 import org.etieskrill.engine.graphics.gl.Renderer;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
-import org.etieskrill.engine.graphics.model.PointLight;
+import org.etieskrill.engine.graphics.model.Material;
+import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.texture.font.Font;
 import org.etieskrill.engine.graphics.texture.font.Fonts;
@@ -33,6 +32,7 @@ import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.util.Loaders.ModelLoader;
 import org.etieskrill.engine.util.Loaders.ShaderLoader;
 import org.etieskrill.engine.window.Window;
+import org.joml.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
