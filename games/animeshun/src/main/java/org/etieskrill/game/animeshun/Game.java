@@ -4,7 +4,6 @@ import org.etieskrill.engine.graphics.Camera;
 import org.etieskrill.engine.graphics.PerspectiveCamera;
 import org.etieskrill.engine.graphics.data.DirectionalLight;
 import org.etieskrill.engine.graphics.gl.Renderer;
-import org.etieskrill.engine.graphics.gl.shaders.Shaders;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.input.Input;
 import org.etieskrill.engine.input.KeyInputManager;
@@ -26,7 +25,7 @@ public class Game {
 
     private Camera camera;
     private Model vampy;
-    private Shaders.StaticShader vampyShader;
+    private AnimationShader vampyShader;
     private Model[] cubes;
     private DirectionalLight globalLight;
 
@@ -61,7 +60,7 @@ public class Game {
                 .getRotation().rotationY((float) Math.toRadians(-90));
         this.vampy.getTransform()
                 .setPosition(new Vector3f(2.5f, -1.5f, 0));
-        this.vampyShader = (Shaders.StaticShader) Loaders.ShaderLoader.get().load("vampyShader", Shaders::getStandardShader);
+        this.vampyShader = (AnimationShader) Loaders.ShaderLoader.get().load("vampyShader", AnimationShader::new);
 
         this.cubes = new Model[4];
         for (int i = 0; i < cubes.length; i++)
