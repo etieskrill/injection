@@ -56,10 +56,11 @@ public class Game {
         this.camera = new PerspectiveCamera(window.getSize().toVec()).setOrientation(0, 0, 0);
 
         this.vampy = Loaders.ModelLoader.get().load("vampy", () -> new Model.Builder("vampire_hip_hop.fbx").disableCulling().build());
-        this.vampy.getTransform()
-                .setPosition(new Vector3f(2.5f, -1.5f, 0))
+        this.vampy.getInitialTransform()
                 .setScale(.01f)
-                .setRotation((float) Math.toRadians(-90), new Vector3f(0, 1, 0));
+                .getRotation().rotationY((float) Math.toRadians(-90));
+        this.vampy.getTransform()
+                .setPosition(new Vector3f(2.5f, -1.5f, 0));
         this.vampyShader = (Shaders.StaticShader) Loaders.ShaderLoader.get().load("vampyShader", Shaders::getStandardShader);
 
         this.cubes = new Model[4];
@@ -79,7 +80,10 @@ public class Game {
         while (!window.shouldClose()) {
             renderer.prepare();
 
-            vampy.getTransform().setRotation((float) (vampy.getTransform().getRotation() + pacer.getDeltaTimeSeconds()), vampy.getTransform().getRotationAxis());
+            float newScale = (float) Math.sin(pacer.getTime() * 1.5) * 0.25f + 1;
+            vampy.getTransform()
+                    .setScale(newScale)
+                    .applyRotation(rotation -> rotation.rotateY((float) pacer.getDeltaTimeSeconds()));
 
             vampyShader.setGlobalLights(globalLight);
 

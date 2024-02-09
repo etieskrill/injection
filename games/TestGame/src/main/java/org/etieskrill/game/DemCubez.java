@@ -336,11 +336,12 @@ public class DemCubez {
             models[i] = ModelLoader.get().get("cube");
             models[i].getTransform()
                     .setPosition(cubePositions[i])
-                    .setRotation(random.nextFloat(),
+                    .setRotation(new Quaternionf().rotateAxis(
+                            random.nextFloat(),
                             new Vector3f(
                                     random.nextFloat(-1f, 1f),
                                     random.nextFloat(-1f, 1f),
-                                    random.nextFloat(-1f, 1f))
+                                    random.nextFloat(-1f, 1f)))
                     );
         }
     
@@ -368,17 +369,17 @@ public class DemCubez {
             lightSources[i] = ModelLoader.get().load("light", () ->
                             new Model.Builder("cube.obj")
                                     .setName("light")
-                                    .setTransform(Transform.getBlank()
+                                    .setTransform(new Transform()
                                             .setScale(0.2f)
                                             .setPosition(new Vector3f(0f, 0f, -5f)))
                                     .build());
         }
-    
+
         sword = ModelLoader.get().load("sword", () ->
                 new Model.Builder("Sting-Sword.obj")
                         .setTransform(new Transform(
                                 new Vector3f(0, 0, -2),
-                                (float) Math.toRadians(90f), new Vector3f(1f, 0f, 0f),
+                                new Quaternionf().rotateAxis((float) Math.toRadians(90), new Vector3f(1, 0, 0)),
                                 new Vector3f(0.1f)))
                         .build()
         );
@@ -387,7 +388,7 @@ public class DemCubez {
                 new Model.Builder("backpack.obj")
                         .setTransform(new Transform(
                                 new Vector3f(3, .5f, -2),
-                                (float) Math.toRadians(-90), new Vector3f(0, 1, 0),
+                                new Quaternionf().rotateAxis((float) Math.toRadians(-90), new Vector3f(0, 1, 0)),
                                 new Vector3f(0.15f)))
                         .build()
         );
@@ -467,7 +468,7 @@ public class DemCubez {
     
         if (!paused) {
             for (Model cube : models)
-                cube.getTransform().setRotation(cube.getTransform().getRotation() + .01f, cube.getTransform().getRotationAxis());
+                cube.getTransform().getRotation().w = (cube.getTransform().getRotation().w() + .01f);
         }
     }
     

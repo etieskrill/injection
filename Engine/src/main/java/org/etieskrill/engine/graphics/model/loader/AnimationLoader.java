@@ -17,7 +17,6 @@ import org.lwjgl.assimp.*;
 import java.util.ArrayList;
 import java.util.List;
 
-
 class AnimationLoader {
 
     static void loadAnimations(AIScene scene, List<Animation> animations, List<Mesh> meshes) {

@@ -16,8 +16,7 @@ import java.util.function.Supplier;
 
 import static org.etieskrill.engine.graphics.model.loader.Loader.loadModel;
 
-//TODO refactor: loading in separate class / classes
-//               reduce to data in anticipation of ces
+//TODO refactor: reduce to data in anticipation of ces
 //               find most comprehensive solution for multi-entry-point builders
 public class Model implements Disposable {
     
@@ -35,6 +34,7 @@ public class Model implements Disposable {
     private final String name;
     
     private final Transform transform;
+    private final Transform initialTransform;
     
     private final boolean culling;
     private final boolean transparency;
@@ -56,8 +56,9 @@ public class Model implements Disposable {
         protected boolean flipWinding = false;
         protected boolean culling = true;
         protected boolean transparency = false;
-        
-        protected Transform transform = Transform.getBlank();
+
+        protected Transform transform = new Transform();
+        protected Transform initialTransform = new Transform();
 
         protected AABB boundingBox;
         
@@ -155,6 +156,11 @@ public class Model implements Disposable {
             return this;
         }
 
+        public Builder setInitialTransform(Transform initialTransform) {
+            this.initialTransform = initialTransform;
+            return this;
+        }
+
         public void setBoundingBox(AABB boundingBox) {
             this.boundingBox = boundingBox;
         }
@@ -203,11 +209,12 @@ public class Model implements Disposable {
         this.boundingBox = model.boundingBox;
         this.name = model.name;
 
-        this.transform = new Transform(model.transform);
-
         this.culling = model.culling;
         this.transparency = model.transparency;
-        
+
+        this.transform = new Transform(model.transform);
+        this.initialTransform = new Transform(model.initialTransform);
+
         this.enabled = model.enabled;
     }
     
@@ -225,6 +232,7 @@ public class Model implements Disposable {
         this.transparency = builder.transparency;
         
         this.transform = builder.transform;
+        this.initialTransform = builder.initialTransform;
         
         enable();
     }
@@ -242,6 +250,7 @@ public class Model implements Disposable {
         this.transparency = builder.transparency;
 
         this.transform = builder.transform;
+        this.initialTransform = builder.initialTransform;
         
         enable();
     }
@@ -251,7 +260,7 @@ public class Model implements Disposable {
     }
     
     public AABB getWorldBoundingBox() {
-        Matrix4f worldTransform = this.transform.toMat();
+        Matrix4f worldTransform = getFinalTransform().toMat();
         return new AABB(worldTransform.transformPosition(new Vector3f(boundingBox.getMin())),
                 worldTransform.transformPosition(new Vector3f(boundingBox.getMax())));
     }
@@ -270,6 +279,14 @@ public class Model implements Disposable {
 
     public Transform getTransform() {
         return transform;
+    }
+
+    public Transform getInitialTransform() {
+        return initialTransform;
+    }
+
+    public Transform getFinalTransform() {
+        return transform.apply(initialTransform);
     }
     
     public boolean doCulling() {

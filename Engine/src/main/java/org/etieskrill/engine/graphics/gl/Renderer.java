@@ -139,8 +139,8 @@ public class Renderer {
     
     private void _render(Model model, ShaderProgram shader, Matrix4fc combined) {
         shader.setUniform("uCombined", combined, false);
-        shader.setUniform("uModel", model.getTransform().toMat(), false);
-        shader.setUniform("uNormal", model.getTransform().toMat().invert().transpose().get3x3(new Matrix3f()), false);
+        shader.setUniform("uModel", model.getFinalTransform().toMat(), false);
+        shader.setUniform("uNormal", model.getFinalTransform().toMat().invert().transpose().get3x3(new Matrix3f()), false);
 
         if (!model.doCulling()) glDisable(GL_CULL_FACE);
         if (model.hasTransparency()) glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -167,8 +167,8 @@ public class Renderer {
 
     public void renderInstances(Model model, int numInstances, ShaderProgram shader, Matrix4fc combined) {
         shader.setUniform("uCombined", combined, false);
-        shader.setUniform("uModel", model.getTransform().toMat(), false);
-        shader.setUniform("uNormal", model.getTransform().toMat().invert().transpose().get3x3(new Matrix3f()), false);
+        shader.setUniform("uModel", model.getFinalTransform().toMat(), false);
+        shader.setUniform("uNormal", model.getFinalTransform().toMat().invert().transpose().get3x3(new Matrix3f()), false);
 
         if (!model.doCulling()) glDisable(GL_CULL_FACE);
         if (model.hasTransparency()) glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

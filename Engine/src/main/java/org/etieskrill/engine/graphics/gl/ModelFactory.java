@@ -131,13 +131,13 @@ public class ModelFactory {
 
     public static Model box(Vector3f size) {
         Model box = Loaders.ModelLoader.get().load("internal-model-factory:box", () -> Model.ofFile("box.obj"));
-        box.getTransform().setInitialScale(size);
+        box.getInitialTransform().setScale(size);
         return box;
     }
 
     public static Model quadBox(Vector3f size) {
         Model quadBox = Loaders.ModelLoader.get().load("internal-model-loader:quad-box", () -> new Model.Builder("quad-box.obj").build());
-        quadBox.getTransform().setInitialScale(size);
+        quadBox.getInitialTransform().setScale(size);
         return quadBox;
     }
 

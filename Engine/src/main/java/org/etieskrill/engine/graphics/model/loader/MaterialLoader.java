@@ -29,7 +29,7 @@ import static org.etieskrill.engine.graphics.model.Material.Property.*;
 import static org.etieskrill.engine.graphics.texture.AbstractTexture.Type.*;
 import static org.lwjgl.assimp.Assimp.*;
 
-public class MaterialLoader {
+class MaterialLoader {
 
     private static final Logger logger = LoggerFactory.getLogger(MaterialLoader.class);
 
