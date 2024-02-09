@@ -156,6 +156,8 @@ public class Transform {
     
     private void updateTransform() {
         this.transform.identity()
+                //TODO it's supposed to be Translation * Rotation * Scaling, and somehow, it just works a/w
+                // i'm probs just too stupid to figure out why
                 .translate(position)
                 .rotate(rotation)
                 .scale(scale);
