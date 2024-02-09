@@ -1,16 +1,15 @@
 package org.etieskrill.game.shaderz;
 
-import org.joml.*;
 import org.etieskrill.engine.entity.data.Transform;
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.Camera;
 import org.etieskrill.engine.graphics.OrthographicCamera;
 import org.etieskrill.engine.graphics.PerspectiveCamera;
-import org.etieskrill.engine.graphics.assimp.Model;
+import org.etieskrill.engine.graphics.data.DirectionalLight;
 import org.etieskrill.engine.graphics.gl.Renderer;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
-import org.etieskrill.engine.graphics.model.DirectionalLight;
+import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.texture.font.Fonts;
 import org.etieskrill.engine.input.Input;
 import org.etieskrill.engine.input.Keys;
@@ -21,9 +20,10 @@ import org.etieskrill.engine.scene.component.VBox;
 import org.etieskrill.engine.time.LoopPacer;
 import org.etieskrill.engine.time.SystemNanoTimePacer;
 import org.etieskrill.engine.window.Window;
+import org.joml.*;
 import org.lwjgl.glfw.GLFW;
 
-import java.lang.Math; //TODO look into JOML's fast math stuff
+import java.lang.Math;
 import java.util.Arrays;
 
 public class Game {

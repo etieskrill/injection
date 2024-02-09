@@ -1,8 +1,8 @@
-package org.etieskrill.engine.graphics.model;
+package org.etieskrill.engine.graphics.data;
 
-import org.joml.Vector3f;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shaders.UniformMappable;
+import org.joml.Vector3f;
 
 public class PointLight implements UniformMappable {
     

@@ -2,11 +2,11 @@ package org.etieskrill.orbes.scene;
 
 import org.etieskrill.engine.graphics.Camera;
 import org.etieskrill.engine.graphics.PerspectiveCamera;
-import org.etieskrill.engine.graphics.assimp.Model;
+import org.etieskrill.engine.graphics.data.PointLight;
 import org.etieskrill.engine.graphics.gl.ModelFactory;
 import org.etieskrill.engine.graphics.gl.Renderer;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
-import org.etieskrill.engine.graphics.model.PointLight;
+import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.input.*;
 import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.orbes.Game;

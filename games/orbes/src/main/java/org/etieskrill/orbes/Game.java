@@ -1,18 +1,14 @@
 package org.etieskrill.orbes;
 
-import org.joml.Vector2f;
-import org.joml.Vector2fc;
-import org.joml.Vector2i;
-import org.joml.Vector3f;
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.Camera;
 import org.etieskrill.engine.graphics.OrthographicCamera;
-import org.etieskrill.engine.graphics.assimp.Material;
-import org.etieskrill.engine.graphics.assimp.Model;
 import org.etieskrill.engine.graphics.gl.FrameBuffer;
 import org.etieskrill.engine.graphics.gl.ModelFactory;
 import org.etieskrill.engine.graphics.gl.Renderer;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
+import org.etieskrill.engine.graphics.model.Material;
+import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.texture.font.TrueTypeFont;
 import org.etieskrill.engine.time.LoopPacer;
@@ -20,6 +16,10 @@ import org.etieskrill.engine.time.SystemNanoTimePacer;
 import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.window.Window;
 import org.etieskrill.orbes.scene.*;
+import org.joml.Vector2f;
+import org.joml.Vector2fc;
+import org.joml.Vector2i;
+import org.joml.Vector3f;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

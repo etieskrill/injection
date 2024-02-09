@@ -4,16 +4,10 @@ import org.jetbrains.annotations.Contract;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
-public class AABB {
-
-    private final Vector3fc min;
-    private final Vector3fc max;
-
-    public AABB(Vector3fc min, Vector3fc max) {
-        this.min = min;
-        this.max = max;
-    }
-
+public record AABB(
+        Vector3fc min,
+        Vector3fc max
+) {
     public Vector3fc getMin() {
         return min;
     }
@@ -31,7 +25,7 @@ public class AABB {
     public Vector3f getSize() {
         return max.sub(min, new Vector3f());
     }
-    
+
     @Override
     public String toString() {
         return "AABB{" +
@@ -39,5 +33,5 @@ public class AABB {
                 ", max=" + max +
                 '}';
     }
-    
+
 }

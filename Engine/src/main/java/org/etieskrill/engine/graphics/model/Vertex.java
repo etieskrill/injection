@@ -1,4 +1,4 @@
-package org.etieskrill.engine.graphics.assimp;
+package org.etieskrill.engine.graphics.model;
 
 import org.joml.Vector2fc;
 import org.joml.Vector3fc;

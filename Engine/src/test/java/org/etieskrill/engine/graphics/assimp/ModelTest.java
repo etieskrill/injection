@@ -1,9 +1,11 @@
 package org.etieskrill.engine.graphics.assimp;
 
+import org.etieskrill.engine.graphics.model.AnimationLoader;
+import org.etieskrill.engine.graphics.model.Model;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ModelTest {
 

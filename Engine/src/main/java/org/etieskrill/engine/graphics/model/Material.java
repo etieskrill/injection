@@ -1,14 +1,13 @@
-package org.etieskrill.engine.graphics.assimp;
+package org.etieskrill.engine.graphics.model;
 
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
+import org.joml.Vector4f;
 
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-
-import org.joml.Vector4f;
 
 import static java.util.Objects.requireNonNullElse;
 import static org.lwjgl.assimp.Assimp.*;

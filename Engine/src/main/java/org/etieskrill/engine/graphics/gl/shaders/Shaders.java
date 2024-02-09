@@ -1,7 +1,7 @@
 package org.etieskrill.engine.graphics.gl.shaders;
 
-import org.etieskrill.engine.graphics.model.DirectionalLight;
-import org.etieskrill.engine.graphics.model.PointLight;
+import org.etieskrill.engine.graphics.data.DirectionalLight;
+import org.etieskrill.engine.graphics.data.PointLight;
 import org.joml.Vector3f;
 
 import static org.etieskrill.engine.graphics.gl.shaders.ShaderProgram.Uniform.Type.*;
