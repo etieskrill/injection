@@ -10,9 +10,6 @@ import org.lwjgl.system.MemoryStack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -372,7 +369,7 @@ public abstract class ShaderProgram implements Disposable {
     }
     
     //TODO move to separate class and replace constructors with factory methods
-    protected static class Uniform {
+    public static class Uniform {
         protected static final int INVALID_UNIFORM_LOCATION = -1;
         protected static final int NESTED_UNIFORM_LOCATION = -2;
         
@@ -548,13 +545,17 @@ public abstract class ShaderProgram implements Disposable {
             arrayUniforms.put(uniform, null);
             return;
         }
-        
+
+        boolean registered = false;
         for (int i = 0; i < size; i++) {
             int location = glGetUniformLocation(programID, uniform.getNameWith(i));
             if (location != -1) {
                 locations.add(location);
                 setStandardValue(uniform, location);
-                logger.trace("Registered uniform {}", uniform.getName());
+                if (!registered) {
+                    logger.trace("Registered uniform {}", uniform.getName());
+                    registered = true;
+                }
                 continue;
             }
             
