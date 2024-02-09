@@ -99,9 +99,10 @@ public class Game {
             for (int i = 1; i < hallwaySegments.length; i++) {
                 Vector3f translation = hallwaySegments[i - 1]
                         .transformPosition(new Vector3f(hallway.getBoundingBox().getSize().x(), 0, 0));
+                int finalI = i;
                 hallwaySegments[i] = new Transform(hallway.getTransform())
                         .translate(translation)
-                        .setRotation((float) (i * Math.toRadians(ANGLE)), new Vector3f(0, 0, 1))
+                        .applyRotation(rotation -> rotation.rotationZ((float) (finalI * Math.toRadians(ANGLE))))
                         .toMat();
             }
             shader.setUniformArray("uModels[$]", hallwaySegments);

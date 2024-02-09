@@ -79,10 +79,9 @@ public class GameScene {
         skelly.getTransform().setScale(15);
 
         skellyBBModel = ModelFactory.box(skelly.getBoundingBox().getMax().sub(skelly.getBoundingBox().getMin(), new Vector3f()));
-        skellyBBModel.getTransform()
-                .setInitialPosition(
-                        skelly.getBoundingBox().getCenter().mul(skelly.getTransform().getScale())
-                );
+        skellyBBModel.getInitialTransform().setPosition(
+                skelly.getBoundingBox().getCenter().mul(skelly.getTransform().getScale())
+        );
 
         orbs = new Model[NUM_ORBS];
         Random random = new Random(69420);
@@ -97,7 +96,7 @@ public class GameScene {
                     ));
         }
         Model orbBBModel = ModelFactory.box(orbs[0].getBoundingBox().getMax().sub(orbs[0].getBoundingBox().getMin(), new Vector3f()));
-        orbBBModel.getTransform().setInitialPosition(
+        orbBBModel.getInitialTransform().setPosition(
                 orbBBModel.getBoundingBox().getCenter()
         );
     }
@@ -157,9 +156,7 @@ public class GameScene {
                 smoothRotation += Math.toRadians(rotation - smoothRotation >= 0 ? falloff : -falloff);
             }
             smoothRotation %= Math.toRadians(360);
-            skelly.getTransform().setRotation(
-                    smoothRotation,
-                    new Vector3f(0, 1, 0));
+            skelly.getTransform().getRotation().rotationY(smoothRotation);
         }
         deltaPos.set(0);
 
