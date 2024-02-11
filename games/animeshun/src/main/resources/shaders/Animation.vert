@@ -23,19 +23,26 @@ void main()
 {
     vec4 bonedPosition = vec4(0.0);
     vec3 bonedNormal = vec3(0.0);
+
+    int bones = 0;
     for (int i = 0; i < MAX_BONE_INFLUENCES; i++) {
-        if (boneIds[i] == -1) continue; //no bone set
-        if (boneIds[i] >= MAX_BONES) //vertex is not involved in animation
-        {
-            bonedPosition = vec4(iPosition, 1.0);
+        if (boneIds[i] < 0)  //TODO int is probs being read as float and thus much more negative yate yate yate ... replace with == -1 once i have been be fucked to debug this shit
+            continue; //no bone set
+        if (boneIds[i] >= MAX_BONES) //bones contain invalid data -> vertex is not animated
             break;
-        }
+
+        bones++;
 
         vec4 localPosition = boneMatrices[boneIds[i]] * vec4(iPosition, 1.0);
         bonedPosition += localPosition * weights[i];
 
         vec3 localNormal = mat3(boneMatrices[boneIds[i]]) * uNormal * iNormal;
         bonedNormal += localNormal * weights[i];
+    }
+
+    if (bones == 0) { //no bones are set, thus vertex is not involved in animation
+        bonedPosition = vec4(iPosition, 1.0);
+        bonedNormal = iNormal;
     }
 
     tNormal = normalize(bonedNormal);
