@@ -4,6 +4,7 @@ import org.joml.Vector2fc;
 import org.joml.Vector3fc;
 import org.joml.Vector4f;
 import org.joml.Vector4i;
+import org.lwjgl.BufferUtils;
 
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -18,12 +19,13 @@ public class Vertex {
             BONE_WEIGHT_COMPONENTS = 4,
             COMPONENTS = POSITION_COMPONENTS + NORMAL_COMPONENTS + TEXTURE_COMPONENTS + BONE_COMPONENTS + BONE_WEIGHT_COMPONENTS;
 
-    public static final int COMPONENT_BYTES =
-            POSITION_COMPONENTS * Float.BYTES +
-                    NORMAL_COMPONENTS * Float.BYTES +
-                    TEXTURE_COMPONENTS * Float.BYTES +
-                    BONE_COMPONENTS * Integer.BYTES +
-                    BONE_WEIGHT_COMPONENTS * Float.BYTES;
+    public static final int
+            POSITION_BYTES = POSITION_COMPONENTS * Float.BYTES,
+            NORMAL_BYTES = NORMAL_COMPONENTS * Float.BYTES,
+            TEXTURE_BYTES = TEXTURE_COMPONENTS * Float.BYTES,
+            BONE_BYTES = BONE_COMPONENTS * Integer.BYTES,
+            BONE_WEIGHT_BYTES = BONE_WEIGHT_COMPONENTS * Float.BYTES,
+            COMPONENT_BYTES = POSITION_BYTES + NORMAL_BYTES + TEXTURE_BYTES + BONE_BYTES + BONE_WEIGHT_BYTES;
 
     private final Vector3fc position;
     private Vector3fc normal;
@@ -58,7 +60,16 @@ public class Vertex {
     }
 
     public ByteBuffer block() {
-        ByteBuffer block = ByteBuffer.allocateDirect(COMPONENT_BYTES);
+        //TODO debug: write this in blood into a general debugging guide
+        //buffers created by java's nio package, whether wrapping or direct (e.g. ByteBuffer.allocateDirect(...), are
+        //allocated on-heap, which is obvious for the java-native array wrapping buffers, and is true for direct
+        //buffers as well. LWJGL operations (at least in opengl) such as writing buffers require specific off-heap
+        //buffers, which are created using the BufferUtils class provided by LWJGL. if an on-heap buffer is passed to
+        //any of the library's operations, the data will most likely have been overwritten already, as it is considered
+        //freed or something by the jvm, yet can still be read by the native operations. this in and of itself is a
+        //lapse in judgement by whomever decided to even allow regular nio buffers to be used in the library's methods.
+        //TODO maybe an annotation or *something* could be leveraged to help identify such errors
+        ByteBuffer block = BufferUtils.createByteBuffer(COMPONENT_BYTES);
         block.putFloat(position.x()).putFloat(position.y()).putFloat(position.z());
         if (normal != null) block.putFloat(normal.x()).putFloat(normal.y()).putFloat(normal.z());
         else block.position(block.position() + NORMAL_COMPONENTS * Float.BYTES);

@@ -9,7 +9,6 @@ import org.etieskrill.engine.graphics.model.Vertex;
 import java.nio.ByteBuffer;
 import java.util.List;
 
-import static org.etieskrill.engine.graphics.model.Mesh.GL_FLOAT_BYTE_SIZE;
 import static org.etieskrill.engine.graphics.model.Vertex.*;
 import static org.lwjgl.opengl.GL11C.GL_FLOAT;
 import static org.lwjgl.opengl.GL15C.*;
@@ -40,31 +39,6 @@ public final class MeshLoader {
                 .map(Vertex::block)
                 .forEach(data::put);
         data.rewind();
-
-        System.out.println("------- BUffer start -------");
-        for (int i = 0; i < Math.min(vertices.size(), 20); i++) {
-            System.out.println(vertices.get(i).toList());
-            ByteBuffer block = vertices.get(i).block();
-            System.out.print(block.getFloat() + " ");
-            System.out.print(block.getFloat() + " ");
-            System.out.print(block.getFloat() + " ");
-            System.out.print(block.getFloat() + " ");
-            System.out.print(block.getFloat() + " ");
-            System.out.print(block.getFloat() + " ");
-            System.out.print(block.getFloat() + " ");
-            System.out.print(block.getFloat() + " ");
-            System.out.print(block.getInt() + " ");
-            System.out.print(block.getInt() + " ");
-            System.out.print(block.getInt() + " ");
-            System.out.print(block.getInt() + " ");
-            System.out.print(block.getFloat() + " ");
-            System.out.print(block.getFloat() + " ");
-            System.out.print(block.getFloat() + " ");
-            System.out.print(block.getFloat() + " ");
-            System.out.println();
-        }
-        System.out.println("------- Buffer end -------");
-
         int vbo = prepareVBO(data);
 
         int[] _indices = new int[indices.size()];
@@ -89,36 +63,30 @@ public final class MeshLoader {
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
         glBufferData(GL_ARRAY_BUFFER, data, GL_STATIC_READ);
 
-        setFloatVertexAttributePointer(0, POSITION_COMPONENTS, false, 0);
-        setFloatVertexAttributePointer(1, NORMAL_COMPONENTS, true,
-                POSITION_COMPONENTS * GL_FLOAT_BYTE_SIZE);
-        setFloatVertexAttributePointer(2, TEXTURE_COMPONENTS, false,
-                (POSITION_COMPONENTS + NORMAL_COMPONENTS) * GL_FLOAT_BYTE_SIZE);
-        setIntegerVertexAttributePointer(3, BONE_COMPONENTS, false,
-                (POSITION_COMPONENTS + NORMAL_COMPONENTS + TEXTURE_COMPONENTS) * GL_FLOAT_BYTE_SIZE);
-        setFloatVertexAttributePointer(4, BONE_WEIGHT_COMPONENTS, false,
-                (POSITION_COMPONENTS + NORMAL_COMPONENTS + TEXTURE_COMPONENTS + BONE_COMPONENTS) * GL_FLOAT_BYTE_SIZE);
+        setFloatPointer(0, POSITION_COMPONENTS, false, 0);
+        setFloatPointer(1, NORMAL_COMPONENTS, true, POSITION_BYTES);
+        setFloatPointer(2, TEXTURE_COMPONENTS, false, POSITION_BYTES + NORMAL_BYTES);
+        setIntegerPointer(3, BONE_COMPONENTS, false, POSITION_BYTES + NORMAL_BYTES + TEXTURE_BYTES);
+        setFloatPointer(4, BONE_WEIGHT_COMPONENTS, false, POSITION_BYTES + NORMAL_BYTES + TEXTURE_BYTES + BONE_BYTES);
 
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         return vbo;
     }
 
-    private static void setFloatVertexAttributePointer(int index, int numComponents, boolean normalised, int offset) {
+    private static void setFloatPointer(int index, int numComponents, boolean normalised, int offset) {
         glEnableVertexAttribArray(index);
-        int totalStride = COMPONENTS * GL_FLOAT_BYTE_SIZE;
-        glVertexAttribPointer(index, numComponents, GL_FLOAT, normalised, totalStride, offset);
+        glVertexAttribPointer(index, numComponents, GL_FLOAT, normalised, COMPONENT_BYTES, offset);
     }
 
-    private static void setIntegerVertexAttributePointer(int index, int numComponents, boolean normalised, int offset) {
+    private static void setIntegerPointer(int index, int numComponents, boolean normalised, int offset) {
         glEnableVertexAttribArray(index);
-        int totalStride = COMPONENTS * GL_FLOAT_BYTE_SIZE;
-        glVertexAttribPointer(index, numComponents, GL_INT, normalised, totalStride, offset);
+        glVertexAttribPointer(index, numComponents, GL_INT, normalised, COMPONENT_BYTES, offset);
     }
 
     private static int prepareIndexBuffer(int[] indices) {
         int ebo = glGenBuffers();
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices, GL_DYNAMIC_DRAW);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices, GL_STATIC_READ);
         return ebo;
     }
 
