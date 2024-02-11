@@ -51,12 +51,12 @@ public class Vertex {
         return textureCoords;
     }
 
-    public List<Float> toList() { //TODO optimise this
-        return List.of(
-                position.x(), position.y(), position.z(),
-                normal.x(), normal.y(), normal.z(),
-                textureCoords.x(), textureCoords.y()
-        );
+    public Vector4i getBones() {
+        return bones;
+    }
+
+    public Vector4f getBoneWeights() {
+        return boneWeights;
     }
 
     public ByteBuffer block() {
@@ -72,16 +72,18 @@ public class Vertex {
         ByteBuffer block = BufferUtils.createByteBuffer(COMPONENT_BYTES);
         block.putFloat(position.x()).putFloat(position.y()).putFloat(position.z());
         if (normal != null) block.putFloat(normal.x()).putFloat(normal.y()).putFloat(normal.z());
-        else block.position(block.position() + NORMAL_COMPONENTS * Float.BYTES);
+        else putZero(block, NORMAL_BYTES);
         if (textureCoords != null) block.putFloat(textureCoords.x()).putFloat(textureCoords.y());
-        else block.position(block.position() + TEXTURE_COMPONENTS * Float.BYTES);
+        else putZero(block, TEXTURE_BYTES);
         if (bones != null) block.putInt(bones.x()).putInt(bones.y()).putInt(bones.z()).putInt(bones.w());
-        else block.position(block.position() + BONE_COMPONENTS * Integer.BYTES);
-        if (boneWeights != null)
-            block.putFloat(boneWeights.x()).putFloat(boneWeights.y()).putFloat(boneWeights.z()).putFloat(boneWeights.w());
-        else block.position(block.position() + BONE_WEIGHT_COMPONENTS * Float.BYTES);
-        block.rewind();
-        return block;
+        else block.putInt(-1).putInt(-1).putInt(-1).putInt(-1);
+        if (boneWeights != null) block.putFloat(boneWeights.x()).putFloat(boneWeights.y()).putFloat(boneWeights.z()).putFloat(boneWeights.w());
+        else putZero(block, BONE_WEIGHT_BYTES);
+        return block.rewind();
+    }
+
+    private static void putZero(ByteBuffer block, int numBytes) {
+        for (int i = 0; i < numBytes; i++) block.put((byte) 0);
     }
 
     @Override

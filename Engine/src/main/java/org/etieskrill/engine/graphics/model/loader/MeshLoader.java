@@ -5,6 +5,7 @@ import org.etieskrill.engine.graphics.model.Bone;
 import org.etieskrill.engine.graphics.model.Material;
 import org.etieskrill.engine.graphics.model.Mesh;
 import org.etieskrill.engine.graphics.model.Vertex;
+import org.lwjgl.BufferUtils;
 
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -34,7 +35,7 @@ public final class MeshLoader {
     public static Mesh loadToVAO(List<Vertex> vertices, List<Integer> indices, Material material, List<Bone> bones, AABB boundingBox, Mesh.DrawMode drawMode) {
         int vao = createVAO();
 
-        ByteBuffer data = ByteBuffer.allocateDirect(vertices.size() * COMPONENT_BYTES);
+        ByteBuffer data = BufferUtils.createByteBuffer(vertices.size() * COMPONENT_BYTES);
         vertices.stream()
                 .map(Vertex::block)
                 .forEach(data::put);
