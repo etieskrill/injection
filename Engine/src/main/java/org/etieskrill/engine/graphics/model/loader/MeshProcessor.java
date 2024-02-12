@@ -43,10 +43,10 @@ class MeshProcessor {
 
         List<Vertex> vertices = new ArrayList<>(numVertices);
         for (int i = 0; i < aiMesh.mNumVertices(); i++)
-            vertices.add(new Vertex(
-                    positions.get(i),
-                    normals.size() > 0 ? normals.get(i) : new Vector3f(),
-                    texCoords.size() > 0 ? texCoords.get(i) : new Vector2f())
+            vertices.add(new Vertex.Builder(positions.get(i))
+                    .normal(!normals.isEmpty() ? normals.get(i) : null)
+                    .textureCoords(!texCoords.isEmpty() ? texCoords.get(i) : null)
+                    .build()
             );
 
         //three because a face is usually a triangle, but this list is discarded at the first opportunity a/w

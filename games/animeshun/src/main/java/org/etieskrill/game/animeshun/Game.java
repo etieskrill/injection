@@ -54,10 +54,12 @@ public class Game {
 
         this.camera = new PerspectiveCamera(window.getSize().toVec()).setOrientation(0, 0, 0);
 
-        this.vampy = Loaders.ModelLoader.get().load("vampy", () -> new Model.Builder("vampire_hip_hop.fbx").disableCulling().build());
+        this.vampy = Loaders.ModelLoader.get().load("vampy", () -> new Model.Builder("vampire_hip_hop.glb").disableCulling().build());
         this.vampy.getInitialTransform()
-                .setScale(.01f)
-                .getRotation().rotationY((float) Math.toRadians(-90));
+//                .setScale(.01f)
+                .setScale(100f)
+                .getRotation().rotationX((float) Math.toRadians(-90));
+//                .getRotation().rotationY((float) Math.toRadians(-90));
         this.vampy.getTransform()
                 .setPosition(new Vector3f(2.5f, -1.5f, 0));
         this.vampyShader = (AnimationShader) Loaders.ShaderLoader.get().load("vampyShader", AnimationShader::new);

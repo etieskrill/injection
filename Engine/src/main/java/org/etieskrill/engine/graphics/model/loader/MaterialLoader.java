@@ -135,6 +135,8 @@ class MaterialLoader {
             // more often than not the bulk redundant data (probably), i should add an option to switch this off tho
             String textureName = modelName + "_" + type.name().toLowerCase() + "_" + i;
             String textureFile = file.dataString();
+            String[] splitTextureFile = textureFile.split("/");
+            String textureFileName = splitTextureFile[splitTextureFile.length - 1];
 
             Supplier<AbstractTexture> supplier;
             if (embeddedTextures.containsKey(textureFile)) {
@@ -143,6 +145,10 @@ class MaterialLoader {
             } else if (Textures.exists(textureFile)) {
                 logger.info("Texture '{}' is loaded from file {}", textureName, textureFile);
                 supplier = () -> Textures.ofFile(textureFile, type);
+            } else if (Textures.exists(textureFileName)) {
+                //TODO this is prone to breaking due to the undivided nature of model data/textures, should be proofed a bit more
+                logger.info("Texture '{}' is loaded as fallback based on filename from file {}", textureFileName, textureFile);
+                supplier = () -> Textures.ofFile(textureFileName, type);
             } else if (embeddedTextures.values().stream()
                     .map(AbstractTexture.Builder::getType)
                     .anyMatch(builderType -> builderType == type)) {
