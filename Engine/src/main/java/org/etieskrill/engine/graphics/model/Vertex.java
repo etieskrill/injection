@@ -2,12 +2,11 @@ package org.etieskrill.engine.graphics.model;
 
 import org.joml.Vector2fc;
 import org.joml.Vector3fc;
-import org.joml.Vector4f;
-import org.joml.Vector4i;
+import org.joml.Vector4fc;
+import org.joml.Vector4ic;
 import org.lwjgl.BufferUtils;
 
 import java.nio.ByteBuffer;
-import java.util.List;
 
 public class Vertex {
     
@@ -30,13 +29,58 @@ public class Vertex {
     private final Vector3fc position;
     private Vector3fc normal;
     private Vector2fc textureCoords;
-    private Vector4i bones;
-    private Vector4f boneWeights;
+    private Vector4ic bones;
+    private Vector4fc boneWeights;
+
+    //TODO WOOOOOOOOOOOOOOOOOOOOOOOO LOMBOOOOOOK WHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEN
+    public static class Builder {
+        private final Vector3fc position;
+        private Vector3fc normal;
+        private Vector2fc textureCoords;
+        private Vector4ic bones;
+        private Vector4fc boneWeights;
+
+        public Builder(Vector3fc position) {
+            this.position = position;
+        }
+
+        public Builder normal(Vector3fc normal) {
+            this.normal = normal;
+            return this;
+        }
+
+        public Builder textureCoords(Vector2fc textureCoords) {
+            this.textureCoords = textureCoords;
+            return this;
+        }
+
+        public Builder bones(Vector4ic bones) {
+            this.bones = bones;
+            return this;
+        }
+
+        public Builder boneWeights(Vector4fc boneWeights) {
+            this.boneWeights = boneWeights;
+            return this;
+        }
+
+        public Vertex build() {
+            return new Vertex(position, normal, textureCoords, bones, boneWeights);
+        }
+    }
 
     public Vertex(Vector3fc position, Vector3fc normal, Vector2fc textureCoords) {
         this.position = position;
         this.normal = normal;
         this.textureCoords = textureCoords;
+    }
+
+    public Vertex(Vector3fc position, Vector3fc normal, Vector2fc textureCoords, Vector4ic bones, Vector4fc boneWeights) {
+        this.position = position;
+        this.normal = normal;
+        this.textureCoords = textureCoords;
+        this.bones = bones;
+        this.boneWeights = boneWeights;
     }
 
     public Vector3fc getPosition() {
@@ -51,11 +95,11 @@ public class Vertex {
         return textureCoords;
     }
 
-    public Vector4i getBones() {
+    public Vector4ic getBones() {
         return bones;
     }
 
-    public Vector4f getBoneWeights() {
+    public Vector4fc getBoneWeights() {
         return boneWeights;
     }
 
