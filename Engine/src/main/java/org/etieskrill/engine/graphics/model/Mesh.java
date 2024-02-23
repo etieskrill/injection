@@ -9,9 +9,7 @@ import java.util.List;
 import static org.lwjgl.opengl.GL33C.*;
 
 public class Mesh implements Disposable {
-    
-    public static final int GL_FLOAT_BYTE_SIZE = Float.BYTES;
-    
+
     private final Material material;
     private final List<Bone> bones;
     private final int vao, numIndices, vbo, ebo;

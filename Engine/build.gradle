@@ -26,7 +26,9 @@ dependencies {
 //    implementation "org.lwjgl:lwjgl-opencl"
     implementation "org.lwjgl:lwjgl-opengl"
     implementation "org.lwjgl:lwjgl-stb"
+
     implementation 'org.jetbrains:annotations:24.0.0'
+
     runtimeOnly "org.lwjgl:lwjgl::$lwjglNatives"
     runtimeOnly "org.lwjgl:lwjgl-assimp::$lwjglNatives"
     runtimeOnly "org.lwjgl:lwjgl-freetype::$lwjglNatives"

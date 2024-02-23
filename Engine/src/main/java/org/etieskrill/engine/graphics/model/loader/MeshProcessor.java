@@ -1,23 +1,20 @@
 package org.etieskrill.engine.graphics.model.loader;
 
 import org.etieskrill.engine.entity.data.AABB;
-import org.etieskrill.engine.graphics.model.Bone;
-import org.etieskrill.engine.graphics.model.Material;
-import org.etieskrill.engine.graphics.model.Mesh;
-import org.etieskrill.engine.graphics.model.Vertex;
+import org.etieskrill.engine.graphics.model.*;
 import org.joml.Vector2f;
 import org.joml.Vector2fc;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
-import org.lwjgl.assimp.AIFace;
-import org.lwjgl.assimp.AIMesh;
-import org.lwjgl.assimp.AIVector3D;
+import org.lwjgl.PointerBuffer;
+import org.lwjgl.assimp.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.etieskrill.engine.graphics.model.loader.AnimationLoader.getBones;
 import static org.lwjgl.assimp.Assimp.*;
@@ -26,7 +23,20 @@ class MeshProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(MeshProcessor.class);
 
-    static Mesh processMesh(AIMesh aiMesh, List<Material> materials) {
+    static void loadMeshes(AIScene scene, Model.Builder builder) {
+        PointerBuffer meshBuffer = scene.mMeshes();
+        if (meshBuffer == null) return;
+
+        List<Mesh> meshes = Stream
+                .generate(meshBuffer::get)
+                .limit(scene.mNumMeshes())
+                .map(AIMesh::create)
+                .map(aiMesh -> processMesh(aiMesh, builder.getMaterials()))
+                .toList();
+        builder.getMeshes().addAll(meshes);
+    }
+
+    private static Mesh processMesh(AIMesh aiMesh, List<Material> materials) {
         //TODO add AABB loading but oh FUCK each goddamn mesh has a separate one FFS
 
         int numVertices = aiMesh.mNumVertices();
@@ -41,12 +51,11 @@ class MeshProcessor {
         if (aiMesh.mTextureCoords(0) != null)
             aiMesh.mTextureCoords(0).forEach(texCoord -> texCoords.add(new Vector2f(texCoord.x(), texCoord.y())));
 
-        List<Vertex> vertices = new ArrayList<>(numVertices);
+        List<Vertex.Builder> vertexBuilders = new ArrayList<>(numVertices);
         for (int i = 0; i < aiMesh.mNumVertices(); i++)
-            vertices.add(new Vertex.Builder(positions.get(i))
+            vertexBuilders.add(new Vertex.Builder(positions.get(i))
                     .normal(!normals.isEmpty() ? normals.get(i) : null)
                     .textureCoords(!texCoords.isEmpty() ? texCoords.get(i) : null)
-                    .build()
             );
 
         //three because a face is usually a triangle, but this list is discarded at the first opportunity a/w
@@ -59,7 +68,11 @@ class MeshProcessor {
                 indices.add(buffer.get());
         }
 
-        List<Bone> bones = getBones(aiMesh, vertices);
+        List<Bone> bones = getBones(aiMesh, vertexBuilders);
+
+        List<Vertex> vertices = vertexBuilders.stream()
+                .map(Vertex.Builder::build)
+                .toList();
 
         AIVector3D min = aiMesh.mAABB().mMin();
         AIVector3D max = aiMesh.mAABB().mMax();

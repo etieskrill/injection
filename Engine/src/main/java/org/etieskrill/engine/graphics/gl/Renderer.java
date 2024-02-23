@@ -2,10 +2,7 @@ package org.etieskrill.engine.graphics.gl;
 
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
-import org.etieskrill.engine.graphics.model.CubeMapModel;
-import org.etieskrill.engine.graphics.model.Material;
-import org.etieskrill.engine.graphics.model.Mesh;
-import org.etieskrill.engine.graphics.model.Model;
+import org.etieskrill.engine.graphics.model.*;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.etieskrill.engine.graphics.texture.font.Font;
 import org.etieskrill.engine.graphics.texture.font.Glyph;
@@ -114,7 +111,7 @@ public class Renderer {
                 .setScale(new Vector3f(glyph.getSize(), 1))
                 .setPosition(new Vector3f(position.add(glyph.getPosition(), new Vector2f()), 0));
 
-        List<AbstractTexture> textures = getQuad().getMeshes().get(0).getMaterial().getTextures();
+        List<AbstractTexture> textures = getQuad().getNodes().getFirst().getMeshes().getFirst().getMaterial().getTextures();
         textures.clear();
         textures.add(glyph.getTexture());
 
@@ -145,8 +142,8 @@ public class Renderer {
         if (!model.doCulling()) glDisable(GL_CULL_FACE);
         if (model.hasTransparency()) glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         shader.start();
-        for (Mesh mesh : model.getMeshes())
-            render(mesh, shader);
+        Node rootNode = model.getNodes().getFirst();
+        renderNode(rootNode, shader, rootNode.getTransform());
         shader.stop();
         if (!model.doCulling()) glEnable(GL_CULL_FACE);
         if (model.hasTransparency()) glBlendFunc(GL_ONE, GL_ZERO);
@@ -154,40 +151,58 @@ public class Renderer {
     
     //TODO should once again be made private, so dont use anywhere else, even if you **could**
     @Deprecated
-    public void render(Mesh mesh, ShaderProgram shader) {
+    public void renderNode(Node node, ShaderProgram shader, Matrix4fc meshTransform) {
+        shader.setUniform("uMesh", meshTransform, false);
+
+        for (Mesh mesh : node.getMeshes())
+            renderMesh(mesh, shader);
+
+        for (Node child : node.getChildren())
+            renderNode(child, shader, meshTransform.mul(child.getTransform(), new Matrix4f()));
+    }
+
+    private void renderMesh(Mesh mesh, ShaderProgram shader) {
         bindMaterial(mesh.getMaterial(), shader);
         glBindVertexArray(mesh.getVao());
 
         glDrawElements(mesh.getDrawMode().gl(), mesh.getNumIndices(), GL_UNSIGNED_INT, 0);
 
         AbstractTexture.unbindAllTextures();
-
         glBindVertexArray(0);
     }
 
     public void renderInstances(Model model, int numInstances, ShaderProgram shader, Matrix4fc combined) {
         shader.setUniform("uCombined", combined, false);
         shader.setUniform("uModel", model.getFinalTransform().toMat(), false);
-        shader.setUniform("uNormal", model.getFinalTransform().toMat().invert().transpose().get3x3(new Matrix3f()), false);
+        shader.setUniform("uNormal", model.getFinalTransform().toMat().invert().transpose().get3x3(new Matrix3f()), false); //TODO store in fixed matrix to lessen object creation
 
         if (!model.doCulling()) glDisable(GL_CULL_FACE);
         if (model.hasTransparency()) glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         shader.start();
-        for (Mesh mesh : model.getMeshes())
-            renderInstances(mesh, numInstances, shader);
+        Node rootNode = model.getNodes().getFirst();
+        renderNodeInstances(rootNode, numInstances, shader, rootNode.getTransform());
         shader.stop();
         if (!model.doCulling()) glEnable(GL_CULL_FACE);
         if (model.hasTransparency()) glBlendFunc(GL_ONE, GL_ZERO);
     }
 
-    public void renderInstances(Mesh mesh, int numInstances, ShaderProgram shader) {
+    public void renderNodeInstances(Node node, int numInstances, ShaderProgram shader, Matrix4fc meshTransform) {
+        shader.setUniform("uMesh", meshTransform, false);
+
+        for (Mesh mesh : node.getMeshes())
+            renderMeshInstances(mesh, numInstances, shader);
+
+        for (Node child : node.getChildren())
+            renderNodeInstances(child, numInstances, shader, meshTransform.mul(child.getTransform(), new Matrix4f())); //TODO same as with normal, store precalculated in nodes
+    }
+
+    private void renderMeshInstances(Mesh mesh, int numInstances, ShaderProgram shader) {
         bindMaterial(mesh.getMaterial(), shader);
         glBindVertexArray(mesh.getVao());
 
         glDrawElementsInstanced(mesh.getDrawMode().gl(), mesh.getNumIndices(), GL_UNSIGNED_INT, 0, numInstances);
 
         AbstractTexture.unbindAllTextures();
-
         glBindVertexArray(0);
     }
     

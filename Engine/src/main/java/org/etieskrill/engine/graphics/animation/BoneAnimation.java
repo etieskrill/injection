@@ -8,10 +8,12 @@ import java.util.List;
 
 public record BoneAnimation(
         Bone bone,
-        List<Double> timestamps, //entry 0 in timetamps corresponds to 0 in pos, rot and scaling; etc.
-        List<Vector3fc> positions, //TODO probably store in transform
+        List<Vector3fc> positions,
+        List<Double> positionTimes,
         List<Quaternionfc> rotations,
+        List<Double> rotationTimes,
         List<Vector3fc> scalings,
+        List<Double> scaleTimes,
         Animation.Behaviour preBehaviour, //what happens before first key
         Animation.Behaviour postBehaviour //what happens after last key
 ) {

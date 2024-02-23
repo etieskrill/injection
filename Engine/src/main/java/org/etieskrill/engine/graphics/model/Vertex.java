@@ -1,9 +1,6 @@
 package org.etieskrill.engine.graphics.model;
 
-import org.joml.Vector2fc;
-import org.joml.Vector3fc;
-import org.joml.Vector4fc;
-import org.joml.Vector4ic;
+import org.joml.*;
 import org.lwjgl.BufferUtils;
 
 import java.nio.ByteBuffer;
@@ -37,8 +34,8 @@ public class Vertex {
         private final Vector3fc position;
         private Vector3fc normal;
         private Vector2fc textureCoords;
-        private Vector4ic bones;
-        private Vector4fc boneWeights;
+        private final Vector4i bones = new Vector4i(-1);
+        private final Vector4f boneWeights = new Vector4f(-1);
 
         public Builder(Vector3fc position) {
             this.position = position;
@@ -54,13 +51,21 @@ public class Vertex {
             return this;
         }
 
-        public Builder bones(Vector4ic bones) {
-            this.bones = bones;
+        public Vector4i bones() {
+            return bones;
+        }
+
+        public Builder bones(Vector4i bones) {
+            this.bones.set(bones);
             return this;
         }
 
-        public Builder boneWeights(Vector4fc boneWeights) {
-            this.boneWeights = boneWeights;
+        public Vector4f boneWeights() {
+            return boneWeights;
+        }
+
+        public Builder boneWeights(Vector4f boneWeights) {
+            this.boneWeights.set(boneWeights);
             return this;
         }
 
