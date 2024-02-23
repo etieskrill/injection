@@ -2,23 +2,30 @@ package org.etieskrill.game.animeshun;
 
 import org.etieskrill.engine.graphics.Camera;
 import org.etieskrill.engine.graphics.PerspectiveCamera;
+import org.etieskrill.engine.graphics.animation.Animator;
 import org.etieskrill.engine.graphics.data.DirectionalLight;
 import org.etieskrill.engine.graphics.gl.Renderer;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.input.Input;
 import org.etieskrill.engine.input.KeyInputManager;
 import org.etieskrill.engine.input.Keys;
+import org.etieskrill.engine.scene.component.Label;
 import org.etieskrill.engine.time.LoopPacer;
 import org.etieskrill.engine.time.SystemNanoTimePacer;
 import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.window.Window;
 import org.joml.Vector3f;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import static org.etieskrill.engine.input.InputBinding.Trigger.ON_PRESS;
 import static org.etieskrill.engine.input.InputBinding.Trigger.PRESSED;
 
 public class Game {
 
     private static final int FRAMERATE = 60;
+
+    private static final Logger logger = LoggerFactory.getLogger(Game.class);
 
     private Window window;
     private final Renderer renderer = new Renderer();
@@ -29,12 +36,26 @@ public class Game {
     private Model[] cubes;
     private DirectionalLight globalLight;
 
+    private Animator vampyAnimator;
+
+    private int currentAnimation;
+    private Label animationSelector;
+
     private final KeyInputManager controls = Input.of(
             Input.bind(Keys.ESC.withMods(Keys.Mod.SHIFT)).to(this::terminate),
             Input.bind(Keys.W).on(PRESSED).to(delta -> camera.translate(new Vector3f(0, 0, delta.floatValue()))),
             Input.bind(Keys.S).on(PRESSED).to(delta -> camera.translate(new Vector3f(0, 0, -delta.floatValue()))),
             Input.bind(Keys.A).on(PRESSED).to(delta -> camera.translate(new Vector3f(-delta.floatValue(), 0, 0))),
-            Input.bind(Keys.D).on(PRESSED).to(delta -> camera.translate(new Vector3f(delta.floatValue(), 0, 0)))
+            Input.bind(Keys.D).on(PRESSED).to(delta -> camera.translate(new Vector3f(delta.floatValue(), 0, 0))),
+            Input.bind(Keys.Q).on(ON_PRESS).to(() -> {
+                vampyAnimator.switchPlaying();
+                logger.info("Vampy animation is {}", vampyAnimator.isPlaying() ? "playing" : "stopped");
+            }),
+            Input.bind(Keys.E).on(ON_PRESS).to(() -> {
+                this.currentAnimation = ++currentAnimation % (vampy.getAnimations().size() - 1);
+                this.vampyAnimator = new Animator(vampy.getAnimations().get(currentAnimation), vampy);
+                logger.info("Switching to animation {}, '{}'", currentAnimation, vampy.getAnimations().get(currentAnimation).getName());
+            })
     );
 
     Game() {
@@ -55,14 +76,24 @@ public class Game {
         this.camera = new PerspectiveCamera(window.getSize().toVec()).setOrientation(0, 0, 0);
 
         this.vampy = Loaders.ModelLoader.get().load("vampy", () -> new Model.Builder("vampire_hip_hop.glb").disableCulling().build());
-        this.vampy.getInitialTransform()
+//        this.vampy.getInitialTransform()
 //                .setScale(.01f)
-                .setScale(100f)
-                .getRotation().rotationX((float) Math.toRadians(-90));
+//                .setScale(100f)
+//                .getRotation().rotationX((float) Math.toRadians(-90));
 //                .getRotation().rotationY((float) Math.toRadians(-90));
         this.vampy.getTransform()
-                .setPosition(new Vector3f(2.5f, -1.5f, 0));
+//                .setScale(100)
+                .setPosition(new Vector3f(2.5f, -1.5f, 0))
+//                .applyRotation(quat -> quat
+//                                .rotationX((float) Math.toRadians(-90))
+//                                .rotateY((float) Math.toRadians(90))
+//                                .rotateZ((float) Math.toRadians(-90)))
+        ;
         this.vampyShader = (AnimationShader) Loaders.ShaderLoader.get().load("vampyShader", AnimationShader::new);
+
+//        System.out.println("animations available: " + vampy.getAnimations().stream().map(Animation::getName).collect(Collectors.joining(", ")));
+
+        this.vampyAnimator = new Animator(vampy.getAnimations().get(0), vampy);
 
         this.cubes = new Model[4];
         for (int i = 0; i < cubes.length; i++)
@@ -81,11 +112,16 @@ public class Game {
         while (!window.shouldClose()) {
             renderer.prepare();
 
-            float newScale = (float) Math.sin(pacer.getTime() * 1.5) * 0.25f + 1;
-            vampy.getTransform()
-                    .setScale(newScale)
-                    .applyRotation(rotation -> rotation.rotateY((float) pacer.getDeltaTimeSeconds()));
+//            float newScale = (float) Math.sin(pacer.getTime() * 1.5) * 0.25f + 1;
+//            vampy.getTransform()
+//                    .setScale(newScale)
+//                    .applyRotation(rotation -> rotation.rotateY((float) pacer.getDeltaTimeSeconds()));
 
+            vampyAnimator.update(pacer.getDeltaTimeSeconds());
+//            System.out.println(Arrays.toString(vampyAnimator.getBoneMatrices().get(20).get(new float[16])));
+//            System.out.println("\n\n");
+
+            vampyShader.setBoneMatrices(vampyAnimator.getBoneMatrices());
             vampyShader.setGlobalLights(globalLight);
 
             renderer.render(vampy, vampyShader, camera.getCombined());

@@ -3,32 +3,34 @@ package org.etieskrill.engine.graphics.model.loader;
 import org.etieskrill.engine.graphics.animation.Animation;
 import org.etieskrill.engine.graphics.animation.BoneAnimation;
 import org.etieskrill.engine.graphics.model.Bone;
-import org.etieskrill.engine.graphics.model.BoneWeight;
 import org.etieskrill.engine.graphics.model.Mesh;
+import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.model.Vertex;
 import org.etieskrill.engine.graphics.util.AssimpUtils;
-import org.joml.Quaternionf;
-import org.joml.Quaternionfc;
-import org.joml.Vector3f;
-import org.joml.Vector3fc;
+import org.joml.*;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.assimp.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 
 class AnimationLoader {
 
-    static void loadAnimations(AIScene scene, List<Animation> animations, List<Mesh> meshes) {
+    private static final Logger logger = LoggerFactory.getLogger(AnimationLoader.class);
+
+    static void loadAnimations(AIScene scene, Model.Builder builder) {
+        PointerBuffer animationBuffer = scene.mAnimations();
         for (int i = 0; i < scene.mNumAnimations(); i++) {
-            AIAnimation aiAnimation = AIAnimation.create(scene.mAnimations().get());
-            animations.add(new Animation(
+            AIAnimation aiAnimation = AIAnimation.create(animationBuffer.get());
+            builder.getAnimations().add(new Animation(
                     aiAnimation.mName().dataString(),
-                    aiAnimation.mDuration(),
+                    (int) aiAnimation.mDuration(),
                     aiAnimation.mTicksPerSecond(),
-                    loadNodeAnimations(aiAnimation.mNumChannels(), aiAnimation.mChannels(), meshes),
+                    loadNodeAnimations(aiAnimation.mNumChannels(), aiAnimation.mChannels(), builder.getMeshes()),
                     null
-                    ));
+            ));
         }
     }
 
@@ -48,48 +50,64 @@ class AnimationLoader {
                     .orElseThrow(() -> new IllegalStateException(
                             "Failed to load animation because no bone '" + name + "' was found"));
 
-            List<Double> timestamps = new ArrayList<>(nodeAnim.mNumPositionKeys());
+            List<Double> positionTimes = new ArrayList<>(nodeAnim.mNumPositionKeys());
             List<Vector3fc> positions = nodeAnim.mPositionKeys().stream().limit(nodeAnim.mNumPositionKeys())
-                    .peek(key -> timestamps.add(key.mTime()))
+                    .peek(key -> positionTimes.add(key.mTime()))
                     .map(AIVectorKey::mValue)
                     .map(vector -> (Vector3fc) new Vector3f(vector.x(), vector.y(), vector.z()))
                     .toList();
+            List<Double> rotationTimes = new ArrayList<>(nodeAnim.mNumRotationKeys());
             List<Quaternionfc> rotations = nodeAnim.mRotationKeys().stream().limit(nodeAnim.mNumRotationKeys())
+                    .peek(key -> rotationTimes.add(key.mTime()))
                     .map(AIQuatKey::mValue)
                     .map(quat -> (Quaternionfc) new Quaternionf(quat.x(), quat.y(), quat.z(), quat.w()))
                     .toList();
+            List<Double> scaleTimes = new ArrayList<>(nodeAnim.mNumScalingKeys());
             List<Vector3fc> scalings = nodeAnim.mScalingKeys().stream().limit(nodeAnim.mNumScalingKeys())
+                    .peek(key -> scaleTimes.add(key.mTime()))
                     .map(AIVectorKey::mValue)
                     .map(vector -> (Vector3fc) new Vector3f(vector.x(), vector.y(), vector.z()))
                     .toList();
             boneAnims.add(new BoneAnimation(
                     bone,
-                    timestamps, positions, rotations, scalings,
+                    positions, positionTimes, rotations, rotationTimes, scalings, scaleTimes,
                     Animation.Behaviour.from(nodeAnim.mPreState()), Animation.Behaviour.from(nodeAnim.mPostState())
             ));
         }
+
         return boneAnims;
     }
 
-    static List<Bone> getBones(AIMesh mesh, List<Vertex> vertices) {
+    static List<Bone> getBones(AIMesh mesh, List<Vertex.Builder> vertices) {
         List<Bone> bones = new ArrayList<>(mesh.mNumBones());
+        PointerBuffer boneBuffer = mesh.mBones();
         for (int i = 0; i < mesh.mNumBones(); i++) {
-            AIBone aiBone = AIBone.create(mesh.mBones().get());
+            AIBone aiBone = AIBone.create(boneBuffer.get());
+            loadBoneWeights(i, aiBone.mNumWeights(), aiBone.mWeights(), vertices);
             bones.add(new Bone(
                     aiBone.mName().dataString(),
-                    loadBoneWeights(aiBone.mNumWeights(), aiBone.mWeights(), vertices),
                     AssimpUtils.fromAI(aiBone.mOffsetMatrix())
             ));
         }
         return bones;
     }
 
-    private static List<BoneWeight> loadBoneWeights(int numWeights, AIVertexWeight.Buffer weightBuffer, List<Vertex> vertices) {
-        return weightBuffer
+    private static void loadBoneWeights(int boneId, int numWeights, AIVertexWeight.Buffer weightBuffer, List<Vertex.Builder> vertices) {
+        weightBuffer
                 .stream()
                 .limit(numWeights)
-                .map(aiWeight -> new BoneWeight(vertices.get(aiWeight.mVertexId()), aiWeight.mWeight()))
-                .toList();
+                .forEach(aiWeight -> {
+                    Vertex.Builder vertex = vertices.get(aiWeight.mVertexId());
+                    boolean wasSet = false;
+                    for (int i = 0; i < Animation.MAX_BONE_INFLUENCES; i++) {
+                        if (vertex.bones().get(i) == boneId) continue;
+                        if (vertex.bones().get(i) != -1) continue;
+                        vertex.bones().setComponent(i, boneId);
+                        vertex.boneWeights().setComponent(i, aiWeight.mWeight());
+                        wasSet = true;
+                    }
+//                    if (!wasSet) logger.warn("Vertex with id '{}' is influenced by more than the maximum of {} bones", aiWeight.mVertexId(), MAX_BONE_INFLUENCES);
+                });
     }
 
 }

@@ -3,6 +3,8 @@ package org.etieskrill.engine.graphics.model.loader;
 import org.etieskrill.engine.entity.data.AABB;
 import org.etieskrill.engine.graphics.model.Mesh;
 import org.etieskrill.engine.graphics.model.Model;
+import org.etieskrill.engine.graphics.model.Node;
+import org.etieskrill.engine.graphics.util.AssimpUtils;
 import org.etieskrill.engine.util.ResourceReader;
 import org.joml.Vector3f;
 import org.lwjgl.PointerBuffer;
@@ -13,12 +15,16 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Stream;
 
 import static org.etieskrill.engine.config.ResourcePaths.MODEL_PATH;
 import static org.etieskrill.engine.graphics.model.loader.AnimationLoader.loadAnimations;
 import static org.etieskrill.engine.graphics.model.loader.MaterialLoader.loadEmbeddedTextures;
 import static org.etieskrill.engine.graphics.model.loader.MaterialLoader.loadMaterials;
-import static org.etieskrill.engine.graphics.model.loader.MeshProcessor.processMesh;
+import static org.etieskrill.engine.graphics.model.loader.MeshProcessor.loadMeshes;
 import static org.lwjgl.assimp.Assimp.*;
 import static org.lwjgl.system.MemoryUtil.memAddress;
 import static org.lwjgl.system.MemoryUtil.memCopy;
@@ -32,17 +38,17 @@ public class Loader {
         //TODO properly set these
         int processFlags =
                 aiProcess_Triangulate |
-                        aiProcess_SortByPType |
+//                        aiProcess_SortByPType |
                         (builder.shouldFlipUVs() ? aiProcess_FlipUVs : 0) |
-                        aiProcess_OptimizeMeshes |
-                        aiProcess_OptimizeGraph |
-                        aiProcess_JoinIdenticalVertices |
-                        aiProcess_RemoveRedundantMaterials |
-                        aiProcess_FindInvalidData |
-                        aiProcess_GenUVCoords |
-                        aiProcess_TransformUVCoords |
-                        aiProcess_FindInstances |
-                        aiProcess_PreTransformVertices |
+//                        aiProcess_OptimizeMeshes |
+//                        aiProcess_OptimizeGraph |
+//                        aiProcess_JoinIdenticalVertices |
+//                        aiProcess_RemoveRedundantMaterials |
+//                        aiProcess_FindInvalidData |
+//                        aiProcess_GenUVCoords |
+//                        aiProcess_TransformUVCoords |
+//                        aiProcess_FindInstances |
+//                        aiProcess_PreTransformVertices | //TODO add ~static~ flag or smth, but none of this baby shit anymore
                         (builder.shouldFlipWinding() ? aiProcess_FlipWindingOrder : 0);
 
         AIFileIO fileIO = AIFileIO.create().OpenProc((pFileIO, fileName, openMode) -> {
@@ -79,27 +85,46 @@ public class Loader {
 
         loadEmbeddedTextures(scene, builder.getEmbeddedTextures());
         loadMaterials(scene, builder, builder.getEmbeddedTextures());
-        processNode(scene.mRootNode(), scene, builder);
-        loadAnimations(scene, builder.getAnimations(), builder.getMeshes()); //animations reference bones, which need first be loaded from the nodes
+        loadMeshes(scene, builder);
+        processNode(null, scene.mRootNode(), builder);
+        loadAnimations(scene, builder); //animations reference bones, which need first be loaded from the nodes
         calculateModelBoundingBox(builder);
 
         aiReleaseImport(scene);
 
-        logger.debug("Loaded model {} with {} mesh{} and {} material{}", builder.getName(),
+        logger.debug("Loaded model {} with {} node{}, {} mesh{} and {} material{}", builder.getName(),
+                builder.getNodes().size(), builder.getNodes().size() == 1 ? "" : "s",
                 builder.getMeshes().size(), builder.getMeshes().size() == 1 ? "" : "es",
                 builder.getMaterials().size(), builder.getMaterials().size() == 1 ? "" : "s");
     }
 
-    private static void processNode(AINode node, AIScene scene, Model.Builder builder) {
-        PointerBuffer mMeshes = scene.mMeshes();
-        if (mMeshes == null) return;
-        for (int i = 0; i < node.mNumMeshes(); i++)
-            builder.getMeshes().add(processMesh(AIMesh.create(mMeshes.get(node.mMeshes().get(i))), builder.getMaterials()));
+    private static void processNode(Node parent, AINode aiNode, Model.Builder builder) {
+        Node node = new Node(
+                aiNode.mName().dataString(),
+                AssimpUtils.fromAI(aiNode.mTransformation()),
+                getNodeMeshes(aiNode, builder)
+        );
 
-        PointerBuffer mChildren = node.mChildren();
+        builder.getNodes().add(node);
+        if (parent != null)
+            parent.getChildren().add(node);
+
+        PointerBuffer mChildren = aiNode.mChildren();
         if (mChildren == null) return;
-        for (int i = 0; i < node.mNumChildren(); i++)
-            processNode(AINode.create(mChildren.get()), scene, builder);
+        for (int i = 0; i < aiNode.mNumChildren(); i++)
+            processNode(node, AINode.create(mChildren.get()), builder);
+    }
+
+    private static List<Mesh> getNodeMeshes(AINode aiNode, Model.Builder builder) {
+        IntBuffer meshIndexBuffer = aiNode.mMeshes();
+        if (meshIndexBuffer == null)
+            return List.of();
+
+        return Stream
+                .generate(meshIndexBuffer::get)
+                .limit(aiNode.mNumMeshes())
+                .map(builder.getMeshes()::get)
+                .toList();
     }
 
     private static void calculateModelBoundingBox(Model.Builder builder) {

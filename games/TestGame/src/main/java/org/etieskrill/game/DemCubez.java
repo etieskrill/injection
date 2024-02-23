@@ -6,6 +6,7 @@ import org.etieskrill.engine.graphics.data.DirectionalLight;
 import org.etieskrill.engine.graphics.data.PointLight;
 import org.etieskrill.engine.graphics.gl.FrameBuffer;
 import org.etieskrill.engine.graphics.gl.FrameBufferAttachment;
+import org.etieskrill.engine.graphics.gl.ModelFactory;
 import org.etieskrill.engine.graphics.gl.Renderer;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
@@ -73,7 +74,7 @@ public class DemCubez {
     }
     
     private void init() {
-        if (true) throw new RuntimeException("Will compile and run, but is currently broken"); //TODO fix
+//        if (true) throw new RuntimeException("Will compile and run, but is currently broken"); //TODO fix
 
         Window.USE_RAW_MOUSE_MOTION_IF_AVAILABLE = false;
         
@@ -222,14 +223,7 @@ public class DemCubez {
         textureBuffer.bind(0);
     
         Material mat = new Material.Builder().addTextures(textureBuffer).build();
-
-        List<Vertex> vertices = new ArrayList<>();
-        vertices.add(new Vertex(new Vector3f(-1f, -1f, 0f), new Vector3f(), new Vector2f(0f)));
-        vertices.add(new Vertex(new Vector3f(-1f, 1f, 0f), new Vector3f(), new Vector2f(0f, 1f)));
-        vertices.add(new Vertex(new Vector3f(1f, -1f, 0f), new Vector3f(), new Vector2f(1f, 0f)));
-        vertices.add(new Vertex(new Vector3f(1f, 1f, 0f), new Vector3f(), new Vector2f(1f, 1f)));
-        List<Integer> indices = new ArrayList<>(List.of(new Integer[]{0, 2, 1, 3, 1, 2}));
-        Mesh screenQuad = MeshLoader.loadToVAO(vertices, indices, mat);
+        Model screenQuad = ModelFactory.rectangle(-1, -1, 2, 2, mat).build();
         
         while (!window.shouldClose()) {
             //Toggle escape button and related behaviour
@@ -253,18 +247,18 @@ public class DemCubez {
             
             updateModels();
             
-            frameBuffer.bind();
+//            frameBuffer.bind();
             renderModels();
-            frameBuffer.unbind();
+//            frameBuffer.unbind();
             
-            renderer.prepare();
-            screenShader.start();
+//            renderer.prepare();
+//            screenShader.start();
 //            screenShader.setUniform("uSharpen", true);
 //            screenShader.setUniform("uSharpenOffset", 1f / 10000f);
 
-            screenShader.setUniform("uColour", new Vector3f(1.0f));
+//            screenShader.setUniform("uColour", new Vector3f(1.0f));
             glEnable(GL_FRAMEBUFFER_SRGB); //manual gamma correction for funsies
-            renderer.render(screenQuad, screenShader);
+//            renderer.render(screenQuad, screenShader, new Matrix4f());
             glDisable(GL_FRAMEBUFFER_SRGB);
 
             window.update(pacer.getDeltaTimeSeconds());
@@ -328,10 +322,17 @@ public class DemCubez {
     
         models = new Model[cubePositions.length];
         Random random = new Random(69420);
-        ModelLoader.get().load("cube", () -> Model.ofFile("cube.obj"))
-                .getMeshes().get(0).getMaterial().getTextures().add(
-                        Textures.getSkybox("space")
-                );
+        ModelLoader.get().load("cube", () -> Model.ofFile("cube.obj"));
+
+//        List<Node> nodes = ModelLoader.get().get("cube").getNodes();
+//        for (int i = 0; i < nodes.size(); i++) {
+//            System.out.println(i + " " + nodes.get(i).getMeshes().size());
+//        }
+//                .getNodes().getFirst()
+//                .getMeshes().getFirst()
+//                .getMaterial().getTextures().add(
+//                        Textures.getSkybox("space")
+//                );
         for (int i = 0; i < cubePositions.length; i++) {
             models[i] = ModelLoader.get().get("cube");
             models[i].getTransform()
@@ -477,7 +478,7 @@ public class DemCubez {
 
         Vector3f translation = camera.getCombined().getTranslation(new Vector3f());
         renderer.render(skybox, skyboxShader, camera.getCombined().translate(translation.negate(), new Matrix4f()).scale(50f));
-    
+
         setShaderUniforms();
 
         for (Model model : models)

@@ -13,18 +13,21 @@ import static org.lwjgl.assimp.Assimp.*;
  * Confusingly, bones are called '{@link AINodeAnim Nodes}' in Assimp.
  *
  * @param name           an identifying name
- * @param duration       the total duration
+ * @param duration       the total duration in ticks
  * @param ticksPerSecond how many frames play every second
  * @param boneAnimations
  * @param meshChannels
  */
 public record Animation(
         String name,
-        double duration,
+        int duration,
         double ticksPerSecond,
         List<BoneAnimation> boneAnimations,
         List<MeshAnimation> meshChannels
 ) {
+
+    public static final int MAX_BONE_INFLUENCES = 4;
+    public static final int MAX_BONES = 100;
 
     public enum Behaviour {
         DEFAULT(aiAnimBehaviour_DEFAULT), //take default transform
@@ -49,6 +52,22 @@ public record Animation(
                     .findAny()
                     .orElse(DEFAULT);
         }
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public int getDuration() {
+        return duration;
+    }
+
+    public double getTicksPerSecond() {
+        return ticksPerSecond;
+    }
+
+    public List<BoneAnimation> getBoneAnimations() {
+        return boneAnimations;
     }
 
 }

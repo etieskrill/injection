@@ -23,11 +23,12 @@ public class Model implements Disposable {
     private static final Supplier<Model> ERROR_MODEL = () -> new Builder("cube.obj").build();
     
     private static final Logger logger = LoggerFactory.getLogger(Model.class);
-    
-    private final List<Mesh> meshes; //TODO these should become immutable after model instantiation
+
+    private final List<Node> nodes;
     private final List<Material> materials; //TODO since meshes know their materials, these here may not be necessary?
 
     private final List<Animation> animations;
+    private final List<Bone> bones;
 
     private final AABB boundingBox;
     
@@ -46,9 +47,11 @@ public class Model implements Disposable {
         protected final String file;
         protected String name;
 
+        protected final List<Node> nodes;
         protected final List<Mesh> meshes;
         protected final List<Material> materials;
         protected final List<Animation> animations;
+        protected final List<Bone> bones;
 
         protected final Map<String, Texture2D.Builder> embeddedTextures;
 
@@ -68,9 +71,11 @@ public class Model implements Disposable {
             this.file = file;
             this.name = file.split("\\.")[0];
 
-            this.meshes = new LinkedList<>();
+            this.nodes = new ArrayList<>();
+            this.meshes = new ArrayList<>();
             this.materials = new LinkedList<>();
             this.animations = new LinkedList<>();
+            this.bones = new ArrayList<>();
             this.embeddedTextures = new HashMap<>();
         }
 
@@ -82,11 +87,16 @@ public class Model implements Disposable {
             return name;
         }
 
-        //TODO actually integrate this & material setter into loading process
-        public Builder setMeshes(Mesh... meshes) {
-            this.meshes.clear();
-            this.meshes.addAll(List.of(meshes));
-            return this;
+        public List<Node> getNodes() {
+            return nodes;
+        }
+
+        public void addNodes(Node... nodes) {
+            addNodes(List.of(nodes));
+        }
+
+        public void addNodes(List<Node> nodes) {
+            this.nodes.addAll(nodes);
         }
 
         public List<Mesh> getMeshes() {
@@ -105,6 +115,10 @@ public class Model implements Disposable {
 
         public List<Animation> getAnimations() {
             return animations;
+        }
+
+        public List<Bone> getBones() {
+            return bones;
         }
 
         public Map<String, Texture2D.Builder> getEmbeddedTextures() {
@@ -203,9 +217,10 @@ public class Model implements Disposable {
 
         //TODO since the below three lines represent the model as loaded into the graphics memory
         // and should effectively be immutable, consider encapsulating them into another class
-        this.meshes = model.meshes;
+        this.nodes = model.nodes;
         this.materials = model.materials;
         this.animations = model.animations;
+        this.bones = model.bones;
         this.boundingBox = model.boundingBox;
         this.name = model.name;
 
@@ -222,9 +237,10 @@ public class Model implements Disposable {
         logger.debug("Loading model {} from file {}", builder.name, builder.file);
         loadModel(builder);
 
-        this.meshes = Collections.unmodifiableList(builder.meshes);
+        this.nodes = Collections.unmodifiableList(builder.nodes);
         this.materials = Collections.unmodifiableList(builder.materials);
         this.animations = Collections.unmodifiableList(builder.animations);
+        this.bones = Collections.unmodifiableList(builder.bones);
         this.boundingBox = builder.boundingBox;
         this.name = builder.name;
     
@@ -240,9 +256,10 @@ public class Model implements Disposable {
     private Model(MemoryBuilder builder) {
         logger.debug("Loading model {} from memory", builder.name);
 
-        this.meshes = Collections.unmodifiableList(builder.meshes);
+        this.nodes = Collections.unmodifiableList(builder.nodes);
         this.materials = Collections.unmodifiableList(builder.materials);
         this.animations = Collections.unmodifiableList(builder.animations);
+        this.bones = Collections.unmodifiableList(builder.bones);
         this.boundingBox = builder.boundingBox;
         this.name = builder.name;
 
@@ -268,13 +285,17 @@ public class Model implements Disposable {
     public String getName() {
         return name;
     }
-    
-    public List<Mesh> getMeshes() {
-        return meshes;
+
+    public List<Node> getNodes() {
+        return nodes;
     }
 
     public List<Animation> getAnimations() {
         return animations;
+    }
+
+    public List<Bone> getBones() {
+        return bones;
     }
 
     public Transform getTransform() {
@@ -311,7 +332,7 @@ public class Model implements Disposable {
 
     @Override
     public void dispose() {
-        meshes.forEach(Mesh::dispose);
+        nodes.getFirst().dispose(); //Node trees dispose themselves recursively
         materials.forEach(Material::dispose);
     }
     
