@@ -55,6 +55,9 @@ in vec3 tNormal;
 in vec2 tTextureCoords;
 in vec3 tFragPos;
 
+flat in ivec4 tBoneIds;
+flat in vec4 tWeights;
+
 //TODO implement this in view space to mitigate passing such variables anyway
 uniform vec3 uViewPosition;
 
@@ -62,6 +65,9 @@ uniform Material material;
 
 uniform DirectionalLight globalLights[NR_DIRECTIONAL_LIGHTS];
 uniform PointLight lights[NR_POINT_LIGHTS];
+
+uniform int uShowBoneSelector;
+uniform bool uShowBoneWeights;
 
 vec4 calculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 fragPosition, vec3 viewPosition);
 vec4 calculatePointLight(PointLight light, vec3 normal, vec3 fragPosition, vec3 viewPosition);
@@ -96,6 +102,13 @@ void main()
     //    }
 
     oColour = combinedLight;
+
+    if (uShowBoneSelector != 4) {
+        if (tBoneIds[uShowBoneSelector] % 3 == 0) oColour.x = (float(tBoneIds[uShowBoneSelector]) / 100.0);
+        if (tBoneIds[uShowBoneSelector] % 3 == 1) oColour.y = (float(tBoneIds[uShowBoneSelector]) / 100.0);
+        if (tBoneIds[uShowBoneSelector] % 3 == 2) oColour.z = (float(tBoneIds[uShowBoneSelector]) / 100.0);
+    }
+    if (uShowBoneWeights) oColour = tWeights;
 }
 
 vec4 calculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 fragPosition, vec3 viewPosition)

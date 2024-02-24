@@ -7,7 +7,10 @@ import org.etieskrill.engine.graphics.model.Mesh;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.model.Vertex;
 import org.etieskrill.engine.graphics.util.AssimpUtils;
-import org.joml.*;
+import org.joml.Quaternionf;
+import org.joml.Quaternionfc;
+import org.joml.Vector3f;
+import org.joml.Vector3fc;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.assimp.*;
 import org.slf4j.Logger;
@@ -15,6 +18,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.etieskrill.engine.graphics.animation.Animation.MAX_BONE_INFLUENCES;
 
 class AnimationLoader {
 
@@ -83,6 +88,7 @@ class AnimationLoader {
         PointerBuffer boneBuffer = mesh.mBones();
         for (int i = 0; i < mesh.mNumBones(); i++) {
             AIBone aiBone = AIBone.create(boneBuffer.get());
+            logger.info("Loading bone '{}'", aiBone.mName().dataString());
             loadBoneWeights(i, aiBone.mNumWeights(), aiBone.mWeights(), vertices);
             bones.add(new Bone(
                     aiBone.mName().dataString(),
@@ -93,20 +99,23 @@ class AnimationLoader {
     }
 
     private static void loadBoneWeights(int boneId, int numWeights, AIVertexWeight.Buffer weightBuffer, List<Vertex.Builder> vertices) {
+        logger.info("Loading {} vertex weights for bone {}", numWeights, boneId);
         weightBuffer
                 .stream()
                 .limit(numWeights)
                 .forEach(aiWeight -> {
                     Vertex.Builder vertex = vertices.get(aiWeight.mVertexId());
                     boolean wasSet = false;
-                    for (int i = 0; i < Animation.MAX_BONE_INFLUENCES; i++) {
+                    for (int i = 0; i < MAX_BONE_INFLUENCES; i++) {
                         if (vertex.bones().get(i) == boneId) continue;
                         if (vertex.bones().get(i) != -1) continue;
                         vertex.bones().setComponent(i, boneId);
                         vertex.boneWeights().setComponent(i, aiWeight.mWeight());
                         wasSet = true;
+                        break;
                     }
-//                    if (!wasSet) logger.warn("Vertex with id '{}' is influenced by more than the maximum of {} bones", aiWeight.mVertexId(), MAX_BONE_INFLUENCES);
+                    if (!wasSet)
+                        logger.warn("Vertex with id '{}' is influenced by more than the maximum of {} bones", aiWeight.mVertexId(), MAX_BONE_INFLUENCES);
                 });
     }
 

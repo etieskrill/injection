@@ -41,12 +41,17 @@ public class Game {
     private int currentAnimation;
     private Label animationSelector;
 
+    private int boneSelector = 4;
+    private boolean showBoneWeights = false;
+
     private final KeyInputManager controls = Input.of(
             Input.bind(Keys.ESC.withMods(Keys.Mod.SHIFT)).to(this::terminate),
             Input.bind(Keys.W).on(PRESSED).to(delta -> camera.translate(new Vector3f(0, 0, delta.floatValue()))),
             Input.bind(Keys.S).on(PRESSED).to(delta -> camera.translate(new Vector3f(0, 0, -delta.floatValue()))),
             Input.bind(Keys.A).on(PRESSED).to(delta -> camera.translate(new Vector3f(-delta.floatValue(), 0, 0))),
             Input.bind(Keys.D).on(PRESSED).to(delta -> camera.translate(new Vector3f(delta.floatValue(), 0, 0))),
+            Input.bind(Keys.SPACE).on(PRESSED).to(delta -> camera.translate(new Vector3f(0, -delta.floatValue(), 0))),
+            Input.bind(Keys.SHIFT).on(PRESSED).to(delta -> camera.translate(new Vector3f(0, delta.floatValue(), 0))),
             Input.bind(Keys.Q).on(ON_PRESS).to(() -> {
                 vampyAnimator.switchPlaying();
                 logger.info("Vampy animation is {}", vampyAnimator.isPlaying() ? "playing" : "stopped");
@@ -55,6 +60,14 @@ public class Game {
                 this.currentAnimation = ++currentAnimation % (vampy.getAnimations().size() - 1);
                 this.vampyAnimator = new Animator(vampy.getAnimations().get(currentAnimation), vampy);
                 logger.info("Switching to animation {}, '{}'", currentAnimation, vampy.getAnimations().get(currentAnimation).getName());
+            }),
+            Input.bind(Keys.R).on(ON_PRESS).to(() -> {
+                boneSelector = ++boneSelector % 5;
+                vampyShader.setShowBoneSelector(boneSelector);
+            }),
+            Input.bind(Keys.F).on(ON_PRESS).to(() -> {
+                showBoneWeights = !showBoneWeights;
+                vampyShader.setShowBoneWeights(showBoneWeights);
             })
     );
 
@@ -84,12 +97,15 @@ public class Game {
         this.vampy.getTransform()
 //                .setScale(100)
                 .setPosition(new Vector3f(2.5f, -1.5f, 0))
+                .applyRotation(quat -> quat.rotationY((float) Math.toRadians(-90)))
 //                .applyRotation(quat -> quat
 //                                .rotationX((float) Math.toRadians(-90))
 //                                .rotateY((float) Math.toRadians(90))
 //                                .rotateZ((float) Math.toRadians(-90)))
         ;
         this.vampyShader = (AnimationShader) Loaders.ShaderLoader.get().load("vampyShader", AnimationShader::new);
+        vampyShader.setShowBoneSelector(boneSelector);
+        vampyShader.setShowBoneWeights(showBoneWeights);
 
 //        System.out.println("animations available: " + vampy.getAnimations().stream().map(Animation::getName).collect(Collectors.joining(", ")));
 

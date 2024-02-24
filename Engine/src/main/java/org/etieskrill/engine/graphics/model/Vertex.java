@@ -125,6 +125,7 @@ public class Vertex {
         if (textureCoords != null) block.putFloat(textureCoords.x()).putFloat(textureCoords.y());
         else putZero(block, TEXTURE_BYTES);
         if (bones != null) block.putInt(bones.x()).putInt(bones.y()).putInt(bones.z()).putInt(bones.w());
+//        block.putIn
         else block.putInt(-1).putInt(-1).putInt(-1).putInt(-1);
         if (boneWeights != null) block.putFloat(boneWeights.x()).putFloat(boneWeights.y()).putFloat(boneWeights.z()).putFloat(boneWeights.w());
         else putZero(block, BONE_WEIGHT_BYTES);
@@ -141,8 +142,8 @@ public class Vertex {
                 "position=" + position +
                 ", normal=" + normal +
                 ", textureCoords=" + textureCoords +
-                ", bones=" + bones +
-                ", boneWeights=" + boneWeights +
+                ", bones=" + "(" + bones.x() + ", " + bones.y() + ", " + bones.z() + ", " + bones.w() + ")" +
+                ", boneWeights=(%5.3f, %5.3f, %5.3f, %5.3f)".formatted(boneWeights.x(), boneWeights.y(), boneWeights.z(), boneWeights.w()) +
                 '}';
     }
 
