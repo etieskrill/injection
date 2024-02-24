@@ -7,7 +7,10 @@ import org.joml.Vector2fc;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 import org.lwjgl.PointerBuffer;
-import org.lwjgl.assimp.*;
+import org.lwjgl.assimp.AIFace;
+import org.lwjgl.assimp.AIMesh;
+import org.lwjgl.assimp.AIScene;
+import org.lwjgl.assimp.AIVector3D;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,6 +34,7 @@ class MeshProcessor {
                 .generate(meshBuffer::get)
                 .limit(scene.mNumMeshes())
                 .map(AIMesh::create)
+                .peek(mesh -> logger.info("Loading vertices of mesh '{}'", builder.getMeshes().size()))
                 .map(aiMesh -> processMesh(aiMesh, builder.getMaterials()))
                 .toList();
         builder.getMeshes().addAll(meshes);
@@ -73,6 +77,8 @@ class MeshProcessor {
         List<Vertex> vertices = vertexBuilders.stream()
                 .map(Vertex.Builder::build)
                 .toList();
+
+        vertices.stream().limit(10).forEach(vertex -> logger.info("Vertex loaded: {}", vertex));
 
         AIVector3D min = aiMesh.mAABB().mMin();
         AIVector3D max = aiMesh.mAABB().mMax();

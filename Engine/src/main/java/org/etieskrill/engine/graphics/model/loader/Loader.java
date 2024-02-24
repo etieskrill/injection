@@ -8,7 +8,10 @@ import org.etieskrill.engine.graphics.util.AssimpUtils;
 import org.etieskrill.engine.util.ResourceReader;
 import org.joml.Vector3f;
 import org.lwjgl.PointerBuffer;
-import org.lwjgl.assimp.*;
+import org.lwjgl.assimp.AIFile;
+import org.lwjgl.assimp.AIFileIO;
+import org.lwjgl.assimp.AINode;
+import org.lwjgl.assimp.AIScene;
 import org.lwjgl.system.MemoryUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +19,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -99,6 +101,7 @@ public class Loader {
     }
 
     private static void processNode(Node parent, AINode aiNode, Model.Builder builder) {
+        if (builder.getNodes().size() < 10) logger.info("New node '{}' was loaded", aiNode.mName().dataString());
         Node node = new Node(
                 aiNode.mName().dataString(),
                 AssimpUtils.fromAI(aiNode.mTransformation()),

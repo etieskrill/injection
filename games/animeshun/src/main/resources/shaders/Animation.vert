@@ -13,6 +13,9 @@ out vec3 tNormal;
 out vec2 tTextureCoords;
 out vec3 tFragPos;
 
+flat out ivec4 tBoneIds;
+flat out vec4 tWeights;
+
 uniform mat4 uModel;
 uniform mat3 uNormal;
 uniform mat4 uCombined;
@@ -30,11 +33,15 @@ void main()
             continue; //no bone set
         if (boneIds[i] >= MAX_BONES) //bones contain invalid data -> vertex is not animated
             break;
+        if (weights[i] <= 0.0)
+        continue; //either bone has an unset weight if negative, or no influence at all
 
         bones++;
 
         vec4 localPosition = boneMatrices[boneIds[i]] * vec4(iPosition, 1.0);
         bonedPosition += localPosition * weights[i];
+        //        bonedPosition += boneMatrices[boneIds[i]] * vec4(iPosition, 1.0);
+        //        bonedPosition += boneMatrices[2] * vec4(iPosition, 1.0);
 
         vec3 localNormal = mat3(boneMatrices[boneIds[i]]) * uNormal * iNormal;
         bonedNormal += localNormal * weights[i];
@@ -49,4 +56,6 @@ void main()
     tTextureCoords = iTextureCoords;
     tFragPos = vec3(uModel * bonedPosition);
     gl_Position = uCombined * uModel * bonedPosition;
+    tBoneIds = boneIds;
+    tWeights = weights;
 }
