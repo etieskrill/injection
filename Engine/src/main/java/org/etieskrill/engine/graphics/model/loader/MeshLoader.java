@@ -15,8 +15,7 @@ import static org.lwjgl.opengl.GL11C.GL_FLOAT;
 import static org.lwjgl.opengl.GL15C.*;
 import static org.lwjgl.opengl.GL20C.glEnableVertexAttribArray;
 import static org.lwjgl.opengl.GL20C.glVertexAttribPointer;
-import static org.lwjgl.opengl.GL30C.glBindVertexArray;
-import static org.lwjgl.opengl.GL30C.glGenVertexArrays;
+import static org.lwjgl.opengl.GL30C.*;
 
 public final class MeshLoader {
     //TODO builder
@@ -67,7 +66,7 @@ public final class MeshLoader {
         setFloatPointer(0, POSITION_COMPONENTS, false, 0);
         setFloatPointer(1, NORMAL_COMPONENTS, true, POSITION_BYTES);
         setFloatPointer(2, TEXTURE_COMPONENTS, false, POSITION_BYTES + NORMAL_BYTES);
-        setIntegerPointer(3, BONE_COMPONENTS, false, POSITION_BYTES + NORMAL_BYTES + TEXTURE_BYTES);
+        setIntegerPointer(3, BONE_COMPONENTS, POSITION_BYTES + NORMAL_BYTES + TEXTURE_BYTES);
         setFloatPointer(4, BONE_WEIGHT_COMPONENTS, false, POSITION_BYTES + NORMAL_BYTES + TEXTURE_BYTES + BONE_BYTES);
 
         glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -79,9 +78,9 @@ public final class MeshLoader {
         glVertexAttribPointer(index, numComponents, GL_FLOAT, normalised, COMPONENT_BYTES, offset);
     }
 
-    private static void setIntegerPointer(int index, int numComponents, boolean normalised, int offset) {
+    private static void setIntegerPointer(int index, int numComponents, int offset) {
         glEnableVertexAttribArray(index);
-        glVertexAttribPointer(index, numComponents, GL_INT, normalised, COMPONENT_BYTES, offset);
+        glVertexAttribIPointer(index, numComponents, GL_INT, COMPONENT_BYTES, offset); //TODO FUUUCKKCKKCKKC DFHTSIISTHTIISSS WHY DOES IT NOT WORK WITH A NON TYPED ATTRIB POINTER???___!__!!_!!1111 fufuuuuuuuUUUUUUUUUUUKKKK
     }
 
     private static int prepareIndexBuffer(int[] indices) {

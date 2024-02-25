@@ -18,6 +18,7 @@ import java.util.List;
  */
 public record Bone(
         String name,
+        int id,
         Matrix4fc offset
 ) {
 }

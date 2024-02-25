@@ -95,9 +95,11 @@ public class Game {
 //                .getRotation().rotationX((float) Math.toRadians(-90));
 //                .getRotation().rotationY((float) Math.toRadians(-90));
         this.vampy.getTransform()
-//                .setScale(100)
                 .setPosition(new Vector3f(2.5f, -1.5f, 0))
-                .applyRotation(quat -> quat.rotationY((float) Math.toRadians(-90)))
+                .applyRotation(quat -> quat
+                        .rotationY((float) Math.toRadians(-90))
+                        .rotateX((float) Math.toRadians(90)))
+                .setScale(.01f)
 //                .applyRotation(quat -> quat
 //                                .rotationX((float) Math.toRadians(-90))
 //                                .rotateY((float) Math.toRadians(90))
@@ -133,7 +135,7 @@ public class Game {
 //                    .setScale(newScale)
 //                    .applyRotation(rotation -> rotation.rotateY((float) pacer.getDeltaTimeSeconds()));
 
-            vampyAnimator.update(pacer.getDeltaTimeSeconds());
+            vampyAnimator.update(pacer.getDeltaTimeSeconds() * 0.5);
 //            System.out.println(Arrays.toString(vampyAnimator.getBoneMatrices().get(20).get(new float[16])));
 //            System.out.println("\n\n");
 

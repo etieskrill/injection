@@ -40,8 +40,6 @@ void main()
 
         vec4 localPosition = boneMatrices[boneIds[i]] * vec4(iPosition, 1.0);
         bonedPosition += localPosition * weights[i];
-        //        bonedPosition += boneMatrices[boneIds[i]] * vec4(iPosition, 1.0);
-        //        bonedPosition += boneMatrices[2] * vec4(iPosition, 1.0);
 
         vec3 localNormal = mat3(boneMatrices[boneIds[i]]) * uNormal * iNormal;
         bonedNormal += localNormal * weights[i];
