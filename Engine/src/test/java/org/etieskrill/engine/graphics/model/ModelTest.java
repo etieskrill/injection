@@ -1,7 +1,6 @@
-package org.etieskrill.engine.graphics.assimp;
+package org.etieskrill.engine.graphics.model;
 
-import org.etieskrill.engine.graphics.model.AnimationLoader;
-import org.etieskrill.engine.graphics.model.Model;
+import org.etieskrill.engine.graphics.animation.Animation;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -20,7 +19,7 @@ class ModelTest {
     void test() {
         assertEquals(1, ANIMATED_MODEL.getAnimations().size());
 
-        AnimationLoader.Animation animation = ANIMATED_MODEL.getAnimations().getFirst();
+        Animation animation = ANIMATED_MODEL.getAnimations().getFirst();
 
         System.out.println(animation);
     }

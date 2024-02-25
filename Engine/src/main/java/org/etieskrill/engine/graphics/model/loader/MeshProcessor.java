@@ -34,7 +34,6 @@ class MeshProcessor {
                 .generate(meshBuffer::get)
                 .limit(scene.mNumMeshes())
                 .map(AIMesh::create)
-                .peek(mesh -> logger.info("Loading vertices of mesh '{}'", builder.getMeshes().size()))
                 .map(aiMesh -> processMesh(aiMesh, builder.getMaterials()))
                 .toList();
         builder.getMeshes().addAll(meshes);
@@ -77,8 +76,6 @@ class MeshProcessor {
         List<Vertex> vertices = vertexBuilders.stream()
                 .map(Vertex.Builder::build)
                 .toList();
-
-        vertices.stream().limit(10).forEach(vertex -> logger.info("Vertex loaded: {}", vertex));
 
         AIVector3D min = aiMesh.mAABB().mMin();
         AIVector3D max = aiMesh.mAABB().mMax();
