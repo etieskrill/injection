@@ -1,11 +1,14 @@
 package org.etieskrill.engine.entity.data;
 
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import java.util.function.Consumer;
+
+import static java.util.Objects.requireNonNull;
 
 public class Transform {
 
@@ -15,20 +18,37 @@ public class Transform {
 
     private final Matrix4f transform;
     
-    private boolean dirty = true;
+    private boolean dirty = false;
 
+    /**
+     * Constructs a new identity {@link Transform}, such that the {@link #toMat()} call will result in an
+     * {@link Matrix4f#identity() identity matrix}.
+     */
     public Transform() {
         this(new Vector3f(), new Quaternionf(), new Vector3f(1));
     }
 
+    /**
+     * Constructs a new {@link Transform} based off of the given position, rotation, and scaling.
+     *
+     * @param position the 3d position vector
+     * @param rotation the unit rotation quaternion
+     * @param scale the 3d axis scaling vector
+     */
     public Transform(Vector3f position, Quaternionf rotation, Vector3f scale) {
         this.position = position;
         this.rotation = rotation;
         this.scale = scale;
 
         this.transform = new Matrix4f().identity();
+        updateTransform();
     }
-    
+
+    /**
+     * Constructs a copy of the specified {@link Transform} for convenience.
+     *
+     * @param transform the transform to be copied
+     */
     public Transform(Transform transform) {
         this(new Vector3f(transform.position), new Quaternionf(transform.rotation), new Vector3f(transform.scale));
         this.dirty = transform.dirty;
@@ -38,24 +58,24 @@ public class Transform {
         return position;
     }
 
-    public Transform setPosition(Vector3f vec) {
-        this.position.set(vec);
+    public Transform setPosition(@NotNull Vector3f vec) {
+        this.position.set(requireNonNull(vec));
         dirty();
         return this;
     }
     
-    public Transform setPosition(Transform transform) {
-        return setPosition(transform.getPosition());
+    public Transform setPosition(@NotNull Transform transform) {
+        return setPosition(requireNonNull(transform).getPosition());
     }
 
-    public Transform translate(Vector3f vec) {
-        this.position.add(vec);
+    public Transform translate(@NotNull Vector3f vec) {
+        this.position.add(requireNonNull(vec));
         dirty();
         return this;
     }
     
-    public Transform translate(Transform transform) {
-        return translate(transform.getPosition());
+    public Transform translate(@NotNull Transform transform) {
+        return translate(requireNonNull(transform).getPosition());
     }
 
     public Vector3f getScale() {
@@ -146,6 +166,13 @@ public class Transform {
         return this;
     }
 
+    public Transform set(Vector3f position, Quaternionf rotation, Vector3f scale) {
+        setPosition(position);
+        setRotation(rotation);
+        setScale(scale);
+        return this;
+    }
+
     @Contract("_ -> new")
     public Transform apply(Transform transform) {
         return new Transform(
@@ -154,13 +181,12 @@ public class Transform {
                 new Vector3f(this.scale).mul(transform.scale));
     }
     
-    private void updateTransform() {
+    void updateTransform() {
         this.transform.identity()
-                //TODO it's supposed to be Translation * Rotation * Scaling, and somehow, it just works a/w
-                // i'm probs just too stupid to figure out why
                 .translate(position)
                 .rotate(rotation)
-                .scale(scale);
+                .scale(scale)
+        ;
     }
     
     private void dirty() {

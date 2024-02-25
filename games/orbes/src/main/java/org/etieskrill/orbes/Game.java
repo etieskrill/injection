@@ -16,12 +16,11 @@ import org.etieskrill.engine.time.SystemNanoTimePacer;
 import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.window.Window;
 import org.etieskrill.orbes.scene.*;
-import org.joml.Vector2f;
-import org.joml.Vector2fc;
-import org.joml.Vector2i;
-import org.joml.Vector3f;
+import org.joml.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.lang.Math;
 
 import static org.etieskrill.orbes.Game.Stage.*;
 

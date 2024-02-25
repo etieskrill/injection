@@ -1,5 +1,6 @@
 package org.etieskrill.orbes.scene;
 
+import org.etieskrill.engine.entity.data.Transform;
 import org.etieskrill.engine.graphics.Camera;
 import org.etieskrill.engine.graphics.PerspectiveCamera;
 import org.etieskrill.engine.graphics.data.PointLight;
@@ -25,7 +26,7 @@ public class GameScene {
 
     private Camera camera;
 
-    private Model skelly, skellyBBModel;
+    private Model skelly, localSkellyBBModel, skellyBBModel;
     private Model cube, light;
     private PointLight pointLight;
     private PointLight[] pointLights;
@@ -76,7 +77,14 @@ public class GameScene {
         light = models.get("cube");
         light.getTransform().setScale(0.5f).setPosition(new Vector3f(2, 5, -2));
         skelly = models.load("skelly", () -> Model.ofFile("skeleton.glb"));
-        skelly.getTransform().setScale(15);
+        skelly.getInitialTransform().setScale(15);
+
+        Transform localBBBaseTransform = skelly.getNodes().getFirst().getHierarchyTransform();
+        Vector3f localSkellyBBSize = localBBBaseTransform.toMat().transformPosition(skelly.getBoundingBox().getSize());
+        localSkellyBBModel = ModelFactory.box(localSkellyBBSize);
+//        localSkellyBBModel.getInitialTransform().translate(
+//                skelly.getBoundingBox().getCenter().mul(.5f)
+//        );
 
         skellyBBModel = ModelFactory.box(skelly.getBoundingBox().getMax().sub(skelly.getBoundingBox().getMin(), new Vector3f()));
         skellyBBModel.getInitialTransform().setPosition(
@@ -172,14 +180,14 @@ public class GameScene {
         } else jumpTime = 0;
 
         float skellyHeight;
-        if (keyInputManager.isPressed(Keys.LEFT_SHIFT)) skellyHeight = 9;
-        else skellyHeight = 15;
+        if (keyInputManager.isPressed(Keys.LEFT_SHIFT)) skellyHeight = .6f;
+        else skellyHeight = 1;
 
         double falloff = -0.5 * (1 / (2 * Math.abs(skellyHeight - smoothSkellyHeight) + 0.5)) + 1;
-        falloff = 20 * falloff * delta;
+        falloff = 5 * falloff * delta;
         smoothSkellyHeight += skellyHeight > smoothSkellyHeight ? falloff : -falloff;
 
-        skelly.getTransform().setScale(new Vector3f(15, smoothSkellyHeight, 15));
+        skelly.getTransform().applyScale(scale -> scale.y = smoothSkellyHeight);
     }
 
     private void collideOrbs() {
@@ -196,10 +204,14 @@ public class GameScene {
 
     public void updateCamera() {
         Vector3f orbitPos = camera.getDirection().negate().mul(3);
-        float skellyVerticalCentre = skelly.getWorldBoundingBox().getSize().y() - 0.5f;
+        float skellyVerticalCenter = skelly.getWorldBoundingBox().getSize().y() - .5f;
+        float localSkellyVertCenter = skelly.getBoundingBox().getSize().y() - .5f;
+        localSkellyVertCenter = -(localSkellyVertCenter / skelly.getFinalTransform().getScale().y()) + 5;
         camera.setPosition(
-                orbitPos.add(0, skellyVerticalCentre, 0)
-                        .add(skelly.getTransform().getPosition()));
+                skelly.getFinalTransform().getPosition()
+                        .add(orbitPos)
+                        .add(0, localSkellyVertCenter, 0)
+        );
     }
 
     public void render(Renderer renderer) {
@@ -208,6 +220,11 @@ public class GameScene {
 
         renderer.render(cube, shader, camera.getCombined());
         renderer.render(skelly, shader, camera.getCombined());
+
+//        localSkellyBBModel.getTransform().set(skelly.getFinalTransform());
+//        renderer.renderWireframe(localSkellyBBModel, shader, camera.getCombined());
+//        skellyBBModel.getTransform().set(skelly.getTransform());
+//        renderer.renderWireframe(skellyBBModel, shader, camera.getCombined());
 
         for (Model orb : orbs) {
             if (!orb.isEnabled()) continue;

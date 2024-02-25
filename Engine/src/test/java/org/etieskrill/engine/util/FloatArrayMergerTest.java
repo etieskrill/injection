@@ -1,4 +1,4 @@
-package org.etiesrkill.engine.util;
+package org.etieskrill.engine.util;
 
 import org.etieskrill.engine.util.FloatArrayMerger;
 import org.junit.jupiter.api.BeforeEach;

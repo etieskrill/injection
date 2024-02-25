@@ -6,11 +6,10 @@ import org.etieskrill.engine.graphics.model.Node;
 import org.etieskrill.engine.graphics.model.Vertex;
 import org.etieskrill.engine.graphics.model.loader.MeshLoader;
 import org.etieskrill.engine.util.Loaders;
-import org.joml.Matrix4f;
-import org.joml.Vector2f;
-import org.joml.Vector3f;
+import org.joml.*;
 import org.lwjgl.BufferUtils;
 
+import java.lang.Math;
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 import java.util.ArrayList;
@@ -50,7 +49,7 @@ public class ModelFactory {
         Model.MemoryBuilder builder = new Model.MemoryBuilder("internal_model_factory:quad");
         builder
                 .setMaterials(mat)
-                .addNodes(new Node("root", new Matrix4f(), Collections.singletonList(MeshLoader.loadToVAO(vertices, indices, mat))));
+                .addNodes(new Node("root", null, new Matrix4f(), Collections.singletonList(MeshLoader.loadToVAO(vertices, indices, mat))));
         return builder;
     }
 
@@ -133,7 +132,8 @@ public class ModelFactory {
     }
 
     public static Model box(Vector3f size) {
-        Model box = Loaders.ModelLoader.get().load("internal-model-factory:box", () -> Model.ofFile("box.obj"));
+        Model baseBox = Loaders.ModelLoader.get().load("internal-model-factory:box", () -> Model.ofFile("box.obj"));
+        Model box = new Model(baseBox);
         box.getInitialTransform().setScale(size);
         return box;
     }

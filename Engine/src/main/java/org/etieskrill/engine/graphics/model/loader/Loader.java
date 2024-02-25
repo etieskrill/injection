@@ -101,9 +101,9 @@ public class Loader {
     }
 
     private static void processNode(Node parent, AINode aiNode, Model.Builder builder) {
-        if (builder.getNodes().size() < 10) logger.info("New node '{}' was loaded", aiNode.mName().dataString());
         Node node = new Node(
                 aiNode.mName().dataString(),
+                parent,
                 AssimpUtils.fromAI(aiNode.mTransformation()),
                 getNodeMeshes(aiNode, builder)
         );

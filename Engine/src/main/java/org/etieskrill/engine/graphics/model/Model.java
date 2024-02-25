@@ -5,6 +5,8 @@ import org.etieskrill.engine.entity.data.AABB;
 import org.etieskrill.engine.entity.data.Transform;
 import org.etieskrill.engine.graphics.animation.Animation;
 import org.etieskrill.engine.graphics.texture.Texture2D;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.slf4j.Logger;
@@ -36,7 +38,7 @@ public class Model implements Disposable {
     
     private final Transform transform;
     private final Transform initialTransform;
-    
+
     private final boolean culling;
     private final boolean transparency;
     
@@ -65,7 +67,7 @@ public class Model implements Disposable {
 
         protected AABB boundingBox;
         
-        public Builder(String file) {
+        public Builder(@NotNull String file) {
             if (file.isBlank()) throw new IllegalArgumentException("File name cannot be blank");
             if (file.contains("/")) throw new IllegalArgumentException("Custom folder structure not implemented yet: " + file);
             this.file = file;
@@ -179,8 +181,10 @@ public class Model implements Disposable {
             this.boundingBox = boundingBox;
         }
 
-        public Model build() {
+        public @NotNull Model build() {
             try {
+                logger.debug("Loading model {} from file {}", name, file);
+                loadModel(this);
                 return new Model(this);
             } catch (IOException e) {
                 logger.info("Exception while loading model, using default: ", e);
@@ -189,14 +193,14 @@ public class Model implements Disposable {
         }
     }
     
-    //TODO this is a very very very Very VERY temporary solution, i can hardly look at it
     public static class MemoryBuilder extends Builder {
-        public MemoryBuilder(String name) {
+        public MemoryBuilder(@NotNull String name) {
             super(name);
         }
     
         @Override
-        public Model build() {
+        public @NotNull Model build() {
+            logger.debug("Loading model {} from memory", name);
             return new Model(this);
         }
     }
@@ -215,8 +219,9 @@ public class Model implements Disposable {
     public Model(Model model) {
         logger.trace("Creating copy of model {}", model.name);
 
-        //TODO since the below three lines represent the model as loaded into the graphics memory
+        //TODO since the below couple of lines represent the model as loaded into the graphics memory
         // and should effectively be immutable, consider encapsulating them into another class
+        //Shared resources
         this.nodes = model.nodes;
         this.materials = model.materials;
         this.animations = model.animations;
@@ -227,16 +232,14 @@ public class Model implements Disposable {
         this.culling = model.culling;
         this.transparency = model.transparency;
 
+        //Instance resources
         this.transform = new Transform(model.transform);
         this.initialTransform = new Transform(model.initialTransform);
 
         this.enabled = model.enabled;
     }
     
-    private Model(Builder builder) throws IOException {
-        logger.debug("Loading model {} from file {}", builder.name, builder.file);
-        loadModel(builder);
-
+    private Model(Builder builder) {
         this.nodes = Collections.unmodifiableList(builder.nodes);
         this.materials = Collections.unmodifiableList(builder.materials);
         this.animations = Collections.unmodifiableList(builder.animations);
@@ -247,28 +250,9 @@ public class Model implements Disposable {
         this.culling = builder.culling;
         this.transparency = builder.transparency;
         
-        this.transform = builder.transform;
-        this.initialTransform = builder.initialTransform;
-        
-        enable();
-    }
-    
-    private Model(MemoryBuilder builder) {
-        logger.debug("Loading model {} from memory", builder.name);
+        this.transform = new Transform(builder.transform);
+        this.initialTransform = new Transform(builder.initialTransform);
 
-        this.nodes = Collections.unmodifiableList(builder.nodes);
-        this.materials = Collections.unmodifiableList(builder.materials);
-        this.animations = Collections.unmodifiableList(builder.animations);
-        this.bones = Collections.unmodifiableList(builder.bones);
-        this.boundingBox = builder.boundingBox;
-        this.name = builder.name;
-
-        this.culling = builder.culling;
-        this.transparency = builder.transparency;
-
-        this.transform = builder.transform;
-        this.initialTransform = builder.initialTransform;
-        
         enable();
     }
     
@@ -306,6 +290,7 @@ public class Model implements Disposable {
         return initialTransform;
     }
 
+    @Contract("-> new")
     public Transform getFinalTransform() {
         return transform.apply(initialTransform);
     }
