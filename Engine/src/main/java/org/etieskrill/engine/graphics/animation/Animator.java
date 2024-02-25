@@ -108,14 +108,16 @@ public class Animator {
             Quaternionfc rotation = interpolate(boneAnim, boneAnim.rotationTimes(), boneAnim.rotations());
             Vector3fc scaling = interpolate(boneAnim, boneAnim.scaleTimes(), boneAnim.scalings());
 
-            if (position == null) position = new Vector3f();
-            if (rotation == null) rotation = new Quaternionf();
-            if (scaling == null) scaling = new Vector3f(1);
+            if (position != null || rotation != null || scaling != null) { //TODO please replace this with a Transform lest ye forget
+                if (position == null) position = new Vector3f();
+                if (rotation == null) rotation = new Quaternionf();
+                if (scaling == null) scaling = new Vector3f(1);
 
-            localTransform = new Matrix4f()
-                    .scale(scaling)
-                    .rotate(new Quaternionf(rotation))
-                    .translate(new Vector3f(position));
+                localTransform = new Matrix4f()
+                        .translate(new Vector3f(position))
+                        .rotate(new Quaternionf(rotation))
+                        .scale(scaling);
+            }
 
             offset = boneAnim.bone().offset();
         }

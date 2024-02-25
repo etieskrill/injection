@@ -38,7 +38,7 @@ public class Game {
 
     private Animator vampyAnimator;
 
-    private int currentAnimation;
+    private int currentAnimation = 2;
     private Label animationSelector;
 
     private int boneSelector = 4;
@@ -95,7 +95,7 @@ public class Game {
 //                .getRotation().rotationX((float) Math.toRadians(-90));
 //                .getRotation().rotationY((float) Math.toRadians(-90));
         this.vampy.getTransform()
-                .setPosition(new Vector3f(2.5f, -1.5f, 0))
+                .setPosition(new Vector3f(2.5f, -1f, 0))
                 .applyRotation(quat -> quat
                         .rotationY((float) Math.toRadians(-90))
                         .rotateX((float) Math.toRadians(90)))
@@ -111,7 +111,7 @@ public class Game {
 
 //        System.out.println("animations available: " + vampy.getAnimations().stream().map(Animation::getName).collect(Collectors.joining(", ")));
 
-        this.vampyAnimator = new Animator(vampy.getAnimations().get(0), vampy);
+        this.vampyAnimator = new Animator(vampy.getAnimations().get(currentAnimation), vampy);
 
         this.cubes = new Model[4];
         for (int i = 0; i < cubes.length; i++)
@@ -135,7 +135,7 @@ public class Game {
 //                    .setScale(newScale)
 //                    .applyRotation(rotation -> rotation.rotateY((float) pacer.getDeltaTimeSeconds()));
 
-            vampyAnimator.update(pacer.getDeltaTimeSeconds() * 0.5);
+            vampyAnimator.update(pacer.getDeltaTimeSeconds());
 //            System.out.println(Arrays.toString(vampyAnimator.getBoneMatrices().get(20).get(new float[16])));
 //            System.out.println("\n\n");
 
