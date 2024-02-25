@@ -85,6 +85,7 @@ class AnimationLoader {
 
     static List<Bone> getBones(AIMesh mesh, List<Vertex.Builder> vertices) {
         List<Bone> bones = new ArrayList<>(mesh.mNumBones());
+        int boneId = 0;
         PointerBuffer boneBuffer = mesh.mBones();
         for (int i = 0; i < mesh.mNumBones(); i++) {
             AIBone aiBone = AIBone.create(boneBuffer.get());
@@ -92,6 +93,7 @@ class AnimationLoader {
             loadBoneWeights(i, aiBone.mNumWeights(), aiBone.mWeights(), vertices);
             bones.add(new Bone(
                     aiBone.mName().dataString(),
+                    boneId++,
                     AssimpUtils.fromAI(aiBone.mOffsetMatrix())
             ));
         }
