@@ -3,8 +3,6 @@ package org.etieskrill.engine.graphics.model;
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.entity.data.Transform;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Matrix4f;
-import org.joml.Matrix4fc;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,12 +11,12 @@ import java.util.Stack;
 public final class Node implements Disposable {
 
     private final String name;
-    private final Matrix4fc transform;
+    private final Transform transform;
     private final @Nullable Node parent;
     private final List<Node> children;
     private final List<Mesh> meshes;
 
-    public Node(String name, @Nullable Node parent, Matrix4fc transform, List<Mesh> meshes) {
+    public Node(String name, @Nullable Node parent, Transform transform, List<Mesh> meshes) {
         this.name = name;
         this.transform = transform;
         this.parent = parent;
@@ -30,7 +28,7 @@ public final class Node implements Disposable {
         return name;
     }
 
-    public Matrix4fc getTransform() {
+    public Transform getTransform() {
         return transform;
     }
 
@@ -53,15 +51,11 @@ public final class Node implements Disposable {
         while ((root = root.getParent()) != null) //Traverse up the tree to the root, recording every node
             line.push(root);
 
-//        Transform transform = new Transform();
-//        while (!line.isEmpty()) //Traverse down the tree, applying every transform in succession
-//            transform.apply(line.pop().getTransform());
-
-        Matrix4f matrix = new Matrix4f();
+        Transform transform = new Transform();
         while (!line.isEmpty()) //Traverse down the tree, applying every transform in succession
-            matrix.mul(line.pop().getTransform());
+            transform.apply(line.pop().getTransform());
 
-        return Transform.fromMatrix4f(matrix);
+        return transform;
     }
 
     @Override
