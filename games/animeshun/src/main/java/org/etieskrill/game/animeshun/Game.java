@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import static org.etieskrill.engine.input.InputBinding.Trigger.ON_PRESS;
 import static org.etieskrill.engine.input.InputBinding.Trigger.PRESSED;
+import static org.joml.Math.toRadians;
 
 public class Game {
 
@@ -44,7 +45,7 @@ public class Game {
 
     private Animator vampyAnimator;
 
-    private int currentAnimation = 2;
+    private int currentAnimation = 0;
     private Label animationSelector;
 
     private int boneSelector = 4;
@@ -94,14 +95,18 @@ public class Game {
 
         this.camera = new PerspectiveCamera(window.getSize().toVec()).setOrientation(0, 0, 0);
 
-        this.vampy = Loaders.ModelLoader.get().load("vampy", () -> new Model.Builder("vampire_hip_hop.glb").disableCulling().build());
-        this.vampy.getTransform()
-                .setPosition(new Vector3f(2.5f, -1f, 0))
-                .applyRotation(quat -> quat
-                        .rotationY((float) Math.toRadians(-90))
-                        .rotateX((float) Math.toRadians(90)))
-                .setScale(.01f)
-        ;
+        this.vampy = Loaders.ModelLoader.get().load("vampy", () -> new Model.Builder("Unarmed Walk Forward.dae").disableCulling().build());
+        this.vampy.getInitialTransform()
+                .setPosition(new Vector3f(2.5f, -1f, 0f))
+                .applyRotation(quat -> quat.rotateY(toRadians(-90)))
+                .setScale(.01f);
+//        this.vampy.getTransform()
+//                .setPosition(new Vector3f(2.5f, -1f, 0))
+//                .applyRotation(quat -> quat
+//                        .rotationY((float) Math.toRadians(-90))
+//                        .rotateX((float) Math.toRadians(90)))
+//                .setScale(.01f)
+//        ;
         this.vampyShader = (AnimationShader) Loaders.ShaderLoader.get().load("vampyShader", AnimationShader::new);
         vampyShader.setShowBoneSelector(boneSelector);
         vampyShader.setShowBoneWeights(showBoneWeights);

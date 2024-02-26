@@ -16,14 +16,15 @@ public final class Node implements Disposable {
     private final @Nullable Node parent;
     private final List<Node> children;
     private final List<Mesh> meshes;
-//    private final @Nullable Bone bone; //TODO useful to store bone in node?
+    private final @Nullable Bone bone;
 
-    public Node(String name, @Nullable Node parent, TransformC transform, List<Mesh> meshes) {
+    public Node(String name, @Nullable Node parent, TransformC transform, List<Mesh> meshes, @Nullable Bone bone) {
         this.name = name;
         this.transform = transform;
         this.parent = parent;
         this.children = new ArrayList<>();
         this.meshes = meshes;
+        this.bone = bone;
     }
 
     public String getName() {
@@ -44,6 +45,10 @@ public final class Node implements Disposable {
 
     public List<Mesh> getMeshes() {
         return meshes;
+    }
+
+    public @Nullable Bone getBone() {
+        return bone;
     }
 
     public Transform getHierarchyTransform() {
