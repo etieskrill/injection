@@ -37,6 +37,9 @@ class MeshProcessor {
                 .map(aiMesh -> processMesh(aiMesh, builder.getMaterials()))
                 .toList();
         builder.getMeshes().addAll(meshes);
+        builder.getBones().addAll(meshes.stream()
+                .flatMap(mesh -> mesh.getBones().stream())
+                .toList());
     }
 
     private static Mesh processMesh(AIMesh aiMesh, List<Material> materials) {

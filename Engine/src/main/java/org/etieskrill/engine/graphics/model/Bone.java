@@ -4,6 +4,7 @@ import org.joml.Matrix4fc;
 import org.lwjgl.assimp.AIVertexWeight;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * A singular bone in a mesh. It has a human-readable name (e.g. 'hip', 'left_thigh') and an offset matrix, which
@@ -21,4 +22,16 @@ public record Bone(
         int id,
         Matrix4fc offset
 ) {
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Bone bone = (Bone) o;
+        return id == bone.id && Objects.equals(name, bone.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, id);
+    }
 }

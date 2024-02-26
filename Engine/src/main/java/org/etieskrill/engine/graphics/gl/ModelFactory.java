@@ -50,7 +50,7 @@ public class ModelFactory {
         Model.MemoryBuilder builder = new Model.MemoryBuilder("internal_model_factory:quad");
         builder
                 .setMaterials(mat)
-                .addNodes(new Node("root", null, new Transform(), Collections.singletonList(MeshLoader.loadToVAO(vertices, indices, mat))));
+                .addNodes(new Node("root", null, new Transform(), Collections.singletonList(MeshLoader.loadToVAO(vertices, indices, mat)), null));
         return builder;
     }
 

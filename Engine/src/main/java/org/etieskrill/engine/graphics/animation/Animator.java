@@ -1,6 +1,7 @@
 package org.etieskrill.engine.graphics.animation;
 
 import org.etieskrill.engine.entity.data.Transform;
+import org.etieskrill.engine.graphics.model.Bone;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.model.Node;
 import org.jetbrains.annotations.NotNull;
@@ -92,36 +93,31 @@ public class Animator {
     }
 
     private void _updateBoneMatrices(Node node, Matrix4fc transform, Matrix4fc globalInverseTransform) {
-        List<BoneAnimation> boneAnimations = animation.getBoneAnimations();
-        BoneAnimation boneAnim = null;
-        int boneId = -1;
-        for (BoneAnimation boneAnimation : boneAnimations) {
-            if (node.getName().equals(boneAnimation.bone().name())) {
-                boneAnim = boneAnimation;
-                boneId = boneAnim.bone().id();
-                break;
+        Bone bone = node.getBone();
+        Transform localTransform = new Transform(node.getTransform()); //Set node transform as default
+
+        if (bone != null) { //If node has bone, try to find animation
+            BoneAnimation boneAnim = animation.getBoneAnimations().stream()
+                    .filter(_boneAnimation -> _boneAnimation.bone().equals(node.getBone()))
+                    .findAny()
+                    .orElse(null);
+
+            if (boneAnim != null) { //If bone is animated, replace node transform
+                Vector3fc position = interpolate(boneAnim, boneAnim.positionTimes(), boneAnim.positions());
+                Quaternionfc rotation = interpolate(boneAnim, boneAnim.rotationTimes(), boneAnim.rotations());
+                Vector3fc scaling = interpolate(boneAnim, boneAnim.scaleTimes(), boneAnim.scalings());
+
+                localTransform.set(position, rotation, scaling);
             }
         }
 
-        Transform localTransform = new Transform(node.getTransform());
-        Matrix4fc offset = null;
-
-        if (boneAnim != null) {
-            Vector3fc position = interpolate(boneAnim, boneAnim.positionTimes(), boneAnim.positions());
-            Quaternionfc rotation = interpolate(boneAnim, boneAnim.rotationTimes(), boneAnim.rotations());
-            Vector3fc scaling = interpolate(boneAnim, boneAnim.scaleTimes(), boneAnim.scalings());
-
-            localTransform.set(position, rotation, scaling);
-
-            offset = boneAnim.bone().offset();
-        }
-
         Matrix4fc nodeTransform = transform.mul(localTransform.toMat(), new Matrix4f());
-        if (boneAnim != null)
-            boneMatrices.set(boneId, new Matrix4f
-                            (globalInverseTransform)
-                            .mul(nodeTransform)
-                            .mul(offset));
+        if (bone != null) { //Set default or animated transform
+            boneMatrices.set(bone.id(), new Matrix4f
+                    (globalInverseTransform)
+                    .mul(nodeTransform)
+                    .mul(bone.offset()));
+        }
 
         for (Node child : node.getChildren())
             _updateBoneMatrices(child, nodeTransform, globalInverseTransform);
@@ -130,6 +126,7 @@ public class Animator {
     private <T> @NotNull T interpolate(BoneAnimation anim, List<Double> timings, List<T> values) {
         int numTimings = timings.size();
 
+        //TODO evaluate and implement animation behaviour handling
 //        if (currentTicks < timings.getFirst()
 //                && anim.preBehaviour() != Animation.Behaviour.REPEAT) {
 //            return switch (anim.preBehaviour()) {
