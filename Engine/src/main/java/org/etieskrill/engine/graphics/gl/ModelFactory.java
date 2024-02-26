@@ -1,15 +1,16 @@
 package org.etieskrill.engine.graphics.gl;
 
+import org.etieskrill.engine.entity.data.Transform;
 import org.etieskrill.engine.graphics.model.Material;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.model.Node;
 import org.etieskrill.engine.graphics.model.Vertex;
 import org.etieskrill.engine.graphics.model.loader.MeshLoader;
 import org.etieskrill.engine.util.Loaders;
-import org.joml.*;
+import org.joml.Vector2f;
+import org.joml.Vector3f;
 import org.lwjgl.BufferUtils;
 
-import java.lang.Math;
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 import java.util.ArrayList;
@@ -49,7 +50,7 @@ public class ModelFactory {
         Model.MemoryBuilder builder = new Model.MemoryBuilder("internal_model_factory:quad");
         builder
                 .setMaterials(mat)
-                .addNodes(new Node("root", null, new Matrix4f(), Collections.singletonList(MeshLoader.loadToVAO(vertices, indices, mat))));
+                .addNodes(new Node("root", null, new Transform(), Collections.singletonList(MeshLoader.loadToVAO(vertices, indices, mat))));
         return builder;
     }
 

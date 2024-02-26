@@ -143,7 +143,7 @@ public class Renderer {
         if (model.hasTransparency()) glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         shader.start();
         Node rootNode = model.getNodes().getFirst();
-        renderNode(rootNode, shader, rootNode.getTransform());
+        renderNode(rootNode, shader, rootNode.getTransform().toMat());
         shader.stop();
         if (!model.doCulling()) glEnable(GL_CULL_FACE);
         if (model.hasTransparency()) glBlendFunc(GL_ONE, GL_ZERO);
@@ -158,7 +158,7 @@ public class Renderer {
             renderMesh(mesh, shader);
 
         for (Node child : node.getChildren())
-            renderNode(child, shader, meshTransform.mul(child.getTransform(), new Matrix4f()));
+            renderNode(child, shader, meshTransform.mul(child.getTransform().toMat(), new Matrix4f()));
     }
 
     private void renderMesh(Mesh mesh, ShaderProgram shader) {
@@ -180,7 +180,7 @@ public class Renderer {
         if (model.hasTransparency()) glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         shader.start();
         Node rootNode = model.getNodes().getFirst();
-        renderNodeInstances(rootNode, numInstances, shader, rootNode.getTransform());
+        renderNodeInstances(rootNode, numInstances, shader, rootNode.getTransform().toMat());
         shader.stop();
         if (!model.doCulling()) glEnable(GL_CULL_FACE);
         if (model.hasTransparency()) glBlendFunc(GL_ONE, GL_ZERO);
@@ -193,7 +193,7 @@ public class Renderer {
             renderMeshInstances(mesh, numInstances, shader);
 
         for (Node child : node.getChildren())
-            renderNodeInstances(child, numInstances, shader, meshTransform.mul(child.getTransform(), new Matrix4f())); //TODO same as with normal, store precalculated in nodes
+            renderNodeInstances(child, numInstances, shader, meshTransform.mul(child.getTransform().toMat(), new Matrix4f())); //TODO same as with normal, store precalculated in nodes
     }
 
     private void renderMeshInstances(Mesh mesh, int numInstances, ShaderProgram shader) {

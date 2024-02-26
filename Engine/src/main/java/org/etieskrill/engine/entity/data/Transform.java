@@ -212,6 +212,7 @@ public class Transform {
         this.position.add(transform.position);
         this.rotation.mul(transform.rotation);
         this.scale.mul(transform.scale);
+        dirty();
 
         return this;
     }

@@ -1,6 +1,7 @@
 package org.etieskrill.engine.graphics.model.loader;
 
 import org.etieskrill.engine.entity.data.AABB;
+import org.etieskrill.engine.entity.data.Transform;
 import org.etieskrill.engine.graphics.model.Mesh;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.model.Node;
@@ -103,12 +104,12 @@ public class Loader {
 
     private static void processNode(Node parent, AINode aiNode, Model.Builder builder) {
         Matrix4fc transformationMatrix = AssimpUtils.fromAI(aiNode.mTransformation());
-//        Transform transform = Transform.fromMatrix4f(transformationMatrix); //TODO implement node transform as Transform
+        Transform transform = Transform.fromMatrix4f(transformationMatrix);
 
         Node node = new Node(
                 aiNode.mName().dataString(),
                 parent,
-                transformationMatrix,
+                transform,
                 getNodeMeshes(aiNode, builder)
         );
 

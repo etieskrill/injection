@@ -84,7 +84,7 @@ public class Animator {
         for (int i = 0; i < MAX_BONES; i++)
             boneMatrices.add(new Matrix4f());
         Node rootNode = model.getNodes().getFirst();
-        Matrix4fc inverseGlobalTransform = rootNode.getTransform().invert(new Matrix4f());
+        Matrix4fc inverseGlobalTransform = rootNode.getTransform().toMat().invert();
         _updateBoneMatrices(rootNode, new Matrix4f(), inverseGlobalTransform);
 
         if (boneMatrices.size() > MAX_BONES)
@@ -103,17 +103,13 @@ public class Animator {
             }
         }
 
-        Transform localTransform = Transform.fromMatrix4f(node.getTransform());
+        Transform localTransform = new Transform(node.getTransform());
         Matrix4fc offset = null;
 
         if (boneAnim != null) {
             Vector3fc position = interpolate(boneAnim, boneAnim.positionTimes(), boneAnim.positions());
             Quaternionfc rotation = interpolate(boneAnim, boneAnim.rotationTimes(), boneAnim.rotations());
             Vector3fc scaling = interpolate(boneAnim, boneAnim.scaleTimes(), boneAnim.scalings());
-
-//            if (position != null) localTransform.setPosition(position);
-//            if (rotation != null) localTransform.setRotation(rotation);
-//            if (scaling != null) localTransform.setScale(scaling);
 
             localTransform.set(position, rotation, scaling);
 
@@ -122,7 +118,10 @@ public class Animator {
 
         Matrix4fc nodeTransform = transform.mul(localTransform.toMat(), new Matrix4f());
         if (boneAnim != null)
-            boneMatrices.set(boneId, new Matrix4f(globalInverseTransform).mul(nodeTransform).mul(offset));
+            boneMatrices.set(boneId, new Matrix4f
+                            (globalInverseTransform)
+                            .mul(nodeTransform)
+                            .mul(offset));
 
         for (Node child : node.getChildren())
             _updateBoneMatrices(child, nodeTransform, globalInverseTransform);
