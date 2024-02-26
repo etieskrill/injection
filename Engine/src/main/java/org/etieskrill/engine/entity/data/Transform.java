@@ -9,7 +9,7 @@ import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
 
-public class Transform {
+public class Transform implements TransformC {
 
     private final Vector3f position;
     private final Quaternionf rotation;
@@ -39,7 +39,7 @@ public class Transform {
         this.rotation = rotation;
         this.scale = scale;
 
-        this.transform = new Matrix4f().identity();
+        this.transform = new Matrix4f();
         updateTransform();
     }
 
@@ -48,9 +48,9 @@ public class Transform {
      *
      * @param transform the transform to be copied
      */
-    public Transform(Transform transform) {
-        this(new Vector3f(transform.position), new Quaternionf(transform.rotation), new Vector3f(transform.scale));
-        this.dirty = transform.dirty;
+    public Transform(TransformC transform) {
+        this(new Vector3f(transform.getPosition()), new Quaternionf(transform.getRotation()), new Vector3f(transform.getScale()));
+        this.dirty = transform.isDirty();
     }
 
     @Contract("_ -> new")
@@ -69,6 +69,7 @@ public class Transform {
         return transform;
     }
 
+    @Override
     public Vector3f getPosition() {
         return position;
     }
@@ -93,6 +94,7 @@ public class Transform {
         return translate(requireNonNull(transform).getPosition());
     }
 
+    @Override
     public Vector3f getScale() {
         return scale;
     }
@@ -133,6 +135,7 @@ public class Transform {
         return this;
     }
 
+    @Override
     public Quaternionf getRotation() {
         return rotation;
     }
@@ -167,10 +170,11 @@ public class Transform {
         return this;
     }
 
+    @Override
     @Contract("-> new")
     public Matrix4f toMat() {
         //Transform is lazily updated
-        if (isDirty()) updateTransform();
+        if (shouldUpdate()) updateTransform();
         return new Matrix4f(transform);
     }
 
@@ -188,33 +192,21 @@ public class Transform {
         return this;
     }
 
-//    @Contract("_ -> param1")
-//    public Transform apply(@NotNull Transform transform) {
-//        return apply(requireNonNull(transform), this);
-//    }
-//
-//    @Contract("_, _ -> param2")
-//    public Transform apply(@NotNull Transform transform, @NotNull Transform target) {
-//        requireNonNull(transform);
-//        requireNonNull(target);
-//
-//        target.position.add(transform.position);
-//        target.rotation.mul(transform.rotation);
-//        target.scale.mul(transform.scale);
-//
-//        return target;
-//    }
-
-    @Contract(value = "_ -> this", mutates = "this")
-    public Transform apply(@NotNull Transform transform) {
+    @Override
+    public Transform apply(@NotNull TransformC transform, @NotNull Transform target) {
         requireNonNull(transform);
 
-        this.position.add(transform.position);
-        this.rotation.mul(transform.rotation);
-        this.scale.mul(transform.scale);
+        target.position.add(transform.getPosition());
+        target.rotation.mul(transform.getRotation());
+        target.scale.mul(transform.getScale());
         dirty();
 
-        return this;
+        return target;
+    }
+
+    @Contract(value = "_ -> this", mutates = "this")
+    public Transform apply(@NotNull TransformC transform) {
+        return apply(transform, this);
     }
     
     void updateTransform() {
@@ -228,11 +220,16 @@ public class Transform {
     private void dirty() {
         dirty = true;
     }
-    
-    private boolean isDirty() {
+
+    private boolean shouldUpdate() {
         if (!dirty) return false;
         dirty = false;
         return true;
+    }
+
+    @Override
+    public boolean isDirty() {
+        return dirty;
     }
     
     @Override

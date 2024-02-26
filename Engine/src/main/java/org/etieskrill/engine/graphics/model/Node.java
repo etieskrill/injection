@@ -2,6 +2,7 @@ package org.etieskrill.engine.graphics.model;
 
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.entity.data.Transform;
+import org.etieskrill.engine.entity.data.TransformC;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -11,12 +12,13 @@ import java.util.Stack;
 public final class Node implements Disposable {
 
     private final String name;
-    private final Transform transform;
+    private final TransformC transform;
     private final @Nullable Node parent;
     private final List<Node> children;
     private final List<Mesh> meshes;
+//    private final @Nullable Bone bone; //TODO useful to store bone in node?
 
-    public Node(String name, @Nullable Node parent, Transform transform, List<Mesh> meshes) {
+    public Node(String name, @Nullable Node parent, TransformC transform, List<Mesh> meshes) {
         this.name = name;
         this.transform = transform;
         this.parent = parent;
@@ -28,7 +30,7 @@ public final class Node implements Disposable {
         return name;
     }
 
-    public Transform getTransform() {
+    public TransformC getTransform() {
         return transform;
     }
 
