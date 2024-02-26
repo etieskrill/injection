@@ -46,6 +46,13 @@ class TransformTest {
         assertThat(fixture.toMat(), matrixEqualTo(result));
     }
 
+    @ParameterizedTest
+    @MethodSource("customConstructor_GivesCorrectMatrix")
+    void deconstructedTransform_IsCorrect(Transform result, Matrix4fc matrix) {
+        fixture = Transform.fromMatrix4f(matrix);
+        assertThat(fixture, is(result));
+    }
+
     static Stream<Arguments> customConstructor_GivesCorrectMatrix() {
         return Stream.of(
                 arguments(new Transform(), IDENTITY),
@@ -137,8 +144,28 @@ class TransformTest {
     void set() {
     }
 
-    @Test
-    void apply() {
+    @ParameterizedTest
+    @MethodSource
+    void apply_CorrectlyTransforms(Transform firstTransform, Transform secondTransform, Matrix4f result) {
+        assertThat(firstTransform.apply(secondTransform).toMat(), matrixEqualTo(result));
+    }
+
+    private static Stream<Arguments> apply_CorrectlyTransforms() {
+        return Stream.of(
+                arguments(new Transform(), new Transform(), IDENTITY),
+                arguments(
+                        new Transform(),
+                        new Transform().translate(new Vector3f(1, 2, 3)),
+                        new Matrix4f().translate(1, 2, 3)),
+                arguments(
+                        new Transform().translate(new Vector3f(1, 2, 3)),
+                        new Transform(),
+                        new Matrix4f().translate(1, 2, 3)),
+                arguments(
+                        new Transform().translate(new Vector3f(1, 2, 3)),
+                        new Transform().translate(new Vector3f(1, 2, 3)),
+                        new Matrix4f().translate(2, 4, 6))
+        );
     }
 
     @Test

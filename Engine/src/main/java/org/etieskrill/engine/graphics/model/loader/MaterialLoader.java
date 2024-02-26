@@ -159,7 +159,7 @@ class MaterialLoader {
                         .get()
                         .build();
             } else {
-                logger.warn("Failed to find any texture for '{}'", textureName);
+                logger.warn("Failed to find any texture for '{}' at {}", textureName, textureFile);
                 continue;
             }
 

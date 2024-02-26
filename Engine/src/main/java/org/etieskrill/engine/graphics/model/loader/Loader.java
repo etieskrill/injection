@@ -6,6 +6,7 @@ import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.model.Node;
 import org.etieskrill.engine.graphics.util.AssimpUtils;
 import org.etieskrill.engine.util.ResourceReader;
+import org.joml.Matrix4fc;
 import org.joml.Vector3f;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.assimp.AIFile;
@@ -101,10 +102,13 @@ public class Loader {
     }
 
     private static void processNode(Node parent, AINode aiNode, Model.Builder builder) {
+        Matrix4fc transformationMatrix = AssimpUtils.fromAI(aiNode.mTransformation());
+//        Transform transform = Transform.fromMatrix4f(transformationMatrix); //TODO implement node transform as Transform
+
         Node node = new Node(
                 aiNode.mName().dataString(),
                 parent,
-                AssimpUtils.fromAI(aiNode.mTransformation()),
+                transformationMatrix,
                 getNodeMeshes(aiNode, builder)
         );
 

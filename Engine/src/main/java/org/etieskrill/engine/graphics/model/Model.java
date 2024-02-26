@@ -292,7 +292,8 @@ public class Model implements Disposable {
 
     @Contract("-> new")
     public Transform getFinalTransform() {
-        return transform.apply(initialTransform);
+        //return transform.apply(initialTransform, new Transform());
+        return new Transform(transform).apply(initialTransform);
     }
     
     public boolean doCulling() {

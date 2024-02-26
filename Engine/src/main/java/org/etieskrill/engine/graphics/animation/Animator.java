@@ -1,7 +1,9 @@
 package org.etieskrill.engine.graphics.animation;
 
+import org.etieskrill.engine.entity.data.Transform;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.model.Node;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.UnmodifiableView;
 import org.joml.*;
 import org.slf4j.Logger;
@@ -64,6 +66,7 @@ public class Animator {
     public void update(double delta) {
         if (!playing) return;
         currentTicks += animation.getTicksPerSecond() * delta * playbackSpeed;
+        currentTicks %= animation.getDuration();
         updateBoneMatrices();
         if (updates++ % 60 == 0) logger.debug("Playing animation {}, tick {} of {} @ {} ticks/s", animation.getName(), String.format("%7.1f", currentTicks), animation.getDuration(), String.format("%5.1f", animation.getTicksPerSecond()));
     }
@@ -100,7 +103,7 @@ public class Animator {
             }
         }
 
-        Matrix4fc localTransform = node.getTransform();
+        Transform localTransform = Transform.fromMatrix4f(node.getTransform());
         Matrix4fc offset = null;
 
         if (boneAnim != null) {
@@ -108,49 +111,43 @@ public class Animator {
             Quaternionfc rotation = interpolate(boneAnim, boneAnim.rotationTimes(), boneAnim.rotations());
             Vector3fc scaling = interpolate(boneAnim, boneAnim.scaleTimes(), boneAnim.scalings());
 
-            if (position != null || rotation != null || scaling != null) { //TODO please replace this with a Transform lest ye forget
-                if (position == null) position = new Vector3f();
-                if (rotation == null) rotation = new Quaternionf();
-                if (scaling == null) scaling = new Vector3f(1);
+//            if (position != null) localTransform.setPosition(position);
+//            if (rotation != null) localTransform.setRotation(rotation);
+//            if (scaling != null) localTransform.setScale(scaling);
 
-                localTransform = new Matrix4f()
-                        .translate(new Vector3f(position))
-                        .rotate(new Quaternionf(rotation))
-                        .scale(scaling);
-            }
+            localTransform.set(position, rotation, scaling);
 
             offset = boneAnim.bone().offset();
         }
 
-        Matrix4fc nodeTransform = transform.mul(localTransform, new Matrix4f());
-        if (boneAnim != null) {
+        Matrix4fc nodeTransform = transform.mul(localTransform.toMat(), new Matrix4f());
+        if (boneAnim != null)
             boneMatrices.set(boneId, new Matrix4f(globalInverseTransform).mul(nodeTransform).mul(offset));
-        }
 
         for (Node child : node.getChildren())
             _updateBoneMatrices(child, nodeTransform, globalInverseTransform);
     }
 
-    private <T> T interpolate(BoneAnimation anim, List<Double> timings, List<T> values) {
+    private <T> @NotNull T interpolate(BoneAnimation anim, List<Double> timings, List<T> values) {
         int numTimings = timings.size();
 
-        if (currentTicks < timings.getFirst()
-                && anim.preBehaviour() != Animation.Behaviour.REPEAT) {
-            return switch (anim.preBehaviour()) {
-                case DEFAULT -> null;
-                case CONSTANT, LINEAR -> values.getFirst();
-                default -> throw new IllegalStateException("Unexpected value: " + anim.preBehaviour());
-            };
-        } else if (currentTicks > timings.getLast()
-                && anim.preBehaviour() != Animation.Behaviour.REPEAT) {
-            return switch (anim.preBehaviour()) {
-                case DEFAULT -> null;
-                case CONSTANT, LINEAR -> values.getLast();
-                default -> throw new IllegalStateException("Unexpected value: " + anim.preBehaviour());
-            };
-        }
+//        if (currentTicks < timings.getFirst()
+//                && anim.preBehaviour() != Animation.Behaviour.REPEAT) {
+//            return switch (anim.preBehaviour()) {
+//                case DEFAULT -> null;
+//                case CONSTANT, LINEAR -> values.getFirst();
+//                default -> throw new IllegalStateException("Unexpected value: " + anim.preBehaviour());
+//            };
+//        } else if (currentTicks > timings.getLast()
+//                && anim.preBehaviour() != Animation.Behaviour.REPEAT) {
+//            return switch (anim.preBehaviour()) {
+//                case DEFAULT -> null;
+//                case CONSTANT, LINEAR -> values.getLast();
+//                default -> throw new IllegalStateException("Unexpected value: " + anim.preBehaviour());
+//            };
+//        }
 
-        currentTicks %= animation.getDuration(); //all other behaviours were filtered above, so animation must loop -> ticks are normalised
+//        currentTicks %= animation.getDuration(); //all other behaviours were filtered above, so animation must loop -> ticks are normalised
 
         int index = -1;
         for (int i = 0; i < numTimings; i++) {
@@ -163,7 +160,8 @@ public class Animator {
         }
 
         if (index == -1) {
-            logger.warn("Found no valid keyframe for bone '{}' type '{}'", anim.bone().name(), values.getFirst().getClass().getSimpleName()); //surely there won't ever be an empty list, right?
+//            logger.warn("Found no valid keyframe for bone '{}' type '{}'", anim.bone().name(), values.getFirst().getClass().getSimpleName()); //surely there won't ever be an empty list, right?
+            return values.getFirst();
         }
 
         double t = (currentTicks - timings.get(index)) / (timings.get(index + 1) - timings.get(index));

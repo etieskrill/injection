@@ -2,10 +2,9 @@ package org.etieskrill.engine.entity.data;
 
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
-import org.joml.Matrix4f;
-import org.joml.Quaternionf;
-import org.joml.Vector3f;
+import org.joml.*;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
@@ -54,11 +53,27 @@ public class Transform {
         this.dirty = transform.dirty;
     }
 
+    @Contract("_ -> new")
+    public static Transform fromMatrix4f(Matrix4fc matrix) {
+        Transform transform = new Transform(
+                matrix.getTranslation(new Vector3f()),
+                matrix.getUnnormalizedRotation(new Quaternionf()),
+                matrix.getScale(new Vector3f())
+        );
+        if (Float.isNaN(transform.rotation.x) || Float.isNaN(transform.rotation.y)
+                || Float.isNaN(transform.rotation.z) || Float.isNaN(transform.rotation.w)) {
+            transform.applyRotation(Quaternionf::identity);
+        }
+        transform.transform.set(matrix);
+        transform.dirty = false;
+        return transform;
+    }
+
     public Vector3f getPosition() {
         return position;
     }
 
-    public Transform setPosition(@NotNull Vector3f vec) {
+    public Transform setPosition(@NotNull Vector3fc vec) {
         this.position.set(requireNonNull(vec));
         dirty();
         return this;
@@ -68,7 +83,7 @@ public class Transform {
         return setPosition(requireNonNull(transform).getPosition());
     }
 
-    public Transform translate(@NotNull Vector3f vec) {
+    public Transform translate(@NotNull Vector3fc vec) {
         this.position.add(requireNonNull(vec));
         dirty();
         return this;
@@ -82,7 +97,7 @@ public class Transform {
         return scale;
     }
 
-    public Transform setScale(Vector3f scale) {
+    public Transform setScale(Vector3fc scale) {
         if (scale.x() < 0 || scale.y() < 0 || scale.z() < 0)
             throw new IllegalArgumentException("Cannot apply negative scaling factor");
         this.scale.set(scale);
@@ -122,7 +137,7 @@ public class Transform {
         return rotation;
     }
 
-    public Transform setRotation(Quaternionf rotation) {
+    public Transform setRotation(Quaternionfc rotation) {
         this.rotation.set(rotation);
         dirty();
         return this;
@@ -166,19 +181,39 @@ public class Transform {
         return this;
     }
 
-    public Transform set(Vector3f position, Quaternionf rotation, Vector3f scale) {
+    public Transform set(Vector3fc position, Quaternionfc rotation, Vector3fc scale) {
         setPosition(position);
         setRotation(rotation);
         setScale(scale);
         return this;
     }
 
-    @Contract("_ -> new")
-    public Transform apply(Transform transform) {
-        return new Transform(
-                new Vector3f(this.position).add(transform.position),
-                new Quaternionf(this.rotation).mul(transform.rotation),
-                new Vector3f(this.scale).mul(transform.scale));
+//    @Contract("_ -> param1")
+//    public Transform apply(@NotNull Transform transform) {
+//        return apply(requireNonNull(transform), this);
+//    }
+//
+//    @Contract("_, _ -> param2")
+//    public Transform apply(@NotNull Transform transform, @NotNull Transform target) {
+//        requireNonNull(transform);
+//        requireNonNull(target);
+//
+//        target.position.add(transform.position);
+//        target.rotation.mul(transform.rotation);
+//        target.scale.mul(transform.scale);
+//
+//        return target;
+//    }
+
+    @Contract(value = "_ -> this", mutates = "this")
+    public Transform apply(@NotNull Transform transform) {
+        requireNonNull(transform);
+
+        this.position.add(transform.position);
+        this.rotation.mul(transform.rotation);
+        this.scale.mul(transform.scale);
+
+        return this;
     }
     
     void updateTransform() {
@@ -207,5 +242,21 @@ public class Transform {
                 ", scale=" + scale +
                 '}';
     }
-    
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Transform transform = (Transform) o;
+        final float epsilon = 0.000001f; //kind of chosen arbitrarily, and probs not even portable across datastructures
+        return position.equals(transform.position, epsilon)
+                && rotation.equals(transform.rotation, epsilon)
+                && scale.equals(transform.scale, epsilon);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(position, rotation, scale, transform, dirty);
+    }
+
 }
