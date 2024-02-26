@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.etieskrill.engine.graphics.animation.Animation.MAX_BONE_INFLUENCES;
 
@@ -37,6 +38,7 @@ class AnimationLoader {
                     null
             ));
         }
+        logger.info("Loaded {} animations for model '{}': {}", builder.getAnimations().size(), builder.getName(), builder.getAnimations().stream().map(Animation::getName).toList());
     }
 
     private static List<BoneAnimation> loadNodeAnimations(int numAnims, PointerBuffer animBuffer, List<Mesh> meshes) {
@@ -84,24 +86,26 @@ class AnimationLoader {
     }
 
     static List<Bone> getBones(AIMesh mesh, List<Vertex.Builder> vertices) {
+        if (mesh.mNumBones() == 0)
+            return List.of();
+
         List<Bone> bones = new ArrayList<>(mesh.mNumBones());
-        int boneId = 0;
+        int[] boneId = {0};
         PointerBuffer boneBuffer = mesh.mBones();
-        for (int i = 0; i < mesh.mNumBones(); i++) {
-            AIBone aiBone = AIBone.create(boneBuffer.get());
-            logger.info("Loading bone '{}'", aiBone.mName().dataString());
-            loadBoneWeights(i, aiBone.mNumWeights(), aiBone.mWeights(), vertices);
-            bones.add(new Bone(
-                    aiBone.mName().dataString(),
-                    boneId++,
-                    AssimpUtils.fromAI(aiBone.mOffsetMatrix())
-            ));
-        }
+        Stream.generate(boneBuffer::get)
+                .limit(mesh.mNumBones())
+                .map(AIBone::create)
+                .peek(aiBone -> loadBoneWeights(boneId[0], aiBone.mNumWeights(), aiBone.mWeights(), vertices)) //TODO look up when this gets optimised away
+                .forEach(aiBone -> bones.add(new Bone(
+                        aiBone.mName().dataString(),
+                        boneId[0]++,
+                        AssimpUtils.fromAI(aiBone.mOffsetMatrix())
+                )));
+        logger.debug("Loaded {} bones", bones.size());
         return bones;
     }
 
     private static void loadBoneWeights(int boneId, int numWeights, AIVertexWeight.Buffer weightBuffer, List<Vertex.Builder> vertices) {
-        logger.info("Loading {} vertex weights for bone {}", numWeights, boneId);
         weightBuffer
                 .stream()
                 .limit(numWeights)
@@ -119,6 +123,7 @@ class AnimationLoader {
                     if (!wasSet)
                         logger.warn("Vertex with id '{}' is influenced by more than the maximum of {} bones", aiWeight.mVertexId(), MAX_BONE_INFLUENCES);
                 });
+        logger.trace("Loaded {} vertex weights for bone {}", numWeights, boneId);
     }
 
 }

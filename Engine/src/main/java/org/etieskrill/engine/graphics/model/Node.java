@@ -5,10 +5,10 @@ import org.etieskrill.engine.entity.data.Transform;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
-import org.joml.Quaternionf;
-import org.joml.Vector3f;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Stack;
 
 public final class Node implements Disposable {
 
@@ -53,15 +53,15 @@ public final class Node implements Disposable {
         while ((root = root.getParent()) != null) //Traverse up the tree to the root, recording every node
             line.push(root);
 
+//        Transform transform = new Transform();
+//        while (!line.isEmpty()) //Traverse down the tree, applying every transform in succession
+//            transform.apply(line.pop().getTransform());
+
         Matrix4f matrix = new Matrix4f();
         while (!line.isEmpty()) //Traverse down the tree, applying every transform in succession
             matrix.mul(line.pop().getTransform());
 
-        //Try deconstructing matrix into components
-        return new Transform()
-                .setPosition(matrix.getTranslation(new Vector3f()))
-                .setScale(matrix.getScale(new Vector3f()))
-                .setRotation(matrix.getUnnormalizedRotation(new Quaternionf()));
+        return Transform.fromMatrix4f(matrix);
     }
 
     @Override

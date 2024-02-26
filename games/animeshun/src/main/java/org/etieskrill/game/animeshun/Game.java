@@ -14,7 +14,9 @@ import org.etieskrill.engine.time.LoopPacer;
 import org.etieskrill.engine.time.SystemNanoTimePacer;
 import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.window.Window;
+import org.joml.Vector2d;
 import org.joml.Vector3f;
+import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,6 +31,10 @@ public class Game {
 
     private Window window;
     private final Renderer renderer = new Renderer();
+
+    private LoopPacer pacer;
+
+    private Vector2d prevMousePosition;
 
     private Camera camera;
     private Model vampy;
@@ -89,27 +95,16 @@ public class Game {
         this.camera = new PerspectiveCamera(window.getSize().toVec()).setOrientation(0, 0, 0);
 
         this.vampy = Loaders.ModelLoader.get().load("vampy", () -> new Model.Builder("vampire_hip_hop.glb").disableCulling().build());
-//        this.vampy.getInitialTransform()
-//                .setScale(.01f)
-//                .setScale(100f)
-//                .getRotation().rotationX((float) Math.toRadians(-90));
-//                .getRotation().rotationY((float) Math.toRadians(-90));
         this.vampy.getTransform()
                 .setPosition(new Vector3f(2.5f, -1f, 0))
                 .applyRotation(quat -> quat
                         .rotationY((float) Math.toRadians(-90))
                         .rotateX((float) Math.toRadians(90)))
                 .setScale(.01f)
-//                .applyRotation(quat -> quat
-//                                .rotationX((float) Math.toRadians(-90))
-//                                .rotateY((float) Math.toRadians(90))
-//                                .rotateZ((float) Math.toRadians(-90)))
         ;
         this.vampyShader = (AnimationShader) Loaders.ShaderLoader.get().load("vampyShader", AnimationShader::new);
         vampyShader.setShowBoneSelector(boneSelector);
         vampyShader.setShowBoneWeights(showBoneWeights);
-
-//        System.out.println("animations available: " + vampy.getAnimations().stream().map(Animation::getName).collect(Collectors.joining(", ")));
 
         this.vampyAnimator = new Animator(vampy.getAnimations().get(currentAnimation), vampy);
 
@@ -122,10 +117,21 @@ public class Game {
         cubes[3].getTransform().setPosition(new Vector3f(0, 0, -5));
 
         globalLight = new DirectionalLight(new Vector3f(1, 1, 1), new Vector3f(2), new Vector3f(2), new Vector3f(2));
+
+        pacer = new SystemNanoTimePacer(1d / FRAMERATE);
+
+        window.getCursor().disable();
+        prevMousePosition = window.getCursor().getPosition();
+        final double sensitivity = .05;
+        GLFW.glfwSetCursorPosCallback(window.getID(), (window, xpos, ypos) -> {
+            camera.orient(
+                    -sensitivity * (prevMousePosition.y() - ypos),
+                    sensitivity * (prevMousePosition.x() - xpos), 0);
+            prevMousePosition.set(xpos, ypos);
+        });
     }
 
     private void loop() {
-        LoopPacer pacer = new SystemNanoTimePacer(1d / FRAMERATE);
         pacer.start();
         while (!window.shouldClose()) {
             renderer.prepare();
@@ -136,8 +142,6 @@ public class Game {
 //                    .applyRotation(rotation -> rotation.rotateY((float) pacer.getDeltaTimeSeconds()));
 
             vampyAnimator.update(pacer.getDeltaTimeSeconds());
-//            System.out.println(Arrays.toString(vampyAnimator.getBoneMatrices().get(20).get(new float[16])));
-//            System.out.println("\n\n");
 
             vampyShader.setBoneMatrices(vampyAnimator.getBoneMatrices());
             vampyShader.setGlobalLights(globalLight);

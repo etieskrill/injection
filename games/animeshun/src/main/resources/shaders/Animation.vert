@@ -29,12 +29,12 @@ void main()
 
     int bones = 0;
     for (int i = 0; i < MAX_BONE_INFLUENCES; i++) {
-        if (boneIds[i] < 0)  //TODO int is probs being read as float and thus much more negative yate yate yate ... replace with == -1 once i have been be fucked to debug this shit
-            continue; //no bone set
+        if (boneIds[i] == -1)
+            break; //end of bone list
         if (boneIds[i] >= MAX_BONES) //bones contain invalid data -> vertex is not animated
             break;
         if (weights[i] <= 0.0)
-        continue; //either bone has an unset weight if negative, or no influence at all
+            break; //either bone has an unset weight if negative, or no influence at all
 
         bones++;
 
