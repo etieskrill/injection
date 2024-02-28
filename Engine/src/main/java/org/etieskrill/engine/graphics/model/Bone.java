@@ -3,6 +3,8 @@ package org.etieskrill.engine.graphics.model;
 import org.joml.Matrix4fc;
 import org.lwjgl.assimp.AIVertexWeight;
 
+import java.text.MessageFormat;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -22,6 +24,13 @@ public record Bone(
         int id,
         Matrix4fc offset
 ) {
+    @Override
+    public String toString() {
+        return MessageFormat.format("Bone[name={0}, id={1}, offset={2}]",
+                name, id, Arrays.toString(offset.get(new float[16]))
+        ); //TODO mayhaps create a verbal approximator for matrices - a full depiction is not very suitable for logging
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

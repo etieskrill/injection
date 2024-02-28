@@ -13,7 +13,7 @@ public class ResourceReader {
     public static String getClasspathResource(String name) {
         try (InputStream inputStream = ResourceReader.class.getClassLoader().getResourceAsStream(name)) {
             if (inputStream == null)
-                throw new RuntimeException("Resource %s could not be located or access was denied".formatted(name));
+                throw new ResourceLoadException("Resource %s could not be located or access was denied".formatted(name));
             try (BufferedInputStream bis = new BufferedInputStream(inputStream)) {
                 ByteArrayOutputStream buf = new ByteArrayOutputStream();
                 for (int result = bis.read(); result != -1; result = bis.read()) {
@@ -22,7 +22,7 @@ public class ResourceReader {
                 return buf.toString(StandardCharsets.UTF_8);
             }
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new ResourceLoadException(e);
         }
     }
 
@@ -34,7 +34,7 @@ public class ResourceReader {
             ByteBuffer buffer = ByteBuffer.allocateDirect(bytes.length);
             return buffer.put(bytes).rewind();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new ResourceLoadException(e);
         }
     }
 

@@ -10,7 +10,7 @@ import static org.lwjgl.assimp.Assimp.*;
 /**
  * Holds a specific animation for a model. It has an identifying name, a duration, and a speed at which it plays.
  * <p>
- * Confusingly, bones are called '{@link AINodeAnim Nodes}' in Assimp.
+ * Confusingly, Assimp sometimes refers to bones as '{@link AINodeAnim Nodes}' in the context of bone animations.
  *
  * @param name           an identifying name
  * @param duration       the total duration in ticks

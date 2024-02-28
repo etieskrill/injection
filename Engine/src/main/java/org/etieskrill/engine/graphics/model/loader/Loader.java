@@ -2,105 +2,89 @@ package org.etieskrill.engine.graphics.model.loader;
 
 import org.etieskrill.engine.entity.data.AABB;
 import org.etieskrill.engine.entity.data.Transform;
+import org.etieskrill.engine.graphics.animation.Animation;
 import org.etieskrill.engine.graphics.model.Bone;
 import org.etieskrill.engine.graphics.model.Mesh;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.model.Node;
 import org.etieskrill.engine.graphics.util.AssimpUtils;
-import org.etieskrill.engine.util.ResourceReader;
 import org.joml.Matrix4fc;
 import org.joml.Vector3f;
 import org.lwjgl.PointerBuffer;
-import org.lwjgl.assimp.AIFile;
-import org.lwjgl.assimp.AIFileIO;
 import org.lwjgl.assimp.AINode;
 import org.lwjgl.assimp.AIScene;
-import org.lwjgl.system.MemoryUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static org.etieskrill.engine.config.ResourcePaths.MODEL_PATH;
 import static org.etieskrill.engine.graphics.model.loader.AnimationLoader.loadAnimations;
+import static org.etieskrill.engine.graphics.model.loader.Importer.importScene;
 import static org.etieskrill.engine.graphics.model.loader.MaterialLoader.loadEmbeddedTextures;
 import static org.etieskrill.engine.graphics.model.loader.MaterialLoader.loadMaterials;
 import static org.etieskrill.engine.graphics.model.loader.MeshProcessor.loadMeshes;
 import static org.lwjgl.assimp.Assimp.*;
-import static org.lwjgl.system.MemoryUtil.memAddress;
-import static org.lwjgl.system.MemoryUtil.memCopy;
 
 public class Loader {
 
     private static final Logger logger = LoggerFactory.getLogger(Loader.class);
 
+    //TODO loading animations is probs to be separated from model loading: either
+    // - load bones with animation every time, and resolve stuff when assigning an animation to a model/animator or
+    // - require model/nodes when loading in order to link dependencies directly on load
+    public static List<Animation> loadModelAnimations(String file, Model model) {
+        logger.info("Loading animations from '{}'", file);
+
+        AIScene aiScene = importScene(file, new Importer.Options(false, false));
+        List<Animation> animations = new ArrayList<>();
+
+        loadAnimations(aiScene, model.getBones(), animations);
+
+        return animations;
+    }
+
     public static void loadModel(Model.Builder builder) throws IOException {
+//        aiAttachLogStream(AILogStream.create() //TODO i mean... it's possible if ever needed
+//                .callback((messagePointer, userPointer) -> {
+//                    String message = MemoryUtil
+//                            .memUTF8(messagePointer)
+//                            .replace(System.lineSeparator(), "") //TODO assimp appears to always spit out unix lfs; so the below line may suffice
+//                            .replace("\n", "");
+//                    logger.info("Assimp: {}", message);
+//                }));
 
-        //TODO properly set these
-        int processFlags =
-                aiProcess_Triangulate |
-//                        aiProcess_SortByPType |
-                        (builder.shouldFlipUVs() ? aiProcess_FlipUVs : 0) |
-//                        aiProcess_OptimizeMeshes |
-//                        aiProcess_OptimizeGraph |
-//                        aiProcess_JoinIdenticalVertices |
-//                        aiProcess_RemoveRedundantMaterials |
-//                        aiProcess_FindInvalidData |
-//                        aiProcess_GenUVCoords |
-//                        aiProcess_TransformUVCoords |
-//                        aiProcess_FindInstances |
-//                        aiProcess_PreTransformVertices | //TODO add ~static~ flag or smth, but none of this baby shit anymore
-                        (builder.shouldFlipWinding() ? aiProcess_FlipWindingOrder : 0);
+        AIScene aiScene = importScene(
+                builder.getFile(),
+                new Importer.Options(builder.shouldFlipUVs(), builder.shouldFlipWinding())
+        );
 
-        AIFileIO fileIO = AIFileIO.create().OpenProc((pFileIO, fileName, openMode) -> {
-            String name = MemoryUtil.memUTF8(fileName);
-            ByteBuffer buffer = ResourceReader.getRawClassPathResource(MODEL_PATH + name);
+        AINode rootNode = aiScene.mRootNode();
 
-            AIFile aiFile = AIFile.create().ReadProc((pFile, pBuffer, size, count) -> {
-                long blocksRead = Math.min(buffer.remaining() / size, count);
-                memCopy(memAddress(buffer), pBuffer, blocksRead * size);
-                buffer.position((int) (buffer.position() + (blocksRead * size)));
-                return blocksRead;
-            }).SeekProc((pFile, offset, origin) -> {
-                switch (origin) {
-                    case aiOrigin_SET -> buffer.position((int) offset);
-                    case aiOrigin_CUR -> buffer.position(buffer.position() + (int) offset);
-                    case aiOrigin_END -> buffer.position(buffer.limit() + (int) offset);
-                }
-                return 0;
-            }).FileSizeProc(pFile -> buffer.limit());
-
-            return aiFile.address();
-        }).CloseProc((pFileIO, pFile) -> {
-            AIFile aiFile = AIFile.create(pFile);
-            aiFile.ReadProc().free();
-            aiFile.SeekProc().free();
-            aiFile.FileSizeProc().free();
-            //TODO shouldn't the buffer from OpenProc also be freed here?
-        });
-        AIScene scene = aiImportFileEx(builder.getFile(), processFlags, fileIO);
-        if (scene == null || (scene.mFlags() & AI_SCENE_FLAGS_INCOMPLETE) != 0
-                || scene.mRootNode() == null) {
+        if ((aiScene.mFlags() & AI_SCENE_FLAGS_INCOMPLETE) != 0
+                || rootNode == null) {
             throw new IOException(aiGetErrorString());
         }
 
-        loadEmbeddedTextures(scene, builder.getEmbeddedTextures());
-        loadMaterials(scene, builder, builder.getEmbeddedTextures());
-        loadMeshes(scene, builder);
-        processNode(null, scene.mRootNode(), builder);
-        loadAnimations(scene, builder); //animations reference bones, which need first be loaded from the nodes
+        loadEmbeddedTextures(aiScene, builder.getEmbeddedTextures());
+        loadMaterials(aiScene, builder, builder.getEmbeddedTextures());
+        loadMeshes(aiScene, builder);
+        processNode(null, rootNode, builder);
+        loadAnimations(aiScene, builder.getBones(), builder.getAnimations()); //animations reference bones, which need first be loaded from the meshes, and also require the nodes to resolve the back reference
         calculateModelBoundingBox(builder);
 
-        aiReleaseImport(scene);
+        aiReleaseImport(aiScene);
 
-        logger.debug("Loaded model {} with {} node{}, {} mesh{} and {} material{}", builder.getName(),
+        logger.debug("Loaded model {} with {} node{}, {} mesh{}, {} material{}, {} bone{} and {} animation{}",
+                builder.getName(),
                 builder.getNodes().size(), builder.getNodes().size() == 1 ? "" : "s",
                 builder.getMeshes().size(), builder.getMeshes().size() == 1 ? "" : "es",
-                builder.getMaterials().size(), builder.getMaterials().size() == 1 ? "" : "s");
+                builder.getMaterials().size(), builder.getMaterials().size() == 1 ? "" : "s",
+                builder.getBones().size(), builder.getBones().size() == 1 ? "" : "s",
+                builder.getAnimations().size(), builder.getAnimations().size() == 1 ? "" : "s");
     }
 
     private static void processNode(Node parent, AINode aiNode, Model.Builder builder) {

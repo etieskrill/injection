@@ -39,6 +39,7 @@ class MeshProcessor {
         builder.getMeshes().addAll(meshes);
         builder.getBones().addAll(meshes.stream()
                 .flatMap(mesh -> mesh.getBones().stream())
+                .distinct()
                 .toList());
     }
 

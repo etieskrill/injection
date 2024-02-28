@@ -1,6 +1,6 @@
 plugins {
-    id "java"
-    id "java-library"
+    id 'java'
+    id 'java-library'
 }
 
 java {
@@ -13,14 +13,12 @@ dependencies {
     //LWJGL native interfaces
     implementation platform("org.lwjgl:lwjgl-bom:$lwjglVersion")
 
-    implementation "org.lwjgl:lwjgl"
-    implementation "org.lwjgl:lwjgl-assimp"
-    implementation "org.lwjgl:lwjgl-freetype"
-    implementation "org.lwjgl:lwjgl-glfw"
-    implementation "org.lwjgl:lwjgl-opengl"
-    implementation "org.lwjgl:lwjgl-stb"
-
-    implementation 'org.jetbrains:annotations:24.0.0'
+    implementation 'org.lwjgl:lwjgl'
+    implementation 'org.lwjgl:lwjgl-assimp'
+    implementation 'org.lwjgl:lwjgl-freetype'
+    implementation 'org.lwjgl:lwjgl-glfw'
+    implementation 'org.lwjgl:lwjgl-opengl'
+    implementation 'org.lwjgl:lwjgl-stb'
 
     runtimeOnly "org.lwjgl:lwjgl::$lwjglNatives"
     runtimeOnly "org.lwjgl:lwjgl-assimp::$lwjglNatives"
@@ -28,6 +26,8 @@ dependencies {
     runtimeOnly "org.lwjgl:lwjgl-glfw::$lwjglNatives"
     runtimeOnly "org.lwjgl:lwjgl-opengl::$lwjglNatives"
     runtimeOnly "org.lwjgl:lwjgl-stb::$lwjglNatives"
+
+    implementation 'org.jetbrains:annotations:24.0.0'
 
     //OpenGL-oriented maths library
     api "org.joml:joml:$jomlVersion"

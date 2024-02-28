@@ -17,4 +17,18 @@ public record BoneAnimation(
         Animation.Behaviour preBehaviour, //what happens before first key
         Animation.Behaviour postBehaviour //what happens after last key
 ) {
+    @Override
+    public String toString() {
+        return "BoneAnimation{" +
+                "bone=" + bone +
+                ", num positions=" + positions.size() +
+                ", num positionTimes=" + positionTimes.size() +
+                ", num rotations=" + rotations.size() +
+                ", num rotationTimes=" + rotationTimes.size() +
+                ", num scalings=" + scalings.size() +
+                ", num scaleTimes=" + scaleTimes.size() +
+                ", preBehaviour=" + preBehaviour +
+                ", postBehaviour=" + postBehaviour +
+                '}';
+    }
 }

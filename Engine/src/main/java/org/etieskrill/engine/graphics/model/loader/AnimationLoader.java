@@ -3,8 +3,6 @@ package org.etieskrill.engine.graphics.model.loader;
 import org.etieskrill.engine.graphics.animation.Animation;
 import org.etieskrill.engine.graphics.animation.BoneAnimation;
 import org.etieskrill.engine.graphics.model.Bone;
-import org.etieskrill.engine.graphics.model.Mesh;
-import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.model.Vertex;
 import org.etieskrill.engine.graphics.util.AssimpUtils;
 import org.joml.Quaternionf;
@@ -26,32 +24,31 @@ class AnimationLoader {
 
     private static final Logger logger = LoggerFactory.getLogger(AnimationLoader.class);
 
-    static void loadAnimations(AIScene scene, Model.Builder builder) {
+    static void loadAnimations(AIScene scene, List<Bone> bones, List<Animation> animations) {
         PointerBuffer animationBuffer = scene.mAnimations();
         for (int i = 0; i < scene.mNumAnimations(); i++) {
             AIAnimation aiAnimation = AIAnimation.create(animationBuffer.get());
-            builder.getAnimations().add(new Animation(
+            animations.add(new Animation(
                     aiAnimation.mName().dataString(),
                     (int) aiAnimation.mDuration(),
                     aiAnimation.mTicksPerSecond(),
-                    loadNodeAnimations(aiAnimation.mNumChannels(), aiAnimation.mChannels(), builder.getMeshes()),
+                    loadNodeAnimations(aiAnimation.mNumChannels(), aiAnimation.mChannels(), bones),
                     null
             ));
         }
-        logger.info("Loaded {} animations for model '{}': {}", builder.getAnimations().size(), builder.getName(), builder.getAnimations().stream().map(Animation::getName).toList());
+        logger.debug("Loaded {} animation{} for scene '{}': {}",
+                animations.size(), animations.size() == 1 ? "" : "s",
+                scene.mName().dataString(), animations.stream().map(Animation::getName).toList());
     }
 
-    private static List<BoneAnimation> loadNodeAnimations(int numAnims, PointerBuffer animBuffer, List<Mesh> meshes) {
+    private static List<BoneAnimation> loadNodeAnimations(int numAnims, PointerBuffer animBuffer, List<Bone> bones) {
         List<BoneAnimation> boneAnims = new ArrayList<>(numAnims);
         for (int i = 0; i < numAnims; i++) {
             AINodeAnim nodeAnim = AINodeAnim.create(animBuffer.get());
 
             String name = nodeAnim.mNodeName().dataString();
             //since there should be comparatively few bones in a model, extracting them every time should be fine
-            Bone bone = meshes
-                    .stream()
-                    .map(Mesh::getBones)
-                    .flatMap(List::stream)
+            Bone bone = bones.stream()
                     .filter(meshBone -> meshBone.name().equals(name))
                     .findAny()
                     .orElseThrow(() -> new IllegalStateException(
@@ -90,18 +87,24 @@ class AnimationLoader {
             return List.of();
 
         List<Bone> bones = new ArrayList<>(mesh.mNumBones());
-        int[] boneId = {0};
+        final int[] boneId = {0}, totalNumVertexWeights = {0};
         PointerBuffer boneBuffer = mesh.mBones();
         Stream.generate(boneBuffer::get)
                 .limit(mesh.mNumBones())
                 .map(AIBone::create)
-                .peek(aiBone -> loadBoneWeights(boneId[0], aiBone.mNumWeights(), aiBone.mWeights(), vertices)) //TODO look up when this gets optimised away
+                .peek(aiBone -> {
+                    int numVertexWeights = aiBone.mNumWeights();
+                    totalNumVertexWeights[0] += numVertexWeights;
+                    loadBoneWeights(boneId[0], numVertexWeights, aiBone.mWeights(), vertices);
+                }) //TODO look up when this gets optimised away
                 .forEach(aiBone -> bones.add(new Bone(
                         aiBone.mName().dataString(),
                         boneId[0]++,
                         AssimpUtils.fromAI(aiBone.mOffsetMatrix())
                 )));
-        logger.debug("Loaded {} bones", bones.size());
+        logger.trace("Loaded {} vertex weight{} for {} bone{}: {}",
+                totalNumVertexWeights[0], totalNumVertexWeights[0] == 1 ? "" : "s",
+                bones.size(), bones.size() == 1 ? "" : "s", bones);
         return bones;
     }
 
@@ -123,7 +126,6 @@ class AnimationLoader {
                     if (!wasSet)
                         logger.warn("Vertex with id '{}' is influenced by more than the maximum of {} bones", aiWeight.mVertexId(), MAX_BONE_INFLUENCES);
                 });
-        logger.trace("Loaded {} vertex weights for bone {}", numWeights, boneId);
     }
 
 }

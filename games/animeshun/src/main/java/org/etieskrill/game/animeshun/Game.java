@@ -2,10 +2,12 @@ package org.etieskrill.game.animeshun;
 
 import org.etieskrill.engine.graphics.Camera;
 import org.etieskrill.engine.graphics.PerspectiveCamera;
+import org.etieskrill.engine.graphics.animation.Animation;
 import org.etieskrill.engine.graphics.animation.Animator;
 import org.etieskrill.engine.graphics.data.DirectionalLight;
 import org.etieskrill.engine.graphics.gl.Renderer;
 import org.etieskrill.engine.graphics.model.Model;
+import org.etieskrill.engine.graphics.model.loader.Loader;
 import org.etieskrill.engine.input.Input;
 import org.etieskrill.engine.input.KeyInputManager;
 import org.etieskrill.engine.input.Keys;
@@ -19,6 +21,9 @@ import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.etieskrill.engine.input.InputBinding.Trigger.ON_PRESS;
 import static org.etieskrill.engine.input.InputBinding.Trigger.PRESSED;
@@ -46,6 +51,7 @@ public class Game {
     private Animator vampyAnimator;
 
     private int currentAnimation = 0;
+    private List<Animation> vampyAnimations = new ArrayList<>();
     private Label animationSelector;
 
     private int boneSelector = 4;
@@ -64,9 +70,9 @@ public class Game {
                 logger.info("Vampy animation is {}", vampyAnimator.isPlaying() ? "playing" : "stopped");
             }),
             Input.bind(Keys.E).on(ON_PRESS).to(() -> {
-                this.currentAnimation = ++currentAnimation % (vampy.getAnimations().size() - 1);
-                this.vampyAnimator = new Animator(vampy.getAnimations().get(currentAnimation), vampy);
-                logger.info("Switching to animation {}, '{}'", currentAnimation, vampy.getAnimations().get(currentAnimation).getName());
+                currentAnimation = ++currentAnimation % (vampyAnimations.size());
+                vampyAnimator = new Animator(vampyAnimations.get(currentAnimation), vampy);
+                logger.info("Switching to animation {}, '{}'", currentAnimation, vampyAnimations.get(currentAnimation).getName());
             }),
             Input.bind(Keys.R).on(ON_PRESS).to(() -> {
                 boneSelector = ++boneSelector % 5;
@@ -85,7 +91,7 @@ public class Game {
     }
 
     private void init() {
-        this.window = new Window.Builder()
+        window = new Window.Builder()
                 .setTitle("Animeshun yeeees")
                 .setMode(Window.WindowMode.BORDERLESS)
                 .setRefreshRate(FRAMERATE)
@@ -93,10 +99,10 @@ public class Game {
                 .setSamples(4)
                 .build();
 
-        this.camera = new PerspectiveCamera(window.getSize().toVec()).setOrientation(0, 0, 0);
+        camera = new PerspectiveCamera(window.getSize().toVec()).setOrientation(0, 0, 0);
 
-        this.vampy = Loaders.ModelLoader.get().load("vampy", () -> new Model.Builder("Unarmed Walk Forward.dae").disableCulling().build());
-        this.vampy.getInitialTransform()
+        vampy = Loaders.ModelLoader.get().load("vampy", () -> new Model.Builder("mixamo_walk_forward_skinned_vampire.dae").disableCulling().build());
+        vampy.getInitialTransform()
                 .setPosition(new Vector3f(2.5f, -1f, 0f))
                 .applyRotation(quat -> quat.rotateY(toRadians(-90)))
                 .setScale(.01f);
@@ -107,13 +113,20 @@ public class Game {
 //                        .rotateX((float) Math.toRadians(90)))
 //                .setScale(.01f)
 //        ;
-        this.vampyShader = (AnimationShader) Loaders.ShaderLoader.get().load("vampyShader", AnimationShader::new);
+
+        vampyAnimations.add(vampy.getAnimations().getFirst());
+
+        List<Animation> orcIdle = Loader.loadModelAnimations("mixamo_orc_idle.dae", vampy);
+        vampyAnimations.add(0, orcIdle.getFirst());
+
+        //TODO animation blending
+        vampyAnimator = new Animator(vampyAnimations.getFirst(), vampy);
+
+        vampyShader = (AnimationShader) Loaders.ShaderLoader.get().load("vampyShader", AnimationShader::new);
         vampyShader.setShowBoneSelector(boneSelector);
         vampyShader.setShowBoneWeights(showBoneWeights);
 
-        this.vampyAnimator = new Animator(vampy.getAnimations().get(currentAnimation), vampy);
-
-        this.cubes = new Model[4];
+        cubes = new Model[4];
         for (int i = 0; i < cubes.length; i++)
             cubes[i] = Loaders.ModelLoader.get().load("cube", () -> new Model.Builder("cube.obj").disableCulling().build());
         cubes[0].getTransform().setPosition(new Vector3f(5, 0, 0));

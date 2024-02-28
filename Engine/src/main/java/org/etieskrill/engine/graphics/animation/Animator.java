@@ -33,6 +33,9 @@ public class Animator {
     private static final Logger logger = LoggerFactory.getLogger(Animator.class);
 
     public Animator(Animation animation, Model model) {
+        logger.info("Loading animation '{}' for model '{}'", animation.name(), model.getName());
+        validateBonesInModel(animation, model);
+
         this.animation = animation;
         this.model = model;
 
@@ -81,6 +84,10 @@ public class Animator {
     }
 
     private void updateBoneMatrices() {
+        //TODO get performance counters going, then
+        // - set matrices instead of replacing entire list
+        // - pass uniform arrays with single call (if possible)
+        // - bake bone animations into bones / create a map here or in model
         boneMatrices.clear();
         for (int i = 0; i < MAX_BONES; i++)
             boneMatrices.add(new Matrix4f());
@@ -170,6 +177,26 @@ public class Animator {
             case Quaternionfc quaternion -> (T) quaternion.slerp((Quaternionfc) value2, t, new Quaternionf());
             default -> throw new IllegalStateException("Unexpected value: " + value1);
         };
+    }
+
+    private static void validateBonesInModel(Animation animation, Model model) { //TODO this should happen only once while loading the data
+        List<Bone> bones = animation.boneAnimations().stream()
+                .map(BoneAnimation::bone)
+                .toList();
+
+        if (bones.stream().anyMatch(bone -> !model.getBones().contains(bone))) {
+            throw new IllegalArgumentException("Animation contains bones which are not present in the model");
+        }
+
+        logger.atTrace().log(() -> {
+            List<Bone> nonAnimatedBones = model.getBones().stream()
+                    .filter(bone -> !bones.contains(bone))
+                    .toList();
+            if (!nonAnimatedBones.isEmpty())
+                return "Bones contain no animation data: " + nonAnimatedBones;
+            else
+                return "All bones are animated";
+        });
     }
 
 }
