@@ -16,6 +16,7 @@ import org.etieskrill.engine.time.LoopPacer;
 import org.etieskrill.engine.time.SystemNanoTimePacer;
 import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.window.Window;
+import org.joml.Matrix4f;
 import org.joml.Vector2d;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
@@ -51,7 +52,7 @@ public class Game {
     private Animator vampyAnimator;
 
     private int currentAnimation = 0;
-    private List<Animation> vampyAnimations = new ArrayList<>();
+    private final List<Animator> vampyAnimators = new ArrayList<>();
     private Label animationSelector;
 
     private int boneSelector = 4;
@@ -70,9 +71,9 @@ public class Game {
                 logger.info("Vampy animation is {}", vampyAnimator.isPlaying() ? "playing" : "stopped");
             }),
             Input.bind(Keys.E).on(ON_PRESS).to(() -> {
-                currentAnimation = ++currentAnimation % (vampyAnimations.size());
-                vampyAnimator = new Animator(vampyAnimations.get(currentAnimation), vampy);
-                logger.info("Switching to animation {}, '{}'", currentAnimation, vampyAnimations.get(currentAnimation).getName());
+                currentAnimation = ++currentAnimation % (vampyAnimators.size());
+                vampyAnimator = vampyAnimators.get(currentAnimation);
+                logger.info("Switching to animation {}, '{}'", currentAnimation, vampyAnimators.get(currentAnimation).getAnimation().getName());
             }),
             Input.bind(Keys.R).on(ON_PRESS).to(() -> {
                 boneSelector = ++boneSelector % 5;
@@ -104,23 +105,21 @@ public class Game {
         vampy = Loaders.ModelLoader.get().load("vampy", () -> new Model.Builder("mixamo_walk_forward_skinned_vampire.dae").disableCulling().build());
         vampy.getInitialTransform()
                 .setPosition(new Vector3f(2.5f, -1f, 0f))
-                .applyRotation(quat -> quat.rotateY(toRadians(-90)))
-                .setScale(.01f);
-//        this.vampy.getTransform()
-//                .setPosition(new Vector3f(2.5f, -1f, 0))
-//                .applyRotation(quat -> quat
-//                        .rotationY((float) Math.toRadians(-90))
-//                        .rotateX((float) Math.toRadians(90)))
-//                .setScale(.01f)
-//        ;
+                .applyRotation(quat -> quat.rotateY(toRadians(-90)));
 
-        vampyAnimations.add(vampy.getAnimations().getFirst());
+        vampyAnimators.add(new Animator(vampy.getAnimations().getFirst(), vampy));
 
         List<Animation> orcIdle = Loader.loadModelAnimations("mixamo_orc_idle.dae", vampy);
-        vampyAnimations.add(0, orcIdle.getFirst());
+        vampyAnimators.add(0, new Animator(orcIdle.getFirst(), vampy));
+
+        //Different formats sport different conventions or restrictions for the global up direction, one could either
+        // - try to deduce up (and scale for that matter) from the root node of a scene, which is not difficult at all
+        // - or at least stay consistent with file formats within the same bloody model
+        List<Animation> hipHopDance = Loader.loadModelAnimations("vampire_hip_hop.glb", vampy);
+        vampyAnimators.add(new Animator(hipHopDance.get(2), vampy, new Matrix4f().m11(0).m12(-1).m21(1).m22(0).invert()));
 
         //TODO animation blending
-        vampyAnimator = new Animator(vampyAnimations.getFirst(), vampy);
+        vampyAnimator = vampyAnimators.getFirst();
 
         vampyShader = (AnimationShader) Loaders.ShaderLoader.get().load("vampyShader", AnimationShader::new);
         vampyShader.setShowBoneSelector(boneSelector);

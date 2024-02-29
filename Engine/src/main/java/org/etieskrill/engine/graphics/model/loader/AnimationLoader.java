@@ -49,10 +49,18 @@ class AnimationLoader {
             String name = nodeAnim.mNodeName().dataString();
             //since there should be comparatively few bones in a model, extracting them every time should be fine
             Bone bone = bones.stream()
-                    .filter(meshBone -> meshBone.name().equals(name))
+                    .filter(meshBone -> {
+//                        return meshBone.name().equals(name);
+                        //TODO pretty lenient bone name matching for the time being to allow for several file formats - should be undone
+                        if (name.equals("mixamorig:HeadTop_End")) return false;
+                        return meshBone.name().replace("_", "").replace(":", "")
+                                .equals(name.replace("_", "").replace(":", ""));
+                    })
                     .findAny()
-                    .orElseThrow(() -> new IllegalStateException(
-                            "Failed to load animation because no bone '" + name + "' was found"));
+                    .orElse(null);
+//                    .orElseThrow(() -> new IllegalStateException(
+//                            "Failed to load animation because no bone '" + name + "' was found"));
+            if (bone == null) continue;
 
             List<Double> positionTimes = new ArrayList<>(nodeAnim.mNumPositionKeys());
             List<Vector3fc> positions = nodeAnim.mPositionKeys().stream().limit(nodeAnim.mNumPositionKeys())
@@ -88,14 +96,17 @@ class AnimationLoader {
 
         List<Bone> bones = new ArrayList<>(mesh.mNumBones());
         final int[] boneId = {0}, totalNumVertexWeights = {0};
+        List<Integer> maxAffectedLogged = new ArrayList<>(mesh.mNumBones()); //ik this is bad practice, but have you considered the following: screw you
+
         PointerBuffer boneBuffer = mesh.mBones();
+
         Stream.generate(boneBuffer::get)
                 .limit(mesh.mNumBones())
                 .map(AIBone::create)
                 .peek(aiBone -> {
                     int numVertexWeights = aiBone.mNumWeights();
                     totalNumVertexWeights[0] += numVertexWeights;
-                    loadBoneWeights(boneId[0], numVertexWeights, aiBone.mWeights(), vertices);
+                    loadBoneWeights(boneId[0], numVertexWeights, aiBone.mWeights(), vertices, maxAffectedLogged);
                 }) //TODO look up when this gets optimised away
                 .forEach(aiBone -> bones.add(new Bone(
                         aiBone.mName().dataString(),
@@ -108,7 +119,7 @@ class AnimationLoader {
         return bones;
     }
 
-    private static void loadBoneWeights(int boneId, int numWeights, AIVertexWeight.Buffer weightBuffer, List<Vertex.Builder> vertices) {
+    private static void loadBoneWeights(int boneId, int numWeights, AIVertexWeight.Buffer weightBuffer, List<Vertex.Builder> vertices, List<Integer> maxAffectedLogged) {
         weightBuffer
                 .stream()
                 .limit(numWeights)
@@ -123,8 +134,10 @@ class AnimationLoader {
                         wasSet = true;
                         break;
                     }
-                    if (!wasSet)
+                    if (!wasSet && !maxAffectedLogged.contains(boneId)) {
+                        maxAffectedLogged.add(boneId);
                         logger.warn("Vertex with id '{}' is influenced by more than the maximum of {} bones", aiWeight.mVertexId(), MAX_BONE_INFLUENCES);
+                    }
                 });
     }
 

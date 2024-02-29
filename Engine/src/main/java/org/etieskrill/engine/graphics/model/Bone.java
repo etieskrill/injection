@@ -4,7 +4,6 @@ import org.joml.Matrix4fc;
 import org.lwjgl.assimp.AIVertexWeight;
 
 import java.text.MessageFormat;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -13,7 +12,7 @@ import java.util.Objects;
  * describes the inverse of the final node transformation, i.e. from model space to bone space.
  * <p>
  * The vertex weights are resolved and fed into the
- * {@link Vertex vertices} themselves, see the {@link org.etieskrill.engine.graphics.model.loader.AnimationLoader#loadBoneWeights(int, int, AIVertexWeight.Buffer, List) function in AnimationLoader}
+ * {@link Vertex vertices} themselves, see the {@link org.etieskrill.engine.graphics.model.loader.AnimationLoader#loadBoneWeights(int, int, AIVertexWeight.Buffer, List, List) function in AnimationLoader}
  * for more detail.
  *
  * @param name    an identifying name for the bone
@@ -26,8 +25,8 @@ public record Bone(
 ) {
     @Override
     public String toString() {
-        return MessageFormat.format("Bone[name={0}, id={1}, offset={2}]",
-                name, id, Arrays.toString(offset.get(new float[16]))
+        return MessageFormat.format("Bone[name={0}, id={1}]",
+                name, id/*, Arrays.toString(offset.get(new float[16]))*/
         ); //TODO mayhaps create a verbal approximator for matrices - a full depiction is not very suitable for logging
     }
 

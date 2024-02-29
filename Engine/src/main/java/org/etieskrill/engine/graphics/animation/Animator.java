@@ -30,9 +30,20 @@ public class Animator {
     @UnmodifiableView
     private final List<Matrix4fc> boneMatricesView;
 
+    //Lazy solution to animations having different global transform from others for same model, which should never
+    //really be the case, as this should be resolved while loading the node/animation transforms, or just by not having
+    //different conventions and/or file formats within the same goddamn model
+    @Deprecated
+    private final Matrix4fc baseTransform;
+
     private static final Logger logger = LoggerFactory.getLogger(Animator.class);
 
     public Animator(Animation animation, Model model) {
+        this(animation, model, new Matrix4f());
+    }
+
+    @Deprecated
+    public Animator(Animation animation, Model model, Matrix4fc baseTansform) {
         logger.info("Loading animation '{}' for model '{}'", animation.name(), model.getName());
         validateBonesInModel(animation, model);
 
@@ -44,6 +55,8 @@ public class Animator {
 
         this.boneMatrices = new ArrayList<>(MAX_BONES);
         this.boneMatricesView = Collections.unmodifiableList(boneMatrices);
+
+        this.baseTransform = baseTansform;
 
         updateBoneMatrices();
     }
@@ -75,6 +88,10 @@ public class Animator {
         if (updates++ % 60 == 0) logger.debug("Playing animation {}, tick {} of {} @ {} ticks/s", animation.getName(), String.format("%7.1f", currentTicks), animation.getDuration(), String.format("%5.1f", animation.getTicksPerSecond()));
     }
 
+    public Animation getAnimation() {
+        return animation;
+    }
+
     public void setPlaybackSpeed(double playbackSpeed) {
         this.playbackSpeed = playbackSpeed;
     }
@@ -92,14 +109,13 @@ public class Animator {
         for (int i = 0; i < MAX_BONES; i++)
             boneMatrices.add(new Matrix4f());
         Node rootNode = model.getNodes().getFirst();
-        Matrix4fc inverseGlobalTransform = rootNode.getTransform().toMat().invert();
-        _updateBoneMatrices(rootNode, new Matrix4f(), inverseGlobalTransform);
+        _updateBoneMatrices(rootNode, baseTransform);
 
         if (boneMatrices.size() > MAX_BONES)
             logger.warn("Animation contains more than the maximum of {} bones", MAX_BONES);
     }
 
-    private void _updateBoneMatrices(Node node, Matrix4fc transform, Matrix4fc globalInverseTransform) {
+    private void _updateBoneMatrices(Node node, Matrix4fc transform) {
         Bone bone = node.getBone();
         Transform localTransform = new Transform(node.getTransform()); //Set node transform as default
 
@@ -121,13 +137,12 @@ public class Animator {
         Matrix4fc nodeTransform = transform.mul(localTransform.toMat(), new Matrix4f());
         if (bone != null) { //Set default or animated transform
             boneMatrices.set(bone.id(), new Matrix4f
-                    (globalInverseTransform)
-                    .mul(nodeTransform)
+                    (nodeTransform)
                     .mul(bone.offset()));
         }
 
         for (Node child : node.getChildren())
-            _updateBoneMatrices(child, nodeTransform, globalInverseTransform);
+            _updateBoneMatrices(child, nodeTransform);
     }
 
     private <T> @NotNull T interpolate(BoneAnimation anim, List<Double> timings, List<T> values) {
