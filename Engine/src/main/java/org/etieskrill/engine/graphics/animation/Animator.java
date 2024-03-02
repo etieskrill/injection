@@ -1,10 +1,12 @@
 package org.etieskrill.engine.graphics.animation;
 
 import org.etieskrill.engine.entity.data.Transform;
+import org.etieskrill.engine.entity.data.TransformC;
 import org.etieskrill.engine.graphics.model.Bone;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.model.Node;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnmodifiableView;
 import org.joml.*;
 import org.slf4j.Logger;
@@ -26,25 +28,31 @@ public class Animator {
     private double currentTicks;
     private double playbackSpeed;
 
-    private final List<Matrix4fc> boneMatrices;
     @UnmodifiableView
-    private final List<Matrix4fc> boneMatricesView;
+    private final List<Matrix4fc> boneMatrices;
 
     //Lazy solution to animations having different global transform from others for same model, which should never
     //really be the case, as this should be resolved while loading the node/animation transforms, or just by not having
     //different conventions and/or file formats within the same goddamn model
     @Deprecated
-    private final Matrix4fc baseTransform;
+    private final TransformC baseTransform;
+    private final Matrix4fc _baseTransform;
 
     private static final Logger logger = LoggerFactory.getLogger(Animator.class);
 
     public Animator(Animation animation, Model model) {
-        this(animation, model, new Matrix4f());
+        this(animation, model, (Transform) null, null);
     }
 
     @Deprecated
-    public Animator(Animation animation, Model model, Matrix4fc baseTansform) {
-        logger.info("Loading animation '{}' for model '{}'", animation.name(), model.getName());
+    public Animator(Animation animation, Model model, Matrix4f transform) {
+        this(animation, model, Transform.fromMatrix4f(transform), transform);
+    }
+
+    @Deprecated
+    public Animator(@NotNull Animation animation, @NotNull Model model, @Nullable Transform baseTransform, Matrix4f _baseTransform) {
+        logger.info("Loading animation {} for model '{}'", animation.getName(), model.getName());
+
         validateBonesInModel(animation, model);
 
         this.animation = animation;
@@ -53,10 +61,12 @@ public class Animator {
         this.playing = false;
         this.playbackSpeed = 1;
 
-        this.boneMatrices = new ArrayList<>(MAX_BONES);
-        this.boneMatricesView = Collections.unmodifiableList(boneMatrices);
+        List<Matrix4f> boneMatrices = new ArrayList<>(MAX_BONES);
+        for (int i = 0; i < MAX_BONES; i++) boneMatrices.add(new Matrix4f());
+        this.boneMatrices = Collections.unmodifiableList(boneMatrices);
 
-        this.baseTransform = baseTansform;
+        this.baseTransform = baseTransform != null ? baseTransform : new Transform();
+        this._baseTransform = _baseTransform != null ? _baseTransform : new Matrix4f();
 
         updateBoneMatrices();
     }
@@ -85,11 +95,19 @@ public class Animator {
         currentTicks += animation.getTicksPerSecond() * delta * playbackSpeed;
         currentTicks %= animation.getDuration();
         updateBoneMatrices();
-        if (updates++ % 60 == 0) logger.debug("Playing animation {}, tick {} of {} @ {} ticks/s", animation.getName(), String.format("%7.1f", currentTicks), animation.getDuration(), String.format("%5.1f", animation.getTicksPerSecond()));
+        if (updates++ % 60 == 0)
+            logger.debug("Playing animation {}, tick {} of {} @ {} ticks/s",
+                    animation.getName(),
+                    String.format("%7.1f", currentTicks), animation.getDuration(),
+                    String.format("%5.1f", animation.getTicksPerSecond()));
     }
 
     public Animation getAnimation() {
         return animation;
+    }
+
+    public Model getModel() {
+        return model;
     }
 
     public void setPlaybackSpeed(double playbackSpeed) {
@@ -97,7 +115,7 @@ public class Animator {
     }
 
     public List<Matrix4fc> getBoneMatrices() {
-        return boneMatricesView;
+        return boneMatrices;
     }
 
     private void updateBoneMatrices() {
@@ -105,17 +123,11 @@ public class Animator {
         // - set matrices instead of replacing entire list
         // - pass uniform arrays with single call (if possible)
         // - bake bone animations into bones / create a map here or in model
-        boneMatrices.clear();
-        for (int i = 0; i < MAX_BONES; i++)
-            boneMatrices.add(new Matrix4f());
         Node rootNode = model.getNodes().getFirst();
-        _updateBoneMatrices(rootNode, baseTransform);
-
-        if (boneMatrices.size() > MAX_BONES)
-            logger.warn("Animation contains more than the maximum of {} bones", MAX_BONES);
+        _updateBoneMatrices(rootNode, baseTransform, _baseTransform);
     }
 
-    private void _updateBoneMatrices(Node node, Matrix4fc transform) {
+    private void _updateBoneMatrices(Node node, TransformC transform, Matrix4fc trafo) {
         Bone bone = node.getBone();
         Transform localTransform = new Transform(node.getTransform()); //Set node transform as default
 
@@ -134,15 +146,19 @@ public class Animator {
             }
         }
 
-        Matrix4fc nodeTransform = transform.mul(localTransform.toMat(), new Matrix4f());
+        TransformC nodeTransform = transform.apply(localTransform, new Transform());
+        Matrix4fc _nodeTransform = trafo.mul(localTransform.toMat(), new Matrix4f());
+        if (!nodeTransform.toMat().equals(_nodeTransform, .00001f)) {
+            System.out.println("diff: " + nodeTransform + "\n" + nodeTransform.toMat() + "\n" + _nodeTransform);
+        }
         if (bone != null) { //Set default or animated transform
-            boneMatrices.set(bone.id(), new Matrix4f
-                    (nodeTransform)
+            ((Matrix4f) boneMatrices.get(bone.id())).set(new Matrix4f
+                    (_nodeTransform)
                     .mul(bone.offset()));
         }
 
         for (Node child : node.getChildren())
-            _updateBoneMatrices(child, nodeTransform);
+            _updateBoneMatrices(child, nodeTransform, trafo);
     }
 
     private <T> @NotNull T interpolate(BoneAnimation anim, List<Double> timings, List<T> values) {

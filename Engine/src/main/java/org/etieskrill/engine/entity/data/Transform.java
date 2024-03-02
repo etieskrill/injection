@@ -194,12 +194,10 @@ public class Transform implements TransformC {
 
     @Override
     public Transform apply(@NotNull TransformC transform, @NotNull Transform target) {
-        requireNonNull(transform);
-
         target.position.add(transform.getPosition());
         target.rotation.mul(transform.getRotation());
         target.scale.mul(transform.getScale());
-        dirty();
+        target.dirty();
 
         return target;
     }
