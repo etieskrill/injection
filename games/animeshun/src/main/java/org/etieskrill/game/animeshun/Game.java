@@ -1,5 +1,6 @@
 package org.etieskrill.game.animeshun;
 
+import org.etieskrill.engine.entity.data.Transform;
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.Camera;
 import org.etieskrill.engine.graphics.OrthographicCamera;
@@ -24,7 +25,10 @@ import org.etieskrill.engine.time.LoopPacer;
 import org.etieskrill.engine.time.SystemNanoTimePacer;
 import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.window.Window;
-import org.joml.*;
+import org.joml.Matrix4f;
+import org.joml.Vector2d;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,7 +56,7 @@ public class Game {
     private Camera camera;
     private Model vampy;
     private AnimationShader vampyShader;
-    private Model[] cubes;
+    private Model cube;
     private DirectionalLight globalLight;
 
     private Animator vampyAnimator;
@@ -130,7 +134,8 @@ public class Game {
         // - try to deduce up (and scale for that matter) from the root node of a scene, which is not difficult at all
         // - or at least stay consistent with file formats within the same bloody model
         List<Animation> hipHopDance = Loader.loadModelAnimations("vampire_hip_hop.glb", vampy);
-        vampyAnimators.add(new Animator(hipHopDance.get(2), vampy, new Matrix4f().m11(0).m12(-1).m21(1).m22(0).invert()));
+        Transform vampyHipHopTransform = Transform.fromMatrix4f(new Matrix4f().m11(0).m12(-1).m21(1).m22(0).invert());
+        vampyAnimators.add(new Animator(hipHopDance.get(2), vampy, vampyHipHopTransform));
 
         //TODO animation blending
         vampyAnimator = vampyAnimators.getFirst();
@@ -139,13 +144,8 @@ public class Game {
         vampyShader.setShowBoneSelector(boneSelector);
         vampyShader.setShowBoneWeights(showBoneWeights);
 
-        cubes = new Model[4];
-        for (int i = 0; i < cubes.length; i++)
-            cubes[i] = Loaders.ModelLoader.get().load("cube", () -> new Model.Builder("cube.obj").disableCulling().build());
-        cubes[0].getTransform().setPosition(new Vector3f(5, 0, 0));
-        cubes[1].getTransform().setPosition(new Vector3f(-5, 0, 0));
-        cubes[2].getTransform().setPosition(new Vector3f(0, 0, 5));
-        cubes[3].getTransform().setPosition(new Vector3f(0, 0, -5));
+        cube = Loaders.ModelLoader.get().load("cube", () -> new Model.Builder("cube.obj").disableCulling().build());
+        cube.getTransform().setScale(10).setPosition(new Vector3f(2, -6, 0));
 
         globalLight = new DirectionalLight(new Vector3f(1, 1, 1), new Vector3f(2), new Vector3f(2), new Vector3f(2));
 
@@ -176,59 +176,18 @@ public class Game {
         window.setScene(scene);
     }
 
-    double walkingLinearFactor = 0, runningLinearFactor = 0;
-    boolean qPressedPrevious = false;
-
     private void loop() {
         pacer.start();
-
-        vampyAnimators.get(1).play();
-        vampyAnimators.get(2).play();
         while (!window.shouldClose()) {
             renderer.prepare();
 
-//            float newScale = (float) Math.sin(pacer.getTime() * 1.5) * 0.25f + 1;
-//            vampy.getTransform()
-//                    .setScale(newScale)
-//                    .applyRotation(rotation -> rotation.rotateY((float) pacer.getDeltaTimeSeconds()));
-
-            List<Matrix4fc> mixedMatrices = new ArrayList<>();
-            for (int i = 0; i < 100; i++) {
-                mixedMatrices.add(new Matrix4f());
-            }
-
-            //TODO smoothstep the interpolation factor over time, and that may just be mixing animations already.
-            // though, literally using lerp cannot mathematically be correct, is what my gut tells me at least.
-
-            vampyAnimators.get(1).update(pacer.getDeltaTimeSeconds());
-            vampyAnimators.get(2).update(pacer.getDeltaTimeSeconds());
-
-            //TODO control schemes definitely call for a declarative facade
-            if (!controls.isPressed(Keys.CONTROL)) {
-                if (controls.isPressed(Keys.Q)) {
-                    if (walkingLinearFactor < 1) walkingLinearFactor += 1.25 * pacer.getDeltaTimeSeconds();
-                } else if (walkingLinearFactor > 0) walkingLinearFactor -= 1.25 * pacer.getDeltaTimeSeconds();
-            } else if (controls.isPressed(Keys.Q)) {
-            }
-
-            double walkingSmoothFactor;
-            if (walkingLinearFactor < .5) walkingSmoothFactor = 2 * walkingLinearFactor * walkingLinearFactor;
-            else walkingSmoothFactor = 1 - ((-2 * walkingLinearFactor + 2) * (-2 * walkingLinearFactor + 2) * 0.5);
-
-            for (int i = 0; i < vampyAnimators.get(1).getBoneMatrices().size(); i++) {
-                mixedMatrices.set(i, vampyAnimators.get(1).getBoneMatrices().get(i).lerp(
-                        vampyAnimators.get(2).getBoneMatrices().get(i),
-                        (float) walkingSmoothFactor, new Matrix4f()
-                ));
-            }
-
             vampyAnimator.update(pacer.getDeltaTimeSeconds());
-            vampyShader.setBoneMatrices(mixedMatrices);
-//            vampyShader.setBoneMatrices(vampyAnimator.getBoneMatrices());
+
+            vampyShader.setBoneMatrices(vampyAnimator.getBoneMatrices());
             vampyShader.setGlobalLights(globalLight);
 
             renderer.render(vampy, vampyShader, camera.getCombined());
-//            for (int i = 0; i < cubes.length; i++) renderer.render(cubes[i], vampyShader, camera.getCombined());
+            renderer.render(cube, vampyShader, camera.getCombined());
 
             window.update(pacer.getDeltaTimeSeconds());
             pacer.nextFrame();

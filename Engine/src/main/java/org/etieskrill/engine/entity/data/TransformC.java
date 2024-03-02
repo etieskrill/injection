@@ -2,7 +2,7 @@ package org.etieskrill.engine.entity.data;
 
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
-import org.joml.Matrix4f;
+import org.joml.Matrix4fc;
 import org.joml.Quaternionfc;
 import org.joml.Vector3fc;
 
@@ -16,8 +16,12 @@ public interface TransformC {
     Quaternionfc getRotation();
     Vector3fc getScale();
 
-    @Contract("-> this") //not technically correct, but there is no way to specify fields of the qualifying object
-    Matrix4f toMat();
+    /**
+     * Gets the updated matrix of the transform.
+     * @return the transform matrix
+     */
+    @Contract("-> this")
+    Matrix4fc getMatrix();
 
     @Contract("_, _ -> new")
     Transform apply(@NotNull TransformC transform, @NotNull Transform target);

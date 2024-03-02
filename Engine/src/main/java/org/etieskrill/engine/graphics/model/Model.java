@@ -261,7 +261,7 @@ public class Model implements Disposable {
     }
     
     public AABB getWorldBoundingBox() {
-        Matrix4f worldTransform = getFinalTransform().toMat();
+        Matrix4f worldTransform = new Matrix4f(getFinalTransform().getMatrix());
         return new AABB(worldTransform.transformPosition(new Vector3f(boundingBox.getMin())),
                 worldTransform.transformPosition(new Vector3f(boundingBox.getMax())));
     }

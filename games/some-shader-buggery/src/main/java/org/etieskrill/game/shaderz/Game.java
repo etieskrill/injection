@@ -94,8 +94,8 @@ public class Game {
             sun.getTransform().setPosition(new Vector3f((float) (10 * Math.cos(pacer.getTime())), 10, (float) (10 * Math.sin(pacer.getTime()))));
             sunLight.setDirection(sun.getTransform().getPosition().negate().normalize());
 
-            Matrix4f[] hallwaySegments = new Matrix4f[NUM_SECTORS];
-            hallwaySegments[0] = hallway.getTransform().toMat();
+            Matrix4fc[] hallwaySegments = new Matrix4fc[NUM_SECTORS];
+            hallwaySegments[0] = hallway.getTransform().getMatrix();
             for (int i = 1; i < hallwaySegments.length; i++) {
                 Vector3f translation = hallwaySegments[i - 1]
                         .transformPosition(new Vector3f(hallway.getBoundingBox().getSize().x(), 0, 0));
@@ -103,10 +103,10 @@ public class Game {
                 hallwaySegments[i] = new Transform(hallway.getTransform())
                         .translate(translation)
                         .applyRotation(rotation -> rotation.rotationZ((float) (finalI * Math.toRadians(ANGLE))))
-                        .toMat();
+                        .getMatrix();
             }
             shader.setUniformArray("uModels[$]", hallwaySegments);
-            shader.setUniformArray("uNormals[$]", Arrays.stream(hallwaySegments).map(mat4 -> mat4.invert().transpose().get3x3(new Matrix3f())).toArray());
+            shader.setUniformArray("uNormals[$]", Arrays.stream(hallwaySegments).map(mat4 -> mat4.invert(new Matrix4f()).transpose().get3x3(new Matrix3f())).toArray());
 
             fpsLabel.setText(String.valueOf((int) pacer.getAverageFPS()));
 

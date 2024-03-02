@@ -80,7 +80,7 @@ public class GameScene {
         skelly.getInitialTransform().setScale(15);
 
         Transform localBBBaseTransform = skelly.getNodes().getFirst().getHierarchyTransform();
-        Vector3f localSkellyBBSize = localBBBaseTransform.toMat().transformPosition(skelly.getBoundingBox().getSize());
+        Vector3f localSkellyBBSize = localBBBaseTransform.getMatrix().transformPosition(skelly.getBoundingBox().getSize());
         localSkellyBBModel = ModelFactory.box(localSkellyBBSize);
 //        localSkellyBBModel.getInitialTransform().translate(
 //                skelly.getBoundingBox().getCenter().mul(.5f)
