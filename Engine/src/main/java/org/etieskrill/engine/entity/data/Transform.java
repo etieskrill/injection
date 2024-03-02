@@ -20,11 +20,15 @@ public class Transform implements TransformC {
     private boolean dirty = false;
 
     /**
-     * Constructs a new identity {@link Transform}, such that the {@link #toMat()} call will result in an
+     * Constructs a new identity {@link Transform}, such that the {@link #getMatrix()} call will result in an
      * {@link Matrix4f#identity() identity matrix}.
      */
     public Transform() {
         this(new Vector3f(), new Quaternionf(), new Vector3f(1));
+    }
+
+    public Transform(Matrix4fc transform) {
+        this(Transform.fromMatrix4f(transform));
     }
 
     /**
@@ -55,18 +59,21 @@ public class Transform implements TransformC {
 
     @Contract("_ -> new")
     public static Transform fromMatrix4f(Matrix4fc matrix) {
-        Transform transform = new Transform(
-                matrix.getTranslation(new Vector3f()),
-                matrix.getUnnormalizedRotation(new Quaternionf()),
-                matrix.getScale(new Vector3f())
-        );
-        if (Float.isNaN(transform.rotation.x) || Float.isNaN(transform.rotation.y)
-                || Float.isNaN(transform.rotation.z) || Float.isNaN(transform.rotation.w)) {
-            transform.applyRotation(Quaternionf::identity);
-        }
-        transform.transform.set(matrix);
-        transform.dirty = false;
+        Transform transform = new Transform();
+        deconstructMatrixToTransform(matrix, transform);
         return transform;
+    }
+
+    private static void deconstructMatrixToTransform(Matrix4fc matrix, Transform target) {
+        target.setPosition(matrix.getTranslation(target.getPosition()));
+        target.setRotation(matrix.getUnnormalizedRotation(target.getRotation()));
+        target.setScale(matrix.getScale(target.getScale()));
+
+        if (!target.getRotation().isFinite())
+            target.applyRotation(Quaternionf::identity);
+
+        target.transform.set(matrix);
+        target.dirty = false;
     }
 
     @Override
@@ -100,8 +107,6 @@ public class Transform implements TransformC {
     }
 
     public Transform setScale(Vector3fc scale) {
-        if (scale.x() < 0 || scale.y() < 0 || scale.z() < 0)
-            throw new IllegalArgumentException("Cannot apply negative scaling factor");
         this.scale.set(scale);
         dirty();
         return this;
@@ -132,6 +137,7 @@ public class Transform implements TransformC {
      */
     public Transform applyScale(Consumer<Vector3f> scale) {
         scale.accept(this.scale);
+        dirty();
         return this;
     }
 
@@ -167,15 +173,15 @@ public class Transform implements TransformC {
      */
     public Transform applyRotation(Consumer<Quaternionf> rotation) {
         rotation.accept(this.rotation);
+        dirty();
         return this;
     }
 
     @Override
-    @Contract("-> new")
-    public Matrix4f toMat() {
+    public Matrix4fc getMatrix() {
         //Transform is lazily updated
         if (shouldUpdate()) updateTransform();
-        return new Matrix4f(transform);
+        return transform;
     }
 
     public Transform set(Transform transform) {
@@ -194,10 +200,10 @@ public class Transform implements TransformC {
 
     @Override
     public Transform apply(@NotNull TransformC transform, @NotNull Transform target) {
-        target.position.add(transform.getPosition());
-        target.rotation.mul(transform.getRotation());
-        target.scale.mul(transform.getScale());
-        target.dirty();
+        Matrix4f targetTransform = new Matrix4f(target.set(this).getMatrix());
+        Matrix4fc _transform = transform.getMatrix();
+        Matrix4fc newTransform = targetTransform.mul(_transform);
+        deconstructMatrixToTransform(newTransform, target);
 
         return target;
     }

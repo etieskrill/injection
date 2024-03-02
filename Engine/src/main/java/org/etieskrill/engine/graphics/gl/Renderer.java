@@ -136,14 +136,14 @@ public class Renderer {
     
     private void _render(Model model, ShaderProgram shader, Matrix4fc combined) {
         shader.setUniform("uCombined", combined, false);
-        shader.setUniform("uModel", model.getFinalTransform().toMat(), false);
-        shader.setUniform("uNormal", model.getFinalTransform().toMat().invert().transpose().get3x3(new Matrix3f()), false);
+        shader.setUniform("uModel", model.getFinalTransform().getMatrix(), false);
+        shader.setUniform("uNormal", model.getFinalTransform().getMatrix().invert(new Matrix4f()).transpose().get3x3(new Matrix3f()), false);
 
         if (!model.doCulling()) glDisable(GL_CULL_FACE);
         if (model.hasTransparency()) glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         shader.start();
         Node rootNode = model.getNodes().getFirst();
-        renderNode(rootNode, shader, rootNode.getTransform().toMat());
+        renderNode(rootNode, shader, rootNode.getTransform().getMatrix());
         shader.stop();
         if (!model.doCulling()) glEnable(GL_CULL_FACE);
         if (model.hasTransparency()) glBlendFunc(GL_ONE, GL_ZERO);
@@ -158,7 +158,7 @@ public class Renderer {
             renderMesh(mesh, shader);
 
         for (Node child : node.getChildren())
-            renderNode(child, shader, meshTransform.mul(child.getTransform().toMat(), new Matrix4f()));
+            renderNode(child, shader, meshTransform.mul(child.getTransform().getMatrix(), new Matrix4f()));
     }
 
     private void renderMesh(Mesh mesh, ShaderProgram shader) {
@@ -173,14 +173,14 @@ public class Renderer {
 
     public void renderInstances(Model model, int numInstances, ShaderProgram shader, Matrix4fc combined) {
         shader.setUniform("uCombined", combined, false);
-        shader.setUniform("uModel", model.getFinalTransform().toMat(), false);
-        shader.setUniform("uNormal", model.getFinalTransform().toMat().invert().transpose().get3x3(new Matrix3f()), false); //TODO store in fixed matrix to lessen object creation
+        shader.setUniform("uModel", model.getFinalTransform().getMatrix(), false);
+        shader.setUniform("uNormal", model.getFinalTransform().getMatrix().invert(new Matrix4f()).transpose().get3x3(new Matrix3f()), false); //TODO store in fixed matrix to lessen object creation
 
         if (!model.doCulling()) glDisable(GL_CULL_FACE);
         if (model.hasTransparency()) glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         shader.start();
         Node rootNode = model.getNodes().getFirst();
-        renderNodeInstances(rootNode, numInstances, shader, rootNode.getTransform().toMat());
+        renderNodeInstances(rootNode, numInstances, shader, rootNode.getTransform().getMatrix());
         shader.stop();
         if (!model.doCulling()) glEnable(GL_CULL_FACE);
         if (model.hasTransparency()) glBlendFunc(GL_ONE, GL_ZERO);
@@ -193,7 +193,7 @@ public class Renderer {
             renderMeshInstances(mesh, numInstances, shader);
 
         for (Node child : node.getChildren())
-            renderNodeInstances(child, numInstances, shader, meshTransform.mul(child.getTransform().toMat(), new Matrix4f())); //TODO same as with normal, store precalculated in nodes
+            renderNodeInstances(child, numInstances, shader, meshTransform.mul(child.getTransform().getMatrix(), new Matrix4f())); //TODO same as with normal, store precalculated in nodes
     }
 
     private void renderMeshInstances(Mesh mesh, int numInstances, ShaderProgram shader) {

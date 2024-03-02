@@ -35,7 +35,7 @@ class TransformTest {
 
     @Test
     void emptyConstructor_IsIdentity_AndNotDirty() {
-        assertThat(fixture.toMat(), is(IDENTITY));
+        assertThat(fixture.getMatrix(), is(IDENTITY));
         assertDirtied(false);
     }
 
@@ -43,7 +43,7 @@ class TransformTest {
     @MethodSource
     void customConstructor_GivesCorrectMatrix(Transform transform, Matrix4f result) {
         fixture.set(transform);
-        assertThat(fixture.toMat(), matrixEqualTo(result));
+        assertThat(fixture.getMatrix(), matrixEqualTo(result));
     }
 
     @ParameterizedTest
@@ -147,7 +147,13 @@ class TransformTest {
     @ParameterizedTest
     @MethodSource
     void apply_CorrectlyTransforms(Transform firstTransform, Transform secondTransform, Matrix4f result) {
-        assertThat(firstTransform.apply(secondTransform).toMat(), matrixEqualTo(result));
+        assertThat(firstTransform.apply(secondTransform).getMatrix(), matrixEqualTo(result));
+    }
+
+    @ParameterizedTest
+    @MethodSource("apply_CorrectlyTransforms")
+    void applyToTarget_CorrectlyTransforms(Transform firstTransform, Transform secondTransform, Matrix4f result) {
+        assertThat(firstTransform.apply(secondTransform, new Transform()).getMatrix(), matrixEqualTo(result));
     }
 
     private static Stream<Arguments> apply_CorrectlyTransforms() {
@@ -164,19 +170,55 @@ class TransformTest {
                 arguments(
                         new Transform().translate(new Vector3f(1, 2, 3)),
                         new Transform().translate(new Vector3f(1, 2, 3)),
-                        new Matrix4f().translate(2, 4, 6))
+                        new Matrix4f().translate(2, 4, 6)),
+                arguments(
+                        new Transform(),
+                        new Transform().applyScale(scale -> scale.mul(2)),
+                        new Matrix4f().scale(2)),
+                arguments(
+                        new Transform().applyScale(scale -> scale.mul(2)),
+                        new Transform(),
+                        new Matrix4f().scale(2)),
+                arguments(
+                        new Transform().applyScale(scale -> scale.mul(2)),
+                        new Transform().applyScale(scale -> scale.mul(2)),
+                        new Matrix4f().scale(4)),
+                arguments(
+                        new Transform(),
+                        new Transform().applyRotation(quat -> quat.rotateX(toRadians(90)).rotateY(toRadians(-90))),
+                        new Matrix4f().rotateX(toRadians(90)).rotateY(toRadians(-90))),
+                arguments(
+                        new Transform().applyRotation(quat -> quat.rotateX(toRadians(90)).rotateY(toRadians(-90))),
+                        new Transform(),
+                        new Matrix4f().rotateX(toRadians(90)).rotateY(toRadians(-90))),
+                arguments(
+                        new Transform().applyRotation(quat -> quat.rotateX(toRadians(90)).rotateY(toRadians(-90))),
+                        new Transform().applyRotation(quat -> quat.rotateX(toRadians(90)).rotateY(toRadians(-90))),
+                        new Matrix4f().rotateX(toRadians(90)).rotateY(toRadians(-90)).rotateX(toRadians(90)).rotateY(toRadians(-90))),
+                arguments(
+                        new Transform().applyScale(scale -> scale.mul(2)).applyRotation(quat -> quat.rotateX(toRadians(90)).rotateY(toRadians(-90))).translate(new Vector3f(1, 2, 3)),
+                        new Transform(),
+                        new Matrix4f().translate(1, 2, 3).rotateX(toRadians(90)).rotateY(toRadians(-90)).scale(2)),
+                arguments(
+                        new Transform(),
+                        new Transform().applyScale(scale -> scale.mul(2)).applyRotation(quat -> quat.rotateX(toRadians(90)).rotateY(toRadians(-90))).translate(new Vector3f(1, 2, 3)),
+                        new Matrix4f().translate(1, 2, 3).rotateX(toRadians(90)).rotateY(toRadians(-90)).scale(2)),
+                arguments(
+                        new Transform().applyScale(scale -> scale.mul(2)).applyRotation(quat -> quat.rotateX(toRadians(90)).rotateY(toRadians(-90))).translate(new Vector3f(1, 2, 3)),
+                        new Transform().applyScale(scale -> scale.mul(2)).applyRotation(quat -> quat.rotateX(toRadians(90)).rotateY(toRadians(-90))).translate(new Vector3f(2,3, 4)),
+                        new Matrix4f().translate(1, 2, 3).rotateX(toRadians(90)).rotateY(toRadians(-90)).scale(2).translate(2, 3, 4).rotateX(toRadians(90)).rotateY(toRadians(-90)).scale(2))
         );
     }
 
     @Test
     void toMat_UpdatesMatrix_OnlyWhenDirty() {
         fixture = spy(fixture);
-        fixture.toMat();
+        fixture.getMatrix();
         verify(fixture, never()).updateTransform();
 
         fixture.setPosition(new Vector3f(1, 2, 3));
         assertDirtied(true);
-        Matrix4f matrix = fixture.toMat();
+        Matrix4fc matrix = fixture.getMatrix();
         verify(fixture, times(1)).updateTransform();
 
         assertThat(matrix, matrixEqualTo(new Matrix4f().translate(1, 2, 3)));

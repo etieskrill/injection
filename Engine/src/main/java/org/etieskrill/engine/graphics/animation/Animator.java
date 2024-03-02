@@ -36,23 +36,16 @@ public class Animator {
     //different conventions and/or file formats within the same goddamn model
     @Deprecated
     private final TransformC baseTransform;
-    private final Matrix4fc _baseTransform;
 
     private static final Logger logger = LoggerFactory.getLogger(Animator.class);
 
     public Animator(Animation animation, Model model) {
-        this(animation, model, (Transform) null, null);
+        this(animation, model, new Transform());
     }
 
     @Deprecated
-    public Animator(Animation animation, Model model, Matrix4f transform) {
-        this(animation, model, Transform.fromMatrix4f(transform), transform);
-    }
-
-    @Deprecated
-    public Animator(@NotNull Animation animation, @NotNull Model model, @Nullable Transform baseTransform, Matrix4f _baseTransform) {
-        logger.info("Loading animation {} for model '{}'", animation.getName(), model.getName());
-
+    public Animator(@NotNull Animation animation, @NotNull Model model, @Nullable TransformC baseTansform) {
+        logger.info("Loading animation '{}' for model '{}'", animation.getName(), model.getName());
         validateBonesInModel(animation, model);
 
         this.animation = animation;
@@ -65,8 +58,7 @@ public class Animator {
         for (int i = 0; i < MAX_BONES; i++) boneMatrices.add(new Matrix4f());
         this.boneMatrices = Collections.unmodifiableList(boneMatrices);
 
-        this.baseTransform = baseTransform != null ? baseTransform : new Transform();
-        this._baseTransform = _baseTransform != null ? _baseTransform : new Matrix4f();
+        this.baseTransform = baseTansform != null ? baseTansform : new Transform();
 
         updateBoneMatrices();
     }
@@ -123,11 +115,12 @@ public class Animator {
         // - set matrices instead of replacing entire list
         // - pass uniform arrays with single call (if possible)
         // - bake bone animations into bones / create a map here or in model
+        boneMatrices.forEach(matrix -> ((Matrix4f) matrix).identity()); //Technically not necessary, but helps identify if node transform does not work
         Node rootNode = model.getNodes().getFirst();
-        _updateBoneMatrices(rootNode, baseTransform, _baseTransform);
+        _updateBoneMatrices(rootNode, baseTransform);
     }
 
-    private void _updateBoneMatrices(Node node, TransformC transform, Matrix4fc trafo) {
+    private void _updateBoneMatrices(Node node, TransformC transform) {
         Bone bone = node.getBone();
         Transform localTransform = new Transform(node.getTransform()); //Set node transform as default
 
@@ -147,18 +140,14 @@ public class Animator {
         }
 
         TransformC nodeTransform = transform.apply(localTransform, new Transform());
-        Matrix4fc _nodeTransform = trafo.mul(localTransform.toMat(), new Matrix4f());
-        if (!nodeTransform.toMat().equals(_nodeTransform, .00001f)) {
-            System.out.println("diff: " + nodeTransform + "\n" + nodeTransform.toMat() + "\n" + _nodeTransform);
-        }
         if (bone != null) { //Set default or animated transform
-            ((Matrix4f) boneMatrices.get(bone.id())).set(new Matrix4f
-                    (_nodeTransform)
-                    .mul(bone.offset()));
+            ((Matrix4f) boneMatrices.get(bone.id()))
+                    .set(nodeTransform.getMatrix())
+                    .mul(bone.offset());
         }
 
         for (Node child : node.getChildren())
-            _updateBoneMatrices(child, nodeTransform, trafo);
+            _updateBoneMatrices(child, nodeTransform);
     }
 
     private <T> @NotNull T interpolate(BoneAnimation anim, List<Double> timings, List<T> values) {
