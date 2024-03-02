@@ -183,7 +183,7 @@ public class Game {
 
             vampyAnimator.update(pacer.getDeltaTimeSeconds());
 
-            vampyShader.setBoneMatrices(vampyAnimator.getBoneMatrices());
+            vampyShader.setBoneMatrices(vampyAnimator.getBoneTransformMatrices());
             vampyShader.setGlobalLights(globalLight);
 
             renderer.render(vampy, vampyShader, camera.getCombined());

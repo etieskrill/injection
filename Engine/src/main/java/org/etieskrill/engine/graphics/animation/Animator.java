@@ -29,7 +29,7 @@ public class Animator {
     private double playbackSpeed;
 
     @UnmodifiableView
-    private final List<Matrix4fc> boneMatrices;
+    private final List<TransformC> boneTransforms;
 
     //Lazy solution to animations having different global transform from others for same model, which should never
     //really be the case, as this should be resolved while loading the node/animation transforms, or just by not having
@@ -54,9 +54,9 @@ public class Animator {
         this.playing = false;
         this.playbackSpeed = 1;
 
-        List<Matrix4f> boneMatrices = new ArrayList<>(MAX_BONES);
-        for (int i = 0; i < MAX_BONES; i++) boneMatrices.add(new Matrix4f());
-        this.boneMatrices = Collections.unmodifiableList(boneMatrices);
+        List<Transform> boneTransforms = new ArrayList<>(MAX_BONES);
+        for (int i = 0; i < MAX_BONES; i++) boneTransforms.add(new Transform());
+        this.boneTransforms = Collections.unmodifiableList(boneTransforms);
 
         this.baseTransform = baseTansform != null ? baseTansform : new Transform();
 
@@ -106,8 +106,12 @@ public class Animator {
         this.playbackSpeed = playbackSpeed;
     }
 
-    public List<Matrix4fc> getBoneMatrices() {
-        return boneMatrices;
+    public List<TransformC> getBoneTransforms() {
+        return boneTransforms;
+    }
+
+    public List<Matrix4fc> getBoneTransformMatrices() {
+        return boneTransforms.stream().map(TransformC::getMatrix).toList();
     }
 
     private void updateBoneMatrices() {
@@ -115,7 +119,7 @@ public class Animator {
         // - set matrices instead of replacing entire list
         // - pass uniform arrays with single call (if possible)
         // - bake bone animations into bones / create a map here or in model
-        boneMatrices.forEach(matrix -> ((Matrix4f) matrix).identity()); //Technically not necessary, but helps identify if node transform does not work
+        boneTransforms.forEach(transform -> ((Transform) transform).identity()); //Technically not necessary, but helps identify if node transform does not work
         Node rootNode = model.getNodes().getFirst();
         _updateBoneMatrices(rootNode, baseTransform);
     }
@@ -141,9 +145,9 @@ public class Animator {
 
         TransformC nodeTransform = transform.apply(localTransform, new Transform());
         if (bone != null) { //Set default or animated transform
-            ((Matrix4f) boneMatrices.get(bone.id()))
-                    .set(nodeTransform.getMatrix())
-                    .mul(bone.offset());
+            ((Transform) boneTransforms.get(bone.id()))
+                    .set(nodeTransform)
+                    .apply(bone.offset());
         }
 
         for (Node child : node.getChildren())

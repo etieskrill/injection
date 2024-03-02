@@ -1,5 +1,6 @@
 package org.etieskrill.engine.graphics.model.loader;
 
+import org.etieskrill.engine.entity.data.Transform;
 import org.etieskrill.engine.graphics.animation.Animation;
 import org.etieskrill.engine.graphics.animation.BoneAnimation;
 import org.etieskrill.engine.graphics.model.Bone;
@@ -111,7 +112,7 @@ class AnimationLoader {
                 .forEach(aiBone -> bones.add(new Bone(
                         aiBone.mName().dataString(),
                         boneId[0]++,
-                        AssimpUtils.fromAI(aiBone.mOffsetMatrix())
+                        new Transform(AssimpUtils.fromAI(aiBone.mOffsetMatrix()))
                 )));
         logger.trace("Loaded {} vertex weight{} for {} bone{}: {}",
                 totalNumVertexWeights[0], totalNumVertexWeights[0] == 1 ? "" : "s",
