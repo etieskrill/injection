@@ -14,6 +14,7 @@ public class InputBinding {
     public enum Trigger {
         ON_PRESS,
         PRESSED,
+        //TODO add ON_RELEASE and RELEASED events
         ON_TOGGLE,
         TOGGLED
     }

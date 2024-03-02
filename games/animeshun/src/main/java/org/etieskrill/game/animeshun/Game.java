@@ -1,24 +1,30 @@
 package org.etieskrill.game.animeshun;
 
+import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.Camera;
+import org.etieskrill.engine.graphics.OrthographicCamera;
 import org.etieskrill.engine.graphics.PerspectiveCamera;
 import org.etieskrill.engine.graphics.animation.Animation;
 import org.etieskrill.engine.graphics.animation.Animator;
 import org.etieskrill.engine.graphics.data.DirectionalLight;
 import org.etieskrill.engine.graphics.gl.Renderer;
+import org.etieskrill.engine.graphics.gl.shaders.Shaders;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.model.loader.Loader;
+import org.etieskrill.engine.graphics.texture.font.Fonts;
+import org.etieskrill.engine.graphics.texture.font.TrueTypeFont;
 import org.etieskrill.engine.input.Input;
 import org.etieskrill.engine.input.KeyInputManager;
 import org.etieskrill.engine.input.Keys;
+import org.etieskrill.engine.scene.Scene;
+import org.etieskrill.engine.scene.component.Container;
 import org.etieskrill.engine.scene.component.Label;
+import org.etieskrill.engine.scene.component.Node;
 import org.etieskrill.engine.time.LoopPacer;
 import org.etieskrill.engine.time.SystemNanoTimePacer;
 import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.window.Window;
-import org.joml.Matrix4f;
-import org.joml.Vector2d;
-import org.joml.Vector3f;
+import org.joml.*;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,6 +59,8 @@ public class Game {
 
     private int currentAnimation = 0;
     private final List<Animator> vampyAnimators = new ArrayList<>();
+
+    private Scene scene;
     private Label animationSelector;
 
     private int boneSelector = 4;
@@ -73,6 +81,7 @@ public class Game {
             Input.bind(Keys.E).on(ON_PRESS).to(() -> {
                 currentAnimation = ++currentAnimation % (vampyAnimators.size());
                 vampyAnimator = vampyAnimators.get(currentAnimation);
+                animationSelector.setText("Current animation " + (currentAnimation + 1) + " of " + vampyAnimators.size() + ": " + vampyAnimators.get(currentAnimation).getAnimation().getName());
                 logger.info("Switching to animation {}, '{}'", currentAnimation, vampyAnimators.get(currentAnimation).getAnimation().getName());
             }),
             Input.bind(Keys.R).on(ON_PRESS).to(() -> {
@@ -112,6 +121,11 @@ public class Game {
         List<Animation> orcIdle = Loader.loadModelAnimations("mixamo_orc_idle.dae", vampy);
         vampyAnimators.add(0, new Animator(orcIdle.getFirst(), vampy));
 
+        List<Animation> running = Loader.loadModelAnimations("mixamo_running.dae", vampy);
+        Animator vampyRunningAnimator = new Animator(running.getFirst(), vampy);
+        vampyRunningAnimator.setPlaybackSpeed(.85);
+        vampyAnimators.add(vampyRunningAnimator);
+
         //Different formats sport different conventions or restrictions for the global up direction, one could either
         // - try to deduce up (and scale for that matter) from the root node of a scene, which is not difficult at all
         // - or at least stay consistent with file formats within the same bloody model
@@ -146,10 +160,30 @@ public class Game {
                     sensitivity * (prevMousePosition.x() - xpos), 0);
             prevMousePosition.set(xpos, ypos);
         });
+
+        animationSelector = new Label(
+                "Current animation " + (currentAnimation + 1) + " of " + vampyAnimators.size() + ": " + vampyAnimators.get(currentAnimation).getAnimation().getName(),
+                Fonts.getDefault(36)
+        );
+        scene = new Scene(
+                new Batch(renderer).setShader(Shaders.getTextShader()),
+                new Container(
+                        animationSelector.setAlignment(Node.Alignment.TOP_RIGHT)
+                                .setMargin(new Vector4f(10))
+                ),
+                new OrthographicCamera(window.getSize().toVec()).setPosition(new Vector3f(window.getSize().toVec().mul(.5f), 0))
+        );
+        window.setScene(scene);
     }
+
+    double walkingLinearFactor = 0, runningLinearFactor = 0;
+    boolean qPressedPrevious = false;
 
     private void loop() {
         pacer.start();
+
+        vampyAnimators.get(1).play();
+        vampyAnimators.get(2).play();
         while (!window.shouldClose()) {
             renderer.prepare();
 
@@ -158,9 +192,39 @@ public class Game {
 //                    .setScale(newScale)
 //                    .applyRotation(rotation -> rotation.rotateY((float) pacer.getDeltaTimeSeconds()));
 
-            vampyAnimator.update(pacer.getDeltaTimeSeconds());
+            List<Matrix4fc> mixedMatrices = new ArrayList<>();
+            for (int i = 0; i < 100; i++) {
+                mixedMatrices.add(new Matrix4f());
+            }
 
-            vampyShader.setBoneMatrices(vampyAnimator.getBoneMatrices());
+            //TODO smoothstep the interpolation factor over time, and that may just be mixing animations already.
+            // though, literally using lerp cannot mathematically be correct, is what my gut tells me at least.
+
+            vampyAnimators.get(1).update(pacer.getDeltaTimeSeconds());
+            vampyAnimators.get(2).update(pacer.getDeltaTimeSeconds());
+
+            //TODO control schemes definitely call for a declarative facade
+            if (!controls.isPressed(Keys.CONTROL)) {
+                if (controls.isPressed(Keys.Q)) {
+                    if (walkingLinearFactor < 1) walkingLinearFactor += 1.25 * pacer.getDeltaTimeSeconds();
+                } else if (walkingLinearFactor > 0) walkingLinearFactor -= 1.25 * pacer.getDeltaTimeSeconds();
+            } else if (controls.isPressed(Keys.Q)) {
+            }
+
+            double walkingSmoothFactor;
+            if (walkingLinearFactor < .5) walkingSmoothFactor = 2 * walkingLinearFactor * walkingLinearFactor;
+            else walkingSmoothFactor = 1 - ((-2 * walkingLinearFactor + 2) * (-2 * walkingLinearFactor + 2) * 0.5);
+
+            for (int i = 0; i < vampyAnimators.get(1).getBoneMatrices().size(); i++) {
+                mixedMatrices.set(i, vampyAnimators.get(1).getBoneMatrices().get(i).lerp(
+                        vampyAnimators.get(2).getBoneMatrices().get(i),
+                        (float) walkingSmoothFactor, new Matrix4f()
+                ));
+            }
+
+            vampyAnimator.update(pacer.getDeltaTimeSeconds());
+            vampyShader.setBoneMatrices(mixedMatrices);
+//            vampyShader.setBoneMatrices(vampyAnimator.getBoneMatrices());
             vampyShader.setGlobalLights(globalLight);
 
             renderer.render(vampy, vampyShader, camera.getCombined());
@@ -176,6 +240,7 @@ public class Game {
     private void terminate() {
         window.close();
         Loaders.disposeDefaultLoaders();
+        TrueTypeFont.disposeLibrary();
     }
 
     public static void main(String[] args) {
