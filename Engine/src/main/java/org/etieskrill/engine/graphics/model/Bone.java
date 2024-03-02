@@ -1,6 +1,6 @@
 package org.etieskrill.engine.graphics.model;
 
-import org.joml.Matrix4fc;
+import org.etieskrill.engine.entity.data.TransformC;
 import org.lwjgl.assimp.AIVertexWeight;
 
 import java.text.MessageFormat;
@@ -21,7 +21,7 @@ import java.util.Objects;
 public record Bone(
         String name,
         int id,
-        Matrix4fc offset
+        TransformC offset
 ) {
     @Override
     public String toString() {

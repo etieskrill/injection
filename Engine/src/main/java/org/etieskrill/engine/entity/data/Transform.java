@@ -87,7 +87,7 @@ public class Transform implements TransformC {
         return this;
     }
     
-    public Transform setPosition(@NotNull Transform transform) {
+    public Transform setPosition(@NotNull TransformC transform) {
         return setPosition(requireNonNull(transform).getPosition());
     }
 
@@ -97,7 +97,7 @@ public class Transform implements TransformC {
         return this;
     }
     
-    public Transform translate(@NotNull Transform transform) {
+    public Transform translate(@NotNull TransformC transform) {
         return translate(requireNonNull(transform).getPosition());
     }
 
@@ -116,7 +116,7 @@ public class Transform implements TransformC {
         return setScale(new Vector3f(scale));
     }
     
-    public Transform setScale(Transform transform) {
+    public Transform setScale(TransformC transform) {
         return setScale(transform.getScale());
     }
 
@@ -152,7 +152,7 @@ public class Transform implements TransformC {
         return this;
     }
 
-    public Transform setRotation(Transform transform) {
+    public Transform setRotation(TransformC transform) {
         return setRotation(transform.getRotation());
     }
 
@@ -184,7 +184,7 @@ public class Transform implements TransformC {
         return transform;
     }
 
-    public Transform set(Transform transform) {
+    public Transform set(TransformC transform) {
         setPosition(transform);
         setRotation(transform);
         setScale(transform);
@@ -211,6 +211,15 @@ public class Transform implements TransformC {
     @Contract(value = "_ -> this", mutates = "this")
     public Transform apply(@NotNull TransformC transform) {
         return apply(transform, this);
+    }
+
+    public Transform identity() {
+        this.position.set(0);
+        this.rotation.identity();
+        this.scale.set(1);
+        this.transform.identity();
+
+        return this;
     }
     
     void updateTransform() {
