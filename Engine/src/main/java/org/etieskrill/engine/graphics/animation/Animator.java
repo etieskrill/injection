@@ -13,6 +13,14 @@ import java.util.List;
 import static org.etieskrill.engine.graphics.animation.Animation.MAX_BONES;
 
 
+/**
+ * <p>The {@code Animator} is used to animate a specific, but not necessarily singular, {@link Model}. It offers a way
+ * to group together animations whose skeletons are compatible, as well as an interface for blending between them.</p>
+ * <p>The {@code Animator} acts as the primary control unit in any animation workflow - it also offers the more usable
+ * side of the animation api as a whole right now.</p>
+ * <p>Every model which beckons for animation should have at most one animator influencing it's skinned skeleton.</p>
+ */
+//TODO in-detail description of animation workflow
 public class Animator {
 
     private final List<AnimationProvider> animationProviders;
@@ -29,10 +37,28 @@ public class Animator {
 
     private static final Logger logger = LoggerFactory.getLogger(Animator.class);
 
+    /**
+     * Construct a new animator for a specific {@link Model}. The skeleton of any {@link Animation Animation} added to
+     * this {@code Animator} must be compatible with the {@code Model's} skeleton.
+     *
+     * @param model the model influenced by added animations
+     */
     public Animator(@NotNull Model model) {
         this(new ArrayList<>(), new AnimationMixer(), model);
     }
 
+    /**
+     * Construct a new animator for a specific {@link Model}. The skeletons of all {@link Animation Animations} passed
+     * in this constructor must be compatible with the {@code Model's} skeleton.
+     * <br>
+     * This is a rather clunky constructor, use {@link Animator#Animator(Model)} instead.
+     *
+     * @param animationProviders the animations in this group
+     * @param animationMixer
+     * @param model the model influenced by added animations
+     *
+     * @see Animator#Animator(Model)
+     */
     public Animator(
             @NotNull List<AnimationProvider> animationProviders,
             @NotNull AnimationMixer animationMixer,
@@ -61,24 +87,47 @@ public class Animator {
         this.playbackSpeed = 1;
     }
 
+    /**
+     * Resets the current time to zero and plays all {@link Animation Animations} bound to this {@code Animator}.
+     */
     public void play() {
         currentTimeSeconds = 0;
         playing = true;
     }
 
+    /**
+     * Stops all {@link Animation Animations} bound to this {@code Animator}.
+     */
     public void stop() {
         playing = false;
     }
 
+    /**
+     * Switches the current play-state of all animations bound to this {@code Animator} to the opposite of what it was
+     * at the time of calling.
+     *
+     * @see Animator#play()
+     * @see Animator#stop()
+     */
     public void switchPlaying() {
         if (isPlaying()) stop();
         else play();
     }
 
+    /**
+     * @return whether bound {@link Animation Animations} are playing
+     */
     public boolean isPlaying() {
         return playing;
     }
 
+    /**
+     * Updates the current animation time and retrieves all transforms for bound {@link Animation Animations} at the
+     * new time, combines them using the provided {@link AnimationMixer}, and updates the list of
+     * {@link Transform Transforms}, which can be retrieved with {@link Animator#getTransforms()}.
+     *
+     * @param delta time since the last animation frame
+     */
     public void update(double delta) {
         if (!playing) return;
         currentTimeSeconds += delta * playbackSpeed;
@@ -94,7 +143,7 @@ public class Animator {
         //   !- add (multivariate lerp) or override (set) in layer order
         //    - apply additive with filter, and override exclusively with filter
         // - !retrieve from mixer
-        // - apply post processing ()
+        // - apply post processing (physics sims (cloth, rigid), procedural animation etc.)
         // - !bake into model space
         // - !return final bone matrices
 
@@ -112,14 +161,7 @@ public class Animator {
     }
 
     public Animator add(Animation animation) {
-        animationProviders.add(new AnimationProvider(animation, model));
-        animationMixer.addAdditiveAnimation(0);
-
-        List<Transform> providerTransform = new ArrayList<>(MAX_BONES);
-        for (int j = 0; j < MAX_BONES; j++) providerTransform.add(new Transform());
-        providerTransforms.add(providerTransform);
-
-        return this;
+        return add(animation, 0);
     }
 
     public Animator add(Animation animation, float weight) {
