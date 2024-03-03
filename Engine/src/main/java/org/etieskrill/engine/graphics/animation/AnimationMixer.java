@@ -19,8 +19,8 @@ public class AnimationMixer {
         for (int i = 0; i < MAX_BONES; i++) transforms.add(new Transform());
     }
 
-    public AnimationMixer addAdditiveAnimation(float factor) {
-        animationLayers.add(new AnimationLayer(AnimationBlendMode.ADDITIVE, factor));
+    public AnimationMixer addAdditiveAnimation(float weight) {
+        animationLayers.add(new AnimationLayer(AnimationBlendMode.ADDITIVE, weight));
         return this;
     }
 
@@ -29,7 +29,20 @@ public class AnimationMixer {
         return this;
     }
 
-    public List<Transform> mixAnimations(List<List<Transform>> providerTransforms) {
+    public void setWeights(List<Float> weights) {
+        List<AnimationLayer> additiveLayers = animationLayers.stream()
+                .filter(layer -> layer.getBlendMode() == AnimationBlendMode.ADDITIVE)
+                .toList();
+
+        if (weights.size() != additiveLayers.size())
+            throw new IllegalArgumentException("Number of weights does not match number of additive animations");
+
+        for (int i = 0; i < additiveLayers.size(); i++) {
+            additiveLayers.get(i).setWeight(weights.get(i));
+        }
+    }
+
+    List<Transform> mixAnimations(List<List<Transform>> providerTransforms) {
         if (providerTransforms.size() != animationLayers.size())
             throw new IllegalArgumentException("There must be exactly one layer for each provider");
 

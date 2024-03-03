@@ -7,8 +7,6 @@ import org.etieskrill.engine.graphics.Camera;
 import org.etieskrill.engine.graphics.OrthographicCamera;
 import org.etieskrill.engine.graphics.PerspectiveCamera;
 import org.etieskrill.engine.graphics.animation.Animation;
-import org.etieskrill.engine.graphics.animation.AnimationMixer;
-import org.etieskrill.engine.graphics.animation.AnimationProvider;
 import org.etieskrill.engine.graphics.animation.Animator;
 import org.etieskrill.engine.graphics.data.DirectionalLight;
 import org.etieskrill.engine.graphics.gl.Renderer;
@@ -129,21 +127,12 @@ public class Game {
         Transform vampyHipHopTransform = Transform.fromMatrix4f(new Matrix4f().m11(0).m12(-1).m21(1).m22(0).invert());
         hipHopDance.getFirst().setBaseTransform(vampyHipHopTransform);
 
-        vampyAnimator = new Animator(
-                List.of(new AnimationProvider(orcIdle.getFirst(), vampy),
-                        new AnimationProvider(vampy.getAnimations().getFirst(), vampy),
-                        new AnimationProvider(running.getFirst(), vampy),
-                        new AnimationProvider(waving.getFirst(), vampy),
-                        new AnimationProvider(hipHopDance.getFirst(), vampy)
-                ),
-                new AnimationMixer()
-                        .addAdditiveAnimation(.5f)
-                        .addAdditiveAnimation(.0f)
-                        .addAdditiveAnimation(.0f)
-                        .addAdditiveAnimation(.5f)
-                        .addAdditiveAnimation(.0f),
-                vampy
-        );
+        vampyAnimator = new Animator(vampy)
+                .add(orcIdle.getFirst(), .5f)
+                .add(vampy.getAnimations().getFirst())
+                .add(running.getFirst())
+                .add(waving.getFirst(), .5f)
+                .add(hipHopDance.getFirst());
 
         vampyShader = (AnimationShader) Loaders.ShaderLoader.get().load("vampyShader", AnimationShader::new);
         vampyShader.setShowBoneSelector(boneSelector);
