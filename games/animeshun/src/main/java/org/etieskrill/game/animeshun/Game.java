@@ -1,13 +1,15 @@
 package org.etieskrill.game.animeshun;
 
 import org.etieskrill.engine.entity.data.Transform;
+import org.etieskrill.engine.entity.data.TransformC;
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.Camera;
 import org.etieskrill.engine.graphics.OrthographicCamera;
 import org.etieskrill.engine.graphics.PerspectiveCamera;
 import org.etieskrill.engine.graphics.animation.Animation;
+import org.etieskrill.engine.graphics.animation.AnimationMixer;
+import org.etieskrill.engine.graphics.animation.AnimationProvider;
 import org.etieskrill.engine.graphics.animation.Animator;
-import org.etieskrill.engine.graphics.animation.MultiAnimator;
 import org.etieskrill.engine.graphics.data.DirectionalLight;
 import org.etieskrill.engine.graphics.gl.Renderer;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
@@ -60,7 +62,7 @@ public class Game {
     private DirectionalLight globalLight;
 
     private int currentAnimation = 0;
-    private MultiAnimator vampyAnimator;
+    private Animator vampyAnimator;
 
     private Label animationSelector;
 
@@ -80,9 +82,9 @@ public class Game {
                 logger.info("Vampy animation is {}", vampyAnimator.isPlaying() ? "playing" : "stopped");
             }),
             Input.bind(Keys.E).on(ON_PRESS).to(() -> {
-                currentAnimation = ++currentAnimation % (vampyAnimator.getAnimators().size());
-                animationSelector.setText("Current animation " + (currentAnimation + 1) + " of " + vampyAnimator.getAnimators().size() + ": " + vampyAnimator.getAnimators().get(currentAnimation).getAnimation().getName());
-                logger.info("Switching to animation {}, '{}'", currentAnimation, vampyAnimator.getAnimators().get(currentAnimation).getAnimation().getName());
+                currentAnimation = ++currentAnimation % (vampyAnimator.getAnimationProviders().size());
+                animationSelector.setText("Current animation " + (currentAnimation + 1) + " of " + vampyAnimator.getAnimationProviders().size() + ": " + vampyAnimator.getAnimationProviders().get(currentAnimation).getAnimation().getName());
+                logger.info("Switching to animation {}, '{}'", currentAnimation, vampyAnimator.getAnimationProviders().get(currentAnimation).getAnimation().getName());
             }),
             Input.bind(Keys.R).on(ON_PRESS).to(() -> {
                 boneSelector = ++boneSelector % 5;
@@ -116,20 +118,9 @@ public class Game {
                 .setPosition(new Vector3f(2.5f, -1f, 0f))
                 .applyRotation(quat -> quat.rotateY(toRadians(-90)));
 
-        vampyAnimator = new MultiAnimator(vampy);
-        vampyAnimator.add(new Animator(vampy.getAnimations().getFirst(), vampy), 0f);
-
         List<Animation> orcIdle = Loader.loadModelAnimations("mixamo_orc_idle.dae", vampy);
-        vampyAnimator.add(0, new Animator(orcIdle.getFirst(), vampy), 1f);
-
         List<Animation> running = Loader.loadModelAnimations("mixamo_running.dae", vampy);
-        Animator vampyRunningAnimator = new Animator(running.getFirst(), vampy);
-        vampyRunningAnimator.setPlaybackSpeed(.85);
-        vampyAnimator.add(vampyRunningAnimator, 0f);
-
         List<Animation> waving = Loader.loadModelAnimations("mixamo_waving.dae", vampy);
-        vampyAnimator.add(new Animator(waving.getFirst(), vampy), 1f);
-        vampyAnimator.getAnimators().getFirst().setSecondAnimation(waving.getFirst());
 
         //Different formats sport different conventions or restrictions for the global up direction, one could either
         // - try to deduce up (and scale for that matter) from the root node of a scene, which is not difficult at all
@@ -137,7 +128,22 @@ public class Game {
         List<Animation> hipHopDance = Loader.loadModelAnimations("vampire_hip_hop.glb", vampy);
         Transform vampyHipHopTransform = Transform.fromMatrix4f(new Matrix4f().m11(0).m12(-1).m21(1).m22(0).invert());
         hipHopDance.getFirst().setBaseTransform(vampyHipHopTransform);
-        vampyAnimator.add(new Animator(hipHopDance.get(2), vampy), 0f);
+
+        vampyAnimator = new Animator(
+                List.of(new AnimationProvider(orcIdle.getFirst(), vampy),
+                        new AnimationProvider(vampy.getAnimations().getFirst(), vampy),
+                        new AnimationProvider(running.getFirst(), vampy),
+                        new AnimationProvider(waving.getFirst(), vampy),
+                        new AnimationProvider(hipHopDance.getFirst(), vampy)
+                ),
+                new AnimationMixer()
+                        .addAdditiveAnimation(.5f)
+                        .addAdditiveAnimation(.0f)
+                        .addAdditiveAnimation(.0f)
+                        .addAdditiveAnimation(.5f)
+                        .addAdditiveAnimation(.0f),
+                vampy
+        );
 
         vampyShader = (AnimationShader) Loaders.ShaderLoader.get().load("vampyShader", AnimationShader::new);
         vampyShader.setShowBoneSelector(boneSelector);
@@ -161,7 +167,7 @@ public class Game {
         });
 
         animationSelector = new Label(
-                "Current animation " + (currentAnimation + 1) + " of " + vampyAnimator.getAnimators().size() + ": " + vampyAnimator.getAnimators().get(currentAnimation).getAnimation().getName(),
+                "Current animation " + (currentAnimation + 1) + " of " + vampyAnimator.getAnimationProviders().size() + ": " + vampyAnimator.getAnimationProviders().get(currentAnimation).getAnimation().getName(),
                 Fonts.getDefault(36)
         );
         Scene scene = new Scene(
@@ -176,13 +182,15 @@ public class Game {
     }
 
     private void loop() {
+        vampyAnimator.play();
+
         pacer.start();
         while (!window.shouldClose()) {
             renderer.prepare();
 
             vampyAnimator.update(pacer.getDeltaTimeSeconds());
 
-            vampyShader.setBoneMatrices(vampyAnimator.getBoneTransformMatrices());
+            vampyShader.setBoneMatrices(vampyAnimator.getTransforms().stream().map(TransformC::getMatrix).toList());
             vampyShader.setGlobalLights(globalLight);
 
             renderer.render(vampy, vampyShader, camera.getCombined());
