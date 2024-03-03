@@ -265,7 +265,7 @@ public abstract class ShaderProgram implements Disposable {
         setUniformValue(uniform, location, value);
     }
     
-    public void setUniformArray(String name, Object[] values) {
+    public void setUniformArray(String name, Object[] values) { //TODO use the glUniform[...]v family of functions to set arrays
         for (int i = 0; i < values.length; i++)
             setUniformArray(name, i, values[i]);
     }

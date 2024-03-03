@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.params.provider.Arguments.of;
 
 class MathUtilsTest {
@@ -27,6 +28,21 @@ class MathUtilsTest {
                 of(list(.5f), list(1f)),
                 of(list(0f, 1f), list(0f, 1f)),
                 of(list(1f, 2f, 2f), list(.2f, .4f, .4f))
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    void shouldFailNormalisationOnNegativeValues(List<Float> components) {
+        assertThrows(IllegalArgumentException.class, () -> MathUtils.normalise(components));
+    }
+
+    private static Stream<List<Float>> shouldFailNormalisationOnNegativeValues() {
+        return Stream.of(
+                list(-1f),
+                list(-1f, -2f),
+                list(1f, -1f, 2f),
+                list(-5f, 10f, -15f)
         );
     }
 

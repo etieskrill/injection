@@ -12,7 +12,9 @@ public class MathUtils {
     }
 
     @Contract(mutates = "param1")
-    public static List<Float> normalise(@NotNull List<Float> components) {
+    public static List<Float> normalise(@NotNull List<@NotNull Float> components) {
+        if (components.stream().anyMatch(component -> component < 0f))
+            throw new IllegalArgumentException("Components must not be negative");
         float componentSum = (float) components.stream().mapToDouble(Number::doubleValue).sum();
         if (componentSum == 0) {
             Collections.fill(components, (float) 0);
@@ -27,7 +29,7 @@ public class MathUtils {
     }
 
     @Contract(mutates = "param1")
-    public static List<Double> normaliseD(@NotNull List<Double> components) {
+    public static List<Double> normaliseD(@NotNull List<@NotNull Double> components) {
         double componentSum = components.stream().mapToDouble(Number::doubleValue).sum();
         if (componentSum == 0) {
             Collections.fill(components, 0d);
