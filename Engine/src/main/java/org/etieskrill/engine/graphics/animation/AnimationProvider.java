@@ -1,7 +1,6 @@
 package org.etieskrill.engine.graphics.animation;
 
 import org.etieskrill.engine.entity.data.Transform;
-import org.etieskrill.engine.entity.data.TransformC;
 import org.etieskrill.engine.graphics.model.Bone;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.model.Node;
@@ -24,7 +23,7 @@ public class AnimationProvider {
 
     public AnimationProvider(@NotNull Animation animation, @NotNull Model model) {
         logger.info("Loading animation '{}' for model '{}'", animation.getName(), model.getName());
-        AbstractAnimator.validateBonesInModel(animation, model);
+        validateBonesInModel(animation, model);
 
         this.animation = animation;
         this.rootNode = model.getNodes().getFirst();
@@ -34,10 +33,19 @@ public class AnimationProvider {
         return animation;
     }
 
-    public List<TransformC> getLocalBoneTransforms(List<Transform> boneTransforms, double currentTicks) {
+    public List<Transform> getLocalBoneTransforms(List<Transform> boneTransforms, double currentTimeSeconds) {
+        //TODO get performance counters going, then
+        // - pass uniform arrays with single call
+        // - bake bone animations into bones / create a map here or in model
+        double currentTicks = currentTimeSeconds * animation.getTicksPerSecond();
+        switch (animation.getBehaviour()) {
+            case REPEAT -> currentTicks %= animation.getDuration();
+            default -> throw new IllegalArgumentException("Unexpected behaviour: " + animation.getBehaviour());
+        }
+
         boneTransforms.forEach(Transform::identity);
         updateBoneTransforms(boneTransforms, currentTicks, rootNode);
-        return boneTransforms.stream().map(transform -> (TransformC) transform).toList();
+        return boneTransforms;
     }
 
     private void updateBoneTransforms(List<Transform> boneTransforms, double currentTicks, Node node) {
@@ -115,6 +123,26 @@ public class AnimationProvider {
             case Quaternionfc quaternion -> (T) quaternion.slerp((Quaternionfc) value2, t, new Quaternionf());
             default -> throw new IllegalStateException("Unexpected value: " + value1);
         };
+    }
+
+    protected static void validateBonesInModel(Animation animation, Model model) { //TODO this should happen only once while loading the data
+        List<Bone> bones = animation.getBoneAnimations().stream()
+                .map(BoneAnimation::bone)
+                .toList();
+
+        if (bones.stream().anyMatch(bone -> !model.getBones().contains(bone))) {
+            throw new IllegalArgumentException("Animation contains bones which are not present in the model");
+        }
+
+        logger.atTrace().log(() -> {
+            List<Bone> nonAnimatedBones = model.getBones().stream()
+                    .filter(bone -> !bones.contains(bone))
+                    .toList();
+            if (!nonAnimatedBones.isEmpty())
+                return "Bones contain no animation data: " + nonAnimatedBones;
+            else
+                return "All bones are animated";
+        });
     }
 
 }

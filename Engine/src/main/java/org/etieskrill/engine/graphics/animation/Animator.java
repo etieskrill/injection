@@ -2,188 +2,117 @@ package org.etieskrill.engine.graphics.animation;
 
 import org.etieskrill.engine.entity.data.Transform;
 import org.etieskrill.engine.entity.data.TransformC;
-import org.etieskrill.engine.graphics.model.Bone;
 import org.etieskrill.engine.graphics.model.Model;
-import org.etieskrill.engine.graphics.model.Node;
 import org.jetbrains.annotations.NotNull;
-import org.joml.Quaternionf;
-import org.joml.Quaternionfc;
-import org.joml.Vector3f;
-import org.joml.Vector3fc;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import static org.etieskrill.engine.graphics.animation.Animation.MAX_BONES;
 
-public class Animator extends AbstractAnimator {
 
-    private final Animation animation;
-    private Animation secondAnimation;
+public class Animator {
 
-    private double currentTicks;
+    private final List<AnimationProvider> animationProviders;
+    private final List<List<Transform>> providerTransforms;
+    private final List<TransformC> transforms;
+
+    private final AnimationMixer animationMixer;
+
+    private final Model model;
+
+    private boolean playing;
+    private double currentTimeSeconds;
+    private double playbackSpeed;
 
     private static final Logger logger = LoggerFactory.getLogger(Animator.class);
 
-    public Animator(@NotNull Animation animation, @NotNull Model model) {
-        super(model);
+    public Animator(
+            @NotNull List<AnimationProvider> animationProviders,
+            @NotNull AnimationMixer animationMixer,
+            @NotNull Model model
+    ) {
+        logger.info("Loading {} animation{}: {}", animationProviders.size(), animationProviders.size() == 1 ? "" : "s",
+                animationProviders.stream().map(AnimationProvider::getAnimation).map(Animation::getName).toList());
 
-        logger.info("Loading animation '{}' for model '{}'", animation.getName(), model.getName());
-        validateBonesInModel(animation, model);
+        this.animationProviders = animationProviders;
+        this.providerTransforms = new ArrayList<>(animationProviders.size());
+        for (int i = 0; i < animationProviders.size(); i++) {
+            List<Transform> providerTransform = new ArrayList<>(MAX_BONES);
+            for (int j = 0; j < MAX_BONES; j++) providerTransform.add(new Transform());
+            providerTransforms.add(providerTransform);
+        }
 
-        this.animation = animation;
+        this.transforms = new ArrayList<>(MAX_BONES);
+        for (int i = 0; i < MAX_BONES; i++) transforms.add(new Transform());
 
-        updateBoneMatrices();
+        this.animationMixer = animationMixer;
+
+        this.model = model;
+
+        this.playing = false;
+        this.currentTimeSeconds = 0;
+        this.playbackSpeed = 1;
     }
 
     public void play() {
-        currentTicks = 0;
+        currentTimeSeconds = 0;
         playing = true;
     }
 
-    @Override
     public void stop() {
         playing = false;
     }
 
-    private int updates = 0;
-    @Override
+    public void switchPlaying() {
+        if (isPlaying()) stop();
+        else play();
+    }
+
+    public boolean isPlaying() {
+        return playing;
+    }
+
     public void update(double delta) {
         if (!playing) return;
-        currentTicks += animation.getTicksPerSecond() * delta * playbackSpeed;
-        currentTicks %= animation.getDuration();
-        updateBoneMatrices();
-        if (updates++ % 60 == 0)
-            logger.debug("Playing animation {}, tick {} of {} @ {} ticks/s",
-                    animation.getName(),
-                    String.format("%7.1f", currentTicks), animation.getDuration(),
-                    String.format("%5.1f", animation.getTicksPerSecond()));
-    }
+        currentTimeSeconds += delta * playbackSpeed;
 
-    public Animation getAnimation() {
-        return animation;
-    }
+        for (int i = 0; i < animationProviders.size(); i++)
+            animationProviders.get(i).getLocalBoneTransforms(providerTransforms.get(i), currentTimeSeconds);
 
-    public void setSecondAnimation(Animation secondAnimation) {
-        this.secondAnimation = secondAnimation;
-    }
+        List<Transform> transforms = animationMixer.mixAnimations(providerTransforms);
 
-    private void updateBoneMatrices() {
-        //TODO get performance counters going, then
-        // - set matrices instead of replacing entire list
-        // - pass uniform arrays with single call (if possible)
-        // - bake bone animations into bones / create a map here or in model
-        boneTransforms.forEach(Transform::identity); //Technically not necessary, but helps identify if node transform does not work
-        Node rootNode = model.getNodes().getFirst();
-        _updateBoneMatrices(rootNode, animation.getBaseTransform());
-    }
+        //TODO
+        // - !get all updated provider transforms
+        // - !pass to mixer
+        //   !- add (multivariate lerp) or override (set) in layer order
+        //    - apply additive with filter, and override exclusively with filter
+        // - !retrieve from mixer
+        // - apply post processing ()
+        // - !bake into model space
+        // - !return final bone matrices
 
-    private void _updateBoneMatrices(Node node, TransformC transform) {
-        Bone bone = node.getBone();
-        Transform localTransform = new Transform(node.getTransform()); //Set node transform as default
+//        if (updates++ % 60 == 0)
+//            logger.debug("Playing animation {}, tick {} of {} @ {} ticks/s",
+//                    animation.getName(),
+//                    String.format("%7.1f", currentTimeSeconds), animation.getDuration(),
+//                    String.format("%5.1f", animation.getTicksPerSecond()));
 
-        if (bone != null) { //If node has bone, try to find animation
-            //Add in mixing thingy here, should override boneAnim, or potentially add two???
-            BoneAnimation boneAnim = animation.getBoneAnimations().stream()
-                    .filter(_boneAnimation -> _boneAnimation.bone().equals(node.getBone()))
-                    .findAny()
-                    .orElse(null);
+        AnimationAssembler.transformToModelSpace(transforms, model.getNodes().getFirst(), new Transform());
 
-            BoneAnimation boneAnim2 = null;
-            if (secondAnimation != null) {
-                boneAnim2 = secondAnimation.getBoneAnimations().stream()
-                        .filter(_boneAnimation -> _boneAnimation.bone().equals(node.getBone()))
-                        .findAny()
-                        .orElse(null);
-            }
-
-            if (boneAnim != null) { //If bone is animated, replace node transform
-                Vector3fc position = interpolate(boneAnim, boneAnim.positionTimes(), boneAnim.positions());
-                Quaternionfc rotation = interpolate(boneAnim, boneAnim.rotationTimes(), boneAnim.rotations());
-                Vector3fc scaling = interpolate(boneAnim, boneAnim.scaleTimes(), boneAnim.scalings());
-
-                localTransform.set(position, rotation, scaling);
-            }
-
-            List<String> filter = List.of(
-//                    "mixamorig_Spine",
-//                    "mixamorig_Spine1",
-//                    "mixamorig_Spine2",
-//                    "mixamorig_Neck",
-//                    "mixamorig_Head",
-                    "mixamorig_RightShoulder",
-                    "mixamorig_RightArm",
-                    "mixamorig_RightForeArm",
-                    "mixamorig_RightHand"
-            );
-
-            if (boneAnim2 != null/* && filter.stream().anyMatch(name -> bone.name().contains(name))*/) {
-                Vector3f position = (Vector3f) interpolate(boneAnim2, boneAnim2.positionTimes(), boneAnim2.positions());
-                Quaternionf rotation = (Quaternionf) interpolate(boneAnim2, boneAnim2.rotationTimes(), boneAnim2.rotations());
-                Vector3f scaling = (Vector3f) interpolate(boneAnim2, boneAnim2.scaleTimes(), boneAnim2.scalings());
-
-                localTransform.lerp(new Transform(position, rotation, scaling), .5f);
-            }
+        for (int i = 0; i < this.transforms.size(); i++) {
+            ((Transform) this.transforms.get(i)).set(transforms.get(i));
         }
-
-        TransformC nodeTransform = transform.apply(localTransform, new Transform());
-        if (bone != null) { //Set default or animated transform
-            boneTransforms.get(bone.id())
-                    .set(nodeTransform)
-                    .apply(bone.offset());
-        }
-
-        for (Node child : node.getChildren())
-            _updateBoneMatrices(child, nodeTransform);
     }
 
-    private <T> @NotNull T interpolate(BoneAnimation anim, List<Double> timings, List<T> values) {
-        int numTimings = timings.size();
-
-        //TODO evaluate and implement animation behaviour handling
-//        if (currentTicks < timings.getFirst()
-//                && anim.preBehaviour() != Animation.Behaviour.REPEAT) {
-//            return switch (anim.preBehaviour()) {
-//                case DEFAULT -> null;
-//                case CONSTANT, LINEAR -> values.getFirst();
-//                default -> throw new IllegalStateException("Unexpected value: " + anim.preBehaviour());
-//            };
-//        } else if (currentTicks > timings.getLast()
-//                && anim.preBehaviour() != Animation.Behaviour.REPEAT) {
-//            return switch (anim.preBehaviour()) {
-//                case DEFAULT -> null;
-//                case CONSTANT, LINEAR -> values.getLast();
-//                default -> throw new IllegalStateException("Unexpected value: " + anim.preBehaviour());
-//            };
-//        }
-
-//        currentTicks %= animation.getDuration(); //all other behaviours were filtered above, so animation must loop -> ticks are normalised
-
-        int index = -1;
-        for (int i = 0; i < numTimings; i++) {
-            if (i < numTimings - 1
-                    && timings.get(i) <= currentTicks
-                    && timings.get(i + 1) >= currentTicks) {
-                index = i;
-                break;
-            }
-        }
-
-        if (index == -1) {
-//            logger.warn("Found no valid keyframe for bone '{}' type '{}'", anim.bone().name(), values.getFirst().getClass().getSimpleName()); //surely there won't ever be an empty list, right?
-            return values.getFirst();
-        }
-
-        double t = (currentTicks - timings.get(index)) / (timings.get(index + 1) - timings.get(index));
-        return lerp((float) t, values.get(index), values.get(index + 1));
+    public List<AnimationProvider> getAnimationProviders() {
+        return animationProviders;
     }
 
-    private static <T> T lerp(float t, T value1, T value2) {
-        return switch (value1) {
-            case Vector3fc vector -> (T) vector.lerp((Vector3fc) value2, t, new Vector3f());
-            case Quaternionfc quaternion -> (T) quaternion.slerp((Quaternionfc) value2, t, new Quaternionf());
-            default -> throw new IllegalStateException("Unexpected value: " + value1);
-        };
+    public List<TransformC> getTransforms() {
+        return transforms;
     }
 
 }
