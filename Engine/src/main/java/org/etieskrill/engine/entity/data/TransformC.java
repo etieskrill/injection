@@ -12,6 +12,8 @@ import org.joml.Vector3fc;
  */
 public interface TransformC {
 
+    TransformC IDENTITY = new Transform();
+
     Vector3fc getPosition();
     Quaternionfc getRotation();
     Vector3fc getScale();
@@ -23,8 +25,11 @@ public interface TransformC {
     @Contract("-> this")
     Matrix4fc getMatrix();
 
-    @Contract("_, _ -> new")
+    @Contract("_, _ -> param2")
     Transform apply(@NotNull TransformC transform, @NotNull Transform target);
+
+    @Contract("_, _, _ -> param3")
+    Transform lerp(@NotNull TransformC other, float factor, @NotNull Transform target);
 
     boolean isDirty();
 

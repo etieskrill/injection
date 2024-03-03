@@ -213,6 +213,23 @@ public class Transform implements TransformC {
         return apply(transform, this);
     }
 
+    @Override
+    public Transform lerp(@NotNull TransformC other, float factor, @NotNull Transform target) {
+        target.set(this);
+
+        target.position.lerp(other.getPosition(), factor);
+        target.rotation.slerp(other.getRotation(), factor);
+        target.scale.lerp(other.getScale(), factor);
+        target.dirty();
+
+        return target;
+    }
+
+    @Contract(value = "_, _ -> this", mutates = "this")
+    public Transform lerp(@NotNull TransformC other, float factor) {
+        return lerp(other, factor, this);
+    }
+
     public Transform identity() {
         this.position.set(0);
         this.rotation.identity();

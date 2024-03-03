@@ -7,6 +7,7 @@ import org.etieskrill.engine.graphics.OrthographicCamera;
 import org.etieskrill.engine.graphics.PerspectiveCamera;
 import org.etieskrill.engine.graphics.animation.Animation;
 import org.etieskrill.engine.graphics.animation.Animator;
+import org.etieskrill.engine.graphics.animation.MultiAnimator;
 import org.etieskrill.engine.graphics.data.DirectionalLight;
 import org.etieskrill.engine.graphics.gl.Renderer;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
@@ -33,7 +34,6 @@ import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.etieskrill.engine.input.InputBinding.Trigger.ON_PRESS;
@@ -59,12 +59,9 @@ public class Game {
     private Model cube;
     private DirectionalLight globalLight;
 
-    private Animator vampyAnimator;
-
     private int currentAnimation = 0;
-    private final List<Animator> vampyAnimators = new ArrayList<>();
+    private MultiAnimator vampyAnimator;
 
-    private Scene scene;
     private Label animationSelector;
 
     private int boneSelector = 4;
@@ -83,10 +80,9 @@ public class Game {
                 logger.info("Vampy animation is {}", vampyAnimator.isPlaying() ? "playing" : "stopped");
             }),
             Input.bind(Keys.E).on(ON_PRESS).to(() -> {
-                currentAnimation = ++currentAnimation % (vampyAnimators.size());
-                vampyAnimator = vampyAnimators.get(currentAnimation);
-                animationSelector.setText("Current animation " + (currentAnimation + 1) + " of " + vampyAnimators.size() + ": " + vampyAnimators.get(currentAnimation).getAnimation().getName());
-                logger.info("Switching to animation {}, '{}'", currentAnimation, vampyAnimators.get(currentAnimation).getAnimation().getName());
+                currentAnimation = ++currentAnimation % (vampyAnimator.getAnimators().size());
+                animationSelector.setText("Current animation " + (currentAnimation + 1) + " of " + vampyAnimator.getAnimators().size() + ": " + vampyAnimator.getAnimators().get(currentAnimation).getAnimation().getName());
+                logger.info("Switching to animation {}, '{}'", currentAnimation, vampyAnimator.getAnimators().get(currentAnimation).getAnimation().getName());
             }),
             Input.bind(Keys.R).on(ON_PRESS).to(() -> {
                 boneSelector = ++boneSelector % 5;
@@ -120,25 +116,28 @@ public class Game {
                 .setPosition(new Vector3f(2.5f, -1f, 0f))
                 .applyRotation(quat -> quat.rotateY(toRadians(-90)));
 
-        vampyAnimators.add(new Animator(vampy.getAnimations().getFirst(), vampy));
+        vampyAnimator = new MultiAnimator(vampy);
+        vampyAnimator.add(new Animator(vampy.getAnimations().getFirst(), vampy), 0f);
 
         List<Animation> orcIdle = Loader.loadModelAnimations("mixamo_orc_idle.dae", vampy);
-        vampyAnimators.add(0, new Animator(orcIdle.getFirst(), vampy));
+        vampyAnimator.add(0, new Animator(orcIdle.getFirst(), vampy), 1f);
 
         List<Animation> running = Loader.loadModelAnimations("mixamo_running.dae", vampy);
         Animator vampyRunningAnimator = new Animator(running.getFirst(), vampy);
         vampyRunningAnimator.setPlaybackSpeed(.85);
-        vampyAnimators.add(vampyRunningAnimator);
+        vampyAnimator.add(vampyRunningAnimator, 0f);
+
+        List<Animation> waving = Loader.loadModelAnimations("mixamo_waving.dae", vampy);
+        vampyAnimator.add(new Animator(waving.getFirst(), vampy), 1f);
+        vampyAnimator.getAnimators().getFirst().setSecondAnimation(waving.getFirst());
 
         //Different formats sport different conventions or restrictions for the global up direction, one could either
         // - try to deduce up (and scale for that matter) from the root node of a scene, which is not difficult at all
         // - or at least stay consistent with file formats within the same bloody model
         List<Animation> hipHopDance = Loader.loadModelAnimations("vampire_hip_hop.glb", vampy);
         Transform vampyHipHopTransform = Transform.fromMatrix4f(new Matrix4f().m11(0).m12(-1).m21(1).m22(0).invert());
-        vampyAnimators.add(new Animator(hipHopDance.get(2), vampy, vampyHipHopTransform));
-
-        //TODO animation blending
-        vampyAnimator = vampyAnimators.getFirst();
+        hipHopDance.getFirst().setBaseTransform(vampyHipHopTransform);
+        vampyAnimator.add(new Animator(hipHopDance.get(2), vampy), 0f);
 
         vampyShader = (AnimationShader) Loaders.ShaderLoader.get().load("vampyShader", AnimationShader::new);
         vampyShader.setShowBoneSelector(boneSelector);
@@ -162,10 +161,10 @@ public class Game {
         });
 
         animationSelector = new Label(
-                "Current animation " + (currentAnimation + 1) + " of " + vampyAnimators.size() + ": " + vampyAnimators.get(currentAnimation).getAnimation().getName(),
+                "Current animation " + (currentAnimation + 1) + " of " + vampyAnimator.getAnimators().size() + ": " + vampyAnimator.getAnimators().get(currentAnimation).getAnimation().getName(),
                 Fonts.getDefault(36)
         );
-        scene = new Scene(
+        Scene scene = new Scene(
                 new Batch(renderer).setShader(Shaders.getTextShader()),
                 new Container(
                         animationSelector.setAlignment(Node.Alignment.TOP_RIGHT)

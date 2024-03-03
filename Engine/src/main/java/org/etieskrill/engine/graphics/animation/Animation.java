@@ -1,5 +1,8 @@
 package org.etieskrill.engine.graphics.animation;
 
+import org.etieskrill.engine.entity.data.Transform;
+import org.etieskrill.engine.entity.data.TransformC;
+import org.jetbrains.annotations.NotNull;
 import org.lwjgl.assimp.AINodeAnim;
 
 import java.util.Arrays;
@@ -8,26 +11,48 @@ import java.util.List;
 import static org.lwjgl.assimp.Assimp.*;
 
 /**
- * Holds a specific animation for a model. It has an identifying name, a duration, and a speed at which it plays.
+ * Holds a specific animation for a model. It has an identifying name, a duration, and a speed at which it plays. May
+ * optionally have an externally defined global base transform.
  * <p>
  * Confusingly, Assimp sometimes refers to bones as '{@link AINodeAnim Nodes}' in the context of bone animations.
- *
- * @param name           an identifying name
- * @param duration       the total duration in ticks
- * @param ticksPerSecond how many frames play every second
- * @param boneAnimations
- * @param meshChannels
  */
-public record Animation(
-        String name,
-        int duration,
-        double ticksPerSecond,
-        List<BoneAnimation> boneAnimations,
-        List<MeshAnimation> meshChannels
-) {
+public class Animation {
 
     public static final int MAX_BONE_INFLUENCES = 4;
     public static final int MAX_BONES = 100;
+
+    private final String name;
+
+    private final int duration;
+    private final double ticksPerSecond;
+
+    private final Behaviour behaviour;
+    //TODO non-linear interpolation?
+
+    private final List<BoneAnimation> boneAnimations;
+    private final List<MeshAnimation> meshChannels;
+
+    private final TransformC baseTransform;
+    //TODO add a map from Node/Bone to BoneAnimation so the search for every frame for every node in Animator#_updateBoneMatrices is unnecessary
+
+    /**
+     * Constructs a new instance of an animation.
+     *
+     * @param name           an identifying name
+     * @param duration       the total duration in ticks
+     * @param ticksPerSecond how many frames play every second
+     * @param boneAnimations
+     * @param meshChannels
+     */
+    public Animation(String name, int duration, double ticksPerSecond, List<BoneAnimation> boneAnimations, List<MeshAnimation> meshChannels) {
+        this.name = name;
+        this.duration = duration;
+        this.ticksPerSecond = ticksPerSecond;
+        this.boneAnimations = boneAnimations;
+        this.meshChannels = meshChannels;
+        this.baseTransform = new Transform();
+        this.behaviour = Behaviour.REPEAT; //TODO insert in constructor
+    }
 
     public enum Behaviour {
         DEFAULT(aiAnimBehaviour_DEFAULT), //take default transform
@@ -66,8 +91,20 @@ public record Animation(
         return ticksPerSecond;
     }
 
+    public Behaviour getBehaviour() {
+        return behaviour;
+    }
+
     public List<BoneAnimation> getBoneAnimations() {
         return boneAnimations;
+    }
+
+    public TransformC getBaseTransform() {
+        return baseTransform;
+    }
+
+    public void setBaseTransform(@NotNull TransformC baseTransform) {
+        ((Transform) this.baseTransform).set(baseTransform);
     }
 
 }
