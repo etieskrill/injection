@@ -14,6 +14,13 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
+/**
+ * The {@code AnimationProvider} is an instance of an {@link Animation}, which is bound to the skeleton of a specific
+ * {@link Model}.
+ * <p>
+ * Other than the bounds described above, an {@code AnimationProvider} may be reused across any number of
+ * {@link Animator Animators}, so long as the referenced {@link Model} is the same.
+ */
 public class AnimationProvider {
 
     private final Animation animation;
@@ -33,7 +40,7 @@ public class AnimationProvider {
         return animation;
     }
 
-    List<Transform> getLocalBoneTransforms(List<Transform> boneTransforms, double currentTimeSeconds) {
+    List<Transform> getLocalBoneTransforms(List<Transform> localBoneTransforms, double currentTimeSeconds) {
         //TODO get performance counters going, then
         // - pass uniform arrays with single call
         // - bake bone animations into bones / create a map here or in model
@@ -43,17 +50,16 @@ public class AnimationProvider {
             default -> throw new IllegalArgumentException("Unexpected behaviour: " + animation.getBehaviour());
         }
 
-        boneTransforms.forEach(Transform::identity);
-        updateBoneTransforms(boneTransforms, currentTicks, rootNode);
-        return boneTransforms;
+        localBoneTransforms.forEach(Transform::identity);
+        updateBoneTransforms(localBoneTransforms, currentTicks, rootNode);
+        return localBoneTransforms;
     }
 
-    private void updateBoneTransforms(List<Transform> boneTransforms, double currentTicks, Node node) {
+    private void updateBoneTransforms(List<Transform> localBoneTransforms, double currentTicks, Node node) {
         Bone bone = node.getBone();
         Transform localTransform = new Transform(node.getTransform()); //Set node transform as default
 
         if (bone != null) { //If node has bone, try to find animation
-            //Add in mixing thingy here, should override boneAnim, or potentially add two???
             BoneAnimation boneAnim = animation.getBoneAnimations().stream()
                     .filter(_boneAnimation -> _boneAnimation.bone().equals(node.getBone()))
                     .findAny()
@@ -67,13 +73,13 @@ public class AnimationProvider {
                 localTransform.set(position, rotation, scaling);
             }
 
-            boneTransforms
+            localBoneTransforms
                     .get(bone.id())
                     .set(localTransform);
         }
 
         for (Node child : node.getChildren())
-            updateBoneTransforms(boneTransforms, currentTicks, child);
+            updateBoneTransforms(localBoneTransforms, currentTicks, child);
     }
 
     private <T> @NotNull T interpolate(double currentTicks, BoneAnimation anim, List<Double> timings, List<T> values) {
@@ -108,7 +114,7 @@ public class AnimationProvider {
             }
         }
 
-        if (index == -1) {
+        if (index == -1) { //TODO this should never happen once behaviours are implemented - remove once it is so
 //            logger.warn("Found no valid keyframe for bone '{}' type '{}'", anim.bone().name(), values.getFirst().getClass().getSimpleName()); //surely there won't ever be an empty list, right?
             return values.getFirst();
         }
@@ -125,7 +131,7 @@ public class AnimationProvider {
         };
     }
 
-    private static void validateBonesInModel(Animation animation, Model model) { //TODO this should happen only once while loading the data
+    private static void validateBonesInModel(Animation animation, Model model) {
         List<Bone> bones = animation.getBoneAnimations().stream()
                 .map(BoneAnimation::bone)
                 .toList();

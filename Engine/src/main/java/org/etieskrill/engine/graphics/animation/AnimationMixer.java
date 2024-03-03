@@ -8,6 +8,13 @@ import java.util.List;
 
 import static org.etieskrill.engine.graphics.animation.Animation.MAX_BONES;
 
+/**
+ * An {@code AnimationMixer} describes the way a set of animations from an {@link Animator} are combined.
+ * <p>
+ * This class has an internal state in order to store the final transforms without creating a new list of potentially
+ * hundreds of new single-use objects. Because of this, a given {@code AnimationMixer} may only be bound to exacly one
+ * {@link Animator}.
+ */
 public class AnimationMixer {
 
     private final List<AnimationLayer> animationLayers;
