@@ -33,7 +33,7 @@ public class AnimationProvider {
         return animation;
     }
 
-    public List<Transform> getLocalBoneTransforms(List<Transform> boneTransforms, double currentTimeSeconds) {
+    List<Transform> getLocalBoneTransforms(List<Transform> boneTransforms, double currentTimeSeconds) {
         //TODO get performance counters going, then
         // - pass uniform arrays with single call
         // - bake bone animations into bones / create a map here or in model
@@ -125,7 +125,7 @@ public class AnimationProvider {
         };
     }
 
-    protected static void validateBonesInModel(Animation animation, Model model) { //TODO this should happen only once while loading the data
+    private static void validateBonesInModel(Animation animation, Model model) { //TODO this should happen only once while loading the data
         List<Bone> bones = animation.getBoneAnimations().stream()
                 .map(BoneAnimation::bone)
                 .toList();

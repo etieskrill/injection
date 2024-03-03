@@ -29,6 +29,10 @@ public class Animator {
 
     private static final Logger logger = LoggerFactory.getLogger(Animator.class);
 
+    public Animator(@NotNull Model model) {
+        this(new ArrayList<>(), new AnimationMixer(), model);
+    }
+
     public Animator(
             @NotNull List<AnimationProvider> animationProviders,
             @NotNull AnimationMixer animationMixer,
@@ -107,12 +111,38 @@ public class Animator {
         }
     }
 
+    public Animator add(Animation animation) {
+        animationProviders.add(new AnimationProvider(animation, model));
+        animationMixer.addAdditiveAnimation(0);
+
+        List<Transform> providerTransform = new ArrayList<>(MAX_BONES);
+        for (int j = 0; j < MAX_BONES; j++) providerTransform.add(new Transform());
+        providerTransforms.add(providerTransform);
+
+        return this;
+    }
+
+    public Animator add(Animation animation, float weight) {
+        animationProviders.add(new AnimationProvider(animation, model));
+        animationMixer.addAdditiveAnimation(weight);
+
+        List<Transform> providerTransform = new ArrayList<>(MAX_BONES);
+        for (int j = 0; j < MAX_BONES; j++) providerTransform.add(new Transform());
+        providerTransforms.add(providerTransform);
+
+        return this;
+    }
+
     public List<AnimationProvider> getAnimationProviders() {
         return animationProviders;
     }
 
     public List<TransformC> getTransforms() {
         return transforms;
+    }
+
+    public AnimationMixer getAnimationMixer() {
+        return animationMixer;
     }
 
 }
