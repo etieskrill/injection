@@ -21,9 +21,8 @@ import org.etieskrill.engine.input.Input;
 import org.etieskrill.engine.input.KeyInputManager;
 import org.etieskrill.engine.input.Keys;
 import org.etieskrill.engine.scene.Scene;
-import org.etieskrill.engine.scene.component.Container;
 import org.etieskrill.engine.scene.component.Label;
-import org.etieskrill.engine.scene.component.Node.Alignment;
+import org.etieskrill.engine.scene.component.Stack;
 import org.etieskrill.engine.time.LoopPacer;
 import org.etieskrill.engine.time.SystemNanoTimePacer;
 import org.etieskrill.engine.util.Loaders;
@@ -33,10 +32,14 @@ import org.joml.Vector2d;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 import org.lwjgl.glfw.GLFW;
+import org.lwjgl.opengl.GL33C;
+import org.lwjgl.opengl.GL46C;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayDeque;
 import java.util.List;
+import java.util.OptionalDouble;
 
 import static org.etieskrill.engine.input.InputBinding.Trigger.ON_PRESS;
 import static org.etieskrill.engine.input.InputBinding.Trigger.PRESSED;
@@ -65,6 +68,7 @@ public class Game {
     private Animator vampyAnimator;
 
     private Label animationSelector;
+    private Label renderStatistics;
 
     private int boneSelector = 4;
     private boolean showBoneWeights = false;
@@ -167,12 +171,17 @@ public class Game {
                 "Current animation " + (currentAnimation + 1) + " of " + vampyAnimator.getAnimationProviders().size() + ": " + vampyAnimator.getAnimationProviders().get(currentAnimation).getAnimation().getName(),
                 Fonts.getDefault(36)
         );
+        renderStatistics = new Label();
         Scene scene = new Scene(
                 new Batch(renderer).setShader(Shaders.getTextShader()),
-                new Container(
-                        animationSelector.setAlignment(Alignment.TOP_RIGHT)
+                new Stack(List.of(
+                        animationSelector
+                                .setAlignment(org.etieskrill.engine.scene.component.Node.Alignment.TOP_RIGHT)
+                                .setMargin(new Vector4f(10)),
+                        renderStatistics
+                                .setAlignment(org.etieskrill.engine.scene.component.Node.Alignment.TOP_LEFT)
                                 .setMargin(new Vector4f(10))
-                ),
+                )),
                 new OrthographicCamera(window.getSize().toVec()).setPosition(new Vector3f(window.getSize().toVec().mul(.5f), 0))
         );
         window.setScene(scene);
@@ -181,8 +190,13 @@ public class Game {
     private void loop() {
         vampyAnimator.play();
 
+        int gpuTimeQuery = GL46C.glCreateQueries(GL33C.GL_TIME_ELAPSED);
+        ArrayDeque<Double> gpuTimes = new ArrayDeque<>(10);
+
         pacer.start();
         while (!window.shouldClose()) {
+            //TODO retrieve gpu time
+
             renderer.prepare();
 
             vampyAnimator.update(pacer.getDeltaTimeSeconds());
@@ -190,10 +204,30 @@ public class Game {
             vampyShader.setBoneMatrices(vampyAnimator.getTransforms().stream().map(TransformC::getMatrix).toList());
             vampyShader.setGlobalLights(globalLight);
 
+//            GL46C.glBeginQuery(GL33C.GL_TIME_ELAPSED, gpuTimeQuery);
+
             renderer.render(vampy, vampyShader, camera.getCombined());
             renderer.render(cube, vampyShader, camera.getCombined());
 
             window.update(pacer.getDeltaTimeSeconds());
+
+//            GL46C.glEndQuery(GL33C.GL_TIME_ELAPSED);
+
+            long time = System.nanoTime();
+            int gpuTimeNano = 0;
+//                    GL46C.glGetQueryObjecti(gpuTimeQuery, GL46C.GL_QUERY_RESULT);
+            System.out.println("time waited for gpu: %4.1f, gpu time: %4.1f".formatted((System.nanoTime() - time) / 1000000d, gpuTimeNano / 1000000d));
+            gpuTimes.push(gpuTimeNano / 1000000d);
+            OptionalDouble avgGpuTime = gpuTimes.stream().mapToDouble(value -> value).average();
+
+
+            renderStatistics.setText(
+                    "Render calls: " + renderer.getRenderCalls() +
+                    "\nTriangles drawn: " + renderer.getTrianglesDrawn() +
+                    "\nAverage fps: %3.0f".formatted(pacer.getAverageFPS()) +
+                    "\nCPU time: %4.1fms".formatted(1000 / pacer.getAverageFPS()) +
+                    "\nGPU time: %4.1fms".formatted(avgGpuTime.orElse(0))
+            );
             pacer.nextFrame();
         }
 

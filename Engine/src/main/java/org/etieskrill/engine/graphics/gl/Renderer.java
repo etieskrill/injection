@@ -18,12 +18,17 @@ import static org.lwjgl.opengl.GL33C.*;
 public class Renderer {
     
     private static final float clearColour = 0.25f;//0.025f;
+
+    private int trianglesDrawn, renderCalls;
     
     private final Logger logger = LoggerFactory.getLogger(getClass());
     
     public void prepare() {
         glClearColor(clearColour, clearColour, clearColour, 1f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+        trianglesDrawn = 0;
+        renderCalls = 0;
     }
     
     public void render(Model model, ShaderProgram shader, Matrix4fc combined) {
@@ -166,6 +171,9 @@ public class Renderer {
         glBindVertexArray(mesh.getVao());
 
         glDrawElements(mesh.getDrawMode().gl(), mesh.getNumIndices(), GL_UNSIGNED_INT, 0);
+        if (mesh.getDrawMode() == Mesh.DrawMode.TRIANGLES)
+            trianglesDrawn += mesh.getNumIndices() / 3;
+        renderCalls++;
 
         AbstractTexture.unbindAllTextures();
         glBindVertexArray(0);
@@ -201,6 +209,9 @@ public class Renderer {
         glBindVertexArray(mesh.getVao());
 
         glDrawElementsInstanced(mesh.getDrawMode().gl(), mesh.getNumIndices(), GL_UNSIGNED_INT, 0, numInstances);
+        if (mesh.getDrawMode() == Mesh.DrawMode.TRIANGLES)
+            trianglesDrawn += mesh.getNumIndices() / 3;
+        renderCalls++;
 
         AbstractTexture.unbindAllTextures();
         glBindVertexArray(0);
@@ -255,5 +266,13 @@ public class Renderer {
         //Optional information
         shader.setUniform("material.numTextures", tex2d + cubemaps, false);
     }
-    
+
+    public int getTrianglesDrawn() {
+        return trianglesDrawn;
+    }
+
+    public int getRenderCalls() {
+        return renderCalls;
+    }
+
 }
