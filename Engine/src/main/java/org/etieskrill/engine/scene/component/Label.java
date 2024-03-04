@@ -1,11 +1,11 @@
 package org.etieskrill.engine.scene.component;
 
-import org.joml.Vector2f;
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.texture.font.Font;
 import org.etieskrill.engine.graphics.texture.font.Fonts;
 import org.etieskrill.engine.graphics.texture.font.Glyph;
 import org.etieskrill.engine.input.Key;
+import org.joml.Vector2f;
 
 import java.util.Objects;
 
@@ -49,9 +49,10 @@ public class Label extends Node {
         return text;
     }
     
-    public void setText(String text) {
+    public Label setText(String text) {
         if (!this.text.equals(text)) invalidate();
         this.text = text;
+        return this;
     }
 
     @Override
