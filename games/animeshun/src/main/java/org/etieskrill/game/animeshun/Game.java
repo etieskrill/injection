@@ -1,7 +1,6 @@
 package org.etieskrill.game.animeshun;
 
 import org.etieskrill.engine.entity.data.Transform;
-import org.etieskrill.engine.entity.data.TransformC;
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.Camera;
 import org.etieskrill.engine.graphics.OrthographicCamera;
@@ -193,41 +192,44 @@ public class Game {
         int gpuTimeQuery = GL46C.glCreateQueries(GL33C.GL_TIME_ELAPSED);
         ArrayDeque<Double> gpuTimes = new ArrayDeque<>(10);
 
+        long cpuTime = System.nanoTime();
+
         pacer.start();
         while (!window.shouldClose()) {
-            //TODO retrieve gpu time
+            long time = System.nanoTime();
+            int gpuTimeNano = GL46C.glGetQueryObjecti(gpuTimeQuery, GL46C.GL_QUERY_RESULT);
+            double gpuWaitTimeMillis = (System.nanoTime() - time) / 1000000d;
+            gpuTimes.push(gpuTimeNano / 1000000d);
+            OptionalDouble avgGpuTime = gpuTimes.stream().mapToDouble(value -> value).average();
+
+            time = System.nanoTime();
 
             renderer.prepare();
 
             vampyAnimator.update(pacer.getDeltaTimeSeconds());
 
-            vampyShader.setBoneMatrices(vampyAnimator.getTransforms().stream().map(TransformC::getMatrix).toList());
+            vampyShader.setBoneMatrices(vampyAnimator.getTransformMatrices());
             vampyShader.setGlobalLights(globalLight);
 
-//            GL46C.glBeginQuery(GL33C.GL_TIME_ELAPSED, gpuTimeQuery);
+            GL46C.glBeginQuery(GL33C.GL_TIME_ELAPSED, gpuTimeQuery);
 
             renderer.render(vampy, vampyShader, camera.getCombined());
             renderer.render(cube, vampyShader, camera.getCombined());
 
             window.update(pacer.getDeltaTimeSeconds());
 
-//            GL46C.glEndQuery(GL33C.GL_TIME_ELAPSED);
-
-            long time = System.nanoTime();
-            int gpuTimeNano = 0;
-//                    GL46C.glGetQueryObjecti(gpuTimeQuery, GL46C.GL_QUERY_RESULT);
-            System.out.println("time waited for gpu: %4.1f, gpu time: %4.1f".formatted((System.nanoTime() - time) / 1000000d, gpuTimeNano / 1000000d));
-            gpuTimes.push(gpuTimeNano / 1000000d);
-            OptionalDouble avgGpuTime = gpuTimes.stream().mapToDouble(value -> value).average();
-
+            GL46C.glEndQuery(GL33C.GL_TIME_ELAPSED);
 
             renderStatistics.setText(
                     "Render calls: " + renderer.getRenderCalls() +
                     "\nTriangles drawn: " + renderer.getTrianglesDrawn() +
-                    "\nAverage fps: %3.0f".formatted(pacer.getAverageFPS()) +
-                    "\nCPU time: %4.1fms".formatted(1000 / pacer.getAverageFPS()) +
+                            "\nAverage fps: %3.0f (%4.1fms)".formatted(pacer.getAverageFPS(), 1000 / pacer.getAverageFPS()) +
+                            "\nCPU time: %4.1fms (%4.1fms gpu sync time)".formatted(cpuTime / 1000000d, gpuWaitTimeMillis) +
                     "\nGPU time: %4.1fms".formatted(avgGpuTime.orElse(0))
             );
+
+            cpuTime = System.nanoTime() - time;
+
             pacer.nextFrame();
         }
 

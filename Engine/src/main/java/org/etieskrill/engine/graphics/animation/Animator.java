@@ -5,6 +5,7 @@ import org.etieskrill.engine.entity.data.TransformC;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.model.Node;
 import org.jetbrains.annotations.NotNull;
+import org.joml.Matrix4fc;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -231,6 +232,10 @@ public class Animator {
 
     public List<TransformC> getTransforms() {
         return transforms;
+    }
+
+    public List<Matrix4fc> getTransformMatrices() {
+        return transforms.stream().map(TransformC::getMatrix).toList();
     }
 
     public AnimationMixer getAnimationMixer() {
