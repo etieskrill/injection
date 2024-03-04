@@ -1,7 +1,9 @@
 package org.etieskrill.engine.graphics.animation;
 
 import org.etieskrill.engine.entity.data.Transform;
+import org.etieskrill.engine.graphics.model.Node;
 import org.etieskrill.engine.util.MathUtils;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,12 +29,16 @@ public class AnimationMixer {
     }
 
     public AnimationMixer addAdditiveAnimation(float weight) {
-        animationLayers.add(new AnimationLayer(AnimationBlendMode.ADDITIVE, weight));
+        return addAdditiveAnimation(weight, null);
+    }
+
+    public AnimationMixer addAdditiveAnimation(float weight, NodeFilter filter) {
+        animationLayers.add(new AnimationLayer(AnimationBlendMode.ADDITIVE, weight, filter));
         return this;
     }
 
-    public AnimationMixer addOverridingAnimation() {
-        animationLayers.add(new AnimationLayer(AnimationBlendMode.OVERRIDING));
+    public AnimationMixer addOverridingAnimation(NodeFilter filter) {
+        animationLayers.add(new AnimationLayer(AnimationBlendMode.OVERRIDING, filter));
         return this;
     }
 
@@ -49,7 +55,7 @@ public class AnimationMixer {
         }
     }
 
-    List<Transform> mixAnimations(List<List<Transform>> providerTransforms) {
+    List<Transform> mixAnimations(List<Node> nodes, List<List<Transform>> providerTransforms) {
         if (providerTransforms.size() != animationLayers.size())
             throw new IllegalArgumentException("There must be exactly one layer for each provider");
 
@@ -72,15 +78,20 @@ public class AnimationMixer {
 
         for (int i = 1; i < animationLayers.size(); i++) {
             List<Transform> providerTransform = providerTransforms.get(i);
-            switch (animationLayers.get(i).getBlendMode()) {
+            AnimationLayer layer = animationLayers.get(i);
+            NodeFilter filter = layer.getFilter();
+            switch (layer.getBlendMode()) {
                 case ADDITIVE -> {
-                    for (int j = 0; j < transforms.size(); j++)
+                    for (int j = 0; j < transforms.size(); j++) {
+                        if (filter != null && !filter.allows(nodes.get(j))) continue;
                         transforms.get(j).lerp(providerTransform.get(j), weights.get(i));
+                    }
                 }
                 case OVERRIDING -> {
-                    //TODO enforce node filter use
-                    for (int j = 0; j < transforms.size(); j++)
+                    for (int j = 0; j < transforms.size(); j++) {
+                        if (filter != null && !filter.allows(nodes.get(j))) continue;
                         transforms.get(j).set(providerTransform.get(j));
+                    }
                 }
             }
         }
@@ -91,14 +102,24 @@ public class AnimationMixer {
     private static class AnimationLayer {
         private final AnimationBlendMode blendMode;
         private float weight;
+        private final @Nullable NodeFilter filter;
 
         public AnimationLayer(AnimationBlendMode blendMode) {
             this(blendMode, 0f);
         }
 
         public AnimationLayer(AnimationBlendMode blendMode, float weight) {
+            this(blendMode, weight, null);
+        }
+
+        public AnimationLayer(AnimationBlendMode blendMode,  @Nullable NodeFilter filter) {
+            this(blendMode, 0f, filter);
+        }
+
+        public AnimationLayer(AnimationBlendMode blendMode, float weight, @Nullable NodeFilter filter) {
             this.blendMode = blendMode;
             this.weight = weight;
+            this.filter = filter;
         }
 
         public AnimationBlendMode getBlendMode() {
@@ -111,6 +132,10 @@ public class AnimationMixer {
 
         public void setWeight(float weight) {
             this.weight = weight;
+        }
+
+        public @Nullable NodeFilter getFilter() {
+            return filter;
         }
     }
 

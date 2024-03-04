@@ -3,6 +3,7 @@ package org.etieskrill.engine.graphics.animation;
 import org.etieskrill.engine.entity.data.Transform;
 import org.etieskrill.engine.entity.data.TransformC;
 import org.etieskrill.engine.graphics.model.Model;
+import org.etieskrill.engine.graphics.model.Node;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +31,7 @@ public class Animator {
     private final AnimationMixer animationMixer;
 
     private final Model model;
+    private final List<Node> nodes;
 
     private boolean playing;
     private double currentTimeSeconds;
@@ -69,11 +71,7 @@ public class Animator {
 
         this.animationProviders = animationProviders;
         this.providerTransforms = new ArrayList<>(animationProviders.size());
-        for (int i = 0; i < animationProviders.size(); i++) {
-            List<Transform> providerTransform = new ArrayList<>(MAX_BONES);
-            for (int j = 0; j < MAX_BONES; j++) providerTransform.add(new Transform());
-            providerTransforms.add(providerTransform);
-        }
+        for (int i = 0; i < animationProviders.size(); i++) addNewProviderTransformList();
 
         this.transforms = new ArrayList<>(MAX_BONES);
         for (int i = 0; i < MAX_BONES; i++) transforms.add(new Transform());
@@ -81,6 +79,11 @@ public class Animator {
         this.animationMixer = animationMixer;
 
         this.model = model;
+        this.nodes = new ArrayList<>(model.getNodes().size());
+        for (int i = 0; i < model.getNodes().size(); i++) this.nodes.add(null);
+        model.getNodes().forEach(node -> {
+            if (node.getBone() != null) nodes.set(node.getBone().id(), node);
+        });
 
         this.playing = false;
         this.currentTimeSeconds = 0;
@@ -135,13 +138,13 @@ public class Animator {
         for (int i = 0; i < animationProviders.size(); i++)
             animationProviders.get(i).getLocalBoneTransforms(providerTransforms.get(i), currentTimeSeconds);
 
-        List<Transform> transforms = animationMixer.mixAnimations(providerTransforms);
+        List<Transform> transforms = animationMixer.mixAnimations(nodes, providerTransforms);
 
         //TODO
         // - !get all updated provider transforms
         // - !pass to mixer
         //   !- add (multivariate lerp) or override (set) in layer order
-        //    - apply additive with filter, and override exclusively with filter
+        //   !- apply additive with filter, and override exclusively with filter
         // - !retrieve from mixer
         // - apply post processing (physics sims (cloth, rigid), procedural animation etc.)
         // - !bake into model space
@@ -160,17 +163,64 @@ public class Animator {
         }
     }
 
+    /**
+     * Adds an animation to this {@code Animator} using {@link AnimationMixer.AnimationBlendMode#ADDITIVE additive}
+     * blending with a weight of {@code 0}, meaning it has no influence, unless changed later.
+     *
+     * @param animation the animation to add
+     * @return the {@code Animator} for chaining
+     */
     public Animator add(Animation animation) {
         return add(animation, 0);
     }
 
+    /**
+     * Adds an animation to this {@code Animator} using {@link AnimationMixer.AnimationBlendMode#ADDITIVE additive}
+     * blending with the strength specified by {@code weight}. The weight factors are later normalised across all
+     * additive layers, so use whatever scale you are comfortable with.
+     *
+     * @param animation the animation to add
+     * @param weight the influence this animation has
+     * @return the {@code Animator} for chaining
+     */
     public Animator add(Animation animation, float weight) {
-        animationProviders.add(new AnimationProvider(animation, model));
-        animationMixer.addAdditiveAnimation(weight);
+        return add(animation, weight, null);
+    }
 
-        List<Transform> providerTransform = new ArrayList<>(MAX_BONES);
-        for (int j = 0; j < MAX_BONES; j++) providerTransform.add(new Transform());
-        providerTransforms.add(providerTransform);
+    /**
+     * Adds an animation to this {@code Animator} using {@link AnimationMixer.AnimationBlendMode#OVERRIDING overriding}
+     * blending. This requires a {@link NodeFilter}, since a layer without one would simply override all other layers,
+     * which is probably not desired in the majority of cases.
+     *
+     * @param animation the animation to add
+     * @param filter the nodes to apply the animation to
+     * @return the {@code Animator} for chaining
+     */
+    public Animator add(Animation animation, NodeFilter filter) {
+        animationProviders.add(new AnimationProvider(animation, model));
+        animationMixer.addOverridingAnimation(filter);
+
+        addNewProviderTransformList();
+
+        return this;
+    }
+
+    /**
+     * Adds an animation to this {@code Animator} using {@link AnimationMixer.AnimationBlendMode#ADDITIVE additive}
+     * blending with the strength specified by {@code weight}. The weight factors are later normalised across all
+     * additive layers, so use whatever scale you are comfortable with. Here, a {@link NodeFilter} is taken into
+     * consideration, which is used to more selectively apply the animation.
+     *
+     * @param animation the animation to add
+     * @param filter the nodes to apply the animation to
+     * @param weight the influence this animation has
+     * @return the {@code Animator} for chaining
+     */
+    public Animator add(Animation animation, float weight, NodeFilter filter) {
+        animationProviders.add(new AnimationProvider(animation, model));
+        animationMixer.addAdditiveAnimation(weight, filter);
+
+        addNewProviderTransformList();
 
         return this;
     }
@@ -185,6 +235,12 @@ public class Animator {
 
     public AnimationMixer getAnimationMixer() {
         return animationMixer;
+    }
+
+    private void addNewProviderTransformList() {
+        List<Transform> providerTransform = new ArrayList<>(MAX_BONES);
+        for (int j = 0; j < MAX_BONES; j++) providerTransform.add(new Transform());
+        providerTransforms.add(providerTransform);
     }
 
 }

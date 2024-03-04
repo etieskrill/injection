@@ -8,10 +8,12 @@ import org.etieskrill.engine.graphics.OrthographicCamera;
 import org.etieskrill.engine.graphics.PerspectiveCamera;
 import org.etieskrill.engine.graphics.animation.Animation;
 import org.etieskrill.engine.graphics.animation.Animator;
+import org.etieskrill.engine.graphics.animation.NodeFilter;
 import org.etieskrill.engine.graphics.data.DirectionalLight;
 import org.etieskrill.engine.graphics.gl.Renderer;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
 import org.etieskrill.engine.graphics.model.Model;
+import org.etieskrill.engine.graphics.model.Node;
 import org.etieskrill.engine.graphics.model.loader.Loader;
 import org.etieskrill.engine.graphics.texture.font.Fonts;
 import org.etieskrill.engine.graphics.texture.font.TrueTypeFont;
@@ -21,7 +23,7 @@ import org.etieskrill.engine.input.Keys;
 import org.etieskrill.engine.scene.Scene;
 import org.etieskrill.engine.scene.component.Container;
 import org.etieskrill.engine.scene.component.Label;
-import org.etieskrill.engine.scene.component.Node;
+import org.etieskrill.engine.scene.component.Node.Alignment;
 import org.etieskrill.engine.time.LoopPacer;
 import org.etieskrill.engine.time.SystemNanoTimePacer;
 import org.etieskrill.engine.util.Loaders;
@@ -127,12 +129,18 @@ public class Game {
         Transform vampyHipHopTransform = Transform.fromMatrix4f(new Matrix4f().m11(0).m12(-1).m21(1).m22(0).invert());
         hipHopDance.getFirst().setBaseTransform(vampyHipHopTransform);
 
+        Node rightArmNode = vampy.getNodes().stream()
+                .filter(node -> node.getName().equals("mixamorig_RightShoulder"))
+                .findAny()
+                .orElseThrow();
+
         vampyAnimator = new Animator(vampy)
-                .add(orcIdle.getFirst(), .5f)
+                .add(orcIdle.getFirst(), 1f)
                 .add(vampy.getAnimations().getFirst())
                 .add(running.getFirst())
-                .add(waving.getFirst(), .5f)
-                .add(hipHopDance.getFirst());
+                .add(waving.getFirst(), NodeFilter.tree(rightArmNode))
+//                .add(hipHopDance.getFirst()) //TODO figure out why adding this breaks the animator
+        ;
 
         vampyShader = (AnimationShader) Loaders.ShaderLoader.get().load("vampyShader", AnimationShader::new);
         vampyShader.setShowBoneSelector(boneSelector);
@@ -162,7 +170,7 @@ public class Game {
         Scene scene = new Scene(
                 new Batch(renderer).setShader(Shaders.getTextShader()),
                 new Container(
-                        animationSelector.setAlignment(Node.Alignment.TOP_RIGHT)
+                        animationSelector.setAlignment(Alignment.TOP_RIGHT)
                                 .setMargin(new Vector4f(10))
                 ),
                 new OrthographicCamera(window.getSize().toVec()).setPosition(new Vector3f(window.getSize().toVec().mul(.5f), 0))
