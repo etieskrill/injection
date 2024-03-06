@@ -9,6 +9,7 @@ import org.etieskrill.engine.graphics.animation.Animation;
 import org.etieskrill.engine.graphics.animation.Animator;
 import org.etieskrill.engine.graphics.animation.NodeFilter;
 import org.etieskrill.engine.graphics.data.DirectionalLight;
+import org.etieskrill.engine.graphics.gl.GLUtils;
 import org.etieskrill.engine.graphics.gl.Renderer;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
 import org.etieskrill.engine.graphics.model.Model;
@@ -29,7 +30,6 @@ import org.etieskrill.engine.util.FixedArrayDeque;
 import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.window.Window;
 import org.joml.Matrix4f;
-import org.joml.Vector2d;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 import org.lwjgl.opengl.GL33C;
@@ -55,8 +55,6 @@ public class Game {
     private final Renderer renderer = new Renderer();
 
     private LoopPacer pacer;
-
-    private Vector2d prevMousePosition;
 
     private Camera camera;
     private Model vampy;
@@ -114,6 +112,8 @@ public class Game {
                 .setKeyInputHandler(controls)
                 .setSamples(4)
                 .build();
+
+        GLUtils.addDebugLogging();
 
         camera = new PerspectiveCamera(window.getSize().toVec()).setOrientation(0, 0, 0);
         window.setCursorInputs(new CursorCameraController(camera));
@@ -178,6 +178,8 @@ public class Game {
                 new OrthographicCamera(window.getSize().toVec()).setPosition(new Vector3f(window.getSize().toVec().mul(.5f), 0))
         );
         window.setScene(scene);
+
+        GLUtils.removeDebugLogging();
     }
 
     private void loop() {

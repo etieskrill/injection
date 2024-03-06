@@ -62,8 +62,6 @@ public class Shaders {
 
     //TODO evaluate whether to put uniforms as variables
     public static class StaticShader extends ShaderProgram {
-        @Override
-        protected void init() {}
     
         @Override
         protected String[] getShaderFileNames() {
@@ -130,9 +128,6 @@ public class Shaders {
     
     public static class RoundedBoxShader extends ShaderProgram {
         @Override
-        protected void init() {}
-    
-        @Override
         protected String[] getShaderFileNames() {
             return new String[]{"RoundedBox.vert", "RoundedBox.frag"};
         }
@@ -164,9 +159,6 @@ public class Shaders {
     
     public static class TextureShader extends ShaderProgram {
         @Override
-        protected void init() {}
-        
-        @Override
         protected String[] getShaderFileNames() {
             return new String[]{"Texture.vert", "Texture.frag"};
         }
@@ -178,9 +170,6 @@ public class Shaders {
     }
     
     public static class SingleColourShader extends ShaderProgram {
-        @Override
-        protected void init() {}
-        
         @Override
         protected String[] getShaderFileNames() {
             return new String[]{"SingleColour.vert", "SingleColour.frag"};
@@ -194,9 +183,6 @@ public class Shaders {
     }
     
     public static class OutlineShader extends ShaderProgram {
-        @Override
-        protected void init() {}
-    
         @Override
         protected String[] getShaderFileNames() {
             return new String[]{"Outline.vert", "Outline.frag"};
@@ -212,9 +198,6 @@ public class Shaders {
     
     public static class PhongShininessMapShader extends StaticShader {
         @Override
-        protected void init() {}
-    
-        @Override
         protected String[] getShaderFileNames() {
             return new String[]{"PhongShininessMap.vert", "PhongShininessMap.frag"};
         }
@@ -227,9 +210,6 @@ public class Shaders {
     
     public static class ScreenQuadShader extends ShaderProgram {
         @Override
-        protected void init() {}
-    
-        @Override
         protected String[] getShaderFileNames() {
             return new String[]{"ScreenQuad.vert", "ScreenQuad.frag"};
         }
@@ -239,9 +219,6 @@ public class Shaders {
     }
     
     public static class PostprocessingShader extends ShaderProgram {
-        @Override
-        protected void init() {}
-        
         @Override
         protected String[] getShaderFileNames() {
             return new String[]{"Postprocessing.vert", "Postprocessing.frag"};
@@ -311,11 +288,8 @@ public class Shaders {
             setUniform("uGammaFactor", gammaFactor);
         }
     }
-    
-    private static class CubeMapShader extends ShaderProgram {
-        @Override
-        protected void init() {}
-    
+
+    public static class CubeMapShader extends ShaderProgram {
         @Override
         protected String[] getShaderFileNames() {
             return new String[]{"CubeMap.vert", "CubeMap.frag"};
@@ -326,9 +300,6 @@ public class Shaders {
     }
     
     public static class TextShader extends ShaderProgram {
-        @Override
-        protected void init() {}
-    
         @Override
         protected String[] getShaderFileNames() {
             return new String[]{"Font.vert", "Font.frag"};
