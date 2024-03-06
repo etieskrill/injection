@@ -1,6 +1,5 @@
 package org.etieskrill.engine.graphics.gl;
 
-import org.joml.Vector2i;
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.texture.Textures;
@@ -14,44 +13,44 @@ import java.util.Map;
 import static org.lwjgl.opengl.GL33C.*;
 
 public class FrameBuffer implements Disposable {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(FrameBuffer.class);
-    
+
     private final int fbo;
     private final Vector2ic size;
     private final Map<AttachmentType, FrameBufferAttachment> attachments;
-    
+
     public static FrameBuffer getStandard(Vector2ic size) {
         // Colour buffer as a texture attachment
         Texture2D colourBufferTexture = Textures.genBlank(size, Texture2D.Format.RGB);
-    
+
         // Depth and stencil buffer as a renderbuffer attachment
         RenderBuffer depthStencilBuffer = new RenderBuffer(size, RenderBuffer.Type.DEPTH_STENCIL);
-        
+
         return new Builder(size)
                 .attach(colourBufferTexture, AttachmentType.COLOUR0)
                 .attach(depthStencilBuffer, AttachmentType.DEPTH_STENCIL)
                 .build();
     }
-    
+
     public static final class Builder {
         private Vector2ic size;
-        
+
         private final Map<AttachmentType, FrameBufferAttachment> attachments = new HashMap<>();
-        
+
         public Builder(Vector2ic size) {
             this.size = size;
         }
-    
+
         public Builder attach(FrameBufferAttachment attachment, AttachmentType type) {
             attachments.put(type, attachment);
             return this;
         }
-        
+
         public FrameBuffer build() {
-            glGetError();
+            GLUtils.clearError();
             int ret;
-            
+
             FrameBuffer frameBuffer = new FrameBuffer(size);
             frameBuffer.bind();
             for (AttachmentType type : attachments.keySet()) {
@@ -62,48 +61,46 @@ public class FrameBuffer implements Disposable {
                             this.size, attachment.getSize());
                     continue;
                 }
-                
+
                 if (attachment instanceof Texture2D) {
                     glFramebufferTexture2D(GL_FRAMEBUFFER, type.toGLAttachment(), GL_TEXTURE_2D, attachment.getID(), 0);
                 } else if (attachment instanceof RenderBuffer) {
                     glFramebufferRenderbuffer(GL_FRAMEBUFFER, type.toGLAttachment(), GL_RENDERBUFFER, attachment.getID());
                 }
-                
+
                 if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT)
                     throw new IllegalStateException("Incomplete framebuffer attachment for " +
                             type.name() + ": " + attachment);
             }
-            
+
             if ((ret = glCheckFramebufferStatus(GL_FRAMEBUFFER)) != GL_FRAMEBUFFER_COMPLETE)
                 throw new IllegalStateException("Framebuffer was not successfully completed: 0x" +
                         Integer.toHexString(ret).toUpperCase());
-    
-            if ((ret = glGetError()) != GL_NO_ERROR)
-                throw new IllegalStateException("Error during framebuffer creation: 0x" +
-                        Integer.toHexString(ret).toUpperCase());
-            
+
+            GLUtils.checkErrorThrowing("Error during framebuffer creation");
+
             frameBuffer.getAttachments().putAll(attachments);
-            
+
             return frameBuffer;
         }
     }
-    
+
     private FrameBuffer(Vector2ic size) {
         this.fbo = glGenFramebuffers();
         this.size = size;
         this.attachments = new HashMap<>(3);
     }
-    
+
     public enum Binding {
         READ,
         WRITE,
         BOTH
     }
-    
+
     public void bind() {
         bind(Binding.BOTH);
     }
-    
+
     public void bind(Binding binding) {
         glBindFramebuffer(switch (binding) {
             case READ -> GL_READ_FRAMEBUFFER;
@@ -111,11 +108,11 @@ public class FrameBuffer implements Disposable {
             case BOTH -> GL_FRAMEBUFFER;
         }, fbo);
     }
-    
+
     public void unbind() {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
-    
+
     public enum AttachmentType {
         COLOUR0,
         COLOUR1,
@@ -124,7 +121,7 @@ public class FrameBuffer implements Disposable {
         DEPTH,
         STENCIL,
         DEPTH_STENCIL;
-        
+
         public int toGLAttachment() {
             return switch (this) {
                 case COLOUR0 -> GL_COLOR_ATTACHMENT0;
@@ -137,22 +134,22 @@ public class FrameBuffer implements Disposable {
             };
         }
     }
-    
+
     public Vector2ic getSize() {
         return size;
     }
-    
+
     public Map<AttachmentType, FrameBufferAttachment> getAttachments() {
         return attachments;
     }
-    
+
     public FrameBufferAttachment getAttachment(AttachmentType type) {
         return attachments.get(type);
     }
-    
+
     @Override
     public void dispose() {
         glDeleteFramebuffers(fbo);
     }
-    
+
 }

@@ -18,6 +18,8 @@ public class AnimationShader extends Shaders.StaticShader {
 
     @Override
     protected void getUniformLocations() {
+        super.getUniformLocations();
+
         addUniformArray("boneMatrices[$]", MAX_BONES, Uniform.Type.MAT4);
 
         addUniformArray("globalLights[$]", 1, STRUCT);
