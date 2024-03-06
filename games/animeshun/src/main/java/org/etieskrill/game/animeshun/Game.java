@@ -16,6 +16,7 @@ import org.etieskrill.engine.graphics.model.Node;
 import org.etieskrill.engine.graphics.model.loader.Loader;
 import org.etieskrill.engine.graphics.texture.font.Fonts;
 import org.etieskrill.engine.graphics.texture.font.TrueTypeFont;
+import org.etieskrill.engine.input.CursorCameraController;
 import org.etieskrill.engine.input.Input;
 import org.etieskrill.engine.input.KeyInputManager;
 import org.etieskrill.engine.input.Keys;
@@ -24,13 +25,13 @@ import org.etieskrill.engine.scene.component.Label;
 import org.etieskrill.engine.scene.component.Stack;
 import org.etieskrill.engine.time.LoopPacer;
 import org.etieskrill.engine.time.SystemNanoTimePacer;
+import org.etieskrill.engine.util.FixedArrayDeque;
 import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.window.Window;
 import org.joml.Matrix4f;
 import org.joml.Vector2d;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
-import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL33C;
 import org.lwjgl.opengl.GL46C;
 import org.slf4j.Logger;
@@ -110,11 +111,12 @@ public class Game {
                 .setTitle("Animeshun yeeees")
                 .setMode(Window.WindowMode.BORDERLESS)
                 .setRefreshRate(FRAMERATE)
-                .setInputManager(controls)
+                .setKeyInputHandler(controls)
                 .setSamples(4)
                 .build();
 
         camera = new PerspectiveCamera(window.getSize().toVec()).setOrientation(0, 0, 0);
+        window.setCursorInputs(new CursorCameraController(camera));
 
         vampy = Loaders.ModelLoader.get().load("vampy", () -> new Model.Builder("mixamo_walk_forward_skinned_vampire.dae").disableCulling().build());
         vampy.getInitialTransform()
@@ -157,14 +159,6 @@ public class Game {
         pacer = new SystemNanoTimePacer(1d / FRAMERATE);
 
         window.getCursor().disable();
-        prevMousePosition = window.getCursor().getPosition();
-        final double sensitivity = .05;
-        GLFW.glfwSetCursorPosCallback(window.getID(), (window, xpos, ypos) -> {
-            camera.orient(
-                    -sensitivity * (prevMousePosition.y() - ypos),
-                    sensitivity * (prevMousePosition.x() - xpos), 0);
-            prevMousePosition.set(xpos, ypos);
-        });
 
         animationSelector = new Label(
                 "Current animation " + (currentAnimation + 1) + " of " + vampyAnimator.getAnimationProviders().size() + ": " + vampyAnimator.getAnimationProviders().get(currentAnimation).getAnimation().getName(),
@@ -190,9 +184,10 @@ public class Game {
         vampyAnimator.play();
 
         int gpuTimeQuery = GL46C.glCreateQueries(GL33C.GL_TIME_ELAPSED);
-        ArrayDeque<Double> gpuTimes = new ArrayDeque<>(10);
+        ArrayDeque<Double> gpuTimes = new FixedArrayDeque<>(FRAMERATE);
 
-        long cpuTime = System.nanoTime();
+        long cpuTime;
+        ArrayDeque<Double> cpuTimes = new FixedArrayDeque<>(FRAMERATE);
 
         pacer.start();
         while (!window.shouldClose()) {
@@ -201,6 +196,7 @@ public class Game {
             double gpuWaitTimeMillis = (System.nanoTime() - time) / 1000000d;
             gpuTimes.push(gpuTimeNano / 1000000d);
             OptionalDouble avgGpuTime = gpuTimes.stream().mapToDouble(value -> value).average();
+            OptionalDouble avgCpuTime = cpuTimes.stream().mapToDouble(value -> value).average();
 
             time = System.nanoTime();
 
@@ -223,12 +219,13 @@ public class Game {
             renderStatistics.setText(
                     "Render calls: " + renderer.getRenderCalls() +
                     "\nTriangles drawn: " + renderer.getTrianglesDrawn() +
-                            "\nAverage fps: %3.0f (%4.1fms)".formatted(pacer.getAverageFPS(), 1000 / pacer.getAverageFPS()) +
-                            "\nCPU time: %4.1fms (%4.1fms gpu sync time)".formatted(cpuTime / 1000000d, gpuWaitTimeMillis) +
+                            "\nAverage fps: %3.0f (%4.1fms)".formatted(pacer.getAverageFPS(), 1000d / pacer.getAverageFPS()) +
+                            "\nCPU time: %4.1fms (%4.1fms gpu sync time)".formatted(avgCpuTime.orElse(0), gpuWaitTimeMillis) +
                     "\nGPU time: %4.1fms".formatted(avgGpuTime.orElse(0))
             );
 
             cpuTime = System.nanoTime() - time;
+            cpuTimes.push(cpuTime / 1000000d);
 
             pacer.nextFrame();
         }

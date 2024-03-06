@@ -11,6 +11,7 @@ import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.texture.font.Fonts;
+import org.etieskrill.engine.input.CursorCameraController;
 import org.etieskrill.engine.input.Input;
 import org.etieskrill.engine.input.Keys;
 import org.etieskrill.engine.scene.Scene;
@@ -21,7 +22,6 @@ import org.etieskrill.engine.time.LoopPacer;
 import org.etieskrill.engine.time.SystemNanoTimePacer;
 import org.etieskrill.engine.window.Window;
 import org.joml.*;
-import org.lwjgl.glfw.GLFW;
 
 import java.lang.Math;
 import java.util.Arrays;
@@ -36,7 +36,6 @@ public class Game {
             .build();
 
     private Camera camera = new PerspectiveCamera(window.getSize().toVec());
-    private final Vector2f prevCursorPos;
 
     private Model hallway;
     private Model sun;
@@ -51,19 +50,14 @@ public class Game {
     private Label fpsLabel, verticesDrawnLabel, primitivesDrawnLabel; //TODO use these for performance evaluation
 
     public Game() {
-        window.setInputs(Input.of(
+        window.setKeyInputs(Input.of(
                 Input.bind(Keys.ESC.withMods(Keys.Mod.SHIFT)).to(() -> window.close())
         ));
         window.getCursor().disable();
 
-        final double sensitivity = 0.05;
-        prevCursorPos = window.getCursor().getPosition().get(new Vector2f());
-        GLFW.glfwSetCursorPosCallback(window.getID(), (window, xpos, ypos) -> {
-            camera.orient(
-                    -sensitivity * (prevCursorPos.y() - ypos),
-                    sensitivity * (prevCursorPos.x() - xpos), 0);
-            prevCursorPos.set(xpos, ypos);
-        });
+        window.setCursorInputs(
+                new CursorCameraController(camera, .05, 0)
+        );
 
         hallway = new Model.Builder("scifi-hallway.glb").disableCulling().build(); //TODO implement per-mesh culling, then enable here
 

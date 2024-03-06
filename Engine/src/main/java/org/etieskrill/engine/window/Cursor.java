@@ -115,9 +115,9 @@ public class Cursor implements Disposable {
 //        glfwSetInputMode(window, );
     }
 
+    private final double[] posx = new double[1], posy = new double[1];
     public Vector2d getPosition() {
         checkWindow();
-        double[] posx = new double[1], posy = new double[1];
         glfwGetCursorPos(window.getID(), posx, posy);
         return new Vector2d(posx[0], posy[0]);
     }

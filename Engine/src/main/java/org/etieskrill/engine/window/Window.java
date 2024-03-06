@@ -1,13 +1,10 @@
 package org.etieskrill.engine.window;
 
+import org.etieskrill.engine.Disposable;
+import org.etieskrill.engine.input.*;
+import org.etieskrill.engine.scene.Scene;
 import org.jetbrains.annotations.Contract;
 import org.joml.Vector2f;
-import org.etieskrill.engine.Disposable;
-import org.etieskrill.engine.input.Key;
-import org.etieskrill.engine.input.KeyInputManager;
-import org.etieskrill.engine.input.Keys;
-import org.etieskrill.engine.scene.Scene;
-import org.joml.Vector2fc;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFWVidMode;
@@ -42,7 +39,8 @@ public class Window implements Disposable {
     
     private Cursor cursor;
 
-    private KeyInputManager inputs;
+    private KeyInputHandler keyInputs;
+    private CursorInputHandler cursorInputs;
     private Scene scene;
     
     private boolean built = false;
@@ -125,12 +123,16 @@ public class Window implements Disposable {
         private Window.WindowMode mode;
         private Window.WindowSize size;
         private Vector2f position;
+
         private float refreshRate;
         private boolean vSyncEnabled;
         private int samples;
+
         private String title;
         private Cursor cursor;
-        private KeyInputManager inputs;
+
+        private KeyInputHandler keyInputs;
+        private CursorInputHandler cursorInputs;
         
         public Builder() {}
         
@@ -174,8 +176,13 @@ public class Window implements Disposable {
             return this;
         }
 
-        public Builder setInputManager(KeyInputManager inputs) {
-            this.inputs = inputs;
+        public Builder setKeyInputHandler(KeyInputHandler keyInputs) {
+            this.keyInputs = keyInputs;
+            return this;
+        }
+
+        public Builder setCursorInputHandler(CursorInputHandler cursorInputs) {
+            this.cursorInputs = cursorInputs;
             return this;
         }
     
@@ -189,15 +196,22 @@ public class Window implements Disposable {
                     Math.max(samples, 0),
                     title != null ? title : "Window",
                     cursor != null ? cursor : Cursor.getDefault(),
-                    inputs
+                    keyInputs,
+                    cursorInputs
             );
         }
         
     }
 
-    Window(WindowMode mode, WindowSize size, Vector2f position, float targetFrameRate, boolean vSyncEnabled, int samples,
-           String title, Cursor cursor,
-           KeyInputManager inputs) {
+    private Window(
+            WindowMode mode,
+            WindowSize size, Vector2f position,
+            float targetFrameRate, boolean vSyncEnabled, int samples,
+            String title,
+            Cursor cursor,
+            KeyInputHandler keyInputs,
+            CursorInputHandler cursorInputs
+    ) {
         this.mode = mode;
         this.size = size;
         this.position = position;
@@ -206,8 +220,9 @@ public class Window implements Disposable {
         this.samples = samples;
         
         this.title = title;
-        
-        this.inputs = inputs;
+
+        this.keyInputs = keyInputs;
+        this.cursorInputs = cursorInputs;
         
         init();
         
@@ -289,30 +304,32 @@ public class Window implements Disposable {
             glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
         
         glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
-            if (inputs != null && window == this.window) inputs.invoke(Key.Type.KEYBOARD, key, action, mods);
+            if (keyInputs != null && window == this.window) keyInputs.invoke(Key.Type.KEYBOARD, key, action, mods);
         });
         final double[] posX = new double[1], posY = new double[1]; //does this cause this method's stack to persist?
         glfwSetMouseButtonCallback(window, (window, button, action, glfwMods) -> {
-            if (inputs != null && window == this.window) inputs.invoke(Key.Type.MOUSE, button, action, glfwMods);
-            if (scene != null && window == this.window) {
+            if (keyInputs != null && window == this.window) keyInputs.invoke(Key.Type.MOUSE, button, action, glfwMods);
+            if (window == this.window && (cursorInputs != null || scene != null)) {
                 Keys key = Keys.fromGlfw(button);
                 if (key == null) return;
                 Key keyWithMods = key.withMods(Keys.Mod.fromGlfw(glfwMods));
 
                 glfwGetCursorPos(window, posX, posY);
-                scene.invokeClick(keyWithMods, action, posX[0], posY[0]);
+                if (cursorInputs != null) cursorInputs.invokeClick(keyWithMods, action, posX[0], posY[0]);
+                if (scene != null) scene.invokeClick(keyWithMods, action, posX[0], posY[0]);
             }
         });
         glfwSetCursorPosCallback(window, (window, xpos, ypos) -> {
+            if (cursorInputs != null && window == this.window) cursorInputs.invokeMove(xpos, ypos);
             if (scene != null && window == this.window) scene.invokeMove(xpos, ypos);
         });
         glfwSetScrollCallback(window, (window, xoffset, yoffset) -> {
+            if (cursorInputs != null && window == this.window) cursorInputs.invokeScroll(xoffset, yoffset);
             if (scene != null && window == this.window) scene.invokeScroll(xoffset, yoffset);
         });
     }
     
     private void initGl() {
-        //TODO 1. figure out what this "context" actually is 2. make window creation disjoint from gl context creation
         GLCapabilities caps = GL.createCapabilities();
 //        System.out.println("woooo " + caps.GL_ARB_shading_language_include);
 
@@ -353,16 +370,15 @@ public class Window implements Disposable {
             scene.update(delta);
             scene.render();
         }
-        
-        //glfwMakeContextCurrent(window);
+
+//        glfwMakeContextCurrent(window);
         glfwSwapBuffers(window); //Buffers are usually swapped before polling events
-        if (inputs != null) inputs.update(delta);
         glfwPollEvents(); //Also proves to system that window has not frozen
+        if (keyInputs != null && keyInputs instanceof KeyInputManager manager) manager.update(delta);
     }
     
     //TODO make package-private
-    @Deprecated
-    public long getID() {
+    long getID() {
         return window;
     }
     
@@ -423,8 +439,12 @@ public class Window implements Disposable {
         this.cursor = cursor;
     }
 
-    public void setInputs(KeyInputManager inputs) {
-        this.inputs = inputs;
+    public void setKeyInputs(KeyInputHandler keyInputs) {
+        this.keyInputs = keyInputs;
+    }
+
+    public void setCursorInputs(CursorInputHandler cursorInputs) {
+        this.cursorInputs = cursorInputs;
     }
 
     public Scene getScene() {

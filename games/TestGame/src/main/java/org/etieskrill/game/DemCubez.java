@@ -10,10 +10,11 @@ import org.etieskrill.engine.graphics.gl.ModelFactory;
 import org.etieskrill.engine.graphics.gl.Renderer;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
-import org.etieskrill.engine.graphics.model.*;
-import org.etieskrill.engine.graphics.model.loader.MeshLoader;
+import org.etieskrill.engine.graphics.model.CubeMapModel;
+import org.etieskrill.engine.graphics.model.Material;
+import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.texture.Texture2D;
-import org.etieskrill.engine.graphics.texture.Textures;
+import org.etieskrill.engine.input.CursorInputAdapter;
 import org.etieskrill.engine.time.LoopPacer;
 import org.etieskrill.engine.time.SystemNanoTimePacer;
 import org.etieskrill.engine.util.Loaders.ModelLoader;
@@ -130,14 +131,11 @@ public class DemCubez {
     }
     
     private boolean initKeybinds() {
-        glfwSetKeyCallback(window.getID(), (long window, int key, int scancode, int action, int mods) -> {
+        window.setKeyInputs((type, key, action, modifiers) -> {
             switch (key) {
                 case GLFW_KEY_ESCAPE -> {
-                    if (mods == 0 && action == GLFW_RELEASE) {
-                        escPressed = !escPressed;
-                    }
-                    else if ((mods & GLFW_MOD_SHIFT) != 0)
-                        glfwSetWindowShouldClose(window, true);
+                    if (modifiers == 0 && action == GLFW_RELEASE) escPressed = !escPressed;
+                    else if ((modifiers & GLFW_MOD_SHIFT) != 0) window.close();
                 }
                 case GLFW_KEY_W -> wPressed = action != GLFW_RELEASE;
                 case GLFW_KEY_A -> aPressed = action != GLFW_RELEASE;
@@ -149,6 +147,7 @@ public class DemCubez {
                 case GLFW_KEY_E -> ePressed = action != GLFW_RELEASE;
                 case GLFW_KEY_LEFT_CONTROL -> ctrlPressed = action != GLFW_RELEASE;
             }
+            return true;
         });
         
         return glfwGetError(null) == GLFW_NO_ERROR;
@@ -160,52 +159,38 @@ public class DemCubez {
         resetPreviousMousePosition();
         
         float mouseSensitivity = 0.15f, zoomSensitivity = 0.5f;
+        window.setCursorInputs(new CursorInputAdapter() {
+            @Override
+            public boolean invokeMove(double posX, double posY) {
+                if (paused) return false;
 
-        glfwSetCursorPosCallback(window.getID(), (window, xpos, ypos) -> {
-            if (paused) return;
+                double dx = -((posX - prevMouseX) * mouseSensitivity);
+                double dy = ((posY - prevMouseY) * mouseSensitivity);
 
-            double dx = -((xpos - prevMouseX) * mouseSensitivity);
-            double dy = ((ypos - prevMouseY) * mouseSensitivity);
-            
-            dPitch = (float) dy;
-            dYaw = (float) dx;
-            
-            //pitch += Math.cos(roll) * dy + Math.sin(roll) * dx;
-            //yaw -= Math.cos(roll) * dx + Math.sin(roll) * dy;
-            
-//            if (pitch > 89f) {
-//                pitch = 89f;
-//            } else if (pitch < -89f) {
-//                pitch = -89f;
-//            }
-            
-            prevMouseX = (float) xpos;
-            prevMouseY = (float) ypos;
-        });
+                dPitch = (float) dy;
+                dYaw = (float) dx;
 
-        glfwSetMouseButtonCallback(window.getID(), (window, button, action, mods) -> {
-        });
-        
-        glfwSetScrollCallback(window.getID(), (window, xoffset, yoffset) -> {
-            double zoom = camera.getZoom() - yoffset * zoomSensitivity;
-    
-            if (zoom > 10d) {
-                zoom = 10f;
-            } else if (zoom < 0.1d) {
-                zoom = 0.1f;
+                prevMouseX = (float) posX;
+                prevMouseY = (float) posY;
+
+                return true;
             }
-            
-            camera.setZoom((float) zoom);
+
+            @Override
+            public boolean invokeScroll(double deltaX, double deltaY) {
+                double zoom = camera.getZoom() - deltaY * zoomSensitivity;
+                camera.setZoom((float) zoom);
+                return true;
+            }
         });
     
         return glfwGetError(null) == GLFW_NO_ERROR;
     }
     
     private void resetPreviousMousePosition() {
-        double[] prevX = new double[1], prevY = new double[1];
-        glfwGetCursorPos(window.getID(), prevX, prevY);
-        prevMouseX = (float) prevX[0];
-        prevMouseY = (float) prevY[0];
+        Vector2d mousePos = window.getCursor().getPosition();
+        prevMouseX = (float) mousePos.x();
+        prevMouseY = (float) mousePos.y();
     }
 
     private void loop() {
