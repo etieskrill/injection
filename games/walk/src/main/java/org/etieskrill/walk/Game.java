@@ -15,11 +15,8 @@ import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.texture.font.Font;
 import org.etieskrill.engine.graphics.texture.font.Fonts;
 import org.etieskrill.engine.graphics.texture.font.TrueTypeFont;
-import org.etieskrill.engine.input.Input;
+import org.etieskrill.engine.input.*;
 import org.etieskrill.engine.input.InputBinding.Trigger;
-import org.etieskrill.engine.input.KeyInputManager;
-import org.etieskrill.engine.input.Keys;
-import org.etieskrill.engine.input.OverruleGroup;
 import org.etieskrill.engine.scene.Scene;
 import org.etieskrill.engine.scene.component.Button;
 import org.etieskrill.engine.scene.component.Container;
@@ -41,7 +38,6 @@ import java.lang.Math;
 import java.util.List;
 import java.util.Random;
 
-import static org.lwjgl.glfw.GLFW.glfwSetCursorPosCallback;
 import static org.lwjgl.opengl.GL11C.*;
 
 public class Game {
@@ -103,24 +99,21 @@ public class Game {
                 .setRefreshRate(0)
                 .setMode(Window.WindowMode.BORDERLESS)
                 .setTitle("Walk")
-                .setInputManager(keyInputManager)
+                .setKeyInputHandler(keyInputManager)
                 .build();
-        
-        setupCursor();
         window.getCursor().disable();
+
+        camera = new PerspectiveCamera(window.getSize().toVec());
+        camera.setZoom(4.81f);
+
+        setupCursor();
     }
     
     private void setupCursor() {
-        glfwSetCursorPosCallback(window.getID(), ((window1, xpos, ypos) -> {
-            double dx = prevCursorPosX - xpos;
-            double dy = prevCursorPosY - ypos;
-
-            double sens = 0.04;
-            if (!pacer.isPaused()) camera.orient(-dy * sens, dx * sens, 0);
-    
-            prevCursorPosX = xpos;
-            prevCursorPosY = ypos;
-        }));
+        window.setCursorInputs(
+                new CursorCameraController(camera, .04, 0)
+                        .setUpdateCondition(() -> !pacer.isPaused())
+        );
     }
     
     private void setupUI() {
@@ -199,9 +192,6 @@ public class Game {
         shader = (Shaders.StaticShader) ShaderLoader.get().load("standard", Shaders::getStandardShader);
         lightShader = (Shaders.LightSourceShader) ShaderLoader.get().load("light", Shaders::getLightSourceShader);
         fontShader = (Shaders.TextShader) ShaderLoader.get().load("font", Shaders::getTextShader);
-        
-        camera = new PerspectiveCamera(window.getSize().toVec());
-        camera.setZoom(4.81f);
 
         pointLight = new PointLight(light.getTransform().getPosition(),
                 new Vector3f(1), new Vector3f(1), new Vector3f(1),

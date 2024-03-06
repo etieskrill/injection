@@ -95,7 +95,7 @@ public abstract class Camera {
     }
 
     public Camera setZoom(float zoom) {
-        this.zoom = zoom;
+        this.zoom = Math.clamp(zoom, .01f, 10f);
         if (autoUpdate) update();
         return this;
     }

@@ -18,8 +18,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Random;
 
-import static org.lwjgl.glfw.GLFW.glfwSetCursorPosCallback;
-
 public class GameScene {
 
     private static final Logger logger = LoggerFactory.getLogger(GameScene.class);
@@ -44,8 +42,6 @@ public class GameScene {
     Shaders.LightSourceShader lightShader;
 
     private KeyInputManager keyInputManager;
-
-    private double prevCursorPosX, prevCursorPosY;
 
     public GameScene(Game game) {
         init(game);
@@ -124,17 +120,10 @@ public class GameScene {
     }
 
     private void setupCursor(Game game) {
-        glfwSetCursorPosCallback(game.getWindow().getID(), ((window1, xpos, ypos) -> {
-            double dx = prevCursorPosX - xpos;
-            double dy = prevCursorPosY - ypos;
-
-            double sens = 0.04;
-            if (!game.getPacer().isPaused() && game.getStage() == Game.Stage.GAME)
-                camera.orient(-dy * sens, dx * sens, 0);
-
-            prevCursorPosX = xpos;
-            prevCursorPosY = ypos;
-        }));
+        game.getWindow().setCursorInputs(
+                new CursorCameraController(camera, .04, 0)
+                        .setUpdateCondition(() -> !game.getPacer().isPaused() && game.getStage() == Game.Stage.GAME)
+        );
     }
 
     public void updateScene(double delta) {

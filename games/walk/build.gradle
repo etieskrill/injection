@@ -16,8 +16,6 @@ application {
 dependencies {
     implementation project(':engine')
 
-    implementation "org.lwjgl:lwjgl-glfw:3.3.3"
-    runtimeOnly "org.lwjgl:lwjgl-glfw::natives-windows"
     implementation "org.lwjgl:lwjgl-opengl:3.3.3"
     runtimeOnly "org.lwjgl:lwjgl-opengl::natives-windows"
 }

@@ -138,8 +138,16 @@ public class Renderer {
             pen.add(glyph.getAdvance());
         }
     }
-    
+
+    public void renderInstances(Model model, int numInstances, ShaderProgram shader, Matrix4fc combined) {
+        _render(model, shader, combined, true, numInstances);
+    }
+
     private void _render(Model model, ShaderProgram shader, Matrix4fc combined) {
+        _render(model, shader, combined, false, 0);
+    }
+
+    private void _render(Model model, ShaderProgram shader, Matrix4fc combined, boolean instanced, int numInstances) {
         shader.setUniform("uCombined", combined, false);
         shader.setUniform("uModel", model.getFinalTransform().getMatrix(), false);
         shader.setUniform("uNormal", model.getFinalTransform().getMatrix().invert(new Matrix4f()).transpose().get3x3(new Matrix3f()), false);
@@ -148,29 +156,28 @@ public class Renderer {
         if (model.hasTransparency()) glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         shader.start();
         Node rootNode = model.getNodes().getFirst();
-        renderNode(rootNode, shader, rootNode.getTransform().getMatrix());
+        renderNode(rootNode, shader, rootNode.getTransform().getMatrix(), instanced, numInstances);
         shader.stop();
         if (!model.doCulling()) glEnable(GL_CULL_FACE);
         if (model.hasTransparency()) glBlendFunc(GL_ONE, GL_ZERO);
     }
-    
-    //TODO should once again be made private, so dont use anywhere else, even if you **could**
-    @Deprecated
-    public void renderNode(Node node, ShaderProgram shader, Matrix4fc meshTransform) {
+
+    private void renderNode(Node node, ShaderProgram shader, Matrix4fc meshTransform, boolean instanced, int numInstances) {
         shader.setUniform("uMesh", meshTransform, false);
 
         for (Mesh mesh : node.getMeshes())
-            renderMesh(mesh, shader);
+            renderMesh(mesh, shader, instanced, numInstances);
 
         for (Node child : node.getChildren())
-            renderNode(child, shader, meshTransform.mul(child.getTransform().getMatrix(), new Matrix4f()));
+            renderNode(child, shader, meshTransform.mul(child.getTransform().getMatrix(), new Matrix4f()), instanced, numInstances);
     }
 
-    private void renderMesh(Mesh mesh, ShaderProgram shader) {
+    private void renderMesh(Mesh mesh, ShaderProgram shader, boolean instanced, int numInstances) {
         bindMaterial(mesh.getMaterial(), shader);
         glBindVertexArray(mesh.getVao());
 
-        glDrawElements(mesh.getDrawMode().gl(), mesh.getNumIndices(), GL_UNSIGNED_INT, 0);
+        if (!instanced) glDrawElements(mesh.getDrawMode().gl(), mesh.getNumIndices(), GL_UNSIGNED_INT, 0);
+        else glDrawElementsInstanced(mesh.getDrawMode().gl(), mesh.getNumIndices(), GL_UNSIGNED_INT, 0, numInstances);
         if (mesh.getDrawMode() == Mesh.DrawMode.TRIANGLES)
             trianglesDrawn += mesh.getNumIndices() / 3;
         renderCalls++;
@@ -179,44 +186,6 @@ public class Renderer {
         glBindVertexArray(0);
     }
 
-    public void renderInstances(Model model, int numInstances, ShaderProgram shader, Matrix4fc combined) {
-        shader.setUniform("uCombined", combined, false);
-        shader.setUniform("uModel", model.getFinalTransform().getMatrix(), false);
-        shader.setUniform("uNormal", model.getFinalTransform().getMatrix().invert(new Matrix4f()).transpose().get3x3(new Matrix3f()), false); //TODO store in fixed matrix to lessen object creation
-
-        if (!model.doCulling()) glDisable(GL_CULL_FACE);
-        if (model.hasTransparency()) glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        shader.start();
-        Node rootNode = model.getNodes().getFirst();
-        renderNodeInstances(rootNode, numInstances, shader, rootNode.getTransform().getMatrix());
-        shader.stop();
-        if (!model.doCulling()) glEnable(GL_CULL_FACE);
-        if (model.hasTransparency()) glBlendFunc(GL_ONE, GL_ZERO);
-    }
-
-    public void renderNodeInstances(Node node, int numInstances, ShaderProgram shader, Matrix4fc meshTransform) {
-        shader.setUniform("uMesh", meshTransform, false);
-
-        for (Mesh mesh : node.getMeshes())
-            renderMeshInstances(mesh, numInstances, shader);
-
-        for (Node child : node.getChildren())
-            renderNodeInstances(child, numInstances, shader, meshTransform.mul(child.getTransform().getMatrix(), new Matrix4f())); //TODO same as with normal, store precalculated in nodes
-    }
-
-    private void renderMeshInstances(Mesh mesh, int numInstances, ShaderProgram shader) {
-        bindMaterial(mesh.getMaterial(), shader);
-        glBindVertexArray(mesh.getVao());
-
-        glDrawElementsInstanced(mesh.getDrawMode().gl(), mesh.getNumIndices(), GL_UNSIGNED_INT, 0, numInstances);
-        if (mesh.getDrawMode() == Mesh.DrawMode.TRIANGLES)
-            trianglesDrawn += mesh.getNumIndices() / 3;
-        renderCalls++;
-
-        AbstractTexture.unbindAllTextures();
-        glBindVertexArray(0);
-    }
-    
     private void bindMaterial(Material material, ShaderProgram shader) {
         //TODO here the renderer could decide what kind of shader to use, based on the material given
         int tex2d = 0, cubemaps = 0;

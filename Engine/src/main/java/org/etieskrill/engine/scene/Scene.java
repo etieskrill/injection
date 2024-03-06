@@ -1,18 +1,18 @@
 package org.etieskrill.engine.scene;
 
-import org.joml.Vector2f;
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.Camera;
-import org.etieskrill.engine.input.CursorInputHandler;
+import org.etieskrill.engine.input.CursorInputAdapter;
 import org.etieskrill.engine.input.Key;
 import org.etieskrill.engine.scene.component.Node;
 import org.jetbrains.annotations.NotNull;
+import org.joml.Vector2f;
 import org.joml.Vector2fc;
 
 import static java.util.Objects.requireNonNull;
 import static org.lwjgl.opengl.GL11C.*;
 
-public class Scene implements CursorInputHandler {
+public class Scene implements CursorInputAdapter {
     
     private Batch batch;
     private Node root;
@@ -87,16 +87,6 @@ public class Scene implements CursorInputHandler {
     @Override
     public boolean invokeClick(Key button, int action, double posX, double posY) {
         return root.hit(button, action, posX, posY);
-    }
-
-    @Override
-    public boolean invokeMove(double deltaX, double deltaY) {
-        return false;
-    }
-
-    @Override
-    public boolean invokeScroll(double deltaX, double deltaY) {
-        return false;
     }
 
 }
