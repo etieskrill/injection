@@ -1,10 +1,9 @@
 package org.etieskrill.engine.time;
 
+import org.etieskrill.engine.util.FixedArrayDeque;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.concurrent.atomic.AtomicLong;
 
 
@@ -14,10 +13,9 @@ public class SystemNanoTimePacer implements LoopPacer {
 
     private static final long NANO_FACTOR = 1000000000, MILLI_FACTOR = 1000000;
     private static final int AVERAGE_FRAMERATE_SPAN = 20;
-    
-    private final Deque<Long> deltaBuffer = new ArrayDeque<>(AVERAGE_FRAMERATE_SPAN);
-    private final int ignoredInitialReadings;
-    
+
+    private final FixedArrayDeque<Long> deltaBuffer = new FixedArrayDeque<>(AVERAGE_FRAMERATE_SPAN);
+
     private long targetDelta;
     private volatile long timeNow, timeLast, delta;
     private final AtomicLong timerTime = new AtomicLong();
@@ -25,37 +23,30 @@ public class SystemNanoTimePacer implements LoopPacer {
     private volatile double averageFPS;
 
     private volatile long totalFrames, localFrames;
-    
+
     private boolean started = false;
-    
+
     private long thread, lastThread = 0;
-    
-    public SystemNanoTimePacer(double targetDeltaSeconds, int ignoredInitialReadings) {
-        this.targetDelta = (long) (targetDeltaSeconds * NANO_FACTOR);
-        this.ignoredInitialReadings = ignoredInitialReadings;
-    }
-    
+
     public SystemNanoTimePacer(double targetDeltaSeconds) {
         this.targetDelta = (long) (targetDeltaSeconds * NANO_FACTOR);
-        this.ignoredInitialReadings = (int) (10f / targetDelta);
     }
-    
+
     @Override
     public void start() {
         if (started) throw new IllegalStateException("Pacer was already started");
 
         this.timeLast = System.nanoTime();
-        this.deltaBuffer.addLast(0L);
         this.started = true;
     }
-    
+
     @Override
     public void nextFrame() {
         if (!started) throw new IllegalStateException("Pacer must be started before call to nextFrame");
         if ((thread = Thread.currentThread().threadId()) != lastThread && lastThread != 0)
             throw new WrongThreadException("nextFrame must not be called from more than one thread");
         else lastThread = thread;
-        
+
         updateTime();
         delta = timeNow - timeLast;
         if (!timerPaused) timerTime.addAndGet(delta);
@@ -66,34 +57,30 @@ public class SystemNanoTimePacer implements LoopPacer {
             logger.warn("Could not sleep", e);
         }
 
-        if (totalFrames > ignoredInitialReadings) updateAverageFPS(System.nanoTime() - timeLast);
+        updateAverageFPS(System.nanoTime() - timeLast);
         timeLast = timeNow;
 
         incrementFrameCounters();
     }
 
     private void updateAverageFPS(long newDelta) {
-        if (deltaBuffer.size() >= AVERAGE_FRAMERATE_SPAN) deltaBuffer.removeFirst();
-        deltaBuffer.addLast(newDelta);
+        deltaBuffer.push(newDelta);
 
-        long sum = 0;
-        for (long value : deltaBuffer) {
-            sum += value;
-        }
-
-        //TODO technically the value is wrong until the entire buffer is filled, but a buffer size call with every call seems pretty expensive in comparison
-        averageFPS = (AVERAGE_FRAMERATE_SPAN * NANO_FACTOR) / (double)sum;
+        averageFPS = NANO_FACTOR / deltaBuffer.stream()
+                .mapToLong(value -> value)
+                .average()
+                .orElse(0);
     }
-    
+
     @Override
     public double getDeltaTimeSeconds() {
-        return (double)delta / NANO_FACTOR;
+        return (double) delta / NANO_FACTOR;
     }
-    
+
     @Override
     public double getSecondsElapsedTotal() {
         updateTime();
-        return (double)timeNow / NANO_FACTOR;
+        return (double) timeNow / NANO_FACTOR;
     }
 
     @Override
@@ -105,7 +92,7 @@ public class SystemNanoTimePacer implements LoopPacer {
     public void resumeTimer() {
         this.timerPaused = false;
     }
-    
+
     @Override
     public boolean isPaused() {
         return this.timerPaused;
@@ -118,7 +105,7 @@ public class SystemNanoTimePacer implements LoopPacer {
 
     @Override
     public double getTime() {
-        return (double)this.timerTime.get() / NANO_FACTOR;
+        return (double) this.timerTime.get() / NANO_FACTOR;
     }
 
     @Override
@@ -143,14 +130,14 @@ public class SystemNanoTimePacer implements LoopPacer {
 
     @Override
     public double getTargetDeltaTime() {
-        return (double)targetDelta / NANO_FACTOR;
+        return (double) targetDelta / NANO_FACTOR;
     }
-    
+
     @Override
     public synchronized void setTargetDeltaTime(double targetDeltaSeconds) {
-        this.targetDelta = (long)(targetDeltaSeconds * NANO_FACTOR);
+        this.targetDelta = (long) (targetDeltaSeconds * NANO_FACTOR);
     }
-    
+
     private void updateTime() {
         this.timeNow = System.nanoTime();
     }
@@ -159,5 +146,5 @@ public class SystemNanoTimePacer implements LoopPacer {
         totalFrames++;
         localFrames++;
     }
-    
+
 }

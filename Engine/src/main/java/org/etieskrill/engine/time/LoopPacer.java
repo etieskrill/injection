@@ -1,5 +1,6 @@
 package org.etieskrill.engine.time;
 
+//TODO rework interface and document
 public interface LoopPacer {
     
     void start();
