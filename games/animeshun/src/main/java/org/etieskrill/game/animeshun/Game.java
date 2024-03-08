@@ -15,7 +15,6 @@ import org.etieskrill.engine.graphics.gl.shaders.Shaders;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.model.Node;
 import org.etieskrill.engine.graphics.model.loader.Loader;
-import org.etieskrill.engine.graphics.texture.font.Fonts;
 import org.etieskrill.engine.graphics.texture.font.TrueTypeFont;
 import org.etieskrill.engine.input.CursorCameraController;
 import org.etieskrill.engine.input.Input;
@@ -58,14 +57,22 @@ public class Game {
 
     private Camera camera;
     private Model vampy;
+    private Vector3f vampyPosDelta;
     private AnimationShader vampyShader;
     private Model cube;
     private DirectionalLight globalLight;
 
-    private int currentAnimation = 0;
     private Animator vampyAnimator;
 
-    private Label animationSelector;
+    private static final int VAMPY_ANIMATION_IDLE = 0;
+    private static final int VAMPY_ANIMATION_WALKING = 1;
+    private static final int VAMPY_ANIMATION_WALKING_LEFT = 2;
+    private static final int VAMPY_ANIMATION_WALKING_RIGHT = 3;
+    private static final int VAMPY_ANIMATION_WALKING_BACKWARD = 4;
+    private static final int VAMPY_ANIMATION_RUNNING = 5;
+    private static final int VAMPY_ANIMATION_WAVING = 6;
+    private static final int VAMPY_ANIMATION_DANCING = 7;
+
     private Label renderStatistics;
 
     private int boneSelector = 4;
@@ -73,20 +80,16 @@ public class Game {
 
     private final KeyInputManager controls = Input.of(
             Input.bind(Keys.ESC.withMods(Keys.Mod.SHIFT)).to(this::terminate),
-            Input.bind(Keys.W).on(PRESSED).to(delta -> camera.translate(new Vector3f(0, 0, delta.floatValue()))),
-            Input.bind(Keys.S).on(PRESSED).to(delta -> camera.translate(new Vector3f(0, 0, -delta.floatValue()))),
-            Input.bind(Keys.A).on(PRESSED).to(delta -> camera.translate(new Vector3f(-delta.floatValue(), 0, 0))),
-            Input.bind(Keys.D).on(PRESSED).to(delta -> camera.translate(new Vector3f(delta.floatValue(), 0, 0))),
-            Input.bind(Keys.SPACE).on(PRESSED).to(delta -> camera.translate(new Vector3f(0, -delta.floatValue(), 0))),
-            Input.bind(Keys.SHIFT).on(PRESSED).to(delta -> camera.translate(new Vector3f(0, delta.floatValue(), 0))),
+            Input.bind(Keys.W).on(PRESSED).to(() -> vampyPosDelta.add(0, 0, 1)),
+            Input.bind(Keys.S).on(PRESSED).to(() -> vampyPosDelta.add(0, 0, -1)),
+            Input.bind(Keys.A).on(PRESSED).to(() -> vampyPosDelta.add(-1, 0, 0)),
+            Input.bind(Keys.D).on(PRESSED).to(() -> vampyPosDelta.add(1, 0, 0)),
+//            Input.bind(Keys.SPACE).on(PRESSED).to(delta -> vampy.getTransform().translate(new Vector3f(0, -delta.floatValue(), 0))),
+//            Input.bind(Keys.SHIFT).on(PRESSED).to(delta -> vampy.getTransform().translate(new Vector3f(0, delta.floatValue(), 0))),
             Input.bind(Keys.Q).on(ON_PRESS).to(() -> {
-                vampyAnimator.switchPlaying();
-                logger.info("Vampy animation is {}", vampyAnimator.isPlaying() ? "playing" : "stopped");
-            }),
-            Input.bind(Keys.E).on(ON_PRESS).to(() -> {
-                currentAnimation = ++currentAnimation % (vampyAnimator.getAnimationProviders().size());
-                animationSelector.setText("Current animation " + (currentAnimation + 1) + " of " + vampyAnimator.getAnimationProviders().size() + ": " + vampyAnimator.getAnimationProviders().get(currentAnimation).getAnimation().getName());
-                logger.info("Switching to animation {}, '{}'", currentAnimation, vampyAnimator.getAnimationProviders().get(currentAnimation).getAnimation().getName());
+                boolean waving = vampyAnimator.getAnimationMixer().isEnabled(VAMPY_ANIMATION_WAVING);
+                vampyAnimator.getAnimationMixer().setEnabled(VAMPY_ANIMATION_WAVING, !waving);
+                logger.info("Vampy is {}waving", waving ? "not " : "");
             }),
             Input.bind(Keys.R).on(ON_PRESS).to(() -> {
                 boneSelector = ++boneSelector % 5;
@@ -122,10 +125,8 @@ public class Game {
         vampy.getInitialTransform()
                 .setPosition(new Vector3f(2.5f, -1f, 0f))
                 .applyRotation(quat -> quat.rotateY(toRadians(-90)));
+        vampyPosDelta = new Vector3f();
 
-        List<Animation> orcIdle = Loader.loadModelAnimations("mixamo_orc_idle.dae", vampy);
-        List<Animation> running = Loader.loadModelAnimations("mixamo_running.dae", vampy);
-        List<Animation> waving = Loader.loadModelAnimations("mixamo_waving.dae", vampy);
 
         //Different formats sport different conventions or restrictions for the global up direction, one could either
         // - try to deduce up (and scale for that matter) from the root node of a scene, which is not difficult at all
@@ -140,12 +141,28 @@ public class Game {
                 .orElseThrow();
 
         vampyAnimator = new Animator(vampy)
-                .add(orcIdle.getFirst(), 1f)
-                .add(vampy.getAnimations().getFirst())
-                .add(running.getFirst())
-                .add(waving.getFirst(), NodeFilter.tree(rightArmNode))
-//                .add(hipHopDance.getFirst()) //TODO figure out why adding this breaks the animator
+                .add(Loader.loadModelAnimations("mixamo_orc_idle.dae", vampy).getFirst(), 0)
+                .add(vampy.getAnimations().getFirst(), 0)
+                .add(Loader.loadModelAnimations("mixamo_left_strafe_walking.dae", vampy).getFirst(), 0)
+                .add(Loader.loadModelAnimations("mixamo_right_strafe_walking.dae", vampy).getFirst(), 0)
+                .add(Loader.loadModelAnimations("mixamo_walking_backwards.dae", vampy).getFirst(), 0)
+                .add(Loader.loadModelAnimations("mixamo_running.dae", vampy).getFirst(), 0)
+                .add(Loader.loadModelAnimations("mixamo_waving.dae", vampy).getFirst(), NodeFilter.tree(rightArmNode))
+                .add(Loader.loadModelAnimations("mixamo_hip_hop_dancing.dae", vampy).getFirst(), 0) //TODO -figure out why adding this breaks the animator- base transform is not respected in mixer
         ;
+
+        double walkDuration = vampyAnimator.getAnimationProviders().get(VAMPY_ANIMATION_WALKING).getAnimation().getDuration();
+        double walkLeftDuration = vampyAnimator.getAnimationProviders().get(VAMPY_ANIMATION_WALKING_LEFT).getAnimation().getDuration();
+        double walkRightDuration = vampyAnimator.getAnimationProviders().get(VAMPY_ANIMATION_WALKING_RIGHT).getAnimation().getDuration();
+        double walkBackDuration = vampyAnimator.getAnimationProviders().get(VAMPY_ANIMATION_WALKING_BACKWARD).getAnimation().getDuration();
+        double speed = .85;
+        vampyAnimator.getAnimationProviders().get(VAMPY_ANIMATION_WALKING).setPlaybackSpeed(speed);
+        vampyAnimator.getAnimationProviders().get(VAMPY_ANIMATION_WALKING_LEFT).setPlaybackSpeed(speed * walkLeftDuration / walkDuration);
+        vampyAnimator.getAnimationProviders().get(VAMPY_ANIMATION_WALKING_RIGHT).setPlaybackSpeed(speed * walkRightDuration / walkDuration);
+        vampyAnimator.getAnimationProviders().get(VAMPY_ANIMATION_WALKING_BACKWARD).setPlaybackSpeed(speed * walkBackDuration / walkDuration);
+        vampyAnimator.getAnimationProviders().get(VAMPY_ANIMATION_RUNNING).setPlaybackSpeed(.75);
+        vampyAnimator.getAnimationMixer().setEnabled(VAMPY_ANIMATION_WAVING, false);
+        vampyAnimator.getAnimationMixer().setEnabled(VAMPY_ANIMATION_DANCING, false);
 
         vampyShader = (AnimationShader) Loaders.ShaderLoader.get().load("vampyShader", AnimationShader::new);
         vampyShader.setShowBoneSelector(boneSelector);
@@ -160,17 +177,10 @@ public class Game {
 
         window.getCursor().disable();
 
-        animationSelector = new Label(
-                "Current animation " + (currentAnimation + 1) + " of " + vampyAnimator.getAnimationProviders().size() + ": " + vampyAnimator.getAnimationProviders().get(currentAnimation).getAnimation().getName(),
-                Fonts.getDefault(36)
-        );
         renderStatistics = new Label();
         Scene scene = new Scene(
                 new Batch(renderer).setShader(Shaders.getTextShader()),
                 new Stack(List.of(
-                        animationSelector
-                                .setAlignment(org.etieskrill.engine.scene.component.Node.Alignment.TOP_RIGHT)
-                                .setMargin(new Vector4f(10)),
                         renderStatistics
                                 .setAlignment(org.etieskrill.engine.scene.component.Node.Alignment.TOP_LEFT)
                                 .setMargin(new Vector4f(10))
@@ -191,8 +201,13 @@ public class Game {
         long cpuTime;
         ArrayDeque<Double> cpuTimes = new FixedArrayDeque<>(FRAMERATE);
 
+        float walkingFactor = 0, runningFactor = 0;
+        final Vector3f currentPosition = new Vector3f(), lastPosition = new Vector3f();
+
         pacer.start();
         while (!window.shouldClose()) {
+            double delta = pacer.getDeltaTimeSeconds();
+
             long time = System.nanoTime();
             int gpuTimeNano = GL46C.glGetQueryObjecti(gpuTimeQuery, GL46C.GL_QUERY_RESULT);
             double gpuWaitTimeMillis = (System.nanoTime() - time) / 1000000d;
@@ -202,9 +217,73 @@ public class Game {
 
             time = System.nanoTime();
 
+            Vector3f vampyAcceleration;
+            if (!vampyPosDelta.equals(0, 0, 0)) {
+                vampyAcceleration = camera.relativeTranslation(vampyPosDelta);
+                vampyAcceleration.y = 0;
+                vampyAcceleration.normalize();
+            } else {
+                vampyAcceleration = new Vector3f();
+            }
+
+            //verlet + universal friction: p_n+1 = (2-f)*p_n - (1-f)*p_n-1 + a_n * dt^2
+            final float friction = .075f;
+            final float accel = controls.isPressed(Keys.W) && controls.isPressed(Keys.SHIFT) ? 15 : 8;
+            currentPosition.set(vampy.getTransform().getPosition());
+            Vector3f acceleration = vampyAcceleration.mul(accel * (float) (delta * delta));
+            vampy.getTransform().getPosition()
+                    .mul(2 - friction)
+                    .sub(lastPosition.mul(1 - friction))
+                    .add(acceleration);
+            lastPosition.set(currentPosition);
+            vampyPosDelta.zero();
+//            System.out.println(vampy.getTransform().getPosition().sub(lastPosition, new Vector3f()));
+
+            vampy.getTransform().applyRotation(quat -> quat.rotationY((float) toRadians(-camera.getYaw() + 180)));
+
+            Vector3f orbitPos = new Vector3f(vampy.getTransform().getPosition())
+                    .add(2.5f, .5f, 0)
+                    .add(camera.getDirection().mul(-2.5f));
+            camera.setPosition(orbitPos);
+
             renderer.prepare();
 
-            vampyAnimator.update(pacer.getDeltaTimeSeconds());
+            float diff = (controls.isPressed(Keys.W)
+                    || controls.isPressed(Keys.A)
+                    || controls.isPressed(Keys.D)
+                    || controls.isPressed(Keys.S)
+            ) && !controls.isPressed(Keys.SHIFT) ? 1 - walkingFactor : -walkingFactor;
+            diff *= (float) delta * 5;
+            walkingFactor += diff;
+
+            diff = (controls.isPressed(Keys.W)
+                    || controls.isPressed(Keys.A)
+                    || controls.isPressed(Keys.D)
+                    || controls.isPressed(Keys.S)
+            ) && controls.isPressed(Keys.SHIFT) ? 1 - runningFactor : -runningFactor;
+            diff *= (float) delta * 5;
+            runningFactor += diff;
+
+            float forwardFactor = 0, leftFactor = 0, rightFactor = 0, backFactor = 0;
+            if (controls.isPressed(Keys.W)) forwardFactor = 1;
+            if (controls.isPressed(Keys.A)) leftFactor = 1;
+            if (controls.isPressed(Keys.D)) rightFactor = 1;
+            if (controls.isPressed(Keys.S)) backFactor = 1;
+            float factorSum = forwardFactor + leftFactor + rightFactor + backFactor;
+            if (factorSum != 0) {
+                forwardFactor /= factorSum;
+                leftFactor /= factorSum;
+                rightFactor /= factorSum;
+                backFactor /= factorSum;
+            }
+
+            vampyAnimator.getAnimationMixer().setWeight(VAMPY_ANIMATION_IDLE, Math.max(1f - walkingFactor - runningFactor, 0));
+            vampyAnimator.getAnimationMixer().setWeight(VAMPY_ANIMATION_WALKING, forwardFactor * walkingFactor);
+            vampyAnimator.getAnimationMixer().setWeight(VAMPY_ANIMATION_WALKING_LEFT, leftFactor * walkingFactor);
+            vampyAnimator.getAnimationMixer().setWeight(VAMPY_ANIMATION_WALKING_RIGHT, rightFactor * walkingFactor);
+            vampyAnimator.getAnimationMixer().setWeight(VAMPY_ANIMATION_WALKING_BACKWARD, backFactor * walkingFactor);
+            vampyAnimator.getAnimationMixer().setWeight(VAMPY_ANIMATION_RUNNING, runningFactor);
+            vampyAnimator.update(delta);
 
             vampyShader.setBoneMatrices(vampyAnimator.getTransformMatrices());
             vampyShader.setGlobalLights(globalLight);
@@ -214,7 +293,7 @@ public class Game {
             renderer.render(vampy, vampyShader, camera.getCombined());
             renderer.render(cube, vampyShader, camera.getCombined());
 
-            window.update(pacer.getDeltaTimeSeconds());
+            window.update(delta);
 
             GL46C.glEndQuery(GL33C.GL_TIME_ELAPSED);
 
