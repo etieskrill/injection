@@ -1,9 +1,7 @@
 package org.etieskrill.orbes.scene;
 
-import org.joml.Vector2f;
-import org.joml.Vector4f;
 import org.etieskrill.engine.graphics.Batch;
-import org.etieskrill.engine.graphics.Camera;
+import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.texture.font.Font;
 import org.etieskrill.engine.graphics.texture.font.Fonts;
 import org.etieskrill.engine.scene.Scene;
@@ -13,6 +11,8 @@ import org.etieskrill.engine.scene.component.Label;
 import org.etieskrill.engine.scene.component.Node.Alignment;
 import org.etieskrill.engine.scene.component.VBox;
 import org.etieskrill.orbes.Game;
+import org.joml.Vector2f;
+import org.joml.Vector4f;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

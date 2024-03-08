@@ -1,11 +1,10 @@
 package org.etieskrill.engine.graphics;
 
-import org.joml.*;
-import org.etieskrill.engine.graphics.gl.Renderer;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
 import org.etieskrill.engine.graphics.texture.font.Font;
 import org.jetbrains.annotations.NotNull;
+import org.joml.*;
 
 public class Batch {
 

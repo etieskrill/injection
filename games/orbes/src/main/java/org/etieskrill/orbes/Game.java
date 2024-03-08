@@ -1,14 +1,15 @@
 package org.etieskrill.orbes;
 
 import org.etieskrill.engine.graphics.Batch;
-import org.etieskrill.engine.graphics.Camera;
-import org.etieskrill.engine.graphics.OrthographicCamera;
+import org.etieskrill.engine.graphics.Renderer;
+import org.etieskrill.engine.graphics.camera.Camera;
+import org.etieskrill.engine.graphics.camera.OrthographicCamera;
 import org.etieskrill.engine.graphics.gl.FrameBuffer;
-import org.etieskrill.engine.graphics.gl.ModelFactory;
-import org.etieskrill.engine.graphics.gl.Renderer;
+import org.etieskrill.engine.graphics.gl.GLRenderer;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
 import org.etieskrill.engine.graphics.model.Material;
 import org.etieskrill.engine.graphics.model.Model;
+import org.etieskrill.engine.graphics.model.ModelFactory;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.texture.font.TrueTypeFont;
 import org.etieskrill.engine.time.LoopPacer;
@@ -33,7 +34,7 @@ public class Game {
 
     private Window window;
 
-    private Renderer renderer = new Renderer();
+    private Renderer renderer = new GLRenderer();
 
     private static final double MAX_TIME = 40.0;
 

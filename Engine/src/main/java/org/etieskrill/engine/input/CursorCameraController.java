@@ -1,6 +1,6 @@
 package org.etieskrill.engine.input;
 
-import org.etieskrill.engine.graphics.Camera;
+import org.etieskrill.engine.graphics.camera.Camera;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2d;
 

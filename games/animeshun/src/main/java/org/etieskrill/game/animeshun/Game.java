@@ -1,17 +1,15 @@
 package org.etieskrill.game.animeshun;
 
 import org.etieskrill.engine.entity.data.Transform;
-import org.etieskrill.engine.graphics.Batch;
-import org.etieskrill.engine.graphics.Camera;
-import org.etieskrill.engine.graphics.OrthographicCamera;
-import org.etieskrill.engine.graphics.PerspectiveCamera;
+import org.etieskrill.engine.graphics.Renderer;
 import org.etieskrill.engine.graphics.animation.Animation;
 import org.etieskrill.engine.graphics.animation.Animator;
 import org.etieskrill.engine.graphics.animation.NodeFilter;
+import org.etieskrill.engine.graphics.camera.Camera;
+import org.etieskrill.engine.graphics.camera.PerspectiveCamera;
 import org.etieskrill.engine.graphics.data.DirectionalLight;
+import org.etieskrill.engine.graphics.gl.GLRenderer;
 import org.etieskrill.engine.graphics.gl.GLUtils;
-import org.etieskrill.engine.graphics.gl.Renderer;
-import org.etieskrill.engine.graphics.gl.shaders.Shaders;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.model.Node;
 import org.etieskrill.engine.graphics.model.loader.Loader;
@@ -20,9 +18,6 @@ import org.etieskrill.engine.input.CursorCameraController;
 import org.etieskrill.engine.input.Input;
 import org.etieskrill.engine.input.KeyInputManager;
 import org.etieskrill.engine.input.Keys;
-import org.etieskrill.engine.scene.Scene;
-import org.etieskrill.engine.scene.component.Label;
-import org.etieskrill.engine.scene.component.Stack;
 import org.etieskrill.engine.time.LoopPacer;
 import org.etieskrill.engine.time.SystemNanoTimePacer;
 import org.etieskrill.engine.util.FixedArrayDeque;
@@ -30,9 +25,6 @@ import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.window.Window;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
-import org.joml.Vector4f;
-import org.lwjgl.opengl.GL33C;
-import org.lwjgl.opengl.GL46C;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,7 +43,7 @@ public class Game {
     private static final Logger logger = LoggerFactory.getLogger(Game.class);
 
     private Window window;
-    private final Renderer renderer = new Renderer();
+    private final Renderer renderer = new GLRenderer();
 
     private LoopPacer pacer;
 
@@ -72,8 +64,6 @@ public class Game {
     private static final int VAMPY_ANIMATION_RUNNING = 5;
     private static final int VAMPY_ANIMATION_WAVING = 6;
     private static final int VAMPY_ANIMATION_DANCING = 7;
-
-    private Label renderStatistics;
 
     private int boneSelector = 4;
     private boolean showBoneWeights = false;
@@ -127,7 +117,6 @@ public class Game {
                 .applyRotation(quat -> quat.rotateY(toRadians(-90)));
         vampyPosDelta = new Vector3f();
 
-
         //Different formats sport different conventions or restrictions for the global up direction, one could either
         // - try to deduce up (and scale for that matter) from the root node of a scene, which is not difficult at all
         // - or at least stay consistent with file formats within the same bloody model
@@ -148,7 +137,7 @@ public class Game {
                 .add(Loader.loadModelAnimations("mixamo_walking_backwards.dae", vampy).getFirst(), 0)
                 .add(Loader.loadModelAnimations("mixamo_running.dae", vampy).getFirst(), 0)
                 .add(Loader.loadModelAnimations("mixamo_waving.dae", vampy).getFirst(), NodeFilter.tree(rightArmNode))
-                .add(Loader.loadModelAnimations("mixamo_hip_hop_dancing.dae", vampy).getFirst(), 0) //TODO -figure out why adding this breaks the animator- base transform is not respected in mixer
+                .add(hipHopDance.getFirst(), 0) //TODO -figure out why adding this breaks the animator- base transform is not respected in mixer
         ;
 
         double walkDuration = vampyAnimator.getAnimationProviders().get(VAMPY_ANIMATION_WALKING).getAnimation().getDuration();
@@ -176,27 +165,13 @@ public class Game {
         pacer = new SystemNanoTimePacer(1d / FRAMERATE);
 
         window.getCursor().disable();
-
-        renderStatistics = new Label();
-        Scene scene = new Scene(
-                new Batch(renderer).setShader(Shaders.getTextShader()),
-                new Stack(List.of(
-                        renderStatistics
-                                .setAlignment(org.etieskrill.engine.scene.component.Node.Alignment.TOP_LEFT)
-                                .setMargin(new Vector4f(10))
-                )),
-                new OrthographicCamera(window.getSize().toVec()).setPosition(new Vector3f(window.getSize().toVec().mul(.5f), 0))
-        );
-        window.setScene(scene);
+        window.setScene(new DebugOverlay(renderer, pacer, window.getSize().toVec()));
 
         GLUtils.removeDebugLogging();
     }
 
     private void loop() {
         vampyAnimator.play();
-
-        int gpuTimeQuery = GL46C.glCreateQueries(GL33C.GL_TIME_ELAPSED);
-        ArrayDeque<Double> gpuTimes = new FixedArrayDeque<>(FRAMERATE);
 
         long cpuTime;
         ArrayDeque<Double> cpuTimes = new FixedArrayDeque<>(FRAMERATE);
@@ -208,14 +183,9 @@ public class Game {
         while (!window.shouldClose()) {
             double delta = pacer.getDeltaTimeSeconds();
 
-            long time = System.nanoTime();
-            int gpuTimeNano = GL46C.glGetQueryObjecti(gpuTimeQuery, GL46C.GL_QUERY_RESULT);
-            double gpuWaitTimeMillis = (System.nanoTime() - time) / 1000000d;
-            gpuTimes.push(gpuTimeNano / 1000000d);
-            OptionalDouble avgGpuTime = gpuTimes.stream().mapToDouble(value -> value).average();
             OptionalDouble avgCpuTime = cpuTimes.stream().mapToDouble(value -> value).average();
-
-            time = System.nanoTime();
+            ((DebugOverlay) window.getScene()).setCpuTime(avgCpuTime.orElse(0));
+            long time = System.nanoTime();
 
             Vector3f vampyAcceleration;
             if (!vampyPosDelta.equals(0, 0, 0)) {
@@ -288,22 +258,10 @@ public class Game {
             vampyShader.setBoneMatrices(vampyAnimator.getTransformMatrices());
             vampyShader.setGlobalLights(globalLight);
 
-            GL46C.glBeginQuery(GL33C.GL_TIME_ELAPSED, gpuTimeQuery);
-
             renderer.render(vampy, vampyShader, camera.getCombined());
             renderer.render(cube, vampyShader, camera.getCombined());
 
             window.update(delta);
-
-            GL46C.glEndQuery(GL33C.GL_TIME_ELAPSED);
-
-            renderStatistics.setText(
-                    "Render calls: " + renderer.getRenderCalls() +
-                    "\nTriangles drawn: " + renderer.getTrianglesDrawn() +
-                            "\nAverage fps: %3.0f (%4.1fms)".formatted(pacer.getAverageFPS(), 1000d / pacer.getAverageFPS()) +
-                            "\nCPU time: %4.1fms (%4.1fms gpu sync time)".formatted(avgCpuTime.orElse(0), gpuWaitTimeMillis) +
-                    "\nGPU time: %4.1fms".formatted(avgGpuTime.orElse(0))
-            );
 
             cpuTime = System.nanoTime() - time;
             cpuTimes.push(cpuTime / 1000000d);

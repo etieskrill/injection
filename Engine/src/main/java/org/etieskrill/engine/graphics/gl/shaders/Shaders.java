@@ -3,6 +3,7 @@ package org.etieskrill.engine.graphics.gl.shaders;
 import org.etieskrill.engine.graphics.data.DirectionalLight;
 import org.etieskrill.engine.graphics.data.PointLight;
 import org.joml.Vector3f;
+import org.joml.Vector3fc;
 
 import static org.etieskrill.engine.graphics.gl.shaders.ShaderProgram.Uniform.Type.*;
 
@@ -76,8 +77,8 @@ public class Shaders {
             addUniformArray("globalLights[$]", 1, STRUCT);
             addUniformArray("lights[$]", 2, STRUCT);
         }
-        
-        public void setViewPosition(Vector3f viewPosition) {
+
+        public void setViewPosition(Vector3fc viewPosition) {
             setUniform("uViewPosition", viewPosition);
         }
 

@@ -2,11 +2,12 @@ package org.etieskrill.game.shaderz;
 
 import org.etieskrill.engine.entity.data.Transform;
 import org.etieskrill.engine.graphics.Batch;
-import org.etieskrill.engine.graphics.Camera;
-import org.etieskrill.engine.graphics.OrthographicCamera;
-import org.etieskrill.engine.graphics.PerspectiveCamera;
+import org.etieskrill.engine.graphics.Renderer;
+import org.etieskrill.engine.graphics.camera.Camera;
+import org.etieskrill.engine.graphics.camera.OrthographicCamera;
+import org.etieskrill.engine.graphics.camera.PerspectiveCamera;
 import org.etieskrill.engine.graphics.data.DirectionalLight;
-import org.etieskrill.engine.graphics.gl.Renderer;
+import org.etieskrill.engine.graphics.gl.GLRenderer;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
 import org.etieskrill.engine.graphics.model.Model;
@@ -41,7 +42,7 @@ public class Game {
     private Model sun;
     private DirectionalLight sunLight;
 
-    private Renderer renderer = new Renderer();
+    private Renderer renderer = new GLRenderer();
     private final ShaderProgram shader = new HallwayShader();
     private final ShaderProgram sunShader = Shaders.getLightSourceShader();
 
