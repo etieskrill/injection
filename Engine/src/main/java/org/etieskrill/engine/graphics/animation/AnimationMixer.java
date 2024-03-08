@@ -101,7 +101,8 @@ public class AnimationMixer {
         for (int i = firstEnabled + 1; i < animationLayers.size(); i++) {
             List<Transform> providerTransform = providerTransforms.get(i);
             AnimationLayer layer = animationLayers.get(i);
-            if (!layer.isEnabled() || weights.get(i) == 0) continue;
+            if (!layer.isEnabled() ||
+                    (layer.getBlendMode() != AnimationBlendMode.OVERRIDING && weights.get(i) == 0)) continue;
 
             NodeFilter filter = layer.getFilter();
             switch (layer.getBlendMode()) {
