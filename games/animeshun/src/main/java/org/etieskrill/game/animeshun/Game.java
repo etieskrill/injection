@@ -89,7 +89,7 @@ public class Game {
             Input.bind(Keys.Q).on(ON_PRESS).to(() -> {
                 boolean waving = vampyAnimator.getAnimationMixer().isEnabled(VAMPY_ANIMATION_WAVING);
                 vampyAnimator.getAnimationMixer().setEnabled(VAMPY_ANIMATION_WAVING, !waving);
-                logger.info("Vampy is {}waving", waving ? "not " : "");
+                logger.info(waving ? "Vampy stopped waving" : "Vampy started waving");
             }),
             Input.bind(Keys.R).on(ON_PRESS).to(() -> {
                 boneSelector = ++boneSelector % 5;
