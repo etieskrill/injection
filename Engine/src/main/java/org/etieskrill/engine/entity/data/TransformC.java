@@ -31,6 +31,8 @@ public interface TransformC {
     @Contract("_, _, _ -> param3")
     Transform lerp(@NotNull TransformC other, float factor, @NotNull Transform target);
 
+    boolean isIdentity();
+
     boolean isDirty();
 
 }

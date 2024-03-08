@@ -2,6 +2,7 @@ package org.etieskrill.engine.input;
 
 import org.etieskrill.engine.graphics.Camera;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Vector2d;
 
 import java.util.function.Supplier;
 
@@ -14,7 +15,7 @@ public class CursorCameraController implements CursorInputAdapter {
 
     private @Nullable Supplier<Boolean> updateCondition;
 
-    private double previousX, previousY;
+    private final Vector2d previousPosition;
 
     private boolean firstValueSet;
 
@@ -26,22 +27,27 @@ public class CursorCameraController implements CursorInputAdapter {
         this.camera = camera;
         this.lookSensitivity = lookSensitivity;
         this.zoomSensitivity = zoomSensitivity;
+
+        this.previousPosition = new Vector2d();
+
         this.firstValueSet = false;
     }
 
     @Override
     public boolean invokeMove(double posX, double posY) {
         if (!firstValueSet) {
-            previousX = posX;
-            previousY = posY;
+            previousPosition.set(posX, posY);
             firstValueSet = true;
         }
 
-        double dX = previousX - posX, dY = previousY - posY;
-        previousX = posX;
-        previousY = posY;
+        previousPosition.sub(posX, posY);
+        if (shouldUpdate())
+            camera.orient(
+                    lookSensitivity * -previousPosition.y(),
+                    lookSensitivity * previousPosition.x(),
+                    0);
 
-        if (shouldUpdate()) camera.orient(lookSensitivity * -dY, lookSensitivity * dX, 0);
+        previousPosition.set(posX, posY);
         return true;
     }
 

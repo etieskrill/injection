@@ -230,6 +230,11 @@ public class Transform implements TransformC {
         return lerp(other, factor, this);
     }
 
+    @Override
+    public boolean isIdentity() {
+        return this.equals(TransformC.IDENTITY);
+    }
+
     public Transform identity() {
         this.position.set(0);
         this.rotation.identity();

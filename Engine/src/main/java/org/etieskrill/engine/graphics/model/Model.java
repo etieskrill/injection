@@ -290,10 +290,13 @@ public class Model implements Disposable {
         return initialTransform;
     }
 
+    //TODO what is this operation called? composition? move to transform
     @Contract("-> new")
     public Transform getFinalTransform() {
-        //return transform.apply(initialTransform, new Transform());
-        return new Transform(transform).apply(initialTransform);
+        return new Transform(transform)
+                .translate(initialTransform.getPosition())
+                .applyRotation(quat -> quat.mul(initialTransform.getRotation()))
+                .applyScale(scale -> scale.mul(initialTransform.getScale()));
     }
     
     public boolean doCulling() {

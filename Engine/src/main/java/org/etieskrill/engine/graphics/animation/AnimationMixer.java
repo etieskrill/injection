@@ -42,10 +42,20 @@ public class AnimationMixer {
         return this;
     }
 
+    public boolean isEnabled(int index) {
+        return animationLayers.get(index).isEnabled();
+    }
+
+    public void setEnabled(int index, boolean enabled) {
+        animationLayers.get(index).setEnabled(enabled);
+    }
+
+    public void setWeight(int index, float weight) {
+        getAdditiveLayers().get(index).setWeight(weight);
+    }
+
     public void setWeights(List<Float> weights) {
-        List<AnimationLayer> additiveLayers = animationLayers.stream()
-                .filter(layer -> layer.getBlendMode() == AnimationBlendMode.ADDITIVE)
-                .toList();
+        List<AnimationLayer> additiveLayers = getAdditiveLayers();
 
         if (weights.size() != additiveLayers.size())
             throw new IllegalArgumentException("Number of weights does not match number of additive animations");
@@ -59,16 +69,28 @@ public class AnimationMixer {
         if (providerTransforms.size() != animationLayers.size())
             throw new IllegalArgumentException("There must be exactly one layer for each provider");
 
+        int firstEnabled = -1;
+        for (int i = 0; i < animationLayers.size(); i++) {
+            if (animationLayers.get(i).isEnabled()) {
+                firstEnabled = i;
+                break;
+            }
+        }
+
+        if (firstEnabled == -1)
+            throw new IllegalStateException("At least one animation layer must be enabled"); //TODO replace with bind pose
+
         //Set base layer
         for (int i = 0; i < transforms.size(); i++)
-            transforms.get(i).set(providerTransforms.getFirst().get(i));
+            transforms.get(i).set(providerTransforms.get(firstEnabled).get(i));
 
         //Normalise additive layer weights
         List<Float> weights = new ArrayList<>();
-        animationLayers.stream()
-                .filter(layer -> layer.getBlendMode() == AnimationBlendMode.ADDITIVE)
-                .forEach(layer -> weights.add(layer.getWeight()));
         for (AnimationLayer layer : animationLayers) {
+            if (!layer.isEnabled()) {
+                weights.add(0f);
+                continue;
+            }
             switch (layer.getBlendMode()) {
                 case ADDITIVE -> weights.add(layer.getWeight());
                 case OVERRIDING -> weights.add(0f);
@@ -76,9 +98,11 @@ public class AnimationMixer {
         }
         MathUtils.normalise(weights);
 
-        for (int i = 1; i < animationLayers.size(); i++) {
+        for (int i = firstEnabled + 1; i < animationLayers.size(); i++) {
             List<Transform> providerTransform = providerTransforms.get(i);
             AnimationLayer layer = animationLayers.get(i);
+            if (!layer.isEnabled() || weights.get(i) == 0) continue;
+
             NodeFilter filter = layer.getFilter();
             switch (layer.getBlendMode()) {
                 case ADDITIVE -> {
@@ -101,29 +125,41 @@ public class AnimationMixer {
 
     private static class AnimationLayer {
         private final AnimationBlendMode blendMode;
-        private float weight;
         private final @Nullable NodeFilter filter;
+
+        private boolean enabled;
+        private float weight;
 
         public AnimationLayer(AnimationBlendMode blendMode) {
             this(blendMode, 0f);
         }
 
         public AnimationLayer(AnimationBlendMode blendMode, float weight) {
-            this(blendMode, weight, null);
+            this(blendMode, true, weight, null);
         }
 
         public AnimationLayer(AnimationBlendMode blendMode,  @Nullable NodeFilter filter) {
-            this(blendMode, 0f, filter);
+            this(blendMode, true, 0f, filter);
         }
 
         public AnimationLayer(AnimationBlendMode blendMode, float weight, @Nullable NodeFilter filter) {
+            this(blendMode, true, weight, filter);
+        }
+
+        public AnimationLayer(AnimationBlendMode blendMode, boolean enabled, float weight, @Nullable NodeFilter filter) {
             this.blendMode = blendMode;
-            this.weight = weight;
             this.filter = filter;
+
+            this.enabled = enabled;
+            this.weight = weight;
         }
 
         public AnimationBlendMode getBlendMode() {
             return blendMode;
+        }
+
+        public @Nullable NodeFilter getFilter() {
+            return filter;
         }
 
         public float getWeight() {
@@ -134,14 +170,24 @@ public class AnimationMixer {
             this.weight = weight;
         }
 
-        public @Nullable NodeFilter getFilter() {
-            return filter;
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
         }
     }
 
     private enum AnimationBlendMode {
         ADDITIVE,
         OVERRIDING
+    }
+
+    private List<AnimationLayer> getAdditiveLayers() {
+        return animationLayers.stream()
+                .filter(layer -> layer.getBlendMode() == AnimationBlendMode.ADDITIVE)
+                .toList();
     }
 
 }

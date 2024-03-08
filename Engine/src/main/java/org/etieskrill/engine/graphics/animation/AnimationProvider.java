@@ -19,12 +19,14 @@ import java.util.List;
  * {@link Model}.
  * <p>
  * Other than the bounds described above, an {@code AnimationProvider} may be reused across any number of
- * {@link Animator Animators}, so long as the referenced {@link Model} is the same.
+ * {@link Animator Animators}, so long as the referenced {@link Model Model's} skeleton is compatible.
  */
 public class AnimationProvider {
 
     private final Animation animation;
     private final Node rootNode;
+
+    private double playbackSpeed;
 
     private static final Logger logger = LoggerFactory.getLogger(AnimationProvider.class);
 
@@ -34,17 +36,27 @@ public class AnimationProvider {
 
         this.animation = animation;
         this.rootNode = model.getNodes().getFirst();
+
+        this.playbackSpeed = 1;
     }
 
     public Animation getAnimation() {
         return animation;
     }
 
+    public double getPlaybackSpeed() {
+        return playbackSpeed;
+    }
+
+    public void setPlaybackSpeed(double playbackSpeed) {
+        this.playbackSpeed = playbackSpeed;
+    }
+
     List<Transform> getLocalBoneTransforms(List<Transform> localBoneTransforms, double currentTimeSeconds) {
         //TODO get performance counters going, then
         // - pass uniform arrays with single call
         // - bake bone animations into bones / create a map here or in model
-        double currentTicks = currentTimeSeconds * animation.getTicksPerSecond();
+        double currentTicks = currentTimeSeconds * animation.getTicksPerSecond() * playbackSpeed;
         switch (animation.getBehaviour()) {
             case REPEAT -> currentTicks %= animation.getDuration();
             default -> throw new IllegalArgumentException("Unexpected behaviour: " + animation.getBehaviour());

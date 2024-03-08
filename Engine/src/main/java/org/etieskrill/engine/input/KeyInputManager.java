@@ -9,8 +9,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static java.util.Collections.synchronizedSet;
 import static org.etieskrill.engine.input.InputBinding.Trigger.*;
 import static org.lwjgl.glfw.GLFW.*;
 
@@ -36,9 +38,9 @@ public class KeyInputManager implements KeyInputHandler {
         this.bindings = Objects.requireNonNull(bindings);
         this.groups = Objects.requireNonNull(groups);
         this.groupKeysActive = new HashMap<>();
-        this.pressed = new HashSet<>();
-        this.toggled = new HashSet<>();
-        this.events = new ArrayDeque<>();
+        this.pressed = synchronizedSet(new HashSet<>());
+        this.toggled = synchronizedSet(new HashSet<>());
+        this.events = new LinkedBlockingDeque<>();
     }
 
     public record TriggerAction(
