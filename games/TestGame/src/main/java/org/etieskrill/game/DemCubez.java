@@ -1,18 +1,19 @@
 package org.etieskrill.game;
 
 import org.etieskrill.engine.entity.data.Transform;
-import org.etieskrill.engine.graphics.PerspectiveCamera;
+import org.etieskrill.engine.graphics.Renderer;
+import org.etieskrill.engine.graphics.camera.PerspectiveCamera;
 import org.etieskrill.engine.graphics.data.DirectionalLight;
 import org.etieskrill.engine.graphics.data.PointLight;
 import org.etieskrill.engine.graphics.gl.FrameBuffer;
 import org.etieskrill.engine.graphics.gl.FrameBufferAttachment;
-import org.etieskrill.engine.graphics.gl.ModelFactory;
-import org.etieskrill.engine.graphics.gl.Renderer;
+import org.etieskrill.engine.graphics.gl.GLRenderer;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
 import org.etieskrill.engine.graphics.model.CubeMapModel;
 import org.etieskrill.engine.graphics.model.Material;
 import org.etieskrill.engine.graphics.model.Model;
+import org.etieskrill.engine.graphics.model.ModelFactory;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.input.CursorInputAdapter;
 import org.etieskrill.engine.time.LoopPacer;
@@ -94,8 +95,8 @@ public class DemCubez {
     
         loadModels();
         loadShaders();
-    
-        renderer = new Renderer();
+
+        renderer = new GLRenderer();
         camera = (PerspectiveCamera) new PerspectiveCamera(window.getSize().toVec())
                 .setPosition(new Vector3f(0f, 0f, 3f))
                 .setOrientation(0f, -90f, 0f)
@@ -479,7 +480,7 @@ public class DemCubez {
         }
 
         //TODO 1. draw opaque, 2. sort transparent by decreasing distance to viewer, 3. draw sorted transparent
-        Vector3f camPos = camera.getPosition();
+        Vector3fc camPos = camera.getPosition();
         grassModels.sort((model1, model2) -> Float.compare(
                 new Vector3f(camPos).sub(model2.getTransform().getPosition()).length(),
                 new Vector3f(camPos).sub(model1.getTransform().getPosition()).length())

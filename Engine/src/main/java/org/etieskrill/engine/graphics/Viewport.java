@@ -1,6 +1,7 @@
 package org.etieskrill.engine.graphics;
 
 
+import org.etieskrill.engine.graphics.camera.Camera;
 import org.joml.Vector2f;
 
 //TODO fixed viewport for now

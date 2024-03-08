@@ -1,10 +1,6 @@
-package org.etieskrill.engine.graphics.gl;
+package org.etieskrill.engine.graphics.model;
 
 import org.etieskrill.engine.entity.data.Transform;
-import org.etieskrill.engine.graphics.model.Material;
-import org.etieskrill.engine.graphics.model.Model;
-import org.etieskrill.engine.graphics.model.Node;
-import org.etieskrill.engine.graphics.model.Vertex;
 import org.etieskrill.engine.graphics.model.loader.MeshLoader;
 import org.etieskrill.engine.util.Loaders;
 import org.joml.Vector2f;

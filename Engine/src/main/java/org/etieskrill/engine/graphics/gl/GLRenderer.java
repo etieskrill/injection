@@ -6,6 +6,7 @@ import org.etieskrill.engine.graphics.model.*;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.etieskrill.engine.graphics.texture.font.Font;
 import org.etieskrill.engine.graphics.texture.font.Glyph;
+import org.etieskrill.engine.util.FixedArrayDeque;
 import org.joml.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,30 +14,62 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 
 import static java.util.Objects.requireNonNullElse;
+import static org.lwjgl.opengl.GL15C.glBeginQuery;
 import static org.lwjgl.opengl.GL33C.*;
+import static org.lwjgl.opengl.GL45C.glCreateQueries;
 
-public class Renderer {
-    
-    private static final float clearColour = 0.25f;//0.025f;
+//TODO assure thread safety/passing
+public class GLRenderer implements org.etieskrill.engine.graphics.Renderer {
+
+    private static final float CLEAR_COLOUR = 0.25f;//0.025f;
 
     private int trianglesDrawn, renderCalls;
-    
+    private int timeQuery = -1;
+
+    private boolean queryGpuTime;
+    private long gpuTime;
+    private final FixedArrayDeque<Long> gpuTimes;
+    private long averagedGpuTime;
+    private long gpuDelay;
+
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    
+
+    public GLRenderer() {
+        this(60);
+    }
+
+    public GLRenderer(int numGpuTimeSamples) {
+        this(true, numGpuTimeSamples);
+    }
+
+    public GLRenderer(boolean queryGpuTime, int numGpuTimeSamples) {
+        this.queryGpuTime = queryGpuTime;
+        this.gpuTimes = new FixedArrayDeque<>(numGpuTimeSamples);
+    }
+
+    @Override
     public void prepare() {
-        glClearColor(clearColour, clearColour, clearColour, 1f);
+        if (queryGpuTime) queryGpuTime();
+        else {
+            gpuTime = 0;
+            averagedGpuTime = 0;
+            gpuDelay = 0;
+        }
+
+        glClearColor(CLEAR_COLOUR, CLEAR_COLOUR, CLEAR_COLOUR, 1f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
         trianglesDrawn = 0;
         renderCalls = 0;
     }
-    
+
+    @Override
     public void render(Model model, ShaderProgram shader, Matrix4fc combined) {
         if (shader.isPlaceholder()) {
             renderOutline(model, shader, combined, 1f, new Vector4f(1, 0, 1, 1), true);
             return;
         }
-        
+
         _render(model, shader, combined);
     }
 
@@ -47,44 +80,48 @@ public class Renderer {
         return box;
     }
 
-    public void renderBox(Vector3f position, Vector3f size, ShaderProgram shader, Matrix4fc combined) {
+    @Override
+    public void renderBox(Vector3fc position, Vector3fc size, ShaderProgram shader, Matrix4fc combined) {
         getBox().getTransform().setPosition(position).setScale(size);
         _render(getBox(), shader, combined);
     }
-    
+
     //TODO update spec: all factory methods use loaders by default, constructors/builders do not
     private static ShaderProgram outlineShader;
+
     private static ShaderProgram getOutlineShader() {
         if (outlineShader == null)
             outlineShader = Shaders.getOutlineShader();
         return outlineShader;
     }
-    
+
     //TODO add outline & wireframe as flag in render
     public void renderOutline(Model model, ShaderProgram shader, Matrix4fc combined) {
         renderOutline(model, shader, combined, 0.5f, new Vector4f(1f, 0f, 0f, 1f), false);
     }
-    
+
+    @Override
     public void renderOutline(Model model, ShaderProgram shader, Matrix4fc combined, float thickness, Vector4fc colour, boolean writeToFront) {
         getOutlineShader().setUniform("uThicknessFactor", thickness);
         getOutlineShader().setUniform("uColour", colour);
-        
+
         glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-    
+
         glStencilFunc(GL_ALWAYS, 1, 0xFF);
         glStencilMask(0xFF);
         _render(model, shader, combined);
-    
+
         glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
         glStencilMask(0x00);
         if (writeToFront) glDisable(GL_DEPTH_TEST);
         _render(model, getOutlineShader(), combined);
-    
+
         glStencilFunc(GL_ALWAYS, 0, 0xFF);
         glStencilMask(0xFF);
         if (writeToFront) glEnable(GL_DEPTH_TEST);
     }
-    
+
+    @Override
     public void renderWireframe(Model model, ShaderProgram shader, Matrix4fc combined) {
         glDisable(GL_CULL_FACE);
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -92,15 +129,17 @@ public class Renderer {
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         glEnable(GL_CULL_FACE);
     }
-    
+
+    @Override
     public void render(CubeMapModel cubemap, ShaderProgram shader, Matrix4fc combined) {
         //TODO perf increase use early depth test to discard instead of this
         glDepthMask(false);
         _render(cubemap, shader, combined);
         glDepthMask(true);
     }
-    
+
     private static Model quad;
+
     private static Model getQuad() {
         if (quad == null)
             quad = ModelFactory
@@ -110,7 +149,8 @@ public class Renderer {
                     .build();
         return quad;
     }
-    
+
+    @Override
     public void render(Glyph glyph, Vector2fc position, ShaderProgram shader, Matrix4fc combined) {
         getQuad().getTransform()
                 .setScale(new Vector3f(glyph.getSize(), 1))
@@ -122,8 +162,9 @@ public class Renderer {
 
         _render(getQuad(), shader, combined);
     }
-    
+
     //TODO can be improved by rendering to some framebuffer and reusing unchanged sections instead of rendering every single glyph with a separate render call
+    @Override
     public void render(String chars, Font font, Vector2fc position, ShaderProgram shader, Matrix4fc combined) {
         Vector2f pen = new Vector2f(0);
         for (Glyph glyph : font.getGlyphs(chars)) {
@@ -133,12 +174,13 @@ public class Renderer {
                     continue;
                 }
             }
-            
+
             render(glyph, new Vector2f(position).add(pen), shader, combined);
             pen.add(glyph.getAdvance());
         }
     }
 
+    @Override
     public void renderInstances(Model model, int numInstances, ShaderProgram shader, Matrix4fc combined) {
         _render(model, shader, combined, true, numInstances);
     }
@@ -191,18 +233,19 @@ public class Renderer {
         int tex2d = 0, cubemaps = 0;
         int diffuse = 0, specular = 0, normal = 0, emissive = 0, height = 0, shininess = 0;
         List<AbstractTexture> textures = material.getTextures();
-        
+
         for (AbstractTexture texture : textures) {
             String uniform = "material.";
             int number = -1;
-            
+
             switch (texture.getTarget()) {
                 case TWO_D -> {
                     uniform += texture.getType().name().toLowerCase();
                     tex2d++;
                     number = switch (texture.getType()) {
                         case DIFFUSE -> diffuse++;
-                        case SPECULAR -> specular++; //TODO could pass texture colour channels here, but it is probs best to just finally define a standard for this whole shebang
+                        case SPECULAR ->
+                                specular++; //TODO could pass texture colour channels here, but it is probs best to just finally define a standard for this whole shebang
                         case NORMAL -> normal++;
                         case EMISSIVE -> emissive++;
                         case HEIGHT -> height++;
@@ -215,7 +258,7 @@ public class Renderer {
                     number = cubemaps++;
                 }
             }
-            
+
             int validTextures = (tex2d + cubemaps) - 1;
             texture.bind(validTextures);
             shader.setUniform(uniform + number, validTextures, false);
@@ -236,12 +279,56 @@ public class Renderer {
         shader.setUniform("material.numTextures", tex2d + cubemaps, false);
     }
 
+    private void queryGpuTime() {
+        if (timeQuery == -1) {
+            timeQuery = glCreateQueries(GL_TIME_ELAPSED);
+        }
+
+        glEndQuery(GL_TIME_ELAPSED);
+
+        long time = System.nanoTime();
+        gpuTime = glGetQueryObjectui64(timeQuery, GL_QUERY_RESULT);
+        gpuDelay = System.nanoTime() - time;
+
+        gpuTimes.push(gpuTime);
+        averagedGpuTime = (long) gpuTimes.stream().mapToLong(value -> value).average().orElse(0d);
+
+        glBeginQuery(GL_TIME_ELAPSED, timeQuery);
+    }
+
+    @Override
     public int getTrianglesDrawn() {
         return trianglesDrawn;
     }
 
+    @Override
     public int getRenderCalls() {
         return renderCalls;
+    }
+
+    @Override
+    public boolean doesQueryGpuTime() {
+        return queryGpuTime;
+    }
+
+    @Override
+    public void setQueryGpuTime(boolean queryGpuTime) {
+        this.queryGpuTime = queryGpuTime;
+    }
+
+    @Override
+    public long getGpuTime() {
+        return gpuTime;
+    }
+
+    @Override
+    public long getAveragedGpuTime() {
+        return averagedGpuTime;
+    }
+
+    @Override
+    public long getGpuDelay() {
+        return gpuDelay;
     }
 
 }

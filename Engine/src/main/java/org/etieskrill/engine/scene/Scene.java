@@ -1,7 +1,7 @@
 package org.etieskrill.engine.scene;
 
 import org.etieskrill.engine.graphics.Batch;
-import org.etieskrill.engine.graphics.Camera;
+import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.input.CursorInputAdapter;
 import org.etieskrill.engine.input.Key;
 import org.etieskrill.engine.scene.component.Node;
@@ -9,7 +9,6 @@ import org.jetbrains.annotations.NotNull;
 import org.joml.Vector2f;
 import org.joml.Vector2fc;
 
-import static java.util.Objects.requireNonNull;
 import static org.lwjgl.opengl.GL11C.*;
 
 public class Scene implements CursorInputAdapter {
@@ -19,15 +18,23 @@ public class Scene implements CursorInputAdapter {
     private Camera camera;
 
     private final Vector2f size;
-    
+
+    /**
+     * Available for more convenient construction in subclasses. Take care to set {@link Scene#batch},
+     * {@link Scene#root} and {@link Scene#camera} while still in the constructor. Use at your own peril.
+     */
+    protected Scene() {
+        this(null, null, null);
+    }
+
     public Scene(Batch batch, Node root, Camera camera) {
-        this.batch = requireNonNull(batch);
-        this.root = requireNonNull(root);
-        this.camera = requireNonNull(camera);
+        this.batch = batch;
+        this.root = root;
+        this.camera = camera;
         
         this.size = new Vector2f(0);
-    
-        camera.setOrientation(0f, -90f, 0f);
+
+        if (camera != null) camera.setOrientation(0f, -90f, 0f);
     }
     
     public void update(double delta) {
@@ -68,7 +75,7 @@ public class Scene implements CursorInputAdapter {
     }
     
     public void setCamera(@NotNull Camera camera) {
-        this.camera = camera;
+        this.camera = camera.setOrientation(0f, -90f, 0f);
     }
     
     public void show() {

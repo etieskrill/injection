@@ -1,16 +1,16 @@
 package org.etieskrill.orbes.scene;
 
-import org.joml.Vector2f;
-import org.joml.Vector3f;
-import org.joml.Vector4f;
 import org.etieskrill.engine.graphics.Batch;
-import org.etieskrill.engine.graphics.Camera;
+import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.texture.font.Fonts;
 import org.etieskrill.engine.scene.Scene;
 import org.etieskrill.engine.scene.component.Container;
 import org.etieskrill.engine.scene.component.Label;
 import org.etieskrill.engine.scene.component.Node;
 import org.etieskrill.engine.scene.component.Stack;
+import org.joml.Vector2f;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 import java.util.List;
 

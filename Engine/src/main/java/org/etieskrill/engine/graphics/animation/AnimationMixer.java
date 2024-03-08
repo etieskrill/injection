@@ -139,7 +139,7 @@ public class AnimationMixer {
             this(blendMode, true, weight, null);
         }
 
-        public AnimationLayer(AnimationBlendMode blendMode,  @Nullable NodeFilter filter) {
+        public AnimationLayer(AnimationBlendMode blendMode, @Nullable NodeFilter filter) {
             this(blendMode, true, 0f, filter);
         }
 

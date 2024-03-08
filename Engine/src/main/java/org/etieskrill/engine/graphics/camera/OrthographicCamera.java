@@ -1,16 +1,13 @@
-package org.etieskrill.engine.graphics;
+package org.etieskrill.engine.graphics.camera;
 
-import org.joml.Matrix4d;
-import org.joml.Matrix4f;
-import org.joml.Vector2f;
-import org.joml.Vector3f;
+import org.joml.*;
 
 public class OrthographicCamera extends Camera {
     
     private final Vector2f size;
     private float top, bottom, left, right;
-    
-    public OrthographicCamera(Vector2f size, Vector3f origin) {
+
+    public OrthographicCamera(Vector2fc size, Vector3fc origin) {
         super();
         this.size = new Vector2f();
         setSize(size);
@@ -20,7 +17,7 @@ public class OrthographicCamera extends Camera {
         if (autoUpdate) update();
     }
 
-    public OrthographicCamera(Vector2f size) {
+    public OrthographicCamera(Vector2fc size) {
         this(size, new Vector3f(0f));
     }
 
@@ -32,14 +29,14 @@ public class OrthographicCamera extends Camera {
     }
 
     @Override
-    public Camera setPosition(Vector3f position) {
+    public Camera setPosition(Vector3fc position) {
         this.position.set(position);
         updateDimensions();
         if (autoUpdate) update();
         return this;
     }
 
-    public void setSize(Vector2f size) {
+    public void setSize(Vector2fc size) {
         this.size.set(size);
         updateDimensions();
         if (autoUpdate) update();

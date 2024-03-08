@@ -1,9 +1,10 @@
-package org.etieskrill.engine.graphics;
+package org.etieskrill.engine.graphics.camera;
 
 import org.jetbrains.annotations.Contract;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
 import org.joml.Vector3f;
+import org.joml.Vector3fc;
 
 public abstract class Camera {
 
@@ -57,7 +58,7 @@ public abstract class Camera {
      * @return itself for chaining
      */
     //TODO optimise
-    public Camera translate(Vector3f translation) {
+    public Camera translate(Vector3fc translation) {
         Vector3f delta = relativeTranslation(translation);
         this.position.add(delta);
         if (autoUpdate) update();
@@ -65,14 +66,18 @@ public abstract class Camera {
     }
 
     @Contract("_ -> new")
-    public Vector3f relativeTranslation(Vector3f translation) {
+    public Vector3f relativeTranslation(Vector3fc translation) {
         return new Vector3f()
                 .add(front.mul(translation.z()))
                 .add(right.mul(-translation.x())) //TODO make positive
                 .add(up.mul(-translation.y())); //TODO also make positive
     }
 
-    public Camera setPosition(Vector3f position) {
+    public Vector3fc getPosition() {
+        return position;
+    }
+
+    public Camera setPosition(Vector3fc position) {
         this.position.set(position);
         if (autoUpdate) update();
         return this;
@@ -85,7 +90,7 @@ public abstract class Camera {
     }
 
     @Deprecated
-    public Camera setRotationAxis(Vector3f rotationAxis) {
+    public Camera setRotationAxis(Vector3fc rotationAxis) {
         this.rotationAxis.set(rotationAxis);
         return this;
     }
@@ -117,7 +122,7 @@ public abstract class Camera {
 
     protected abstract void updatePerspective();
 
-    protected Camera setPerspective(Matrix4f perspective) {
+    protected Camera setPerspective(Matrix4fc perspective) {
         this.perspective.set(perspective);
         if (autoUpdate) update();
         return this;
@@ -125,10 +130,6 @@ public abstract class Camera {
     
     private void updateCombined() {
         this.combined = new Matrix4f(perspective).mul(view);
-    }
-
-    public Vector3f getPosition() {
-        return position;
     }
 
     @Contract("-> new")
@@ -157,7 +158,7 @@ public abstract class Camera {
         return this;
     }
 
-    public Camera setWorldUp(Vector3f worldUp) {
+    public Camera setWorldUp(Vector3fc worldUp) {
         this.worldUp.set(worldUp);
         if (autoUpdate) update();
         return this;
