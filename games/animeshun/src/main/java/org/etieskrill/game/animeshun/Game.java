@@ -144,7 +144,7 @@ public class Game {
         double walkLeftDuration = vampyAnimator.getAnimationProviders().get(VAMPY_ANIMATION_WALKING_LEFT).getAnimation().getDuration();
         double walkRightDuration = vampyAnimator.getAnimationProviders().get(VAMPY_ANIMATION_WALKING_RIGHT).getAnimation().getDuration();
         double walkBackDuration = vampyAnimator.getAnimationProviders().get(VAMPY_ANIMATION_WALKING_BACKWARD).getAnimation().getDuration();
-        double speed = .85;
+        double speed = .95;
         vampyAnimator.getAnimationProviders().get(VAMPY_ANIMATION_WALKING).setPlaybackSpeed(speed);
         vampyAnimator.getAnimationProviders().get(VAMPY_ANIMATION_WALKING_LEFT).setPlaybackSpeed(speed * walkLeftDuration / walkDuration);
         vampyAnimator.getAnimationProviders().get(VAMPY_ANIMATION_WALKING_RIGHT).setPlaybackSpeed(speed * walkRightDuration / walkDuration);
@@ -177,7 +177,12 @@ public class Game {
         ArrayDeque<Double> cpuTimes = new FixedArrayDeque<>(FRAMERATE);
 
         float walkingFactor = 0, runningFactor = 0;
-        final Vector3f currentPosition = new Vector3f(), lastPosition = new Vector3f();
+
+        final Vector3f currentPosition = new Vector3f(), lastPosition = new Vector3f(),
+                velocity = new Vector3f(), acceleration = new Vector3f();
+        double lastDelta = 0;
+
+        float forwardFactor = 0, leftFactor = 0, rightFactor = 0, backFactor = 0;
 
         pacer.start();
         while (!window.shouldClose()) {
@@ -187,27 +192,27 @@ public class Game {
             ((DebugOverlay) window.getScene()).setCpuTime(avgCpuTime.orElse(0));
             long time = System.nanoTime();
 
-            Vector3f vampyAcceleration;
             if (!vampyPosDelta.equals(0, 0, 0)) {
-                vampyAcceleration = camera.relativeTranslation(vampyPosDelta);
-                vampyAcceleration.y = 0;
-                vampyAcceleration.normalize();
+                acceleration.set(camera.relativeTranslation(vampyPosDelta));
+                acceleration.y = 0;
+                acceleration.normalize();
+                acceleration.mul(controls.isPressed(Keys.W) && controls.isPressed(Keys.SHIFT) ? 15 : 8);
             } else {
-                vampyAcceleration = new Vector3f();
+                acceleration.zero();
             }
 
-            //verlet + universal friction: p_n+1 = (2-f)*p_n - (1-f)*p_n-1 + a_n * dt^2
+            //time-corrected verlet with second order taylor derivation + universal friction: p_n+1 = p_n + (1 - f) * (p_n - p_n-1) * (dt_n / dt_n-1) + a_n * dt_n * ((dt_n + dt_n-1) / 2)
             final float friction = .075f;
-            final float accel = controls.isPressed(Keys.W) && controls.isPressed(Keys.SHIFT) ? 15 : 8;
             currentPosition.set(vampy.getTransform().getPosition());
-            Vector3f acceleration = vampyAcceleration.mul(accel * (float) (delta * delta));
+            final float correctedDelta = (float) (delta / lastDelta);
             vampy.getTransform().getPosition()
-                    .mul(2 - friction)
-                    .sub(lastPosition.mul(1 - friction))
-                    .add(acceleration);
+                    .add(velocity.set(vampy.getTransform().getPosition())
+                            .sub(lastPosition)
+                            .mul(Float.isFinite(correctedDelta) ? correctedDelta : 1)
+                            .mul(1 - friction))
+                    .add(acceleration.mul((float) (delta * ((delta + lastDelta) / 2))));
             lastPosition.set(currentPosition);
             vampyPosDelta.zero();
-//            System.out.println(vampy.getTransform().getPosition().sub(lastPosition, new Vector3f()));
 
             vampy.getTransform().applyRotation(quat -> quat.rotationY((float) toRadians(-camera.getYaw() + 180)));
 
@@ -234,11 +239,19 @@ public class Game {
             diff *= (float) delta * 5;
             runningFactor += diff;
 
-            float forwardFactor = 0, leftFactor = 0, rightFactor = 0, backFactor = 0;
-            if (controls.isPressed(Keys.W)) forwardFactor = 1;
-            if (controls.isPressed(Keys.A)) leftFactor = 1;
-            if (controls.isPressed(Keys.D)) rightFactor = 1;
-            if (controls.isPressed(Keys.S)) backFactor = 1;
+            diff = controls.isPressed(Keys.W) ? 1 - forwardFactor : -forwardFactor;
+            diff *= (float) delta * 5;
+            forwardFactor += diff;
+            diff = controls.isPressed(Keys.A) ? 1 - leftFactor : -leftFactor;
+            diff *= (float) delta * 5;
+            leftFactor += diff;
+            diff = controls.isPressed(Keys.D) ? 1 - rightFactor : -rightFactor;
+            diff *= (float) delta * 5;
+            rightFactor += diff;
+            diff = controls.isPressed(Keys.S) ? 1 - backFactor : -backFactor;
+            diff *= (float) delta * 5;
+            backFactor += diff;
+
             float factorSum = forwardFactor + leftFactor + rightFactor + backFactor;
             if (factorSum != 0) {
                 forwardFactor /= factorSum;
@@ -265,6 +278,8 @@ public class Game {
 
             cpuTime = System.nanoTime() - time;
             cpuTimes.push(cpuTime / 1000000d);
+
+            lastDelta = delta;
 
             pacer.nextFrame();
         }
