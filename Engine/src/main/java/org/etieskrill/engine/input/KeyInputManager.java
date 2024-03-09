@@ -170,8 +170,6 @@ public class KeyInputManager implements KeyInputHandler {
     }
 
     public boolean isPressed(Key input) {
-        //TODO is this efficient at all, or would something like a HashMap<KeyInput, Boolean> (even with value = null)
-        // be faster? these methods need to be optimised since they will be called every frame for certain keybinds
         return pressed.contains(input);
     }
     
