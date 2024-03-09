@@ -120,7 +120,7 @@ public class Game {
         //Different formats sport different conventions or restrictions for the global up direction, one could either
         // - try to deduce up (and scale for that matter) from the root node of a scene, which is not difficult at all
         // - or at least stay consistent with file formats within the same bloody model
-        List<Animation> hipHopDance = Loader.loadModelAnimations("vampire_hip_hop.glb", vampy);
+        List<Animation> hipHopDance = Loader.loadModelAnimations("vampire_hip_hop.glb", vampy); //TODO -figure out why adding this animation breaks the animator- base transform is not respected in mixer
         Transform vampyHipHopTransform = Transform.fromMatrix4f(new Matrix4f().m11(0).m12(-1).m21(1).m22(0).invert());
         hipHopDance.getFirst().setBaseTransform(vampyHipHopTransform);
 
@@ -130,28 +130,22 @@ public class Game {
                 .orElseThrow();
 
         vampyAnimator = new Animator(vampy)
-                .add(Loader.loadModelAnimations("mixamo_orc_idle.dae", vampy).getFirst(), 0)
-                .add(vampy.getAnimations().getFirst(), 0)
-                .add(Loader.loadModelAnimations("mixamo_left_strafe_walking.dae", vampy).getFirst(), 0)
-                .add(Loader.loadModelAnimations("mixamo_right_strafe_walking.dae", vampy).getFirst(), 0)
-                .add(Loader.loadModelAnimations("mixamo_walking_backwards.dae", vampy).getFirst(), 0)
-                .add(Loader.loadModelAnimations("mixamo_running.dae", vampy).getFirst(), 0)
-                .add(Loader.loadModelAnimations("mixamo_waving.dae", vampy).getFirst(), NodeFilter.tree(rightArmNode))
-                .add(hipHopDance.getFirst(), 0) //TODO -figure out why adding this breaks the animator- base transform is not respected in mixer
+                .add(Loader.loadModelAnimations("mixamo_orc_idle.dae", vampy).getFirst())
+                .addNormalisedGroup(.8, animations -> animations
+                        .add(Loader.loadModelAnimations("mixamo_walking_forward.dae", vampy).getFirst())
+                        .add(Loader.loadModelAnimations("mixamo_left_strafe_walking.dae", vampy).getFirst())
+                        .add(Loader.loadModelAnimations("mixamo_right_strafe_walking.dae", vampy).getFirst())
+                        .add(Loader.loadModelAnimations("mixamo_walking_backwards.dae", vampy).getFirst(), layer -> layer.playbackSpeed(1.1))
+                )
+                .add(Loader.loadModelAnimations("mixamo_running.dae", vampy).getFirst(), layer -> layer.setPlaybackSpeed(.7))
+                .add(Loader.loadModelAnimations("mixamo_waving.dae", vampy).getFirst(), layer -> layer.filter(NodeFilter.tree(rightArmNode)).enabled(false))
+                .add(Loader.loadModelAnimations("mixamo_hip_hop_dancing.dae", vampy).getFirst(), layer -> layer.enabled(false))
         ;
 
-        double walkDuration = vampyAnimator.getAnimationProviders().get(VAMPY_ANIMATION_WALKING).getAnimation().getDuration();
-        double walkLeftDuration = vampyAnimator.getAnimationProviders().get(VAMPY_ANIMATION_WALKING_LEFT).getAnimation().getDuration();
-        double walkRightDuration = vampyAnimator.getAnimationProviders().get(VAMPY_ANIMATION_WALKING_RIGHT).getAnimation().getDuration();
-        double walkBackDuration = vampyAnimator.getAnimationProviders().get(VAMPY_ANIMATION_WALKING_BACKWARD).getAnimation().getDuration();
-        double speed = .95;
-        vampyAnimator.getAnimationProviders().get(VAMPY_ANIMATION_WALKING).setPlaybackSpeed(speed);
-        vampyAnimator.getAnimationProviders().get(VAMPY_ANIMATION_WALKING_LEFT).setPlaybackSpeed(speed * walkLeftDuration / walkDuration);
-        vampyAnimator.getAnimationProviders().get(VAMPY_ANIMATION_WALKING_RIGHT).setPlaybackSpeed(speed * walkRightDuration / walkDuration);
-        vampyAnimator.getAnimationProviders().get(VAMPY_ANIMATION_WALKING_BACKWARD).setPlaybackSpeed(speed * walkBackDuration / walkDuration);
-        vampyAnimator.getAnimationProviders().get(VAMPY_ANIMATION_RUNNING).setPlaybackSpeed(.75);
-        vampyAnimator.getAnimationMixer().setEnabled(VAMPY_ANIMATION_WAVING, false);
-        vampyAnimator.getAnimationMixer().setEnabled(VAMPY_ANIMATION_DANCING, false);
+        for (int i = VAMPY_ANIMATION_WALKING; i <= VAMPY_ANIMATION_WALKING_BACKWARD; i++) {
+            System.out.println(vampyAnimator.getAnimationProviders().get(i).getPlaybackSpeed());
+            System.out.println(vampyAnimator.getAnimationProviders().get(i).getAnimation().getDuration());
+        }
 
         vampyShader = (AnimationShader) Loaders.ShaderLoader.get().load("vampyShader", AnimationShader::new);
         vampyShader.setShowBoneSelector(boneSelector);
@@ -196,7 +190,7 @@ public class Game {
                 acceleration.set(camera.relativeTranslation(vampyPosDelta));
                 acceleration.y = 0;
                 acceleration.normalize();
-                acceleration.mul(controls.isPressed(Keys.W) && controls.isPressed(Keys.SHIFT) ? 15 : 8);
+                acceleration.mul(controls.isPressed(Keys.W) && controls.isPressed(Keys.SHIFT) ? 18 : 9);
             } else {
                 acceleration.zero();
             }

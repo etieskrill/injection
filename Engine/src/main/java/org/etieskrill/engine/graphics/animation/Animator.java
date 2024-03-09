@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static org.etieskrill.engine.graphics.animation.Animation.MAX_BONES;
 
@@ -166,64 +167,85 @@ public class Animator {
 
     /**
      * Adds an animation to this {@code Animator} using {@link AnimationMixer.AnimationBlendMode#ADDITIVE additive}
-     * blending with a weight of {@code 0}, meaning it has no influence, unless changed later.
+     * blending with a weight of {@code 1} and enables it without any {@link NodeFilter}.
      *
      * @param animation the animation to add
      * @return the {@code Animator} for chaining
      */
-    public Animator add(Animation animation) {
-        return add(animation, 0);
+    public Animator add(@NotNull Animation animation) {
+        return add(animation, layer -> {});
     }
 
     /**
-     * Adds an animation to this {@code Animator} using {@link AnimationMixer.AnimationBlendMode#ADDITIVE additive}
-     * blending with the strength specified by {@code weight}. The weight factors are later normalised across all
-     * additive layers, so use whatever scale you are comfortable with.
+     * Adds an animation to this {@code Animator} using the configuration provided in the {@code layer} argument.
+     * <p>
+     * By default, the layer has {@link AnimationMixer.AnimationBlendMode#ADDITIVE additive} blending with a weight of
+     * {@code 1} and disables it, meaning it has no influence, and no {@link NodeFilter} is set.
      *
      * @param animation the animation to add
-     * @param weight the influence this animation has
+     * @param layer the animation layer for configuration
      * @return the {@code Animator} for chaining
      */
-    public Animator add(Animation animation, float weight) {
-        return add(animation, weight, null);
+    public Animator add(@NotNull Animation animation, @NotNull Consumer<AnimationMixer.AnimationLayer> layer) {
+        AnimationMixer.AnimationLayer animationLayer = new AnimationMixer.AnimationLayer();
+        layer.accept(animationLayer);
+
+        return add(animation, animationLayer);
     }
 
-    /**
-     * Adds an animation to this {@code Animator} using {@link AnimationMixer.AnimationBlendMode#OVERRIDING overriding}
-     * blending. This requires a {@link NodeFilter}, since a layer without one would simply override all other layers,
-     * which is probably not desired in the majority of cases.
-     *
-     * @param animation the animation to add
-     * @param filter the nodes to apply the animation to
-     * @return the {@code Animator} for chaining
-     */
-    public Animator add(Animation animation, NodeFilter filter) {
-        animationProviders.add(new AnimationProvider(animation, model));
-        animationMixer.addOverridingAnimation(filter);
+    public Animator addNormalisedGroup(@NotNull Consumer<Animations> animations) {
+        return addNormalisedGroup(1, animations);
+    }
+
+    public Animator addNormalisedGroup(double playbackSpeed, @NotNull Consumer<Animations> animations) {
+        Animations container = new Animations();
+        animations.accept(container);
+
+        if (container.animations.isEmpty()) return this;
+
+        double baseDuration = container.animations.getFirst().getDuration();
+        for (int i = 0; i < container.animations.size(); i++) {
+            double duration = container.animations.get(i).getDuration() * container.layers.get(i).getPlaybackSpeed();
+            container.layers.get(i).playbackSpeed(playbackSpeed * duration / baseDuration);
+            add(container.animations.get(i), container.layers.get(i));
+        }
+
+        return this;
+    }
+
+    private Animator add(Animation animation, AnimationMixer.AnimationLayer layer) {
+        AnimationProvider provider = new AnimationProvider(animation, model);
+        provider.setPlaybackSpeed(layer.getPlaybackSpeed());
+        animationProviders.add(provider);
+        animationMixer.addAnimationLayer(layer);
 
         addNewProviderTransformList();
 
         return this;
     }
 
-    /**
-     * Adds an animation to this {@code Animator} using {@link AnimationMixer.AnimationBlendMode#ADDITIVE additive}
-     * blending with the strength specified by {@code weight}. The weight factors are later normalised across all
-     * additive layers, so use whatever scale you are comfortable with. Here, a {@link NodeFilter} is taken into
-     * consideration, which is used to more selectively apply the animation.
-     *
-     * @param animation the animation to add
-     * @param filter the nodes to apply the animation to
-     * @param weight the influence this animation has
-     * @return the {@code Animator} for chaining
-     */
-    public Animator add(Animation animation, float weight, NodeFilter filter) {
-        animationProviders.add(new AnimationProvider(animation, model));
-        animationMixer.addAdditiveAnimation(weight, filter);
+    public static class Animations {
+        private final List<Animation> animations;
+        private final List<AnimationMixer.AnimationLayer> layers;
 
-        addNewProviderTransformList();
+        private Animations() {
+            this.animations = new ArrayList<>();
+            this.layers = new ArrayList<>();
+        }
 
-        return this;
+        public Animations add(@NotNull Animation animation) {
+            return add(animation, layer -> {});
+        }
+
+        public Animations add(@NotNull Animation animation, @NotNull Consumer<AnimationMixer.AnimationLayer> layer) {
+            animations.add(animation);
+
+            AnimationMixer.AnimationLayer animationLayer = new AnimationMixer.AnimationLayer();
+            layer.accept(animationLayer);
+            layers.add(animationLayer);
+
+            return this;
+        }
     }
 
     public List<AnimationProvider> getAnimationProviders() {

@@ -43,6 +43,8 @@ public abstract class ShaderProgram implements Disposable {
 
     private final boolean placeholder;
 
+    private final Map<String, Integer> nonstrictUniformCache = new HashMap<>();
+
     public enum ShaderType {
         VERTEX,
         GEOMETRY,
@@ -256,9 +258,17 @@ public abstract class ShaderProgram implements Disposable {
             return;
         }
 
-        int location = STRICT_UNIFORM_DETECTION && strict ?
-                uniforms.get(uniform) :
-                glGetUniformLocation(programID, uniform.getName());
+        Integer location;
+        if (STRICT_UNIFORM_DETECTION && strict) {
+            location = uniforms.get(uniform);
+        } else {
+            location = nonstrictUniformCache.get(uniform.getName());
+            if (location == null) {
+                location = glGetUniformLocation(programID, uniform.getName());
+                nonstrictUniformCache.put(uniform.getName(), location);
+            }
+        }
+
         if (location == -1) {
             if (missingUniforms.get(name) == null) logger.trace("Attempted to set nonexistent uniform: " + name);
             missingUniforms.put(name, true);
