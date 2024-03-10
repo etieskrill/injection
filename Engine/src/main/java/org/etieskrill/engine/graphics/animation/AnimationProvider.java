@@ -12,6 +12,7 @@ import org.joml.Vector3fc;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -28,6 +29,9 @@ public class AnimationProvider {
 
     private double playbackSpeed;
 
+    private final List<Transform> transformPool;
+    private int currentTransform;
+
     private static final Logger logger = LoggerFactory.getLogger(AnimationProvider.class);
 
     public AnimationProvider(@NotNull Animation animation, @NotNull Model model) {
@@ -38,6 +42,9 @@ public class AnimationProvider {
         this.rootNode = model.getNodes().getFirst();
 
         this.playbackSpeed = 1;
+
+        this.transformPool = new ArrayList<>(model.getNodes().size());
+        for (int i = 0; i < model.getNodes().size(); i++) transformPool.add(new Transform());
     }
 
     public Animation getAnimation() {
@@ -62,6 +69,7 @@ public class AnimationProvider {
             default -> throw new IllegalArgumentException("Unexpected behaviour: " + animation.getBehaviour());
         }
 
+        currentTransform = 0;
         localBoneTransforms.forEach(Transform::identity);
         updateBoneTransforms(localBoneTransforms, currentTicks, rootNode);
         return localBoneTransforms;
@@ -69,18 +77,15 @@ public class AnimationProvider {
 
     private void updateBoneTransforms(List<Transform> localBoneTransforms, double currentTicks, Node node) {
         Bone bone = node.getBone();
-        Transform localTransform = new Transform(node.getTransform()); //Set node transform as default
+        Transform localTransform = transformPool.get(currentTransform++).set(node.getTransform()); //Set node transform as default
 
         if (bone != null) { //If node has bone, try to find animation
-            BoneAnimation boneAnim = animation.getBoneAnimations().stream()
-                    .filter(_boneAnimation -> _boneAnimation.bone().equals(node.getBone()))
-                    .findAny()
-                    .orElse(null);
+            BoneAnimation boneAnim = animation.getBoneAnimation(bone);
 
             if (boneAnim != null) { //If bone is animated, replace node transform
-                Vector3fc position = interpolate(currentTicks, boneAnim, boneAnim.positionTimes(), boneAnim.positions());
-                Quaternionfc rotation = interpolate(currentTicks, boneAnim, boneAnim.rotationTimes(), boneAnim.rotations());
-                Vector3fc scaling = interpolate(currentTicks, boneAnim, boneAnim.scaleTimes(), boneAnim.scalings());
+                Vector3fc position = interpolateVector(currentTicks, boneAnim.positionTimes(), boneAnim.positions());
+                Quaternionfc rotation = interpolateQuaternion(currentTicks, boneAnim.rotationTimes(), boneAnim.rotations());
+                Vector3fc scaling = interpolateVector(currentTicks, boneAnim.scaleTimes(), boneAnim.scalings());
 
                 localTransform.set(position, rotation, scaling);
             }
@@ -92,6 +97,42 @@ public class AnimationProvider {
 
         for (Node child : node.getChildren())
             updateBoneTransforms(localBoneTransforms, currentTicks, child);
+    }
+
+    private Vector3fc interpolateVector(double currentTicks, double[] timings, List<Vector3fc> positions) {
+        int numTimings = timings.length;
+
+        int index = -1;
+        for (int i = 0; i < numTimings; i++) {
+            if (i < numTimings - 1
+                    && timings[i] <= currentTicks
+                    && timings[i + 1] >= currentTicks) {
+                index = i;
+                break;
+            }
+        }
+
+        if (index == -1) return positions.getFirst();
+        double t = (currentTicks - timings[index]) / (timings[index + 1] - timings[index]);
+        return positions.get(index).lerp(positions.get(index + 1), (float) t, new Vector3f());
+    }
+
+    private Quaternionfc interpolateQuaternion(double currentTicks, double[] timings, List<Quaternionfc> rotations) {
+        int numTimings = timings.length;
+
+        int index = -1;
+        for (int i = 0; i < numTimings; i++) {
+            if (i < numTimings - 1
+                    && timings[i] <= currentTicks
+                    && timings[i + 1] >= currentTicks) {
+                index = i;
+                break;
+            }
+        }
+
+        if (index == -1) return rotations.getFirst();
+        double t = (currentTicks - timings[index]) / (timings[index + 1] - timings[index]);
+        return rotations.get(index).slerp(rotations.get(index + 1), (float) t, new Quaternionf());
     }
 
     private <T> @NotNull T interpolate(double currentTicks, BoneAnimation anim, List<Double> timings, List<T> values) {

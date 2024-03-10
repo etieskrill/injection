@@ -2,6 +2,7 @@ package org.etieskrill.engine.graphics.gl.shaders;
 
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.util.ResourceReader;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -308,13 +309,15 @@ public abstract class ShaderProgram implements Disposable {
 
     //TODO simplify, either here or by implementing directly in setUniform/setUniformArray methods
     private <T extends Uniform> T getUniform(Map<T, ?> map, String name, Object value, boolean strict, Function<Uniform.Type, T> supplier) {
-        T uniform;
+        T uniform = null;
         if (STRICT_UNIFORM_DETECTION & strict) {
-            Optional<T> optUniform = map.keySet().stream()
-                    .filter(element -> name.equals(element.getName()))
-                    .findAny();
-            if (optUniform.isEmpty()) return null;
-            uniform = optUniform.get();
+            for (T t : map.keySet()) {
+                if (name.equals(t.getName())) {
+                    uniform = t;
+                    break;
+                }
+            }
+            if (uniform == null) return null;
             if (uniform.getType() == Uniform.Type.STRUCT) return uniform;
             if (!value.getClass().equals(uniform.getType().get())) return null;
         } else {
@@ -404,12 +407,14 @@ public abstract class ShaderProgram implements Disposable {
 
             private final Class<?> type;
 
-            public static Type getFromValue(Object value) {
+            private static final Type[] values = values();
+
+            public static @Nullable Type getFromValue(Object value) {
                 if (value instanceof UniformMappable) return STRUCT;
-                return Arrays.stream(Type.values())
-                        .filter(type -> type.get().equals(value.getClass()))
-                        .findAny()
-                        .orElse(null);
+                for (Type type : values) {
+                    if (type.get().equals(value.getClass())) return type;
+                }
+                return null;
             }
 
             Type(Class<?> type) {

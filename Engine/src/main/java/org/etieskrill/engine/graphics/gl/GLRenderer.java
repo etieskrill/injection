@@ -8,6 +8,7 @@ import org.etieskrill.engine.graphics.texture.font.Font;
 import org.etieskrill.engine.graphics.texture.font.Glyph;
 import org.etieskrill.engine.util.FixedArrayDeque;
 import org.joml.*;
+import org.lwjgl.system.MemoryStack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -151,10 +152,9 @@ public class GLRenderer implements org.etieskrill.engine.graphics.Renderer {
     }
 
     @Override
-    public void render(Glyph glyph, Vector2fc position, ShaderProgram shader, Matrix4fc combined) {
-        getQuad().getTransform()
-                .setScale(new Vector3f(glyph.getSize(), 1))
-                .setPosition(new Vector3f(position.add(glyph.getPosition(), new Vector2f()), 0));
+    public void render(Glyph glyph, Vector2f position, ShaderProgram shader, Matrix4fc combined) {
+        getQuad().getTransform().getScale().set(glyph.getSize(), 1);
+        getQuad().getTransform().getPosition().set(position.add(glyph.getPosition()), 0);
 
         List<AbstractTexture> textures = getQuad().getNodes().getFirst().getMeshes().getFirst().getMaterial().getTextures();
         textures.clear();
@@ -167,6 +167,7 @@ public class GLRenderer implements org.etieskrill.engine.graphics.Renderer {
     @Override
     public void render(String chars, Font font, Vector2fc position, ShaderProgram shader, Matrix4fc combined) {
         Vector2f pen = new Vector2f(0);
+        Vector2f _position = new Vector2f(position);
         for (Glyph glyph : font.getGlyphs(chars)) {
             switch (requireNonNullElse(glyph.getCharacter(), (char) 0)) {
                 case '\n' -> {
@@ -175,7 +176,7 @@ public class GLRenderer implements org.etieskrill.engine.graphics.Renderer {
                 }
             }
 
-            render(glyph, new Vector2f(position).add(pen), shader, combined);
+            render(glyph, _position.set(position).add(pen), shader, combined);
             pen.add(glyph.getAdvance());
         }
     }
@@ -191,8 +192,11 @@ public class GLRenderer implements org.etieskrill.engine.graphics.Renderer {
 
     private void _render(Model model, ShaderProgram shader, Matrix4fc combined, boolean instanced, int numInstances) {
         shader.setUniform("uCombined", combined, false);
-        shader.setUniform("uModel", model.getFinalTransform().getMatrix(), false);
-        shader.setUniform("uNormal", model.getFinalTransform().getMatrix().invert(new Matrix4f()).transpose().get3x3(new Matrix3f()), false);
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            Matrix4f transform = new Matrix4f(model.getFinalTransform().getMatrix().get(stack.callocFloat(16)));
+            shader.setUniform("uModel", transform, false);
+            shader.setUniform("uNormal", transform.invert().transpose().get(stack.callocFloat(9)), false);
+        }
 
         if (!model.doCulling()) glDisable(GL_CULL_FACE);
         if (model.hasTransparency()) glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

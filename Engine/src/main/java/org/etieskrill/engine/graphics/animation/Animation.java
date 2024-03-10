@@ -2,11 +2,14 @@ package org.etieskrill.engine.graphics.animation;
 
 import org.etieskrill.engine.entity.data.Transform;
 import org.etieskrill.engine.entity.data.TransformC;
+import org.etieskrill.engine.graphics.model.Bone;
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.assimp.AINodeAnim;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.lwjgl.assimp.Assimp.*;
 
@@ -35,6 +38,8 @@ public class Animation {
     private final TransformC baseTransform;
     //TODO add a map from Node/Bone to BoneAnimation so the search for every frame for every node in Animator#_updateBoneMatrices is unnecessary
 
+    private final Map<Bone, BoneAnimation> bonerMap;
+
     /**
      * Constructs a new instance of an animation.
      *
@@ -44,14 +49,23 @@ public class Animation {
      * @param boneAnimations
      * @param meshChannels
      */
-    public Animation(String name, int duration, double ticksPerSecond, List<BoneAnimation> boneAnimations, List<MeshAnimation> meshChannels) {
+    public Animation(String name, int duration, double ticksPerSecond, List<Bone> bones, List<BoneAnimation> boneAnimations, List<MeshAnimation> meshChannels) {
         this.name = name;
+
         this.duration = duration;
         this.ticksPerSecond = ticksPerSecond;
+
         this.boneAnimations = boneAnimations;
         this.meshChannels = meshChannels;
+
         this.baseTransform = new Transform();
+
         this.behaviour = Behaviour.REPEAT; //TODO insert in constructor
+        this.bonerMap = new HashMap<>(boneAnimations.size());
+        for (BoneAnimation boneAnimation : boneAnimations) {
+            Bone bone = bones.stream().filter(_bone -> boneAnimation.bone().equals(_bone)).findAny().orElse(null);
+            bonerMap.put(bone, boneAnimation);
+        }
     }
 
     public enum Behaviour {
@@ -93,6 +107,10 @@ public class Animation {
 
     public Behaviour getBehaviour() {
         return behaviour;
+    }
+
+    public BoneAnimation getBoneAnimation(Bone bone) {
+        return bonerMap.get(bone);
     }
 
     public List<BoneAnimation> getBoneAnimations() {

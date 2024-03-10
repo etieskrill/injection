@@ -4,7 +4,6 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.joml.*;
 
-import java.util.Objects;
 import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
@@ -289,7 +288,12 @@ public class Transform implements TransformC {
 
     @Override
     public int hashCode() {
-        return Objects.hash(position, rotation, scale, transform, dirty);
+        int hash = position.hashCode();
+        hash = 31 * hash + rotation.hashCode();
+        hash = 31 * hash + scale.hashCode();
+        hash = 31 * hash + transform.hashCode();
+        hash = 31 * hash + (dirty ? 1 : 0);
+        return hash;
     }
 
 }

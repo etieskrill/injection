@@ -31,6 +31,7 @@ public class Animator {
     private final List<TransformC> transforms;
 
     private final AnimationMixer animationMixer;
+    private final AnimationAssembler animationAssembler;
 
     private final Model model;
     private final List<Node> nodes;
@@ -48,7 +49,7 @@ public class Animator {
      * @param model the model influenced by added animations
      */
     public Animator(@NotNull Model model) {
-        this(new ArrayList<>(), new AnimationMixer(), model);
+        this(new ArrayList<>(), new AnimationMixer(), new AnimationAssembler(model.getNodes().size()), model);
     }
 
     /**
@@ -66,6 +67,7 @@ public class Animator {
     public Animator(
             @NotNull List<AnimationProvider> animationProviders,
             @NotNull AnimationMixer animationMixer,
+            @NotNull AnimationAssembler animationAssembler,
             @NotNull Model model
     ) {
         logger.info("Loading {} animation{}: {}", animationProviders.size(), animationProviders.size() == 1 ? "" : "s",
@@ -79,6 +81,7 @@ public class Animator {
         for (int i = 0; i < MAX_BONES; i++) transforms.add(new Transform());
 
         this.animationMixer = animationMixer;
+        this.animationAssembler = animationAssembler;
 
         this.model = model;
         this.nodes = new ArrayList<>(model.getNodes().size());
@@ -158,7 +161,7 @@ public class Animator {
 //                    String.format("%7.1f", currentTimeSeconds), animation.getDuration(),
 //                    String.format("%5.1f", animation.getTicksPerSecond()));
 
-        AnimationAssembler.transformToModelSpace(transforms, model.getNodes().getFirst(), new Transform());
+        animationAssembler.transformToModelSpace(transforms, model.getNodes().getFirst());
 
         for (int i = 0; i < this.transforms.size(); i++) {
             ((Transform) this.transforms.get(i)).set(transforms.get(i));

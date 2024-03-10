@@ -3,6 +3,7 @@ package org.etieskrill.engine.graphics.model;
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.entity.data.AABB;
 import org.etieskrill.engine.entity.data.Transform;
+import org.etieskrill.engine.entity.data.TransformC;
 import org.etieskrill.engine.graphics.animation.Animation;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.jetbrains.annotations.Contract;
@@ -38,10 +39,11 @@ public class Model implements Disposable {
     
     private final Transform transform;
     private final Transform initialTransform;
+    private final Transform finalTransform;
 
     private final boolean culling;
     private final boolean transparency;
-    
+
     //TODO move to entity eventually
     private boolean enabled;
     
@@ -235,6 +237,7 @@ public class Model implements Disposable {
         //Instance resources
         this.transform = new Transform(model.transform);
         this.initialTransform = new Transform(model.initialTransform);
+        this.finalTransform = new Transform(model.finalTransform);
 
         this.enabled = model.enabled;
     }
@@ -252,6 +255,7 @@ public class Model implements Disposable {
         
         this.transform = new Transform(builder.transform);
         this.initialTransform = new Transform(builder.initialTransform);
+        this.finalTransform = new Transform();
 
         enable();
     }
@@ -291,9 +295,9 @@ public class Model implements Disposable {
     }
 
     //TODO what is this operation called? composition? move to transform
-    @Contract("-> new")
-    public Transform getFinalTransform() {
-        return new Transform(transform)
+    @Contract("-> this")
+    public TransformC getFinalTransform() {
+        return finalTransform.set(transform)
                 .translate(initialTransform.getPosition())
                 .applyRotation(quat -> quat.mul(initialTransform.getRotation()))
                 .applyScale(scale -> scale.mul(initialTransform.getScale()));

@@ -9,11 +9,11 @@ import java.util.List;
 public record BoneAnimation(
         Bone bone,
         List<Vector3fc> positions,
-        List<Double> positionTimes,
+        double[] positionTimes,
         List<Quaternionfc> rotations,
-        List<Double> rotationTimes,
+        double[] rotationTimes,
         List<Vector3fc> scalings,
-        List<Double> scaleTimes,
+        double[] scaleTimes,
         Animation.Behaviour preBehaviour, //what happens before first key
         Animation.Behaviour postBehaviour //what happens after last key
 ) {
@@ -22,11 +22,11 @@ public record BoneAnimation(
         return "BoneAnimation{" +
                 "bone=" + bone +
                 ", num positions=" + positions.size() +
-                ", num positionTimes=" + positionTimes.size() +
+                ", num positionTimes=" + positionTimes.length +
                 ", num rotations=" + rotations.size() +
-                ", num rotationTimes=" + rotationTimes.size() +
+                ", num rotationTimes=" + rotationTimes.length +
                 ", num scalings=" + scalings.size() +
-                ", num scaleTimes=" + scaleTimes.size() +
+                ", num scaleTimes=" + scaleTimes.length +
                 ", preBehaviour=" + preBehaviour +
                 ", postBehaviour=" + postBehaviour +
                 '}';

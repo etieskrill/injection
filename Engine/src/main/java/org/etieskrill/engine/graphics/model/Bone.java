@@ -40,6 +40,9 @@ public record Bone(
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, id);
+        int hash = name.hashCode();
+        hash = 31 * hash + id;
+        hash = 31 * hash + offset.hashCode();
+        return hash;
     }
 }

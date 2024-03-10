@@ -33,6 +33,7 @@ class AnimationLoader {
                     aiAnimation.mName().dataString(),
                     (int) aiAnimation.mDuration(),
                     aiAnimation.mTicksPerSecond(),
+                    bones,
                     loadNodeAnimations(aiAnimation.mNumChannels(), aiAnimation.mChannels(), bones),
                     null
             ));
@@ -63,21 +64,24 @@ class AnimationLoader {
 //                            "Failed to load animation because no bone '" + name + "' was found"));
             if (bone == null) continue;
 
-            List<Double> positionTimes = new ArrayList<>(nodeAnim.mNumPositionKeys());
+            double[] positionTimes = new double[nodeAnim.mNumPositionKeys()];
+            final int[] positionIndex = {0};
             List<Vector3fc> positions = nodeAnim.mPositionKeys().stream().limit(nodeAnim.mNumPositionKeys())
-                    .peek(key -> positionTimes.add(key.mTime()))
+                    .peek(key -> positionTimes[positionIndex[0]++] = key.mTime())
                     .map(AIVectorKey::mValue)
                     .map(vector -> (Vector3fc) new Vector3f(vector.x(), vector.y(), vector.z()))
                     .toList();
-            List<Double> rotationTimes = new ArrayList<>(nodeAnim.mNumRotationKeys());
+            double[] rotationTimes = new double[nodeAnim.mNumRotationKeys()];
+            final int[] rotationIndex = {0};
             List<Quaternionfc> rotations = nodeAnim.mRotationKeys().stream().limit(nodeAnim.mNumRotationKeys())
-                    .peek(key -> rotationTimes.add(key.mTime()))
+                    .peek(key -> rotationTimes[rotationIndex[0]++] = key.mTime())
                     .map(AIQuatKey::mValue)
                     .map(quat -> (Quaternionfc) new Quaternionf(quat.x(), quat.y(), quat.z(), quat.w()))
                     .toList();
-            List<Double> scaleTimes = new ArrayList<>(nodeAnim.mNumScalingKeys());
+            double[] scaleTimes = new double[nodeAnim.mNumScalingKeys()];
+            final int[] scaleIndex = {0};
             List<Vector3fc> scalings = nodeAnim.mScalingKeys().stream().limit(nodeAnim.mNumScalingKeys())
-                    .peek(key -> scaleTimes.add(key.mTime()))
+                    .peek(key -> scaleTimes[scaleIndex[0]++] = key.mTime())
                     .map(AIVectorKey::mValue)
                     .map(vector -> (Vector3fc) new Vector3f(vector.x(), vector.y(), vector.z()))
                     .toList();
