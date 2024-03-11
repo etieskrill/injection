@@ -263,7 +263,8 @@ public class Game {
             vampyAnimator.update(delta);
 
             vampyShader.setBoneMatrices(vampyAnimator.getTransformMatrices());
-            vampyShader.setGlobalLights(globalLight);
+//            vampyShader.setGlobalLights(globalLight);
+//            vampyShader.setUniform("globalLights[0].direction", globalLight.);
 
             renderer.render(vampy, vampyShader, camera.getCombined());
             renderer.render(cube, vampyShader, camera.getCombined());

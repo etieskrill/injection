@@ -25,6 +25,7 @@ public class GLRenderer implements org.etieskrill.engine.graphics.Renderer {
     private static final float CLEAR_COLOUR = 0.25f;//0.025f;
 
     private int trianglesDrawn, renderCalls;
+    private int lastTrianglesDrawn, lastRenderCalls;
     private int timeQuery = -1;
 
     private boolean queryGpuTime;
@@ -60,7 +61,9 @@ public class GLRenderer implements org.etieskrill.engine.graphics.Renderer {
         glClearColor(CLEAR_COLOUR, CLEAR_COLOUR, CLEAR_COLOUR, 1f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
+        lastTrianglesDrawn = trianglesDrawn;
         trianglesDrawn = 0;
+        lastRenderCalls = renderCalls;
         renderCalls = 0;
     }
 
@@ -195,7 +198,7 @@ public class GLRenderer implements org.etieskrill.engine.graphics.Renderer {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             Matrix4f transform = new Matrix4f(model.getFinalTransform().getMatrix().get(stack.callocFloat(16)));
             shader.setUniform("uModel", transform, false);
-            shader.setUniform("uNormal", transform.invert().transpose().get(stack.callocFloat(9)), false);
+            shader.setUniform("uNormal", transform.invert().transpose().get3x3(new Matrix3f(stack.callocFloat(9))), false);
         }
 
         if (!model.doCulling()) glDisable(GL_CULL_FACE);
@@ -203,7 +206,6 @@ public class GLRenderer implements org.etieskrill.engine.graphics.Renderer {
         shader.start();
         Node rootNode = model.getNodes().getFirst();
         renderNode(rootNode, shader, rootNode.getTransform().getMatrix(), instanced, numInstances);
-        shader.stop();
         if (!model.doCulling()) glEnable(GL_CULL_FACE);
         if (model.hasTransparency()) glBlendFunc(GL_ONE, GL_ZERO);
     }
@@ -227,9 +229,6 @@ public class GLRenderer implements org.etieskrill.engine.graphics.Renderer {
         if (mesh.getDrawMode() == Mesh.DrawMode.TRIANGLES)
             trianglesDrawn += mesh.getNumIndices() / 3;
         renderCalls++;
-
-        AbstractTexture.unbindAllTextures();
-        glBindVertexArray(0);
     }
 
     private void bindMaterial(Material material, ShaderProgram shader) {
@@ -302,12 +301,12 @@ public class GLRenderer implements org.etieskrill.engine.graphics.Renderer {
 
     @Override
     public int getTrianglesDrawn() {
-        return trianglesDrawn;
+        return lastTrianglesDrawn;
     }
 
     @Override
     public int getRenderCalls() {
-        return renderCalls;
+        return lastRenderCalls;
     }
 
     @Override

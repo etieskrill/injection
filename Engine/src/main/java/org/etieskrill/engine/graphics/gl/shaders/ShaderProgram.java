@@ -2,6 +2,7 @@ package org.etieskrill.engine.graphics.gl.shaders;
 
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.util.ResourceReader;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
@@ -11,14 +12,16 @@ import org.lwjgl.system.MemoryStack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.etieskrill.engine.config.ResourcePaths.SHADER_PATH;
 import static org.etieskrill.engine.graphics.gl.GLUtils.checkError;
 import static org.etieskrill.engine.graphics.gl.GLUtils.clearError;
 import static org.etieskrill.engine.graphics.gl.shaders.ShaderProgram.ShaderType.*;
+import static org.etieskrill.engine.graphics.gl.shaders.ShaderProgram.Uniform.INVALID_UNIFORM_LOCATION;
 import static org.etieskrill.engine.graphics.gl.shaders.ShaderProgram.Uniform.NESTED_UNIFORM_LOCATION;
 import static org.lwjgl.opengl.ARBShadingLanguageInclude.GL_SHADER_INCLUDE_ARB;
 import static org.lwjgl.opengl.ARBShadingLanguageInclude.glNamedStringARB;
@@ -39,12 +42,15 @@ public abstract class ShaderProgram implements Disposable {
 
     protected int programID;
     private int vertID, geomID = -1, fragID;
-    private final Map<Uniform, Integer> uniforms;
-    private final Map<ArrayUniform, List<Integer>> arrayUniforms;
+    private final Map<String, Uniform> uniforms;
+    private final Map<String, ArrayUniform> arrayUniforms;
 
     private final boolean placeholder;
 
     private final Map<String, Integer> nonstrictUniformCache = new HashMap<>();
+    private final Map<String, Integer> arrayElementUniformCache = new HashMap<>();
+
+    private final Set<String> missingUniforms = new HashSet<>();
 
     public enum ShaderType {
         VERTEX,
@@ -53,15 +59,10 @@ public abstract class ShaderProgram implements Disposable {
         //LIBRARY
     }
 
-    protected static class ShaderFile {
-        private final String name;
-        private final ShaderType type;
-
-        public ShaderFile(String name, ShaderType type) {
-            this.name = name;
-            this.type = type;
-        }
-
+    protected record ShaderFile(
+            String name,
+            ShaderType type
+    ) {
         public String getName() {
             return name;
         }
@@ -223,116 +224,89 @@ public abstract class ShaderProgram implements Disposable {
         glUseProgram(0);
     }
 
-    private final HashMap<String, Boolean> missingUniforms = new HashMap<>();
-
-    public void setUniform(String name, Object value) {
-        setUniform(name, value, true);
+    public void setUniform(@NotNull String name, @NotNull Object value) {
+        setUniform(name, value, uniforms, true, false);
     }
 
-    //TODO this is so-called bullshit spaghetti code. fix it.
-    public void setUniform(String name, Object value, boolean strict) {
-        if (value == null || name == null || name.isBlank()) return;
+    public void setUniform(@NotNull String name, @NotNull Object value, boolean strict) {
+        setUniform(name, value, uniforms, strict, false);
+    }
 
-        Uniform uniform = getUniform(uniforms, name, value, strict, type -> new Uniform(name, type));
-        if (uniform != null && uniform.getType() == Uniform.Type.STRUCT) {
-            if (value instanceof UniformMappable mappable)
-                mappable.map(MapperShaderProgram.get(this, name, -1));
-            else
+    public void setUniformArray(@NotNull String name, @NotNull Object[] values) { //TODO use the glUniform[...]v family of functions to set arrays
+        if (values.length == 0)
+            throw new IllegalArgumentException("Uniform values must not be empty");
+
+        setUniform(name, values, arrayUniforms, false, true);
+    }
+
+    //TODO public void setUniformArray(String name, int index, Object value)
+
+    private <T extends Uniform> void setUniform(String name, Object value, Map<String, T> uniformMap, boolean strict, boolean array) {
+        if (name.isBlank()) throw new IllegalArgumentException("Name must not be empty");
+
+        T uniform = uniformMap.get(name);
+        System.out.println("could not find uniform " + name);
+        if (uniform != null) {
+            setRegisteredUniform(uniform, value, array);
+            return;
+        }
+
+        if (STRICT_UNIFORM_DETECTION && strict)
+            throw new ShaderUniformException("Attempted to set unregistered uniform in strict mode", name);
+
+        if (!missingUniforms.contains(name)) {
+            logger.warn("Attempted to set unregistered uniform '{}'", name);
+            missingUniforms.add(name);
+        }
+
+        setUnregisteredUniform(name, value, array);
+    }
+
+    private void setRegisteredUniform(Uniform uniform, Object value, boolean array) {
+        if (uniform.getType() == Uniform.Type.STRUCT) {
+            if (value instanceof UniformMappable mappable) {
+                mappable.map(MapperShaderProgram.get(this, uniform.getName(), -1));
+            } else {
                 throw new ShaderUniformException("Struct uniform must implement UniformMappable interface");
-            return;
-        }
-        if (uniform == null) {
-            StringBuilder message = new StringBuilder("Attempted to set unregistered uniform: ").append(name);
-            uniforms.keySet().stream()
-                    .filter(u -> u.getName().equals(name))
-                    .findAny()
-                    .ifPresent(
-                            uniform1 -> message.delete(0, message.length()).append("Uniform ").append(name)
-                                    .append(" is present but type does not match, expected ")
-                                    .append(uniform1.getType().name()).append(" but got ")
-                                    .append(value.getClass().getSimpleName())
-                    );
-
-            if (STRICT_UNIFORM_DETECTION & strict) throw new ShaderUniformException(message.toString());
-            if (missingUniforms.get(name) == null) logger.warn(message.toString());
-            missingUniforms.put(name, true);
-            return;
-        }
-
-        Integer location;
-        if (STRICT_UNIFORM_DETECTION && strict) {
-            location = uniforms.get(uniform);
-        } else {
-            location = nonstrictUniformCache.get(uniform.getName());
-            if (location == null) {
-                location = glGetUniformLocation(programID, uniform.getName());
-                nonstrictUniformCache.put(uniform.getName(), location);
             }
+            return;
+        }
+
+        if (!uniform.getType().get().equals(value.getClass())) {
+            throw new ShaderUniformException("Uniform " + uniform.getName() + " is present but expected type " +
+                    uniform.getType().get().getSimpleName() + " does not match value type " + value.getClass().getSimpleName());
+        }
+
+        if (!array) setUniformValue(uniform.getType(), uniform.getLocation(), value);
+        else setUniformArrayValue(uniform.getType(), uniform.getLocation(), (Object[]) value);
+        System.out.println("setting registered uniform: " + uniform + " to " + value);
+    }
+
+    private void setUnregisteredUniform(String name, Object value, boolean array) {
+        Integer location = nonstrictUniformCache.get(name);
+        if (location == null) {
+            location = glGetUniformLocation(programID, name);
+            nonstrictUniformCache.put(name, location);
         }
 
         if (location == -1) {
-            if (missingUniforms.get(name) == null) logger.trace("Attempted to set nonexistent uniform: " + name);
-            missingUniforms.put(name, true);
-            return;
-        }
-        setUniformValue(uniform, location, value);
-    }
-
-    public void setUniformArray(String name, Object[] values) { //TODO use the glUniform[...]v family of functions to set arrays
-        for (int i = 0; i < values.length; i++)
-            setUniformArray(name, i, values[i]);
-    }
-
-    public void setUniformArray(String name, int index, Object value) {
-        if (name == null) throw new NullPointerException("Name must not be null");
-        if (value == null) throw new NullPointerException("Value must not be null");
-
-        ArrayUniform uniform = getUniform(arrayUniforms, name, value, true, type -> new ArrayUniform(name, index, type));
-        if (uniform == null) {
-            if (missingUniforms.get(name) == null) logger.trace("Attempted to set unregistered uniform: " + name);
-            missingUniforms.put(name, true);
+            if (!missingUniforms.contains(name)) logger.trace("Attempted to set nonexistent uniform: " + name);
+            missingUniforms.add(name);
             return;
         }
 
-        if (index < 0 || index > uniform.getSize()) return;
-
-        if (uniform.getType() == Uniform.Type.STRUCT) {
-            if (value instanceof UniformMappable mappable)
-                mappable.map(MapperShaderProgram.get(this, name, index));
-            else
-                throw new ShaderUniformException("Struct uniform must implement UniformMappable interface");
-            return;
-        }
-
-        setUniform(uniform.getNameWith(index), value, false);
+        if (!array) setUniformValue(Uniform.Type.getFromValue(value), location, value);
+        else setUniformArrayValue(Uniform.Type.getFromValue(((Object[]) value)[0]), location, (Object[]) value);
     }
 
-    //TODO simplify, either here or by implementing directly in setUniform/setUniformArray methods
-    private <T extends Uniform> T getUniform(Map<T, ?> map, String name, Object value, boolean strict, Function<Uniform.Type, T> supplier) {
-        T uniform = null;
-        if (STRICT_UNIFORM_DETECTION & strict) {
-            for (T t : map.keySet()) {
-                if (name.equals(t.getName())) {
-                    uniform = t;
-                    break;
-                }
-            }
-            if (uniform == null) return null;
-            if (uniform.getType() == Uniform.Type.STRUCT) return uniform;
-            if (!value.getClass().equals(uniform.getType().get())) return null;
-        } else {
-            Uniform.Type type = Uniform.Type.getFromValue(value);
-            if (type == null) return null;
-            uniform = supplier.apply(type);
-        }
-        return uniform;
-    }
+    void setUniformValue(Uniform.Type type, int location, Object value) {
+        if (type == null)
+            throw new ShaderUniformException("Could not determine uniform type for " + value.getClass().getSimpleName());
 
-    void setUniformValue(Uniform uniform, int location, Object value) {
         if (AUTO_START_ON_VARIABLE_SET) start();
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            switch (uniform.getType()) {
+            switch (type) {
                 case INT, SAMPLER2D, SAMPLER_CUBE_MAP -> glUniform1i(location, (Integer) value);
                 case FLOAT -> glUniform1f(location, (Float) value);
                 case BOOLEAN -> glUniform1f(location, (boolean) value ? 1 : 0);
@@ -340,6 +314,50 @@ public abstract class ShaderProgram implements Disposable {
                 case VEC4 -> glUniform4fv(location, ((Vector4f) value).get(stack.callocFloat(4)));
                 case MAT3 -> glUniformMatrix3fv(location, false, ((Matrix3f) value).get(stack.callocFloat(9)));
                 case MAT4 -> glUniformMatrix4fv(location, false, ((Matrix4f) value).get(stack.callocFloat(16)));
+            }
+        }
+    }
+
+    void setUniformArrayValue(Uniform.Type type, int location, Object[] value) {
+        if (AUTO_START_ON_VARIABLE_SET) start();
+
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            switch (type) {
+                case INT, SAMPLER2D, SAMPLER_CUBE_MAP -> {
+                    IntBuffer ints = stack.mallocInt(value.length);
+                    for (Object o : value) ints.put((Integer) o);
+                    glUniform1iv(location, ints);
+                }
+                case FLOAT -> {
+                    FloatBuffer floats = stack.mallocFloat(value.length);
+                    for (Object o :value) floats.put((Float) o);
+                    glUniform1fv(location, floats);
+                }
+                case BOOLEAN -> {
+                    IntBuffer ints = stack.mallocInt(value.length);
+                    for (Object o : value) ints.put((Boolean) o ? 1 : 0);
+                    glUniform1iv(location, ints);
+                }
+                case VEC3 -> {
+                    FloatBuffer vector3s = stack.mallocFloat(3 * value.length);
+                    for (Object o : value) ((Vector3f) o).get(vector3s).position(vector3s.position() + 3);
+                    glUniform3fv(location, vector3s);
+                }
+                case VEC4 -> {
+                    FloatBuffer vector4s = stack.mallocFloat(4 * value.length);
+                    for (Object o : value) ((Vector4f) o).get(vector4s).position(vector4s.position() + 4);
+                    glUniform4fv(location, vector4s);
+                }
+                case MAT3 -> {
+                    FloatBuffer matrix3s = stack.mallocFloat(9 * value.length);
+                    for (Object o : value) ((Matrix3f) o).get(matrix3s).position(matrix3s.position() + 9);
+                    glUniformMatrix3fv(location, false, matrix3s);
+                }
+                case MAT4 -> {
+                    FloatBuffer matrix4s = stack.mallocFloat(16 * value.length);
+                    for (Object o : value) ((Matrix4f) o).get(matrix4s).position(matrix4s.position() + 16);
+                    glUniformMatrix4fv(location, false, matrix4s);
+                }
             }
         }
     }
@@ -367,17 +385,7 @@ public abstract class ShaderProgram implements Disposable {
 
         public MapperShaderProgram map(String varName, Object value) {
             //TODO strict nested uniforms: probably hook into here for registration
-            Uniform.Type type = Uniform.Type.getFromValue(value);
-            if (type == null) return this;
-            Uniform uniform;
-            if (arrayIndex <= -1)
-                uniform = new Uniform(structName + "." + varName, type);
-            else
-                uniform = new ArrayUniform(structName + "." + varName, arrayIndex, type);
-            String name = arrayIndex <= -1 ? uniform.getName() : ((ArrayUniform) uniform).getNameWith(arrayIndex);
-            int location = glGetUniformLocation(programID, name);
-            if (location == -1) return this;
-            setUniformValue(uniform, location, value);
+            setUniform(varName, value);
             return this;
         }
     }
@@ -389,7 +397,7 @@ public abstract class ShaderProgram implements Disposable {
 
         private final String name;
         private final Type type;
-//        private final boolean wildcard;
+        private final int location;
 
         public enum Type {
             INT(Integer.class),
@@ -426,22 +434,11 @@ public abstract class ShaderProgram implements Disposable {
             }
         }
 
-        public Uniform(String name, Type type) {
-            //TODO array/wildcard detection
-//            if (name.contains("*")) {
-//                if (numArrayIndices > 0 || name.indexOf("*") != name.length() - 1) throw new IllegalArgumentException(
-//                        "Name may only contain either an array index or a wildcard, " +
-//                        "and the wildcard must be at the end of the name: " + name);
-//                wildcard = true;
-//            } else wildcard = false;
-
+        public Uniform(String name, Type type, int location) {
             this.name = name;
             this.type = type;
+            this.location = location;
         }
-
-//        public boolean hasWildcard() {
-//            return wildcard;
-//        }
 
         public String getName() {
             return name;
@@ -449,6 +446,10 @@ public abstract class ShaderProgram implements Disposable {
 
         public Type getType() {
             return type;
+        }
+
+        public int getLocation() {
+            return location;
         }
 
         @Override
@@ -471,24 +472,8 @@ public abstract class ShaderProgram implements Disposable {
     protected static class ArrayUniform extends Uniform {
         private final int size;
 
-        private int arrayIndex;
-
-        public ArrayUniform(String name, int size, Type type) {
-            super(name, type);
-
-            if (name.contains("*")) throw new ShaderUniformException(
-                    "Uniform of array type may not contain any wildcard specifiers", name);
-
-            int numArrayIndices = 0;
-            for (int i = 0; i < name.length(); i++) {
-                if (name.charAt(i) == '$') {
-                    arrayIndex = i;
-                    numArrayIndices++;
-                }
-                if (numArrayIndices > 1) throw new ShaderUniformException(
-                        "Only a single array index placeholder may be specified", name);
-            }
-
+        public ArrayUniform(String name, int size, Type type, int location) {
+            super(name, type, location);
             this.size = size;
         }
 
@@ -497,24 +482,8 @@ public abstract class ShaderProgram implements Disposable {
             return getName().replace("$", Integer.toString(index));
         }
 
-        public int getArrayIndex() {
-            return arrayIndex;
-        }
-
         public int getSize() {
             return size;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            if (!super.equals(o)) return false;
-
-            ArrayUniform that = (ArrayUniform) o;
-
-            // Size is irrelevant for equality
-            return arrayIndex == that.arrayIndex;
         }
     }
 
@@ -525,70 +494,66 @@ public abstract class ShaderProgram implements Disposable {
 
     protected abstract void getUniformLocations();
 
-    //TODO add setting of default value here
     protected void addUniform(String name, Uniform.Type type) {
-        Uniform uniform = new Uniform(name, type);
-        if (uniforms.containsKey(uniform)) return;
+        addUniform(name, type, true);
+    }
+
+    protected void addUniform(String name, Uniform.Type type, boolean defaultValues) {
+        if (uniforms.containsKey(name)) return;
 
         if (type == Uniform.Type.STRUCT) {
-            uniforms.put(uniform, NESTED_UNIFORM_LOCATION); //TODO remove filler value if possible, since type is present a/w
-            logger.trace("Registered nested uniform {}", uniform.getName());
+            uniforms.put(name, new Uniform(name, type, NESTED_UNIFORM_LOCATION));
+            logger.trace("Registered nested uniform '{}'", name);
             return;
         }
 
-        int uniformLocation = glGetUniformLocation(programID, uniform.getName());
-        if (uniformLocation != -1) {
-            uniforms.put(uniform, uniformLocation);
-            setStandardValue(uniform, uniformLocation);
-            logger.trace("Registered uniform {}", uniform.getName());
+        int location = glGetUniformLocation(programID, name);
+        if (location != INVALID_UNIFORM_LOCATION) {
+            uniforms.put(name, new Uniform(name, type, location));
+            if (defaultValues) setStandardValue(type, location);
+            logger.trace("Registered uniform '{}'", name);
             return;
         }
 
         if (STRICT_UNIFORM_DETECTION)
             throw new ShaderUniformException(
-                    "Cannot register non-existent or non-used uniform in strict mode", uniform.getName());
+                    "Cannot register non-existent or non-used uniform in strict mode", name);
 
-        logger.debug("Could not find location of uniform {}", uniform);
+        logger.debug("Could not find uniform '{}' of type {}", name, type);
     }
 
     protected void addUniformArray(String name, int size, Uniform.Type type) {
-        List<Integer> locations = new ArrayList<>();
-        ArrayUniform uniform = new ArrayUniform(name, size, type);
+        addUniformArray(name, size, type, true);
+    }
 
-        if (arrayUniforms.containsKey(uniform)) return;
+    protected void addUniformArray(String name, int size, Uniform.Type type, boolean defaultValues) {
+        if (arrayUniforms.containsKey(name)) return;
 
         if (type == Uniform.Type.STRUCT) {
-            //TODO check for values
-            arrayUniforms.put(uniform, null);
+            arrayUniforms.put(name, new ArrayUniform(name, size, type, NESTED_UNIFORM_LOCATION));
+            logger.trace("Registered nested array uniform '{}'", name);
             return;
         }
 
-        boolean registered = false;
-        for (int i = 0; i < size; i++) {
-            int location = glGetUniformLocation(programID, uniform.getNameWith(i));
-            if (location != -1) {
-                locations.add(location);
-                setStandardValue(uniform, location);
-                if (!registered) {
-                    logger.trace("Registered uniform {}", uniform.getName());
-                    registered = true;
-                }
-                continue;
-            }
-
-            if (STRICT_UNIFORM_DETECTION)
-                throw new ShaderUniformException(
-                        "Cannot register non-existent or unused uniform in strict mode", uniform.getName());
-
-            logger.debug("Could not find location of uniform {}", uniform);
+        int location = glGetUniformLocation(programID, name);
+        if (location != INVALID_UNIFORM_LOCATION) {
+            uniforms.put(name, new Uniform(name, type, location));
+            System.out.println("registered array uniform: " + uniforms.get(name));
+            if (defaultValues) setStandardValue(type, location);
+            logger.trace("Registered array uniform '{}'", name);
+            return;
         }
 
-        arrayUniforms.put(uniform, locations);
+        if (STRICT_UNIFORM_DETECTION)
+            throw new ShaderUniformException(
+                    "Cannot register non-existent or non-used array uniform in strict mode", name);
+
+        logger.debug("Could not find array uniform '{}' of type {}", name, type);
     }
 
-    private void setStandardValue(Uniform uniform, int location) {
+    private void setStandardValue(Uniform.Type type, int location) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            switch (uniform.type) {
+            switch (type) {
                 case INT, BOOLEAN, SAMPLER2D -> glUniform1i(location, 0);
                 case FLOAT -> glUniform1f(location, 0f);
                 case VEC3 -> glUniform3fv(location, stack.callocFloat(3));

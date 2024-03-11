@@ -74,8 +74,8 @@ public class Shaders {
             //TODO theoretically, a sort of autodetect feature is entirely possible
             addUniform("uViewPosition", VEC3);
             
-            addUniformArray("globalLights[$]", 1, STRUCT);
-            addUniformArray("lights[$]", 2, STRUCT);
+            addUniformArray("globalLights", 1, STRUCT);
+            addUniformArray("lights", 2, STRUCT);
         }
 
         public void setViewPosition(Vector3fc viewPosition) {
@@ -83,7 +83,7 @@ public class Shaders {
         }
 
         public void setGlobalLights(DirectionalLight... lights) {
-            setUniformArray("globalLights[$]", lights);
+            setUniformArray("globalLights", lights);
         }
         
         public void setLights(PointLight[] pointLights) {
