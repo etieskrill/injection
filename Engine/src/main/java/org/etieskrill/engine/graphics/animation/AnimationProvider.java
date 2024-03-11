@@ -83,11 +83,9 @@ public class AnimationProvider {
             BoneAnimation boneAnim = animation.getBoneAnimation(bone);
 
             if (boneAnim != null) { //If bone is animated, replace node transform
-                Vector3fc position = interpolateVector(currentTicks, boneAnim.positionTimes(), boneAnim.positions());
-                Quaternionfc rotation = interpolateQuaternion(currentTicks, boneAnim.rotationTimes(), boneAnim.rotations());
-                Vector3fc scaling = interpolateVector(currentTicks, boneAnim.scaleTimes(), boneAnim.scalings());
-
-                localTransform.set(position, rotation, scaling);
+                interpolateVector(currentTicks, boneAnim.positionTimes(), boneAnim.positions(), localTransform.getPosition());
+                interpolateQuaternion(currentTicks, boneAnim.rotationTimes(), boneAnim.rotations(), localTransform.getRotation());
+                interpolateVector(currentTicks, boneAnim.scaleTimes(), boneAnim.scalings(), localTransform.getScale());
             }
 
             localBoneTransforms
@@ -95,11 +93,11 @@ public class AnimationProvider {
                     .set(localTransform);
         }
 
-        for (Node child : node.getChildren())
-            updateBoneTransforms(localBoneTransforms, currentTicks, child);
+        for (int i = 0; i < node.getChildren().size(); i++)
+            updateBoneTransforms(localBoneTransforms, currentTicks, node.getChildren().get(i));
     }
 
-    private Vector3fc interpolateVector(double currentTicks, double[] timings, List<Vector3fc> positions) {
+    private void interpolateVector(double currentTicks, double[] timings, List<Vector3fc> vectors, Vector3f target) {
         int numTimings = timings.length;
 
         int index = -1;
@@ -112,12 +110,15 @@ public class AnimationProvider {
             }
         }
 
-        if (index == -1) return positions.getFirst();
+        if (index == -1) {
+            target.set(vectors.getFirst());
+            return;
+        }
         double t = (currentTicks - timings[index]) / (timings[index + 1] - timings[index]);
-        return positions.get(index).lerp(positions.get(index + 1), (float) t, new Vector3f());
+        vectors.get(index).lerp(vectors.get(index + 1), (float) t, target);
     }
 
-    private Quaternionfc interpolateQuaternion(double currentTicks, double[] timings, List<Quaternionfc> rotations) {
+    private void interpolateQuaternion(double currentTicks, double[] timings, List<Quaternionfc> quaternions, Quaternionf target) {
         int numTimings = timings.length;
 
         int index = -1;
@@ -130,9 +131,12 @@ public class AnimationProvider {
             }
         }
 
-        if (index == -1) return rotations.getFirst();
+        if (index == -1) {
+            target.set(quaternions.getFirst());
+            return;
+        }
         double t = (currentTicks - timings[index]) / (timings[index + 1] - timings[index]);
-        return rotations.get(index).slerp(rotations.get(index + 1), (float) t, new Quaternionf());
+        quaternions.get(index).slerp(quaternions.get(index + 1), (float) t, target);
     }
 
     private <T> @NotNull T interpolate(double currentTicks, BoneAnimation anim, List<Double> timings, List<T> values) {

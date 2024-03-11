@@ -20,17 +20,17 @@ public class AnimationShader extends Shaders.StaticShader {
     protected void getUniformLocations() {
         super.getUniformLocations();
 
-        addUniformArray("boneMatrices[$]", MAX_BONES, Uniform.Type.MAT4);
+        addUniformArray("boneMatrices", MAX_BONES, MAT4);
 
-        addUniformArray("globalLights[$]", 1, STRUCT);
-        addUniformArray("lights[$]", 2, STRUCT);
+        addUniformArray("globalLights", 1, STRUCT);
+        addUniformArray("lights", 2, STRUCT);
 
         addUniform("uShowBoneSelector", INT);
         addUniform("uShowBoneWeights", BOOLEAN);
     }
 
     public void setBoneMatrices(List<Matrix4fc> boneMatrices) {
-        setUniformArray("boneMatrices[$]", boneMatrices.toArray());
+        setUniformArray("boneMatrices", boneMatrices.toArray());
     }
 
     public void setShowBoneSelector(int boneGroup) {

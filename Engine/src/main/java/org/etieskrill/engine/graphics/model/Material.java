@@ -4,10 +4,7 @@ import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.joml.Vector4f;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static java.util.Objects.requireNonNullElse;
 import static org.lwjgl.assimp.Assimp.*;
@@ -77,7 +74,7 @@ public class Material implements Disposable {
     }
 
     private Material(List<AbstractTexture> textures, Map<Property, Object> properties) {
-        this.textures = new LinkedList<>(textures);
+        this.textures = new ArrayList<>(textures);
         this.properties = new HashMap<>(properties);
     }
     

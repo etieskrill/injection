@@ -320,13 +320,6 @@ public abstract class AbstractTexture implements Disposable {
         glBindTexture(target.gl(), 0);
     }
 
-    public static void unbindAllTextures() {
-        for (int i = 0; i < 32; i++) {
-            glActiveTexture(GL_TEXTURE0 + i);
-            glBindTexture(GL_TEXTURE_2D, 0); //i presume the target does not matter here
-        }
-    }
-
     public int getID() {
         return texture;
     }
