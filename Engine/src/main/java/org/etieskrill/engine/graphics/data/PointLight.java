@@ -27,7 +27,7 @@ public class PointLight implements UniformMappable {
     }
     
     @Override
-    public boolean map(ShaderProgram.MapperShaderProgram shader) {
+    public boolean map(ShaderProgram.UniformMapper shader) {
         shader
                 .map("position", position)
                 .map("ambient", ambient)

@@ -24,7 +24,7 @@ public class DirectionalLight implements UniformMappable {
     }
     
     @Override
-    public boolean map(ShaderProgram.MapperShaderProgram shader) {
+    public boolean map(ShaderProgram.UniformMapper shader) {
         shader
                 .map("direction", direction)
                 .map("ambient", ambient)
