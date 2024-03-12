@@ -1,5 +1,6 @@
 package org.etieskrill.game.animeshun;
 
+import org.etieskrill.engine.graphics.data.DirectionalLight;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
 import org.joml.Matrix4fc;
 
@@ -41,6 +42,10 @@ public class AnimationShader extends Shaders.StaticShader {
 
     public void setShowBoneWeights(boolean showBoneWeights) {
         setUniform("uShowBoneWeights", showBoneWeights);
+    }
+
+    public void setGlobalLight(DirectionalLight light) {
+        setUniformArray("globalLights", 0, light);
     }
 
 }
