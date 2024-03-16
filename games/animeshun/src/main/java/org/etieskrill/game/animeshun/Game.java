@@ -1,6 +1,7 @@
 package org.etieskrill.game.animeshun;
 
 import org.etieskrill.engine.entity.data.Transform;
+import org.etieskrill.engine.entity.data.TransformC;
 import org.etieskrill.engine.graphics.Renderer;
 import org.etieskrill.engine.graphics.animation.Animation;
 import org.etieskrill.engine.graphics.animation.Animator;
@@ -48,10 +49,15 @@ public class Game {
     private LoopPacer pacer;
 
     private Camera camera;
+
     private Model vampy;
+    private Model vampyBB;
+
     private Vector3f vampyPosDelta;
     private AnimationShader vampyShader;
+
     private Model cube;
+
     private DirectionalLight globalLight;
 
     private Animator vampyAnimator;
@@ -115,6 +121,11 @@ public class Game {
         vampy.getInitialTransform()
                 .setPosition(new Vector3f(2.5f, -1f, 0f))
                 .applyRotation(quat -> quat.rotateY(toRadians(-90)));
+        vampyBB = Loaders.ModelLoader.get().load("vampyBB", () -> Model.ofFile("box.obj"));
+        vampyBB.getInitialTransform()
+                .set(vampy.getInitialTransform())
+                .setScale(vampy.getBoundingBox().getSize().mul(.01f));
+
         vampyPosDelta = new Vector3f();
 
         //Different formats sport different conventions or restrictions for the global up direction, one could either
@@ -210,11 +221,6 @@ public class Game {
 
             vampy.getTransform().applyRotation(quat -> quat.rotationY((float) toRadians(-camera.getYaw() + 180)));
 
-            Vector3f orbitPos = new Vector3f(vampy.getTransform().getPosition())
-                    .add(2.5f, .5f, 0)
-                    .add(camera.getDirection().mul(-2.5f));
-            camera.setPosition(orbitPos);
-
             renderer.prepare();
 
             float diff = (controls.isPressed(Keys.W)
@@ -265,7 +271,27 @@ public class Game {
             vampyShader.setBoneMatrices(vampyAnimator.getTransformMatrices());
             vampyShader.setGlobalLight(globalLight);
 
+            Node head = vampy.getNodes().stream().filter(node -> node.getName().equals("mixamorig_Head")).findAny().get();
+//            List<Node> tree = new ArrayList<>(List.of(head));
+//            while ((head = head.getParent()) != null)
+//                tree.add(head);
+            TransformC headTransform = vampyAnimator.getTransforms().get(head.getBone().id());//new Transform();
+//            tree.reversed().forEach(node -> {
+//                if (node.getBone() == null) return;
+//                headTransform.apply(vampyAnimator.getTransforms().get(node.getBone().id()));
+//            });
+
+            Vector3f orbitPos = new Vector3f(/*vampy.getTransform().getPosition()*/)
+                    .add(2.5f, 1f, -.25f)
+                    .add(camera.getDirection().mul(-2.5f * .25f))
+//                    .add(vampy.getTransform().getMatrix().rotateY(toRadians(270), new Matrix4f()).transformPosition(headTransform.getPosition(), new Vector3f()))
+                    .add(vampy.getTransform().getMatrix().transformPosition(headTransform.getPosition(), new Vector3f()));
+            camera.setPosition(orbitPos);
+
             renderer.render(vampy, vampyShader, camera.getCombined());
+//            vampyBB.getTransform().set(vampy.getTransform());
+//            renderer.renderWireframe(vampyBB, vampyShader, camera.getCombined());
+//            renderer.renderBox(vampy.getTransform().getPosition(), vampy.getBoundingBox().getSize().mul(.01f), vampyShader, camera.getCombined());
             renderer.render(cube, vampyShader, camera.getCombined());
 
             window.update(delta);
