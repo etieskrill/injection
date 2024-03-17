@@ -4,6 +4,7 @@ import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
 import org.etieskrill.engine.graphics.model.*;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
+import org.etieskrill.engine.graphics.texture.font.BitmapFont;
 import org.etieskrill.engine.graphics.texture.font.Font;
 import org.etieskrill.engine.graphics.texture.font.Glyph;
 import org.etieskrill.engine.util.FixedArrayDeque;
@@ -148,20 +149,29 @@ public class GLRenderer implements org.etieskrill.engine.graphics.Renderer {
         if (quad == null)
             quad = ModelFactory
                     .rectangle(new Vector2f(0), new Vector2f(1))
-                    .hasTransparency() //TODO when antialiasing is used, this could be disabled, depending on how aa works
+                    .hasTransparency() //TODO when antialiasing is used, this could be disabled, depending on how aa works ////what in the goddamn fuck am in on about
                     .disableCulling()
                     .build();
         return quad;
     }
 
     @Override
-    public void render(Glyph glyph, Vector2f position, ShaderProgram shader, Matrix4fc combined) {
+    public void render(Font font, Glyph glyph, Vector2f position, ShaderProgram shader, Matrix4fc combined) {
         getQuad().getTransform().getScale().set(glyph.getSize(), 1);
         getQuad().getTransform().getPosition().set(position.add(glyph.getPosition()), 0);
 
         List<AbstractTexture> textures = getQuad().getNodes().getFirst().getMeshes().getFirst().getMaterial().getTextures();
         textures.clear();
-        textures.add(glyph.getTexture());
+        if (font instanceof BitmapFont bitmapFont) {
+            if (glyph.getTextureIndex() == null)
+                throw new IllegalStateException("");
+
+            textures.add(bitmapFont.getTextures());
+            Vector2f glyphSize = new Vector2f(glyph.getSize()).div(font.getPixelSize().x(), font.getPixelSize().y());
+            shader.setUniform("uGlyphSize", glyphSize, false);
+            shader.setUniform("uGlyphIndex", glyph.getTextureIndex(), false);
+        }
+        if (glyph.getTexture() != null) textures.add(glyph.getTexture());
 
         _render(getQuad(), shader, combined);
     }
@@ -179,7 +189,7 @@ public class GLRenderer implements org.etieskrill.engine.graphics.Renderer {
                 }
             }
 
-            render(glyph, _position.set(position).add(pen), shader, combined);
+            render(font, glyph, _position.set(position).add(pen), shader, combined);
             pen.add(glyph.getAdvance());
         }
     }
@@ -233,9 +243,10 @@ public class GLRenderer implements org.etieskrill.engine.graphics.Renderer {
 
     private void bindMaterial(Material material, ShaderProgram shader) {
         //TODO here the renderer could decide what kind of shader to use, based on the material given
-        int tex2d = 0, cubemaps = 0;
+        int tex2d = 0, texArrays = 0, cubemaps = 0;
         int diffuse = 0, specular = 0, normal = 0, emissive = 0, height = 0, shininess = 0;
         List<AbstractTexture> textures = material.getTextures();
+        int validTextures = 0;
 
         for (AbstractTexture texture : textures) {
             String uniform = "material.";
@@ -256,16 +267,23 @@ public class GLRenderer implements org.etieskrill.engine.graphics.Renderer {
                         case UNKNOWN -> throw new IllegalStateException("Texture has invalid type");
                     };
                 }
+                case ARRAY -> {
+                    uniform += "array";
+                    number = texArrays++;
+                }
                 case CUBEMAP -> {
                     uniform += "cubemap";
                     number = cubemaps++;
                 }
             }
 
-            int validTextures = (tex2d + cubemaps) - 1;
+            validTextures = (tex2d + texArrays + cubemaps) - 1;
             texture.bind(validTextures);
             shader.setUniform(uniform + number, validTextures, false);
         }
+
+        for (int i = validTextures + 1; i < 8; i++) //TODO this is a little inefficient, but you don't have to unbind textures all the time like this
+            AbstractTexture.clearBind(i);
 
         //TODO add a way to map all available material props automatically
         shader.setUniform("material.colour", material.getColourProperty(Material.Property.COLOUR_BASE), false);
@@ -276,10 +294,10 @@ public class GLRenderer implements org.etieskrill.engine.graphics.Renderer {
 
         if (shininess == 0)
             shader.setUniform("material.shininess", material.getValueProperty(Material.Property.SHININESS), false);
-        shader.setUniform("material.specularity", material.getValueProperty(Material.Property.SHININESS_STRENGTH), false);
+        shader.setUniform("material.specularity", (float)(int) material.getValueProperty(Material.Property.SHININESS_STRENGTH), false);
 
         //Optional information
-        shader.setUniform("material.numTextures", tex2d + cubemaps, false);
+        shader.setUniform("material.numTextures", tex2d + texArrays + cubemaps, false);
     }
 
     private void queryGpuTime() {

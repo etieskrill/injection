@@ -28,6 +28,7 @@ public abstract class AbstractTexture implements Disposable {
 
     public enum Target { //TODO more types
         TWO_D(Texture2D.class, GL_TEXTURE_2D),
+        ARRAY(ArrayTexture.class, GL_TEXTURE_2D_ARRAY),
         CUBEMAP(CubeMapTexture.class, GL_TEXTURE_CUBE_MAP);
 
         private final Class<? extends AbstractTexture> type;
@@ -318,6 +319,11 @@ public abstract class AbstractTexture implements Disposable {
     public void unbind(int unit) {
         glActiveTexture(GL_TEXTURE0 + unit);
         glBindTexture(target.gl(), 0);
+    }
+
+    public static void clearBind(int unit) {
+        glActiveTexture(GL_TEXTURE0 + unit);
+        glBindTexture(GL_TEXTURE_2D, 0);
     }
 
     public int getID() {
