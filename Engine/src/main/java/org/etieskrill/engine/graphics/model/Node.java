@@ -52,11 +52,17 @@ public final class Node implements Disposable {
     }
 
     public Transform getHierarchyTransform() {
+        return getHierarchyTransform(0);
+    }
+
+    public Transform getHierarchyTransform(int numNodesIgnoredFromRoot) { //TODO precompute
         Node root = this;
         Stack<Node> line = new Stack<>();
         line.push(this);
         while ((root = root.getParent()) != null) //Traverse up the tree to the root, recording every node
             line.push(root);
+
+        for (int i = 0; i < numNodesIgnoredFromRoot; i++) line.pop();
 
         Transform transform = new Transform();
         while (!line.isEmpty()) //Traverse down the tree, applying every transform in succession

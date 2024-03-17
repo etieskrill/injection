@@ -78,8 +78,8 @@ public class Game {
             Input.bind(Keys.ESC.withMods(Keys.Mod.SHIFT)).to(this::terminate),
             Input.bind(Keys.W).on(PRESSED).to(() -> vampyPosDelta.add(0, 0, 1)),
             Input.bind(Keys.S).on(PRESSED).to(() -> vampyPosDelta.add(0, 0, -1)),
-            Input.bind(Keys.A).on(PRESSED).to(() -> vampyPosDelta.add(-1, 0, 0)),
-            Input.bind(Keys.D).on(PRESSED).to(() -> vampyPosDelta.add(1, 0, 0)),
+            Input.bind(Keys.A).on(PRESSED).to(() -> vampyPosDelta.add(1, 0, 0)),
+            Input.bind(Keys.D).on(PRESSED).to(() -> vampyPosDelta.add(-1, 0, 0)),
 //            Input.bind(Keys.SPACE).on(PRESSED).to(delta -> vampy.getTransform().translate(new Vector3f(0, -delta.floatValue(), 0))),
 //            Input.bind(Keys.SHIFT).on(PRESSED).to(delta -> vampy.getTransform().translate(new Vector3f(0, delta.floatValue(), 0))),
             Input.bind(Keys.Q).on(ON_PRESS).to(() -> {
@@ -120,7 +120,7 @@ public class Game {
         vampy = Loaders.ModelLoader.get().load("vampy", () -> new Model.Builder("mixamo_walk_forward_skinned_vampire.dae").disableCulling().build());
         vampy.getInitialTransform()
                 .setPosition(new Vector3f(2.5f, -1f, 0f))
-                .applyRotation(quat -> quat.rotateY(toRadians(-90)));
+                .applyRotation(quat -> quat.rotateY(toRadians(90)));
         vampyBB = Loaders.ModelLoader.get().load("vampyBB", () -> Model.ofFile("box.obj"));
         vampyBB.getInitialTransform()
                 .set(vampy.getInitialTransform())
@@ -152,11 +152,6 @@ public class Game {
                 .add(Loader.loadModelAnimations("mixamo_waving.dae", vampy).getFirst(), layer -> layer.filter(NodeFilter.tree(rightArmNode)).enabled(false))
                 .add(Loader.loadModelAnimations("mixamo_hip_hop_dancing.dae", vampy).getFirst(), layer -> layer.enabled(false))
         ;
-
-        for (int i = VAMPY_ANIMATION_WALKING; i <= VAMPY_ANIMATION_WALKING_BACKWARD; i++) {
-            System.out.println(vampyAnimator.getAnimationProviders().get(i).getPlaybackSpeed());
-            System.out.println(vampyAnimator.getAnimationProviders().get(i).getAnimation().getDuration());
-        }
 
         vampyShader = (AnimationShader) Loaders.ShaderLoader.get().load("vampyShader", AnimationShader::new);
         vampyShader.setShowBoneSelector(boneSelector);
@@ -198,10 +193,13 @@ public class Game {
             long time = System.nanoTime();
 
             if (!vampyPosDelta.equals(0, 0, 0)) {
-                acceleration.set(camera.relativeTranslation(vampyPosDelta));
+                acceleration.set(vampyPosDelta);
                 acceleration.y = 0;
+                acceleration.rotateY((float) toRadians(-camera.getYaw() + 90));
                 acceleration.normalize();
-                acceleration.mul(controls.isPressed(Keys.W) && controls.isPressed(Keys.SHIFT) ? 18 : 9);
+                acceleration.mul(controls.isPressed(Keys.W) && controls.isPressed(Keys.SHIFT)
+                        && !controls.isPressed(Keys.A) && !controls.isPressed(Keys.S)
+                        && !controls.isPressed(Keys.D) ? 18 : 9);
             } else {
                 acceleration.zero();
             }
@@ -219,7 +217,7 @@ public class Game {
             lastPosition.set(currentPosition);
             vampyPosDelta.zero();
 
-            vampy.getTransform().applyRotation(quat -> quat.rotationY((float) toRadians(-camera.getYaw() + 180)));
+            vampy.getTransform().applyRotation(quat -> quat.rotationY((float) toRadians(-camera.getYaw())));
 
             renderer.prepare();
 
@@ -272,20 +270,25 @@ public class Game {
             vampyShader.setGlobalLight(globalLight);
 
             Node head = vampy.getNodes().stream().filter(node -> node.getName().equals("mixamorig_Head")).findAny().get();
-//            List<Node> tree = new ArrayList<>(List.of(head));
-//            while ((head = head.getParent()) != null)
-//                tree.add(head);
-            TransformC headTransform = vampyAnimator.getTransforms().get(head.getBone().id());//new Transform();
-//            tree.reversed().forEach(node -> {
-//                if (node.getBone() == null) return;
-//                headTransform.apply(vampyAnimator.getTransforms().get(node.getBone().id()));
-//            });
+            TransformC headTransform = vampyAnimator.getTransforms().get(head.getBone().id());
+
+            Vector3f headBindPosition = head
+                    .getHierarchyTransform(1) //ignore scene root scaling
+                    .getPosition();
+            Vector3f headAnimPosition = headTransform.getMatrix().transformPosition(headBindPosition);
+            headAnimPosition.mul(vampy.getFinalTransform().getScale());
+            Vector3f headAnimWorldPosition = vampy.getFinalTransform().getMatrix().transformPosition(headAnimPosition);
 
             Vector3f orbitPos = new Vector3f(/*vampy.getTransform().getPosition()*/)
-                    .add(2.5f, 1f, -.25f)
-                    .add(camera.getDirection().mul(-2.5f * .25f))
+//                    .add(2.5f, 1f, -.25f)
+//                    .add(.25f, 2.5f, .0f)
+//                    .add(camera.getDirection().mul(-2.5f * .25f))
 //                    .add(vampy.getTransform().getMatrix().rotateY(toRadians(270), new Matrix4f()).transformPosition(headTransform.getPosition(), new Vector3f()))
-                    .add(vampy.getTransform().getMatrix().transformPosition(headTransform.getPosition(), new Vector3f()));
+//                    .add(vampy.getFinalTransform().getMatrix().transformPosition(headTransform.getPosition().rotateY(toRadians(90), new Vector3f()), new Vector3f()))
+                    .add(headAnimWorldPosition)
+                    .add(0, .22f, 0)
+                    ;
+            camera.setWorldUp(vampy.getFinalTransform().getRotation().transform(headTransform.getRotation().transform(new Vector3f(0, -1, 0))));
             camera.setPosition(orbitPos);
 
             renderer.render(vampy, vampyShader, camera.getCombined());
