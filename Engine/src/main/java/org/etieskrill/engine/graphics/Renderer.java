@@ -51,7 +51,7 @@ public interface Renderer {
 
     void render(String chars, Font font, Vector2fc position, ShaderProgram shader, Matrix4fc combined);
 
-    void render(Glyph glyph, Vector2f position, ShaderProgram shader, Matrix4fc combined);
+    void render(Font font, Glyph glyph, Vector2f position, ShaderProgram shader, Matrix4fc combined);
 
     //TODO move to another interface with more "primitive" drawing calls with backing singleton/per-renderer instances
     void renderBox(Vector3fc position, Vector3fc size, ShaderProgram shader, Matrix4fc combined);

@@ -198,7 +198,7 @@ public class GameScene {
         localSkellyVertCenter = -(localSkellyVertCenter / skelly.getFinalTransform().getScale().y()) + 5;
         camera.setPosition(
                 skelly.getFinalTransform().getPosition()
-                        .add(orbitPos)
+                        .add(orbitPos, new Vector3f())
                         .add(0, localSkellyVertCenter, 0)
         );
     }

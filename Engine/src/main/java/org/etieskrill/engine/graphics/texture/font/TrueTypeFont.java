@@ -1,11 +1,11 @@
 package org.etieskrill.engine.graphics.texture.font;
 
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
-import org.etieskrill.engine.graphics.texture.Texture2D;
+import org.etieskrill.engine.graphics.texture.ArrayTexture;
 import org.etieskrill.engine.util.ResourceReader;
-import org.joml.RoundingMode;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
+import org.joml.Vector2ic;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.util.freetype.*;
@@ -34,6 +34,8 @@ public class TrueTypeFont implements Font {
 
     private final String family;
     private final String style;
+
+    private final Vector2i pixelSize;
 
     public static final class ScalableFont extends TrueTypeFont {
         public ScalableFont(String file) throws IOException {
@@ -65,6 +67,8 @@ public class TrueTypeFont implements Font {
 
         this.family = face.family_nameString();
         this.style = face.style_nameString();
+
+        this.pixelSize = new Vector2i(INVALID_PIXEL_SIZE);
     }
 
     private static void initLibrary() throws IOException {
@@ -84,8 +88,23 @@ public class TrueTypeFont implements Font {
 //        check(FT_Set_Char_Size(face, pixelWidth, pixelHeight, 1920, 1080),
 //                "succ muh dicc");
 
+        int glyphIndex = 0;
+
+        //TODO validate size better & determine glyph size and apply
+        if (pixelWidth == 0) pixelWidth = pixelHeight; //Currently, if any glyph is wider than it is tall, this will cause everything to break
+        pixelSize.set(pixelWidth, pixelHeight);
+
+        ArrayTexture.BufferBuilder textures = (ArrayTexture.BufferBuilder) new ArrayTexture.BufferBuilder(
+                new Vector2i(pixelWidth, pixelHeight),
+                NUM_CHARS_ASCII,
+                AbstractTexture.Format.ALPHA
+        )
+                .setType(AbstractTexture.Type.DIFFUSE)
+                .setMipMapping(AbstractTexture.MinFilter.LINEAR, AbstractTexture.MagFilter.LINEAR)
+                .setWrapping(AbstractTexture.Wrapping.CLAMP_TO_EDGE);
+
         Map<Character, Glyph> glyphs = new HashMap<>();
-        for (int i = 0; i < 128; i++) {
+        for (int i = 0; i < NUM_CHARS_ASCII; i++) {
             check(FT_Load_Char(face, i, FT_LOAD_RENDER),
                     "Could not load character \"%c\"".formatted((char) i));
 
@@ -104,30 +123,44 @@ public class TrueTypeFont implements Font {
             Vector2f advance = new Vector2f(adv.x(), adv.y()).mul(1 / 64f);
             if (!verticalUp) advance.mul(1, -1);
 
-            ByteBuffer buffer = bitmap.buffer((int) (2 * size.x() * size.y()));
+            ByteBuffer _buffer = bitmap.buffer((int) (2 * size.x() * size.y()));
+            ByteBuffer buffer = null;
+            if (_buffer != null) { //Pad buffer to specified pixel size
+                buffer = BufferUtils.createByteBuffer(pixelWidth * pixelHeight);
+                for (int j = 0; j < size.y(); j++) {
+                    for (int k = 0; k < size.x(); k++) buffer.put(_buffer.get());
+                    for (int k = 0; k < pixelWidth - size.x(); k++) buffer.put((byte) 0);
+                }
+                for (int j = 0; j < pixelHeight - size.y(); j++) {
+                    for (int k = 0; k < pixelWidth; k++) buffer.put((byte) 0);
+                }
+                buffer.rewind();
+            }
+
             if (buffer == null)
-                logger.trace("Encountered glyph ({}) without buffer, proceeding with blank bitmap", (char) i);
+                logger.trace("Encountered glyph '{}' (code: {}) without buffer, proceeding with blank bitmap", (char) i, i);
 
-            glPixelStorei(GL_UNPACK_ALIGNMENT, 1); //TODO more permanent solution
-            Texture2D texture = new Texture2D.BufferBuilder(
-                    buffer,
-                    size.get(RoundingMode.TRUNCATE, new Vector2i()),
-                    AbstractTexture.Format.ALPHA
-            )
-                    .setType(AbstractTexture.Type.DIFFUSE)
-                    .setMipMapping(AbstractTexture.MinFilter.LINEAR, AbstractTexture.MagFilter.LINEAR)
-                    .setWrapping(AbstractTexture.Wrapping.CLAMP_TO_EDGE)
-                    .build();
-            glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
-
-            Glyph glyph = new Glyph(size, position, advance, texture, (char) i);
+            textures.addTexture(buffer);
+            Glyph glyph = new Glyph(size, position, advance, glyphIndex++, (char) i);
 
             glyphs.put((char) i, glyph);
         }
 
         //TODO figure out whether the face height is actually scaled via FT_Set_Pixel_Sizes or the like
         // alr it seems like it does not, but how to get the height then?
-        return new BitmapFont(glyphs, getLineHeight(), getMinLineHeight(), face.family_nameString(), face.style_nameString());
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        ArrayTexture glyphTextures = textures.build();
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+
+        return new BitmapFont(
+                glyphs,
+                getLineHeight(),
+                getMinLineHeight(),
+                getPixelSize(),
+                face.family_nameString(),
+                face.style_nameString(),
+                glyphTextures
+        );
     }
 
     public BitmapFont generateBitmapFont(int pixelWidth, int pixelHeight) throws IOException {
@@ -154,6 +187,11 @@ public class TrueTypeFont implements Font {
     public Glyph[] getGlyphs(String s) {
         if (disposed) return null;
         return null;
+    }
+
+    @Override
+    public Vector2ic getPixelSize() {
+        return pixelSize;
     }
 
     @Override

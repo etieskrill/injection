@@ -108,7 +108,7 @@ public class Game {
         );
 
         gameUIScene = new GameUIScene(
-                new Batch(renderer).setShader(Shaders.getTextShader()),
+                new Batch(renderer),
                 new OrthographicCamera(new Vector2f(windowSize)),
                 new Vector2f(windowSize));
 

@@ -41,7 +41,7 @@ public final class Fonts {
                 });
         
         return Loaders.FontLoader.get().load(
-                "bmp:%s:%d".formatted(file, pixelHeight), () -> {
+                "bmp:%s:%d".formatted(path, pixelHeight), () -> {
                     try {
                         return generatorFont.generateBitmapFont(pixelHeight);
                     } catch (IOException e) {

@@ -87,7 +87,7 @@ public class Shaders {
         }
         
         public void setLights(PointLight[] pointLights) {
-            setUniformArray("lights[$]", pointLights);
+            setUniformArray("lights", pointLights);
         }
     }
     

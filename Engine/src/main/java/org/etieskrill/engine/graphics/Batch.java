@@ -12,12 +12,14 @@ public class Batch {
 
     //TODO declare this as a pure ui rendering batch (or make subclass) and hardcode shaders here, with a colour stack n stuff
     private ShaderProgram shader;
+    private ShaderProgram textShader;
 
     private final Matrix4f combined;
 
     public Batch(@NotNull Renderer renderer) {
         this.renderer = renderer;
         this.shader = Shaders.getTextureShader();
+        this.textShader = Shaders.getTextShader();
         this.combined = new Matrix4f().identity();
     }
 
@@ -30,7 +32,7 @@ public class Batch {
     }
 
     public void render(String text, Font font, Vector2f position) {
-        renderer.render(text, font, position, shader, combined);
+        renderer.render(text, font, position, textShader, combined);
     }
 
     public Batch setCombined(Matrix4fc mat) {
