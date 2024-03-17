@@ -26,6 +26,7 @@ import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.window.Window;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
+import org.joml.Vector3fc;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,6 +41,8 @@ import static org.joml.Math.toRadians;
 public class Game {
 
     private static final int FRAMERATE = 60;
+
+    private static final Vector3fc WORLD_UP = new Vector3f(0, -1, 0);
 
     private static final Logger logger = LoggerFactory.getLogger(Game.class);
 
@@ -71,6 +74,9 @@ public class Game {
     private static final int VAMPY_ANIMATION_WAVING = 6;
     private static final int VAMPY_ANIMATION_DANCING = 7;
 
+    private boolean thirdPerson = false;
+    private float perspectiveTransition = 0;
+
     private int boneSelector = 4;
     private boolean showBoneWeights = false;
 
@@ -86,6 +92,10 @@ public class Game {
                 boolean waving = vampyAnimator.getAnimationMixer().isEnabled(VAMPY_ANIMATION_WAVING);
                 vampyAnimator.getAnimationMixer().setEnabled(VAMPY_ANIMATION_WAVING, !waving);
                 logger.info(waving ? "Vampy stopped waving" : "Vampy started waving");
+            }),
+            Input.bind(Keys.E).on(ON_PRESS).to(() -> {
+                thirdPerson = !thirdPerson;
+                logger.info("View set to {} person", thirdPerson ? "3rd" : "1st");
             }),
             Input.bind(Keys.R).on(ON_PRESS).to(() -> {
                 boneSelector = ++boneSelector % 5;
@@ -184,6 +194,12 @@ public class Game {
 
         float forwardFactor = 0, leftFactor = 0, rightFactor = 0, backFactor = 0;
 
+        //Vampy head bind position for first person camera snapping
+        final Node vampyHeadNode = vampy.getNodes().stream().filter(node -> node.getName().equals("mixamorig_Head")).findAny().get();
+        final Vector3fc vampyHeadBindPosition = vampyHeadNode
+                .getHierarchyTransform(1) //ignore scene root scaling
+                .getPosition();
+
         pacer.start();
         while (!window.shouldClose()) {
             double delta = pacer.getDeltaTimeSeconds();
@@ -269,27 +285,35 @@ public class Game {
             vampyShader.setBoneMatrices(vampyAnimator.getTransformMatrices());
             vampyShader.setGlobalLight(globalLight);
 
-            Node head = vampy.getNodes().stream().filter(node -> node.getName().equals("mixamorig_Head")).findAny().get();
-            TransformC headTransform = vampyAnimator.getTransforms().get(head.getBone().id());
+            diff = thirdPerson ? 1 - perspectiveTransition : -perspectiveTransition;
+            perspectiveTransition += (float) (diff * delta * 10);
+            Vector3f orbitPosition = null, worldUp = null;
+            { //Only do calculations for both perspectives if currently switching
+                if (perspectiveTransition < 1) {
+                    TransformC headTransform = vampyAnimator.getTransforms().get(vampyHeadNode.getBone().id());
+                    Vector3f headAnimPosition = headTransform.getMatrix().transformPosition(vampyHeadBindPosition, new Vector3f());
+                    headAnimPosition.mul(vampy.getFinalTransform().getScale());
+                    Vector3f headAnimWorldPosition = vampy.getFinalTransform().getMatrix().transformPosition(headAnimPosition);
 
-            Vector3f headBindPosition = head
-                    .getHierarchyTransform(1) //ignore scene root scaling
-                    .getPosition();
-            Vector3f headAnimPosition = headTransform.getMatrix().transformPosition(headBindPosition);
-            headAnimPosition.mul(vampy.getFinalTransform().getScale());
-            Vector3f headAnimWorldPosition = vampy.getFinalTransform().getMatrix().transformPosition(headAnimPosition);
+                    orbitPosition = new Vector3f()
+                            .add(headAnimWorldPosition)
+                            .add(0, .22f, 0);
+                    worldUp = vampy.getFinalTransform().getRotation().transform(headTransform.getRotation().transform(new Vector3f(WORLD_UP)));
+                }
+                if (perspectiveTransition > 0) {
+                    Vector3f tpOrbitPosition = new Vector3f(vampy.getFinalTransform().getPosition())
+                            .add(0, 1.75f, 0)
+                            .sub(camera.getDirection().mul(1.75f));
+                    Vector3f tpWorldUp = new Vector3f(WORLD_UP);
 
-            Vector3f orbitPos = new Vector3f(/*vampy.getTransform().getPosition()*/)
-//                    .add(2.5f, 1f, -.25f)
-//                    .add(.25f, 2.5f, .0f)
-//                    .add(camera.getDirection().mul(-2.5f * .25f))
-//                    .add(vampy.getTransform().getMatrix().rotateY(toRadians(270), new Matrix4f()).transformPosition(headTransform.getPosition(), new Vector3f()))
-//                    .add(vampy.getFinalTransform().getMatrix().transformPosition(headTransform.getPosition().rotateY(toRadians(90), new Vector3f()), new Vector3f()))
-                    .add(headAnimWorldPosition)
-                    .add(0, .22f, 0)
-                    ;
-            camera.setWorldUp(vampy.getFinalTransform().getRotation().transform(headTransform.getRotation().transform(new Vector3f(0, -1, 0))));
-            camera.setPosition(orbitPos);
+                    if (orbitPosition != null) orbitPosition.lerp(tpOrbitPosition, perspectiveTransition);
+                    else orbitPosition = tpOrbitPosition;
+                    if (worldUp != null) worldUp.lerp(tpWorldUp, perspectiveTransition);
+                    else worldUp = tpWorldUp;
+                }
+            }
+            camera.setPosition(orbitPosition);
+            camera.setWorldUp(worldUp);
 
             renderer.render(vampy, vampyShader, camera.getCombined());
 //            vampyBB.getTransform().set(vampy.getTransform());
