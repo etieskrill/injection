@@ -1,11 +1,11 @@
 package org.etieskrill.engine.scene.component;
 
-import org.joml.Vector2f;
-import org.joml.Vector4f;
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.input.Key;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Vector2f;
+import org.joml.Vector4f;
 
 import static java.util.Objects.requireNonNull;
 

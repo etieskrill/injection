@@ -1,12 +1,12 @@
 package org.etieskrill.engine.scene.component;
 
-import org.joml.Vector3f;
-import org.joml.Vector4f;
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.input.Key;
 import org.etieskrill.engine.input.Keys;
 import org.etieskrill.engine.input.action.SimpleAction;
 import org.jetbrains.annotations.NotNull;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 import static java.util.Objects.requireNonNull;
 import static org.etieskrill.engine.scene.component.LayoutUtils.getPreferredNodePosition;

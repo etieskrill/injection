@@ -1,19 +1,19 @@
 package org.etieskrill.engine.scene.component;
 
-import org.joml.Vector2f;
 import org.jetbrains.annotations.NotNull;
+import org.joml.Vector2f;
 
 import java.util.List;
 
 import static org.etieskrill.engine.scene.component.LayoutUtils.getMinNodeSize;
 import static org.etieskrill.engine.scene.component.LayoutUtils.getPreferredNodePosition;
 
-public class HBox extends Stack {
+public class VBox extends Stack {
 
-    public HBox() {
+    public VBox() {
     }
 
-    public HBox(@NotNull Node... children) {
+    public VBox(@NotNull Node... children) {
         super(List.of(children));
     }
 
@@ -22,7 +22,7 @@ public class HBox extends Stack {
         if (!shouldFormat()) return;
 
         //Pre-calculate the size of the smallest fitting box around the children and position cursors accordingly
-        float topPointer = 0, centerPointer = getSize().x() / 2, bottomPointer = getSize().x();
+        float topPointer = 0, centerPointer = getSize().y() / 2, bottomPointer = getSize().y();
         for (int i = 0; i < getChildren().size(); i++) {
             Node child = getChildren().get(i);
             child.format();
@@ -30,38 +30,38 @@ public class HBox extends Stack {
             float margin = 0;
             Node nextChild;
             if (getChildren().size() - 1 > i && (nextChild = getChildren().get(i + 1)) != null) {
-                margin = Math.max(nextChild.getMargin().z(), child.getMargin().w());
+                margin = Math.max(nextChild.getMargin().y(), child.getMargin().x());
             }
 
             switch (child.getAlignment()) {
-                case CENTER, CENTER_LEFT, CENTER_RIGHT -> centerPointer -= child.getSize().x() / 2;
-                case BOTTOM, BOTTOM_LEFT, BOTTOM_RIGHT -> bottomPointer -= getMinNodeSize(child).x() - margin;
+                case CENTER, CENTER_LEFT, CENTER_RIGHT -> centerPointer -= child.getSize().y() / 2;
+                case BOTTOM, BOTTOM_LEFT, BOTTOM_RIGHT -> bottomPointer -= getMinNodeSize(child).y() - margin;
             }
         }
 
         //Place children ignoring vertical preference and adjust cursors
         for (int i = 0; i < getChildren().size(); i++) {
             Node child = getChildren().get(i);
-            Vector2f newPos = getPreferredNodePosition(getSize(), child).mul(0, 1);
+            Vector2f newPos = getPreferredNodePosition(getSize(), child).mul(1, 0);
 
-            child.setPosition(newPos.add(
+            child.setPosition(newPos.add(0,
                     switch (child.getAlignment()) {
                         case TOP, TOP_LEFT, TOP_RIGHT -> topPointer;
                         case CENTER, CENTER_LEFT, CENTER_RIGHT -> centerPointer;
                         case BOTTOM, BOTTOM_LEFT, BOTTOM_RIGHT -> bottomPointer;
-                    }, 0));
+                    }));
 
             float margin = 0;
             Node nextChild;
             if (getChildren().size() - 1 > i && (nextChild = getChildren().get(i + 1)) != null) {
-                margin = Math.max(nextChild.getMargin().z(), child.getMargin().w());
+                margin = Math.max(nextChild.getMargin().y(), child.getMargin().x());
             }
 
-            float childWidth = child.getSize().x();
+            float childHeight = child.getSize().y();
             switch (child.getAlignment()) {
-                case TOP, TOP_LEFT, TOP_RIGHT -> topPointer += childWidth + margin;
-                case CENTER, CENTER_LEFT, CENTER_RIGHT -> centerPointer += childWidth + margin;
-                case BOTTOM, BOTTOM_LEFT, BOTTOM_RIGHT -> bottomPointer += childWidth + margin;
+                case TOP, TOP_LEFT, TOP_RIGHT -> topPointer += childHeight + margin;
+                case CENTER, CENTER_LEFT, CENTER_RIGHT -> centerPointer += childHeight + margin;
+                case BOTTOM, BOTTOM_LEFT, BOTTOM_RIGHT -> bottomPointer += childHeight + margin;
             }
         }
     }
