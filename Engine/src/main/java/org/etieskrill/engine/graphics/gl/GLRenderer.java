@@ -6,47 +6,18 @@ import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
 import org.etieskrill.engine.graphics.model.*;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
-import org.etieskrill.engine.util.FixedArrayDeque;
 import org.joml.*;
 import org.lwjgl.system.MemoryStack;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
-import static org.lwjgl.opengl.GL15C.glBeginQuery;
 import static org.lwjgl.opengl.GL33C.*;
-import static org.lwjgl.opengl.GL45C.glCreateQueries;
 
 //TODO assure thread safety/passing
+//TODO separate text renderer
 public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer {
 
     private static final float CLEAR_COLOUR = 0.25f;//0.025f;
-
-    private int trianglesDrawn, renderCalls;
-    private int lastTrianglesDrawn, lastRenderCalls;
-    private int timeQuery = -1;
-
-    private boolean queryGpuTime;
-    private long gpuTime;
-    private final FixedArrayDeque<Long> gpuTimes;
-    private long averagedGpuTime;
-    private long gpuDelay;
-
-    private final Logger logger = LoggerFactory.getLogger(getClass());
-
-    public GLRenderer() {
-        this(60);
-    }
-
-    public GLRenderer(int numGpuTimeSamples) {
-        this(true, numGpuTimeSamples);
-    }
-
-    public GLRenderer(boolean queryGpuTime, int numGpuTimeSamples) {
-        this.queryGpuTime = queryGpuTime;
-        this.gpuTimes = new FixedArrayDeque<>(numGpuTimeSamples);
-    }
 
     @Override
     public void prepare() {
@@ -245,58 +216,6 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
 
         //Optional information
         shader.setUniform("material.numTextures", tex2d + texArrays + cubemaps, false);
-    }
-
-    private void queryGpuTime() {
-        if (timeQuery == -1) {
-            timeQuery = glCreateQueries(GL_TIME_ELAPSED);
-        }
-
-        glEndQuery(GL_TIME_ELAPSED);
-
-        long time = System.nanoTime();
-        gpuTime = glGetQueryObjectui64(timeQuery, GL_QUERY_RESULT);
-        gpuDelay = System.nanoTime() - time;
-
-        gpuTimes.push(gpuTime);
-        averagedGpuTime = (long) gpuTimes.stream().mapToLong(value -> value).average().orElse(0d);
-
-        glBeginQuery(GL_TIME_ELAPSED, timeQuery);
-    }
-
-    @Override
-    public int getTrianglesDrawn() {
-        return lastTrianglesDrawn;
-    }
-
-    @Override
-    public int getRenderCalls() {
-        return lastRenderCalls;
-    }
-
-    @Override
-    public boolean doesQueryGpuTime() {
-        return queryGpuTime;
-    }
-
-    @Override
-    public void setQueryGpuTime(boolean queryGpuTime) {
-        this.queryGpuTime = queryGpuTime;
-    }
-
-    @Override
-    public long getGpuTime() {
-        return gpuTime;
-    }
-
-    @Override
-    public long getAveragedGpuTime() {
-        return averagedGpuTime;
-    }
-
-    @Override
-    public long getGpuDelay() {
-        return gpuDelay;
     }
 
 }

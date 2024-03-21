@@ -1,8 +1,8 @@
 package org.etieskrill.game.animeshun;
 
 import org.etieskrill.engine.graphics.Batch;
-import org.etieskrill.engine.graphics.Renderer;
 import org.etieskrill.engine.graphics.camera.OrthographicCamera;
+import org.etieskrill.engine.graphics.gl.DebuggableRenderer;
 import org.etieskrill.engine.graphics.gl.GLRenderer;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
 import org.etieskrill.engine.scene.Scene;
@@ -18,7 +18,7 @@ import java.util.List;
 
 public class DebugOverlay extends Scene {
 
-    private final Renderer renderer;
+    private final DebuggableRenderer renderer;
     private final LoopPacer pacer;
     private final Label renderStatistics;
 
@@ -50,12 +50,11 @@ public class DebugOverlay extends Scene {
     @Override
     public void update(double delta) {
         renderStatistics.setText(
-//                "Render calls: " + renderer.getRenderCalls() +
-//                        "\nTriangles drawn: " + renderer.getTrianglesDrawn() +
-//                        "\nAverage fps: %3.0f (%4.1fms)".formatted(pacer.getAverageFPS(), 1000d / pacer.getAverageFPS()) +
-//                        "\nCPU time: %4.1fms (%4.1fms gpu sync time)".formatted(cpuTime, renderer.getGpuDelay() / 1000000d) +
-//                        "\nGPU time: %4.1fms".formatted(renderer.getAveragedGpuTime() / 1000000d)
-                "0123456789[]()^&$#Gg"
+                "Render calls: " + renderer.getRenderCalls() +
+                        "\nTriangles drawn: " + renderer.getTrianglesDrawn() +
+                        "\nAverage fps: %3.0f (%4.1fms)".formatted(pacer.getAverageFPS(), 1000d / pacer.getAverageFPS()) +
+                        "\nCPU time: %4.1fms (%4.1fms gpu sync time)".formatted(cpuTime, renderer.getGpuDelay() / 1000000d) +
+                        "\nGPU time: %4.1fms".formatted(renderer.getAveragedGpuTime() / 1000000d)
         );
         super.update(delta);
     }

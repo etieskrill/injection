@@ -37,12 +37,6 @@ public class TrueTypeFont implements Font {
 
     private final Vector2i pixelSize;
 
-    public static final class ScalableFont extends TrueTypeFont {
-        public ScalableFont(String file) throws IOException {
-            super(file);
-        }
-    }
-
     public TrueTypeFont(String file) throws IOException {
         if (library == 0) initLibrary();
 
@@ -82,16 +76,15 @@ public class TrueTypeFont implements Font {
         if (pixelHeight <= 0) throw new IllegalArgumentException("Font height must be greater than zero");
         if (pixelWidth < 0) throw new IllegalArgumentException("Font width must not be smaller than zero");
 
+        //Is FT_Set_Char_Size ever going to be more practical than this?
         check(FT_Set_Pixel_Sizes(face, pixelWidth, pixelHeight),
                 "Failed to set font pixel size");
-
-//        check(FT_Set_Char_Size(face, pixelWidth, pixelHeight, 1920, 1080),
-//                "succ muh dicc");
 
         int glyphIndex = 0;
 
         //TODO validate size better & determine glyph size and apply
-        if (pixelWidth == 0) pixelWidth = pixelHeight; //Currently, if any glyph is wider than it is tall, this will cause everything to break
+        if (pixelWidth == 0)
+            pixelWidth = pixelHeight; //Currently, if any glyph is wider than it is tall, this will cause everything to break TODO maybe not?
         pixelSize.set(pixelWidth, pixelHeight);
 
         ArrayTexture.BufferBuilder textures = (ArrayTexture.BufferBuilder) new ArrayTexture.BufferBuilder(
@@ -100,8 +93,8 @@ public class TrueTypeFont implements Font {
                 AbstractTexture.Format.ALPHA
         )
                 .setType(AbstractTexture.Type.DIFFUSE)
-                .setMipMapping(AbstractTexture.MinFilter.LINEAR, AbstractTexture.MagFilter.LINEAR)
-                .setWrapping(AbstractTexture.Wrapping.CLAMP_TO_EDGE);
+                .setMipMapping(AbstractTexture.MinFilter.NEAREST, AbstractTexture.MagFilter.LINEAR) //TODO min nearest is better for small text, but when rendering using pixel sizes this should never be used anyway
+                .setWrapping(AbstractTexture.Wrapping.CLAMP_TO_BORDER);
 
         Map<Character, Glyph> glyphs = new HashMap<>();
         for (int i = 0; i < NUM_CHARS_ASCII; i++) {
@@ -123,7 +116,7 @@ public class TrueTypeFont implements Font {
             Vector2f advance = new Vector2f(adv.x(), adv.y()).mul(1 / 64f);
             if (!verticalUp) advance.mul(1, -1);
 
-            ByteBuffer _buffer = bitmap.buffer((int) (2 * size.x() * size.y()));
+            ByteBuffer _buffer = bitmap.buffer((int) (size.x() * size.y()));
             ByteBuffer buffer = null;
             if (_buffer != null) { //Pad top and right of buffer to specified pixel size
                 buffer = BufferUtils.createByteBuffer(pixelWidth * pixelHeight);

@@ -5,7 +5,6 @@ import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.graphics.texture.font.BitmapFont;
 import org.etieskrill.engine.graphics.texture.font.Font;
 import org.etieskrill.engine.graphics.texture.font.Glyph;
-import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
 import org.joml.Vector2f;
 import org.joml.Vector2fc;
@@ -16,7 +15,7 @@ import java.nio.ByteBuffer;
 import static java.util.Objects.requireNonNullElse;
 import static org.lwjgl.opengl.GL46C.*;
 
-public class GLTextRenderer implements TextRenderer {
+public class GLTextRenderer extends DebuggableRenderer implements TextRenderer {
 
     public static final int MAX_BATCH_LENGTH = 1 << 12;
 
@@ -33,7 +32,6 @@ public class GLTextRenderer implements TextRenderer {
     public void render(String chars, Font font, Vector2fc position, ShaderProgram shader, Matrix4fc combined) {
         GLUtils.clearError();
 
-        shader.setUniform("uModel", new Matrix4f()/*position*/, false);
         shader.setUniform("uCombined", combined, false);
         shader.setUniform("uGlyphTextureSize", new Vector2f(font.getPixelSize()), false);
 
@@ -55,23 +53,15 @@ public class GLTextRenderer implements TextRenderer {
                 }
             }
 
-            glyph.getSize().get(glyphBuffer)
-                    .position(glyphBuffer.position() + 2 * Float.BYTES);
+            glyph.getSize()
+                    .get(glyphBuffer).position(glyphBuffer.position() + 2 * Float.BYTES);
             penPosition
-//                    .set(position).add(pen)
-                    .set(pen)
+                    .set(position).add(pen)
                     .add(glyph.getPosition())
                     .get(glyphBuffer).position(glyphBuffer.position() + 2 * Float.BYTES);
             glyphBuffer.putInt(glyph.getTextureIndex());
             pen.add(glyph.getAdvance());
         }
-
-//        glyphBuffer.rewind();
-//        while (glyphBuffer.hasRemaining()) {
-//            System.out.printf("(%4.2f %4.2f) (%4.2f %4.2f) %d\n", glyphBuffer.getFloat(), glyphBuffer.getFloat(), glyphBuffer.getFloat(), glyphBuffer.getFloat(), glyphBuffer.getInt());
-//        }
-//        System.out.println("---------------");
-//        glyphBuffer.rewind();
 
         renderBitmapGlyphs(chars.length(), glyphBuffer.rewind(), font, shader);
         GLUtils.checkError("Error drawing bitmap glyphs");
@@ -83,8 +73,12 @@ public class GLTextRenderer implements TextRenderer {
         shader.setUniform("glyphs", 0, false);
 
         glDisable(GL_CULL_FACE);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); //TODO transparency really belongs to a texture, not a model
         glDrawArrays(GL_POINTS, 0, numChars);
+        glBlendFunc(GL_ONE, GL_ZERO);
         glEnable(GL_CULL_FACE);
+
+        renderCalls++;
     }
 
     private void bufferBitmapGlyphs(ByteBuffer buffer) {
@@ -94,11 +88,12 @@ public class GLTextRenderer implements TextRenderer {
     }
 
     private int glyphVAO = -1;
-    private void bindGlyphVAO() { //This is to ensure gl methods are called on thread with where gl context is active
+
+    private void bindGlyphVAO() {
         if (glyphVAO == -1) {
             GLUtils.clearError();
 
-            glyphVAO = glCreateVertexArrays(); //the only difference between this and glGenBuffers is that here, the internal state vector of the buffer is also initialised
+            glyphVAO = glCreateVertexArrays();
             if (glyphVAO == -1)
                 throw new IllegalStateException("Could not initialize vertex array");
             glBindVertexArray(glyphVAO);

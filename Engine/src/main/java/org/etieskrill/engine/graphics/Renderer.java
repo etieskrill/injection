@@ -53,20 +53,4 @@ public interface Renderer {
     //TODO move to another interface with more "primitive" drawing calls with backing singleton/per-renderer instances
     void renderBox(Vector3fc position, Vector3fc size, ShaderProgram shader, Matrix4fc combined);
 
-    // ----------- Debugging / Statistics -----------
-
-    int getTrianglesDrawn();
-
-    int getRenderCalls();
-
-    boolean doesQueryGpuTime();
-
-    void setQueryGpuTime(boolean queryGpuTime);
-
-    long getGpuTime();
-
-    long getAveragedGpuTime();
-
-    long getGpuDelay();
-
 }
