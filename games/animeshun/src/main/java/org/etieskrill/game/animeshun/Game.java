@@ -13,7 +13,6 @@ import org.etieskrill.engine.graphics.gl.GLRenderer;
 import org.etieskrill.engine.graphics.gl.GLUtils;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.model.Node;
-import org.etieskrill.engine.graphics.model.loader.Loader;
 import org.etieskrill.engine.graphics.texture.font.TrueTypeFont;
 import org.etieskrill.engine.input.CursorCameraController;
 import org.etieskrill.engine.input.Input;
@@ -34,6 +33,8 @@ import java.util.ArrayDeque;
 import java.util.List;
 import java.util.OptionalDouble;
 
+import static org.etieskrill.engine.graphics.animation.AnimationMixer.AnimationBlendMode.OVERRIDING;
+import static org.etieskrill.engine.graphics.model.loader.Loader.loadModelAnimations;
 import static org.etieskrill.engine.input.InputBinding.Trigger.ON_PRESS;
 import static org.etieskrill.engine.input.InputBinding.Trigger.PRESSED;
 import static org.joml.Math.toRadians;
@@ -77,6 +78,9 @@ public class Game {
     private boolean thirdPerson = false;
     private float perspectiveTransition = 0;
 
+    private boolean waving = false;
+    private float wavingTransition = 0;
+
     private int boneSelector = 4;
     private boolean showBoneWeights = false;
 
@@ -89,9 +93,8 @@ public class Game {
 //            Input.bind(Keys.SPACE).on(PRESSED).to(delta -> vampy.getTransform().translate(new Vector3f(0, -delta.floatValue(), 0))),
 //            Input.bind(Keys.SHIFT).on(PRESSED).to(delta -> vampy.getTransform().translate(new Vector3f(0, delta.floatValue(), 0))),
             Input.bind(Keys.Q).on(ON_PRESS).to(() -> {
-                boolean waving = vampyAnimator.getAnimationMixer().isEnabled(VAMPY_ANIMATION_WAVING);
-                vampyAnimator.getAnimationMixer().setEnabled(VAMPY_ANIMATION_WAVING, !waving);
                 logger.info(waving ? "Vampy stopped waving" : "Vampy started waving");
+                waving = !waving;
             }),
             Input.bind(Keys.E).on(ON_PRESS).to(() -> {
                 thirdPerson = !thirdPerson;
@@ -141,7 +144,7 @@ public class Game {
         //Different formats sport different conventions or restrictions for the global up direction, one could either
         // - try to deduce up (and scale for that matter) from the root node of a scene, which is not difficult at all
         // - or at least stay consistent with file formats within the same bloody model
-        List<Animation> hipHopDance = Loader.loadModelAnimations("vampire_hip_hop.glb", vampy); //TODO -figure out why adding this animation breaks the animator- base transform is not respected in mixer
+        List<Animation> hipHopDance = loadModelAnimations("vampire_hip_hop.glb", vampy); //TODO -figure out why adding this animation breaks the animator- base transform is not respected in mixer
         Transform vampyHipHopTransform = Transform.fromMatrix4f(new Matrix4f().m11(0).m12(-1).m21(1).m22(0).invert());
         hipHopDance.getFirst().setBaseTransform(vampyHipHopTransform);
 
@@ -151,16 +154,16 @@ public class Game {
                 .orElseThrow();
 
         vampyAnimator = new Animator(vampy)
-                .add(Loader.loadModelAnimations("mixamo_orc_idle.dae", vampy).getFirst())
+                .add(loadModelAnimations("mixamo_orc_idle.dae", vampy).getFirst())
                 .addNormalisedGroup(.8, animations -> animations
-                        .add(Loader.loadModelAnimations("mixamo_walking_forward.dae", vampy).getFirst())
-                        .add(Loader.loadModelAnimations("mixamo_left_strafe_walking.dae", vampy).getFirst())
-                        .add(Loader.loadModelAnimations("mixamo_right_strafe_walking.dae", vampy).getFirst())
-                        .add(Loader.loadModelAnimations("mixamo_walking_backwards.dae", vampy).getFirst(), layer -> layer.playbackSpeed(1.1))
+                        .add(loadModelAnimations("mixamo_walking_forward.dae", vampy).getFirst())
+                        .add(loadModelAnimations("mixamo_left_strafe_walking.dae", vampy).getFirst())
+                        .add(loadModelAnimations("mixamo_right_strafe_walking.dae", vampy).getFirst())
+                        .add(loadModelAnimations("mixamo_walking_backwards.dae", vampy).getFirst(), layer -> layer.playbackSpeed(1.1))
                 )
-                .add(Loader.loadModelAnimations("mixamo_running.dae", vampy).getFirst(), layer -> layer.setPlaybackSpeed(.7))
-                .add(Loader.loadModelAnimations("mixamo_waving.dae", vampy).getFirst(), layer -> layer.filter(NodeFilter.tree(rightArmNode)).enabled(false))
-                .add(Loader.loadModelAnimations("mixamo_hip_hop_dancing.dae", vampy).getFirst(), layer -> layer.enabled(false))
+                .add(loadModelAnimations("mixamo_running.dae", vampy).getFirst(), layer -> layer.setPlaybackSpeed(.7))
+                .add(loadModelAnimations("mixamo_waving.dae", vampy).getFirst(), layer -> layer.blendMode(OVERRIDING).filter(NodeFilter.tree(rightArmNode)))
+                .add(loadModelAnimations("mixamo_hip_hop_dancing.dae", vampy).getFirst(), layer -> layer.enabled(false))
         ;
 
         vampyShader = (AnimationShader) Loaders.ShaderLoader.get().load("vampyShader", AnimationShader::new);
@@ -177,7 +180,7 @@ public class Game {
         window.getCursor().disable();
         window.setScene(new DebugOverlay((GLRenderer) renderer, pacer, window.getSize().toVec()));
 
-//        GLUtils.removeDebugLogging();
+        GLUtils.removeDebugLogging();
     }
 
     private void loop() {
@@ -274,12 +277,17 @@ public class Game {
                 backFactor /= factorSum;
             }
 
+            diff = waving ? 1 - wavingTransition : -wavingTransition;
+            diff *= (float) delta * 5;
+            wavingTransition += diff;
+
             vampyAnimator.getAnimationMixer().setWeight(VAMPY_ANIMATION_IDLE, Math.max(1f - walkingFactor - runningFactor, 0));
             vampyAnimator.getAnimationMixer().setWeight(VAMPY_ANIMATION_WALKING, forwardFactor * walkingFactor);
             vampyAnimator.getAnimationMixer().setWeight(VAMPY_ANIMATION_WALKING_LEFT, leftFactor * walkingFactor);
             vampyAnimator.getAnimationMixer().setWeight(VAMPY_ANIMATION_WALKING_RIGHT, rightFactor * walkingFactor);
             vampyAnimator.getAnimationMixer().setWeight(VAMPY_ANIMATION_WALKING_BACKWARD, backFactor * walkingFactor);
             vampyAnimator.getAnimationMixer().setWeight(VAMPY_ANIMATION_RUNNING, runningFactor);
+            vampyAnimator.getAnimationMixer().setWeight(VAMPY_ANIMATION_WAVING, wavingTransition);
             vampyAnimator.update(delta);
 
             vampyShader.setBoneMatrices(vampyAnimator.getTransformMatrices());

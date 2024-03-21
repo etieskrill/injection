@@ -4,9 +4,9 @@ import org.etieskrill.engine.graphics.model.Node;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 
 /**
@@ -17,12 +17,11 @@ import java.util.function.Function;
  */
 public class NodeFilter implements Function<Node, Boolean> {
 
-    private final Map<Node, Boolean> affectedNodes; //TODO dunno if a map really helps at all, i should go over this with a profiler first
+    private final Set<Node> affectedNodes;
 
     private NodeFilter(List<Node> affectedNodes) {
-        this.affectedNodes = new HashMap<>();
-        for (Node affectedNode : affectedNodes)
-            this.affectedNodes.put(affectedNode, true);
+        this.affectedNodes = new HashSet<>();
+        this.affectedNodes.addAll(affectedNodes);
     }
 
     /**
@@ -57,7 +56,7 @@ public class NodeFilter implements Function<Node, Boolean> {
     @Override
     public Boolean apply(@Nullable Node node) {
         if (node == null) return false;
-        return affectedNodes.get(node) != null;
+        return affectedNodes.contains(node);
     }
 
     public boolean allows(@Nullable Node node) {
