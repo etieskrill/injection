@@ -102,24 +102,24 @@ public class Game {
         Vector2fc windowSize = window.getSize().toVec();
 
         mainMenuScene = new MainMenuUIScene(
-                new Batch(renderer),
+                new Batch((GLRenderer) renderer),
                 new OrthographicCamera(new Vector2f(windowSize)).setPosition(new Vector3f(windowSize, 0).mul(0.5f)),
                 this
         );
 
         gameUIScene = new GameUIScene(
-                new Batch(renderer),
+                new Batch((GLRenderer) renderer),
                 new OrthographicCamera(new Vector2f(windowSize)),
                 new Vector2f(windowSize));
 
         pauseUIScene = new GameUIPauseScene(
-                new Batch(renderer),
+                new Batch((GLRenderer) renderer),
                 new OrthographicCamera(new Vector2f(windowSize)).setPosition(new Vector3f(windowSize, 0).mul(0.5f)),
                 this
         );
 
         endScene = new EndScene(
-                new Batch(renderer),
+                new Batch((GLRenderer) renderer),
                 new OrthographicCamera(new Vector2f(windowSize)).setPosition(new Vector3f(windowSize, 0).mul(0.5f)),
                 this
         );

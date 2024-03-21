@@ -4,9 +4,9 @@ import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.graphics.model.CubeMapModel;
 import org.etieskrill.engine.graphics.model.Model;
-import org.etieskrill.engine.graphics.texture.font.Font;
-import org.etieskrill.engine.graphics.texture.font.Glyph;
-import org.joml.*;
+import org.joml.Matrix4fc;
+import org.joml.Vector3fc;
+import org.joml.Vector4fc;
 
 /**
  * A {@code Renderer} provides an abstracted way to render a {@link Model} and its subclasses, such as
@@ -49,9 +49,6 @@ public interface Renderer {
 
     void render(CubeMapModel cubemap, ShaderProgram shader, Matrix4fc combined);
 
-    void render(String chars, Font font, Vector2fc position, ShaderProgram shader, Matrix4fc combined);
-
-    void render(Font font, Glyph glyph, Vector2f position, ShaderProgram shader, Matrix4fc combined);
 
     //TODO move to another interface with more "primitive" drawing calls with backing singleton/per-renderer instances
     void renderBox(Vector3fc position, Vector3fc size, ShaderProgram shader, Matrix4fc combined);

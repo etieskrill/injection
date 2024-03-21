@@ -319,6 +319,7 @@ public abstract class ShaderProgram implements Disposable {
                 case FLOAT -> glUniform1f(location, (Float) value);
                 case BOOLEAN -> glUniform1f(location, (boolean) value ? 1 : 0);
                 case VEC2 -> glUniform2fv(location, ((Vector2f) value).get(stack.mallocFloat(2)));
+                case VEC2I -> glUniform2iv(location, ((Vector2i) value).get(stack.mallocInt(2)));
                 case VEC3 -> glUniform3fv(location, ((Vector3f) value).get(stack.mallocFloat(3)));
                 case VEC4 -> glUniform4fv(location, ((Vector4f) value).get(stack.mallocFloat(4)));
                 case MAT3 -> glUniformMatrix3fv(location, false, ((Matrix3f) value).get(stack.mallocFloat(9)));
@@ -351,6 +352,11 @@ public abstract class ShaderProgram implements Disposable {
                     FloatBuffer vector2s = stack.mallocFloat(2 * value.length);
                     for (Object o : value) ((Vector2f) o).get(vector2s).position(vector2s.position() + 2);
                     glUniform2fv(location, vector2s.rewind());
+                }
+                case VEC2I -> {
+                    IntBuffer vector2is = stack.mallocInt(2 * value.length);
+                    for (Object o : value) ((Vector2i) o).get(vector2is).position(vector2is.position() + 2);
+                    glUniform2iv(location, vector2is.rewind());
                 }
                 case VEC3 -> {
                     FloatBuffer vector3s = stack.mallocFloat(3 * value.length);
@@ -414,6 +420,7 @@ public abstract class ShaderProgram implements Disposable {
             FLOAT(Float.class),
             BOOLEAN(Boolean.class),
             VEC2(Vector2f.class),
+            VEC2I(Vector2i.class),
             VEC3(Vector3f.class),
             VEC4(Vector4f.class),
             MAT3(Matrix3f.class),
@@ -567,6 +574,7 @@ public abstract class ShaderProgram implements Disposable {
                 case INT, BOOLEAN, SAMPLER2D -> glUniform1i(location, 0);
                 case FLOAT -> glUniform1f(location, 0f);
                 case VEC2 -> glUniform2fv(location, stack.callocFloat(2));
+                case VEC2I -> glUniform2iv(location, stack.callocInt(2));
                 case VEC3 -> glUniform3fv(location, stack.callocFloat(3));
                 case VEC4 -> glUniform4fv(location, stack.callocFloat(4));
                 case MAT3 -> glUniformMatrix3fv(location, false, new Matrix3f().identity().get(stack.callocFloat(9)));

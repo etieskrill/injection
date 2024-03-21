@@ -175,9 +175,9 @@ public class Game {
         pacer = new SystemNanoTimePacer(1d / FRAMERATE);
 
         window.getCursor().disable();
-        window.setScene(new DebugOverlay(renderer, pacer, window.getSize().toVec()));
+        window.setScene(new DebugOverlay((GLRenderer) renderer, pacer, window.getSize().toVec()));
 
-        GLUtils.removeDebugLogging();
+//        GLUtils.removeDebugLogging();
     }
 
     private void loop() {

@@ -125,7 +125,7 @@ public class TrueTypeFont implements Font {
 
             ByteBuffer _buffer = bitmap.buffer((int) (2 * size.x() * size.y()));
             ByteBuffer buffer = null;
-            if (_buffer != null) { //Pad buffer to specified pixel size
+            if (_buffer != null) { //Pad top and right of buffer to specified pixel size
                 buffer = BufferUtils.createByteBuffer(pixelWidth * pixelHeight);
                 for (int j = 0; j < size.y(); j++) {
                     for (int k = 0; k < size.x(); k++) buffer.put(_buffer.get());

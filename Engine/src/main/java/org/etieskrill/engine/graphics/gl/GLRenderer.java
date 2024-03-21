@@ -1,12 +1,11 @@
 package org.etieskrill.engine.graphics.gl;
 
+import org.etieskrill.engine.graphics.Renderer;
+import org.etieskrill.engine.graphics.TextRenderer;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
 import org.etieskrill.engine.graphics.model.*;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
-import org.etieskrill.engine.graphics.texture.font.BitmapFont;
-import org.etieskrill.engine.graphics.texture.font.Font;
-import org.etieskrill.engine.graphics.texture.font.Glyph;
 import org.etieskrill.engine.util.FixedArrayDeque;
 import org.joml.*;
 import org.lwjgl.system.MemoryStack;
@@ -15,13 +14,12 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
-import static java.util.Objects.requireNonNullElse;
 import static org.lwjgl.opengl.GL15C.glBeginQuery;
 import static org.lwjgl.opengl.GL33C.*;
 import static org.lwjgl.opengl.GL45C.glCreateQueries;
 
 //TODO assure thread safety/passing
-public class GLRenderer implements org.etieskrill.engine.graphics.Renderer {
+public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer {
 
     private static final float CLEAR_COLOUR = 0.25f;//0.025f;
 
@@ -141,57 +139,6 @@ public class GLRenderer implements org.etieskrill.engine.graphics.Renderer {
         glDepthMask(false);
         _render(cubemap, shader, combined);
         glDepthMask(true);
-    }
-
-    private static Model quad;
-
-    private static Model getQuad() {
-        if (quad == null)
-            quad = ModelFactory
-                    .rectangle(new Vector2f(0), new Vector2f(1))
-                    .hasTransparency() //TODO when antialiasing is used, this could be disabled, depending on how aa works ////what in the goddamn fuck am in on about
-                    .disableCulling()
-                    .build();
-        return quad;
-    }
-
-    @Override
-    public void render(Font font, Glyph glyph, Vector2f position, ShaderProgram shader, Matrix4fc combined) {
-        getQuad().getTransform().getScale().set(glyph.getSize(), 1);
-        getQuad().getTransform().getPosition().set(position.add(glyph.getPosition()), 0);
-
-        List<AbstractTexture> textures = getQuad().getNodes().getFirst().getMeshes().getFirst().getMaterial().getTextures();
-        textures.clear();
-        if (font instanceof BitmapFont bitmapFont) {
-            if (glyph.getTextureIndex() == null)
-                throw new IllegalStateException("");
-
-            textures.add(bitmapFont.getTextures());
-            Vector2f glyphSize = new Vector2f(glyph.getSize()).div(font.getPixelSize().x(), font.getPixelSize().y());
-            shader.setUniform("uGlyphSize", glyphSize, false);
-            shader.setUniform("uGlyphIndex", glyph.getTextureIndex(), false);
-        }
-        if (glyph.getTexture() != null) textures.add(glyph.getTexture());
-
-        _render(getQuad(), shader, combined);
-    }
-
-    //TODO can be improved by rendering to some framebuffer and reusing unchanged sections instead of rendering every single glyph with a separate render call
-    @Override
-    public void render(String chars, Font font, Vector2fc position, ShaderProgram shader, Matrix4fc combined) {
-        Vector2f pen = new Vector2f(0);
-        Vector2f _position = new Vector2f(position);
-        for (Glyph glyph : font.getGlyphs(chars)) {
-            switch (requireNonNullElse(glyph.getCharacter(), (char) 0)) {
-                case '\n' -> {
-                    pen.set(0, pen.y() + font.getLineHeight());
-                    continue;
-                }
-            }
-
-            render(font, glyph, _position.set(position).add(pen), shader, combined);
-            pen.add(glyph.getAdvance());
-        }
     }
 
     @Override

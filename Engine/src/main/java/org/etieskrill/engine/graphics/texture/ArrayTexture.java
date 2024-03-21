@@ -42,7 +42,7 @@ public class ArrayTexture extends AbstractTexture {
                 buffer.position(buffer.position() + numBytesPerTexture);
                 return this;
             }
-            if (data.remaining() != numBytesPerTexture) //TODO pad automatically if too small instead?
+            if (data.remaining() != numBytesPerTexture) //TODO pad automatically if too small instead? specify which sides to pad explicitly
                 throw new IllegalArgumentException("Texture buffer does not contain correct number of bytes for " +
                         pixelSize.x() + "x" + pixelSize.y() + " " + format.getChannels() + "-channel texture: expected " +
                         numBytesPerTexture + " but got " + data.remaining());
