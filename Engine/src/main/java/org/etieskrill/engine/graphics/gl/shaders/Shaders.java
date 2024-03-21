@@ -303,7 +303,10 @@ public class Shaders {
     public static class TextShader extends ShaderProgram {
         @Override
         protected String[] getShaderFileNames() {
-            return new String[]{"Font.vert", "Font.frag"};
+            return new String[]{
+                    "Text.vert",
+                    "Text.geom",
+                    "Text.frag"};
         }
         
         @Override
