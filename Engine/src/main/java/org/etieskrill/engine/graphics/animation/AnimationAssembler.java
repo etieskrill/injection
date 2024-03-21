@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * Translates all bone-space transforms into model space.
+ * <p>
  * May only be used by one {@link Animator} at a time, as the {@code AnimationAssembler} is not thread safe.
  */
 public final class AnimationAssembler {

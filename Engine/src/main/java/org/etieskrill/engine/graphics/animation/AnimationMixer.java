@@ -45,7 +45,7 @@ public class AnimationMixer {
     }
 
     public void setWeight(int index, float weight) {
-        getAdditiveLayers().get(index).setWeight(weight);
+        animationLayers.get(index).setWeight(weight);
     }
 
     public void setWeights(List<Float> weights) {
@@ -60,9 +60,17 @@ public class AnimationMixer {
     }
 
     /**
-     * Negative weights are treated as if they were zero, that is, they are ignored. Overriding animations are weighted
-     * with 1 if enabled, and 0 if disabled. The first eligible layer is set with a weight of one as a base layer. If
-     * there is no eligible animation layer the skeleton's bind pose is assumed.
+     * {@link AnimationBlendMode#ADDITIVE ADDITIVE} animations have their weights normalised across all additive layers,
+     * which is useful when mixing several base-layer animations, such as walking in multiple directions, or idling.
+     * <p>
+     * {@link AnimationBlendMode#OVERRIDING OVERRIDING} layers are excluded from said normalisation. This allows
+     * transitioning into and out of animations which completely override behaviour of certain parts of a model, such as
+     * e.g. a waving animation. However, this can still be overridden by other layers, whether additive or overriding.
+     * <p>
+     * Negative weights are treated as if they were zero, that is, they are ignored.
+     * <p>
+     * The first eligible layer is set with a weight of one as a base layer. If there is no eligible animation layer
+     * the skeleton's bind pose is assumed.
      */
     List<Transform> mixAnimations(List<Node> nodes, List<List<Transform>> providerTransforms) {
         if (providerTransforms.size() != animationLayers.size())
@@ -82,21 +90,14 @@ public class AnimationMixer {
         for (int i = firstEnabled + 1; i < animationLayers.size(); i++) {
             List<Transform> providerTransform = providerTransforms.get(i);
             AnimationLayer layer = animationLayers.get(i);
-            if (!layer.isEnabled() ||
-                    (layer.getBlendMode() != AnimationBlendMode.OVERRIDING && weights.get(i) <= 0)) continue;
+            if (!layer.isEnabled() || weights.get(i) <= 0) continue;
 
             NodeFilter filter = layer.getFilter();
             switch (layer.getBlendMode()) {
-                case ADDITIVE -> {
+                case ADDITIVE, OVERRIDING -> {
                     for (int j = 0; j < transforms.size(); j++) {
                         if (filter != null && !filter.allows(nodes.get(j))) continue;
                         transforms.get(j).lerp(providerTransform.get(j), weights.get(i));
-                    }
-                }
-                case OVERRIDING -> {
-                    for (int j = 0; j < transforms.size(); j++) {
-                        if (filter != null && !filter.allows(nodes.get(j))) continue;
-                        transforms.get(j).set(providerTransform.get(j));
                     }
                 }
             }
@@ -121,7 +122,7 @@ public class AnimationMixer {
 
     private void normaliseAdditiveWeights(List<Float> weights) {
         weights.clear();
-        for (AnimationLayer layer : animationLayers) {
+        for (AnimationLayer layer : animationLayers) { //Filter for enabled additive layers
             if (!layer.isEnabled()) {
                 weights.add(0f);
                 continue;
@@ -131,7 +132,15 @@ public class AnimationMixer {
                 case OVERRIDING -> weights.add(0f);
             }
         }
+
         MathUtils.normalise(weights);
+
+        for (int i = 0; i < weights.size(); i++) { //Re-add enabled overriding layers
+            AnimationLayer layer = animationLayers.get(i);
+            if (layer.isEnabled() && layer.getBlendMode() == AnimationBlendMode.OVERRIDING) {
+                weights.set(i, layer.getWeight());
+            }
+        }
     }
 
     public static class AnimationLayer {
