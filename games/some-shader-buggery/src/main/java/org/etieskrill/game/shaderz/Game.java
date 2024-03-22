@@ -51,12 +51,12 @@ public class Game {
     private Label fpsLabel, verticesDrawnLabel, primitivesDrawnLabel; //TODO use these for performance evaluation
 
     public Game() {
-        window.setKeyInputs(Input.of(
+        window.addKeyInputs(Input.of(
                 Input.bind(Keys.ESC.withMods(Keys.Mod.SHIFT)).to(() -> window.close())
         ));
         window.getCursor().disable();
 
-        window.setCursorInputs(
+        window.addCursorInputs(
                 new CursorCameraController(camera, .05, 0)
         );
 

@@ -132,7 +132,7 @@ public class DemCubez {
     }
     
     private boolean initKeybinds() {
-        window.setKeyInputs((type, key, action, modifiers) -> {
+        window.addKeyInputs((type, key, action, modifiers) -> {
             switch (key) {
                 case GLFW_KEY_ESCAPE -> {
                     if (modifiers == 0 && action == GLFW_RELEASE) escPressed = !escPressed;
@@ -160,7 +160,7 @@ public class DemCubez {
         resetPreviousMousePosition();
         
         float mouseSensitivity = 0.15f, zoomSensitivity = 0.5f;
-        window.setCursorInputs(new CursorInputAdapter() {
+        window.addCursorInputs(new CursorInputAdapter() {
             @Override
             public boolean invokeMove(double posX, double posY) {
                 if (paused) return false;

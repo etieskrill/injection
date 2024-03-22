@@ -52,7 +52,8 @@ public class SystemNanoTimePacer implements LoopPacer {
         if (!timerPaused) timerTime.addAndGet(delta);
 
         try {
-            Thread.sleep((int) Math.max(targetDelta - delta, 0) / MILLI_FACTOR);
+            long timeout = Math.max(targetDelta - delta, 0) / MILLI_FACTOR;
+            Thread.sleep(timeout); //TODO wait a bit shorter, then use spinlock for more accuracy (probably)
         } catch (InterruptedException e) {
             logger.warn("Could not sleep", e);
         }
