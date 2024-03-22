@@ -25,31 +25,35 @@ public class Scene implements CursorInputAdapter {
      */
     @SuppressWarnings("DataFlowIssue")
     protected Scene() {
-        this(null, null, null);
+        this.batch = null;
+        this.root = null;
+        this.camera = null;
+
+        this.size = new Vector2f(0);
     }
 
     public Scene(@NotNull Batch batch, @NotNull Node root, @NotNull Camera camera) {
         this.batch = batch;
         this.root = root;
         this.camera = camera;
-        
+
         this.size = new Vector2f(0);
 
         camera.setOrientation(0f, -90f, 0f);
     }
-    
+
     public void update(double delta) {
         root.getPosition().set(0);
         root.getSize().set(size);
         root.update(delta);
-        
+
         root.format();
     }
-    
+
     public void render() {
         if (!root.isVisible()) return;
         batch.setCombined(camera.getCombined());
-        
+
         glDisable(GL_DEPTH_TEST); //TODO either this or implement with depth testing
         root.render(batch);
         glEnable(GL_DEPTH_TEST);
@@ -58,7 +62,7 @@ public class Scene implements CursorInputAdapter {
     public @NotNull Batch getBatch() {
         return batch;
     }
-    
+
     public void setBatch(@NotNull Batch batch) {
         this.batch = batch;
     }
@@ -66,7 +70,7 @@ public class Scene implements CursorInputAdapter {
     public @NotNull Node getRoot() {
         return root;
     }
-    
+
     public void setRoot(@NotNull Node root) {
         this.root = root;
     }
@@ -74,15 +78,15 @@ public class Scene implements CursorInputAdapter {
     public @NotNull Camera getCamera() {
         return camera;
     }
-    
+
     public void setCamera(@NotNull Camera camera) {
         this.camera = camera.setOrientation(0f, -90f, 0f);
     }
-    
+
     public void show() {
         this.root.show();
     }
-    
+
     public void hide() {
         this.root.hide();
     }

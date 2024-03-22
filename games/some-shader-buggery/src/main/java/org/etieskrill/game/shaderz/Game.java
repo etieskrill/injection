@@ -12,9 +12,9 @@ import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.texture.font.Fonts;
-import org.etieskrill.engine.input.CursorCameraController;
 import org.etieskrill.engine.input.Input;
 import org.etieskrill.engine.input.Keys;
+import org.etieskrill.engine.input.controller.CursorCameraController;
 import org.etieskrill.engine.scene.Scene;
 import org.etieskrill.engine.scene.component.Label;
 import org.etieskrill.engine.scene.component.Node;
@@ -72,7 +72,7 @@ public class Game {
 
         fpsLabel = (Label) new Label("", Fonts.getDefault(48)).setMargin(new Vector4f(10));
         window.setScene(new Scene(
-                new Batch(renderer).setShader(Shaders.getTextShader()),
+                new Batch((GLRenderer) renderer).setShader(Shaders.getTextShader()),
                 new VBox(fpsLabel).setAlignment(Node.Alignment.TOP_LEFT),
                 new OrthographicCamera(window.getSize().toVec()).setPosition(new Vector3f(window.getSize().toVec().mul(.5f), 0)))
         );

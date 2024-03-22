@@ -2,6 +2,7 @@ package org.etieskrill.engine.graphics.model;
 
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Vector4f;
 
 import java.util.*;
@@ -82,16 +83,24 @@ public class Material implements Disposable {
         return textures;
     }
 
+    public Map<Property, Object> getProperties() {
+        return properties;
+    }
+
     public Object getProperty(Property property) {
         return properties.get(property);
+    }
+
+    public void setProperty(Property property, Object value) {
+        properties.put(property, value);
     }
 
     public Vector4f getColourProperty(Property colourProperty) {
         return (Vector4f) requireNonNullElse(properties.get(colourProperty), new Vector4f(0));
     }
 
-    public Number getValueProperty(Property valueProperty) {
-        return (Number) requireNonNullElse(properties.get(valueProperty), 0);
+    public @Nullable Number getValueProperty(Property valueProperty) {
+        return (Number) properties.get(valueProperty);
     }
 
     private boolean wasAlreadyDisposed = false;

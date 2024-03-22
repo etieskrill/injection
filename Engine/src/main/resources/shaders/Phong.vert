@@ -13,10 +13,12 @@ uniform mat4 uModel;
 uniform mat3 uNormal;
 uniform mat4 uCombined;
 
+uniform vec2 uTextureScale;
+
 void main()
 {
     tNormal = normalize(uNormal * iNormal);
-    tTextureCoords = iTextureCoords;
-    tFragPos = vec3(uModel * vec4(iPosition, 1.0));
+    tTextureCoords = iTextureCoords * uTextureScale;
+    tFragPos = vec3(uModel * uMesh * vec4(iPosition, 1.0));
     gl_Position = uCombined * uModel * uMesh * vec4(iPosition, 1.0);
 }

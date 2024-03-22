@@ -127,7 +127,7 @@ public abstract class ShaderProgram implements Disposable {
         this.placeholder = placeholder;
 
         if (checkError("OpenGL error during shader creation"))
-            logger.debug("Successfully created shader");
+            logger.info("Successfully created shader");
     }
 
     private void createShader(Set<ShaderFile> files) {

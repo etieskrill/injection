@@ -73,7 +73,7 @@ public class Shaders {
         protected void getUniformLocations() {
             //TODO theoretically, a sort of autodetect feature is entirely possible
             addUniform("uViewPosition", VEC3);
-            
+
             addUniformArray("globalLights", 1, STRUCT);
             addUniformArray("lights", 2, STRUCT);
         }
@@ -154,6 +154,10 @@ public class Shaders {
         }
         
         public void setLight(PointLight light) {
+            setUniform("light", light);
+        }
+
+        public void setLight(DirectionalLight light) {
             setUniform("light", light);
         }
     }
@@ -311,6 +315,21 @@ public class Shaders {
         
         @Override
         protected void getUniformLocations() {}
+    }
+
+    public static class ShowNormalsShader extends ShaderProgram {
+        @Override
+        protected String[] getShaderFileNames() {
+            return new String[]{
+                    "ShowNormals.vert",
+                    "ShowNormals.geom",
+                    "ShowNormals.frag"
+            };
+        }
+
+        @Override
+        protected void getUniformLocations() {
+        }
     }
 
 }

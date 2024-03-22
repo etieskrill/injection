@@ -129,7 +129,7 @@ public class ModelFactory {
     }
 
     public static Model box(Vector3f size) {
-        Model baseBox = Loaders.ModelLoader.get().load("internal-model-factory:box", () -> Model.ofFile("box.obj"));
+        Model baseBox = Loaders.ModelLoader.get().load("internal-model-factory:box", () -> new Model.Builder("box.obj").disableCulling().build());
         Model box = new Model(baseBox);
         box.getInitialTransform().setScale(size);
         return box;

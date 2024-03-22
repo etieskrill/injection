@@ -94,7 +94,7 @@ class MaterialLoader {
     }
 
     static void loadMaterials(AIScene scene, Model.Builder builder, Map<String, Texture2D.Builder> embeddedTextures) {
-        logger.trace("{} materials found", scene.mNumMaterials());
+        logger.debug("{} materials found", scene.mNumMaterials());
         PointerBuffer mMaterials = scene.mMaterials();
         for (int i = 0; i < scene.mNumMaterials(); i++) {
             logger.trace("Processing material {}", i);
@@ -140,19 +140,19 @@ class MaterialLoader {
 
             Supplier<AbstractTexture> supplier;
             if (embeddedTextures.containsKey(textureFile)) {
-                logger.info("Texture '{}' is loaded from embedded textures", textureName);
+                logger.trace("Texture '{}' is loaded from embedded textures", textureName);
                 supplier = () -> embeddedTextures.get(textureFile).setType(type).build();
             } else if (Textures.exists(textureFile)) {
-                logger.info("Texture '{}' is loaded from file {}", textureName, textureFile);
+                logger.trace("Texture '{}' is loaded from file {}", textureName, textureFile);
                 supplier = () -> Textures.ofFile(textureFile, type);
             } else if (Textures.exists(textureFileName)) {
                 //TODO this is prone to breaking due to the undivided nature of model data/textures, should be proofed a bit more
-                logger.info("Texture '{}' is loaded as fallback based on filename from file {}", textureFileName, textureFile);
+                logger.debug("Texture '{}' is loaded as fallback based on filename from file {}", textureFileName, textureFile);
                 supplier = () -> Textures.ofFile(textureFileName, type);
             } else if (embeddedTextures.values().stream()
                     .map(AbstractTexture.Builder::getType)
                     .anyMatch(builderType -> builderType == type)) {
-                logger.info("Texture '{}' is loaded as fallback from embedded textures", textureName);
+                logger.debug("Texture '{}' is loaded as fallback from embedded textures based on texture type", textureName);
                 supplier = () -> embeddedTextures.values().stream()
                         .filter(texture -> texture.getType() == type)
                         .findFirst()

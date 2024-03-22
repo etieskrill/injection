@@ -11,6 +11,7 @@ import org.lwjgl.system.MemoryStack;
 
 import java.util.List;
 
+import static org.etieskrill.engine.graphics.model.Material.Property.*;
 import static org.lwjgl.opengl.GL33C.*;
 
 //TODO assure thread safety/passing
@@ -152,8 +153,9 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
         bindMaterial(mesh.getMaterial(), shader);
         glBindVertexArray(mesh.getVao());
 
-        if (!instanced) glDrawElements(mesh.getDrawMode().gl(), mesh.getNumIndices(), GL_UNSIGNED_INT, 0);
-        else glDrawElementsInstanced(mesh.getDrawMode().gl(), mesh.getNumIndices(), GL_UNSIGNED_INT, 0, numInstances);
+        int mode = shader instanceof Shaders.ShowNormalsShader ? GL_POINTS : mesh.getDrawMode().gl();
+        if (!instanced) glDrawElements(mode, mesh.getNumIndices(), GL_UNSIGNED_INT, 0);
+        else glDrawElementsInstanced(mode, mesh.getNumIndices(), GL_UNSIGNED_INT, 0, numInstances);
         if (mesh.getDrawMode() == Mesh.DrawMode.TRIANGLES)
             trianglesDrawn += mesh.getNumIndices() / 3;
         renderCalls++;
@@ -203,16 +205,17 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
         for (int i = validTextures + 1; i < 8; i++) //TODO this is a little inefficient, but you don't have to unbind textures all the time like this
             AbstractTexture.clearBind(i);
 
-        //TODO add a way to map all available material props automatically
-        shader.setUniform("material.colour", material.getColourProperty(Material.Property.COLOUR_BASE), false);
-        shader.setUniform("material.diffuseColour", material.getColourProperty(Material.Property.COLOUR_DIFFUSE), false);
-        shader.setUniform("material.emissiveColour", material.getColourProperty(Material.Property.COLOUR_EMISSIVE), false);
-        shader.setUniform("material.emissiveIntensity", material.getValueProperty(Material.Property.INTENSITY_EMISSIVE), false);
-        shader.setUniform("material.opacity", material.getValueProperty(Material.Property.OPACITY), false);
+        //TODO add a way to map all available material props automatically with sensible default values
+        //TODO add invalidation flag to uniform properties and update here only if invalid (do not forget about the first time)
+        shader.setUniform("material.colour", material.getColourProperty(COLOUR_BASE), false);
+        shader.setUniform("material.diffuseColour", material.getColourProperty(COLOUR_DIFFUSE), false);
+        shader.setUniform("material.emissiveColour", material.getColourProperty(COLOUR_EMISSIVE), false);
+        shader.setUniform("material.emissiveIntensity", material.getProperties().getOrDefault(INTENSITY_EMISSIVE, 0), false);
+        shader.setUniform("material.opacity", material.getProperties().getOrDefault(OPACITY, 1), false);
 
-        if (shininess == 0)
-            shader.setUniform("material.shininess", material.getValueProperty(Material.Property.SHININESS), false);
-        shader.setUniform("material.specularity", (float)(int) material.getValueProperty(Material.Property.SHININESS_STRENGTH), false);
+        if (shininess == 0) //TODO this property thingies NEED type safety
+            shader.setUniform("material.shininess", (float) material.getProperties().getOrDefault(SHININESS, 64f), false);
+        shader.setUniform("material.specularity", (float) material.getProperties().getOrDefault(SHININESS_STRENGTH, 1f), false);
 
         //Optional information
         shader.setUniform("material.numTextures", tex2d + texArrays + cubemaps, false);
