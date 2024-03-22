@@ -6,7 +6,7 @@ plugins {
 group = 'org.etieskrill.game.horde'
 version = '1.0.0-SNAPSHOT'
 
-applicationDefaultJvmArgs = ["-Dorg.slf4j.simpleLogger.defaultLogLevel=trace"]
+applicationDefaultJvmArgs = ["-Dorg.slf4j.simpleLogger.defaultLogLevel=info"]
 
 dependencies {
     implementation project(':engine')

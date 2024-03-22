@@ -9,6 +9,7 @@ import org.etieskrill.engine.graphics.gl.shaders.Shaders;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.model.ModelFactory;
 import org.etieskrill.engine.input.*;
+import org.etieskrill.engine.input.controller.CursorCameraController;
 import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.orbes.Game;
 import org.joml.Vector2f;

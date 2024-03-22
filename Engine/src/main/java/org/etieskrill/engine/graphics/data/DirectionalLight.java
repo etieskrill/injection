@@ -3,15 +3,20 @@ package org.etieskrill.engine.graphics.data;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shaders.UniformMappable;
 import org.joml.Vector3f;
+import org.joml.Vector3fc;
 
 public class DirectionalLight implements UniformMappable {
-    
+
     private final Vector3f direction;
-    
+
     private final Vector3f ambient;
     private final Vector3f diffuse;
     private final Vector3f specular;
-    
+
+    public DirectionalLight(Vector3f direction) {
+        this(direction, new Vector3f(1), new Vector3f(1), new Vector3f(1));
+    }
+
     public DirectionalLight(Vector3f direction, Vector3f ambient, Vector3f diffuse, Vector3f specular) {
         this.direction = direction;
         this.ambient = ambient;
@@ -19,10 +24,38 @@ public class DirectionalLight implements UniformMappable {
         this.specular = specular;
     }
 
+    public Vector3f getDirection() {
+        return direction;
+    }
+
     public void setDirection(Vector3f direction) {
         this.direction.set(direction);
     }
-    
+
+    public Vector3f getAmbient() {
+        return ambient;
+    }
+
+    public void setAmbient(Vector3fc ambient) {
+        this.ambient.set(ambient);
+    }
+
+    public Vector3f getDiffuse() {
+        return diffuse;
+    }
+
+    public void setDiffuse(Vector3fc diffuse) {
+        this.diffuse.set(diffuse);
+    }
+
+    public Vector3f getSpecular() {
+        return specular;
+    }
+
+    public void setSpecular(Vector3fc specular) {
+        this.specular.set(specular);
+    }
+
     @Override
     public boolean map(ShaderProgram.UniformMapper shader) {
         shader
@@ -32,5 +65,5 @@ public class DirectionalLight implements UniformMappable {
                 .map("specular", specular);
         return true;
     }
-    
+
 }

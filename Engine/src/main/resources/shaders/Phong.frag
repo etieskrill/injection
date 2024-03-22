@@ -3,7 +3,7 @@
 #define LIMIT_ATTENUATION true
 
 #define NR_DIRECTIONAL_LIGHTS 1
-#define NR_POINT_LIGHTS 2
+#define NR_POINT_LIGHTS 0
 //#define NR_SPOT_LIGHTS 1
 
 struct DirectionalLight {
@@ -61,7 +61,7 @@ uniform vec3 uViewPosition;
 uniform Material material;
 
 uniform DirectionalLight globalLights[NR_DIRECTIONAL_LIGHTS];
-uniform PointLight lights[NR_POINT_LIGHTS];
+//uniform PointLight lights[NR_POINT_LIGHTS];
 
 vec4 calculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 fragPosition, vec3 viewPosition);
 vec4 calculatePointLight(PointLight light, vec3 normal, vec3 fragPosition, vec3 viewPosition);
@@ -75,21 +75,20 @@ void main()
     vec4 combinedLight = vec4(0.0);
     for (int i = 0; i < NR_DIRECTIONAL_LIGHTS; i++) {
         vec4 dirLight = calculateDirectionalLight(globalLights[i], tNormal, tFragPos, uViewPosition);
-        //        combinedLight = mix(combinedLight, dirLight, 0.5);
         combinedLight += dirLight;
     }
-    for (int i = 0; i < NR_POINT_LIGHTS; i++) {
-        vec4 pointLight = calculatePointLight(lights[i], tNormal, tFragPos, uViewPosition);
-        combinedLight = mix(combinedLight, pointLight, 0.5);
-    }
+    //    for (int i = 0; i < NR_POINT_LIGHTS; i++) {
+    //        vec4 pointLight = calculatePointLight(lights[i], tNormal, tFragPos, uViewPosition);
+    //        combinedLight += pointLight;
+    //    }
 
     vec4 emission = vec4(0.0);
     //    if (length(texture(material.specular0, tTextureCoords).rgb) == 0.0) //sometimes causes weird artifacts, and tbh, i do not remember what this was for
     emission = texture(material.emissive0, tTextureCoords);
-    combinedLight += vec4(emission.rgb, 0);
+    //    combinedLight += vec4(emission.rgb, 0);
 
     //TODO pack reflection mix factor into material property. until reflection maps are a thing, anyway
-    combinedLight = mix(combinedLight, getCubeReflection(), 0.2);
+    combinedLight += getCubeReflection();
 
 //    if (combinedLight.a < 0.9) {
 //        combinedLight = mix(combinedLight, getCubeRefraction(1 / 1.52), 0.5);

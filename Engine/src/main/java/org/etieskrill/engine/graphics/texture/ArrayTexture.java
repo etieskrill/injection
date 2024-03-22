@@ -51,7 +51,7 @@ public class ArrayTexture extends AbstractTexture {
                         " does not fit in " + (buffer.capacity() - buffer.position()) + " bytes");
 
             buffer.put(data); //TODO i think it's this operation which causes segfaults sometimes, one of the buffers is probably not allocated correctly
-            logger.debug("Added texture to array, now contains {} of {} bytes", buffer.position(), buffer.capacity());
+            logger.trace("Added texture to array, now contains {} of {} bytes", buffer.position(), buffer.capacity());
             return this;
         }
 

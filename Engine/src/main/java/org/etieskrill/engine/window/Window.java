@@ -119,7 +119,7 @@ public class Window implements Disposable {
 
         @Override
         public String toString() {
-            return String.format("%s(%d x %d)", name(), width, height);
+            return String.format("%s(%dx%d)", name(), width, height);
         }
     }
 
@@ -256,8 +256,11 @@ public class Window implements Disposable {
             logger.warn("Error during window creation: 0x{} {}",
                     Integer.toHexString(err), MemoryUtil.memASCII(description.get()));
         }
+
+        logger.info("Created window with settings: {}", this);
     }
 
+    @SuppressWarnings("resource")
     private void init() {
         if (!glfwInit())
             throw new IllegalStateException("Unable to initialize glfw library");
@@ -319,8 +322,11 @@ public class Window implements Disposable {
         this.built = true;
 
         setTitle(title);
+
+        glfwSetErrorCallback(null);
     }
 
+    @SuppressWarnings("resource")
     private void configInput() {
         if (USE_RAW_MOUSE_MOTION_IF_AVAILABLE && glfwRawMouseMotionSupported())
             glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
@@ -508,6 +514,19 @@ public class Window implements Disposable {
     public void dispose() {
         glfwDestroyWindow(window);
         cursor.dispose();
+    }
+
+    @Override
+    public String toString() {
+        return "Window{" +
+                "mode=" + mode +
+                ", size=" + size +
+                ", targetFrameRate=" + targetFrameRate +
+                ", vSyncEnabled=" + vSyncEnabled +
+                ", samples=" + samples +
+                ", title='" + title + '\'' +
+                ", scene=" + scene +
+                '}';
     }
 
 }
