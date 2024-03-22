@@ -17,7 +17,7 @@ import static org.lwjgl.opengl.GL46C.*;
 
 public class GLTextRenderer extends DebuggableRenderer implements TextRenderer {
 
-    public static final int MAX_BATCH_LENGTH = 1 << 12;
+    public static final int MAX_BATCH_LENGTH = 1 << 10; //Max text length is 1024 characters per draw call
 
     private static final int
             GLYPH_SIZE_BYTES = 2 * Float.BYTES, //TODO pass to buffer object on initialisation
@@ -102,9 +102,16 @@ public class GLTextRenderer extends DebuggableRenderer implements TextRenderer {
             if (glyphVBO == -1)
                 throw new IllegalStateException("Could not initialize buffer");
 
+            int position = glyphBuffer.position(); //Reset buffer to original state for gl buffer initialisation
+            int limit = glyphBuffer.limit();
+            glyphBuffer.rewind();
+            glyphBuffer.limit(glyphBuffer.capacity());
+
             glBindBuffer(GL_ARRAY_BUFFER, glyphVBO);
             glBufferData(GL_ARRAY_BUFFER, glyphBuffer, GL_DYNAMIC_DRAW);
             GLUtils.checkErrorThrowing("Failed to buffer data");
+
+            glyphBuffer.position(position).limit(limit); //Return buffer to state before initialisation
 
             glEnableVertexAttribArray(0);
             glVertexAttribPointer(0, 2, GL_FLOAT, false, GLYPH_TRANSFER_BYTES, 0L);

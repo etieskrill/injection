@@ -1,7 +1,6 @@
 package org.etieskrill.walk;
 
 import org.etieskrill.engine.graphics.Batch;
-import org.etieskrill.engine.graphics.Renderer;
 import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.camera.OrthographicCamera;
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera;
@@ -50,7 +49,7 @@ public class Game {
     private Window window;
     
     private Camera camera, uiCamera;
-    private Renderer renderer = new GLRenderer();
+    private GLRenderer renderer = new GLRenderer();
 
     private Scene gameScene, pauseScene;
     
@@ -100,7 +99,7 @@ public class Game {
                 .setRefreshRate(0)
                 .setMode(Window.WindowMode.BORDERLESS)
                 .setTitle("Walk")
-                .setKeyInputHandler(keyInputManager)
+                .setKeyInputHandlers(keyInputManager)
                 .build();
         window.getCursor().disable();
 
@@ -111,7 +110,7 @@ public class Game {
     }
     
     private void setupCursor() {
-        window.setCursorInputs(
+        window.addCursorInputs(
                 new CursorCameraController(camera, .04, 0)
                         .setUpdateCondition(() -> !pacer.isPaused())
         );

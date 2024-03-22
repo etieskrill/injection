@@ -121,14 +121,14 @@ public class Game {
                 .setTitle("Animeshun yeeees")
                 .setMode(Window.WindowMode.BORDERLESS)
                 .setRefreshRate(FRAMERATE)
-                .setKeyInputHandler(controls)
+                .setKeyInputHandlers(controls)
                 .setSamples(4)
                 .build();
 
         GLUtils.addDebugLogging();
 
         camera = new PerspectiveCamera(window.getSize().toVec()).setOrientation(0, 0, 0);
-        window.setCursorInputs(new CursorCameraController(camera));
+        window.addCursorInputs(new CursorCameraController(camera));
 
         vampy = Loaders.ModelLoader.get().load("vampy", () -> new Model.Builder("mixamo_walk_forward_skinned_vampire.dae").disableCulling().build());
         vampy.getInitialTransform()

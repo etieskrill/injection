@@ -15,6 +15,11 @@ import org.lwjgl.system.Platform;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
+import static java.util.Arrays.asList;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL33C.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
@@ -39,8 +44,8 @@ public class Window implements Disposable {
 
     private Cursor cursor;
 
-    private KeyInputHandler keyInputs;
-    private CursorInputHandler cursorInputs;
+    private final List<KeyInputHandler> keyInputs;
+    private final List<CursorInputHandler> cursorInputs;
     private Scene scene;
 
     private boolean built = false;
@@ -131,8 +136,8 @@ public class Window implements Disposable {
         private String title;
         private Cursor cursor;
 
-        private KeyInputHandler keyInputs;
-        private CursorInputHandler cursorInputs;
+        private final List<KeyInputHandler> keyInputs = new ArrayList<>();
+        private final List<CursorInputHandler> cursorInputs = new ArrayList<>();
 
         public Builder() {
         }
@@ -177,13 +182,25 @@ public class Window implements Disposable {
             return this;
         }
 
-        public Builder setKeyInputHandler(KeyInputHandler keyInputs) {
-            this.keyInputs = keyInputs;
+        public Builder setKeyInputHandlers(KeyInputHandler... keyInputs) {
+            this.keyInputs.clear();
+            this.keyInputs.addAll(asList(keyInputs));
             return this;
         }
 
-        public Builder setCursorInputHandler(CursorInputHandler cursorInputs) {
-            this.cursorInputs = cursorInputs;
+        public Builder addKeyInputHandler(KeyInputHandler keyInputs) {
+            this.keyInputs.add(keyInputs);
+            return this;
+        }
+
+        public Builder setCursorInputHandler(CursorInputHandler... cursorInputs) {
+            this.keyInputs.clear();
+            this.cursorInputs.addAll(asList(cursorInputs));
+            return this;
+        }
+
+        public Builder addCursorInputHandler(CursorInputHandler cursorInputs) {
+            this.cursorInputs.add(cursorInputs);
             return this;
         }
 
@@ -210,8 +227,8 @@ public class Window implements Disposable {
             float targetFrameRate, boolean vSyncEnabled, int samples,
             String title,
             Cursor cursor,
-            KeyInputHandler keyInputs,
-            CursorInputHandler cursorInputs
+            List<KeyInputHandler> keyInputs,
+            List<CursorInputHandler> cursorInputs
     ) {
         this.mode = mode;
         this.size = size;
@@ -222,6 +239,10 @@ public class Window implements Disposable {
 
         this.title = title;
 
+        if (keyInputs.stream().anyMatch(Objects::isNull)
+                || cursorInputs.stream().anyMatch(Objects::isNull)) {
+            throw new IllegalArgumentException("Input handlers must not contain null entries");
+        }
         this.keyInputs = keyInputs;
         this.cursorInputs = cursorInputs;
 
@@ -305,27 +326,34 @@ public class Window implements Disposable {
             glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
 
         glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
-            if (keyInputs != null && window == this.window) keyInputs.invoke(Key.Type.KEYBOARD, key, action, mods);
+            if (window == this.window) {
+                keyInputs.forEach(keyInputHandlers ->
+                        keyInputHandlers.invoke(Key.Type.KEYBOARD, key, action, mods));
+            }
         });
         final double[] posX = new double[1], posY = new double[1]; //does this cause this method's stack to persist?
         glfwSetMouseButtonCallback(window, (window, button, action, glfwMods) -> {
-            if (keyInputs != null && window == this.window) keyInputs.invoke(Key.Type.MOUSE, button, action, glfwMods);
+            if (window == this.window) keyInputs.forEach(keyInputHandler ->
+                    keyInputHandler.invoke(Key.Type.MOUSE, button, action, glfwMods));
             if (window == this.window && (cursorInputs != null || scene != null)) {
                 Keys key = Keys.fromGlfw(button);
                 if (key == null) return;
                 Key keyWithMods = key.withMods(Keys.Mod.fromGlfw(glfwMods));
 
                 glfwGetCursorPos(window, posX, posY);
-                if (cursorInputs != null) cursorInputs.invokeClick(keyWithMods, action, posX[0], posY[0]);
+                cursorInputs.forEach(cursorInputHandler ->
+                        cursorInputHandler.invokeClick(keyWithMods, action, posX[0], posY[0]));
                 if (scene != null) scene.invokeClick(keyWithMods, action, posX[0], posY[0]);
             }
         });
         glfwSetCursorPosCallback(window, (window, xpos, ypos) -> {
-            if (cursorInputs != null && window == this.window) cursorInputs.invokeMove(xpos, ypos);
+            if (window == this.window) cursorInputs.forEach(cursorInputHandler ->
+                    cursorInputHandler.invokeMove(xpos, ypos));
             if (scene != null && window == this.window) scene.invokeMove(xpos, ypos);
         });
         glfwSetScrollCallback(window, (window, xoffset, yoffset) -> {
-            if (cursorInputs != null && window == this.window) cursorInputs.invokeScroll(xoffset, yoffset);
+            if (window == this.window) cursorInputs.forEach(cursorInputHandler ->
+                    cursorInputHandler.invokeScroll(xoffset, yoffset));
             if (scene != null && window == this.window) scene.invokeScroll(xoffset, yoffset);
         });
     }
@@ -372,10 +400,11 @@ public class Window implements Disposable {
             scene.render();
         }
 
-//        glfwMakeContextCurrent(window);
         glfwSwapBuffers(window); //Buffers are usually swapped before polling events
         glfwPollEvents(); //Also proves to system that window has not frozen
-        if (keyInputs != null && keyInputs instanceof KeyInputManager manager) manager.update(delta);
+        for (KeyInputHandler keyInputs : keyInputs) {
+            if (keyInputs instanceof KeyInputManager manager) manager.update(delta);
+        }
     }
 
     //TODO make package-private
@@ -440,12 +469,30 @@ public class Window implements Disposable {
         this.cursor = cursor;
     }
 
-    public void setKeyInputs(KeyInputHandler keyInputs) {
-        this.keyInputs = keyInputs;
+    public void addKeyInputs(KeyInputHandler keyInputs) {
+        this.keyInputs.add(keyInputs);
     }
 
-    public void setCursorInputs(CursorInputHandler cursorInputs) {
-        this.cursorInputs = cursorInputs;
+    public void setKeyInputs(KeyInputHandler... keyInputs) {
+        this.keyInputs.clear();
+        this.keyInputs.addAll(asList(keyInputs));
+    }
+
+    public void clearKeyInputs() {
+        keyInputs.clear();
+    }
+
+    public void addCursorInputs(CursorInputHandler cursorInputs) {
+        this.cursorInputs.add(cursorInputs);
+    }
+
+    public void setCursorInputs(CursorInputHandler... cursorInputs) {
+        this.keyInputs.clear();
+        this.cursorInputs.addAll(asList(cursorInputs));
+    }
+
+    public void clearCursorInputs() {
+        cursorInputs.clear();
     }
 
     public Scene getScene() {

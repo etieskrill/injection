@@ -120,7 +120,7 @@ public class GameScene {
     }
 
     private void setupCursor(Game game) {
-        game.getWindow().setCursorInputs(
+        game.getWindow().addCursorInputs(
                 new CursorCameraController(camera, .04, 0)
                         .setUpdateCondition(() -> !game.getPacer().isPaused() && game.getStage() == Game.Stage.GAME)
         );

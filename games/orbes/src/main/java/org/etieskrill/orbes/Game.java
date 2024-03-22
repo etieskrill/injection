@@ -6,6 +6,7 @@ import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.camera.OrthographicCamera;
 import org.etieskrill.engine.graphics.gl.FrameBuffer;
 import org.etieskrill.engine.graphics.gl.GLRenderer;
+import org.etieskrill.engine.graphics.gl.GLUtils;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
 import org.etieskrill.engine.graphics.model.Material;
 import org.etieskrill.engine.graphics.model.Model;
@@ -58,6 +59,7 @@ public class Game {
         setupUI();
         this.gameScene = new GameScene(this);
 
+        GLUtils.addDebugLogging();
         loop();
         exit();
     }
@@ -209,7 +211,7 @@ public class Game {
 
     public void showMainMenu() {
         gameScene.reset();
-        window.setKeyInputs(null);
+        window.clearKeyInputs();
         window.setScene(mainMenuScene);
         stage = MAIN_MENU;
     }
@@ -222,7 +224,7 @@ public class Game {
     }
 
     public void showEndScreen(EndScene.Status status, int score) {
-        window.setKeyInputs(null);
+        window.clearKeyInputs();
         window.setScene(endScene.setStatus(status).setScore(score));
         window.getCursor().capture();
         stage = END;
