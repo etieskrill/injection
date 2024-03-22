@@ -12,10 +12,10 @@ import org.joml.Vector2fc;
 import static org.lwjgl.opengl.GL11C.*;
 
 public class Scene implements CursorInputAdapter {
-    
-    private Batch batch;
-    private Node root;
-    private Camera camera;
+
+    private @NotNull Batch batch;
+    private @NotNull Node root;
+    private @NotNull Camera camera;
 
     private final Vector2f size;
 
@@ -23,18 +23,19 @@ public class Scene implements CursorInputAdapter {
      * Available for more convenient construction in subclasses. Take care to set {@link Scene#batch},
      * {@link Scene#root} and {@link Scene#camera} while still in the constructor. Use at your own peril.
      */
+    @SuppressWarnings("DataFlowIssue")
     protected Scene() {
         this(null, null, null);
     }
 
-    public Scene(Batch batch, Node root, Camera camera) {
+    public Scene(@NotNull Batch batch, @NotNull Node root, @NotNull Camera camera) {
         this.batch = batch;
         this.root = root;
         this.camera = camera;
         
         this.size = new Vector2f(0);
 
-        if (camera != null) camera.setOrientation(0f, -90f, 0f);
+        camera.setOrientation(0f, -90f, 0f);
     }
     
     public void update(double delta) {
@@ -53,24 +54,24 @@ public class Scene implements CursorInputAdapter {
         root.render(batch);
         glEnable(GL_DEPTH_TEST);
     }
-    
-    public Batch getBatch() {
+
+    public @NotNull Batch getBatch() {
         return batch;
     }
     
     public void setBatch(@NotNull Batch batch) {
         this.batch = batch;
     }
-    
-    public Node getRoot() {
+
+    public @NotNull Node getRoot() {
         return root;
     }
     
     public void setRoot(@NotNull Node root) {
         this.root = root;
     }
-    
-    public Camera getCamera() {
+
+    public @NotNull Camera getCamera() {
         return camera;
     }
     
@@ -88,7 +89,7 @@ public class Scene implements CursorInputAdapter {
 
     public void setSize(Vector2fc size) {
         this.size.set(size);
-        if (root != null) root.invalidate();
+        root.invalidate();
     }
 
     @Override
