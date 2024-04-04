@@ -51,8 +51,8 @@ struct Material {
 };
 
 in Data {
-    mat3 tbn;
     vec3 normal;
+    mat3 tbn;
     vec2 texCoord;
     vec3 fragPos;
 } vert_out;
@@ -62,6 +62,8 @@ out vec4 fragColour;
 //TODO implement this in view space to mitigate passing such variables anyway
 uniform vec3 uViewPosition;
 uniform mat3 uNormal;
+
+uniform bool uNormalMapped;
 
 uniform Material material;
 
@@ -77,29 +79,27 @@ vec4 getCubeRefraction(float refractIndex, vec3 normal);
 
 void main()
 {
-    vec3 normal = normalize(texture(material.normal0, vert_out.texCoord).xyz);
-////    normal = (normal * 2.0) - 1.0;
-    normal = normalize(vert_out.tbn * normal);
-//    vec3 normal = vert_out.normal;
+    vec3 normal;
+    if (uNormalMapped) {
+        normal = texture(material.normal0, vert_out.texCoord).xyz * 2.0 - 1.0;
+        normal = normalize(normal);
+        normal = normalize(vert_out.tbn * normal);
+    } else {
+        normal = vert_out.normal;
+    }
 
-    fragColour = vec4(0.0);
-    fragColour += getDirLight(globalLights[0], normal, vert_out.fragPos, uViewPosition);
-//    fragColour += getPointLight(lights[0], normal, vert_out.fragPos, uViewPosition);
+    vec4 texel = texture(material.diffuse0, vert_out.texCoord);
+    if (texel.a == 0.0) discard;
 
-//    vec4 texel = texture(material.diffuse0, vert_out.texCoord);
-//    if (texel.a == 0.0) discard;
-//
-//    vec4 combinedLight = vec4(0.0);
-//    for (int i = 0; i < NR_DIRECTIONAL_LIGHTS; i++) {
-//        vec4 dirLight = getDirLight(globalLights[i], normal, vert_out.fragPos, uViewPosition);
-//        combinedLight += dirLight;
-//    }
-//    for (int i = 0; i < NR_POINT_LIGHTS; i++) {
-//        vec4 pointLight = getPointLight(lights[i], normal, vert_out.fragPos, uViewPosition);
-//        combinedLight += pointLight;
-//    }
-
-//    combinedLight = vec4(1.0 - abs(dot(vert_out.normal, vert_out.tbn * (texture(material.normal0, vert_out.texCoord).rgb * 2.0 - 1.0))), 0.0, 0.0, 1.0);
+    vec4 combinedLight = vec4(0.0);
+    for (int i = 0; i < NR_DIRECTIONAL_LIGHTS; i++) {
+        vec4 dirLight = getDirLight(globalLights[i], normal, vert_out.fragPos, uViewPosition);
+        combinedLight += dirLight;
+    }
+    for (int i = 0; i < NR_POINT_LIGHTS; i++) {
+        vec4 pointLight = getPointLight(lights[i], normal, vert_out.fragPos, uViewPosition);
+        combinedLight += pointLight;
+    }
 
 //    vec4 emission = vec4(0.0);
     //    if (length(texture(material.specular0, tTextureCoords).rgb) == 0.0) //sometimes causes weird artifacts, and tbh, i do not remember what this was for
@@ -113,7 +113,7 @@ void main()
 //        combinedLight = mix(combinedLight, getCubeRefraction(1 / 1.52, normal), 0.5);
 //    }
 
-//    fragColour = combinedLight;
+    fragColour = combinedLight;
 }
 
 vec4 getDirLight(DirectionalLight light, vec3 normal, vec3 fragPosition, vec3 viewPosition)

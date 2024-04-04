@@ -64,7 +64,12 @@ public class Shaders {
 
     //TODO evaluate whether to put uniforms as variables
     public static class StaticShader extends ShaderProgram {
-    
+
+        @Override
+        protected void init() {
+            disableStrictUniformChecking();
+        }
+
         @Override
         protected String[] getShaderFileNames() {
             return new String[]{"Phong.vert", "Phong.frag"};
@@ -75,6 +80,8 @@ public class Shaders {
             //TODO theoretically, a sort of autodetect feature is entirely possible
             addUniform("uViewPosition", VEC3);
             addUniform("uTextureScale", VEC2, new Vector2f(1f));
+
+            addUniform("uNormalMapped", BOOLEAN);
 
             addUniformArray("globalLights", 1, STRUCT);
             addUniformArray("lights", 2, STRUCT);
