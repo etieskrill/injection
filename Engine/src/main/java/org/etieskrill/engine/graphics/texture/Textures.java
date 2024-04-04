@@ -44,14 +44,14 @@ public class Textures {
     static AbstractTexture.TextureData loadFileOrDefault(String file, AbstractTexture.Type type) {
         AbstractTexture.TextureData data;
         try {
-            data = Textures.loadFile(file);
+            data = Textures.loadFile(file, type);
         } catch (MissingResourceException | ResourceLoadException e) {
             String reason = stbi_failure_reason();
             logger.info("Texture {} could not be loaded, using placeholder because:\n{}",
                     file, reason != null ? reason : "Unspecified error");
             file = type == DIFFUSE || type == UNKNOWN ? DEFAULT_TEXTURE : TRANSPARENT_TEXTURE;
             try {
-                data = Textures.loadFile(file);
+                data = Textures.loadFile(file, type);
             } catch (MissingResourceException | ResourceLoadException ex) {
                 throw new RuntimeException("Failed to load default texture: this is an engine-internal error", ex);
             }
@@ -59,7 +59,7 @@ public class Textures {
         return data;
     }
 
-    static AbstractTexture.TextureData loadFile(String file) {
+    static AbstractTexture.TextureData loadFile(String file, AbstractTexture.Type type) {
         IntBuffer bufferWidth = BufferUtils.createIntBuffer(1);
         IntBuffer bufferHeight = BufferUtils.createIntBuffer(1);
         IntBuffer bufferColourChannels = BufferUtils.createIntBuffer(1);
@@ -74,7 +74,7 @@ public class Textures {
 
         int pixelWidth = bufferWidth.get();
         int pixelHeight = bufferHeight.get();
-        AbstractTexture.Format format = AbstractTexture.Format.fromChannels(bufferColourChannels.get());
+        AbstractTexture.Format format = AbstractTexture.Format.fromChannelsAndType(bufferColourChannels.get(), type);
 
         return new AbstractTexture.TextureData(textureData, new Vector2i(pixelWidth, pixelHeight), format);
     }

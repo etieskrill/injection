@@ -106,7 +106,7 @@ class MaterialLoader {
         Material.Builder material = new Material.Builder();
 
         for (AbstractTexture.Type type : new AbstractTexture.Type[]{
-                DIFFUSE, SPECULAR, EMISSIVE, HEIGHT, AbstractTexture.Type.SHININESS
+                DIFFUSE, SPECULAR, EMISSIVE, HEIGHT, AbstractTexture.Type.SHININESS, NORMAL
         })
             addTexturesToMaterial(material, aiMaterial, type, embeddedTextures, modelName);
 

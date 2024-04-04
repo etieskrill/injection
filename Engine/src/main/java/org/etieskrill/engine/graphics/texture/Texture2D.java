@@ -78,8 +78,8 @@ public class Texture2D extends AbstractTexture implements FrameBufferAttachment 
     
         @Override
         protected Texture2D bufferTextureData() {
-            logger.debug("Loading {}x{} {}-bit {} texture from {}", pixelSize.x(), pixelSize.y(),
-                    NR_BITS_PER_COLOUR_CHANNEL * format.getChannels(), type.name().toLowerCase(),
+            logger.debug("Loading {}x{} {}-bit {} {} texture from {}", pixelSize.x(), pixelSize.y(),
+                    NR_BITS_PER_COLOUR_CHANNEL * format.getChannels(), format, type.name().toLowerCase(),
                     getClass().getSimpleName());
 
             Texture2D texture = new Texture2D(this);
