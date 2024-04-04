@@ -44,6 +44,7 @@ struct Material {
     sampler2D diffuse0;
     sampler2D specular0;
     sampler2D normal0;
+    bool specularTexture;
     float shininess;
     float specularity;
     sampler2D emissive0;
@@ -163,7 +164,9 @@ vec4 getSpecular(vec3 lightDirection, vec3 lightPosition, vec3 normal, vec3 frag
     }
 
     float specularIntensity = material.specularity * pow(clamp(specularFactor, 0.0, 1.0), material.shininess);
-    return vec4(lightSpecular, 1.0) * specularIntensity * texture(material.specular0, vert_out.texCoord);
+    vec4 specular = vec4(lightSpecular, 1.0) * specularIntensity;
+    if (material.specularTexture) specular *= texture(material.specular0, vert_out.texCoord);
+    return specular;
 }
 
 vec4 getCubeReflection(vec3 normal) {

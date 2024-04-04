@@ -24,6 +24,8 @@ import org.joml.Vector3fc;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Random;
+
 import static org.etieskrill.engine.graphics.texture.AbstractTexture.Type.*;
 import static org.lwjgl.opengl.GL11C.glEnable;
 import static org.lwjgl.opengl.GL30C.GL_FRAMEBUFFER_SRGB;
@@ -32,9 +34,12 @@ public class Application extends GameApplication {
 
     private static final int FRAME_RATE = 60;
 
+    private static final Loaders.ModelLoader MODELS = Loaders.ModelLoader.get();
+
     private static final Logger logger = LoggerFactory.getLogger(Application.class);
 
     private Model floor;
+    private Model[] brickCubes;
     private Shaders.StaticShader shader;
     private Camera camera;
 
@@ -49,8 +54,6 @@ public class Application extends GameApplication {
     private static final Vector3fc lightOn = new Vector3f(1);
     private static final Vector3fc lightOff = new Vector3f(0);
 
-    private Shaders.ShowNormalsShader normalsShader;
-
     public Application() {
         super(FRAME_RATE, new Window.Builder()
                 .setTitle("Horde")
@@ -63,17 +66,7 @@ public class Application extends GameApplication {
 
     @Override
     protected void init() {
-//        window.setScene(new Scene(
-//                new Batch((GLRenderer) renderer),
-//                new Container(
-//                        new Label("Horde", Fonts.getDefault(128)).setAlignment(Node.Alignment.CENTER)),
-//                new OrthographicCamera(window.getSize().toVec())
-//                        .setPosition(new Vector3f(window.getSize().toVec().mul(.5f), 0))
-//        ));
-
         floor = ModelFactory.box(new Vector3f(100, .1f, 100));
-//        floor = ModelFactory.box(new Vector3f(15));
-//        floor = Model.ofFile("Sphere.obj");
         Material floorMaterial = floor.getNodes().get(2).getMeshes().getFirst().getMaterial();
         floorMaterial.setProperty(Material.Property.SHININESS, 256f);
         floorMaterial.getTextures().clear();
@@ -84,13 +77,10 @@ public class Application extends GameApplication {
                         .setFormat(AbstractTexture.Format.RGB) //TODO MMMMMMHHHHH select correct format automatically
                         .build()
         );
-//        floorMaterial.getTextures().add(Textures.ofFile("brickwall.jpg", DIFFUSE));
-//        floorMaterial.getTextures().add(Textures.ofFile("brickwall_normal.jpg", DIFFUSE));
         floor.getTransform().setPosition(new Vector3f(0, -1, 0));
 
-        Model sphere = Loaders.ModelLoader.get().load("sphere", () -> Model.ofFile("Sphere.obj"));
+        Model sphere = MODELS.load("sphere", () -> Model.ofFile("Sphere.obj"));
 
-//        sun = new DirectionalLight(new Vector3f(-1), new Vector3f(.5f), new Vector3f(1), new Vector3f(1));
         sun = new DirectionalLight(new Vector3f(-1), new Vector3f(0), new Vector3f(1), new Vector3f(2));
         sunModel = new Model(sphere);
         sunModel.getTransform().setPosition(new Vector3f(50)).setScale(new Vector3f(.35f));
@@ -107,10 +97,17 @@ public class Application extends GameApplication {
         lightModel2 = new Model(sphere);
         lightModel2.getTransform().setPosition(light2.getPosition()).setScale(.01f);
 
-        lightShader = Shaders.getLightSourceShader();
+        MODELS.load("brick-cube", () -> Model.ofFile("brick-cube.obj"));
+        brickCubes = new Model[10];
+        Random random = new Random(69420);
+        for (int i = 0; i < brickCubes.length; i++) {
+            Model cube = MODELS.get("brick-cube");
+            cube.getTransform().setPosition(new Vector3f(random.nextFloat() * 40 - 20, random.nextFloat() * 4 + 1, random.nextFloat() * 40 - 20));
+            brickCubes[i] = cube;
+        }
 
+        lightShader = Shaders.getLightSourceShader();
         shader = Shaders.getStandardShader();
-        shader.setUniform("uTextureScale", new Vector2f(15));
 
         camera = new PerspectiveCamera(new Vector2f(window.getSize().toVec()));
         window.addCursorInputs(new CursorCameraController(camera));
@@ -134,19 +131,18 @@ public class Application extends GameApplication {
         ));
 
         glEnable(GL_FRAMEBUFFER_SRGB);
-
-        normalsShader = new Shaders.ShowNormalsShader();
     }
 
     @Override
     protected void loop(double delta) {
-//        floor.getTransform().applyRotation(quat -> quat.rotateY((float) Math.toRadians(45 * delta)));
-
         shader.setGlobalLights(sun);
         shader.setLights(new PointLight[] {light1, light2});
         shader.setViewPosition(camera.getPosition());
+        shader.setTextureScale(new Vector2f(15));
         renderer.render(floor, shader, camera.getCombined());
-//        renderer.render(floor, normalsShader, camera.getCombined());
+
+        shader.setTextureScale(new Vector2f(1));
+        for (Model brickCube : brickCubes) renderer.render(brickCube, shader, camera.getCombined());
 
         lightShader.setLight(sun);
         renderer.render(sunModel, lightShader, camera.getCombined());

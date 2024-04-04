@@ -3,6 +3,7 @@ package org.etieskrill.engine.graphics.gl.shaders;
 import org.etieskrill.engine.graphics.data.DirectionalLight;
 import org.etieskrill.engine.graphics.data.PointLight;
 import org.joml.Vector2f;
+import org.joml.Vector2fc;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
@@ -64,12 +65,6 @@ public class Shaders {
 
     //TODO evaluate whether to put uniforms as variables
     public static class StaticShader extends ShaderProgram {
-
-        @Override
-        protected void init() {
-            disableStrictUniformChecking();
-        }
-
         @Override
         protected String[] getShaderFileNames() {
             return new String[]{"Phong.vert", "Phong.frag"};
@@ -81,11 +76,24 @@ public class Shaders {
             addUniform("uViewPosition", VEC3);
             addUniform("uTextureScale", VEC2, new Vector2f(1f));
 
+            addUniform("material.specularTexture", BOOLEAN);
             addUniform("uNormalMapped", BOOLEAN);
             addUniform("uBlinnPhong", BOOLEAN, true);
 
             addUniformArray("globalLights", 1, STRUCT);
             addUniformArray("lights", 2, STRUCT);
+        }
+
+        public void setTextureScale(Vector2fc textureScale) {
+            setUniform("uTextureScale", textureScale);
+        }
+
+        public void setNormalMapped(boolean normalMapped) {
+            setUniform("uNormalMapped", normalMapped);
+        }
+
+        public void setBlinnPhong(boolean blinnPhong) {
+            setUniform("uBlinnPhong", blinnPhong);
         }
 
         public void setViewPosition(Vector3fc viewPosition) {
