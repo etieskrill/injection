@@ -75,7 +75,7 @@ public class Application extends GameApplication {
 //        floor = ModelFactory.box(new Vector3f(15));
 //        floor = Model.ofFile("Sphere.obj");
         Material floorMaterial = floor.getNodes().get(2).getMeshes().getFirst().getMaterial();
-        floorMaterial.setProperty(Material.Property.SHININESS, 1024f);
+        floorMaterial.setProperty(Material.Property.SHININESS, 256f);
         floorMaterial.getTextures().clear();
         floorMaterial.getTextures().add(Textures.ofFile("TilesSlateSquare001_COL_2K_METALNESS.png", DIFFUSE));
         floorMaterial.getTextures().add(Textures.ofFile("TilesSlateSquare001_ROUGHNESS_2K_METALNESS.png", SPECULAR));
@@ -91,18 +91,18 @@ public class Application extends GameApplication {
         Model sphere = Loaders.ModelLoader.get().load("sphere", () -> Model.ofFile("Sphere.obj"));
 
 //        sun = new DirectionalLight(new Vector3f(-1), new Vector3f(.5f), new Vector3f(1), new Vector3f(1));
-        sun = new DirectionalLight(new Vector3f(-1), new Vector3f(1), new Vector3f(1), new Vector3f(4));
+        sun = new DirectionalLight(new Vector3f(-1), new Vector3f(0), new Vector3f(1), new Vector3f(2));
         sunModel = new Model(sphere);
         sunModel.getTransform().setPosition(new Vector3f(50)).setScale(new Vector3f(.35f));
 
         light1 = new PointLight(new Vector3f(10, 0, 10),
-                new Vector3f(.2f), new Vector3f(4), new Vector3f(1),
+                new Vector3f(0), new Vector3f(2), new Vector3f(2),
                 1, .14f, .07f);
         lightModel1 = new Model(sphere);
         lightModel1.getTransform().setPosition(light1.getPosition()).setScale(.01f);
 
         light2 = new PointLight(new Vector3f(-10, 0, -10),
-                new Vector3f(.2f), new Vector3f(4), new Vector3f(1),
+                new Vector3f(0), new Vector3f(2), new Vector3f(2),
                 1, .14f, .07f);
         lightModel2 = new Model(sphere);
         lightModel2.getTransform().setPosition(light2.getPosition()).setScale(.01f);

@@ -82,6 +82,7 @@ public class Shaders {
             addUniform("uTextureScale", VEC2, new Vector2f(1f));
 
             addUniform("uNormalMapped", BOOLEAN);
+            addUniform("uBlinnPhong", BOOLEAN, true);
 
             addUniformArray("globalLights", 1, STRUCT);
             addUniformArray("lights", 2, STRUCT);
