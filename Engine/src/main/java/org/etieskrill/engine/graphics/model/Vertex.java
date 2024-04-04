@@ -1,39 +1,49 @@
 package org.etieskrill.engine.graphics.model;
 
+import org.jetbrains.annotations.Nullable;
 import org.joml.*;
-import org.lwjgl.BufferUtils;
 
 import java.nio.ByteBuffer;
 
 public class Vertex {
-    
+
     public static final int
             POSITION_COMPONENTS = 3,
             NORMAL_COMPONENTS = 3,
             TEXTURE_COMPONENTS = 2,
+            TANGENT_COMPONENTS = 3,
+            BITANGENT_COMPONENTS = 3,
             BONE_COMPONENTS = 4,
             BONE_WEIGHT_COMPONENTS = 4,
-            COMPONENTS = POSITION_COMPONENTS + NORMAL_COMPONENTS + TEXTURE_COMPONENTS + BONE_COMPONENTS + BONE_WEIGHT_COMPONENTS;
+            COMPONENTS = POSITION_COMPONENTS + NORMAL_COMPONENTS + TEXTURE_COMPONENTS + TANGENT_COMPONENTS
+                    + BITANGENT_COMPONENTS + BONE_COMPONENTS + BONE_WEIGHT_COMPONENTS;
 
     public static final int
             POSITION_BYTES = POSITION_COMPONENTS * Float.BYTES,
             NORMAL_BYTES = NORMAL_COMPONENTS * Float.BYTES,
             TEXTURE_BYTES = TEXTURE_COMPONENTS * Float.BYTES,
+            TANGENT_BYTES = TANGENT_COMPONENTS * Float.BYTES,
+            BITANGENT_BYTES = BITANGENT_COMPONENTS * Float.BYTES,
             BONE_BYTES = BONE_COMPONENTS * Integer.BYTES,
             BONE_WEIGHT_BYTES = BONE_WEIGHT_COMPONENTS * Float.BYTES,
-            COMPONENT_BYTES = POSITION_BYTES + NORMAL_BYTES + TEXTURE_BYTES + BONE_BYTES + BONE_WEIGHT_BYTES;
+            COMPONENT_BYTES = POSITION_BYTES + NORMAL_BYTES + TEXTURE_BYTES + TANGENT_BYTES + BITANGENT_BYTES
+                    + BONE_BYTES + BONE_WEIGHT_BYTES;
 
     private final Vector3fc position;
-    private Vector3fc normal;
-    private Vector2fc textureCoords;
-    private Vector4ic bones;
-    private Vector4fc boneWeights;
+    private final @Nullable Vector3fc normal;
+    private final @Nullable Vector2fc textureCoords;
+    private final @Nullable Vector3fc tangent;
+    private final @Nullable Vector3fc biTangent;
+    private final @Nullable Vector4ic bones;
+    private final @Nullable Vector4fc boneWeights;
 
     //TODO WOOOOOOOOOOOOOOOOOOOOOOOO LOMBOOOOOOK WHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEN
     public static class Builder {
         private final Vector3fc position;
         private Vector3fc normal;
         private Vector2fc textureCoords;
+        private Vector3fc tangent;
+        private Vector3fc biTangent;
         private final Vector4i bones = new Vector4i(-1);
         private final Vector4f boneWeights = new Vector4f(-1);
 
@@ -41,13 +51,39 @@ public class Vertex {
             this.position = position;
         }
 
+        public Vector3fc position() {
+            return position;
+        }
+
         public Builder normal(Vector3fc normal) {
             this.normal = normal;
             return this;
         }
 
+        public Vector2fc textureCoords() {
+            return textureCoords;
+        }
+
         public Builder textureCoords(Vector2fc textureCoords) {
             this.textureCoords = textureCoords;
+            return this;
+        }
+
+        public Vector3fc tangent() {
+            return tangent;
+        }
+
+        public Builder tangent(Vector3fc tangent) {
+            this.tangent = tangent;
+            return this;
+        }
+
+        public Vector3fc biTangent() {
+            return biTangent;
+        }
+
+        public Builder biTangent(Vector3fc biTangent) {
+            this.biTangent = biTangent;
             return this;
         }
 
@@ -70,20 +106,23 @@ public class Vertex {
         }
 
         public Vertex build() {
-            return new Vertex(position, normal, textureCoords, bones, boneWeights);
+            return new Vertex(position, normal, textureCoords, tangent, biTangent, bones, boneWeights);
         }
     }
 
-    public Vertex(Vector3fc position, Vector3fc normal, Vector2fc textureCoords) {
-        this.position = position;
-        this.normal = normal;
-        this.textureCoords = textureCoords;
+    public Vertex(Vector3fc position, @Nullable Vector3fc normal, @Nullable Vector2fc textureCoords) {
+        this(position, normal, textureCoords, null, null, null, null);
     }
 
-    public Vertex(Vector3fc position, Vector3fc normal, Vector2fc textureCoords, Vector4ic bones, Vector4fc boneWeights) {
+    public Vertex(Vector3fc position,
+                  @Nullable Vector3fc normal, @Nullable Vector2fc textureCoords,
+                  @Nullable Vector3fc tangent, @Nullable Vector3fc biTangent,
+                  @Nullable Vector4ic bones, @Nullable Vector4fc boneWeights) {
         this.position = position;
         this.normal = normal;
         this.textureCoords = textureCoords;
+        this.tangent = tangent;
+        this.biTangent = biTangent;
         this.bones = bones;
         this.boneWeights = boneWeights;
     }
@@ -92,23 +131,31 @@ public class Vertex {
         return position;
     }
 
-    public Vector3fc getNormal() {
+    public @Nullable Vector3fc getNormal() {
         return normal;
     }
 
-    public Vector2fc getTextureCoords() {
+    public @Nullable Vector2fc getTextureCoords() {
         return textureCoords;
     }
 
-    public Vector4ic getBones() {
+    public @Nullable Vector3fc getTangent() {
+        return tangent;
+    }
+
+    public @Nullable Vector3fc getBiTangent() {
+        return biTangent;
+    }
+
+    public @Nullable Vector4ic getBones() {
         return bones;
     }
 
-    public Vector4fc getBoneWeights() {
+    public @Nullable Vector4fc getBoneWeights() {
         return boneWeights;
     }
 
-    public ByteBuffer block() {
+    public void buffer(ByteBuffer buffer) {
         //TODO debug: write this in blood into a general debugging guide
         //buffers created by java's nio package, whether wrapping or direct (e.g. ByteBuffer.allocateDirect(...), are
         //allocated on-heap, which is obvious for the java-native array wrapping buffers, and is true for direct
@@ -118,18 +165,38 @@ public class Vertex {
         //freed or something by the jvm, yet can still be read by the native operations. this in and of itself is a
         //lapse in judgement by whomever decided to even allow regular nio buffers to be used in the library's methods.
         //TODO maybe an annotation or *something* could be leveraged to help identify such errors
-        ByteBuffer block = BufferUtils.createByteBuffer(COMPONENT_BYTES);
-        block.putFloat(position.x()).putFloat(position.y()).putFloat(position.z());
-        if (normal != null) block.putFloat(normal.x()).putFloat(normal.y()).putFloat(normal.z());
-        else putZero(block, NORMAL_BYTES);
-        if (textureCoords != null) block.putFloat(textureCoords.x()).putFloat(textureCoords.y());
-        else putZero(block, TEXTURE_BYTES);
-        if (bones != null) block.putInt(bones.x()).putInt(bones.y()).putInt(bones.z()).putInt(bones.w());
-//        block.putIn
-        else block.putInt(-1).putInt(-1).putInt(-1).putInt(-1);
-        if (boneWeights != null) block.putFloat(boneWeights.x()).putFloat(boneWeights.y()).putFloat(boneWeights.z()).putFloat(boneWeights.w());
-        else putZero(block, BONE_WEIGHT_BYTES);
-        return block.rewind();
+
+        if (buffer.remaining() < COMPONENT_BYTES)
+            throw new IllegalArgumentException("Buffer does not have enough space left for a vertex");
+
+        put(buffer, position);
+
+        if (normal != null) put(buffer, normal);
+        else putZero(buffer, NORMAL_BYTES);
+
+        if (textureCoords != null) put(buffer, textureCoords);
+        else putZero(buffer, TEXTURE_BYTES);
+
+        if (tangent != null) {
+            put(buffer, tangent);
+            put(buffer, biTangent);
+        } else putZero(buffer, TANGENT_BYTES + BITANGENT_BYTES);
+
+        if (bones != null) put(buffer, bones);
+        else buffer.putInt(-1).putInt(-1).putInt(-1).putInt(-1);
+
+        if (boneWeights != null) put(buffer, boneWeights);
+        else putZero(buffer, BONE_WEIGHT_BYTES);
+    }
+
+    private void put(ByteBuffer buffer, Object value) {
+        switch (value) {
+            case Vector2fc vec2 -> vec2.get(buffer).position(buffer.position() + 2 * Float.BYTES);
+            case Vector3fc vec3 -> vec3.get(buffer).position(buffer.position() + 3 * Float.BYTES);
+            case Vector4ic vec4i -> vec4i.get(buffer).position(buffer.position() + 4 * Integer.BYTES);
+            case Vector4fc vec4 -> vec4.get(buffer).position(buffer.position() + 4 * Float.BYTES);
+            default -> throw new IllegalArgumentException("Unexpected vertex attribute type: " + value.getClass().getSimpleName());
+        }
     }
 
     private static void putZero(ByteBuffer block, int numBytes) {
