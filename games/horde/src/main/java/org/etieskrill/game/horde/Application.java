@@ -5,6 +5,7 @@ import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera;
 import org.etieskrill.engine.graphics.data.DirectionalLight;
 import org.etieskrill.engine.graphics.data.PointLight;
+import org.etieskrill.engine.graphics.gl.ShadowMap;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
 import org.etieskrill.engine.graphics.model.Material;
 import org.etieskrill.engine.graphics.model.Model;
@@ -18,16 +19,15 @@ import org.etieskrill.engine.input.controller.CursorCameraController;
 import org.etieskrill.engine.input.controller.KeyCameraController;
 import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.window.Window;
-import org.joml.Vector2f;
-import org.joml.Vector3f;
-import org.joml.Vector3fc;
+import org.joml.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.Math;
 import java.util.Random;
 
 import static org.etieskrill.engine.graphics.texture.AbstractTexture.Type.*;
-import static org.lwjgl.opengl.GL11C.glEnable;
+import static org.lwjgl.opengl.GL11C.*;
 import static org.lwjgl.opengl.GL30C.GL_FRAMEBUFFER_SRGB;
 
 public class Application extends GameApplication {
@@ -50,9 +50,15 @@ public class Application extends GameApplication {
     private PointLight light2;
     private Model lightModel2;
     private Shaders.LightSourceShader lightShader;
-    private static boolean light = true;
+    private boolean light = true;
     private static final Vector3fc lightOn = new Vector3f(1);
     private static final Vector3fc lightOff = new Vector3f(0);
+
+    private Matrix4fc sunLightCombined;
+    private ShadowMap shadowMap;
+    private Shaders.DepthShader depthShader;
+
+    Model quad;
 
     public Application() {
         super(FRAME_RATE, new Window.Builder()
@@ -81,18 +87,18 @@ public class Application extends GameApplication {
 
         Model sphere = MODELS.load("sphere", () -> Model.ofFile("Sphere.obj"));
 
-        sun = new DirectionalLight(new Vector3f(-1), new Vector3f(0), new Vector3f(1), new Vector3f(2));
+        sun = new DirectionalLight(new Vector3f(-1), new Vector3f(.1f), new Vector3f(.5f), new Vector3f(2));
         sunModel = new Model(sphere);
         sunModel.getTransform().setPosition(new Vector3f(50)).setScale(new Vector3f(.35f));
 
         light1 = new PointLight(new Vector3f(10, 0, 10),
-                new Vector3f(0), new Vector3f(2), new Vector3f(2),
+                new Vector3f(.1f), new Vector3f(2), new Vector3f(2),
                 1, .14f, .07f);
         lightModel1 = new Model(sphere);
         lightModel1.getTransform().setPosition(light1.getPosition()).setScale(.01f);
 
         light2 = new PointLight(new Vector3f(-10, 0, -10),
-                new Vector3f(0), new Vector3f(2), new Vector3f(2),
+                new Vector3f(.1f), new Vector3f(2), new Vector3f(2),
                 1, .14f, .07f);
         lightModel2 = new Model(sphere);
         lightModel2.getTransform().setPosition(light2.getPosition()).setScale(.01f);
@@ -102,7 +108,13 @@ public class Application extends GameApplication {
         Random random = new Random(69420);
         for (int i = 0; i < brickCubes.length; i++) {
             Model cube = MODELS.get("brick-cube");
-            cube.getTransform().setPosition(new Vector3f(random.nextFloat() * 40 - 20, random.nextFloat() * 4 + 1, random.nextFloat() * 40 - 20));
+            cube.getTransform()
+                    .setPosition(new Vector3f(random.nextFloat() * 30 - 15, random.nextFloat() * 3, random.nextFloat() * 30 - 15))
+                    .applyRotation(quat -> quat.rotationAxis((float) (random.nextFloat() * 2 * Math.PI - Math.PI),
+                            new Vector3f(random.nextFloat(), random.nextFloat(), random.nextFloat())
+                                    .mul(2).sub(1, 1, 1)
+                                    .normalize()))
+                    .setScale(3);
             brickCubes[i] = cube;
         }
 
@@ -130,20 +142,54 @@ public class Application extends GameApplication {
                 })
         ));
 
+        shadowMap = ShadowMap.generate(new Vector2i(1024));
+
+        sunLightCombined = new Matrix4f()
+                .ortho(-30, 30, -30, 30, .1f, 40)
+                .mul(new Matrix4f().lookAt(new Vector3f(10, 20, 10), new Vector3f(-10, 0, -10), new Vector3f(0, 1, 0)));
+
+        depthShader = new Shaders.DepthShader();
+        Material quadMaterial = Material.getBlank();
+        quadMaterial.getTextures().add(shadowMap.getTexture());
+        quad = ModelFactory.rectangle(-.9f, -.9f, 1.8f, 1.8f, quadMaterial).disableCulling().build();
+
         glEnable(GL_FRAMEBUFFER_SRGB);
     }
 
     @Override
     protected void loop(double delta) {
+        shadowMap.bind();
+        glClear(GL_DEPTH_BUFFER_BIT);
+//        glCullFace(GL_FRONT); //Helps with peter panning, but back faces intersecting with other shadowed objects peter pan instead
+        renderScene(depthShader, sunLightCombined);
+//        glCullFace(GL_BACK);
+        shadowMap.unbind();
+
+        glViewport(0, 0, 1920, 1080); //TODO make render manager (??? entity?) do this
+        renderer.bindNextFreeTexture(shader, "u_ShadowMap", shadowMap.getTexture());
+        shader.setUniform("u_LightCombined", sunLightCombined);
+//        renderer.render(quad, shader, new Matrix4f());
+        renderScene(shader, camera.getCombined());
+        renderLights();
+    }
+
+    private void renderScene(Shaders.DepthShader shader, Matrix4fc combined) {
+        renderer.render(floor, shader, combined);
+        for (Model brickCube : brickCubes) renderer.render(brickCube, shader, combined);
+    }
+
+    private void renderScene(Shaders.StaticShader shader, Matrix4fc combined) {
         shader.setGlobalLights(sun);
         shader.setLights(new PointLight[] {light1, light2});
         shader.setViewPosition(camera.getPosition());
         shader.setTextureScale(new Vector2f(15));
-        renderer.render(floor, shader, camera.getCombined());
+        renderer.render(floor, shader, combined);
 
         shader.setTextureScale(new Vector2f(1));
-        for (Model brickCube : brickCubes) renderer.render(brickCube, shader, camera.getCombined());
+        for (Model brickCube : brickCubes) renderer.render(brickCube, shader, combined);
+    }
 
+    private void renderLights() {
         lightShader.setLight(sun);
         renderer.render(sunModel, lightShader, camera.getCombined());
         lightShader.setLight(light1);

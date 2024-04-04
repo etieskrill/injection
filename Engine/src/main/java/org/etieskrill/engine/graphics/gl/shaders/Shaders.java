@@ -66,6 +66,11 @@ public class Shaders {
     //TODO evaluate whether to put uniforms as variables
     public static class StaticShader extends ShaderProgram {
         @Override
+        protected void init() {
+            disableStrictUniformChecking();
+        }
+
+        @Override
         protected String[] getShaderFileNames() {
             return new String[]{"Phong.vert", "Phong.frag"};
         }
@@ -342,6 +347,20 @@ public class Shaders {
                     "ShowNormals.vert",
                     "ShowNormals.geom",
                     "ShowNormals.frag"
+            };
+        }
+
+        @Override
+        protected void getUniformLocations() {
+        }
+    }
+
+    public static class DepthShader extends ShaderProgram {
+        @Override
+        protected String[] getShaderFileNames() {
+            return new String[]{
+                    "Depth.vert",
+                    "Depth.frag"
             };
         }
 

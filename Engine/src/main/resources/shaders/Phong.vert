@@ -11,6 +11,7 @@ out Data {
     mat3 tbn;
     vec2 texCoord;
     vec3 fragPos;
+    vec4 lightSpaceFragPos;
 } vert_out;
 
 uniform mat4 uMesh;
@@ -19,6 +20,8 @@ uniform mat3 uNormal;
 uniform mat4 uCombined;
 
 uniform vec2 uTextureScale;
+
+uniform mat4 u_LightCombined;
 
 void main()
 {
@@ -30,5 +33,6 @@ void main()
 
     vert_out.texCoord = a_TexCoord * uTextureScale;
     vert_out.fragPos = vec3(uModel * vec4(a_Position, 1.0));
+    vert_out.lightSpaceFragPos = u_LightCombined * vec4(vert_out.fragPos, 1.0);
     gl_Position = uCombined * uModel * vec4(a_Position, 1.0);
 }

@@ -5,6 +5,7 @@ import org.etieskrill.engine.graphics.Renderer;
 import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.camera.OrthographicCamera;
 import org.etieskrill.engine.graphics.gl.FrameBuffer;
+import org.etieskrill.engine.graphics.gl.FrameBufferAttachment.BufferAttachmentType;
 import org.etieskrill.engine.graphics.gl.GLRenderer;
 import org.etieskrill.engine.graphics.gl.GLUtils;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
@@ -134,7 +135,7 @@ public class Game {
         Vector2fc windowSize = window.getSize().toVec();
         FrameBuffer postBuffer = FrameBuffer.getStandard(windowSize.get(0, new Vector2i()));
         Material mat = new Material.Builder() //TODO okay, the fact models, or rather meshes simply ignore these mats is getting frustrating now, that builder needs some serious rework
-                .addTextures((Texture2D) postBuffer.getAttachment(FrameBuffer.AttachmentType.COLOUR0))
+                .addTextures((Texture2D) postBuffer.getAttachment(BufferAttachmentType.COLOUR0))
                 .build();
         Model screenQuad = ModelFactory.rectangle(-1, -1, 2, 2, mat) //Hey hey people, these, are in fact, regular    screeeeen coordinates, not viewport, meaning, for post processing, these effectively *always* need to be    (-1, -1) and (2, 2).
                 .build();

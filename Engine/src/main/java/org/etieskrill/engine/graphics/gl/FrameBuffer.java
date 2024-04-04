@@ -1,6 +1,7 @@
 package org.etieskrill.engine.graphics.gl;
 
 import org.etieskrill.engine.Disposable;
+import org.etieskrill.engine.graphics.gl.FrameBufferAttachment.BufferAttachmentType;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.texture.Textures;
 import org.joml.Vector2ic;
@@ -18,7 +19,7 @@ public class FrameBuffer implements Disposable {
 
     private final int fbo;
     private final Vector2ic size;
-    private final Map<AttachmentType, FrameBufferAttachment> attachments;
+    private final Map<BufferAttachmentType, FrameBufferAttachment> attachments;
 
     public static FrameBuffer getStandard(Vector2ic size) {
         // Colour buffer as a texture attachment
@@ -28,32 +29,35 @@ public class FrameBuffer implements Disposable {
         RenderBuffer depthStencilBuffer = new RenderBuffer(size, RenderBuffer.Type.DEPTH_STENCIL);
 
         return new Builder(size)
-                .attach(colourBufferTexture, AttachmentType.COLOUR0)
-                .attach(depthStencilBuffer, AttachmentType.DEPTH_STENCIL)
+                .attach(colourBufferTexture, BufferAttachmentType.COLOUR0)
+                .attach(depthStencilBuffer, BufferAttachmentType.DEPTH_STENCIL)
                 .build();
     }
 
-    public static final class Builder {
-        private Vector2ic size;
+    public static class Builder {
+        protected final Vector2ic size;
 
-        private final Map<AttachmentType, FrameBufferAttachment> attachments = new HashMap<>();
+        private final Map<BufferAttachmentType, FrameBufferAttachment> attachments = new HashMap<>();
 
         public Builder(Vector2ic size) {
             this.size = size;
         }
 
-        public Builder attach(FrameBufferAttachment attachment, AttachmentType type) {
+        public Builder attach(FrameBufferAttachment attachment, BufferAttachmentType type) {
             attachments.put(type, attachment);
             return this;
         }
 
         public FrameBuffer build() {
             GLUtils.clearError();
-            int ret;
-
             FrameBuffer frameBuffer = new FrameBuffer(size);
+            addAttachments(frameBuffer);
+            return frameBuffer;
+        }
+
+        protected void addAttachments(FrameBuffer frameBuffer) {
             frameBuffer.bind();
-            for (AttachmentType type : attachments.keySet()) {
+            for (BufferAttachmentType type : attachments.keySet()) {
                 FrameBufferAttachment attachment = attachments.get(type);
                 if (attachment == null) continue;
                 if (!attachment.getSize().equals(this.size)) {
@@ -73,6 +77,7 @@ public class FrameBuffer implements Disposable {
                             type.name() + ": " + attachment);
             }
 
+            int ret;
             if ((ret = glCheckFramebufferStatus(GL_FRAMEBUFFER)) != GL_FRAMEBUFFER_COMPLETE)
                 throw new IllegalStateException("Framebuffer was not successfully completed: 0x" +
                         Integer.toHexString(ret).toUpperCase());
@@ -80,12 +85,10 @@ public class FrameBuffer implements Disposable {
             GLUtils.checkErrorThrowing("Error during framebuffer creation");
 
             frameBuffer.getAttachments().putAll(attachments);
-
-            return frameBuffer;
         }
     }
 
-    private FrameBuffer(Vector2ic size) {
+    protected FrameBuffer(Vector2ic size) {
         this.fbo = glGenFramebuffers();
         this.size = size;
         this.attachments = new HashMap<>(3);
@@ -113,37 +116,15 @@ public class FrameBuffer implements Disposable {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
-    public enum AttachmentType {
-        COLOUR0,
-        COLOUR1,
-        COLOUR2,
-        COLOUR3,
-        DEPTH,
-        STENCIL,
-        DEPTH_STENCIL;
-
-        public int toGLAttachment() {
-            return switch (this) {
-                case COLOUR0 -> GL_COLOR_ATTACHMENT0;
-                case COLOUR1 -> GL_COLOR_ATTACHMENT1;
-                case COLOUR2 -> GL_COLOR_ATTACHMENT2;
-                case COLOUR3 -> GL_COLOR_ATTACHMENT3;
-                case DEPTH -> GL_DEPTH_ATTACHMENT;
-                case STENCIL -> GL_STENCIL_ATTACHMENT;
-                case DEPTH_STENCIL -> GL_DEPTH_STENCIL_ATTACHMENT;
-            };
-        }
-    }
-
     public Vector2ic getSize() {
         return size;
     }
 
-    public Map<AttachmentType, FrameBufferAttachment> getAttachments() {
+    public Map<BufferAttachmentType, FrameBufferAttachment> getAttachments() {
         return attachments;
     }
 
-    public FrameBufferAttachment getAttachment(AttachmentType type) {
+    public FrameBufferAttachment getAttachment(BufferAttachmentType type) {
         return attachments.get(type);
     }
 
