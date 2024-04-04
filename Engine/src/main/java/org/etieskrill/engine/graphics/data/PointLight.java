@@ -3,6 +3,7 @@ package org.etieskrill.engine.graphics.data;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shaders.UniformMappable;
 import org.joml.Vector3f;
+import org.joml.Vector3fc;
 
 public class PointLight implements UniformMappable {
     
@@ -25,7 +26,15 @@ public class PointLight implements UniformMappable {
         this.linear = linear;
         this.quadratic = quadratic;
     }
-    
+
+    public Vector3f getPosition() {
+        return position;
+    }
+
+    public void setPosition(Vector3fc position) {
+        this.position.set(position);
+    }
+
     @Override
     public boolean map(ShaderProgram.UniformMapper shader) {
         shader

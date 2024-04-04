@@ -1,6 +1,7 @@
 package org.etieskrill.engine.graphics.model.loader;
 
 import org.etieskrill.engine.entity.data.AABB;
+import org.etieskrill.engine.graphics.gl.GLUtils;
 import org.etieskrill.engine.graphics.model.Bone;
 import org.etieskrill.engine.graphics.model.Material;
 import org.etieskrill.engine.graphics.model.Mesh;
@@ -35,9 +36,7 @@ public final class MeshLoader {
         int vao = createVAO();
 
         ByteBuffer data = BufferUtils.createByteBuffer(vertices.size() * COMPONENT_BYTES);
-        vertices.stream()
-                .map(Vertex::block)
-                .forEach(data::put);
+        vertices.forEach(vertex -> vertex.buffer(data));
         data.rewind();
         int vbo = prepareVBO(data);
 
@@ -59,6 +58,8 @@ public final class MeshLoader {
     }
 
     private static int prepareVBO(ByteBuffer data) {
+        GLUtils.clearError();
+
         int vbo = glGenBuffers();
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
         glBufferData(GL_ARRAY_BUFFER, data, GL_STATIC_READ);
@@ -66,10 +67,14 @@ public final class MeshLoader {
         setFloatPointer(0, POSITION_COMPONENTS, false, 0);
         setFloatPointer(1, NORMAL_COMPONENTS, true, POSITION_BYTES);
         setFloatPointer(2, TEXTURE_COMPONENTS, false, POSITION_BYTES + NORMAL_BYTES);
-        setIntegerPointer(3, BONE_COMPONENTS, POSITION_BYTES + NORMAL_BYTES + TEXTURE_BYTES);
-        setFloatPointer(4, BONE_WEIGHT_COMPONENTS, false, POSITION_BYTES + NORMAL_BYTES + TEXTURE_BYTES + BONE_BYTES);
+        setFloatPointer(3, TANGENT_COMPONENTS, true, POSITION_BYTES + NORMAL_BYTES + TEXTURE_BYTES);
+        setFloatPointer(4, BITANGENT_COMPONENTS, true, POSITION_BYTES + NORMAL_BYTES + TEXTURE_BYTES + TANGENT_BYTES);
+        setIntegerPointer(5, BONE_COMPONENTS, POSITION_BYTES + NORMAL_BYTES + TEXTURE_BYTES + TANGENT_BYTES + BITANGENT_BYTES);
+        setFloatPointer(6, BONE_WEIGHT_COMPONENTS, false, POSITION_BYTES + NORMAL_BYTES + TEXTURE_BYTES + TANGENT_BYTES + BITANGENT_BYTES + BONE_BYTES);
 
         glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+        GLUtils.checkErrorThrowing("Failed to setup vertex data");
         return vbo;
     }
 

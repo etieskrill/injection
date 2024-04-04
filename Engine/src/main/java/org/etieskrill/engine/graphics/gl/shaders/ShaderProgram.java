@@ -513,10 +513,10 @@ public abstract class ShaderProgram implements Disposable {
     protected abstract void getUniformLocations();
 
     protected void addUniform(String name, Uniform.Type type) {
-        addUniform(name, type, true);
+        addUniform(name, type, null);
     }
 
-    protected void addUniform(String name, Uniform.Type type, boolean defaultValues) {
+    protected void addUniform(String name, Uniform.Type type, @Nullable Object defaultValue) {
         if (uniforms.containsKey(name)) return;
 
         if (type == Uniform.Type.STRUCT) {
@@ -528,14 +528,14 @@ public abstract class ShaderProgram implements Disposable {
         int location = glGetUniformLocation(programID, name);
         if (location != INVALID_UNIFORM_LOCATION) {
             uniforms.put(name, new Uniform(name, type, location));
-            if (defaultValues) setStandardValue(type, location);
+            if (defaultValue != null) setUniformValue(type, location, defaultValue);
+            else setStandardValue(type, location);
             logger.trace("Registered uniform '{}'", name);
             return;
         }
 
         if (STRICT_UNIFORM_DETECTION)
-            throw new ShaderUniformException(
-                    "Cannot register non-existent or non-used uniform in strict mode", name);
+            throw new ShaderUniformException("Cannot register nonexistent or unused uniform in strict mode", name);
 
         logger.debug("Could not find uniform '{}' of type {}", name, type);
     }

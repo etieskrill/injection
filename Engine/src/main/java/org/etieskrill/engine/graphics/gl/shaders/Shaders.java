@@ -2,6 +2,7 @@ package org.etieskrill.engine.graphics.gl.shaders;
 
 import org.etieskrill.engine.graphics.data.DirectionalLight;
 import org.etieskrill.engine.graphics.data.PointLight;
+import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
@@ -73,6 +74,7 @@ public class Shaders {
         protected void getUniformLocations() {
             //TODO theoretically, a sort of autodetect feature is entirely possible
             addUniform("uViewPosition", VEC3);
+            addUniform("uTextureScale", VEC2, new Vector2f(1f));
 
             addUniformArray("globalLights", 1, STRUCT);
             addUniformArray("lights", 2, STRUCT);
