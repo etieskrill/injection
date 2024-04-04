@@ -205,6 +205,8 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
         for (int i = validTextures + 1; i < 8; i++) //TODO this is a little inefficient, but you don't have to unbind textures all the time like this
             AbstractTexture.clearBind(i);
 
+        shader.setUniform("uNormalMapped", normal > 0, false);
+
         //TODO add a way to map all available material props automatically with sensible default values
         //TODO add invalidation flag to uniform properties and update here only if invalid (do not forget about the first time)
         shader.setUniform("material.colour", material.getColourProperty(COLOUR_BASE), false);

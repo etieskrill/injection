@@ -7,8 +7,8 @@ layout (location = 3) in vec3 a_Tangent;
 layout (location = 4) in vec3 a_BiTangent;
 
 out Data {
-    mat3 tbn;
     vec3 normal;
+    mat3 tbn;
     vec2 texCoord;
     vec3 fragPos;
 } vert_out;
@@ -23,12 +23,10 @@ uniform vec2 uTextureScale;
 void main()
 {
     vec3 normal = normalize(uNormal * a_Normal);
-    vec3 tangent = normalize(uNormal * (a_Tangent * -1));
-//    vec3 biTangent = normalize(uNormal * a_BiTangent);
-    vec3 biTangent = normalize(cross(normal, tangent));
-
-    vert_out.tbn = mat3(tangent, biTangent, normal);
+    vec3 tangent = normalize(uNormal * a_Tangent);
+    vec3 biTangent = normalize(uNormal * a_BiTangent);
     vert_out.normal = normal;
+    vert_out.tbn = mat3(tangent, biTangent, normal);
 
     vert_out.texCoord = a_TexCoord * uTextureScale;
     vert_out.fragPos = vec3(uModel * vec4(a_Position, 1.0));

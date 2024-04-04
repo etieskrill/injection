@@ -9,6 +9,8 @@ import org.etieskrill.engine.graphics.gl.shaders.Shaders;
 import org.etieskrill.engine.graphics.model.Material;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.model.ModelFactory;
+import org.etieskrill.engine.graphics.texture.AbstractTexture;
+import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.texture.Textures;
 import org.etieskrill.engine.input.Input;
 import org.etieskrill.engine.input.Keys;
@@ -77,7 +79,11 @@ public class Application extends GameApplication {
         floorMaterial.getTextures().clear();
         floorMaterial.getTextures().add(Textures.ofFile("TilesSlateSquare001_COL_2K_METALNESS.png", DIFFUSE));
         floorMaterial.getTextures().add(Textures.ofFile("TilesSlateSquare001_ROUGHNESS_2K_METALNESS.png", SPECULAR));
-        floorMaterial.getTextures().add(Textures.ofFile("TilesSlateSquare001_NRM_2K_METALNESS.png", NORMAL));
+        floorMaterial.getTextures().add(
+                new Texture2D.FileBuilder("TilesSlateSquare001_NRM_2K_METALNESS.png", NORMAL)
+                        .setFormat(AbstractTexture.Format.RGB) //TODO MMMMMMHHHHH select correct format automatically
+                        .build()
+        );
 //        floorMaterial.getTextures().add(Textures.ofFile("brickwall.jpg", DIFFUSE));
 //        floorMaterial.getTextures().add(Textures.ofFile("brickwall_normal.jpg", DIFFUSE));
         floor.getTransform().setPosition(new Vector3f(0, -1, 0));
@@ -115,11 +121,11 @@ public class Application extends GameApplication {
         window.addKeyInputs(Input.of(
                 Input.bind(Keys.Q).to(() -> {
                     light = !light;
-                    logger.info("Turning light {}", light ? "on" : "off");
+                    logger.info("Turning sunlight {}", light ? "on" : "off");
 
                     sun.setAmbient(light ? lightOn : lightOff);
                     sun.setDiffuse(light ? lightOn : lightOff);
-//                    sun.setSpecular(light ? lightOn : lightOff);
+                    sun.setSpecular(light ? lightOn : lightOff);
                 }),
                 Input.bind(Keys.CTRL).to(() -> {
                     if (cameraController.getSpeed() == 3) cameraController.setSpeed(20);
