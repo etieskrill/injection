@@ -56,6 +56,7 @@ in Data {
     mat3 tbn;
     vec2 texCoord;
     vec3 fragPos;
+    vec4 lightSpaceFragPos;
 } vert_out;
 
 out vec4 fragColour;
@@ -72,12 +73,19 @@ uniform Material material;
 uniform DirectionalLight globalLights[NR_DIRECTIONAL_LIGHTS];
 uniform PointLight lights[NR_POINT_LIGHTS];
 
-vec4 getDirLight(DirectionalLight light, vec3 normal, vec3 fragPosition, vec3 viewPosition);
-vec4 getPointLight(PointLight light, vec3 normal, vec3 fragPosition, vec3 viewPosition);
-vec4 getAmbientAndDiffuse(vec3 lightDirection, vec3 normal, vec3 lightAmbient, vec3 lightDiffuse);
+uniform sampler2D u_ShadowMap;
+
+vec4 getDirLight(DirectionalLight light, vec3 normal, vec3 fragPosition, vec3 viewPosition, float inShadow);
+vec4 getPointLight(PointLight light, vec3 normal, vec3 fragPosition, vec3 viewPosition, float inShadow);
+
+vec4 getAmbient(vec3 lightAmbient);
+vec4 getDiffuse(vec3 lightDirection, vec3 normal, vec3 lightDiffuse);
 vec4 getSpecular(vec3 lightDirection, vec3 lightPosition, vec3 normal, vec3 fragPosition, vec3 lightDirFragPosition, vec3 viewPosition, vec3 lightSpecular);
+
 vec4 getCubeReflection(vec3 normal);
 vec4 getCubeRefraction(float refractIndex, vec3 normal);
+
+float getInShadow(vec4 lightSpaceFragPos, vec3 lightDirection);
 
 void main()
 {
@@ -95,11 +103,12 @@ void main()
 
     vec4 combinedLight = vec4(0.0);
     for (int i = 0; i < NR_DIRECTIONAL_LIGHTS; i++) {
-        vec4 dirLight = getDirLight(globalLights[i], normal, vert_out.fragPos, uViewPosition);
+        float inShadow = 1 - getInShadow(vert_out.lightSpaceFragPos, globalLights[0].direction);
+        vec4 dirLight = getDirLight(globalLights[i], normal, vert_out.fragPos, uViewPosition, inShadow);
         combinedLight += dirLight;
     }
     for (int i = 0; i < NR_POINT_LIGHTS; i++) {
-        vec4 pointLight = getPointLight(lights[i], normal, vert_out.fragPos, uViewPosition);
+        vec4 pointLight = getPointLight(lights[i], normal, vert_out.fragPos, uViewPosition, 1.0);
         combinedLight += pointLight;
     }
 
@@ -118,36 +127,41 @@ void main()
     fragColour = combinedLight;
 }
 
-vec4 getDirLight(DirectionalLight light, vec3 normal, vec3 fragPosition, vec3 viewPosition)
+vec4 getDirLight(DirectionalLight light, vec3 normal, vec3 fragPosition, vec3 viewPosition, float inShadow)
 {
     vec3 lightDirection = normalize(-light.direction);
-    vec4 ambientAndDiffuse = getAmbientAndDiffuse(lightDirection, normal, light.ambient, light.diffuse);
-
+    vec4 ambient = getAmbient(light.ambient);
+    vec4 diffuse = getDiffuse(lightDirection, normal, light.diffuse);
     vec4 specular = getSpecular(lightDirection, lightDirection, normal, fragPosition, vec3(0.0), viewPosition, light.specular);
 
-    return (ambientAndDiffuse + specular);
+    return ambient + inShadow * (diffuse + specular);
 }
 
-vec4 getPointLight(PointLight light, vec3 normal, vec3 fragPosition, vec3 viewPosition)
+vec4 getPointLight(PointLight light, vec3 normal, vec3 fragPosition, vec3 viewPosition, float inShadow)
 {
     vec3 lightDirection = normalize(light.position - fragPosition);
-    vec4 ambientAndDiffuse = getAmbientAndDiffuse(lightDirection, normal, light.ambient, light.diffuse);
-
+    vec4 ambient = getAmbient(light.ambient);
+    vec4 diffuse = getDiffuse(lightDirection, normal, light.diffuse);
     vec4 specular = getSpecular(lightDirection, light.position, normal, fragPosition, fragPosition, viewPosition, light.specular);
 
     float distance = length(light.position - fragPosition);
     float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * distance * distance);
     if (LIMIT_ATTENUATION) attenuation = min(attenuation, 1.0);
 
-    return (ambientAndDiffuse + specular) * attenuation;
+    return vec4((ambient + inShadow * (diffuse + specular)).rgb * attenuation, 1.0);
 }
 
-vec4 getAmbientAndDiffuse(vec3 lightDirection, vec3 normal, vec3 lightAmbient, vec3 lightDiffuse)
+vec4 getAmbient(vec3 lightAmbient)
 {
     vec4 ambient = vec4(lightAmbient, 1.0);
+    return ambient * texture(material.diffuse0, vert_out.texCoord);
+}
+
+vec4 getDiffuse(vec3 lightDirection, vec3 normal, vec3 lightDiffuse)
+{
     float diff = max(dot(normal, lightDirection), 0.0);
     vec4 diffuse = vec4(lightDiffuse, 1.0) * diff;
-    return (ambient + diffuse) * texture(material.diffuse0, vert_out.texCoord);
+    return diffuse * texture(material.diffuse0, vert_out.texCoord);
 }
 
 vec4 getSpecular(vec3 lightDirection, vec3 lightPosition, vec3 normal, vec3 fragPosition, vec3 lightDirFragPosition, vec3 viewPosition, vec3 lightSpecular)
@@ -179,4 +193,25 @@ vec4 getCubeRefraction(float refractIndex, vec3 normal) {
     vec3 viewDirection = normalize(vert_out.fragPos - uViewPosition);
     vec3 viewRefraction = refract(viewDirection, normal, refractIndex);
     return texture(material.cubemap0, -viewRefraction);
+}
+
+float getInShadow(vec4 lightSpaceFragPos, vec3 lightDirection) {
+    vec3 screenSpace = lightSpaceFragPos.xyz / lightSpaceFragPos.w;
+    vec3 depthSpace = screenSpace * 0.5 + 0.5;
+
+    float currentDepth = depthSpace.z;
+    if (currentDepth > 1.0) return 0.0;
+
+    float bias = min(0.005, 0.05 * (1.0 - dot(vert_out.normal, lightDirection)));
+    float shadow = 0.0;
+
+    vec2 texelSize = 1.0 / textureSize(u_ShadowMap, 0);
+    for (int x = -1; x <= 1; x++) {
+        for (int y = -1; y <= 1; y++) {
+            float shadowSample = texture(u_ShadowMap, depthSpace.xy + vec2(x, y) * texelSize).r;
+            shadow += currentDepth - bias > shadowSample ? 1.0 : 0.0;
+        }
+    }
+
+    return shadow / 9.0;
 }

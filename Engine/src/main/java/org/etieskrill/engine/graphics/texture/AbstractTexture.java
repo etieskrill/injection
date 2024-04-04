@@ -4,12 +4,14 @@ import org.etieskrill.engine.Disposable;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector2i;
 import org.joml.Vector2ic;
+import org.joml.Vector4fc;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.Objects;
 
+import static org.lwjgl.BufferUtils.createFloatBuffer;
 import static org.lwjgl.assimp.Assimp.*;
 import static org.lwjgl.opengl.GL33C.*;
 
@@ -189,7 +191,7 @@ public abstract class AbstractTexture implements Disposable {
     public enum Type {
         UNKNOWN(aiTextureType_UNKNOWN), DIFFUSE(aiTextureType_DIFFUSE), SPECULAR(aiTextureType_SPECULAR),
         SHININESS(aiTextureType_SHININESS), HEIGHT(aiTextureType_HEIGHT), EMISSIVE(aiTextureType_EMISSIVE),
-        NORMAL(aiTextureType_NORMALS);
+        NORMAL(aiTextureType_NORMALS), SHADOW(-1);
 
         private final int aiType;
 
@@ -218,6 +220,8 @@ public abstract class AbstractTexture implements Disposable {
         protected MinFilter minFilter = MinFilter.TRILINEAR;
         protected MagFilter magFilter = MagFilter.LINEAR;
         protected Wrapping wrapping = Wrapping.REPEAT;
+
+        protected Vector4fc borderColour;
 
         //TODO for inheriting builders it is kinda useful if properties are not set/have invalid values from here
         protected Vector2ic pixelSize = new Vector2i(INVALID_PIXEL_SIZE);
@@ -264,6 +268,11 @@ public abstract class AbstractTexture implements Disposable {
             return this;
         }
 
+        public Builder<T> setBorderColour(Vector4fc borderColour) {
+            this.borderColour = borderColour;
+            return this;
+        }
+
         public final T build() {
             T texture = bufferTextureData();
 
@@ -296,6 +305,9 @@ public abstract class AbstractTexture implements Disposable {
         glTexParameteri(target.gl(), GL_TEXTURE_WRAP_S, builder.wrapping.gl());
         glTexParameteri(target.gl(), GL_TEXTURE_WRAP_T, builder.wrapping.gl());
         glTexParameteri(target.gl(), GL_TEXTURE_WRAP_R, builder.wrapping.gl());
+
+        if (builder.borderColour != null)
+            glTexParameterfv(target.gl(), GL_TEXTURE_BORDER_COLOR, builder.borderColour.get(createFloatBuffer(4)));
 
         if (builder.autoSwizzleMask) {
             int[] swizzleMask = switch (builder.format) {

@@ -7,6 +7,7 @@ import org.etieskrill.engine.graphics.data.DirectionalLight;
 import org.etieskrill.engine.graphics.data.PointLight;
 import org.etieskrill.engine.graphics.gl.FrameBuffer;
 import org.etieskrill.engine.graphics.gl.FrameBufferAttachment;
+import org.etieskrill.engine.graphics.gl.FrameBufferAttachment.BufferAttachmentType;
 import org.etieskrill.engine.graphics.gl.GLRenderer;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shaders.Shaders;
@@ -203,8 +204,8 @@ public class DemCubez {
         frameBuffer.unbind();
         
         ShaderProgram screenShader = Shaders.getPostprocessingShader();
-    
-        FrameBufferAttachment attachment = frameBuffer.getAttachments().get(FrameBuffer.AttachmentType.COLOUR0);
+
+        FrameBufferAttachment attachment = frameBuffer.getAttachments().get(BufferAttachmentType.COLOUR0);
         Texture2D textureBuffer = (Texture2D) attachment;
         textureBuffer.bind(0);
     

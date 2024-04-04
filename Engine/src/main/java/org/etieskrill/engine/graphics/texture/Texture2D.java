@@ -61,7 +61,7 @@ public class Texture2D extends AbstractTexture implements FrameBufferAttachment 
     }
     
     public static final class BlankBuilder extends Builder {
-        BlankBuilder(Vector2ic pixelSize) {
+        public BlankBuilder(Vector2ic pixelSize) {
             this.textureData = null;
             this.pixelSize = pixelSize;
             this.format = Format.SRGB;

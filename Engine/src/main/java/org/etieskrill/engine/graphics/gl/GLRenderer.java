@@ -20,6 +20,8 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
 
     private static final float CLEAR_COLOUR = 0.25f;//0.025f;
 
+    private int nextTexture;
+
     @Override
     public void prepare() {
         if (queryGpuTime) queryGpuTime();
@@ -32,10 +34,18 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
         glClearColor(CLEAR_COLOUR, CLEAR_COLOUR, CLEAR_COLOUR, 1f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
+        nextTexture = 0;
+
         lastTrianglesDrawn = trianglesDrawn;
         trianglesDrawn = 0;
         lastRenderCalls = renderCalls;
         renderCalls = 0;
+    }
+
+    @Override
+    public void bindNextFreeTexture(ShaderProgram shader, String name, AbstractTexture texture) {
+        texture.bind(nextTexture);
+        shader.setUniform(name, nextTexture++, false);
     }
 
     @Override
@@ -163,10 +173,8 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
 
     private void bindMaterial(Material material, ShaderProgram shader) {
         //TODO here the renderer could decide what kind of shader to use, based on the material given
-        int tex2d = 0, texArrays = 0, cubemaps = 0;
-        int diffuse = 0, specular = 0, normal = 0, emissive = 0, height = 0, shininess = 0;
+        int diffuse = 0, specular = 0, normal = 0, emissive = 0, height = 0, shininess = 0, shadow = 0;
         List<AbstractTexture> textures = material.getTextures();
-        int validTextures = 0;
 
         for (AbstractTexture texture : textures) {
             String uniform = "material.";
@@ -175,7 +183,6 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
             switch (texture.getTarget()) {
                 case TWO_D -> {
                     uniform += texture.getType().name().toLowerCase();
-                    tex2d++;
                     number = switch (texture.getType()) {
                         case DIFFUSE -> diffuse++;
                         case SPECULAR ->
@@ -184,25 +191,19 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
                         case EMISSIVE -> emissive++;
                         case HEIGHT -> height++;
                         case SHININESS -> shininess++;
+                        case SHADOW -> shadow++;
                         case UNKNOWN -> throw new IllegalStateException("Texture has invalid type");
                     };
                 }
-                case ARRAY -> {
-                    uniform += "array";
-                    number = texArrays++;
-                }
-                case CUBEMAP -> {
-                    uniform += "cubemap";
-                    number = cubemaps++;
-                }
+                case ARRAY -> uniform += "array";
+                case CUBEMAP -> uniform += "cubemap";
             }
 
-            validTextures = (tex2d + texArrays + cubemaps) - 1;
-            texture.bind(validTextures);
-            shader.setUniform(uniform + number, validTextures, false);
+            texture.bind(nextTexture);
+            shader.setUniform(uniform + number, nextTexture++, false);
         }
 
-        for (int i = validTextures + 1; i < 8; i++) //TODO this is a little inefficient, but you don't have to unbind textures all the time like this
+        for (int i = nextTexture; i < 8; i++) //TODO this is a little inefficient, but you don't have to unbind textures all the time like this
             AbstractTexture.clearBind(i);
 
         shader.setUniform("uNormalMapped", normal > 0, false);
@@ -215,13 +216,13 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
         shader.setUniform("material.emissiveIntensity", material.getProperties().getOrDefault(INTENSITY_EMISSIVE, 0), false);
         shader.setUniform("material.opacity", material.getProperties().getOrDefault(OPACITY, 1), false);
 
-        shader.setUniform("material.specularTexture", specular > 0);
+        shader.setUniform("material.specularTexture", specular > 0, false);
         if (shininess == 0) //TODO this property thingies NEED type safety
             shader.setUniform("material.shininess", (float) material.getProperties().getOrDefault(SHININESS, 64f), false);
         shader.setUniform("material.specularity", (float) material.getProperties().getOrDefault(SHININESS_STRENGTH, 1f), false);
 
         //Optional information
-        shader.setUniform("material.numTextures", tex2d + texArrays + cubemaps, false);
+        shader.setUniform("material.numTextures", nextTexture, false); //TODO not accurate anymore if binding textures manually after this
     }
 
 }

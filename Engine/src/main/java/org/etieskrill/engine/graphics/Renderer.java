@@ -4,6 +4,7 @@ import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
 import org.etieskrill.engine.graphics.model.CubeMapModel;
 import org.etieskrill.engine.graphics.model.Model;
+import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.joml.Matrix4fc;
 import org.joml.Vector3fc;
 import org.joml.Vector4fc;
@@ -19,6 +20,8 @@ public interface Renderer {
      * Clears and prepares the scene for the next frame.
      */
     void prepare();
+
+    void bindNextFreeTexture(ShaderProgram shader, String name, AbstractTexture texture);
 
     /**
      * Render the {@link Model} using the specified {@link ShaderProgram shader} and combined {@link Camera camera}
