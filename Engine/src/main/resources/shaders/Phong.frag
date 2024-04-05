@@ -73,7 +73,7 @@ uniform Material material;
 uniform DirectionalLight globalLights[NR_DIRECTIONAL_LIGHTS];
 uniform PointLight lights[NR_POINT_LIGHTS];
 
-uniform sampler2D u_ShadowMap;
+uniform sampler2DShadow u_ShadowMap;
 
 vec4 getDirLight(DirectionalLight light, vec3 normal, vec3 fragPosition, vec3 viewPosition, float inShadow);
 vec4 getPointLight(PointLight light, vec3 normal, vec3 fragPosition, vec3 viewPosition, float inShadow);
@@ -103,7 +103,7 @@ void main()
 
     vec4 combinedLight = vec4(0.0);
     for (int i = 0; i < NR_DIRECTIONAL_LIGHTS; i++) {
-        float inShadow = 1 - getInShadow(vert_out.lightSpaceFragPos, globalLights[0].direction);
+        float inShadow = getInShadow(vert_out.lightSpaceFragPos, globalLights[i].direction);
         vec4 dirLight = getDirLight(globalLights[i], normal, vert_out.fragPos, uViewPosition, inShadow);
         combinedLight += dirLight;
     }
@@ -200,16 +200,16 @@ float getInShadow(vec4 lightSpaceFragPos, vec3 lightDirection) {
     vec3 depthSpace = screenSpace * 0.5 + 0.5;
 
     float currentDepth = depthSpace.z;
-    if (currentDepth > 1.0) return 0.0;
+    if (currentDepth > 1.0) return 1.0;
 
     float bias = min(0.005, 0.05 * (1.0 - dot(vert_out.normal, lightDirection)));
+    depthSpace.z -= bias;
     float shadow = 0.0;
 
-    vec2 texelSize = 1.0 / textureSize(u_ShadowMap, 0);
+    vec3 texelSize = vec3(1.0 / textureSize(u_ShadowMap, 0), 1.0);
     for (int x = -1; x <= 1; x++) {
         for (int y = -1; y <= 1; y++) {
-            float shadowSample = texture(u_ShadowMap, depthSpace.xy + vec2(x, y) * texelSize).r;
-            shadow += currentDepth - bias > shadowSample ? 1.0 : 0.0;
+            shadow += texture(u_ShadowMap, depthSpace + vec3(x, y, 0.0) * texelSize);
         }
     }
 
