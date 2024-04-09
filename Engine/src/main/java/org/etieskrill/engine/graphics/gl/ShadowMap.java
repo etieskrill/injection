@@ -1,6 +1,7 @@
 package org.etieskrill.engine.graphics.gl;
 
 import org.etieskrill.engine.graphics.gl.FrameBufferAttachment.BufferAttachmentType;
+import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.joml.Vector2ic;
 import org.joml.Vector4f;
@@ -33,6 +34,7 @@ public class ShadowMap extends FrameBuffer {
                 new Texture2D.BlankBuilder(size)
                         .setFormat(DEPTH)
                         .setType(SHADOW)
+                        .setMipMapping(AbstractTexture.MinFilter.LINEAR, AbstractTexture.MagFilter.LINEAR)
                         .setWrapping(CLAMP_TO_BORDER)
                         .setBorderColour(new Vector4f(1.0f))
                         .build();

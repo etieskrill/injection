@@ -168,9 +168,15 @@ public class Application extends GameApplication {
         glViewport(0, 0, 1920, 1080); //TODO make render manager (??? entity?) do this
         renderer.bindNextFreeTexture(shader, "u_ShadowMap", shadowMap.getTexture());
         shader.setUniform("u_LightCombined", sunLightCombined);
-//        renderer.render(quad, shader, new Matrix4f());
         renderScene(shader, camera.getCombined());
         renderLights();
+
+        if (pacer.getTotalFramesElapsed() % 60 == 0) {
+            logger.info("Fps: {}, gpu time: {}ms, gpu delay: {}ms",
+                    "%4.1f".formatted(pacer.getAverageFPS()),
+                    "%5.2f".formatted(renderer.getAveragedGpuTime() / 1000000.0),
+                    "%5.2f".formatted(renderer.getGpuDelay() / 1000000.0));
+        }
     }
 
     private void renderScene(Shaders.DepthShader shader, Matrix4fc combined) {

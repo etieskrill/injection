@@ -74,7 +74,7 @@ public class GameScene {
         light = models.get("cube");
         light.getTransform().setScale(0.5f).setPosition(new Vector3f(2, 5, -2));
         skelly = models.load("skelly", () -> Model.ofFile("skeleton.glb"));
-        skelly.getInitialTransform().setScale(15);
+        skelly.getInitialTransform().setScale(.2f);
 
         Transform localBBBaseTransform = skelly.getNodes().getFirst().getHierarchyTransform();
         Vector3f localSkellyBBSize = localBBBaseTransform.getMatrix().transformPosition(skelly.getBoundingBox().getSize());
@@ -195,12 +195,10 @@ public class GameScene {
     public void updateCamera() {
         Vector3f orbitPos = camera.getDirection().negate().mul(3);
         float skellyVerticalCenter = skelly.getWorldBoundingBox().getSize().y() - .5f;
-        float localSkellyVertCenter = skelly.getBoundingBox().getSize().y() - .5f;
-        localSkellyVertCenter = -(localSkellyVertCenter / skelly.getFinalTransform().getScale().y()) + 5;
         camera.setPosition(
                 skelly.getFinalTransform().getPosition()
                         .add(orbitPos, new Vector3f())
-                        .add(0, localSkellyVertCenter, 0)
+                        .add(0, skellyVerticalCenter, 0)
         );
     }
 
