@@ -1,6 +1,5 @@
 package org.etieskrill.engine.application;
 
-import org.etieskrill.engine.graphics.Renderer;
 import org.etieskrill.engine.graphics.gl.GLRenderer;
 import org.etieskrill.engine.input.Key;
 import org.etieskrill.engine.input.Keys;
@@ -17,7 +16,7 @@ public abstract class GameApplication {
     protected final Window window;
     protected final LoopPacer pacer;
 
-    protected final Renderer renderer;
+    protected final GLRenderer renderer;
 
     private double avgCpuTime;
     private final ArrayDeque<Double> cpuTimes;

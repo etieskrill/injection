@@ -112,17 +112,15 @@ void main()
         combinedLight += pointLight;
     }
 
-//    vec4 emission = vec4(0.0);
-    //    if (length(texture(material.specular0, tTextureCoords).rgb) == 0.0) //sometimes causes weird artifacts, and tbh, i do not remember what this was for
-//    emission = texture(material.emissive0, vert_out.texCoord);
+    //    vec4 emission = texture(material.emissive0, vert_out.texCoord);
     //    combinedLight += vec4(emission.rgb, 0);
 
     //TODO pack reflection mix factor into material property. until reflection maps are a thing, anyway
-//    combinedLight += getCubeReflection(normal);
+    //    combinedLight += getCubeReflection(normal);
 
-//    if (combinedLight.a < 0.9) {
-//        combinedLight = mix(combinedLight, getCubeRefraction(1 / 1.52, normal), 0.5);
-//    }
+    //    if (combinedLight.a < 0.9) {
+    //        combinedLight = mix(combinedLight, getCubeRefraction(1 / 1.52, normal), 0.5);
+    //    }
 
     fragColour = combinedLight;
 }
