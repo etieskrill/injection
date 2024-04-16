@@ -62,4 +62,8 @@ public class FileUtils {
         }
     }
 
+    private FileUtils() {
+        //Not intended for instantiation
+    }
+
 }

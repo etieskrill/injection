@@ -1,8 +1,6 @@
 package org.etieskrill.game.shaderz;
 
-import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
-
-import java.nio.file.Path;
+import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 
 public class HallwayShader extends ShaderProgram {
 

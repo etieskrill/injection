@@ -1,12 +1,12 @@
 package org.etieskrill.game.animeshun;
 
 import org.etieskrill.engine.graphics.data.DirectionalLight;
-import org.etieskrill.engine.graphics.gl.shaders.Shaders;
+import org.etieskrill.engine.graphics.gl.shader.Shaders;
 import org.joml.Matrix4fc;
 
 import java.util.List;
 
-import static org.etieskrill.engine.graphics.gl.shaders.ShaderProgram.Uniform.Type.*;
+import static org.etieskrill.engine.graphics.gl.shader.ShaderProgram.Uniform.Type.*;
 
 public class AnimationShader extends Shaders.StaticShader {
 

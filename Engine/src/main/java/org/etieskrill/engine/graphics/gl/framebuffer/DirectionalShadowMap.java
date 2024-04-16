@@ -1,6 +1,7 @@
-package org.etieskrill.engine.graphics.gl;
+package org.etieskrill.engine.graphics.gl.framebuffer;
 
-import org.etieskrill.engine.graphics.gl.FrameBufferAttachment.BufferAttachmentType;
+import org.etieskrill.engine.graphics.gl.GLUtils;
+import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment.BufferAttachmentType;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.joml.Vector2ic;
@@ -13,20 +14,20 @@ import static org.lwjgl.opengl.GL30C.*;
 
 /**
  * It is possible to use both a regular sampler (sampler*D) or a shadow sampler (sampler*DShadow) in glsl code, as the
- * {@link ShadowMap#texture} has the relevant comparator mode set up. The shadow sampler is slightly easier to use, and
+ * {@link DirectionalShadowMap#texture} has the relevant comparator mode set up. The shadow sampler is slightly easier to use, and
  * creates better results out of the box.
  */
-public class ShadowMap extends FrameBuffer {
+public class DirectionalShadowMap extends FrameBuffer {
 
     private final Texture2D texture;
 
-    protected ShadowMap(Vector2ic size, Texture2D texture) {
+    protected DirectionalShadowMap(Vector2ic size, Texture2D texture) {
         super(size);
         this.texture = texture;
     }
 
-    public static ShadowMap generate(Vector2ic size) {
-        return new ShadowMap.Builder(size).build();
+    public static DirectionalShadowMap generate(Vector2ic size) {
+        return new DirectionalShadowMap.Builder(size).build();
     }
 
     public static class Builder extends FrameBuffer.Builder {
@@ -46,13 +47,13 @@ public class ShadowMap extends FrameBuffer {
         }
 
         @Override
-        public ShadowMap build() {
+        public DirectionalShadowMap build() {
             GLUtils.clearError();
-            ShadowMap shadowMap = new ShadowMap(size, texture);
+            DirectionalShadowMap directionalShadowMap = new DirectionalShadowMap(size, texture);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
-            addAttachments(shadowMap);
-            return shadowMap;
+            addAttachments(directionalShadowMap);
+            return directionalShadowMap;
         }
     }
 

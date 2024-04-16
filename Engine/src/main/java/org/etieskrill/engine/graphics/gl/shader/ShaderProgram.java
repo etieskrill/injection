@@ -1,4 +1,4 @@
-package org.etieskrill.engine.graphics.gl.shaders;
+package org.etieskrill.engine.graphics.gl.shader;
 
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.util.ResourceReader;
@@ -17,9 +17,9 @@ import java.util.stream.Collectors;
 import static org.etieskrill.engine.config.ResourcePaths.SHADER_PATH;
 import static org.etieskrill.engine.graphics.gl.GLUtils.checkError;
 import static org.etieskrill.engine.graphics.gl.GLUtils.clearError;
-import static org.etieskrill.engine.graphics.gl.shaders.ShaderProgram.ShaderType.*;
-import static org.etieskrill.engine.graphics.gl.shaders.ShaderProgram.Uniform.INVALID_UNIFORM_LOCATION;
-import static org.etieskrill.engine.graphics.gl.shaders.ShaderProgram.Uniform.NESTED_UNIFORM_LOCATION;
+import static org.etieskrill.engine.graphics.gl.shader.ShaderProgram.ShaderType.*;
+import static org.etieskrill.engine.graphics.gl.shader.ShaderProgram.Uniform.INVALID_UNIFORM_LOCATION;
+import static org.etieskrill.engine.graphics.gl.shader.ShaderProgram.Uniform.NESTED_UNIFORM_LOCATION;
 import static org.lwjgl.opengl.ARBShadingLanguageInclude.GL_SHADER_INCLUDE_ARB;
 import static org.lwjgl.opengl.ARBShadingLanguageInclude.glNamedStringARB;
 import static org.lwjgl.opengl.GL46C.*;

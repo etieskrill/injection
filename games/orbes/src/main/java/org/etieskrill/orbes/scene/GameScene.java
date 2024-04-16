@@ -5,7 +5,7 @@ import org.etieskrill.engine.graphics.Renderer;
 import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera;
 import org.etieskrill.engine.graphics.data.PointLight;
-import org.etieskrill.engine.graphics.gl.shaders.Shaders;
+import org.etieskrill.engine.graphics.gl.shader.Shaders;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.model.ModelFactory;
 import org.etieskrill.engine.input.*;

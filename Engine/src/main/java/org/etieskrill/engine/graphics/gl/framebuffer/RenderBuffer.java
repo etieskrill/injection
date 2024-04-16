@@ -1,6 +1,7 @@
-package org.etieskrill.engine.graphics.gl;
+package org.etieskrill.engine.graphics.gl.framebuffer;
 
 import org.etieskrill.engine.Disposable;
+import org.etieskrill.engine.graphics.gl.GLUtils;
 import org.joml.Vector2ic;
 
 import static org.lwjgl.opengl.GL11C.GL_DEPTH_COMPONENT;
