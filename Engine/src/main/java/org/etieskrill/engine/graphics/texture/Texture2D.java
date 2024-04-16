@@ -1,6 +1,6 @@
 package org.etieskrill.engine.graphics.texture;
 
-import org.etieskrill.engine.graphics.gl.FrameBufferAttachment;
+import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2i;
 import org.joml.Vector2ic;

@@ -5,8 +5,8 @@ import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera;
 import org.etieskrill.engine.graphics.data.DirectionalLight;
 import org.etieskrill.engine.graphics.data.PointLight;
-import org.etieskrill.engine.graphics.gl.ShadowMap;
-import org.etieskrill.engine.graphics.gl.shaders.Shaders;
+import org.etieskrill.engine.graphics.gl.framebuffer.DirectionalShadowMap;
+import org.etieskrill.engine.graphics.gl.shader.Shaders;
 import org.etieskrill.engine.graphics.model.Material;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.model.ModelFactory;
@@ -55,7 +55,7 @@ public class Application extends GameApplication {
     private static final Vector3fc lightOff = new Vector3f(0);
 
     private Matrix4fc sunLightCombined;
-    private ShadowMap shadowMap;
+    private DirectionalShadowMap directionalShadowMap;
     private Shaders.DepthShader depthShader;
 
     Model quad;
@@ -142,7 +142,7 @@ public class Application extends GameApplication {
                 })
         ));
 
-        shadowMap = ShadowMap.generate(new Vector2i(1024));
+        directionalShadowMap = DirectionalShadowMap.generate(new Vector2i(1024));
 
         sunLightCombined = new Matrix4f()
                 .ortho(-30, 30, -30, 30, .1f, 40)
@@ -150,7 +150,7 @@ public class Application extends GameApplication {
 
         depthShader = new Shaders.DepthShader();
         Material quadMaterial = Material.getBlank();
-        quadMaterial.getTextures().add(shadowMap.getTexture());
+        quadMaterial.getTextures().add(directionalShadowMap.getTexture());
         quad = ModelFactory.rectangle(-.9f, -.9f, 1.8f, 1.8f, quadMaterial).disableCulling().build();
 
         glEnable(GL_FRAMEBUFFER_SRGB);
@@ -158,15 +158,15 @@ public class Application extends GameApplication {
 
     @Override
     protected void loop(double delta) {
-        shadowMap.bind();
+        directionalShadowMap.bind();
         glClear(GL_DEPTH_BUFFER_BIT);
 //        glCullFace(GL_FRONT); //Helps with peter panning, but back faces intersecting with other shadowed objects peter pan instead
         renderScene(depthShader, sunLightCombined);
 //        glCullFace(GL_BACK);
-        shadowMap.unbind();
+        directionalShadowMap.unbind();
 
         glViewport(0, 0, 1920, 1080); //TODO make render manager (??? entity?) do this
-        renderer.bindNextFreeTexture(shader, "u_ShadowMap", shadowMap.getTexture());
+        renderer.bindNextFreeTexture(shader, "u_ShadowMap", directionalShadowMap.getTexture());
         shader.setUniform("u_LightCombined", sunLightCombined);
         renderScene(shader, camera.getCombined());
         renderLights();

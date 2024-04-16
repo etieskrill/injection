@@ -1,4 +1,4 @@
-package org.etieskrill.engine.graphics.gl;
+package org.etieskrill.engine.graphics.gl.framebuffer;
 
 import org.joml.Vector2ic;
 
@@ -7,6 +7,7 @@ import static org.lwjgl.opengl.GL30C.*;
 public interface FrameBufferAttachment {
 
     Vector2ic getSize();
+
     int getID();
 
     //TODO add bind() and unbind() methods with default impls

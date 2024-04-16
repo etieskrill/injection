@@ -1,7 +1,7 @@
 package org.etieskrill.engine.graphics.gl;
 
 import org.etieskrill.engine.graphics.TextRenderer;
-import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
+import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.etieskrill.engine.graphics.texture.font.BitmapFont;
 import org.etieskrill.engine.graphics.texture.font.Font;
 import org.etieskrill.engine.graphics.texture.font.Glyph;

@@ -4,7 +4,7 @@ import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.camera.OrthographicCamera;
 import org.etieskrill.engine.graphics.gl.DebuggableRenderer;
 import org.etieskrill.engine.graphics.gl.GLRenderer;
-import org.etieskrill.engine.graphics.gl.shaders.Shaders;
+import org.etieskrill.engine.graphics.gl.shader.Shaders;
 import org.etieskrill.engine.scene.Scene;
 import org.etieskrill.engine.scene.component.Label;
 import org.etieskrill.engine.scene.component.Node;

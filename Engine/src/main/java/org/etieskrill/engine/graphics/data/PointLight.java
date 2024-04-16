@@ -1,7 +1,7 @@
 package org.etieskrill.engine.graphics.data;
 
-import org.etieskrill.engine.graphics.gl.shaders.ShaderProgram;
-import org.etieskrill.engine.graphics.gl.shaders.UniformMappable;
+import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
+import org.etieskrill.engine.graphics.gl.shader.UniformMappable;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 

@@ -1,4 +1,6 @@
-package org.etieskrill.engine.graphics.gl.shaders;
+package org.etieskrill.engine.graphics.gl.shader;
+
+import org.jetbrains.annotations.Nullable;
 
 public class ShaderUniformException extends ShaderException {
 
@@ -18,10 +20,8 @@ public class ShaderUniformException extends ShaderException {
     }
 
     @Override
-    public String getMessage() {
-        String message = super.getMessage();
-        if (uniformName != null) message += ": " + uniformName;
-        return message;
+    protected @Nullable String getErrorMessage(Integer errorCode) {
+        return uniformName;
     }
 
 }

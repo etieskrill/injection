@@ -1,20 +1,25 @@
 package org.etieskrill.engine.graphics.gl;
 
+import org.etieskrill.engine.graphics.gl.exception.GLError;
+import org.etieskrill.engine.graphics.gl.exception.GLException;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GLCapabilities;
-import org.lwjgl.system.MemoryUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
+import static org.etieskrill.engine.graphics.gl.GLUtils.DebugSeverity.toDebugSeverity;
+import static org.etieskrill.engine.graphics.gl.GLUtils.DebugSource.toDebugSource;
+import static org.etieskrill.engine.graphics.gl.GLUtils.DebugType.toDebugType;
+import static org.etieskrill.engine.graphics.gl.exception.GLError.toError;
 import static org.lwjgl.opengl.GL11C.glEnable;
 import static org.lwjgl.opengl.GL11C.glGetError;
 import static org.lwjgl.opengl.GL43C.*;
-import static org.lwjgl.opengl.GL45C.GL_CONTEXT_LOST;
+import static org.lwjgl.system.MemoryUtil.memUTF8;
 
-public class GLUtils {
+public final class GLUtils {
 
     private static final Logger logger = LoggerFactory.getLogger(GLUtils.class);
 
@@ -36,9 +41,9 @@ public class GLUtils {
         GLCapabilities.initialize();
 
         int error = getError();
-        if (error == ErrorCode.NO_ERROR.gl()) return true;
+        if (error == GLError.NO_ERROR.gl()) return true;
 
-        ErrorCode glError = ErrorCode.fromGLErrorCode(error);
+        GLError glError = toError(error);
         logger.warn("{}: {}", header, requireNonNull(glError).getMessage());
         return false;
     }
@@ -70,9 +75,9 @@ public class GLUtils {
         GLCapabilities.initialize();
 
         int error = getError();
-        if (error == ErrorCode.NO_ERROR.gl()) return true;
+        if (error == GLError.NO_ERROR.gl()) return true;
 
-        ErrorCode glError = ErrorCode.fromGLErrorCode(error);
+        GLError glError = toError(error);
         throw exception.apply(header + ": " + requireNonNull(glError).getMessage());
     }
 
@@ -92,16 +97,16 @@ public class GLUtils {
 
         glEnable(GL_DEBUG_OUTPUT);
         glDebugMessageCallback((source, type, id, severity, length, message, userParam) -> {
-            switch (DebugSeverity.fromGLDebugSeverity(severity)) {
+            switch (toDebugSeverity(severity)) {
                 case MEDIUM, LOW, NOTIFICATION -> logger.info("{} ({}): {}",
-                        DebugSource.fromGLDebugSource(source),
-                        DebugType.fromGLDebugType(type),
-                        MemoryUtil.memUTF8(message, length));
+                        toDebugSource(source),
+                        toDebugType(type),
+                        memUTF8(message, length));
                 case HIGH -> logger.warn("{} ({}): {}",
-                        DebugSource.fromGLDebugSource(source),
-                        DebugType.fromGLDebugType(type),
-                        MemoryUtil.memUTF8(message, length));
-                case null -> throw new IllegalStateException("Unexpected severity: " + toHex(severity));
+                        toDebugSource(source),
+                        toDebugType(type),
+                        memUTF8(message, length));
+                case null -> throw new GLException("Unexpected severity", severity);
             }
         }, 0L);
 
@@ -132,49 +137,6 @@ public class GLUtils {
         return "0x" + Integer.toHexString(value).toUpperCase();
     }
 
-    public enum ErrorCode {
-        NO_ERROR(GL_NO_ERROR, ""),
-        INVALID_ENUM(GL_INVALID_ENUM, "Used an invalid enum"),
-        INVALID_VALUE(GL_INVALID_VALUE, "Set an invalid value"),
-        INVALID_OPERATION(GL_INVALID_OPERATION, "Applied an invalid operation"),
-        STACK_OVERFLOW(GL_STACK_OVERFLOW, "Stack overflow"),
-        STACK_UNDERFLOW(GL_STACK_UNDERFLOW, "Stack underflow"),
-        OUT_OF_MEMORY(GL_OUT_OF_MEMORY, "Ran out of memory"),
-        INVALID_FRAMEBUFFER_OPERATION(GL_INVALID_FRAMEBUFFER_OPERATION, "Invalid operation was called on a framebuffer"),
-        CONTEXT_LOST(GL_CONTEXT_LOST, "FATAL: The OpenGL context was lost");
-
-        private final int glErrorCode;
-        private final String message;
-
-        ErrorCode(int glErrorCode, String message) {
-            this.glErrorCode = glErrorCode;
-            this.message = message;
-        }
-
-        public static @Nullable ErrorCode fromGLErrorCode(int glErrorCode) {
-            if (glErrorCode == GL_NO_ERROR)
-                return NO_ERROR;
-
-            for (ErrorCode value : values()) {
-                if (value.gl() == glErrorCode)
-                    return value;
-            }
-            return null;
-        }
-
-        public int gl() {
-            return getGlErrorCode();
-        }
-
-        public int getGlErrorCode() {
-            return glErrorCode;
-        }
-
-        public String getMessage() {
-            return message;
-        }
-    }
-
     public enum DebugSource {
         API(GL_DEBUG_SOURCE_API, "API"),
         WINDOW_SYSTEM(GL_DEBUG_SOURCE_WINDOW_SYSTEM, "Window System"),
@@ -191,7 +153,7 @@ public class GLUtils {
             this.name = name;
         }
 
-        public static @Nullable DebugSource fromGLDebugSource(int glDebugSource) {
+        public static @Nullable DebugSource toDebugSource(int glDebugSource) {
             for (DebugSource value : values()) {
                 if (value.gl() == glDebugSource)
                     return value;
@@ -229,7 +191,7 @@ public class GLUtils {
             this.name = name;
         }
 
-        public static @Nullable DebugType fromGLDebugType(int glDebugType) {
+        public static @Nullable DebugType toDebugType(int glDebugType) {
             for (DebugType value : values()) {
                 if (value.gl() == glDebugType)
                     return value;
@@ -264,7 +226,7 @@ public class GLUtils {
             this.name = name;
         }
 
-        public static @Nullable DebugSeverity fromGLDebugSeverity(int glDebugSeverity) {
+        public static @Nullable DebugSeverity toDebugSeverity(int glDebugSeverity) {
             for (DebugSeverity value : values()) {
                 if (value.gl() == glDebugSeverity)
                     return value;
@@ -283,6 +245,10 @@ public class GLUtils {
         public String getName() {
             return name;
         }
+    }
+
+    private GLUtils() {
+        //Not intended for instantiation
     }
 
 }

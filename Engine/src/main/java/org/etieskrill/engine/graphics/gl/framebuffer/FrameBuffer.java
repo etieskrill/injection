@@ -1,7 +1,8 @@
-package org.etieskrill.engine.graphics.gl;
+package org.etieskrill.engine.graphics.gl.framebuffer;
 
 import org.etieskrill.engine.Disposable;
-import org.etieskrill.engine.graphics.gl.FrameBufferAttachment.BufferAttachmentType;
+import org.etieskrill.engine.graphics.gl.GLUtils;
+import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment.BufferAttachmentType;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.texture.Textures;
 import org.joml.Vector2ic;
@@ -11,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.etieskrill.engine.util.ClassUtils.getSimpleName;
 import static org.lwjgl.opengl.GL33C.*;
 
 public class FrameBuffer implements Disposable {
@@ -66,21 +68,33 @@ public class FrameBuffer implements Disposable {
                     continue;
                 }
 
-                if (attachment instanceof Texture2D) {
-                    glFramebufferTexture2D(GL_FRAMEBUFFER, type.toGLAttachment(), GL_TEXTURE_2D, attachment.getID(), 0);
-                } else if (attachment instanceof RenderBuffer) {
-                    glFramebufferRenderbuffer(GL_FRAMEBUFFER, type.toGLAttachment(), GL_RENDERBUFFER, attachment.getID());
+                switch (attachment) {
+                    case Texture2D texture2D -> glFramebufferTexture2D(
+                            GL_FRAMEBUFFER,
+                            type.toGLAttachment(),
+                            GL_TEXTURE_2D,
+                            texture2D.getID(),
+                            0);
+                    case RenderBuffer renderBuffer -> glFramebufferRenderbuffer(
+                            GL_FRAMEBUFFER,
+                            type.toGLAttachment(),
+                            GL_RENDERBUFFER,
+                            renderBuffer.getID());
+                    default -> throw new FrameBufferCreationException(
+                            "Unknown framebuffer attachment type: " + getSimpleName(attachment)
+                    );
                 }
 
-                if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT)
-                    throw new IllegalStateException("Incomplete framebuffer attachment for " +
+                if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT) {
+                    throw new FrameBufferCreationException("Incomplete framebuffer attachment for " +
                             type.name() + ": " + attachment);
+                }
             }
 
             int ret;
-            if ((ret = glCheckFramebufferStatus(GL_FRAMEBUFFER)) != GL_FRAMEBUFFER_COMPLETE)
-                throw new IllegalStateException("Framebuffer was not successfully completed: 0x" +
-                        Integer.toHexString(ret).toUpperCase());
+            if ((ret = glCheckFramebufferStatus(GL_FRAMEBUFFER)) != GL_FRAMEBUFFER_COMPLETE) {
+                throw new FrameBufferCreationException("Framebuffer was not successfully completed", ret);
+            }
 
             GLUtils.checkErrorThrowing("Error during framebuffer creation");
 
