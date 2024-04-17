@@ -3,6 +3,7 @@ package org.etieskrill.engine.graphics.gl.framebuffer;
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.graphics.gl.GLUtils;
 import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment.BufferAttachmentType;
+import org.etieskrill.engine.graphics.texture.CubeMapTexture;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.texture.Textures;
 import org.joml.Vector2ic;
@@ -12,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.etieskrill.engine.graphics.texture.CubeMapTexture.SIDES;
 import static org.etieskrill.engine.util.ClassUtils.getSimpleName;
 import static org.lwjgl.opengl.GL33C.*;
 
@@ -75,6 +77,16 @@ public class FrameBuffer implements Disposable {
                             GL_TEXTURE_2D,
                             texture2D.getID(),
                             0);
+                    case CubeMapTexture cubeMapTexture -> {
+                        for (int i = 0; i < SIDES; i++) {
+                            glFramebufferTexture2D(
+                                    GL_FRAMEBUFFER,
+                                    type.toGLAttachment(),
+                                    GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+                                    cubeMapTexture.getID(),
+                                    0);
+                        }
+                    }
                     case RenderBuffer renderBuffer -> glFramebufferRenderbuffer(
                             GL_FRAMEBUFFER,
                             type.toGLAttachment(),

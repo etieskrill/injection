@@ -21,33 +21,27 @@ import static org.lwjgl.stb.STBImage.stbi_image_free;
 //TODO move these and Texture's builders and factory methods into a TextureFactory
 public class CubeMapTexture extends AbstractTexture implements FrameBufferAttachment {
 
-    private static final int SIDES = 6;
+    public static final int SIDES = 6;
 
     private static final Logger logger = LoggerFactory.getLogger(CubeMapTexture.class);
 
-    private final String name; //TODO
-
     private final Vector2ic size;
 
-    public static final class CubemapTextureBuilder extends Builder<CubeMapTexture> {
-        private final List<TextureData> sides = new ArrayList<>(SIDES);
-
-        private final String name;
-
+    public static final class CubemapTextureBuilder extends Builder {
         /**
          * Attempts to load all files from a directory with the given name to a {@code CubeMap}.
          */
-        public static CubemapTextureBuilder get(String name) {
+        public static CubemapTextureBuilder get(String file) {
             //TODO (for all external/classpath resources) first search in external facility (some folder/s, which is/are
             // specified via config), then fall back to classpath which should contain standard/error resource, then
             // throw exception
             List<String> cubemapFiles;
-            URL cubemapUrl = CubeMapTexture.class.getClassLoader().getResource(CUBEMAP_PATH + name);
+            URL cubemapUrl = CubeMapTexture.class.getClassLoader().getResource(CUBEMAP_PATH + file);
             if (cubemapUrl == null)
                 throw new MissingResourceException("Cubemap could not be found",
-                        CubeMapTexture.class.getSimpleName(), name);
+                        CubeMapTexture.class.getSimpleName(), file);
             try (FileSystem fs = FileSystems.newFileSystem(cubemapUrl.toURI(), Map.of())) {
-                Path cubemapPath = fs.getPath(CUBEMAP_PATH + name);
+                Path cubemapPath = fs.getPath(CUBEMAP_PATH + file);
                 PathMatcher matcher = fs.getPathMatcher("glob:**/*.{png,jpg}");
                 try (Stream<Path> files = Files.find(cubemapPath, 5, (path, attributes) ->
                         !attributes.isDirectory() && attributes.isRegularFile() && matcher.matches(path)
@@ -62,15 +56,14 @@ public class CubeMapTexture extends AbstractTexture implements FrameBufferAttach
             } catch (URISyntaxException e) {
                 throw new RuntimeException("Internal exception", e);
             }
-            return new CubemapTextureBuilder(name, cubemapFiles.toArray(String[]::new));
+            return new CubemapTextureBuilder(file, cubemapFiles.toArray(String[]::new));
         }
 
         /**
          * Should you ever find yourself in dire need of having to enumerate a {@code CubeMap}'s texture files manually,
          * here you go.
          */
-        public CubemapTextureBuilder(String name, String[] files) {
-            this.name = name;
+        public CubemapTextureBuilder(String file, String[] files) {
 
             if (files == null || files.length != SIDES || Arrays.stream(files).anyMatch(Objects::isNull)) {
                 throw new IllegalArgumentException("Cubemap must have exactly six valid texture files");
@@ -78,40 +71,40 @@ public class CubeMapTexture extends AbstractTexture implements FrameBufferAttach
 
             //TODO improve on presorting / decide on whether to actually do it
             String[] sortedFiles = new String[6];
-            for (String file : files) {
+            for (String fileName : files) {
                 //TODO modularise - config file with mapping aliases
-                if (file.contains("right") || file.contains("px")) {
-                    sortedFiles[0] = file;
+                if (fileName.contains("right") || fileName.contains("px")) {
+                    sortedFiles[0] = fileName;
                     continue;
                 }
-                if (file.contains("left") || file.contains("nx")) {
-                    sortedFiles[1] = file;
+                if (fileName.contains("left") || fileName.contains("nx")) {
+                    sortedFiles[1] = fileName;
                     continue;
                 }
-                if (file.contains("top") || file.contains("up") || file.contains("py")) {
-                    sortedFiles[2] = file;
+                if (fileName.contains("top") || fileName.contains("up") || fileName.contains("py")) {
+                    sortedFiles[2] = fileName;
                     continue;
                 }
-                if (file.contains("bottom") || file.contains("down") || file.contains("ny")) {
-                    sortedFiles[3] = file;
+                if (fileName.contains("bottom") || fileName.contains("down") || fileName.contains("ny")) {
+                    sortedFiles[3] = fileName;
                     continue;
                 }
-                if (file.contains("front") || file.contains("pz")) {
-                    sortedFiles[4] = file;
+                if (fileName.contains("front") || fileName.contains("pz")) {
+                    sortedFiles[4] = fileName;
                     continue;
                 }
-                if (file.contains("back") || file.contains("nz")) {
-                    sortedFiles[5] = file;
+                if (fileName.contains("back") || fileName.contains("nz")) {
+                    sortedFiles[5] = fileName;
                     continue;
                 }
 
-                logger.info("Could not identify file name for cubemap: " + file);
+                logger.info("Could not identify file name for cubemap: " + fileName);
                 sortedFiles = files;
                 break;
             }
 
-            for (String file : sortedFiles) {
-                TextureData data = Textures.loadFileOrDefault(TEXTURE_CUBEMAP_PATH + name + "/" + file, Type.DIFFUSE);
+            for (String fileName : sortedFiles) {
+                TextureData data = Textures.loadFileOrDefault(TEXTURE_CUBEMAP_PATH + fileName + "/" + fileName, Type.DIFFUSE);
                 if (format == null) format = data.format();
                 if (data.format() != format)
                     throw new IllegalArgumentException("All textures must have the same colour format");
@@ -123,11 +116,32 @@ public class CubeMapTexture extends AbstractTexture implements FrameBufferAttach
         }
 
         @Override
-        protected CubeMapTexture bufferTextureData() {
-            logger.debug("Loading {}x{} {}-bit cubemap texture from {}", pixelSize.x(), pixelSize.y(),
-                    NR_BITS_PER_COLOUR_CHANNEL * format.getChannels(), name);
+        protected void freeResources() {
+            sides.forEach(side -> stbi_image_free(side.textureData()));
+        }
+    }
 
-            CubeMapTexture texture = new CubeMapTexture(name, this);
+    public static class MemoryBuilder extends Builder {
+        public MemoryBuilder(Vector2ic pixelSize) {
+            for (int i = 0; i < SIDES; i++)
+                sides.add(new TextureData(null, pixelSize, null));
+            this.pixelSize = pixelSize;
+        }
+
+        @Override
+        protected void freeResources() {
+        }
+    }
+
+    private static abstract class Builder extends AbstractTexture.Builder<CubeMapTexture> {
+        protected final List<TextureData> sides = new ArrayList<>(SIDES);
+
+        @Override
+        protected CubeMapTexture bufferTextureData() {
+            logger.debug("Loading {}x{} {}-bit {} cubemap texture from {}", pixelSize.x(), pixelSize.y(),
+                    NR_BITS_PER_COLOUR_CHANNEL * format.getChannels(), format.name(), getClass().getSimpleName());
+
+            CubeMapTexture texture = new CubeMapTexture(this);
 
             texture.bind(0);
             for (int i = 0; i < sides.size(); i++) {
@@ -138,23 +152,11 @@ public class CubeMapTexture extends AbstractTexture implements FrameBufferAttach
 
             return texture;
         }
-
-        @Override
-        protected void freeResources() {
-            sides.forEach(side -> stbi_image_free(side.textureData()));
-        }
     }
 
-    //TODO non-file builder
-
-    private CubeMapTexture(String name, Builder<CubeMapTexture> builder) {
+    private CubeMapTexture(Builder builder) {
         super(builder.setType(Type.DIFFUSE).setTarget(Target.CUBEMAP));
-        this.name = name;
         this.size = builder.pixelSize;
-    }
-
-    public String getName() {
-        return name;
     }
 
     @Override
