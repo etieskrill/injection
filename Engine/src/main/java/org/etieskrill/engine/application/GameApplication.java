@@ -55,7 +55,7 @@ public abstract class GameApplication {
             loop(delta);
             window.update(delta);
 
-            cpuTimes.push((System.nanoTime() - time) / 1000000d);
+            cpuTimes.push((System.nanoTime() - time) / 1_000_000d);
             avgCpuTime = cpuTimes.stream()
                     .mapToDouble(value -> value)
                     .average()

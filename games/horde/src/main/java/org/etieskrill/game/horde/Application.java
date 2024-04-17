@@ -5,7 +5,9 @@ import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera;
 import org.etieskrill.engine.graphics.data.DirectionalLight;
 import org.etieskrill.engine.graphics.data.PointLight;
+import org.etieskrill.engine.graphics.gl.GLUtils;
 import org.etieskrill.engine.graphics.gl.framebuffer.DirectionalShadowMap;
+import org.etieskrill.engine.graphics.gl.framebuffer.PointShadowMap;
 import org.etieskrill.engine.graphics.gl.shader.Shaders;
 import org.etieskrill.engine.graphics.model.Material;
 import org.etieskrill.engine.graphics.model.Model;
@@ -56,6 +58,8 @@ public class Application extends GameApplication {
 
     private Matrix4fc sunLightCombined;
     private DirectionalShadowMap directionalShadowMap;
+    private PointShadowMap pointShadowMap1;
+    private PointShadowMap pointShadowMap2;
     private Shaders.DepthShader depthShader;
 
     Model quad;
@@ -72,6 +76,8 @@ public class Application extends GameApplication {
 
     @Override
     protected void init() {
+        GLUtils.addDebugLogging();
+
         floor = ModelFactory.box(new Vector3f(100, .1f, 100));
         Material floorMaterial = floor.getNodes().get(2).getMeshes().getFirst().getMaterial();
         floorMaterial.setProperty(Material.Property.SHININESS, 256f);
@@ -143,6 +149,8 @@ public class Application extends GameApplication {
         ));
 
         directionalShadowMap = DirectionalShadowMap.generate(new Vector2i(1024));
+        pointShadowMap1 = PointShadowMap.generate(new Vector2i(1014));
+        pointShadowMap2 = PointShadowMap.generate(new Vector2i(1014));
 
         sunLightCombined = new Matrix4f()
                 .ortho(-30, 30, -30, 30, .1f, 40)
@@ -154,6 +162,8 @@ public class Application extends GameApplication {
         quad = ModelFactory.rectangle(-.9f, -.9f, 1.8f, 1.8f, quadMaterial).disableCulling().build();
 
         glEnable(GL_FRAMEBUFFER_SRGB);
+
+        GLUtils.removeDebugLogging();
     }
 
     @Override
@@ -165,6 +175,7 @@ public class Application extends GameApplication {
 //        glCullFace(GL_BACK);
         directionalShadowMap.unbind();
 
+        renderer.prepare();
         glViewport(0, 0, 1920, 1080); //TODO make render manager (??? entity?) do this
         renderer.bindNextFreeTexture(shader, "u_ShadowMap", directionalShadowMap.getTexture());
         shader.setUniform("u_LightCombined", sunLightCombined);

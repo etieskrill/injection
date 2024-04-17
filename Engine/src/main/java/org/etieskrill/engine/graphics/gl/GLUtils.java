@@ -88,6 +88,8 @@ public final class GLUtils {
     /**
      * Attach a callback to the current OpenGL context, which retrieves the OpenGL log stream, formats the statements,
      * and adds them to the logger in this class at the relevant severity.
+     * <p>
+     * This method overwrites any logger which may have previously been attached.
      *
      * @see GLUtils#removeDebugLogging()
      */
@@ -114,7 +116,9 @@ public final class GLUtils {
     }
 
     /**
-     * Removes the callback added by {@link GLUtils#addDebugLogging()}.
+     * Detaches the OpenGL log stream by removing the callback added by {@link GLUtils#addDebugLogging()}.
+     * <p>
+     * This method has no effect if there was no logger attached in the first place.
      *
      * @see GLUtils#addDebugLogging()
      */

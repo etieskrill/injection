@@ -288,7 +288,7 @@ public abstract class AbstractTexture implements Disposable {
         protected abstract void freeResources();
     }
 
-    record TextureData(ByteBuffer textureData, Vector2i pixelSize, Format format) {
+    record TextureData(ByteBuffer textureData, Vector2ic pixelSize, Format format) {
     }
 
     protected AbstractTexture(Builder<? extends AbstractTexture> builder) {

@@ -2,6 +2,8 @@ package org.etieskrill.engine.graphics.gl.exception;
 
 import org.jetbrains.annotations.Nullable;
 
+import static org.etieskrill.engine.graphics.gl.exception.GLError.toError;
+
 public class GLException extends RuntimeException {
 
     protected String infoLog;
@@ -26,17 +28,19 @@ public class GLException extends RuntimeException {
     }
 
     @Override
-    public String getMessage() {
+    public String getMessage() { //TODO test
         String message = super.getMessage();
-        if (errorCode != null) message += ": 0x%s".formatted(Integer.toHexString(errorCode).toUpperCase());
-        String errorMessage = getErrorMessage(errorCode);
-        if (errorMessage != null) message += ": " + errorMessage;
+        if (errorCode != null) {
+            message += ": 0x%s".formatted(Integer.toHexString(errorCode).toUpperCase());
+            String errorMessage = getErrorMessage(errorCode);
+            if (errorMessage != null) message += ": " + errorMessage;
+        }
         if (infoLog != null) message += "\n" + infoLog;
         return message;
     }
 
     protected @Nullable String getErrorMessage(Integer errorCode) {
-        GLError error = GLError.toError(errorCode);
+        GLError error = toError(errorCode);
         return error != null ? error.getMessage() : null;
     }
 
