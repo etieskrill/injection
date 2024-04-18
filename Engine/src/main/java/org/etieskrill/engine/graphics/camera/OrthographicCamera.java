@@ -4,21 +4,18 @@ import org.joml.*;
 
 public class OrthographicCamera extends Camera {
     
-    private final Vector2f size;
     private float top, bottom, left, right;
 
-    public OrthographicCamera(Vector2fc size, Vector3fc origin) {
-        super();
-        this.size = new Vector2f();
-        setSize(size);
+    public OrthographicCamera(Vector2ic viewportSize, Vector3fc origin) {
+        super(viewportSize);
         setPosition(origin);
         setPerspective(new Matrix4f().ortho(left, right, bottom, top, near, far));
 
         if (autoUpdate) update();
     }
 
-    public OrthographicCamera(Vector2fc size) {
-        this(size, new Vector3f(0f));
+    public OrthographicCamera(Vector2ic viewportSize) {
+        this(viewportSize, new Vector3f(0f));
     }
 
     @Override
@@ -36,16 +33,17 @@ public class OrthographicCamera extends Camera {
         return this;
     }
 
-    public void setSize(Vector2fc size) {
-        this.size.set(size);
+    @Override
+    public void setViewportSize(Vector2ic size) {
+        this.viewportSize.set(size);
         updateDimensions();
         if (autoUpdate) update();
     }
 
     private void updateDimensions() {
-        right = 0.5f * size.x();
+        right = 0.5f * viewportSize.x();
         left = -right;
-        bottom = 0.5f * size.y();
+        bottom = 0.5f * viewportSize.y();
         top = -bottom;
     }
     

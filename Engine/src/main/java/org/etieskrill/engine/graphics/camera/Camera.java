@@ -1,10 +1,9 @@
 package org.etieskrill.engine.graphics.camera;
 
 import org.jetbrains.annotations.Contract;
-import org.joml.Matrix4f;
-import org.joml.Matrix4fc;
-import org.joml.Vector3f;
-import org.joml.Vector3fc;
+import org.joml.*;
+
+import java.lang.Math;
 
 public abstract class Camera {
 
@@ -13,9 +12,11 @@ public abstract class Camera {
     protected final Vector3f rotationAxis;
     protected float zoom;
 
+    protected final Vector2i viewportSize;
+
     protected final Matrix4f view, perspective;
     protected Matrix4fc combined;
-    
+
     protected float near, far;
     protected final Vector3f front, right, up, worldUp;
 
@@ -24,12 +25,15 @@ public abstract class Camera {
 
     //TODO transform perform updates lazily instead of eagerly
     protected boolean autoUpdate;
-    
-    protected Camera() {
+
+    protected Camera(Vector2ic viewportSize) {
         this.position = new Vector3f();
         this.rotation = 0f;
         this.rotationAxis = new Vector3f();
         this.zoom = 1f;
+
+        this.viewportSize = (Vector2i) viewportSize;
+
         this.view = new Matrix4f();
         this.perspective = new Matrix4f();
         this.combined = new Matrix4f();
@@ -41,11 +45,11 @@ public abstract class Camera {
         this.right = new Vector3f();
         this.up = new Vector3f();
         this.worldUp = new Vector3f(0f, -1f, 0f);
-        
+
         this.clampPitch = true;
         this.autoUpdate = true;
     }
-    
+
     public void update() {
         updateView();
         updatePerspective();
@@ -54,6 +58,7 @@ public abstract class Camera {
 
     /**
      * Moves the camera relative to its rotation.
+     *
      * @param translation vector to move by
      * @return itself for chaining
      */
@@ -95,6 +100,14 @@ public abstract class Camera {
         return this;
     }
 
+    public Vector2ic getViewportSize() {
+        return viewportSize;
+    }
+
+    public void setViewportSize(Vector2ic viewportSize) {
+        this.viewportSize.set(viewportSize);
+    }
+
     public float getZoom() {
         return zoom;
     }
@@ -104,12 +117,12 @@ public abstract class Camera {
         if (autoUpdate) update();
         return this;
     }
-    
+
     protected void updateView() {
         front.set(
-                 Math.cos(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch)),
-                    Math.sin(Math.toRadians(pitch)),
-                 Math.sin(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch)));
+                Math.cos(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch)),
+                Math.sin(Math.toRadians(pitch)),
+                Math.sin(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch)));
         front.normalize();
 
         right.set(front.cross(worldUp, new Vector3f()).normalize());
@@ -127,7 +140,7 @@ public abstract class Camera {
         if (autoUpdate) update();
         return this;
     }
-    
+
     private void updateCombined() {
         this.combined = new Matrix4f(perspective).mul(view);
     }
@@ -138,20 +151,20 @@ public abstract class Camera {
                 (float) (Math.cos(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch))),
                 (float) Math.sin(Math.toRadians(pitch)),
                 (float) (Math.sin(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch))))
-            .normalize();
+                .normalize();
     }
 
     public Matrix4fc getCombined() {
         updateCombined();
         return combined;
     }
-    
+
     public Camera setNear(float near) {
         this.near = near;
         if (autoUpdate) update();
         return this;
     }
-    
+
     public Camera setFar(float far) { //TODO far is negative, 1.: find out why, 2.: adjust if necessary
         this.far = far;
         if (autoUpdate) update();
@@ -167,15 +180,15 @@ public abstract class Camera {
     public double getPitch() {
         return pitch;
     }
-    
+
     public double getYaw() {
         return yaw;
     }
-    
+
     public double getRoll() {
         return roll;
     }
-    
+
     public Camera setOrientation(double pitch, double yaw, double roll) {
         if (clampPitch) {
             if (pitch > 89f) pitch = 89f;
@@ -183,7 +196,7 @@ public abstract class Camera {
         }
         this.pitch = pitch;
         this.yaw = yaw;
-        
+
         if (roll != 0f) throw new UnsupportedOperationException("plz dont use roll yet");
         this.roll = roll;
 
@@ -197,10 +210,10 @@ public abstract class Camera {
             if (this.pitch > 89.0) this.pitch = 89.0;
             else if (this.pitch < -89.0) this.pitch = -89.0;
         }
-        
+
         this.yaw -= yaw;
         this.yaw %= 360.0;
-        
+
         if (roll != 0.0) throw new UnsupportedOperationException("plz dont use roll yet");
         this.roll += roll;
 
@@ -230,5 +243,5 @@ public abstract class Camera {
                 ", roll=" + roll +
                 '}';
     }
-    
+
 }

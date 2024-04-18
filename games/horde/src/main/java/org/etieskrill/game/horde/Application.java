@@ -1,7 +1,9 @@
 package org.etieskrill.game.horde;
 
 import org.etieskrill.engine.application.GameApplication;
+import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.camera.Camera;
+import org.etieskrill.engine.graphics.camera.OrthographicCamera;
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera;
 import org.etieskrill.engine.graphics.data.DirectionalLight;
 import org.etieskrill.engine.graphics.data.PointLight;
@@ -15,10 +17,15 @@ import org.etieskrill.engine.graphics.model.ModelFactory;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.texture.Textures;
+import org.etieskrill.engine.graphics.texture.font.Fonts;
 import org.etieskrill.engine.input.Input;
 import org.etieskrill.engine.input.Keys;
 import org.etieskrill.engine.input.controller.CursorCameraController;
 import org.etieskrill.engine.input.controller.KeyCameraController;
+import org.etieskrill.engine.scene.Scene;
+import org.etieskrill.engine.scene.component.Container;
+import org.etieskrill.engine.scene.component.Label;
+import org.etieskrill.engine.scene.component.Node;
 import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.window.Window;
 import org.joml.*;
@@ -66,6 +73,8 @@ public class Application extends GameApplication {
     private PointShadowMapArray pointShadowMaps;
     private Shaders.DepthCubeMapArrayShader depthCubeMapArrayShader;
     private final float pointShadowFarPlane = 40;
+
+    private Label fpsLabel;
 
     Model quad;
 
@@ -132,7 +141,7 @@ public class Application extends GameApplication {
         lightShader = Shaders.getLightSourceShader();
         shader = Shaders.getStandardShader();
 
-        camera = new PerspectiveCamera(new Vector2f(window.getSize().toVec()));
+        camera = new PerspectiveCamera(window.getSize().toVec());
         window.addCursorInputs(new CursorCameraController(camera));
         KeyCameraController cameraController = new KeyCameraController(camera).setSpeed(3);
         window.addKeyInputs(cameraController);
@@ -199,6 +208,13 @@ public class Application extends GameApplication {
         glEnable(GL_FRAMEBUFFER_SRGB);
 
 //        GLUtils.removeDebugLogging();
+
+        OrthographicCamera uiCamera = new OrthographicCamera(window.getSize().toVec());
+        uiCamera.setPosition(new Vector3f(window.getSize().toVec().div(2), 0));
+        fpsLabel = new Label("", Fonts.getDefault(36));
+        fpsLabel.setAlignment(Node.Alignment.TOP_LEFT)
+                .setMargin(new Vector4f(10));
+        window.setScene(new Scene(new Batch(renderer), new Container(fpsLabel), uiCamera));
     }
 
     @Override
@@ -237,6 +253,7 @@ public class Application extends GameApplication {
                     "%5.2f".formatted(renderer.getAveragedGpuTime() / 1000000.0),
                     "%5.2f".formatted(renderer.getGpuDelay() / 1000000.0));
         }
+        fpsLabel.setText("%5.3f".formatted(pacer.getAverageFPS()));
     }
 
     private void renderScene(Shaders.DepthShader shader, Matrix4fc combined) {

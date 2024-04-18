@@ -122,10 +122,8 @@ public class Game {
     }
     
     private void setupUI() {
-        Vector2f windowSize = window.getSize().toVec();
-        uiCamera = new OrthographicCamera(windowSize)
-                .setOrientation(0, -90, 0)
-                .setPosition(new Vector3f(windowSize.mul(.5f), 0));
+        Vector2i windowSize = window.getSize().toVec();
+        uiCamera = new OrthographicCamera(windowSize);
         
         scoreLabel = new Label("", Fonts.getDefault(48));
         scoreLabel.setAlignment(Alignment.TOP).setMargin(new Vector4f(20));
@@ -234,8 +232,7 @@ public class Game {
 //        System.out.println(new Vector2i(1000).times(1.5f));
 //        System.out.println(new Vector2i(1000).times(2f));
     
-        Vector2f windowSize = window.getSize().toVec();
-        FrameBuffer postBuffer = FrameBuffer.getStandard(windowSize.get(RoundingMode.TRUNCATE, new Vector2i()));
+        FrameBuffer postBuffer = FrameBuffer.getStandard(window.getSize().toVec());
         Material mat = new Material.Builder() //TODO okay, the fact models, or rather meshes simply ignore these mats is getting frustrating now, that builder needs some serious rework
                 .addTextures((Texture2D) postBuffer.getAttachment(BufferAttachmentType.COLOUR0))
                 .build();
