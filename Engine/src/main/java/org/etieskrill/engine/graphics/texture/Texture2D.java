@@ -11,19 +11,20 @@ import java.nio.ByteBuffer;
 
 import static org.etieskrill.engine.graphics.texture.Textures.NR_BITS_PER_COLOUR_CHANNEL;
 import static org.etieskrill.engine.graphics.texture.Textures.loadFileOrDefault;
+import static org.lwjgl.opengl.GL11C.GL_TEXTURE_2D;
+import static org.lwjgl.opengl.GL30C.GL_FRAMEBUFFER;
+import static org.lwjgl.opengl.GL30C.glFramebufferTexture2D;
 import static org.lwjgl.opengl.GL33C.GL_UNSIGNED_BYTE;
 import static org.lwjgl.opengl.GL33C.glTexImage2D;
 import static org.lwjgl.stb.STBImage.stbi_image_free;
 
 public class Texture2D extends AbstractTexture implements FrameBufferAttachment {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(Texture2D.class);
 
     private final Vector2ic size;
-    
+
     public static final class FileBuilder extends Builder {
-        private final String file;
-    
         /**
          * Reads image attributes from the specified file and constructs a texture builder.
          *
@@ -31,7 +32,6 @@ public class Texture2D extends AbstractTexture implements FrameBufferAttachment 
          * @param type the type of texture, if any
          */
         public FileBuilder(String file, Type type) {
-            this.file = file;
             this.type = type;
 
             TextureData data = loadFileOrDefault(file, type);
@@ -40,47 +40,49 @@ public class Texture2D extends AbstractTexture implements FrameBufferAttachment 
             pixelSize = data.pixelSize();
             format = data.format();
         }
-        
+
         @Override
         protected void freeResources() {
             stbi_image_free(textureData);
         }
     }
-    
+
     public static final class BufferBuilder extends Builder {
         public BufferBuilder(@Nullable ByteBuffer buffer, Vector2i pixelSize, Format format) {
             this.textureData = buffer;
             this.pixelSize = pixelSize;
             this.format = format;
         }
-    
+
         @Override
         protected void freeResources() {
             //TODO free buffer if possible
         }
     }
-    
+
     public static final class BlankBuilder extends Builder {
         public BlankBuilder(Vector2ic pixelSize) {
             this.textureData = null;
             this.pixelSize = pixelSize;
             this.format = Format.SRGB;
         }
-    
+
         @Override
-        protected void freeResources() {}
+        protected void freeResources() {
+        }
     }
 
     public abstract static class Builder extends AbstractTexture.Builder<Texture2D> {
         protected ByteBuffer textureData;
-        
-        private Builder() {}
-    
+
+        private Builder() {
+        }
+
         @Override
         protected Texture2D bufferTextureData() {
             logger.debug("Loading {}x{} {}-bit {} {} texture from {}", pixelSize.x(), pixelSize.y(),
-                    NR_BITS_PER_COLOUR_CHANNEL * format.getChannels(), format, type.name().toLowerCase(),
-                    getClass().getSimpleName());
+                    NR_BITS_PER_COLOUR_CHANNEL * format.getChannels(), format.name().toLowerCase(),
+                    type.name().toLowerCase(), getClass().getSimpleName());
 
             Texture2D texture = new Texture2D(this);
             texture.bind(0);
@@ -90,7 +92,7 @@ public class Texture2D extends AbstractTexture implements FrameBufferAttachment 
             return texture;
         }
     }
-    
+
     Texture2D(Builder builder) {
         super(builder.setTarget(Target.TWO_D));
         this.size = builder.pixelSize;
@@ -99,6 +101,11 @@ public class Texture2D extends AbstractTexture implements FrameBufferAttachment 
     @Override
     public Vector2ic getSize() {
         return size;
+    }
+
+    @Override
+    public void attach(BufferAttachmentType type) {
+        glFramebufferTexture2D(GL_FRAMEBUFFER, type.toGLAttachment(), GL_TEXTURE_2D, getID(), 0);
     }
 
 }

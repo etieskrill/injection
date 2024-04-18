@@ -163,4 +163,12 @@ public class CubeMapTexture extends AbstractTexture implements FrameBufferAttach
         return size;
     }
 
+    @Override
+    public void attach(BufferAttachmentType type) {
+        //This call binds the whole cubemap as a single shader object, where the faces are then
+        //addressed using gl_Layer. The built-in variable does NOT work if we bound every face of the
+        //cubemap using glFramebufferTexture2D, as the texture object's id would then refer to only the
+        //last texture specified this way, which, when iterating over the faces, is the negative z one.
+        glFramebufferTexture(GL_FRAMEBUFFER, type.toGLAttachment(), getID(), 0);
+    }
 }
