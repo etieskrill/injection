@@ -2,10 +2,8 @@ package org.etieskrill.engine.graphics.gl.shader;
 
 import org.etieskrill.engine.graphics.data.DirectionalLight;
 import org.etieskrill.engine.graphics.data.PointLight;
-import org.joml.Vector2f;
-import org.joml.Vector2fc;
-import org.joml.Vector3f;
-import org.joml.Vector3fc;
+import org.etieskrill.engine.graphics.texture.CubeMapTexture;
+import org.joml.*;
 
 import static org.etieskrill.engine.graphics.gl.shader.ShaderProgram.Uniform.Type.*;
 
@@ -370,6 +368,43 @@ public class Shaders {
 
         @Override
         protected void getUniformLocations() {
+        }
+    }
+
+    public static class DepthCubeMapShader extends ShaderProgram {
+        @Override
+        protected void init() {
+            disableStrictUniformChecking();
+        }
+
+        @Override
+        protected String[] getShaderFileNames() {
+            return new String[]{
+                    "DepthCubeMap.vert",
+                    "DepthCubeMap.geom",
+                    "DepthCubeMap.frag"
+            };
+        }
+
+        @Override
+        protected void getUniformLocations() {
+            addUniformArray("shadowCombined", CubeMapTexture.NUM_SIDES, MAT4);
+            addUniform("light", STRUCT);
+            addUniform("farPlane", FLOAT);
+        }
+
+        public void setShadowCombined(Matrix4fc[] shadowCombined) {
+            if (shadowCombined.length != CubeMapTexture.NUM_SIDES)
+                throw new IllegalArgumentException("Shadow map combined matrices must contain 6 matrices, but was " + shadowCombined.length);
+            setUniformArray("shadowCombined", shadowCombined);
+        }
+
+        public void setLight(PointLight light) {
+            setUniform("light", light);
+        }
+
+        public void setFarPlane(float farPlane) {
+            setUniform("farPlane", farPlane);
         }
     }
 

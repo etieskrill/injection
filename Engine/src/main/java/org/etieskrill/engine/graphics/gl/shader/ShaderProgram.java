@@ -43,6 +43,7 @@ public abstract class ShaderProgram implements Disposable {
     private final boolean placeholder;
 
     private final Map<String, Integer> nonstrictUniformCache = new HashMap<>();
+    private final Set<String> unregisteredUniforms = new HashSet<>();
     private final Set<String> missingUniforms = new HashSet<>();
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
@@ -250,9 +251,9 @@ public abstract class ShaderProgram implements Disposable {
         if (STRICT_UNIFORM_DETECTION && strict)
             throw new ShaderUniformException("Attempted to set unregistered uniform in strict mode", name);
 
-        if (!missingUniforms.contains(name)) {
-            logger.warn("Setting unregistered uniform '{}'", name);
-            missingUniforms.add(name);
+        if (!unregisteredUniforms.contains(name)) {
+            logger.debug("Setting unregistered uniform '{}'", name);
+            unregisteredUniforms.add(name);
         }
 
         setUnregisteredUniform(name, value, array);
@@ -298,7 +299,7 @@ public abstract class ShaderProgram implements Disposable {
         }
 
         if (location == -1) {
-            if (!missingUniforms.contains(name)) logger.trace("Attempted to set nonexistent uniform: " + name);
+            if (!missingUniforms.contains(name)) logger.warn("Attempted to set nonexistent uniform: " + name);
             missingUniforms.add(name);
             return;
         }

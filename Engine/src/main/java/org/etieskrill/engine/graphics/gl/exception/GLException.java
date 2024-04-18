@@ -30,16 +30,15 @@ public class GLException extends RuntimeException {
     @Override
     public String getMessage() { //TODO test
         String message = super.getMessage();
-        if (errorCode != null) {
-            message += ": 0x%s".formatted(Integer.toHexString(errorCode).toUpperCase());
-            String errorMessage = getErrorMessage(errorCode);
-            if (errorMessage != null) message += ": " + errorMessage;
-        }
+        if (errorCode != null) message += ": 0x%s".formatted(Integer.toHexString(errorCode).toUpperCase());
+        String errorMessage = getErrorMessage(errorCode);
+        if (errorMessage != null) message += ": " + errorMessage;
         if (infoLog != null) message += "\n" + infoLog;
         return message;
     }
 
-    protected @Nullable String getErrorMessage(Integer errorCode) {
+    protected @Nullable String getErrorMessage(@Nullable Integer errorCode) {
+        if (errorCode == null) return null;
         GLError error = toError(errorCode);
         return error != null ? error.getMessage() : null;
     }
