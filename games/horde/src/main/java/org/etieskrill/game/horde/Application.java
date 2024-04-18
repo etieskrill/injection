@@ -22,15 +22,33 @@ import org.etieskrill.engine.input.controller.KeyCameraController;
 import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.window.Window;
 import org.joml.*;
+import org.lwjgl.BufferUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.awt.image.Raster;
+import java.awt.image.WritableRaster;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.lang.Math;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import static java.lang.Math.toRadians;
 import static org.etieskrill.engine.graphics.texture.AbstractTexture.Type.*;
+import static org.etieskrill.engine.graphics.texture.CubeMapTexture.NUM_SIDES;
 import static org.lwjgl.opengl.GL11C.*;
+import static org.lwjgl.opengl.GL13C.*;
 import static org.lwjgl.opengl.GL30C.GL_FRAMEBUFFER_SRGB;
+import static org.lwjgl.opengl.GL30C.GL_RED_INTEGER;
 
 public class Application extends GameApplication {
 
@@ -58,9 +76,13 @@ public class Application extends GameApplication {
 
     private Matrix4fc sunLightCombined;
     private DirectionalShadowMap directionalShadowMap;
-    private PointShadowMap pointShadowMap1;
-    private PointShadowMap pointShadowMap2;
     private Shaders.DepthShader depthShader;
+    private Matrix4fc[] pointLightCombined1;
+    private PointShadowMap pointShadowMap1;
+    private Matrix4fc[] pointLightCombined2;
+    private PointShadowMap pointShadowMap2;
+    private Shaders.DepthCubeMapShader depthCubeMapShader;
+    private final float pointShadowFarPlane = 40;
 
     Model quad;
 
@@ -149,21 +171,50 @@ public class Application extends GameApplication {
         ));
 
         directionalShadowMap = DirectionalShadowMap.generate(new Vector2i(1024));
-        pointShadowMap1 = PointShadowMap.generate(new Vector2i(1014));
-        pointShadowMap2 = PointShadowMap.generate(new Vector2i(1014));
+        pointShadowMap1 = PointShadowMap.generate(new Vector2i(1024));
+        pointShadowMap2 = PointShadowMap.generate(new Vector2i(1024));
 
         sunLightCombined = new Matrix4f()
                 .ortho(-30, 30, -30, 30, .1f, 40)
                 .mul(new Matrix4f().lookAt(new Vector3f(10, 20, 10), new Vector3f(-10, 0, -10), new Vector3f(0, 1, 0)));
 
+        pointLightCombined1 = new Matrix4fc[NUM_SIDES];
+        pointLightCombined2 = new Matrix4fc[NUM_SIDES];
+        Matrix4fc pointLightProjection = new Matrix4f()
+                .perspective((float) toRadians(90), 1, .1f, pointShadowFarPlane);
+        Vector3fc[] directions = {
+                new Vector3f(1, 0, 0), new Vector3f(-1, 0, 0), new Vector3f(0, 1, 0),
+                new Vector3f(0, -1, 0), new Vector3f(0, 0, 1), new Vector3f(0, 0, -1)};
+        Vector3fc[] ups = {
+                new Vector3f(0, -1, 0), new Vector3f(0, -1, 0), new Vector3f(0, 0, 1),
+                new Vector3f(0, 0, -1), new Vector3f(0, -1, 0), new Vector3f(0, -1, 0)
+        };
+        for (int i = 0; i < 2; i++) {
+            PointLight light = switch (i) {
+                case 0 -> light1;
+                case 1 -> light2;
+                default -> throw new IllegalStateException("Unexpected value: " + i);};
+            Matrix4fc[] pointLightCombined = switch (i) {
+                case 0 -> pointLightCombined1;
+                case 1 -> pointLightCombined2;
+                default -> throw new IllegalStateException("Unexpected value: " + i);};
+
+            for (int j = 0; j < NUM_SIDES; j++) {
+                Matrix4fc lookAt = new Matrix4f()
+                        .lookAt(light.getPosition(), new Vector3f(light.getPosition()).add(directions[j]), ups[j]);
+                pointLightCombined[j] = new Matrix4f(pointLightProjection).mul(lookAt);
+            }
+        }
+
         depthShader = new Shaders.DepthShader();
+        depthCubeMapShader = new Shaders.DepthCubeMapShader();
         Material quadMaterial = Material.getBlank();
         quadMaterial.getTextures().add(directionalShadowMap.getTexture());
         quad = ModelFactory.rectangle(-.9f, -.9f, 1.8f, 1.8f, quadMaterial).disableCulling().build();
 
         glEnable(GL_FRAMEBUFFER_SRGB);
 
-        GLUtils.removeDebugLogging();
+//        GLUtils.removeDebugLogging();
     }
 
     @Override
@@ -175,10 +226,27 @@ public class Application extends GameApplication {
 //        glCullFace(GL_BACK);
         directionalShadowMap.unbind();
 
+        /*
+        So the depth buffer is initialised to zero at first (as is basically any buffer), and clearing it sets all its
+        values to 1.0f, which is equal to the far plane representing the maximum depth any fragment can have, as
+        anything behind it is clipped.
+        */
+        pointShadowMap1.bind();
+        glClear(GL_DEPTH_BUFFER_BIT);
+        renderScene(light1, depthCubeMapShader, pointLightCombined1);
+        pointShadowMap1.unbind();
+        pointShadowMap2.bind();
+        glClear(GL_DEPTH_BUFFER_BIT);
+        renderScene(light2, depthCubeMapShader, pointLightCombined2);
+        pointShadowMap2.unbind();
+
         renderer.prepare();
         glViewport(0, 0, 1920, 1080); //TODO make render manager (??? entity?) do this
         renderer.bindNextFreeTexture(shader, "u_ShadowMap", directionalShadowMap.getTexture());
         shader.setUniform("u_LightCombined", sunLightCombined);
+        renderer.bindNextFreeTexture(shader, "pointShadowMaps[0]", pointShadowMap1.getTexture());
+        renderer.bindNextFreeTexture(shader, "pointShadowMaps[1]", pointShadowMap2.getTexture());
+        shader.setUniform("farPlane", pointShadowFarPlane, false);
         renderScene(shader, camera.getCombined());
         renderLights();
 
@@ -193,6 +261,14 @@ public class Application extends GameApplication {
     private void renderScene(Shaders.DepthShader shader, Matrix4fc combined) {
         renderer.render(floor, shader, combined);
         for (Model brickCube : brickCubes) renderer.render(brickCube, shader, combined);
+    }
+
+    private void renderScene(PointLight light, Shaders.DepthCubeMapShader shader, Matrix4fc[] combined) {
+        shader.setLight(light);
+        shader.setFarPlane(pointShadowFarPlane);
+        shader.setShadowCombined(combined);
+        renderer.render(floor, shader, new Matrix4f());
+        for (Model brickCube : brickCubes) renderer.render(brickCube, shader, new Matrix4f());
     }
 
     private void renderScene(Shaders.StaticShader shader, Matrix4fc combined) {

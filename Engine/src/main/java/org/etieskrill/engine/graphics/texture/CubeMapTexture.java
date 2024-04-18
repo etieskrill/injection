@@ -21,7 +21,7 @@ import static org.lwjgl.stb.STBImage.stbi_image_free;
 //TODO move these and Texture's builders and factory methods into a TextureFactory
 public class CubeMapTexture extends AbstractTexture implements FrameBufferAttachment {
 
-    public static final int SIDES = 6;
+    public static final int NUM_SIDES = 6;
 
     private static final Logger logger = LoggerFactory.getLogger(CubeMapTexture.class);
 
@@ -56,16 +56,15 @@ public class CubeMapTexture extends AbstractTexture implements FrameBufferAttach
             } catch (URISyntaxException e) {
                 throw new RuntimeException("Internal exception", e);
             }
-            return new CubemapTextureBuilder(file, cubemapFiles.toArray(String[]::new));
+            return new CubemapTextureBuilder(cubemapFiles.toArray(String[]::new));
         }
 
         /**
          * Should you ever find yourself in dire need of having to enumerate a {@code CubeMap}'s texture files manually,
          * here you go.
          */
-        public CubemapTextureBuilder(String file, String[] files) {
-
-            if (files == null || files.length != SIDES || Arrays.stream(files).anyMatch(Objects::isNull)) {
+        public CubemapTextureBuilder(String[] files) {
+            if (files == null || files.length != NUM_SIDES || Arrays.stream(files).anyMatch(Objects::isNull)) {
                 throw new IllegalArgumentException("Cubemap must have exactly six valid texture files");
             }
 
@@ -123,7 +122,7 @@ public class CubeMapTexture extends AbstractTexture implements FrameBufferAttach
 
     public static class MemoryBuilder extends Builder {
         public MemoryBuilder(Vector2ic pixelSize) {
-            for (int i = 0; i < SIDES; i++)
+            for (int i = 0; i < NUM_SIDES; i++)
                 sides.add(new TextureData(null, pixelSize, null));
             this.pixelSize = pixelSize;
         }
@@ -134,7 +133,7 @@ public class CubeMapTexture extends AbstractTexture implements FrameBufferAttach
     }
 
     private static abstract class Builder extends AbstractTexture.Builder<CubeMapTexture> {
-        protected final List<TextureData> sides = new ArrayList<>(SIDES);
+        protected final List<TextureData> sides = new ArrayList<>(NUM_SIDES);
 
         @Override
         protected CubeMapTexture bufferTextureData() {

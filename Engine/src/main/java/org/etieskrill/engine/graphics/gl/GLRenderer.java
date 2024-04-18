@@ -8,6 +8,8 @@ import org.etieskrill.engine.graphics.model.*;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.joml.*;
 import org.lwjgl.system.MemoryStack;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
@@ -21,6 +23,7 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
     private static final float CLEAR_COLOUR = 0.25f;//0.025f;
 
     private int nextTexture;
+    private int manuallyBoundTextures;
 
     @Override
     public void prepare() {
@@ -35,6 +38,7 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
         nextTexture = 0;
+        manuallyBoundTextures = 0;
 
         lastTrianglesDrawn = trianglesDrawn;
         trianglesDrawn = 0;
@@ -46,6 +50,7 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
     public void bindNextFreeTexture(ShaderProgram shader, String name, AbstractTexture texture) {
         texture.bind(nextTexture);
         shader.setUniform(name, nextTexture++, false);
+        manuallyBoundTextures++;
     }
 
     @Override
@@ -166,6 +171,9 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
         int mode = shader instanceof Shaders.ShowNormalsShader ? GL_POINTS : mesh.getDrawMode().gl();
         if (!instanced) glDrawElements(mode, mesh.getNumIndices(), GL_UNSIGNED_INT, 0);
         else glDrawElementsInstanced(mode, mesh.getNumIndices(), GL_UNSIGNED_INT, 0, numInstances);
+
+        nextTexture = manuallyBoundTextures;
+
         if (mesh.getDrawMode() == Mesh.DrawMode.TRIANGLES)
             trianglesDrawn += mesh.getNumIndices() / 3;
         renderCalls++;

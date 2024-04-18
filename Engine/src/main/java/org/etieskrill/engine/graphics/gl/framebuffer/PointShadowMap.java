@@ -12,7 +12,9 @@ import org.slf4j.LoggerFactory;
 import static org.etieskrill.engine.graphics.texture.AbstractTexture.Format.DEPTH;
 import static org.etieskrill.engine.graphics.texture.AbstractTexture.Type.SHADOW;
 import static org.etieskrill.engine.graphics.texture.AbstractTexture.Wrapping.CLAMP_TO_BORDER;
+import static org.etieskrill.engine.graphics.texture.AbstractTexture.Wrapping.CLAMP_TO_EDGE;
 import static org.lwjgl.opengl.GL11C.*;
+import static org.lwjgl.opengl.GL13C.GL_TEXTURE_CUBE_MAP;
 import static org.lwjgl.opengl.GL14C.GL_TEXTURE_COMPARE_FUNC;
 import static org.lwjgl.opengl.GL14C.GL_TEXTURE_COMPARE_MODE;
 import static org.lwjgl.opengl.GL30C.GL_COMPARE_REF_TO_TEXTURE;
@@ -36,7 +38,7 @@ public class PointShadowMap extends FrameBuffer {
                         .setFormat(DEPTH)
                         .setType(SHADOW)
                         .setMipMapping(AbstractTexture.MinFilter.LINEAR, AbstractTexture.MagFilter.LINEAR)
-                        .setWrapping(CLAMP_TO_BORDER)
+                        .setWrapping(CLAMP_TO_EDGE)
                         .setBorderColour(new Vector4f(1.0f))
                         .build();
 
@@ -50,8 +52,11 @@ public class PointShadowMap extends FrameBuffer {
         public PointShadowMap build() {
             GLUtils.clearError();
             PointShadowMap pointShadowMap = new PointShadowMap(size, texture);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+            pointShadowMap.bind();
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+            glReadBuffer(GL_NONE);
+            glDrawBuffer(GL_NONE);
             addAttachments(pointShadowMap);
             return pointShadowMap;
         }
@@ -60,8 +65,6 @@ public class PointShadowMap extends FrameBuffer {
     @Override
     public void bind(Binding binding) {
         super.bind(binding);
-        glReadBuffer(GL_NONE);
-        glDrawBuffer(GL_NONE);
         glViewport(0, 0, getSize().x(), getSize().y());
     }
 

@@ -74,6 +74,9 @@ uniform DirectionalLight globalLights[NR_DIRECTIONAL_LIGHTS];
 uniform PointLight lights[NR_POINT_LIGHTS];
 
 uniform sampler2DShadow u_ShadowMap;
+uniform samplerCubeShadow pointShadowMaps[2];
+
+uniform float farPlane;
 
 vec4 getDirLight(DirectionalLight light, vec3 normal, vec3 fragPosition, vec3 viewPosition, float inShadow);
 vec4 getPointLight(PointLight light, vec3 normal, vec3 fragPosition, vec3 viewPosition, float inShadow);
@@ -86,6 +89,7 @@ vec4 getCubeReflection(vec3 normal);
 vec4 getCubeRefraction(float refractIndex, vec3 normal);
 
 float getInShadow(vec4 lightSpaceFragPos, vec3 lightDirection);
+float getInPointShadow(vec3 fragToLight, samplerCubeShadow sampler);
 
 void main()
 {
@@ -108,7 +112,8 @@ void main()
         combinedLight += dirLight;
     }
     for (int i = 0; i < NR_POINT_LIGHTS; i++) {
-        vec4 pointLight = getPointLight(lights[i], normal, vert_out.fragPos, uViewPosition, 1.0);
+        float inShadow = getInPointShadow(vert_out.fragPos - lights[i].position, pointShadowMaps[i]);
+        vec4 pointLight = getPointLight(lights[i], normal, vert_out.fragPos, uViewPosition, inShadow);
         combinedLight += pointLight;
     }
 
@@ -212,4 +217,23 @@ float getInShadow(vec4 lightSpaceFragPos, vec3 lightDirection) {
     }
 
     return shadow / 9.0;
+}
+
+float getInPointShadow(vec3 fragToLight, samplerCubeShadow sampler) {
+    float currentDepth = length(fragToLight) / farPlane;
+
+    float bias = min(0.005, 0.05 * (1.0 - dot(vert_out.normal, fragToLight)));
+    currentDepth -= bias;
+
+    float shadow = 0.0;
+    float offset = 0.01;
+    for (int x = -1; x <= 1; x++) {
+        for (int y = -1; y <= 1; y++) {
+            for (int z = -1; z <= 1; z++) {
+                shadow += texture(sampler, vec4(fragToLight + vec3(x, y, z) * offset, currentDepth));
+            }
+        }
+    }
+
+    return shadow / 27.0;
 }

@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.etieskrill.engine.graphics.texture.CubeMapTexture.SIDES;
+import static org.etieskrill.engine.graphics.texture.CubeMapTexture.NUM_SIDES;
 import static org.etieskrill.engine.util.ClassUtils.getSimpleName;
 import static org.lwjgl.opengl.GL33C.*;
 
@@ -59,6 +59,9 @@ public class FrameBuffer implements Disposable {
             return frameBuffer;
         }
 
+        /**
+         * This method may only be called after a framebuffer object has been generated.
+         */
         protected void addAttachments(FrameBuffer frameBuffer) {
             frameBuffer.bind();
             for (BufferAttachmentType type : attachments.keySet()) {
@@ -77,16 +80,16 @@ public class FrameBuffer implements Disposable {
                             GL_TEXTURE_2D,
                             texture2D.getID(),
                             0);
-                    case CubeMapTexture cubeMapTexture -> {
-                        for (int i = 0; i < SIDES; i++) {
-                            glFramebufferTexture2D(
+                    case CubeMapTexture cubeMapTexture ->
+                        //This call binds the whole cubemap as a single shader object, where the faces are then
+                        //addressed using gl_Layer. The built-in variable does NOT work if we bound every face of the
+                        //cubemap using glFramebufferTexture2D, as the texture object's id would then refer to only the
+                        //last texture specified this way, which, when iterating over the faces, is the negative z one.
+                            glFramebufferTexture(
                                     GL_FRAMEBUFFER,
                                     type.toGLAttachment(),
-                                    GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
                                     cubeMapTexture.getID(),
                                     0);
-                        }
-                    }
                     case RenderBuffer renderBuffer -> glFramebufferRenderbuffer(
                             GL_FRAMEBUFFER,
                             type.toGLAttachment(),

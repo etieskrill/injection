@@ -68,16 +68,16 @@ class MeshProcessor {
         List<Vertex.Builder> vertexBuilders = new ArrayList<>(numVertices);
         for (int i = 0; i < aiMesh.mNumVertices(); i++) vertexBuilders.add(new Vertex.Builder(positions.get(i)));
         if (!normals.isEmpty()) {
-            for (int i = 0; i < aiMesh.mNumVertices(); i++) vertexBuilders.get(i).normal(normals.get(i));
+            for (int i = 0; i < aiMesh.mNumVertices(); i++)
+                vertexBuilders.get(i).normal(normals.get(i));
         }
         if (!texCoords.isEmpty()) {
-            for (int i = 0; i < aiMesh.mNumVertices(); i++) vertexBuilders.get(i).textureCoords(texCoords.get(i));
+            for (int i = 0; i < aiMesh.mNumVertices(); i++)
+                vertexBuilders.get(i).textureCoords(texCoords.get(i));
         }
         if (!tangents.isEmpty()) {
-            for (int i = 0; i < aiMesh.mNumVertices(); i++) {
+            for (int i = 0; i < aiMesh.mNumVertices(); i++)
                 vertexBuilders.get(i).tangent(tangents.get(i)).biTangent(biTangents.get(i));
-                if (aiMesh.mNumVertices() < 100) System.out.println(i + " tan: " + tangents.get(i) + " bit:" + biTangents.get(i));
-            }
         }
 
         //three because a face is usually a triangle, but this list is discarded at the first opportunity a/w
@@ -88,44 +88,43 @@ class MeshProcessor {
             AIFace face = aiMesh.mFaces().get(i);
             IntBuffer buffer = face.mIndices();
 
-            boolean calcTangents = face.mNumIndices() == 3;
-            if (!calcTangentsWarning && !calcTangents) {
-                logger.warn("Primitive type with {} vertices will not have tangents calculated", face.mNumIndices());
-                calcTangentsWarning = true;
-            }
-
-            Vertex.Builder vertex1 = null, vertex2 = null, vertex3 = null;
+//            boolean calcTangents = face.mNumIndices() == 3;
+//            if (!calcTangentsWarning && !calcTangents) {
+//                logger.warn("Primitive type with {} vertices will not have tangents calculated", face.mNumIndices());
+//                calcTangentsWarning = true;
+//            }
+//
+//            Vertex.Builder vertex1 = null, vertex2 = null, vertex3 = null;
             for (int j = 0; j < face.mNumIndices(); j++) {
                 int index = buffer.get();
                 indices.add(index);
-
-                if (!calcTangents) continue;
-                switch (j) {
-                    case 0 -> vertex1 = vertexBuilders.get(index);
-                    case 1 -> vertex2 = vertexBuilders.get(index);
-                    case 2 -> vertex3 = vertexBuilders.get(index);
-                }
+//
+//                if (!calcTangents) continue;
+//                switch (j) {
+//                    case 0 -> vertex1 = vertexBuilders.get(index);
+//                    case 1 -> vertex2 = vertexBuilders.get(index);
+//                    case 2 -> vertex3 = vertexBuilders.get(index);
+//                }
             }
-
-            Vector3fc edge1 = vertex2.position().sub(vertex1.position(), new Vector3f());
-            Vector3fc edge2 = vertex3.position().sub(vertex1.position(), new Vector3f());
-            Vector2fc deltaTex1 = vertex2.textureCoords().sub(vertex1.textureCoords(), new Vector2f());
-            Vector2fc deltaTex2 = vertex3.textureCoords().sub(vertex1.textureCoords(), new Vector2f());
-
-            Vector3f tangent = new Vector3f();
-            Vector3f biTangent = new Vector3f();
-
-            float f = 1.0f / (deltaTex1.x() * deltaTex2.y() - deltaTex2.x() * deltaTex1.y());
-
-            tangent.x = f * (deltaTex2.y() * edge1.x() - deltaTex1.y() * edge2.x());
-            tangent.y = f * (deltaTex2.y() * edge1.y() - deltaTex1.y() * edge2.y());
-            tangent.z = f * (deltaTex2.y() * edge1.z() - deltaTex1.y() * edge2.z());
-
-            biTangent.x = f * (-deltaTex2.x() * edge1.x() + deltaTex1.x() * edge2.x());
-            biTangent.y = f * (-deltaTex2.x() * edge1.y() + deltaTex1.x() * edge2.y());
-            biTangent.z = f * (-deltaTex2.x() * edge1.z() + deltaTex1.x() * edge2.z());
-
-            if (aiMesh.mNumVertices() < 100) System.out.println(i + " tan: " + tangent + " bitan: " + biTangent);
+//
+//            Vector3fc edge1 = vertex2.position().sub(vertex1.position(), new Vector3f());
+//            Vector3fc edge2 = vertex3.position().sub(vertex1.position(), new Vector3f());
+//            Vector2fc deltaTex1 = vertex2.textureCoords().sub(vertex1.textureCoords(), new Vector2f());
+//            Vector2fc deltaTex2 = vertex3.textureCoords().sub(vertex1.textureCoords(), new Vector2f());
+//
+//            Vector3f tangent = new Vector3f();
+//            Vector3f biTangent = new Vector3f();
+//
+//            float f = 1.0f / (deltaTex1.x() * deltaTex2.y() - deltaTex2.x() * deltaTex1.y());
+//
+//            tangent.x = f * (deltaTex2.y() * edge1.x() - deltaTex1.y() * edge2.x());
+//            tangent.y = f * (deltaTex2.y() * edge1.y() - deltaTex1.y() * edge2.y());
+//            tangent.z = f * (deltaTex2.y() * edge1.z() - deltaTex1.y() * edge2.z());
+//
+//            biTangent.x = f * (-deltaTex2.x() * edge1.x() + deltaTex1.x() * edge2.x());
+//            biTangent.y = f * (-deltaTex2.x() * edge1.y() + deltaTex1.x() * edge2.y());
+//            biTangent.z = f * (-deltaTex2.x() * edge1.z() + deltaTex1.x() * edge2.z());
+//
 //            vertex1.tangent(tangent).biTangent(biTangent);
 //            vertex2.tangent(tangent).biTangent(biTangent);
 //            vertex3.tangent(tangent).biTangent(biTangent);

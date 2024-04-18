@@ -50,8 +50,11 @@ public class DirectionalShadowMap extends FrameBuffer {
         public DirectionalShadowMap build() {
             GLUtils.clearError();
             DirectionalShadowMap directionalShadowMap = new DirectionalShadowMap(size, texture);
+            directionalShadowMap.bind();
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+            glReadBuffer(GL_NONE);
+            glDrawBuffer(GL_NONE);
             addAttachments(directionalShadowMap);
             return directionalShadowMap;
         }
@@ -60,8 +63,6 @@ public class DirectionalShadowMap extends FrameBuffer {
     @Override
     public void bind(Binding binding) {
         super.bind(binding);
-        glReadBuffer(GL_NONE);
-        glDrawBuffer(GL_NONE);
         glViewport(0, 0, getSize().x(), getSize().y());
     }
 
