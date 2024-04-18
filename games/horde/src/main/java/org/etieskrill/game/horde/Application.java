@@ -175,11 +175,13 @@ public class Application extends GameApplication {
             PointLight light = switch (i) {
                 case 0 -> light1;
                 case 1 -> light2;
-                default -> throw new IllegalStateException("Unexpected value: " + i);};
+                default -> throw new IllegalStateException("Unexpected value: " + i);
+            };
             Matrix4fc[] pointLightCombined = switch (i) {
                 case 0 -> pointLightCombined1;
                 case 1 -> pointLightCombined2;
-                default -> throw new IllegalStateException("Unexpected value: " + i);};
+                default -> throw new IllegalStateException("Unexpected value: " + i);
+            };
 
             for (int j = 0; j < NUM_SIDES; j++) {
                 Matrix4fc lookAt = new Matrix4f()
@@ -201,6 +203,8 @@ public class Application extends GameApplication {
 
     @Override
     protected void loop(double delta) {
+        sunModel.getTransform().setPosition(new Vector3f(50).add(camera.getPosition()));
+
         directionalShadowMap.bind();
         glClear(GL_DEPTH_BUFFER_BIT);
 //        glCullFace(GL_FRONT); //Helps with peter panning, but back faces intersecting with other shadowed objects peter pan instead
@@ -251,7 +255,7 @@ public class Application extends GameApplication {
 
     private void renderScene(Shaders.StaticShader shader, Matrix4fc combined) {
         shader.setGlobalLights(sun);
-        shader.setLights(new PointLight[] {light1, light2});
+        shader.setLights(new PointLight[]{light1, light2});
         shader.setViewPosition(camera.getPosition());
         shader.setTextureScale(new Vector2f(15));
         shader.setUniform("farPlane", pointShadowFarPlane, false);
