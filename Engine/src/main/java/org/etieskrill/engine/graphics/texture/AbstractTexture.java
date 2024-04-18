@@ -13,7 +13,7 @@ import java.util.Objects;
 
 import static org.lwjgl.BufferUtils.createFloatBuffer;
 import static org.lwjgl.assimp.Assimp.*;
-import static org.lwjgl.opengl.GL33C.*;
+import static org.lwjgl.opengl.GL40C.*;
 
 /**
  * As this class makes use of the stb_image library, it can decode from all the image formats specified in the
@@ -31,7 +31,8 @@ public abstract class AbstractTexture implements Disposable {
     public enum Target { //TODO more types
         TWO_D(Texture2D.class, GL_TEXTURE_2D),
         ARRAY(ArrayTexture.class, GL_TEXTURE_2D_ARRAY),
-        CUBEMAP(CubeMapTexture.class, GL_TEXTURE_CUBE_MAP);
+        CUBEMAP(CubeMapTexture.class, GL_TEXTURE_CUBE_MAP),
+        CUBEMAP_ARRAY(CubeMapArrayTexture.class, GL_TEXTURE_CUBE_MAP_ARRAY);
 
         private final Class<? extends AbstractTexture> type;
         private final int glTarget;

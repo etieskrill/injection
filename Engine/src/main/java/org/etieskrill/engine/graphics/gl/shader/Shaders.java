@@ -373,11 +373,6 @@ public class Shaders {
 
     public static class DepthCubeMapShader extends ShaderProgram {
         @Override
-        protected void init() {
-            disableStrictUniformChecking();
-        }
-
-        @Override
         protected String[] getShaderFileNames() {
             return new String[]{
                     "DepthCubeMap.vert",
@@ -405,6 +400,43 @@ public class Shaders {
 
         public void setFarPlane(float farPlane) {
             setUniform("farPlane", farPlane);
+        }
+    }
+
+    public static class DepthCubeMapArrayShader extends ShaderProgram {
+        @Override
+        protected String[] getShaderFileNames() {
+            return new String[]{
+                    "DepthCubeMapArray.vert",
+                    "DepthCubeMapArray.geom",
+                    "DepthCubeMapArray.frag"
+            };
+        }
+
+        @Override
+        protected void getUniformLocations() {
+            addUniformArray("shadowCombined", CubeMapTexture.NUM_SIDES, MAT4);
+            addUniform("light", STRUCT);
+            addUniform("farPlane", FLOAT);
+            addUniform("index", INT);
+        }
+
+        public void setShadowCombined(Matrix4fc[] shadowCombined) {
+            if (shadowCombined.length != CubeMapTexture.NUM_SIDES)
+                throw new IllegalArgumentException("Shadow map combined matrices must contain 6 matrices, but was " + shadowCombined.length);
+            setUniformArray("shadowCombined", shadowCombined);
+        }
+
+        public void setLight(PointLight light) {
+            setUniform("light", light);
+        }
+
+        public void setFarPlane(float farPlane) {
+            setUniform("farPlane", farPlane);
+        }
+
+        public void setIndex(int index) {
+            setUniform("index", index);
         }
     }
 

@@ -73,32 +73,7 @@ public class FrameBuffer implements Disposable {
                     continue;
                 }
 
-                switch (attachment) {
-                    case Texture2D texture2D -> glFramebufferTexture2D(
-                            GL_FRAMEBUFFER,
-                            type.toGLAttachment(),
-                            GL_TEXTURE_2D,
-                            texture2D.getID(),
-                            0);
-                    case CubeMapTexture cubeMapTexture ->
-                        //This call binds the whole cubemap as a single shader object, where the faces are then
-                        //addressed using gl_Layer. The built-in variable does NOT work if we bound every face of the
-                        //cubemap using glFramebufferTexture2D, as the texture object's id would then refer to only the
-                        //last texture specified this way, which, when iterating over the faces, is the negative z one.
-                            glFramebufferTexture(
-                                    GL_FRAMEBUFFER,
-                                    type.toGLAttachment(),
-                                    cubeMapTexture.getID(),
-                                    0);
-                    case RenderBuffer renderBuffer -> glFramebufferRenderbuffer(
-                            GL_FRAMEBUFFER,
-                            type.toGLAttachment(),
-                            GL_RENDERBUFFER,
-                            renderBuffer.getID());
-                    default -> throw new FrameBufferCreationException(
-                            "Unknown framebuffer attachment type: " + getSimpleName(attachment)
-                    );
-                }
+                attachment.attach(type);
 
                 if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT) {
                     throw new FrameBufferCreationException("Incomplete framebuffer attachment for " +

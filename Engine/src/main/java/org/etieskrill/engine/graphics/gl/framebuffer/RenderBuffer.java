@@ -66,6 +66,11 @@ public class RenderBuffer implements Disposable, FrameBufferAttachment {
         return rbo;
     }
 
+    @Override
+    public void attach(BufferAttachmentType type) {
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, type.toGLAttachment(), GL_RENDERBUFFER, getID());
+    }
+
     public Type getType() {
         return type;
     }

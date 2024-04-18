@@ -22,7 +22,6 @@ public class ArrayTexture extends AbstractTexture {
     private final Integer length;
 
     public static final class BufferBuilder extends Builder<ArrayTexture> {
-
         private final Integer length; //TODO increase length (and expand buffer) with #addTexture calls
         private final ByteBuffer buffer;
 

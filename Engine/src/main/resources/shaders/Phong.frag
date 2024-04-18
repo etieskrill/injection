@@ -61,7 +61,6 @@ in Data {
 
 out vec4 fragColour;
 
-//TODO implement this in view space to mitigate passing such variables anyway
 uniform vec3 uViewPosition;
 uniform mat3 uNormal;
 
@@ -74,7 +73,7 @@ uniform DirectionalLight globalLights[NR_DIRECTIONAL_LIGHTS];
 uniform PointLight lights[NR_POINT_LIGHTS];
 
 uniform sampler2DShadow u_ShadowMap;
-uniform samplerCubeShadow pointShadowMaps[2];
+uniform samplerCubeArrayShadow pointShadowMaps;
 
 uniform float farPlane;
 
@@ -89,7 +88,7 @@ vec4 getCubeReflection(vec3 normal);
 vec4 getCubeRefraction(float refractIndex, vec3 normal);
 
 float getInShadow(vec4 lightSpaceFragPos, vec3 lightDirection);
-float getInPointShadow(vec3 fragToLight, samplerCubeShadow sampler);
+float getInPointShadow(int index, vec3 fragToLight);
 
 void main()
 {
@@ -112,7 +111,7 @@ void main()
         combinedLight += dirLight;
     }
     for (int i = 0; i < NR_POINT_LIGHTS; i++) {
-        float inShadow = getInPointShadow(vert_out.fragPos - lights[i].position, pointShadowMaps[i]);
+        float inShadow = getInPointShadow(i, vert_out.fragPos - lights[i].position);
         vec4 pointLight = getPointLight(lights[i], normal, vert_out.fragPos, uViewPosition, inShadow);
         combinedLight += pointLight;
     }
@@ -219,7 +218,7 @@ float getInShadow(vec4 lightSpaceFragPos, vec3 lightDirection) {
     return shadow / 9.0;
 }
 
-float getInPointShadow(vec3 fragToLight, samplerCubeShadow sampler) {
+float getInPointShadow(int index, vec3 fragToLight) {
     float currentDepth = length(fragToLight) / farPlane;
 
     float bias = min(0.005, 0.05 * (1.0 - dot(vert_out.normal, fragToLight)));
@@ -230,7 +229,7 @@ float getInPointShadow(vec3 fragToLight, samplerCubeShadow sampler) {
     for (int x = -1; x <= 1; x++) {
         for (int y = -1; y <= 1; y++) {
             for (int z = -1; z <= 1; z++) {
-                shadow += texture(sampler, vec4(fragToLight + vec3(x, y, z) * offset, currentDepth));
+                shadow += texture(pointShadowMaps, vec4(fragToLight + vec3(x, y, z) * offset, index), currentDepth);
             }
         }
     }
