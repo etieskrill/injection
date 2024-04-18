@@ -5,6 +5,7 @@ import org.etieskrill.engine.input.*;
 import org.etieskrill.engine.scene.Scene;
 import org.jetbrains.annotations.Contract;
 import org.joml.Vector2f;
+import org.joml.Vector2i;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFWVidMode;
@@ -101,8 +102,8 @@ public class Window implements Disposable {
         }
 
         @Contract("-> new")
-        public Vector2f toVec() {
-            return new Vector2f(width, height);
+        public Vector2i toVec() {
+            return new Vector2i(width, height);
         }
 
         public float getAspectRatio() {

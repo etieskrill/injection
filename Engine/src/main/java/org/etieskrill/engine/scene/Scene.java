@@ -2,19 +2,22 @@ package org.etieskrill.engine.scene;
 
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.camera.Camera;
+import org.etieskrill.engine.graphics.camera.OrthographicCamera;
 import org.etieskrill.engine.input.CursorInputAdapter;
 import org.etieskrill.engine.input.Key;
 import org.etieskrill.engine.scene.component.Node;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector2f;
 import org.joml.Vector2fc;
+import org.joml.Vector2ic;
+import org.joml.Vector3f;
 
 import static org.lwjgl.opengl.GL11C.*;
 
 public class Scene implements CursorInputAdapter {
 
     private @NotNull Batch batch;
-    private @NotNull Node root;
+    private @NotNull Node root; //TODO direct root (e.g. label) is not formatted -> add transparent parent container?
     private @NotNull Camera camera;
 
     private final Vector2f size;
@@ -40,6 +43,7 @@ public class Scene implements CursorInputAdapter {
         this.size = new Vector2f(0);
 
         camera.setOrientation(0f, -90f, 0f);
+        camera.setPosition(new Vector3f(camera.getViewportSize(), 0).div(2));
     }
 
     public void update(double delta) {
@@ -79,8 +83,17 @@ public class Scene implements CursorInputAdapter {
         return camera;
     }
 
+    /**
+     * Sets the camera used to view the scene.
+     * <p>
+     * This method resets the camera's transform to the standard ui viewport, with the origin in the top-left corner,
+     * and the window size as the bottom-right corner.
+     *
+     * @param camera the camera to set this scene to
+     */
     public void setCamera(@NotNull Camera camera) {
         this.camera = camera.setOrientation(0f, -90f, 0f);
+        this.camera.setPosition(new Vector3f(camera.getViewportSize(), 0).div(2));
     }
 
     public void show() {
@@ -91,7 +104,7 @@ public class Scene implements CursorInputAdapter {
         this.root.hide();
     }
 
-    public void setSize(Vector2fc size) {
+    public void setSize(Vector2ic size) {
         this.size.set(size);
         root.invalidate();
     }

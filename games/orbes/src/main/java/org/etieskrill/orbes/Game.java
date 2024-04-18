@@ -19,12 +19,11 @@ import org.etieskrill.engine.time.SystemNanoTimePacer;
 import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.window.Window;
 import org.etieskrill.orbes.scene.*;
-import org.joml.Vector2f;
-import org.joml.Vector2fc;
-import org.joml.Vector2i;
-import org.joml.Vector3f;
+import org.joml.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.lang.Math;
 
 import static org.etieskrill.orbes.Game.Stage.*;
 
@@ -102,28 +101,28 @@ public class Game {
     }
 
     private void setupUI() {
-        Vector2fc windowSize = window.getSize().toVec();
+        Vector2i windowSize = window.getSize().toVec();
 
         mainMenuScene = new MainMenuUIScene(
                 new Batch((GLRenderer) renderer),
-                new OrthographicCamera(new Vector2f(windowSize)).setPosition(new Vector3f(windowSize, 0).mul(0.5f)),
+                new OrthographicCamera(new Vector2i(windowSize)),
                 this
         );
 
         gameUIScene = new GameUIScene(
                 new Batch((GLRenderer) renderer),
-                new OrthographicCamera(new Vector2f(windowSize)),
+                new OrthographicCamera(new Vector2i(windowSize)),
                 new Vector2f(windowSize));
 
         pauseUIScene = new GameUIPauseScene(
                 new Batch((GLRenderer) renderer),
-                new OrthographicCamera(new Vector2f(windowSize)).setPosition(new Vector3f(windowSize, 0).mul(0.5f)),
+                new OrthographicCamera(new Vector2i(windowSize)),
                 this
         );
 
         endScene = new EndScene(
                 new Batch((GLRenderer) renderer),
-                new OrthographicCamera(new Vector2f(windowSize)).setPosition(new Vector3f(windowSize, 0).mul(0.5f)),
+                new OrthographicCamera(new Vector2i(windowSize)),
                 this
         );
     }
@@ -132,8 +131,8 @@ public class Game {
         //TODO figure out a smart way to link the pacer and window refresh rates
         pacer = new SystemNanoTimePacer(1 / 60f);
 
-        Vector2fc windowSize = window.getSize().toVec();
-        FrameBuffer postBuffer = FrameBuffer.getStandard(windowSize.get(0, new Vector2i()));
+        Vector2i windowSize = window.getSize().toVec();
+        FrameBuffer postBuffer = FrameBuffer.getStandard(windowSize);
         Material mat = new Material.Builder() //TODO okay, the fact models, or rather meshes simply ignore these mats is getting frustrating now, that builder needs some serious rework
                 .addTextures((Texture2D) postBuffer.getAttachment(BufferAttachmentType.COLOUR0))
                 .build();

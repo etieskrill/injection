@@ -74,7 +74,7 @@ public class Game {
         window.setScene(new Scene(
                 new Batch((GLRenderer) renderer).setShader(Shaders.getTextShader()),
                 new VBox(fpsLabel).setAlignment(Node.Alignment.TOP_LEFT),
-                new OrthographicCamera(window.getSize().toVec()).setPosition(new Vector3f(window.getSize().toVec().mul(.5f), 0)))
+                new OrthographicCamera(window.getSize().toVec()))
         );
 
         loop();
