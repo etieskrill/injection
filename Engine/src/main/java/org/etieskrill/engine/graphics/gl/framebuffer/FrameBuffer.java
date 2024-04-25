@@ -12,7 +12,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
+import static java.util.Objects.requireNonNull;
 import static org.etieskrill.engine.graphics.texture.CubeMapTexture.NUM_SIDES;
 import static org.etieskrill.engine.util.ClassUtils.getSimpleName;
 import static org.lwjgl.opengl.GL33C.*;
@@ -39,8 +41,7 @@ public class FrameBuffer implements Disposable {
     }
 
     public static class Builder {
-        protected final Vector2ic size;
-
+        protected Vector2ic size;
         private final Map<BufferAttachmentType, FrameBufferAttachment> attachments = new HashMap<>();
 
         public Builder(Vector2ic size) {
@@ -54,7 +55,7 @@ public class FrameBuffer implements Disposable {
 
         public FrameBuffer build() {
             GLUtils.clearError();
-            FrameBuffer frameBuffer = new FrameBuffer(size);
+            FrameBuffer frameBuffer = new FrameBuffer(requireNonNull(size));
             addAttachments(frameBuffer);
             return frameBuffer;
         }

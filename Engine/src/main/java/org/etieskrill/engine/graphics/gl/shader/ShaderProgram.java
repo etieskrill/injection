@@ -114,7 +114,7 @@ public abstract class ShaderProgram implements Disposable {
         try {
             createShader(files);
         } catch (ShaderException e) {
-            logger.warn("Exception during shader creation, using default shader", e);
+            logger.warn("Exception during shader creation, using default shader", e); //TODO remove and add explicit alternative declaration
             boolean prevStrictState = STRICT_UNIFORM_DETECTION;
             STRICT_UNIFORM_DETECTION = false; //TODO quick and dirty solution bcs faulty shader's uniforms are still added
             createShader(Set.of(
@@ -429,6 +429,7 @@ public abstract class ShaderProgram implements Disposable {
 
             SAMPLER2D(Integer.class),
             SAMPLER_CUBE_MAP(Integer.class),
+            SAMPLER_CUBE_MAP_ARRAY(Integer.class),
 
             STRUCT(UniformMappable.class);
 

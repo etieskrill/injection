@@ -1,5 +1,6 @@
 package org.etieskrill.engine.graphics.gl;
 
+import org.etieskrill.engine.entity.data.TransformC;
 import org.etieskrill.engine.graphics.Renderer;
 import org.etieskrill.engine.graphics.TextRenderer;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
@@ -22,7 +23,7 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
 
     private static final float CLEAR_COLOUR = 0.25f;//0.025f;
 
-    private int nextTexture;
+    private int nextTexture; //TODO move to shader
     private int manuallyBoundTextures;
 
     @Override
@@ -54,13 +55,13 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
     }
 
     @Override
-    public void render(Model model, ShaderProgram shader, Matrix4fc combined) {
+    public void render(TransformC transform, Model model, ShaderProgram shader, Matrix4fc combined) {
         if (shader.isPlaceholder()) {
             renderOutline(model, shader, combined, 1f, new Vector4f(1, 0, 1, 1), true);
             return;
         }
 
-        _render(model, shader, combined);
+        _render(transform, model, shader, combined);
     }
 
     private Model box;
@@ -73,7 +74,7 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
     @Override
     public void renderBox(Vector3fc position, Vector3fc size, ShaderProgram shader, Matrix4fc combined) {
         getBox().getTransform().setPosition(position).setScale(size);
-        _render(getBox(), shader, combined);
+        _render(getBox().getTransform(), getBox(), shader, combined);
     }
 
     //TODO update spec: all factory methods use loaders by default, constructors/builders do not
@@ -99,12 +100,12 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
 
         glStencilFunc(GL_ALWAYS, 1, 0xFF);
         glStencilMask(0xFF);
-        _render(model, shader, combined);
+//        _render(model, shader, combined);
 
         glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
         glStencilMask(0x00);
         if (writeToFront) glDisable(GL_DEPTH_TEST);
-        _render(model, getOutlineShader(), combined);
+//        _render(model, getOutlineShader(), combined);
 
         glStencilFunc(GL_ALWAYS, 0, 0xFF);
         glStencilMask(0xFF);
@@ -115,7 +116,7 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
     public void renderWireframe(Model model, ShaderProgram shader, Matrix4fc combined) {
         glDisable(GL_CULL_FACE);
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        _render(model, shader, combined);
+//        _render(model, shader, combined);
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         glEnable(GL_CULL_FACE);
     }
@@ -124,25 +125,25 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
     public void render(CubeMapModel cubemap, ShaderProgram shader, Matrix4fc combined) {
         //TODO perf increase use early depth test to discard instead of this
         glDepthMask(false);
-        _render(cubemap, shader, combined);
+//        _render(cubemap, shader, combined);
         glDepthMask(true);
     }
 
     @Override
     public void renderInstances(Model model, int numInstances, ShaderProgram shader, Matrix4fc combined) {
-        _render(model, shader, combined, true, numInstances);
+//        _render(model, shader, combined, true, numInstances);
     }
 
-    private void _render(Model model, ShaderProgram shader, Matrix4fc combined) {
-        _render(model, shader, combined, false, 0);
+    private void _render(TransformC transform, Model model, ShaderProgram shader, Matrix4fc combined) {
+        _render(transform, model, shader, combined, false, 0);
     }
 
-    private void _render(Model model, ShaderProgram shader, Matrix4fc combined, boolean instanced, int numInstances) {
+    private void _render(TransformC transform, Model model, ShaderProgram shader, Matrix4fc combined, boolean instanced, int numInstances) {
         shader.setUniform("uCombined", combined, false);
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            Matrix4f transform = new Matrix4f(model.getFinalTransform().getMatrix().get(stack.callocFloat(16)));
-            shader.setUniform("uModel", transform, false);
-            shader.setUniform("uNormal", transform.invert().transpose().get3x3(new Matrix3f(stack.callocFloat(9))), false);
+            Matrix4f transformMatrix = new Matrix4f(transform.getMatrix());// = new Matrix4f(model.getFinalTransform().getMatrix().get(stack.callocFloat(16)));
+            shader.setUniform("uModel", transformMatrix, false);
+            shader.setUniform("uNormal", transformMatrix.invert().transpose().get3x3(new Matrix3f(stack.callocFloat(9))), false);
         }
 
         if (!model.doCulling()) glDisable(GL_CULL_FACE);

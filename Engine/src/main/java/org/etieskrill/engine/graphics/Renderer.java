@@ -1,5 +1,6 @@
 package org.etieskrill.engine.graphics;
 
+import org.etieskrill.engine.entity.data.TransformC;
 import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.etieskrill.engine.graphics.model.CubeMapModel;
@@ -31,7 +32,15 @@ public interface Renderer {
      * @param shader   shader to use while rendering
      * @param combined camera view + perspective
      */
-    void render(Model model, ShaderProgram shader, Matrix4fc combined);
+    void render(TransformC transform, Model model, ShaderProgram shader, Matrix4fc combined);
+
+    /**
+     * @deprecated Left in for compatibility with older games.
+     */
+    @Deprecated
+    default void render(Model model, ShaderProgram shader, Matrix4fc combined) {
+        render(model.getFinalTransform(), model, shader, combined);
+    }
 
     /**
      * Render a number of instances specified by {@code numInstances} of the {@link Model} using the

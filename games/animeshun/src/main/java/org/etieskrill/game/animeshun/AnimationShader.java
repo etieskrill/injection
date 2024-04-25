@@ -13,6 +13,11 @@ public class AnimationShader extends Shaders.StaticShader {
     private static final int MAX_BONES = 100;
 
     @Override
+    protected void init() {
+        disableStrictUniformChecking();
+    }
+
+    @Override
     protected String[] getShaderFileNames() {
         return new String[]{"Animation.vert", "Animation.frag"};
     }
