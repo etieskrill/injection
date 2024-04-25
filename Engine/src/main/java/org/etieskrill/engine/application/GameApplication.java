@@ -1,5 +1,6 @@
 package org.etieskrill.engine.application;
 
+import org.etieskrill.engine.entity.system.EntitySystem;
 import org.etieskrill.engine.graphics.gl.GLRenderer;
 import org.etieskrill.engine.input.Key;
 import org.etieskrill.engine.input.Keys;
@@ -18,6 +19,8 @@ public abstract class GameApplication {
 
     protected final GLRenderer renderer;
 
+    protected final EntitySystem entitySystem;
+
     private double avgCpuTime;
     private final ArrayDeque<Double> cpuTimes;
 
@@ -35,6 +38,7 @@ public abstract class GameApplication {
         });
         this.pacer = new SystemNanoTimePacer(1d / frameRate);
         this.renderer = new GLRenderer();
+        this.entitySystem = new EntitySystem();
         this.cpuTimes = new FixedArrayDeque<>(frameRate);
 
         init();
@@ -53,6 +57,7 @@ public abstract class GameApplication {
 
             double delta = pacer.getDeltaTimeSeconds();
             loop(delta);
+            entitySystem.update(delta);
             window.update(delta);
 
             cpuTimes.push((System.nanoTime() - time) / 1_000_000d);

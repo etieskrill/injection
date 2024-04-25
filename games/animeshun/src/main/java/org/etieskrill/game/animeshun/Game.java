@@ -9,6 +9,7 @@ import org.etieskrill.engine.graphics.animation.NodeFilter;
 import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera;
 import org.etieskrill.engine.graphics.data.DirectionalLight;
+import org.etieskrill.engine.graphics.gl.DebuggableRenderer;
 import org.etieskrill.engine.graphics.gl.GLRenderer;
 import org.etieskrill.engine.graphics.gl.GLUtils;
 import org.etieskrill.engine.graphics.model.Model;
@@ -32,12 +33,17 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayDeque;
 import java.util.List;
 import java.util.OptionalDouble;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import static org.etieskrill.engine.graphics.animation.AnimationMixer.AnimationBlendMode.OVERRIDING;
 import static org.etieskrill.engine.graphics.model.loader.Loader.loadModelAnimations;
 import static org.etieskrill.engine.input.InputBinding.Trigger.ON_PRESS;
 import static org.etieskrill.engine.input.InputBinding.Trigger.PRESSED;
 import static org.joml.Math.toRadians;
+import static org.lwjgl.opengl.GL11C.glFinish;
+import static org.lwjgl.opengl.GL11C.glFlush;
 
 public class Game {
 
@@ -238,8 +244,6 @@ public class Game {
 
             vampy.getTransform().applyRotation(quat -> quat.rotationY((float) toRadians(-camera.getYaw())));
 
-            renderer.prepare();
-
             float diff = (controls.isPressed(Keys.W)
                     || controls.isPressed(Keys.A)
                     || controls.isPressed(Keys.D)
@@ -322,6 +326,8 @@ public class Game {
             }
             camera.setPosition(orbitPosition);
             camera.setWorldUp(worldUp);
+
+            renderer.prepare();
 
             renderer.render(vampy, vampyShader, camera.getCombined());
 //            vampyBB.getTransform().set(vampy.getTransform());

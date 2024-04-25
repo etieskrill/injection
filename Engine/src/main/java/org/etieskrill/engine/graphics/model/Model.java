@@ -296,6 +296,7 @@ public class Model implements Disposable {
 
     //TODO what is this operation called? composition? move to transform
     @Contract("-> this")
+    @Deprecated
     public TransformC getFinalTransform() {
         return finalTransform.set(transform)
                 .translate(initialTransform.getPosition())

@@ -213,6 +213,19 @@ public class Transform implements TransformC {
     }
 
     @Override
+    public Transform compose(@NotNull TransformC transform, @NotNull Transform target) {
+        return target.set(this)
+                .translate(transform.getPosition())
+                .applyRotation(quat -> quat.mul(transform.getRotation()))
+                .applyScale(scale -> scale.mul(transform.getScale()));
+    }
+
+    @Contract(value = "_ -> this", mutates = "this")
+    public Transform compose(@NotNull TransformC transform) {
+        return compose(transform, this);
+    }
+
+    @Override
     public Transform lerp(@NotNull TransformC other, float factor, @NotNull Transform target) {
         target.set(this);
 

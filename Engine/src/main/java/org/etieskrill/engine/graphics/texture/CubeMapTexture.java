@@ -2,6 +2,8 @@ package org.etieskrill.engine.graphics.texture;
 
 import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment;
 import org.joml.Vector2ic;
+import org.joml.Vector3f;
+import org.joml.Vector3fc;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,6 +24,15 @@ import static org.lwjgl.stb.STBImage.stbi_image_free;
 public class CubeMapTexture extends AbstractTexture implements FrameBufferAttachment {
 
     public static final int NUM_SIDES = 6;
+
+    public static final Vector3fc[] FACE_NORMALS = {
+            new Vector3f(1, 0, 0), new Vector3f(-1, 0, 0), new Vector3f(0, 1, 0),
+            new Vector3f(0, -1, 0), new Vector3f(0, 0, 1), new Vector3f(0, 0, -1)};
+
+    public static final Vector3fc[] FACE_UPS = {
+            new Vector3f(0, -1, 0), new Vector3f(0, -1, 0), new Vector3f(0, 0, 1),
+            new Vector3f(0, 0, -1), new Vector3f(0, -1, 0), new Vector3f(0, -1, 0)
+    };
 
     private static final Logger logger = LoggerFactory.getLogger(CubeMapTexture.class);
 

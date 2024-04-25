@@ -20,6 +20,7 @@ public interface TransformC {
 
     /**
      * Gets the updated matrix of the transform.
+     *
      * @return the transform matrix
      */
     @Contract("-> this")
@@ -27,6 +28,10 @@ public interface TransformC {
 
     @Contract("_, _ -> param2")
     Transform apply(@NotNull TransformC transform, @NotNull Transform target);
+
+    //TODO find correct operation name
+    @Contract("_, _ -> param2")
+    Transform compose(@NotNull TransformC transform, @NotNull Transform target);
 
     @Contract("_, _, _ -> param3")
     Transform lerp(@NotNull TransformC other, float factor, @NotNull Transform target);

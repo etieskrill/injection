@@ -64,11 +64,6 @@ public class Shaders {
     //TODO evaluate whether to put uniforms as variables
     public static class StaticShader extends ShaderProgram {
         @Override
-        protected void init() {
-            disableStrictUniformChecking();
-        }
-
-        @Override
         protected String[] getShaderFileNames() {
             return new String[]{"Phong.vert", "Phong.frag"};
         }
@@ -85,6 +80,11 @@ public class Shaders {
 
             addUniformArray("globalLights", 1, STRUCT);
             addUniformArray("lights", 2, STRUCT);
+
+//            addUniform("globalShadowMap", SAMPLER2D);
+            addUniform("pointShadowMaps0", SAMPLER_CUBE_MAP_ARRAY);
+
+            addUniform("pointShadowFarPlane", FLOAT, 20f);
         }
 
         public void setTextureScale(Vector2fc textureScale) {
@@ -109,6 +109,10 @@ public class Shaders {
 
         public void setLights(PointLight[] pointLights) {
             setUniformArray("lights", pointLights);
+        }
+
+        public void setPointShadowFarPlane(float farPlane) {
+            setUniform("pointShadowFarPlane", farPlane);
         }
     }
 
