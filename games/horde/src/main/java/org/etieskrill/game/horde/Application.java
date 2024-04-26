@@ -191,9 +191,9 @@ public class Application extends GameApplication {
 
         directionalShadowMap.bind();
         glClear(GL_DEPTH_BUFFER_BIT);
-        glCullFace(GL_FRONT); //Helps with peter panning, but back faces intersecting with other shadowed objects peter pan instead
+//        glCullFace(GL_FRONT); //Helps with peter panning, but back faces intersecting with other shadowed objects peter pan instead
         renderScene(depthShader, sunLightCombined);
-        glCullFace(GL_BACK);
+//        glCullFace(GL_BACK);
         directionalShadowMap.unbind();
 
         /*
@@ -215,8 +215,8 @@ public class Application extends GameApplication {
         if (pacer.getTotalFramesElapsed() % 60 == 0) {
             logger.info("Fps: {}, gpu time: {}ms, gpu delay: {}ms",
                     "%4.1f".formatted(pacer.getAverageFPS()),
-                    "%5.2f".formatted(renderer.getAveragedGpuTime() / 1000000.0),
-                    "%5.2f".formatted(renderer.getGpuDelay() / 1000000.0));
+                    "%5.2f".formatted(renderer.getAveragedGpuTime() / 1_000_000.0),
+                    "%5.2f".formatted(renderer.getGpuDelay() / 1_000_000.0));
         }
         fpsLabel.setText("%5.3f".formatted(pacer.getAverageFPS()));
     }
@@ -238,8 +238,8 @@ public class Application extends GameApplication {
 
     private void renderScene(Shaders.StaticShader shader, Matrix4fc combined) {
         renderer.bindNextFreeTexture(shader, "u_ShadowMap", directionalShadowMap.getTexture());
-        shader.setUniform("u_LightCombined", sunLightCombined);
-        renderer.bindNextFreeTexture(shader, "pointShadowMaps", pointShadowMaps.getTexture());
+        shader.setUniform("u_LightCombined", sunLightCombined, false);
+        renderer.bindNextFreeTexture(shader, "pointShadowMaps0", pointShadowMaps.getTexture());
         shader.setGlobalLights(sunLight);
         shader.setLights(new PointLight[]{light1, light2});
         shader.setViewPosition(camera.getPosition());

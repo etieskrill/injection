@@ -1,6 +1,7 @@
 package org.etieskrill.engine.graphics.texture;
 
 import org.etieskrill.engine.Disposable;
+import org.etieskrill.engine.graphics.gl.GLUtils;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector2i;
 import org.joml.Vector2ic;
@@ -231,7 +232,8 @@ public abstract class AbstractTexture implements Disposable {
         protected boolean autoSwizzleMask = true;
         protected boolean mipMaps = true;
 
-        Builder() {}
+        Builder() {
+        }
 
         public Builder<T> setType(@NotNull Type type) {
             this.type = type;
@@ -246,12 +248,12 @@ public abstract class AbstractTexture implements Disposable {
             this.target = target;
             return this;
         }
-    
+
         public Builder<T> setFormat(Format format) {
             this.format = format;
             return this;
         }
-    
+
         public Builder<T> disableAutoSwizzleMask() {
             this.autoSwizzleMask = false;
             return this;
@@ -275,15 +277,17 @@ public abstract class AbstractTexture implements Disposable {
         }
 
         public final T build() {
+            GLUtils.clearError();
             T texture = bufferTextureData();
 
             //Wack solution for post-creation method calls
             if (mipMaps) glGenerateMipmap(target.gl());
-            
+
+            GLUtils.checkError("Error while creating texture");
             freeResources();
             return texture;
         }
-        
+
         protected abstract T bufferTextureData();
 
         protected abstract void freeResources();
@@ -312,11 +316,12 @@ public abstract class AbstractTexture implements Disposable {
 
         if (builder.autoSwizzleMask) {
             int[] swizzleMask = switch (builder.format) {
-                case GRAY, DEPTH, STENCIL -> new int[] {GL_RED, GL_RED, GL_RED, GL_ONE};
-                case ALPHA -> new int[] {GL_ONE, GL_ONE, GL_ALPHA, GL_RED};
-                case GA -> new int[] {GL_RED, GL_RED, GL_RED, GL_GREEN};
+                case GRAY, DEPTH, STENCIL -> new int[]{GL_RED, GL_RED, GL_RED, GL_ONE};
+                case ALPHA -> new int[]{GL_ONE, GL_ONE, GL_ALPHA, GL_RED};
+                case GA -> new int[]{GL_RED, GL_RED, GL_RED, GL_GREEN};
                 case RGB, RGBA, SRGB, SRGBA -> new int[]{GL_RED, GL_GREEN, GL_BLUE, GL_ALPHA};
-                case NONE -> throw new IllegalStateException("No swizzle mask for colour format: " + builder.format.name());
+                case NONE ->
+                        throw new IllegalStateException("No swizzle mask for colour format: " + builder.format.name());
             };
 
             glTexParameteriv(target.gl(), GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
