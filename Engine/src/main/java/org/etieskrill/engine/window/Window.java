@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Objects;
 
 import static java.util.Arrays.asList;
+import static java.util.Objects.requireNonNullElse;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL33C.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
@@ -372,6 +373,18 @@ public class Window implements Disposable {
 //        int[] buf = new int[1];
 //        glGetIntegerv(GL_MAX_GEOMETRY_OUTPUT_VERTICES, buf);
 //        System.out.println("max vertices: " + buf[0]); //TODO this kinda stuff needs to be worked into e.g. the geometry shader, but how best to do that?
+
+        String[] glExtensions = requireNonNullElse(glGetString(GL_EXTENSIONS), "").split(" ");
+        logger.debug("""
+                        \n\tGL context:
+                        \t\tversion: {}
+                        \t\tshading language version: {}
+                        \t\textensions ({} total): {}
+                        \t\trenderer: {}
+                        \t\tvendor: {}""",
+                glGetString(GL_VERSION), glGetString(GL_SHADING_LANGUAGE_VERSION),
+                glExtensions.length == 1 && glExtensions[0].isBlank() ? 0 : glExtensions.length, glExtensions,
+                glGetString(GL_RENDERER), glGetString(GL_VENDOR));
 
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LESS);

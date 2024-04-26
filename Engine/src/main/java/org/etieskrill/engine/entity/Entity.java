@@ -1,8 +1,5 @@
 package org.etieskrill.engine.entity;
 
-import org.etieskrill.engine.entity.component.Component;
-import org.etieskrill.engine.entity.data.Transform;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;

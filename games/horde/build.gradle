@@ -1,12 +1,20 @@
+buildscript {
+    dependencies {
+        classpath 'com.github.johnrengelman:shadow:8.1.1'
+    }
+}
+
 plugins {
     id 'java'
     id 'application'
+    id 'edu.sc.seis.launch4j' version '3.0.5'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
 group = 'org.etieskrill.game.horde'
 version = '1.0.0-SNAPSHOT'
 
-applicationDefaultJvmArgs = ["-Dorg.slf4j.simpleLogger.defaultLogLevel=trace"]
+applicationDefaultJvmArgs = ["-Dorg.slf4j.simpleLogger.defaultLogLevel=debug"]
 
 dependencies {
     implementation project(':engine')
@@ -30,4 +38,9 @@ application {
 
 test {
     useJUnitPlatform()
+}
+
+launch4j {
+    mainClassName = 'org.etieskrill.game.horde.Application'
+    jarTask = project.tasks.shadowJar
 }

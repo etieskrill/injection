@@ -3,7 +3,6 @@ package org.etieskrill.engine.entity.service;
 import org.etieskrill.engine.entity.Entity;
 import org.etieskrill.engine.entity.component.DirectionalLightComponent;
 import org.etieskrill.engine.entity.component.Drawable;
-import org.etieskrill.engine.entity.component.EnabledComponent;
 import org.etieskrill.engine.entity.component.PointLightComponent;
 import org.etieskrill.engine.entity.data.Transform;
 import org.etieskrill.engine.graphics.camera.Camera;
@@ -87,8 +86,8 @@ public class RenderService implements Service {
 
     @Override
     public void process(Entity targetEntity, List<Entity> entities, double delta) {
-        EnabledComponent enabledComponent = targetEntity.getComponent(EnabledComponent.class);
-        if (enabledComponent != null && !enabledComponent.getComponent()) return;
+        Boolean enabled = targetEntity.getComponent(Boolean.class);
+        if (enabled != null && !enabled) return;
 
         Drawable drawable = targetEntity.getComponent(Drawable.class);
         if (!drawable.isVisible()) return;

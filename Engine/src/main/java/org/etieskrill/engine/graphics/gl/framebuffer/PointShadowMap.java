@@ -1,8 +1,6 @@
 package org.etieskrill.engine.graphics.gl.framebuffer;
 
 import org.etieskrill.engine.graphics.data.PointLight;
-import org.etieskrill.engine.graphics.gl.GLUtils;
-import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment.BufferAttachmentType;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.etieskrill.engine.graphics.texture.CubeMapTexture;
 import org.jetbrains.annotations.Contract;
@@ -14,11 +12,6 @@ import org.joml.Vector4f;
 import static org.etieskrill.engine.graphics.texture.AbstractTexture.Format.DEPTH;
 import static org.etieskrill.engine.graphics.texture.AbstractTexture.Type.SHADOW;
 import static org.etieskrill.engine.graphics.texture.AbstractTexture.Wrapping.CLAMP_TO_EDGE;
-import static org.lwjgl.opengl.GL11C.*;
-import static org.lwjgl.opengl.GL13C.GL_TEXTURE_CUBE_MAP;
-import static org.lwjgl.opengl.GL14C.GL_TEXTURE_COMPARE_FUNC;
-import static org.lwjgl.opengl.GL14C.GL_TEXTURE_COMPARE_MODE;
-import static org.lwjgl.opengl.GL30C.GL_COMPARE_REF_TO_TEXTURE;
 
 public class PointShadowMap extends ShadowMap<CubeMapTexture> {
 

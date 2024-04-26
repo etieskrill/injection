@@ -204,7 +204,7 @@ float getInShadow(vec4 lightSpaceFragPos, vec3 lightDirection) {
     float currentDepth = depthSpace.z;
     if (currentDepth > 1.0) return 1.0;
 
-    float bias = max(0.005, 0.05 * (1.0 - dot(vert_out.normal, lightDirection)));
+    float bias = min(0.005, 0.05 * (1.0 - dot(vert_out.normal, lightDirection)));
     depthSpace.z -= bias;
     float shadow = 0.0;
 
