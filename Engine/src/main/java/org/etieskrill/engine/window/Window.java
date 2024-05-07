@@ -4,6 +4,7 @@ import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.input.*;
 import org.etieskrill.engine.scene.Scene;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 import org.lwjgl.BufferUtils;
@@ -11,7 +12,6 @@ import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GLCapabilities;
-import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.system.Platform;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,11 +22,16 @@ import java.util.Objects;
 
 import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNullElse;
+import static org.etieskrill.engine.window.Window.GLFWError.NO_ERROR;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL33C.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
+import static org.lwjgl.system.MemoryUtil.memUTF8;
 
 public class Window implements Disposable {
+
+    static final int MIN_GL_CONTEXT_MAJOR_VERSION = 3;
+    static final int MIN_GL_CONTEXT_MINOR_VERSION = 3;
 
     public static boolean USE_RAW_MOUSE_MOTION_IF_AVAILABLE = true;
 
@@ -252,12 +257,7 @@ public class Window implements Disposable {
 
         this.setCursor(cursor.setWindow(this));
 
-        PointerBuffer description = BufferUtils.createPointerBuffer(1);
-        int err = glfwGetError(description);
-        if (err != GLFW_NO_ERROR) {
-            logger.warn("Error during window creation: 0x{} {}",
-                    Integer.toHexString(err), MemoryUtil.memASCII(description.get()));
-        }
+        checkErrorThrowing("Error during window creation");
 
         logger.info("Created window with settings: {}", this);
     }
@@ -267,18 +267,12 @@ public class Window implements Disposable {
         if (!glfwInit())
             throw new IllegalStateException("Unable to initialize glfw library");
 
-        //TODO perhaps DON'T throw an exception in a callback
-        glfwSetErrorCallback((retVal, argv) -> {
-            PointerBuffer errorMessage = BufferUtils.createPointerBuffer(1);
-            throw new IllegalStateException(String.format("GLFW error occurred: %d\nMessage: %s",
-                    glfwGetError(errorMessage), errorMessage.getStringASCII()));
-        });
-
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, MIN_GL_CONTEXT_MAJOR_VERSION);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, MIN_GL_CONTEXT_MINOR_VERSION);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-        if (Platform.get() == Platform.MACOSX)
+        if (Platform.get() == Platform.MACOSX) {
             glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
+        }
 
         //TODO more sophisticated & consumer-controlled monitor choice / general window configuration
         monitor = glfwGetPrimaryMonitor();
@@ -310,6 +304,7 @@ public class Window implements Disposable {
                     case WINDOWED, BORDERLESS -> NULL;
                 },
                 NULL);
+        checkErrorThrowing();
         if (this.window == NULL)
             throw new IllegalStateException("Could not create glfw window");
 
@@ -522,6 +517,67 @@ public class Window implements Disposable {
     public void setScene(Scene scene) {
         this.scene = scene;
         this.scene.setSize(this.size.toVec());
+    }
+
+    private static void checkError() {
+        PointerBuffer description = BufferUtils.createPointerBuffer(1);
+        GLFWError error = GLFWError.fromGLFW(glfwGetError(description));
+        if (error != NO_ERROR) {
+            logger.warn("GLFW error occurred: {} {}", error.toString(), memUTF8(description.get()));
+        }
+    }
+
+    private static void checkErrorThrowing() {
+        checkErrorThrowing(null);
+    }
+
+    private static void checkErrorThrowing(@Nullable String header) {
+        PointerBuffer description = BufferUtils.createPointerBuffer(1);
+        GLFWError error = GLFWError.fromGLFW(glfwGetError(description));
+        if (error != NO_ERROR) {
+            throw new IllegalStateException(
+                    header != null ? header + ":\n" : "GLFW error occurred:\n"
+                            + error.toString() + " " + memUTF8(description.get())
+            );
+        }
+    }
+
+    enum GLFWError {
+        NO_ERROR(GLFW_NO_ERROR),
+        NOT_INITIALIZED(GLFW_NOT_INITIALIZED),
+        NO_CURRENT_CONTEXT(GLFW_NO_CURRENT_CONTEXT),
+        INVALID_ENUM(GLFW_INVALID_ENUM),
+        INVALID_VALUE(GLFW_INVALID_VALUE),
+        OUT_OF_MEMORY(GLFW_OUT_OF_MEMORY),
+        API_UNAVAILABLE(GLFW_API_UNAVAILABLE),
+        VERSION_UNAVAILABLE(GLFW_VERSION_UNAVAILABLE),
+        PLATFORM_ERROR(GLFW_PLATFORM_ERROR),
+        FORMAT_UNAVAILABLE(GLFW_FORMAT_UNAVAILABLE),
+        NO_WINDOW_CONTEXT(GLFW_NO_WINDOW_CONTEXT),
+        CURSOR_UNAVAILABLE(GLFW_CURSOR_UNAVAILABLE),
+        FEATURE_UNAVAILABLE(GLFW_FEATURE_UNAVAILABLE),
+        FEATURE_UNIMPLEMENTED(GLFW_FEATURE_UNIMPLEMENTED),
+        PLATFORM_UNAVAILABLE(GLFW_PLATFORM_UNAVAILABLE);
+
+        private final int glfwError;
+
+        GLFWError(int glfwError) {
+            this.glfwError = glfwError;
+        }
+
+        public static GLFWError fromGLFW(int glfwError) {
+            if (glfwError == NO_ERROR.glfw())
+                return NO_ERROR;
+            for (GLFWError value : values()) {
+                if (value.glfw() == glfwError)
+                    return value;
+            }
+            throw new IllegalStateException("Unknown GLFW error: 0x" + Integer.toHexString(glfwError));
+        }
+
+        public int glfw() {
+            return glfwError;
+        }
     }
 
     @Override

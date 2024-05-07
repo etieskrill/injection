@@ -244,7 +244,7 @@ public class Application extends GameApplication {
         shader.setLights(new PointLight[]{light1, light2});
         shader.setViewPosition(camera.getPosition());
         shader.setTextureScale(new Vector2f(15));
-        shader.setUniform("farPlane", pointShadowFarPlane, false);
+        shader.setPointShadowFarPlane(pointShadowFarPlane);
         renderer.render(floorModel.getFinalTransform(), floorModel, shader, combined);
 
         shader.setTextureScale(new Vector2f(1));
