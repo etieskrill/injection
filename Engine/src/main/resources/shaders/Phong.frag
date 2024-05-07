@@ -1,4 +1,4 @@
-#version 330 core
+#version 400 core
 
 #define LIMIT_ATTENUATION true
 
@@ -73,7 +73,7 @@ uniform DirectionalLight globalLights[NR_DIRECTIONAL_LIGHTS];
 uniform PointLight lights[NR_POINT_LIGHTS];
 
 uniform sampler2DShadow u_ShadowMap;
-uniform samplerCubeArrayShadow pointShadowMaps0;
+uniform samplerCubeArrayShadow pointShadowMaps;
 
 uniform float pointShadowFarPlane;
 
@@ -229,7 +229,7 @@ float getInPointShadow(int index, vec3 fragToLight) {
     for (int x = -1; x <= 1; x++) {
         for (int y = -1; y <= 1; y++) {
             for (int z = -1; z <= 1; z++) {
-                shadow += texture(pointShadowMaps0, vec4(fragToLight + vec3(x, y, z) * offset, index), currentDepth);
+                shadow += texture(pointShadowMaps, vec4(fragToLight + vec3(x, y, z) * offset, index), currentDepth);
             }
         }
     }

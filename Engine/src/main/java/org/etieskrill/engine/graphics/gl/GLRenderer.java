@@ -9,8 +9,6 @@ import org.etieskrill.engine.graphics.model.*;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.joml.*;
 import org.lwjgl.system.MemoryStack;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
@@ -22,6 +20,7 @@ import static org.lwjgl.opengl.GL33C.*;
 public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer {
 
     private static final float CLEAR_COLOUR = 0.25f;//0.025f;
+    private static final int MAX_USABLE_TEXTURE_UNIT = 8; //TODO make more configurable
 
     private int nextTexture; //TODO move to shader
     private int manuallyBoundTextures;
@@ -38,7 +37,7 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
         glClearColor(CLEAR_COLOUR, CLEAR_COLOUR, CLEAR_COLOUR, 1f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-        nextTexture = 0;
+        nextTexture = 1;
         manuallyBoundTextures = 0;
 
         lastTrianglesDrawn = trianglesDrawn;
@@ -173,7 +172,7 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
         if (!instanced) glDrawElements(mode, mesh.getNumIndices(), GL_UNSIGNED_INT, 0);
         else glDrawElementsInstanced(mode, mesh.getNumIndices(), GL_UNSIGNED_INT, 0, numInstances);
 
-        nextTexture = manuallyBoundTextures;
+        nextTexture = manuallyBoundTextures + 1;
 
         if (mesh.getDrawMode() == Mesh.DrawMode.TRIANGLES)
             trianglesDrawn += mesh.getNumIndices() / 3;
@@ -184,6 +183,21 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
         //TODO here the renderer could decide what kind of shader to use, based on the material given
         int diffuse = 0, specular = 0, normal = 0, emissive = 0, height = 0, shininess = 0, shadow = 0;
         List<AbstractTexture> textures = material.getTextures();
+
+        if (textures.size() + manuallyBoundTextures + 1 > MAX_USABLE_TEXTURE_UNIT) {
+            throw new UnsupportedOperationException(
+                    "No more than " + MAX_USABLE_TEXTURE_UNIT + " textures may be used for now");
+        }
+
+        //TODO requires some more investigation:
+        //binding seemingly any texture object to slot 0 causes the context to throw a fit
+//        for (int i = 0; i < MAX_USABLE_TEXTURE_UNIT; i++) {
+//            if (i == 1) continue;
+//            glActiveTexture(GL_TEXTURE0 + i);
+//            glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, 0);
+//        }
+//        glActiveTexture(GL_TEXTURE0);
+//        glBindTexture(GL_TEXTURE_2D, 0);
 
         for (AbstractTexture texture : textures) {
             String uniform = "material.";
@@ -212,8 +226,9 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
             shader.setUniform(uniform + number, nextTexture++, false);
         }
 
-        for (int i = nextTexture; i < 8; i++) //TODO this is a little inefficient, but you don't have to unbind textures all the time like this
+        for (int i = nextTexture; i < MAX_USABLE_TEXTURE_UNIT; i++) { //TODO this is a little inefficient, but you don't have to unbind textures all the time like this
             AbstractTexture.clearBind(i);
+        }
 
         shader.setUniform("uNormalMapped", normal > 0, false);
 

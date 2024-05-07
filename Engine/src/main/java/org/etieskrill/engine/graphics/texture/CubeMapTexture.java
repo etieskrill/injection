@@ -148,8 +148,9 @@ public class CubeMapTexture extends AbstractTexture implements FrameBufferAttach
 
         @Override
         protected CubeMapTexture bufferTextureData() {
-            logger.debug("Loading {}x{} {}-bit {} cubemap texture from {}", pixelSize.x(), pixelSize.y(),
-                    NR_BITS_PER_COLOUR_CHANNEL * format.getChannels(), format.name(), getClass().getSimpleName());
+            logger.debug("Loading {}x{} {}-bit {} {} cubemap texture from {}", pixelSize.x(), pixelSize.y(),
+                    NR_BITS_PER_COLOUR_CHANNEL * format.getChannels(), format.name().toLowerCase(),
+                    type.name().toLowerCase(), getClass().getSimpleName());
 
             CubeMapTexture texture = new CubeMapTexture(this);
 
@@ -165,7 +166,7 @@ public class CubeMapTexture extends AbstractTexture implements FrameBufferAttach
     }
 
     private CubeMapTexture(Builder builder) {
-        super(builder.setType(Type.DIFFUSE).setTarget(Target.CUBEMAP));
+        super(builder.setTarget(Target.CUBEMAP));
         this.size = builder.pixelSize;
     }
 

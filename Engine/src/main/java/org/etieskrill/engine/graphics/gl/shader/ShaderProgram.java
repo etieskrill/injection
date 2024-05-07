@@ -15,8 +15,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.etieskrill.engine.config.ResourcePaths.SHADER_PATH;
-import static org.etieskrill.engine.graphics.gl.GLUtils.checkError;
-import static org.etieskrill.engine.graphics.gl.GLUtils.clearError;
+import static org.etieskrill.engine.graphics.gl.GLUtils.*;
 import static org.etieskrill.engine.graphics.gl.shader.ShaderProgram.ShaderType.*;
 import static org.etieskrill.engine.graphics.gl.shader.ShaderProgram.Uniform.INVALID_UNIFORM_LOCATION;
 import static org.etieskrill.engine.graphics.gl.shader.ShaderProgram.Uniform.NESTED_UNIFORM_LOCATION;
@@ -587,6 +586,15 @@ public abstract class ShaderProgram implements Disposable {
 
     protected void disableStrictUniformChecking() {
         this.STRICT_UNIFORM_DETECTION = false;
+    }
+
+    public void checkStatusThrowing() {
+        clearError();
+        glValidateProgram(programID);
+        if (glGetProgrami(programID, GL_VALIDATE_STATUS) != GL_TRUE)
+            throw new IllegalStateException("Shader program was not successfully validated\n%s"
+                    .formatted(glGetProgramInfoLog(programID)));
+        checkErrorThrowing();
     }
 
     @Override
