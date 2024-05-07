@@ -82,7 +82,7 @@ public class Shaders {
             addUniformArray("lights", 2, STRUCT);
 
 //            addUniform("globalShadowMap", SAMPLER2D);
-            addUniform("pointShadowMaps0", SAMPLER_CUBE_MAP_ARRAY);
+            addUniform("pointShadowMaps", SAMPLER_CUBE_MAP_ARRAY);
 
             addUniform("pointShadowFarPlane", FLOAT, 20f);
         }

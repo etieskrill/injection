@@ -70,6 +70,7 @@ public class Application extends GameApplication {
     private Matrix4fc[] pointLightCombined2;
     private PointShadowMapArray pointShadowMaps;
     private Shaders.DepthCubeMapArrayShader depthCubeMapArrayShader;
+    private final float pointShadowNearPlane = .1f;
     private final float pointShadowFarPlane = 40;
 
     private Label fpsLabel;
@@ -137,7 +138,7 @@ public class Application extends GameApplication {
         }
 
         lightShader = Shaders.getLightSourceShader();
-        shader = Shaders.getStandardShader();
+        shader = new Shaders.StaticShader();
 
         camera = new PerspectiveCamera(window.getSize().toVec());
         window.addCursorInputs(new CursorCameraController(camera));
@@ -167,8 +168,8 @@ public class Application extends GameApplication {
                 .ortho(-30, 30, -30, 30, .1f, 40)
                 .mul(new Matrix4f().lookAt(new Vector3f(10, 20, 10), new Vector3f(-10, 0, -10), new Vector3f(0, 1, 0)));
 
-        pointLightCombined1 = pointShadowMaps.getCombinedMatrices(.1f, pointShadowFarPlane, light1);
-        pointLightCombined2 = pointShadowMaps.getCombinedMatrices(.1f, pointShadowFarPlane, light2);
+        pointLightCombined1 = pointShadowMaps.getCombinedMatrices(pointShadowNearPlane, pointShadowFarPlane, light1);
+        pointLightCombined2 = pointShadowMaps.getCombinedMatrices(pointShadowNearPlane, pointShadowFarPlane, light2);
 
         depthShader = new Shaders.DepthShader();
         depthCubeMapArrayShader = new Shaders.DepthCubeMapArrayShader();
@@ -230,7 +231,7 @@ public class Application extends GameApplication {
         shader.setLight(light);
         shader.setFarPlane(pointShadowFarPlane);
         shader.setShadowCombined(combined);
-        depthCubeMapArrayShader.setIndex(index);
+        shader.setIndex(index);
         renderer.render(floorModel.getFinalTransform(), floorModel, shader, new Matrix4f());
         for (Model brickCube : brickCubes)
             renderer.render(brickCube.getFinalTransform(), brickCube, shader, new Matrix4f());

@@ -11,6 +11,7 @@ import static org.lwjgl.opengl.GL14C.GL_TEXTURE_COMPARE_MODE;
 import static org.lwjgl.opengl.GL30C.GL_COMPARE_REF_TO_TEXTURE;
 
 /**
+ * TODO this is not true, using depth comparison without shadow samplers causes undefined behaviour
  * It is possible to use both a regular sampler (sampler{*D,Cube}) or a shadow sampler (sampler{*D,Cube}Shadow) in glsl
  * code, as the {@link ShadowMap#texture} has the relevant comparator mode set up. The shadow sampler is slightly easier
  * to use, and creates better results out of the box.
