@@ -8,8 +8,6 @@ import org.etieskrill.engine.graphics.animation.Animation;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
-import org.joml.Matrix4f;
-import org.joml.Vector3f;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,7 +32,7 @@ public class Model implements Disposable {
     private final List<Bone> bones;
 
     private final AABB boundingBox;
-    
+
     private final String name;
     
     private final Transform transform;
@@ -263,13 +261,7 @@ public class Model implements Disposable {
     public AABB getBoundingBox() {
         return boundingBox;
     }
-    
-    public AABB getWorldBoundingBox() {
-        Matrix4f worldTransform = new Matrix4f(getFinalTransform().getMatrix());
-        return new AABB(worldTransform.transformPosition(new Vector3f(boundingBox.getMin())),
-                worldTransform.transformPosition(new Vector3f(boundingBox.getMax())));
-    }
-    
+
     public String getName() {
         return name;
     }
