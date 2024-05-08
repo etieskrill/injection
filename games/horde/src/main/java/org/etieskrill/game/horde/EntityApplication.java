@@ -5,7 +5,9 @@ import org.etieskrill.engine.entity.Entity;
 import org.etieskrill.engine.entity.component.DirectionalLightComponent;
 import org.etieskrill.engine.entity.component.Drawable;
 import org.etieskrill.engine.entity.component.PointLightComponent;
+import org.etieskrill.engine.entity.component.WorldSpaceAABB;
 import org.etieskrill.engine.entity.data.Transform;
+import org.etieskrill.engine.entity.service.BoundingBoxService;
 import org.etieskrill.engine.entity.service.DirectionalShadowMappingService;
 import org.etieskrill.engine.entity.service.PointShadowMappingService;
 import org.etieskrill.engine.entity.service.RenderService;
@@ -63,6 +65,8 @@ public class EntityApplication extends GameApplication {
     private static final Vector3fc lightOn = new Vector3f(1);
     private static final Vector3fc lightOff = new Vector3f(0);
 
+    private Transform cubeTransform;
+
     private Label fpsLabel;
 
     public EntityApplication() {
@@ -70,7 +74,8 @@ public class EntityApplication extends GameApplication {
                 .setTitle("Horde")
                 .setMode(Window.WindowMode.BORDERLESS)
                 .setSamples(4)
-                .setVSyncEnabled(true)
+                        .setRefreshRate(FRAME_RATE)
+//                .setVSyncEnabled(true)
                 .build()
         );
     }
@@ -98,6 +103,9 @@ public class EntityApplication extends GameApplication {
 
         floorModel.getTransform().setPosition(new Vector3f(0, -1, 0));
         floor.addComponent(new Transform().setPosition(new Vector3f(0, -1, 0)));
+
+        floor.addComponent(floorModel.getBoundingBox());
+        floor.addComponent(new WorldSpaceAABB());
 
         Model sphere = MODELS.load("sphere", () -> Model.ofFile("Sphere.obj"));
 
@@ -133,9 +141,14 @@ public class EntityApplication extends GameApplication {
                                     .mul(2).sub(1, 1, 1)
                                     .normalize()))
                     .setScale(3);
+            if (i == 0) {
+                cubeTransform = cubeModel.getTransform();
+            }
             Entity cube = entitySystem.createEntity();
             cube.addComponent(new Drawable(cubeModel));
             cube.addComponent(cubeModel.getTransform());
+            cube.addComponent(cubeModel.getBoundingBox());
+            cube.addComponent(new WorldSpaceAABB());
         }
 
         camera = new PerspectiveCamera(window.getSize().toVec());
@@ -195,22 +208,24 @@ public class EntityApplication extends GameApplication {
                 .setMargin(new Vector4f(10));
         window.setScene(new Scene(new Batch(renderer), new Container(fpsLabel), uiCamera));
 
+        entitySystem.addService(new BoundingBoxService());
         entitySystem.addService(new DirectionalShadowMappingService(renderer, depthShader));
         entitySystem.addService(new PointShadowMappingService(renderer, depthCubeMapArrayShader));
-        entitySystem.addService(new RenderService(renderer, camera, window.getSize().toVec()));
+        entitySystem.addService(new RenderService(renderer, camera, window.getSize().toVec()).renderBoundingBoxes(true));
     }
 
     @Override
     protected void loop(double delta) {
         sunTransform.setPosition(new Vector3f(50).add(camera.getPosition()));
+        cubeTransform.applyRotation(quat -> quat.rotateAxis((float) delta, 1, 1, 1));
 
         if (pacer.getTotalFramesElapsed() % 60 == 0) {
             logger.info("Fps: {}, gpu time: {}ms, gpu delay: {}ms",
                     "%4.1f".formatted(pacer.getAverageFPS()),
-                    "%5.2f".formatted(renderer.getAveragedGpuTime() / 1000000.0),
-                    "%5.2f".formatted(renderer.getGpuDelay() / 1000000.0));
+                    "%5.2f".formatted(renderer.getAveragedGpuTime() / 1_000_000.0),
+                    "%5.2f".formatted(renderer.getGpuDelay() / 1_000_000.0));
         }
-        fpsLabel.setText("%5.3f".formatted(pacer.getAverageFPS()));
+        fpsLabel.setText(String.valueOf((int) pacer.getAverageFPS()));
     }
 
     public static void main(String[] args) {

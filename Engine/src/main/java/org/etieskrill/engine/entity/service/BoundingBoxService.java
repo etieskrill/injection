@@ -1,0 +1,40 @@
+package org.etieskrill.engine.entity.service;
+
+import org.etieskrill.engine.entity.Entity;
+import org.etieskrill.engine.entity.component.WorldSpaceAABB;
+import org.etieskrill.engine.entity.data.AABB;
+import org.etieskrill.engine.entity.data.Transform;
+import org.etieskrill.engine.entity.data.TransformC;
+import org.joml.Matrix4fc;
+import org.joml.Vector3f;
+
+import java.util.List;
+
+public class BoundingBoxService implements Service {
+
+    @Override
+    public boolean canProcess(Entity entity) {
+        return entity.hasComponents(Transform.class, AABB.class, WorldSpaceAABB.class);
+    }
+
+    @Override
+    public void process(Entity targetEntity, List<Entity> entities, double delta) {
+        Transform transform = targetEntity.getComponent(Transform.class);
+        AABB aabb = targetEntity.getComponent(AABB.class);
+        WorldSpaceAABB worldSpaceAABB = targetEntity.getComponent(WorldSpaceAABB.class);
+
+        transformBoundingBox(transform, aabb, worldSpaceAABB);
+    }
+
+    private void transformBoundingBox(TransformC transform, AABB boundingBox, WorldSpaceAABB worldSpaceBoundingBox) {
+        Matrix4fc transformMatrix = transform.getMatrix();
+        transformMatrix.transformAab(
+                boundingBox.getMin(),
+                boundingBox.getMax(),
+                (Vector3f) worldSpaceBoundingBox.getMin(),
+                (Vector3f) worldSpaceBoundingBox.getMax()
+        );
+        worldSpaceBoundingBox.set(worldSpaceBoundingBox.getMin(), worldSpaceBoundingBox.getMax());
+    }
+
+}

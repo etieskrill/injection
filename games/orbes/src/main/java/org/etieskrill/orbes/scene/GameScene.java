@@ -77,7 +77,7 @@ public class GameScene {
         skelly.getInitialTransform().setScale(.2f);
 
         Transform localBBBaseTransform = skelly.getNodes().getFirst().getHierarchyTransform();
-        Vector3f localSkellyBBSize = localBBBaseTransform.getMatrix().transformPosition(skelly.getBoundingBox().getSize());
+        Vector3f localSkellyBBSize = localBBBaseTransform.getMatrix().transformPosition(new Vector3f(skelly.getBoundingBox().getSize()));
         localSkellyBBModel = ModelFactory.box(localSkellyBBSize);
 //        localSkellyBBModel.getInitialTransform().translate(
 //                skelly.getBoundingBox().getCenter().mul(.5f)
@@ -85,7 +85,7 @@ public class GameScene {
 
         skellyBBModel = ModelFactory.box(skelly.getBoundingBox().getMax().sub(skelly.getBoundingBox().getMin(), new Vector3f()));
         skellyBBModel.getInitialTransform().setPosition(
-                skelly.getBoundingBox().getCenter().mul(skelly.getTransform().getScale())
+                new Vector3f(skelly.getBoundingBox().getCenter()).mul(skelly.getTransform().getScale())
         );
 
         orbs = new Model[NUM_ORBS];
@@ -194,7 +194,7 @@ public class GameScene {
 
     public void updateCamera() {
         Vector3f orbitPos = camera.getDirection().negate().mul(3);
-        float skellyVerticalCenter = skelly.getWorldBoundingBox().getSize().y() - .5f;
+        float skellyVerticalCenter = skelly.getTransform().getScale().y() * skelly.getBoundingBox().getSize().y() - .5f;
         camera.setPosition(
                 skelly.getFinalTransform().getPosition()
                         .add(orbitPos, new Vector3f())

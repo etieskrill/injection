@@ -34,12 +34,14 @@ import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.util.Loaders.ModelLoader;
 import org.etieskrill.engine.util.Loaders.ShaderLoader;
 import org.etieskrill.engine.window.Window;
-import org.joml.*;
+import org.joml.Vector2f;
+import org.joml.Vector2i;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.lang.Math;
 import java.util.List;
 import java.util.Random;
 
@@ -62,6 +64,7 @@ public class Game {
     private Label fpsLabel;
     
     private Model skelly, skellyBBModel;
+    private final Vector3f skellyBBModelPosition = new Vector3f();
     private Model cube, light;
     private PointLight pointLight;
     private PointLight[] pointLights;
@@ -171,7 +174,7 @@ public class Game {
         
         skellyBBModel = ModelFactory.box(skelly.getBoundingBox().getMax().sub(skelly.getBoundingBox().getMin(), new Vector3f()));
         skellyBBModel.getInitialTransform().setPosition(
-                skelly.getBoundingBox().getCenter().mul(skelly.getTransform().getScale())
+                skellyBBModelPosition.set(skelly.getBoundingBox().getCenter()).mul(skelly.getTransform().getScale())
         );
         
         final int NUM_ORBS = 10;
@@ -364,7 +367,8 @@ public class Game {
     
     private void updateCamera() {
         Vector3f orbitPos = camera.getDirection().negate().mul(3);
-        camera.setPosition(orbitPos.add(0, skelly.getWorldBoundingBox().getSize().y() - .5f, 0).add(skelly.getTransform().getPosition()));
+        float skellyWorldSpaceHeight = skelly.getTransform().getScale().y() * skelly.getBoundingBox().getSize().y() - .5f;
+        camera.setPosition(orbitPos.add(0, skellyWorldSpaceHeight, 0).add(skelly.getTransform().getPosition()));
     }
     
     private void render() {

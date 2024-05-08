@@ -9,7 +9,6 @@ import org.etieskrill.engine.graphics.animation.NodeFilter;
 import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera;
 import org.etieskrill.engine.graphics.data.DirectionalLight;
-import org.etieskrill.engine.graphics.gl.DebuggableRenderer;
 import org.etieskrill.engine.graphics.gl.GLRenderer;
 import org.etieskrill.engine.graphics.gl.GLUtils;
 import org.etieskrill.engine.graphics.model.Model;
@@ -33,17 +32,12 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayDeque;
 import java.util.List;
 import java.util.OptionalDouble;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
 
 import static org.etieskrill.engine.graphics.animation.AnimationMixer.AnimationBlendMode.OVERRIDING;
 import static org.etieskrill.engine.graphics.model.loader.Loader.loadModelAnimations;
 import static org.etieskrill.engine.input.InputBinding.Trigger.ON_PRESS;
 import static org.etieskrill.engine.input.InputBinding.Trigger.PRESSED;
 import static org.joml.Math.toRadians;
-import static org.lwjgl.opengl.GL11C.glFinish;
-import static org.lwjgl.opengl.GL11C.glFlush;
 
 public class Game {
 
@@ -143,7 +137,7 @@ public class Game {
         vampyBB = Loaders.ModelLoader.get().load("vampyBB", () -> Model.ofFile("box.obj"));
         vampyBB.getInitialTransform()
                 .set(vampy.getInitialTransform())
-                .setScale(vampy.getBoundingBox().getSize().mul(.01f));
+                .setScale(new Vector3f(vampy.getBoundingBox().getSize()).mul(.01f));
 
         vampyPosDelta = new Vector3f();
 

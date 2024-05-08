@@ -112,10 +112,10 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
     }
 
     @Override
-    public void renderWireframe(Model model, ShaderProgram shader, Matrix4fc combined) {
+    public void renderWireframe(TransformC transform, Model model, ShaderProgram shader, Matrix4fc combined) {
         glDisable(GL_CULL_FACE);
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-//        _render(model, shader, combined);
+        _render(transform, model, shader, combined);
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         glEnable(GL_CULL_FACE);
     }
