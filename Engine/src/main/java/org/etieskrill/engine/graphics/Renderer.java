@@ -57,7 +57,7 @@ public interface Renderer {
 
     void renderOutline(Model model, ShaderProgram shader, Matrix4fc combined, float thickness, Vector4fc colour, boolean writeToFront);
 
-    void renderWireframe(Model model, ShaderProgram shader, Matrix4fc combined);
+    void renderWireframe(TransformC transform, Model model, ShaderProgram shader, Matrix4fc combined);
 
     void render(CubeMapModel cubemap, ShaderProgram shader, Matrix4fc combined);
 

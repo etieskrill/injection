@@ -114,18 +114,21 @@ public class RenderService implements Service {
     }
 
     private Model box;
-    private final Vector3f cachedPosition = new Vector3f(), cachedSize = new Vector3f();
+    private final Transform boundingBoxTransform = new Transform();
 
     private void renderBoundingBox(WorldSpaceAABB worldSpaceBoundingBox) {
         if (box == null) {
             box = ModelFactory.box(new Vector3f(1));
         }
 
-        box.getTransform()
-                .setPosition(cachedPosition.set(worldSpaceBoundingBox.getMin())
-                        .add(cachedSize.set(worldSpaceBoundingBox.getSize()).mul(.5f)))
-                .setScale(cachedSize.mul(2));
-        renderer.renderWireframe(box.getFinalTransform(), box, shader, camera.getCombined());
+        renderer.renderWireframe(
+                boundingBoxTransform
+                        .setPosition(worldSpaceBoundingBox.getCenter())
+                        .setScale(worldSpaceBoundingBox.getSize()),
+                box,
+                shader,
+                camera.getCombined()
+        );
     }
 
     private ShaderProgram getConfiguredShader(Entity entity, Drawable drawable) {

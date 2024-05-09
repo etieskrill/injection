@@ -215,7 +215,7 @@ public class EntityApplication extends GameApplication {
     }
 
     @Override
-    protected void loop(double delta) {
+    protected void loop(final double delta) {
         sunTransform.setPosition(new Vector3f(50).add(camera.getPosition()));
         cubeTransform.applyRotation(quat -> quat.rotateAxis((float) delta, 1, 1, 1));
 

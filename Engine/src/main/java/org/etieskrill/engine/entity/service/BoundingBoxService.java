@@ -28,13 +28,13 @@ public class BoundingBoxService implements Service {
 
     private void transformBoundingBox(TransformC transform, AABB boundingBox, WorldSpaceAABB worldSpaceBoundingBox) {
         Matrix4fc transformMatrix = transform.getMatrix();
-        transformMatrix.transformAab(
-                boundingBox.getMin(),
-                boundingBox.getMax(),
-                (Vector3f) worldSpaceBoundingBox.getMin(),
-                (Vector3f) worldSpaceBoundingBox.getMax()
-        );
-        worldSpaceBoundingBox.set(worldSpaceBoundingBox.getMin(), worldSpaceBoundingBox.getMax());
+
+        Vector3f min = (Vector3f) worldSpaceBoundingBox.getMin();
+        Vector3f max = (Vector3f) worldSpaceBoundingBox.getMax();
+
+        transformMatrix.transformAab(boundingBox.getMin(), boundingBox.getMax(), min, max);
+
+        worldSpaceBoundingBox.set(min, max);
     }
 
 }
