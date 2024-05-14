@@ -1,6 +1,7 @@
 package org.etieskrill.engine.graphics.gl.shader;
 
 import org.etieskrill.engine.Disposable;
+import org.etieskrill.engine.util.FileUtils;
 import org.etieskrill.engine.util.ResourceReader;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -51,6 +52,7 @@ public abstract class ShaderProgram implements Disposable {
         VERTEX,
         GEOMETRY,
         FRAGMENT,
+        COMPOSITE,
         //LIBRARY
     }
 
@@ -87,20 +89,31 @@ public abstract class ShaderProgram implements Disposable {
         this.placeholder = false;
     }
 
+    /**
+     * A shader file with the <i>glsl</i> extension is presumed to contain exactly a vertex and a fragment shader in the
+     * corresponding definition guards.
+     */
     protected ShaderProgram() {
         Set<ShaderFile> files = Arrays.stream(getShaderFileNames()).map(file -> {
-            String[] parts = file.split("\\.");
-            ShaderType type = switch (parts[parts.length - 1]) {
+            var typedFile = FileUtils.splitTypeFromPath(file);
+            ShaderType type = switch (typedFile.getExtension()) {
                 case "vert" -> VERTEX;
                 case "geom" -> GEOMETRY;
                 case "frag" -> FRAGMENT;
+                case "glsl" -> COMPOSITE;
                 default -> throw new ShaderCreationException("Cannot load shader with unknown file extension: " + file);
             };
             return new ShaderFile(file, type);
         }).collect(Collectors.toSet());
 
-        if (!files.stream().map(ShaderFile::getType).collect(Collectors.toSet()).containsAll(Set.of(VERTEX, FRAGMENT)))
+        if (files.size() == 1 && !files.stream().allMatch(file -> file.getType() == COMPOSITE)) {
+            throw new ShaderCreationException("Single-file shaders must have 'glsl' extension");
+        } else if (files.size() != 1 && !files.stream()
+                .map(ShaderFile::getType)
+                .collect(Collectors.toSet())
+                .containsAll(Set.of(VERTEX, FRAGMENT))) {
             throw new ShaderCreationException("Shader must have one vertex and one fragment shader");
+        }
         //TODO create spec for other shader types and shader programs split across multiple files
         // consider just creating a standard, such that only a single unique identifier must be passed
 
@@ -132,7 +145,8 @@ public abstract class ShaderProgram implements Disposable {
 
     private void createShader(Set<ShaderFile> files) {
         if (CLEAR_ERROR_BEFORE_SHADER_CREATION) clearError();
-        createProgram(files);
+        if (files.size() > 1) createProgram(files);
+        else createSingleFileProgram(files.stream().findAny().get());
         init();
 
         start();
@@ -154,6 +168,21 @@ public abstract class ShaderProgram implements Disposable {
         fragID = loadShader(files, FRAGMENT);
         glAttachShader(programID, fragID);
 
+        checkLinkStatus();
+    }
+
+    private void createSingleFileProgram(ShaderFile file) {
+        programID = glCreateProgram();
+
+        vertID = loadShader(file, VERTEX);
+        glAttachShader(programID, vertID);
+        fragID = loadShader(file, FRAGMENT);
+        glAttachShader(programID, fragID);
+
+        checkLinkStatus();
+    }
+
+    private void checkLinkStatus() {
         glLinkProgram(programID);
         if (glGetProgrami(programID, GL_LINK_STATUS) != GL_TRUE)
             throw new ShaderCreationException("Shader program could not be linked", glGetProgramInfoLog(programID));
@@ -171,22 +200,30 @@ public abstract class ShaderProgram implements Disposable {
         checkError("Error while creating shader");
     }
 
-    //TODO add loader for shader objects and wrap calls to this method in said loader
     private int loadShader(Set<ShaderFile> files, ShaderType type) {
-        ShaderFile file = files.stream()
-                .filter(shaderFile -> shaderFile.getType() == type)
-                .findAny()
-                .orElseThrow(() -> new ShaderCreationException("No " + type.name().toLowerCase() + " shader file was found"));
+        return loadShader(files.stream()
+                        .filter(shaderFile -> shaderFile.getType() == type)
+                        .findAny()
+                        .orElseThrow(() -> new ShaderCreationException("No " + type.name().toLowerCase() + " shader file was found")),
+                type);
+    }
 
+    //TODO add loader for shader objects and wrap calls to this method in said loader
+    private int loadShader(ShaderFile file, ShaderType type) {
         logger.trace("Loading {} shader from file: {}", file.getType().name().toLowerCase(), file);
 
-        int shaderID = glCreateShader(switch (file.getType()) {
+        int shaderID = glCreateShader(switch (type) {
             case VERTEX -> GL_VERTEX_SHADER;
             case GEOMETRY -> GL_GEOMETRY_SHADER;
             case FRAGMENT -> GL_FRAGMENT_SHADER;
+            default -> throw new IllegalStateException("Unexpected value: " + type);
         });
 
-        glShaderSource(shaderID, getShaderSource(file));
+        String shaderSource = getShaderSource(file);
+        if (file.getType() == COMPOSITE) {
+            shaderSource = injectShaderCompileDirective(shaderSource, type);
+        }
+        glShaderSource(shaderID, shaderSource);
         glCompileShader(shaderID);
 
         if (glGetShaderi(shaderID, GL_COMPILE_STATUS) != GL_TRUE)
@@ -199,6 +236,17 @@ public abstract class ShaderProgram implements Disposable {
     private String getShaderSource(ShaderFile file) {
         String qualifiedName = SHADER_PATH + file.getName();
         return ResourceReader.getClasspathResource(qualifiedName);
+    }
+
+    private String injectShaderCompileDirective(String shaderSource, ShaderType type) {
+        List<String> shaderSourceLines = new ArrayList<>(shaderSource.lines().toList());
+        for (int i = 0; i < shaderSourceLines.size(); i++) {
+            String line = shaderSourceLines.get(i);
+            if (line.isBlank()) continue;
+            shaderSourceLines.add(i + 1, "#define " + type.name() + "_SHADER");
+            break;
+        }
+        return String.join("\n", shaderSourceLines);
     }
 
     //TODO use named string arbs to modularise shaders
