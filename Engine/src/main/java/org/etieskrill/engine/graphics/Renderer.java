@@ -35,7 +35,8 @@ public interface Renderer {
     void render(TransformC transform, Model model, ShaderProgram shader, Matrix4fc combined);
 
     /**
-     * @deprecated Left in for compatibility with older games.
+     * @deprecated Left in for compatibility with older games. Use
+     * {@link #render(TransformC, Model, ShaderProgram, Matrix4fc) render() with transform} instead.
      */
     @Deprecated
     default void render(Model model, ShaderProgram shader, Matrix4fc combined) {

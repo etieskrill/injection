@@ -100,7 +100,7 @@ public final class GLUtils {
         glEnable(GL_DEBUG_OUTPUT);
         glDebugMessageCallback((source, type, id, severity, length, message, userParam) -> {
             switch (toDebugSeverity(severity)) {
-                case MEDIUM, LOW, NOTIFICATION -> logger.info("{} ({}): {}",
+                case MEDIUM, LOW, NOTIFICATION -> logger.debug("{} ({}): {}",
                         toDebugSource(source),
                         toDebugType(type),
                         memUTF8(message, length));

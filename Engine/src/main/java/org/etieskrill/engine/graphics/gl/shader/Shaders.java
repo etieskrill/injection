@@ -444,4 +444,16 @@ public class Shaders {
         }
     }
 
+    public static class WireframeShader extends ShaderProgram {
+        @Override
+        protected String[] getShaderFileNames() {
+            return new String[]{"Wireframe.glsl"};
+        }
+
+        @Override
+        protected void getUniformLocations() {
+            addUniform("colour", VEC4, new Vector4f(1, 0, 0, 1));
+        }
+    }
+
 }

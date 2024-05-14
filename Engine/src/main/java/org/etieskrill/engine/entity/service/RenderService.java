@@ -4,17 +4,13 @@ import org.etieskrill.engine.entity.Entity;
 import org.etieskrill.engine.entity.component.DirectionalLightComponent;
 import org.etieskrill.engine.entity.component.Drawable;
 import org.etieskrill.engine.entity.component.PointLightComponent;
-import org.etieskrill.engine.entity.component.WorldSpaceAABB;
 import org.etieskrill.engine.entity.data.Transform;
 import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.data.PointLight;
 import org.etieskrill.engine.graphics.gl.GLRenderer;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shader.Shaders;
-import org.etieskrill.engine.graphics.model.Model;
-import org.etieskrill.engine.graphics.model.ModelFactory;
 import org.joml.Vector2ic;
-import org.joml.Vector3f;
 
 import java.util.Arrays;
 import java.util.List;
@@ -31,11 +27,10 @@ public class RenderService implements Service {
     private final Vector2ic windowSize;
     private final Shaders.StaticShader shader;
     private final Shaders.LightSourceShader lightSourceShader;
+    private final Shaders.WireframeShader wireframeShader;
 
     //TODO make blocking
     private final Transform cachedTransform;
-
-    private boolean renderBoundingBoxes;
 
     public RenderService(GLRenderer renderer, Camera camera, Vector2ic windowSize) {
         this.renderer = renderer;
@@ -43,10 +38,9 @@ public class RenderService implements Service {
         this.windowSize = windowSize;
         this.shader = new Shaders.StaticShader();
         this.lightSourceShader = new Shaders.LightSourceShader();
+        this.wireframeShader = new Shaders.WireframeShader();
 
         this.cachedTransform = new Transform();
-
-        this.renderBoundingBoxes = false;
     }
 
     @Override
@@ -106,29 +100,6 @@ public class RenderService implements Service {
 
         ShaderProgram shader = getConfiguredShader(targetEntity, drawable);
         renderer.render(transform, drawable.getModel(), shader, camera.getCombined());
-
-        WorldSpaceAABB worldSpaceBoundingBox = targetEntity.getComponent(WorldSpaceAABB.class);
-        if (renderBoundingBoxes && worldSpaceBoundingBox != null) {
-            renderBoundingBox(worldSpaceBoundingBox);
-        }
-    }
-
-    private Model box;
-    private final Transform boundingBoxTransform = new Transform();
-
-    private void renderBoundingBox(WorldSpaceAABB worldSpaceBoundingBox) {
-        if (box == null) {
-            box = ModelFactory.box(new Vector3f(1));
-        }
-
-        renderer.renderWireframe(
-                boundingBoxTransform
-                        .setPosition(worldSpaceBoundingBox.getCenter())
-                        .setScale(worldSpaceBoundingBox.getSize()),
-                box,
-                shader,
-                camera.getCombined()
-        );
     }
 
     private ShaderProgram getConfiguredShader(Entity entity, Drawable drawable) {
@@ -151,15 +122,6 @@ public class RenderService implements Service {
     @Override
     public Set<Class<? extends Service>> runAfter() {
         return Set.of(DirectionalShadowMappingService.class, PointShadowMappingService.class);
-    }
-
-    public void setRenderBoundingBoxes(boolean renderBoundingBoxes) {
-        this.renderBoundingBoxes = renderBoundingBoxes;
-    }
-
-    public RenderService renderBoundingBoxes(boolean renderBoundingBoxes) {
-        this.renderBoundingBoxes = renderBoundingBoxes;
-        return this;
     }
 
 }
