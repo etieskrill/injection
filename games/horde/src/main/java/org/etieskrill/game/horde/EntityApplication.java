@@ -2,15 +2,10 @@ package org.etieskrill.game.horde;
 
 import org.etieskrill.engine.application.GameApplication;
 import org.etieskrill.engine.entity.Entity;
-import org.etieskrill.engine.entity.component.DirectionalLightComponent;
-import org.etieskrill.engine.entity.component.Drawable;
-import org.etieskrill.engine.entity.component.PointLightComponent;
-import org.etieskrill.engine.entity.component.WorldSpaceAABB;
+import org.etieskrill.engine.entity.component.*;
+import org.etieskrill.engine.entity.data.AABB;
 import org.etieskrill.engine.entity.data.Transform;
-import org.etieskrill.engine.entity.service.BoundingBoxService;
-import org.etieskrill.engine.entity.service.DirectionalShadowMappingService;
-import org.etieskrill.engine.entity.service.PointShadowMappingService;
-import org.etieskrill.engine.entity.service.RenderService;
+import org.etieskrill.engine.entity.service.*;
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.camera.OrthographicCamera;
@@ -74,8 +69,7 @@ public class EntityApplication extends GameApplication {
                 .setTitle("Horde")
                 .setMode(Window.WindowMode.BORDERLESS)
                 .setSamples(4)
-                        .setRefreshRate(FRAME_RATE)
-//                .setVSyncEnabled(true)
+                .setVSyncEnabled(true)
                 .build()
         );
     }
@@ -102,9 +96,12 @@ public class EntityApplication extends GameApplication {
         floor.addComponent(floorDrawable);
 
         floorModel.getTransform().setPosition(new Vector3f(0, -1, 0));
-        floor.addComponent(new Transform().setPosition(new Vector3f(0, -1, 0)));
+        floor.addComponent(floorModel.getTransform());
 
-        floor.addComponent(floorModel.getBoundingBox());
+        floor.addComponent(new AABB(
+                floorModel.getBoundingBox().getMin().mul(floorModel.getInitialTransform().getScale(), new Vector3f()),
+                floorModel.getBoundingBox().getMax().mul(floorModel.getInitialTransform().getScale(), new Vector3f())
+        ));
         floor.addComponent(new WorldSpaceAABB());
 
         Model sphere = MODELS.load("sphere", () -> Model.ofFile("Sphere.obj"));
@@ -141,14 +138,16 @@ public class EntityApplication extends GameApplication {
                                     .mul(2).sub(1, 1, 1)
                                     .normalize()))
                     .setScale(3);
-            if (i == 0) {
-                cubeTransform = cubeModel.getTransform();
-            }
             Entity cube = entitySystem.createEntity();
             cube.addComponent(new Drawable(cubeModel));
             cube.addComponent(cubeModel.getTransform());
             cube.addComponent(cubeModel.getBoundingBox());
             cube.addComponent(new WorldSpaceAABB());
+
+            if (i == 0) {
+                cubeTransform = cubeModel.getTransform();
+                cube.addComponent(new DirectionalForceComponent(new Vector3f(0, -1, 0)));
+            }
         }
 
         camera = new PerspectiveCamera(window.getSize().toVec());
@@ -211,7 +210,9 @@ public class EntityApplication extends GameApplication {
         entitySystem.addService(new BoundingBoxService());
         entitySystem.addService(new DirectionalShadowMappingService(renderer, depthShader));
         entitySystem.addService(new PointShadowMappingService(renderer, depthCubeMapArrayShader));
-        entitySystem.addService(new RenderService(renderer, camera, window.getSize().toVec()).renderBoundingBoxes(true));
+        entitySystem.addService(new RenderService(renderer, camera, window.getSize().toVec()));
+        entitySystem.addService(new BoundingBoxRenderService(renderer, camera));
+        entitySystem.addService(new PhysicsService());
     }
 
     @Override
