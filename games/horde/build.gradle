@@ -33,7 +33,7 @@ java {
 }
 
 application {
-    mainClass = 'org.etieskrill.game.horde.Application'
+    mainClass = 'org.etieskrill.game.horde.EntityApplication'
 }
 
 test {
@@ -41,6 +41,6 @@ test {
 }
 
 launch4j {
-    mainClassName = 'org.etieskrill.game.horde.Application'
+    mainClassName = 'org.etieskrill.game.horde.EntityApplication'
     jarTask = project.tasks.shadowJar
 }

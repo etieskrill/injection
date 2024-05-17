@@ -24,6 +24,7 @@ import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.texture.Textures;
 import org.etieskrill.engine.graphics.texture.font.Fonts;
 import org.etieskrill.engine.input.Input;
+import org.etieskrill.engine.input.InputBinding.Trigger;
 import org.etieskrill.engine.input.Keys;
 import org.etieskrill.engine.input.controller.CursorCameraController;
 import org.etieskrill.engine.input.controller.KeyCameraController;
@@ -61,6 +62,9 @@ public class EntityApplication extends GameApplication {
     private static final Vector3fc lightOff = new Vector3f(0);
 
     private Transform cubeTransform;
+
+    private Transform playerTransform;
+    private DirectionalForceComponent playerMoveForce; //TODO
 
     private Label fpsLabel;
 
@@ -104,6 +108,8 @@ public class EntityApplication extends GameApplication {
         ));
         floor.addComponent(new WorldSpaceAABB());
 
+        floor.addComponent(new StaticCollider());
+
         Model sphere = MODELS.load("sphere", () -> Model.ofFile("Sphere.obj"));
 
         Entity sun = entitySystem.createEntity();
@@ -143,11 +149,9 @@ public class EntityApplication extends GameApplication {
             cube.addComponent(cubeModel.getTransform());
             cube.addComponent(cubeModel.getBoundingBox());
             cube.addComponent(new WorldSpaceAABB());
+            cube.addComponent(new StaticCollider());
 
-            if (i == 0) {
-                cubeTransform = cubeModel.getTransform();
-                cube.addComponent(new DirectionalForceComponent(new Vector3f(0, -1, 0)));
-            }
+            if (i == 0) cubeTransform = cubeModel.getTransform();
         }
 
         camera = new PerspectiveCamera(window.getSize().toVec());
@@ -168,7 +172,9 @@ public class EntityApplication extends GameApplication {
                 Input.bind(Keys.CTRL).to(() -> {
                     if (cameraController.getSpeed() == 3) cameraController.setSpeed(20);
                     else cameraController.setSpeed(3);
-                })
+                }),
+                Input.bind(Keys.E).to(delta -> playerTransform.getPosition().add(0, .025f, 0)),
+                Input.bind(Keys.W).on(Trigger.PRESSED).to(delta -> playerTransform.getPosition().add((float) (double) delta, 0, 0))
         ));
 
         DirectionalShadowMap directionalShadowMap = DirectionalShadowMap.generate(new Vector2i(1024));
@@ -213,6 +219,15 @@ public class EntityApplication extends GameApplication {
         entitySystem.addService(new RenderService(renderer, camera, window.getSize().toVec()));
         entitySystem.addService(new BoundingBoxRenderService(renderer, camera));
         entitySystem.addService(new PhysicsService());
+
+        Entity player = entitySystem.createEntity();
+        playerTransform = new Transform();
+        player.addComponent(playerTransform);
+        player.addComponent(new AABB(new Vector3f(-.5f, 0, -.5f), new Vector3f(.5f, 2, .5f)));
+        player.addComponent(new WorldSpaceAABB());
+        player.addComponent(new DynamicCollider(new Vector3f()));
+        player.addComponent(new DirectionalForceComponent(new Vector3f(0, -5, 0)));
+        playerMoveForce = new DirectionalForceComponent(new Vector3f());
     }
 
     @Override
@@ -221,8 +236,9 @@ public class EntityApplication extends GameApplication {
         cubeTransform.applyRotation(quat -> quat.rotateAxis((float) delta, 1, 1, 1));
 
         if (pacer.getTotalFramesElapsed() % 60 == 0) {
-            logger.info("Fps: {}, gpu time: {}ms, gpu delay: {}ms",
+            logger.info("Fps: {}, cpu time: {}ms, gpu time: {}ms, gpu delay: {}ms",
                     "%4.1f".formatted(pacer.getAverageFPS()),
+                    "%5.2f".formatted(getAvgCpuTime()),
                     "%5.2f".formatted(renderer.getAveragedGpuTime() / 1_000_000.0),
                     "%5.2f".formatted(renderer.getGpuDelay() / 1_000_000.0));
         }
