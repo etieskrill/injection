@@ -18,6 +18,11 @@ public class AABB {
     }
 
     public AABB(Vector3fc min, Vector3fc max, Vector3fc center, Vector3fc size) {
+        if (min.x() > max.x() || min.y() > max.y() || min.z() > max.z()) {
+            throw new IllegalArgumentException(
+                    "Bounding box mininum corner components must be smaller than those of maximum corner");
+        }
+
         this.min = (Vector3f) min;
         this.max = (Vector3f) max;
         this.center = (Vector3f) center;
@@ -45,6 +50,15 @@ public class AABB {
         this.max.set(max);
         this.max.sub(this.min, this.center).mul(.5f).add(this.min);
         this.max.sub(this.min, this.size).absolute();
+    }
+
+    public boolean overlapsWith(AABB other) {
+        return !(min.x() >= other.getMax().x()
+                || min.y() >= other.getMax().y()
+                || min.z() >= other.getMax().z()
+                || max.x() <= other.getMin().x()
+                || max.y() <= other.getMin().y()
+                || max.z() <= other.getMin().z());
     }
 
     @Override
