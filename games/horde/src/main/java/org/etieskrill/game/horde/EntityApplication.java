@@ -5,6 +5,7 @@ import org.etieskrill.engine.entity.Entity;
 import org.etieskrill.engine.entity.component.*;
 import org.etieskrill.engine.entity.data.AABB;
 import org.etieskrill.engine.entity.data.Transform;
+import org.etieskrill.engine.entity.data.TransformC;
 import org.etieskrill.engine.entity.service.*;
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.camera.Camera;
@@ -16,6 +17,7 @@ import org.etieskrill.engine.graphics.gl.GLUtils;
 import org.etieskrill.engine.graphics.gl.framebuffer.DirectionalShadowMap;
 import org.etieskrill.engine.graphics.gl.framebuffer.PointShadowMapArray;
 import org.etieskrill.engine.graphics.gl.shader.Shaders;
+import org.etieskrill.engine.graphics.gl.shader.Shaders.GridShader;
 import org.etieskrill.engine.graphics.model.Material;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.model.ModelFactory;
@@ -24,10 +26,10 @@ import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.texture.Textures;
 import org.etieskrill.engine.graphics.texture.font.Fonts;
 import org.etieskrill.engine.input.Input;
-import org.etieskrill.engine.input.InputBinding.Trigger;
 import org.etieskrill.engine.input.Keys;
 import org.etieskrill.engine.input.controller.CursorCameraController;
 import org.etieskrill.engine.input.controller.KeyCameraController;
+import org.etieskrill.engine.input.controller.KeyCameraTranslationController;
 import org.etieskrill.engine.scene.Scene;
 import org.etieskrill.engine.scene.component.Container;
 import org.etieskrill.engine.scene.component.Label;
@@ -41,6 +43,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.Math;
 import java.util.Random;
 
+import static org.etieskrill.engine.entity.service.PhysicsService.NarrowCollisionSolver.AABB_SOLVER;
 import static org.etieskrill.engine.graphics.texture.AbstractTexture.Type.*;
 import static org.lwjgl.opengl.GL11C.glEnable;
 import static org.lwjgl.opengl.GL30C.GL_FRAMEBUFFER_SRGB;
@@ -64,9 +67,11 @@ public class EntityApplication extends GameApplication {
     private Transform cubeTransform;
 
     private Transform playerTransform;
-    private DirectionalForceComponent playerMoveForce; //TODO
+    private Acceleration playerMoveForce;
 
     private Label fpsLabel;
+
+    private GridShader gridShader; //TODO fix
 
     public EntityApplication() {
         super(FRAME_RATE, new Window.Builder()
@@ -155,27 +160,6 @@ public class EntityApplication extends GameApplication {
         }
 
         camera = new PerspectiveCamera(window.getSize().toVec());
-        window.addCursorInputs(new CursorCameraController(camera));
-        KeyCameraController cameraController = new KeyCameraController(camera).setSpeed(3);
-        window.addKeyInputs(cameraController);
-        window.getCursor().disable();
-
-        window.addKeyInputs(Input.of(
-                Input.bind(Keys.Q).to(() -> {
-                    light = !light;
-                    logger.info("Turning sunlight {}", light ? "on" : "off");
-
-                    sunLight.setAmbient(light ? lightOn : lightOff);
-                    sunLight.setDiffuse(light ? lightOn : lightOff);
-                    sunLight.setSpecular(light ? lightOn : lightOff);
-                }),
-                Input.bind(Keys.CTRL).to(() -> {
-                    if (cameraController.getSpeed() == 3) cameraController.setSpeed(20);
-                    else cameraController.setSpeed(3);
-                }),
-                Input.bind(Keys.E).to(delta -> playerTransform.getPosition().add(0, .025f, 0)),
-                Input.bind(Keys.W).on(Trigger.PRESSED).to(delta -> playerTransform.getPosition().add((float) (double) delta, 0, 0))
-        ));
 
         DirectionalShadowMap directionalShadowMap = DirectionalShadowMap.generate(new Vector2i(1024));
         PointShadowMapArray pointShadowMaps = PointShadowMapArray.generate(new Vector2i(1024), 2);
@@ -205,7 +189,7 @@ public class EntityApplication extends GameApplication {
 
         glEnable(GL_FRAMEBUFFER_SRGB);
 
-        GLUtils.removeDebugLogging();
+//        GLUtils.removeDebugLogging();
 
         OrthographicCamera uiCamera = new OrthographicCamera(window.getSize().toVec());
         fpsLabel = new Label("", Fonts.getDefault(36));
@@ -218,20 +202,61 @@ public class EntityApplication extends GameApplication {
         entitySystem.addService(new PointShadowMappingService(renderer, depthCubeMapArrayShader));
         entitySystem.addService(new RenderService(renderer, camera, window.getSize().toVec()));
         entitySystem.addService(new BoundingBoxRenderService(renderer, camera));
-        entitySystem.addService(new PhysicsService());
+        entitySystem.addService(new PhysicsService(AABB_SOLVER));
 
         Entity player = entitySystem.createEntity();
         playerTransform = new Transform();
         player.addComponent(playerTransform);
         player.addComponent(new AABB(new Vector3f(-.5f, 0, -.5f), new Vector3f(.5f, 2, .5f)));
         player.addComponent(new WorldSpaceAABB());
-        player.addComponent(new DynamicCollider(new Vector3f()));
-        player.addComponent(new DirectionalForceComponent(new Vector3f(0, -5, 0)));
-        playerMoveForce = new DirectionalForceComponent(new Vector3f());
+        DynamicCollider playerCollider = new DynamicCollider(new Vector3f());
+        player.addComponent(playerCollider);
+        player.addComponent(new DirectionalForceComponent(new Vector3f(0, -15, 0)));
+        playerMoveForce = new Acceleration(new Vector3f());
+        player.addComponent(playerMoveForce);
+
+        window.addCursorInputs(new CursorCameraController(camera));
+        KeyCameraController playerController = new KeyCameraTranslationController(
+                (Vector3f) playerMoveForce.getForce(), camera
+        ).setSpeed(3);
+        window.addKeyInputs(playerController);
+        window.getCursor().disable();
+
+        window.addKeyInputs(Input.of(
+                Input.bind(Keys.Q).to(() -> {
+                    light = !light;
+                    logger.info("Turning sunlight {}", light ? "on" : "off");
+
+                    sunLight.setAmbient(light ? lightOn : lightOff);
+                    sunLight.setDiffuse(light ? lightOn : lightOff);
+                    sunLight.setSpecular(light ? lightOn : lightOff);
+                }),
+                Input.bind(Keys.CTRL).to(() -> {
+                    if (playerController.getSpeed() == 3) playerController.setSpeed(20);
+                    else playerController.setSpeed(3);
+                }),
+                Input.bind(Keys.C).to(() -> {
+                    playerCollider.setPreviousPosition(playerTransform.getPosition());
+                })
+        ));
+
+        gridShader = new GridShader();
+
+        gridPlaneModel = ModelFactory.box(new Vector3f(1));
+        gridTransform = gridPlaneModel.getTransform();
     }
+
+    private TransformC gridTransform;
+    private Model gridPlaneModel;
 
     @Override
     protected void loop(final double delta) {
+        camera.setPosition(
+                new Vector3f(playerTransform.getPosition())
+                        .add(0, 2, 0)
+                        .sub(camera.getDirection().mul(3))
+        );
+
         sunTransform.setPosition(new Vector3f(50).add(camera.getPosition()));
         cubeTransform.applyRotation(quat -> quat.rotateAxis((float) delta, 1, 1, 1));
 
@@ -243,6 +268,11 @@ public class EntityApplication extends GameApplication {
                     "%5.2f".formatted(renderer.getGpuDelay() / 1_000_000.0));
         }
         fpsLabel.setText(String.valueOf((int) pacer.getAverageFPS()));
+    }
+
+    @Override
+    protected void postRender() {
+//        renderer.render(gridTransform, gridPlaneModel, gridShader, camera.getCombined());
     }
 
     public static void main(String[] args) {
