@@ -13,11 +13,11 @@ import java.util.function.Supplier;
 
 public class KeyCameraController extends KeyInputManager {
 
-    private final Camera camera;
-    private float speed;
-    private @Nullable Supplier<Boolean> updateCondition;
+    protected final Camera camera;
+    protected float speed;
+    protected @Nullable Supplier<Boolean> updateCondition;
 
-    private final Vector3f deltaPosition;
+    protected final Vector3f deltaPosition;
 
     public KeyCameraController(Camera camera) {
         this(camera, 1);
@@ -39,12 +39,16 @@ public class KeyCameraController extends KeyInputManager {
 
     @Override
     public void update(double delta) {
-        super.update(delta);
+        updateInputManager(delta);
 
         if (updateCondition == null || updateCondition.get()) {
             camera.translate(deltaPosition.mul((float) (delta * speed)));
         }
         deltaPosition.zero();
+    }
+
+    protected void updateInputManager(double delta) {
+        super.update(delta);
     }
 
     public float getSpeed() {

@@ -27,7 +27,6 @@ public class RenderService implements Service {
     private final Vector2ic windowSize;
     private final Shaders.StaticShader shader;
     private final Shaders.LightSourceShader lightSourceShader;
-    private final Shaders.WireframeShader wireframeShader;
 
     //TODO make blocking
     private final Transform cachedTransform;
@@ -38,7 +37,6 @@ public class RenderService implements Service {
         this.windowSize = windowSize;
         this.shader = new Shaders.StaticShader();
         this.lightSourceShader = new Shaders.LightSourceShader();
-        this.wireframeShader = new Shaders.WireframeShader();
 
         this.cachedTransform = new Transform();
     }
