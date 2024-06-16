@@ -4,7 +4,7 @@ import org.etieskrill.engine.entity.Entity;
 import org.etieskrill.engine.entity.component.DirectionalLightComponent;
 import org.etieskrill.engine.entity.component.Drawable;
 import org.etieskrill.engine.entity.component.PointLightComponent;
-import org.etieskrill.engine.entity.data.Transform;
+import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.data.PointLight;
 import org.etieskrill.engine.graphics.gl.GLRenderer;

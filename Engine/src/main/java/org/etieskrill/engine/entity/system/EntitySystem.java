@@ -4,6 +4,8 @@ import org.etieskrill.engine.entity.Entity;
 import org.etieskrill.engine.entity.service.Service;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +19,8 @@ public class EntitySystem {
     private final List<Service> serviceExecutionPlan;
 
     private int nextEntityId;
+
+    private static final Logger logger = LoggerFactory.getLogger(EntitySystem.class);
 
     public EntitySystem() {
         this.entities = new ArrayList<>();
@@ -35,6 +39,7 @@ public class EntitySystem {
         E entity = factory.apply(nextEntityId++);
         if (entities.contains(entity))
             throw new IllegalStateException("Could not create new unique entity");
+        logger.debug("New entity with id '{}'", entity.getId());
 
         entities.ensureCapacity(entity.getId());
         entities.add(entity.getId(), entity);

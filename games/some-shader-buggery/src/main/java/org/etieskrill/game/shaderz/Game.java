@@ -1,6 +1,6 @@
 package org.etieskrill.game.shaderz;
 
-import org.etieskrill.engine.entity.data.Transform;
+import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.Renderer;
 import org.etieskrill.engine.graphics.camera.Camera;

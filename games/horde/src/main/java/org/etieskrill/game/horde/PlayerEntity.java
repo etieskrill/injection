@@ -1,12 +1,7 @@
 package org.etieskrill.game.horde;
 
 import org.etieskrill.engine.entity.Entity;
-import org.etieskrill.engine.entity.component.Acceleration;
-import org.etieskrill.engine.entity.component.DirectionalForceComponent;
-import org.etieskrill.engine.entity.component.DynamicCollider;
-import org.etieskrill.engine.entity.component.WorldSpaceAABB;
-import org.etieskrill.engine.entity.data.AABB;
-import org.etieskrill.engine.entity.data.Transform;
+import org.etieskrill.engine.entity.component.*;
 import org.joml.Vector3f;
 
 public class PlayerEntity extends Entity {
@@ -28,6 +23,8 @@ public class PlayerEntity extends Entity {
         addComponent(collider);
         addComponent(new DirectionalForceComponent(new Vector3f(0, -15, 0)));
         addComponent(moveForce);
+        addComponent(new Friction(.05f));
+//        addComponent(new OnGround(.075f));
     }
 
     public Transform getTransform() {

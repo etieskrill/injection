@@ -2,7 +2,7 @@ package org.etieskrill.game.horde;
 
 import org.etieskrill.engine.application.GameApplication;
 import org.etieskrill.engine.entity.component.Acceleration;
-import org.etieskrill.engine.entity.data.Transform;
+import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.entity.service.*;
 import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera;
@@ -74,6 +74,7 @@ public class EntityApplication extends GameApplication {
         entitySystem.addService(new PointShadowMappingService(renderer, new Shaders.DepthCubeMapArrayShader()));
         entitySystem.addService(new RenderService(renderer, camera, window.getSize().toVec()));
         entitySystem.addService(new BoundingBoxRenderService(renderer, camera));
+        entitySystem.addService(new JumpService());
         entitySystem.addService(new PhysicsService(AABB_SOLVER));
 
         PlayerEntity player = entitySystem.createEntity(PlayerEntity::new);

@@ -3,8 +3,8 @@ package org.etieskrill.engine.entity.service;
 import org.etieskrill.engine.entity.Entity;
 import org.etieskrill.engine.entity.component.Drawable;
 import org.etieskrill.engine.entity.component.PointLightComponent;
-import org.etieskrill.engine.entity.data.Transform;
-import org.etieskrill.engine.entity.data.TransformC;
+import org.etieskrill.engine.entity.component.Transform;
+import org.etieskrill.engine.entity.component.TransformC;
 import org.etieskrill.engine.graphics.Renderer;
 import org.etieskrill.engine.graphics.gl.shader.Shaders;
 

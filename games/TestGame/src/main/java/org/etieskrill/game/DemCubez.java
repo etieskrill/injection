@@ -1,6 +1,6 @@
 package org.etieskrill.game;
 
-import org.etieskrill.engine.entity.data.Transform;
+import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.graphics.Renderer;
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera;
 import org.etieskrill.engine.graphics.data.DirectionalLight;
@@ -200,7 +200,7 @@ public class DemCubez {
         pacer.start();
         
         FrameBuffer frameBuffer = FrameBuffer.getStandard(
-                new Vector2i(window.getSize().toVec().get(RoundingMode.TRUNCATE, new Vector2i())));
+                new Vector2i(window.getSize().toVec()));
         frameBuffer.unbind();
         
         ShaderProgram screenShader = Shaders.getPostprocessingShader();

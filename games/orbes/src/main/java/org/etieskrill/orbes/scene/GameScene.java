@@ -1,6 +1,6 @@
 package org.etieskrill.orbes.scene;
 
-import org.etieskrill.engine.entity.data.Transform;
+import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.graphics.Renderer;
 import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera;

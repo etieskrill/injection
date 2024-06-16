@@ -1,6 +1,6 @@
 package org.etieskrill.engine.graphics.animation;
 
-import org.etieskrill.engine.entity.data.Transform;
+import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.graphics.model.Node;
 import org.etieskrill.engine.util.MathUtils;
 import org.jetbrains.annotations.NotNull;

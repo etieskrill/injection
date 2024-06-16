@@ -1,4 +1,4 @@
-package org.etieskrill.engine.entity.data;
+package org.etieskrill.engine.entity.component;
 
 import org.joml.Vector3f;
 import org.joml.Vector3fc;

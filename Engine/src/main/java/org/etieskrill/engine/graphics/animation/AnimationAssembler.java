@@ -1,7 +1,7 @@
 package org.etieskrill.engine.graphics.animation;
 
-import org.etieskrill.engine.entity.data.Transform;
-import org.etieskrill.engine.entity.data.TransformC;
+import org.etieskrill.engine.entity.component.Transform;
+import org.etieskrill.engine.entity.component.TransformC;
 import org.etieskrill.engine.graphics.model.Bone;
 import org.etieskrill.engine.graphics.model.Node;
 

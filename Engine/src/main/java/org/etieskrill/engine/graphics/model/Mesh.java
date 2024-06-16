@@ -1,7 +1,7 @@
 package org.etieskrill.engine.graphics.model;
 
 import org.etieskrill.engine.Disposable;
-import org.etieskrill.engine.entity.data.AABB;
+import org.etieskrill.engine.entity.component.AABB;
 
 import java.util.Collections;
 import java.util.List;

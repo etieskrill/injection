@@ -1,6 +1,6 @@
 package org.etieskrill.engine.graphics.model.loader;
 
-import org.etieskrill.engine.entity.data.Transform;
+import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.graphics.animation.Animation;
 import org.etieskrill.engine.graphics.animation.BoneAnimation;
 import org.etieskrill.engine.graphics.model.Bone;
