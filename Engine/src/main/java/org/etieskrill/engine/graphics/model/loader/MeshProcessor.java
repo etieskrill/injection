@@ -1,6 +1,6 @@
 package org.etieskrill.engine.graphics.model.loader;
 
-import org.etieskrill.engine.entity.data.AABB;
+import org.etieskrill.engine.entity.component.AABB;
 import org.etieskrill.engine.graphics.model.*;
 import org.joml.Vector2f;
 import org.joml.Vector2fc;

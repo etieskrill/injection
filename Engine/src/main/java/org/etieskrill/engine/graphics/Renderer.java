@@ -1,6 +1,6 @@
 package org.etieskrill.engine.graphics;
 
-import org.etieskrill.engine.entity.data.TransformC;
+import org.etieskrill.engine.entity.component.TransformC;
 import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.etieskrill.engine.graphics.model.CubeMapModel;

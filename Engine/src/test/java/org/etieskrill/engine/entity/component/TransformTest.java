@@ -1,4 +1,4 @@
-package org.etieskrill.engine.entity.data;
+package org.etieskrill.engine.entity.component;
 
 import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
@@ -60,10 +60,10 @@ class TransformTest {
                 arguments(new Transform().setPosition(new Vector3f(1, 2, 3)),
                         IDENTITY.translate(1, 2, 3, new Matrix4f())),
                 arguments(new Transform().applyRotation(quat ->
-                        quat.rotateX(toRadians(90)).rotateY(toRadians(-90))),
+                                quat.rotateX(toRadians(90)).rotateY(toRadians(-90))),
                         new Matrix4f().rotateX(toRadians(90)).rotateY(toRadians(-90))),
                 arguments(new Transform().applyScale(scale ->
-                        scale.set(4, 5, 6)),
+                                scale.set(4, 5, 6)),
                         IDENTITY.scale(4, 5, 6, new Matrix4f())),
                 arguments(new Transform()
                                 .setPosition(new Vector3f(1, 2, 3))
@@ -93,7 +93,7 @@ class TransformTest {
                         new Matrix4f() //According to the documentation, this is the correct way of specifying the transformation of T * R * S, even though, logically speaking, it should now be the wrong way around
                                 .translate(1, 2, 3)
                                 .rotateX(toRadians(90)).rotateY(toRadians(-90)))
-                );
+        );
     }
 
     @Test
@@ -205,15 +205,16 @@ class TransformTest {
                         new Matrix4f().translate(1, 2, 3).rotateX(toRadians(90)).rotateY(toRadians(-90)).scale(2)),
                 arguments(
                         new Transform().applyScale(scale -> scale.mul(2)).applyRotation(quat -> quat.rotateX(toRadians(90)).rotateY(toRadians(-90))).translate(new Vector3f(1, 2, 3)),
-                        new Transform().applyScale(scale -> scale.mul(2)).applyRotation(quat -> quat.rotateX(toRadians(90)).rotateY(toRadians(-90))).translate(new Vector3f(2,3, 4)),
+                        new Transform().applyScale(scale -> scale.mul(2)).applyRotation(quat -> quat.rotateX(toRadians(90)).rotateY(toRadians(-90))).translate(new Vector3f(2, 3, 4)),
                         new Matrix4f().translate(1, 2, 3).rotateX(toRadians(90)).rotateY(toRadians(-90)).scale(2).translate(2, 3, 4).rotateX(toRadians(90)).rotateY(toRadians(-90)).scale(2))
         );
     }
 
     @Test
-    void toMat_UpdatesMatrix_OnlyWhenDirty() {
+    void toMat_UpdatesMatrix_OnlyWhenDirty() throws NoSuchMethodException {
         fixture = spy(fixture);
         fixture.getMatrix();
+
         verify(fixture, never()).updateTransform();
 
         fixture.setPosition(new Vector3f(1, 2, 3));

@@ -2,8 +2,6 @@ package org.etieskrill.game.horde;
 
 import org.etieskrill.engine.entity.Entity;
 import org.etieskrill.engine.entity.component.*;
-import org.etieskrill.engine.entity.data.AABB;
-import org.etieskrill.engine.entity.data.Transform;
 import org.etieskrill.engine.entity.system.EntitySystem;
 import org.etieskrill.engine.graphics.data.DirectionalLight;
 import org.etieskrill.engine.graphics.data.PointLight;
@@ -101,7 +99,11 @@ public class World {
             cube.addComponent(cubeModel.getTransform());
             cube.addComponent(cubeModel.getBoundingBox());
             cube.addComponent(new WorldSpaceAABB());
-            cube.addComponent(new StaticCollider());
+            if (i == 1) {
+                cube.addComponent(new DynamicCollider(new Vector3f(cubeModel.getTransform().getPosition())));
+            } else {
+                cube.addComponent(new StaticCollider());
+            }
 
             if (i == 0) cubeTransform = cubeModel.getTransform();
         }

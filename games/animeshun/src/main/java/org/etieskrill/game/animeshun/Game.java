@@ -1,7 +1,7 @@
 package org.etieskrill.game.animeshun;
 
-import org.etieskrill.engine.entity.data.Transform;
-import org.etieskrill.engine.entity.data.TransformC;
+import org.etieskrill.engine.entity.component.Transform;
+import org.etieskrill.engine.entity.component.TransformC;
 import org.etieskrill.engine.graphics.Renderer;
 import org.etieskrill.engine.graphics.animation.Animation;
 import org.etieskrill.engine.graphics.animation.Animator;

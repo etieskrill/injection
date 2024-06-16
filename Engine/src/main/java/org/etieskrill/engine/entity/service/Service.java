@@ -36,7 +36,16 @@ public interface Service {
     void process(Entity targetEntity, List<Entity> entities, double delta);
 
     /**
-     * Specifies an absolute set of services which, if present,  must be run before this service does its processing.
+     * Specifies an absolute set of services which, if present, must be run after this service does its processing.
+     *
+     * @return set of (semi-) dependent services
+     */
+    default Set<Class<? extends Service>> runBefore() {
+        return emptySet();
+    }
+
+    /**
+     * Specifies an absolute set of services which, if present, must be run before this service does its processing.
      *
      * @return set of prerequisite services
      */

@@ -1,8 +1,8 @@
 package org.etieskrill.engine.entity.service;
 
 import org.etieskrill.engine.entity.Entity;
+import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.entity.component.WorldSpaceAABB;
-import org.etieskrill.engine.entity.data.Transform;
 import org.etieskrill.engine.graphics.Renderer;
 import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.gl.shader.Shaders.WireframeShader;

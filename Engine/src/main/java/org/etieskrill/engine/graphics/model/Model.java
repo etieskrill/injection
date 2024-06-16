@@ -1,9 +1,9 @@
 package org.etieskrill.engine.graphics.model;
 
 import org.etieskrill.engine.Disposable;
-import org.etieskrill.engine.entity.data.AABB;
-import org.etieskrill.engine.entity.data.Transform;
-import org.etieskrill.engine.entity.data.TransformC;
+import org.etieskrill.engine.entity.component.AABB;
+import org.etieskrill.engine.entity.component.Transform;
+import org.etieskrill.engine.entity.component.TransformC;
 import org.etieskrill.engine.graphics.animation.Animation;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.jetbrains.annotations.Contract;

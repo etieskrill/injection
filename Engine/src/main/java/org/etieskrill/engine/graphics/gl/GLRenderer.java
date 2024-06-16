@@ -1,6 +1,6 @@
 package org.etieskrill.engine.graphics.gl;
 
-import org.etieskrill.engine.entity.data.TransformC;
+import org.etieskrill.engine.entity.component.TransformC;
 import org.etieskrill.engine.graphics.Renderer;
 import org.etieskrill.engine.graphics.TextRenderer;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;

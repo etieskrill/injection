@@ -1,6 +1,6 @@
 package org.etieskrill.engine.graphics.model;
 
-import org.etieskrill.engine.entity.data.TransformC;
+import org.etieskrill.engine.entity.component.TransformC;
 import org.lwjgl.assimp.AIVertexWeight;
 
 import java.text.MessageFormat;

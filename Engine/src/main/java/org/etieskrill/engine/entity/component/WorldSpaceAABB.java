@@ -1,6 +1,5 @@
 package org.etieskrill.engine.entity.component;
 
-import org.etieskrill.engine.entity.data.AABB;
 import org.joml.Vector3f;
 
 public class WorldSpaceAABB extends AABB {

@@ -1,7 +1,7 @@
 package org.etieskrill.engine.graphics.model.loader;
 
-import org.etieskrill.engine.entity.data.AABB;
-import org.etieskrill.engine.entity.data.Transform;
+import org.etieskrill.engine.entity.component.AABB;
+import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.graphics.animation.Animation;
 import org.etieskrill.engine.graphics.model.Bone;
 import org.etieskrill.engine.graphics.model.Mesh;

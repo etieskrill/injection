@@ -1,4 +1,4 @@
-package org.etieskrill.engine.entity.data;
+package org.etieskrill.engine.entity.component;
 
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
