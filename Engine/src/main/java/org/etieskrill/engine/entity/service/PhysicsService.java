@@ -46,10 +46,13 @@ public class PhysicsService implements Service {
         transform.setPosition(newPosition);
 
         for (Entity entity : entities) {
+            if (entity == targetEntity) {
+                continue;
+            }
+
             DynamicCollider dynamicCollider = entity.getComponent(DynamicCollider.class);
             StaticCollider staticCollider = entity.getComponent(StaticCollider.class);
-            if (entity == targetEntity
-                    || (dynamicCollider == null && staticCollider == null)) {
+            if (dynamicCollider == null && staticCollider == null) {
                 continue;
             }
 

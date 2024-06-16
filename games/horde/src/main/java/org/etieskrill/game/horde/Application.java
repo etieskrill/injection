@@ -142,7 +142,7 @@ public class Application extends GameApplication {
 
         camera = new PerspectiveCamera(window.getSize().toVec());
         window.addCursorInputs(new CursorCameraController(camera));
-        KeyCameraController cameraController = new KeyCameraController(camera).setSpeed(3);
+        KeyCameraController cameraController = (KeyCameraController) new KeyCameraController(camera).setSpeed(3);
         window.addKeyInputs(cameraController);
         window.getCursor().disable();
 

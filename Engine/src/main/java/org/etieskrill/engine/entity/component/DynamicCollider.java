@@ -7,6 +7,10 @@ public class DynamicCollider {
 
     private final Vector3f previousPosition;
 
+    public DynamicCollider() {
+        this(new Vector3f());
+    }
+
     public DynamicCollider(Vector3f previousPosition) {
         this.previousPosition = previousPosition;
     }
