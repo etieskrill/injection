@@ -2,9 +2,12 @@ package org.etieskrill.engine.entity.system;
 
 import org.etieskrill.engine.entity.Entity;
 import org.etieskrill.engine.entity.service.Service;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 public class EntitySystem {
 
@@ -25,7 +28,11 @@ public class EntitySystem {
     }
 
     public Entity createEntity() {
-        Entity entity = new Entity(nextEntityId++);
+        return createEntity(Entity::new);
+    }
+
+    public <E extends Entity> E createEntity(@NotNull Function<Integer, E> factory) {
+        E entity = factory.apply(nextEntityId++);
         if (entities.contains(entity))
             throw new IllegalStateException("Could not create new unique entity");
 
@@ -34,16 +41,16 @@ public class EntitySystem {
         return entity;
     }
 
-    public boolean entityExists(Entity entity) {
+    public boolean entityExists(@Nullable Entity entity) {
         return entities.contains(entity);
     }
 
-    public void addService(Service service) {
+    public void addService(@NotNull Service service) {
         services.add(service);
         createServiceExecutionPlan();
     }
 
-    public void removeService(Service service) {
+    public void removeService(@NotNull Service service) {
         services.remove(service);
         createServiceExecutionPlan();
     }
