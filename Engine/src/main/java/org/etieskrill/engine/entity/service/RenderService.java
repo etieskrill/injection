@@ -68,9 +68,11 @@ public class RenderService implements Service {
                 .filter(Objects::nonNull)
                 .toArray(PointLightComponent[]::new);
 
-        shader.setLights(Arrays.stream(pointLightComponents)
-                .map(PointLightComponent::getLight)
-                .toArray(PointLight[]::new));
+        if (pointLightComponents.length > 0) {
+            shader.setLights(Arrays.stream(pointLightComponents)
+                    .map(PointLightComponent::getLight)
+                    .toArray(PointLight[]::new));
+        }
 
         AtomicInteger numPointShadowMaps = new AtomicInteger();
         Arrays.stream(pointLightComponents)
@@ -97,10 +99,18 @@ public class RenderService implements Service {
                 .compose(drawable.getModel().getInitialTransform());
 
         ShaderProgram shader = getConfiguredShader(targetEntity, drawable);
-        renderer.render(transform, drawable.getModel(), shader, camera.getCombined());
+        if (!drawable.isDrawWireframe()) {
+            renderer.render(transform, drawable.getModel(), shader, camera.getCombined());
+        } else {
+            renderer.renderWireframe(transform, drawable.getModel(), shader, camera.getCombined());
+        }
     }
 
     private ShaderProgram getConfiguredShader(Entity entity, Drawable drawable) {
+        if (drawable.getShader() != null) {
+            return drawable.getShader();
+        }
+
         DirectionalLightComponent directionalLightComponent = entity.getComponent(DirectionalLightComponent.class);
         PointLightComponent pointLightComponent = entity.getComponent(PointLightComponent.class);
         if (directionalLightComponent != null) {

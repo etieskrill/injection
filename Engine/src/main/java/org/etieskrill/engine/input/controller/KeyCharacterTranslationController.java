@@ -11,11 +11,24 @@ public class KeyCharacterTranslationController extends KeyCharacterController<Ve
             Vector3f translation,
             Camera camera
     ) {
+        this(translation, camera, true);
+    }
+
+    public KeyCharacterTranslationController(
+            Vector3f translation,
+            Camera camera,
+            boolean fixUpDirection
+    ) {
         super(translation, (delta, target, deltaPosition, speed) -> {
             if (!deltaPosition.equals(0, 0, 0)) {
                 deltaPosition.normalize();
             }
-            deltaPosition.rotateY((float) toRadians(camera.getYaw()));
+            if (fixUpDirection) {
+                deltaPosition.x = -deltaPosition.x;
+                deltaPosition.rotateY((float) toRadians(camera.getYaw()));
+            } else {
+                deltaPosition = camera.relativeTranslation(deltaPosition);
+            }
             translation.set(deltaPosition.mul(speed));
         });
     }
