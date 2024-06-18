@@ -74,8 +74,8 @@ public abstract class Camera {
     public Vector3f relativeTranslation(Vector3fc translation) {
         return new Vector3f()
                 .add(front.mul(translation.z()))
-                .add(right.mul(-translation.x())) //TODO make positive
-                .add(up.mul(-translation.y())); //TODO also make positive
+                .add(right.mul(-translation.x()))
+                .add(up.mul(translation.y()));
     }
 
     public Vector3fc getPosition() {

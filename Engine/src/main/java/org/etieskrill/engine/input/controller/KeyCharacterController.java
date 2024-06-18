@@ -30,8 +30,8 @@ public class KeyCharacterController<T> extends KeyInputManager {
 
         addBindings(Input.bind(Keys.W).on(InputBinding.Trigger.PRESSED).to(() -> deltaPosition.add(0, 0, 1)));
         addBindings(Input.bind(Keys.S).on(InputBinding.Trigger.PRESSED).to(() -> deltaPosition.add(0, 0, -1)));
-        addBindings(Input.bind(Keys.A).on(InputBinding.Trigger.PRESSED).to(() -> deltaPosition.add(1, 0, 0)));
-        addBindings(Input.bind(Keys.D).on(InputBinding.Trigger.PRESSED).to(() -> deltaPosition.add(-1, 0, 0)));
+        addBindings(Input.bind(Keys.A).on(InputBinding.Trigger.PRESSED).to(() -> deltaPosition.add(-1, 0, 0)));
+        addBindings(Input.bind(Keys.D).on(InputBinding.Trigger.PRESSED).to(() -> deltaPosition.add(1, 0, 0)));
         addBindings(Input.bind(Keys.SPACE).on(InputBinding.Trigger.PRESSED).to(() -> deltaPosition.add(0, 1, 0)));
         addBindings(Input.bind(Keys.SHIFT).on(InputBinding.Trigger.PRESSED).to(() -> deltaPosition.add(0, -1, 0)));
     }

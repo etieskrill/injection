@@ -24,7 +24,7 @@ public class PlayerEntity extends Entity {
         addComponent(new DirectionalForceComponent(new Vector3f(0, -15, 0)));
         addComponent(moveForce);
         addComponent(new Friction(.05f));
-//        addComponent(new OnGround(.075f));
+        addComponent(new OnGround(.075f));
     }
 
     public Transform getTransform() {
