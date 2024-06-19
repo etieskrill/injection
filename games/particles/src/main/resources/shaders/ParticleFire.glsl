@@ -25,7 +25,6 @@ void main()
 #endif
 
 #ifdef FRAGMENT_SHADER
-in vec2 texCoords;
 flat in vec4 colour;
 
 out vec4 fragColour;

@@ -1,5 +1,6 @@
 package org.etieskrill.engine.graphics.model;
 
+import org.etieskrill.engine.ApplicationDisposed;
 import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.graphics.model.loader.MeshLoader;
 import org.etieskrill.engine.util.Loaders;
@@ -16,10 +17,12 @@ import java.util.List;
 
 public class ModelFactory {
 
+    @ApplicationDisposed
     public static Model.Builder rectangle(Vector2f position, Vector2f size) {
         return rectangle(position.x(), position.y(), size.x(), size.y(), null);
     }
-    
+
+    @ApplicationDisposed
     public static Model.Builder rectangle(float x, float y, float width, float height, Material material) {
         if (width < 0) {
             float tmp = x;
@@ -128,6 +131,7 @@ public class ModelFactory {
         throw new UnsupportedOperationException("Currently under major reconstruction");
     }
 
+    @ApplicationDisposed
     public static Model box(Vector3f size) {
         Model baseBox = Loaders.ModelLoader.get().load("internal-model-factory:box", () -> new Model.Builder("box.obj").disableCulling().build());
         Model box = new Model(baseBox);
@@ -135,6 +139,7 @@ public class ModelFactory {
         return box;
     }
 
+    @ApplicationDisposed
     public static Model quadBox(Vector3f size) {
         Model quadBox = Loaders.ModelLoader.get().load("internal-model-loader:quad-box", () -> new Model.Builder("quad-box.obj").build());
         quadBox.getInitialTransform().setScale(size);

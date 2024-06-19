@@ -2,6 +2,7 @@ package org.etieskrill.engine.application;
 
 import org.etieskrill.engine.entity.system.EntitySystem;
 import org.etieskrill.engine.graphics.gl.GLRenderer;
+import org.etieskrill.engine.graphics.texture.font.TrueTypeFont;
 import org.etieskrill.engine.input.Key;
 import org.etieskrill.engine.input.Keys;
 import org.etieskrill.engine.time.LoopPacer;
@@ -9,8 +10,11 @@ import org.etieskrill.engine.time.SystemNanoTimePacer;
 import org.etieskrill.engine.util.FixedArrayDeque;
 import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.window.Window;
+import org.lwjgl.opengl.GL;
 
 import java.util.ArrayDeque;
+
+import static org.lwjgl.glfw.GLFW.glfwTerminate;
 
 public abstract class GameApplication {
 
@@ -41,9 +45,12 @@ public abstract class GameApplication {
         this.entitySystem = new EntitySystem();
         this.cpuTimes = new FixedArrayDeque<>(frameRate);
 
-        init();
-        _loop();
-        terminate();
+        try {
+            init();
+            _loop();
+        } finally {
+            terminate();
+        }
     }
 
     protected abstract void init();
@@ -76,6 +83,9 @@ public abstract class GameApplication {
     protected void terminate() {
         window.close();
         Loaders.disposeDefaultLoaders();
+        TrueTypeFont.disposeLibrary();
+        GL.destroy();
+        glfwTerminate();
     }
 
     protected double getAvgCpuTime() {

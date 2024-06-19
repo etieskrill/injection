@@ -1,5 +1,7 @@
 package org.etieskrill.engine.graphics.gl;
 
+import org.etieskrill.engine.ApplicationDisposed;
+import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.entity.component.TransformC;
 import org.etieskrill.engine.graphics.Renderer;
 import org.etieskrill.engine.graphics.TextRenderer;
@@ -17,7 +19,7 @@ import static org.lwjgl.opengl.GL33C.*;
 
 //TODO assure thread safety/passing
 //TODO separate text renderer
-public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer {
+public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer, Disposable {
 
     private static final float CLEAR_COLOUR = 0.25f;//0.025f;
     private static final int MAX_USABLE_TEXTURE_UNIT = 8; //TODO make more configurable
@@ -63,6 +65,7 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
         _render(transform, model, shader, combined);
     }
 
+    @ApplicationDisposed
     private Model box;
 
     private Model getBox() {
@@ -251,6 +254,12 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
 
         //Optional information
         shader.setUniform("material.numTextures", nextTexture, false); //TODO not accurate anymore if binding textures manually after this
+    }
+
+    @Override
+    public void dispose() {
+        super.dispose();
+        outlineShader.dispose();
     }
 
 }
