@@ -61,11 +61,11 @@ in Data {
 
 out vec4 fragColour;
 
-uniform vec3 uViewPosition;
-uniform mat3 uNormal;
+uniform vec3 viewPosition;
+uniform mat3 normal;
 
-uniform bool uNormalMapped;
-uniform bool uBlinnPhong;
+uniform bool normalMapped;
+uniform bool blinnPhong;
 
 uniform Material material;
 
@@ -93,7 +93,7 @@ float getInPointShadow(int index, vec3 fragToLight);
 void main()
 {
     vec3 normal;
-    if (uNormalMapped) {
+    if (normalMapped) {
         normal = texture(material.normal0, vert_out.texCoord).xyz * 2.0 - 1.0;
         normal = normalize(normal);
         normal = normalize(vert_out.tbn * normal);
@@ -107,12 +107,12 @@ void main()
     vec4 combinedLight = vec4(0.0);
     for (int i = 0; i < NR_DIRECTIONAL_LIGHTS; i++) {
         float inShadow = getInShadow(vert_out.lightSpaceFragPos, globalLights[i].direction);
-        vec4 dirLight = getDirLight(globalLights[i], normal, vert_out.fragPos, uViewPosition, inShadow);
+        vec4 dirLight = getDirLight(globalLights[i], normal, vert_out.fragPos, viewPosition, inShadow);
         combinedLight += dirLight;
     }
     for (int i = 0; i < NR_POINT_LIGHTS; i++) {
         float inShadow = getInPointShadow(i, vert_out.fragPos - lights[i].position);
-        vec4 pointLight = getPointLight(lights[i], normal, vert_out.fragPos, uViewPosition, inShadow);
+        vec4 pointLight = getPointLight(lights[i], normal, vert_out.fragPos, viewPosition, inShadow);
         combinedLight += pointLight;
     }
 
@@ -170,7 +170,7 @@ vec4 getSpecular(vec3 lightDirection, vec3 lightPosition, vec3 normal, vec3 frag
 {
     vec3 viewDirection = normalize(viewPosition - fragPosition);
     float specularFactor;
-    if (uBlinnPhong) {
+    if (blinnPhong) {
         vec3 lightDirection = normalize(lightPosition - lightDirFragPosition);
         vec3 halfway = normalize(lightDirection + viewDirection);
         specularFactor = dot(normal, halfway);
@@ -186,13 +186,13 @@ vec4 getSpecular(vec3 lightDirection, vec3 lightPosition, vec3 normal, vec3 frag
 }
 
 vec4 getCubeReflection(vec3 normal) {
-    vec3 viewDirection = normalize(vert_out.fragPos - uViewPosition);
+    vec3 viewDirection = normalize(vert_out.fragPos - viewPosition);
     vec3 viewReflection = reflect(viewDirection, normal);
     return texture(material.cubemap0, -viewReflection);
 }
 
 vec4 getCubeRefraction(float refractIndex, vec3 normal) {
-    vec3 viewDirection = normalize(vert_out.fragPos - uViewPosition);
+    vec3 viewDirection = normalize(vert_out.fragPos - viewPosition);
     vec3 viewRefraction = refract(viewDirection, normal, refractIndex);
     return texture(material.cubemap0, -viewRefraction);
 }

@@ -16,7 +16,7 @@ public class HallwayShader extends ShaderProgram {
 
     @Override
     protected void getUniformLocations() {
-        addUniform("uTime", Uniform.Type.FLOAT);
+        addUniform("time", Uniform.Type.FLOAT);
     }
 
 }

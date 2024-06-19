@@ -19,11 +19,12 @@ import org.etieskrill.engine.time.SystemNanoTimePacer;
 import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.window.Window;
 import org.etieskrill.orbes.scene.*;
-import org.joml.*;
+import org.jetbrains.annotations.VisibleForTesting;
+import org.joml.Vector2f;
+import org.joml.Vector2i;
+import org.joml.Vector3f;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.lang.Math;
 
 import static org.etieskrill.orbes.Game.Stage.*;
 
@@ -189,7 +190,8 @@ public class Game {
         }
     }
 
-    private void update(double delta) {
+    @VisibleForTesting
+    void update(double delta) {
         switch (stage) {
             case MAIN_MENU, END -> {
                 Camera camera = gameScene.getCamera();
@@ -234,7 +236,6 @@ public class Game {
         window.dispose();
         Loaders.disposeDefaultLoaders();
         TrueTypeFont.disposeLibrary();
-        System.exit(0);
     }
 
     public static void main(String[] args) {

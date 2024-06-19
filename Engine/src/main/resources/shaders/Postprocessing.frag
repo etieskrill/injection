@@ -12,26 +12,26 @@ vec4 applyKernel(float[9] kernel, float offset);
 
 uniform Material material;
 
-uniform bool uInvert;
-uniform vec3 uColour;
-uniform bool uGrayscale;
-uniform bool uSharpen;
-uniform float uSharpenOffset;
-uniform bool uBlur;
-uniform float uBlurOffset;
-uniform bool uEdgeDetection;
-uniform bool uEmboss;
-uniform float uEmbossOffset;
-uniform bool uGammaCorrection;
-uniform float uGammaFactor;
+uniform bool invert;
+uniform vec3 colour;
+uniform bool grayscale;
+uniform bool sharpen;
+uniform float sharpenOffset;
+uniform bool blur;
+uniform float blurOffset;
+uniform bool edgeDetection;
+uniform bool emboss;
+uniform float embossOffset;
+uniform bool gammaCorrection;
+uniform float gammaFactor;
 
 void main()
 {
     vec4 texel = texture(material.diffuse0, tTextureCoords);
 
-    texel = uInvert ? 1 - texel : texel;
+    texel = invert ? 1 - texel : texel;
 
-    if (uGrayscale) {
+    if (grayscale) {
         float avg = 0.2126 * texel.r + 0.7152 * texel.g + 0.0722 * texel.b;
         texel.rgb = vec3(avg);
     }
@@ -41,7 +41,7 @@ void main()
         -1,  9, -1,
         -1, -1, -1
     );
-    if (uSharpen) texel = applyKernel(sharpenKernel, uSharpenOffset);
+    if (sharpen) texel = applyKernel(sharpenKernel, sharpenOffset);
 
     const float div = 16;
     float blurKernel[9] = float[](
@@ -49,26 +49,26 @@ void main()
     2 / div, 4 / div, 2 / div,
     1 / div, 2 / div, 1 / div
     );
-    if (uBlur) texel = applyKernel(blurKernel, uBlurOffset);
+    if (blur) texel = applyKernel(blurKernel, blurOffset);
 
     float edgeDetectionKernel[9] = float[](
     1,  1,  1,
     1, -8,  1,
     1,  1,  1
     );
-    if (uEdgeDetection) texel = applyKernel(edgeDetectionKernel, 1.0 / 2500.0);
+    if (edgeDetection) texel = applyKernel(edgeDetectionKernel, 1.0 / 2500.0);
 
     float embossKernel[9] = float[](
     -2, -1,  0,
     -1,  1,  1,
      0,  1,  2
     );
-    if (uEmboss) texel = applyKernel(embossKernel, uEmbossOffset);
+    if (emboss) texel = applyKernel(embossKernel, embossOffset);
 
-    oColour = texel * vec4(uColour, 1.0);
+    oColour = texel * vec4(colour, 1.0);
 
-    if (uGammaCorrection)
-    oColour.rgb = pow(oColour.rgb, vec3(1 / (uGammaFactor == 0 ? 2.2 : uGammaFactor)));
+    if (gammaCorrection)
+    oColour.rgb = pow(oColour.rgb, vec3(1 / (gammaFactor == 0 ? 2.2 : gammaFactor)));
 }
 
 vec4 applyKernel(float[9] kernel, float offset) {

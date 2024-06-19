@@ -7,7 +7,7 @@ layout (location = 2) in int aGlyphIndex;
 out vec2 tGlyphSize;
 flat out int tTexIndex;
 
-uniform mat4 uCombined;
+uniform mat4 combined;
 
 uniform vec2 uGlyphTextureSize;
 

@@ -11,11 +11,11 @@ struct Material {
 
 uniform Material material;
 
-uniform vec4 uColour;
+uniform vec4 colour;
 
 void main()
 {
     vec4 texel = material.numTextures > 0 ? texture(material.diffuse0, tTextureCoords) : vec4(1.0);
     if (texel.a < 0.1) discard;
-    oColour = texel * uColour;
+    oColour = texel * colour;
 }

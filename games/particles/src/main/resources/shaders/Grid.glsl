@@ -7,12 +7,12 @@ layout (location = 2) in vec2 a_TexCoords;
 out vec3 fragPosition;
 out vec2 texCoords;
 
-uniform mat4 uModel;
-uniform mat4 uCombined;
+uniform mat4 model;
+uniform mat4 combined;
 
 void main() {
-    gl_Position = uCombined * uModel * vec4(a_Position, 1.0);
-    fragPosition = vec3(uModel * vec4(a_Position, 1.0));
+    gl_Position = combined * model * vec4(a_Position, 1.0);
+    fragPosition = vec3(model * vec4(a_Position, 1.0));
     texCoords = a_TexCoords;
 }
 #endif

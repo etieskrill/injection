@@ -274,8 +274,8 @@ public class Game {
             postBuffer.unbind();
             
             renderer.prepare();
-            screenShader.setUniform("uEmboss", true);
-            screenShader.setUniform("uColour", pacer.isPaused() ? pauseColour : unpauseColour);
+            screenShader.setUniform("emboss", true);
+            screenShader.setUniform("colour", pacer.isPaused() ? pauseColour : unpauseColour);
             renderer.render(screenQuad, screenShader, null);
             
             glDisable(GL_DEPTH_TEST);

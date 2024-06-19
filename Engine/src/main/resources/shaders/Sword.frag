@@ -55,8 +55,8 @@ in vec3 tNormal;
 in vec2 tTextureCoords;
 in vec3 tFragPos;
 
-uniform vec3 uViewPosition;
-uniform float uTime;
+uniform vec3 viewPosition;
+uniform float time;
 
 uniform DirectionalLight globalLights[NR_DIRECTIONAL_LIGHTS];
 uniform PointLight lights[NR_POINT_LIGHTS];
@@ -70,12 +70,12 @@ void main()
 {
     vec4 combinedLight = vec4(0.0);
     for (int i = 0; i < NR_DIRECTIONAL_LIGHTS; i++)
-        combinedLight += calculateDirectionalLight(globalLights[i], tNormal, tFragPos, uViewPosition);
+    combinedLight += calculateDirectionalLight(globalLights[i], tNormal, tFragPos, viewPosition);
     for (int i = 0; i < NR_POINT_LIGHTS; i++)
-        combinedLight += calculatePointLight(lights[i], tNormal, tFragPos, uViewPosition);
+    combinedLight += calculatePointLight(lights[i], tNormal, tFragPos, viewPosition);
 
     vec4 emission = texture(material.emissive0, tTextureCoords);
-    combinedLight += emission * (sin(2 * uTime) * 0.1 + 0.5);
+    combinedLight += emission * (sin(2 * time) * 0.1 + 0.5);
 
     oColour = combinedLight;
 }

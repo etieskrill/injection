@@ -8,11 +8,11 @@ layout (triangle_strip, max_vertices = 512) out;
 out vec2 tTextureCoords;
 out vec3 tFragPos;
 
-uniform mat4 uModel;
-uniform mat3 uNormal;
-uniform mat4 uCombined;
+uniform mat4 model;
+uniform mat3 normal;
+uniform mat4 combined;
 
-uniform float uTime;
+uniform float time;
 
 void main()
 {
@@ -43,20 +43,20 @@ void main()
     vec3 d0 = (chosenV1 - chosenV0) / SUBDIVISIONS;
     vec3 d1 = (chosenV2 - chosenV0) / SUBDIVISIONS;
 
-    mat4 mvp = uCombined * uModel;
+    mat4 mvp = combined * model;
 
     gl_Position = mvp * vec4(chosenV0, 1.0);
     tTextureCoords = vec2(0.0);
-    tFragPos = vec3(uModel * gl_Position);
+    tFragPos = vec3(model * gl_Position);
     EmitVertex();
     for (int i = 1; i <= SUBDIVISIONS; i++) {
         gl_Position = mvp * vec4(chosenV0 + d0 * i, 1.0);
         tTextureCoords = vec2(i / SUBDIVISIONS, i / SUBDIVISIONS);
-        tFragPos = vec3(uModel * gl_Position);
+        tFragPos = vec3(model * gl_Position);
         EmitVertex();
         gl_Position = mvp * vec4(chosenV0 + d1 * i, 1.0);
         tTextureCoords = vec2(0.0, i / SUBDIVISIONS);
-        tFragPos = vec3(uModel * gl_Position);
+        tFragPos = vec3(model * gl_Position);
         EmitVertex();
     }
 

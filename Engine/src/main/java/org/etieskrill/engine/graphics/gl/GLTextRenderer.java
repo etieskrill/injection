@@ -3,7 +3,6 @@ package org.etieskrill.engine.graphics.gl;
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.graphics.TextRenderer;
 import org.etieskrill.engine.graphics.gl.BufferObject.Frequency;
-import org.etieskrill.engine.graphics.gl.BufferObject.Target;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.etieskrill.engine.graphics.texture.font.BitmapFont;
 import org.etieskrill.engine.graphics.texture.font.Font;
@@ -35,7 +34,7 @@ public class GLTextRenderer extends DebuggableRenderer implements TextRenderer, 
     public void render(String chars, Font font, Vector2fc position, ShaderProgram shader, Matrix4fc combined) {
         GLUtils.clearError();
 
-        shader.setUniform("uCombined", combined, false);
+        shader.setUniform("combined", combined, false);
         shader.setUniform("uGlyphTextureSize", new Vector2f(font.getPixelSize()), false);
 
         if (font instanceof BitmapFont bitmapFont) renderBitmap(chars, bitmapFont, position, shader);

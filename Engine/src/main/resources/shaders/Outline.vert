@@ -3,13 +3,13 @@
 layout (location = 0) in vec3 iPosition;
 layout (location = 1) in vec3 iNormal;
 
-uniform mat4 uModel;
-uniform mat3 uNormal;
-uniform mat4 uCombined;
+uniform mat4 model;
+uniform mat3 normal;
+uniform mat4 combined;
 
-uniform float uThicknessFactor;
+uniform float thicknessFactor;
 
 void main() {
-    vec3 tNormal = normalize(uNormal * iNormal);
-    gl_Position = uCombined * uModel * vec4(iPosition + tNormal * uThicknessFactor, 1.0);
+    vec3 tNormal = normalize(normal * iNormal);
+    gl_Position = combined * model * vec4(iPosition + tNormal * thicknessFactor, 1.0);
 }

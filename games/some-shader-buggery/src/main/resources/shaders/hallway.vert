@@ -10,12 +10,12 @@ out vec4 tFragPos;
 
 uniform mat4[80] uModels;
 uniform mat3[80] uNormals;
-uniform mat4 uCombined;
+uniform mat4 combined;
 
 void main()
 {
     tNormal = normalize(uNormals[gl_InstanceID] * iNormal);
     tTexCoords = iTexCoords;
     tFragPos = uModels[gl_InstanceID] * vec4(iPosition, 1.0);
-    gl_Position = uCombined * uModels[gl_InstanceID] * vec4(iPosition, 1.0);
+    gl_Position = combined * uModels[gl_InstanceID] * vec4(iPosition, 1.0);
 }

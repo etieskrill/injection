@@ -55,9 +55,9 @@ in vec3 tNormal;
 in vec2 tTextureCoords;
 in vec3 tFragPos;
 
-uniform vec3 uViewPosition;
+uniform vec3 viewPosition;
 uniform vec3 uViewDirection;
-uniform float uTime;
+uniform float time;
 
 uniform DirectionalLight globalLights[NR_DIRECTIONAL_LIGHTS];
 uniform PointLight lights[NR_POINT_LIGHTS];
@@ -81,7 +81,7 @@ void main()
         float diff = max(dot(tNormal, lightDirection), 0.0); //TODO put in vertex
         vec3 flashDiffuse = flashlight.diffuse * diff * texture(material.diffuse, tTextureCoords).rgb;
 
-        vec3 viewDirection = normalize(-uViewPosition - tFragPos);
+        vec3 viewDirection = normalize(-viewPosition - tFragPos);
         vec3 reflectionDirection = reflect(-lightDirection, tNormal);
         float spec = pow(max(dot(viewDirection, reflectionDirection), 0.0), material.shininess);
         vec3 flashSpecular = flashlight.specular * spec * texture(material.specular, tTextureCoords).rgb;
@@ -98,19 +98,19 @@ void main()
 
     vec4 combinedLight = vec4(0.0);
     for (int i = 0; i < NR_DIRECTIONAL_LIGHTS; i++) {
-        vec4 dirLight = calculateDirectionalLight(globalLights[i], tNormal, tFragPos, uViewPosition);
+        vec4 dirLight = calculateDirectionalLight(globalLights[i], tNormal, tFragPos, viewPosition);
         combinedLight += vec4(dirLight.rgb, 0);
         combinedLight.a = (combinedLight.a + dirLight.a) / 2; //TODO this FEELS correct for transparent objects
     }
     for (int i = 0; i < NR_POINT_LIGHTS; i++) {
-        vec4 pointLight = calculatePointLight(lights[i], tNormal, tFragPos, uViewPosition);
+        vec4 pointLight = calculatePointLight(lights[i], tNormal, tFragPos, viewPosition);
         combinedLight += vec4(pointLight.rgb, 0);
         combinedLight.a = (combinedLight.a + pointLight.a) / 2;
     }
 
     vec4 emission = vec4(0.0);
     if (length(texture(material.specular0, tTextureCoords).rgb) == 0.0) {
-        emission = texture(material.emissive0, tTextureCoords + vec2(0.0, uTime * 0.25));
+        emission = texture(material.emissive0, tTextureCoords + vec2(0.0, time * 0.25));
         emission = emission.grba * 0.7;
     }
     combinedLight += vec4(emission.rgb, 0);

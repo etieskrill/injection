@@ -56,7 +56,7 @@ in vec2 tTextureCoords;
 in vec3 tFragPos;
 
 //TODO implement this in view space to mitigate passing such variables anyway
-uniform vec3 uViewPosition;
+uniform vec3 viewPosition;
 
 uniform DirectionalLight globalLights[NR_DIRECTIONAL_LIGHTS];
 uniform PointLight lights[NR_POINT_LIGHTS];
@@ -70,9 +70,9 @@ void main()
 {
     vec4 combinedLight = vec4(0.0);
     for (int i = 0; i < NR_DIRECTIONAL_LIGHTS; i++)
-        combinedLight += calculateDirectionalLight(globalLights[i], tNormal, tFragPos, uViewPosition);
+    combinedLight += calculateDirectionalLight(globalLights[i], tNormal, tFragPos, viewPosition);
     for (int i = 0; i < NR_POINT_LIGHTS; i++)
-        combinedLight += calculatePointLight(lights[i], tNormal, tFragPos, uViewPosition);
+    combinedLight += calculatePointLight(lights[i], tNormal, tFragPos, viewPosition);
 
     vec4 emission = texture(material.emissive0, tTextureCoords);
 //    combinedLight += emission;

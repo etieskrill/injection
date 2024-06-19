@@ -59,7 +59,7 @@ flat in ivec4 tBoneIds;
 flat in vec4 tWeights;
 
 //TODO implement this in view space to mitigate passing such variables anyway
-uniform vec3 uViewPosition;
+uniform vec3 viewPosition;
 
 uniform Material material;
 
@@ -80,12 +80,12 @@ void main()
 {
     vec4 combinedLight = vec4(0.0);
     for (int i = 0; i < NR_DIRECTIONAL_LIGHTS; i++) {
-        vec4 dirLight = calculateDirectionalLight(globalLights[i], tNormal, tFragPos, uViewPosition);
+        vec4 dirLight = calculateDirectionalLight(globalLights[i], tNormal, tFragPos, viewPosition);
         //        combinedLight = mix(combinedLight, dirLight, 0.5);
         combinedLight += dirLight;
     }
     for (int i = 0; i < NR_POINT_LIGHTS; i++) {
-        vec4 pointLight = calculatePointLight(lights[i], tNormal, tFragPos, uViewPosition);
+        vec4 pointLight = calculatePointLight(lights[i], tNormal, tFragPos, viewPosition);
         combinedLight = mix(combinedLight, pointLight, 0.5);
     }
 
@@ -157,13 +157,13 @@ vec4 getSpecular(vec3 lightDirection, vec3 normal, vec3 fragPosition, vec3 viewP
 }
 
 vec4 getCubeReflection() {
-    vec3 viewDirection = normalize(tFragPos - uViewPosition);
+    vec3 viewDirection = normalize(tFragPos - viewPosition);
     vec3 viewReflection = reflect(viewDirection, tNormal);
     return texture(material.cubemap0, -viewReflection);
 }
 
 vec4 getCubeRefraction(float refractIndex) {
-    vec3 viewDirection = normalize(tFragPos - uViewPosition);
+    vec3 viewDirection = normalize(tFragPos - viewPosition);
     vec3 viewRefraction = refract(viewDirection, tNormal, refractIndex);
     return texture(material.cubemap0, -viewRefraction);
 }
