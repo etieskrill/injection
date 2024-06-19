@@ -2,6 +2,7 @@ package org.etieskrill.engine.graphics.model;
 
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.entity.component.AABB;
+import org.etieskrill.engine.graphics.gl.BufferObject;
 
 import java.util.Collections;
 import java.util.List;
@@ -12,7 +13,8 @@ public class Mesh implements Disposable {
 
     private final Material material;
     private final List<Bone> bones;
-    private final int vao, numIndices, vbo, ebo;
+    private final int vao, numIndices;
+    private final BufferObject vbo, ebo;
     private final AABB boundingBox;
     private final DrawMode drawMode;
 
@@ -36,25 +38,25 @@ public class Mesh implements Disposable {
             return glDrawMode;
         }
     }
-    
+
     public Mesh(Material material,
                 List<Bone> bones,
-                int vao, int numIndices, int vbo, int ebo,
+                int vao, int numIndices, BufferObject vbo, BufferObject ebo,
                 AABB boundingBox,
                 DrawMode drawMode) {
         this.material = material;
         this.bones = Collections.unmodifiableList(bones);
-        
+
         this.vao = vao;
         this.numIndices = numIndices;
         this.vbo = vbo;
         this.ebo = ebo;
-        
+
         this.boundingBox = boundingBox;
 
         this.drawMode = drawMode;
     }
-    
+
     public Material getMaterial() {
         return material;
     }
@@ -66,11 +68,11 @@ public class Mesh implements Disposable {
     public int getNumIndices() {
         return numIndices;
     }
-    
+
     public int getVao() {
         return vao;
     }
-    
+
     public AABB getBoundingBox() {
         return boundingBox;
     }
@@ -82,9 +84,9 @@ public class Mesh implements Disposable {
     @Override
     public void dispose() {
         material.dispose();
-        glDeleteBuffers(vbo);
-        glDeleteBuffers(ebo);
+        vbo.dispose();
+        ebo.dispose();
         glDeleteVertexArrays(vao);
     }
-    
+
 }

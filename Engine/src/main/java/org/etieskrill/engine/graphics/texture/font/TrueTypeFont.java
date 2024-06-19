@@ -231,7 +231,7 @@ public class TrueTypeFont implements Font {
     private static boolean libraryDisposed = false;
 
     public static void disposeLibrary() {
-        if (libraryDisposed) return;
+        if (library == 0L || libraryDisposed) return;
         try {
             check(FT_Done_Library(library), "Failed to release freetype library");
         } catch (IOException e) {

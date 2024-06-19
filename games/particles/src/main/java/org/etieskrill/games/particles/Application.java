@@ -9,6 +9,7 @@ import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.camera.OrthographicCamera;
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera;
+import org.etieskrill.engine.graphics.gl.BufferObject;
 import org.etieskrill.engine.graphics.gl.GLUtils;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.etieskrill.engine.graphics.model.Model;
@@ -151,7 +152,7 @@ public class Application extends GameApplication {
     }
 
     private int particleVAO;
-    private int particleVBO;
+    private BufferObject particleVBO;
 
     private void initParticleVAO() {
         GLUtils.clearError();
@@ -159,11 +160,7 @@ public class Application extends GameApplication {
         particleVAO = glCreateVertexArrays();
         glBindVertexArray(particleVAO);
 
-        particleVBO = glCreateBuffers();
-        glBindBuffer(GL_ARRAY_BUFFER, particleVBO);
-
-        particleBuffer.rewind().limit(particleBuffer.capacity());
-        glBufferData(GL_ARRAY_BUFFER, particleBuffer, GL_DYNAMIC_DRAW);
+        particleVBO = BufferObject.create(particleBuffer.capacity()).build();
 
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 3, GL_FLOAT, false, PARTICLE_TRANSFER_BYTES, 0L);
@@ -206,12 +203,11 @@ public class Application extends GameApplication {
         }
         if (particleBuffer.position() != fireEmitter.getAliveParticles().size() * PARTICLE_TRANSFER_BYTES)
             throw new IllegalStateException("Particle buffer position does not align with particle byte number");
-        particleBuffer.rewind();
 
         //TODO maybe try glMapBuffer at some point?
+        particleVBO.setData(particleBuffer);
+
         glBindVertexArray(particleVAO);
-        glBindBuffer(GL_ARRAY_BUFFER, particleVBO);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, particleBuffer);
 
 //        renderer.render(
 //                quad.getTransform(),
