@@ -54,7 +54,7 @@ public interface Renderer {
      */
     //TODO idea: a shader may be an instancing shader with it's own validation and other mechanics, which is resolved
     // automatically while rendering, making this method obsolete
-    void renderInstances(Model model, int numInstances, ShaderProgram shader, Matrix4fc combined);
+    void renderInstances(TransformC transform, Model model, int numInstances, ShaderProgram shader, Matrix4fc combined);
 
     void renderOutline(Model model, ShaderProgram shader, Matrix4fc combined, float thickness, Vector4fc colour, boolean writeToFront);
 

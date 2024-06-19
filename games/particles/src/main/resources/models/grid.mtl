@@ -1,9 +1,0 @@
-newmtl grid
-Ka 1.000000 1.000000 1.000000
-Kd 1.000000 1.000000 1.000000
-Ks 1.000000 1.000000 1.000000
-Ns 64.000000
-# TODO kinda forgot to implement these colours
-Ni 1.000000
-d 1.000000
-illum 1

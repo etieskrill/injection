@@ -54,11 +54,11 @@ public class GLTextRenderer extends DebuggableRenderer implements TextRenderer {
             }
 
             glyph.getSize()
-                    .get(glyphBuffer).position(glyphBuffer.position() + 2 * Float.BYTES);
+                    .get(glyphBuffer).position(glyphBuffer.position() + GLYPH_SIZE_BYTES);
             penPosition
                     .set(position).add(pen)
                     .add(glyph.getPosition())
-                    .get(glyphBuffer).position(glyphBuffer.position() + 2 * Float.BYTES);
+                    .get(glyphBuffer).position(glyphBuffer.position() + GLYPH_POSITION_BYTES);
             glyphBuffer.putInt(glyph.getTextureIndex());
             pen.add(glyph.getAdvance());
         }
@@ -84,10 +84,12 @@ public class GLTextRenderer extends DebuggableRenderer implements TextRenderer {
     private void bufferBitmapGlyphs(ByteBuffer buffer) {
         //TODO have a looksy at how SSBOs work
         bindGlyphVAO();
+        glBindBuffer(GL_ARRAY_BUFFER, glyphVBO);
         glBufferSubData(GL_ARRAY_BUFFER, 0, buffer);
     }
 
     private int glyphVAO = -1;
+    private int glyphVBO = -1;
 
     private void bindGlyphVAO() {
         if (glyphVAO == -1) {
@@ -98,7 +100,7 @@ public class GLTextRenderer extends DebuggableRenderer implements TextRenderer {
                 throw new IllegalStateException("Could not initialize vertex array");
             glBindVertexArray(glyphVAO);
 
-            int glyphVBO = glCreateBuffers();
+            glyphVBO = glCreateBuffers();
             if (glyphVBO == -1)
                 throw new IllegalStateException("Could not initialize buffer");
 
@@ -108,7 +110,7 @@ public class GLTextRenderer extends DebuggableRenderer implements TextRenderer {
             glyphBuffer.limit(glyphBuffer.capacity());
 
             glBindBuffer(GL_ARRAY_BUFFER, glyphVBO);
-            glBufferData(GL_ARRAY_BUFFER, glyphBuffer, GL_DYNAMIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, glyphBuffer, GL_DYNAMIC_DRAW); //FIXME valuable lesson; buffer bindings are NOT stored with vertex arrays, only attrib pointers, thus buffers *MUST* be bound before each glBufferData or glBufferSubData call
             GLUtils.checkErrorThrowing("Failed to buffer data");
 
             glyphBuffer.position(position).limit(limit); //Return buffer to state before initialisation

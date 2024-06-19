@@ -120,7 +120,7 @@ public class Game {
         sunShader.setUniform("light", sunLight);
 
         renderer.render(sun, sunShader, camera.getCombined());
-        renderer.renderInstances(hallway, NUM_SECTORS, shader, camera.getCombined());
+        renderer.renderInstances(hallway.getTransform(), hallway, NUM_SECTORS, shader, camera.getCombined());
     }
 
     public static void main(String[] args) {

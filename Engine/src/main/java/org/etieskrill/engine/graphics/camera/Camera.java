@@ -154,6 +154,14 @@ public abstract class Camera {
                 .normalize();
     }
 
+    public Matrix4f getView() {
+        return view;
+    }
+
+    public Matrix4f getPerspective() {
+        return perspective;
+    }
+
     public Matrix4fc getCombined() {
         updateCombined();
         return combined;

@@ -37,6 +37,7 @@ public abstract class ShaderProgram implements Disposable {
 
     protected int programID;
     private int vertID, geomID = -1, fragID;
+    private boolean geometry = false;
     private final Map<String, Uniform> uniforms;
     private final Map<String, ArrayUniform> arrayUniforms;
 
@@ -144,10 +145,10 @@ public abstract class ShaderProgram implements Disposable {
     }
 
     private void createShader(Set<ShaderFile> files) {
+        init();
         if (CLEAR_ERROR_BEFORE_SHADER_CREATION) clearError();
         if (files.size() > 1) createProgram(files);
         else createSingleFileProgram(files.stream().findAny().get());
-        init();
 
         start();
         getUniformLocations();
@@ -176,6 +177,14 @@ public abstract class ShaderProgram implements Disposable {
 
         vertID = loadShader(file, VERTEX);
         glAttachShader(programID, vertID);
+        if (geometry) {
+            try {
+                geomID = loadShader(file, GEOMETRY);
+                glAttachShader(programID, geomID);
+            } catch (ShaderCreationException e) {
+                throw new ShaderCreationException("Failed to compile geometry shader from composite shader file", e);
+            }
+        }
         fragID = loadShader(file, FRAGMENT);
         glAttachShader(programID, fragID);
 
@@ -276,9 +285,7 @@ public abstract class ShaderProgram implements Disposable {
     }
 
     public void setUniformArray(@NotNull String name, @NotNull Object[] values) {
-        if (values.length == 0)
-            throw new IllegalArgumentException("Uniform values must not be empty");
-
+        if (values.length == 0) return;
         setUniform(name, values, arrayUniforms, true, true);
     }
 
@@ -427,6 +434,7 @@ public abstract class ShaderProgram implements Disposable {
                     glUniformMatrix4fv(location, false, matrix4s.rewind());
                 }
             }
+            System.out.println("memory used: " + (stack.getSize() - stack.getPointer()) + "/" + stack.getSize());
         }
     }
 
@@ -634,6 +642,10 @@ public abstract class ShaderProgram implements Disposable {
 
     protected void disableStrictUniformChecking() {
         this.STRICT_UNIFORM_DETECTION = false;
+    }
+
+    protected void hasGeometryShader() {
+        this.geometry = true;
     }
 
     public void checkStatusThrowing() {

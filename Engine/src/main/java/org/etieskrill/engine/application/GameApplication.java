@@ -59,7 +59,6 @@ public abstract class GameApplication {
             loop(delta);
             entitySystem.update(delta);
             window.update(delta);
-            postRender();
 
             cpuTimes.push((System.nanoTime() - time) / 1_000_000d);
             avgCpuTime = cpuTimes.stream()
@@ -73,9 +72,6 @@ public abstract class GameApplication {
     }
 
     protected abstract void loop(double delta);
-
-    protected void postRender() {
-    }
 
     protected void terminate() {
         window.close();
