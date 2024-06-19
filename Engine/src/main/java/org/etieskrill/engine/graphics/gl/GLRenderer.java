@@ -129,8 +129,12 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
     }
 
     @Override
-    public void renderInstances(Model model, int numInstances, ShaderProgram shader, Matrix4fc combined) {
-//        _render(model, shader, combined, true, numInstances);
+    public void renderInstances(TransformC transform,
+                                Model model,
+                                int numInstances,
+                                ShaderProgram shader,
+                                Matrix4fc combined) {
+        _render(transform, model, shader, combined, true, numInstances);
     }
 
     private void _render(TransformC transform, Model model, ShaderProgram shader, Matrix4fc combined) {

@@ -1,5 +1,4 @@
 o cube
-# mtllib grid.mtl
 
 v 100 100 0
 v 100 -100 0
@@ -20,7 +19,6 @@ vt -100 100
 vt -100 -100
 
 g cube
-# usemtl grid
 s 1
 f 1/1 2/2 3/3
 f 2/2 3/3 4/4
