@@ -16,9 +16,9 @@ out vec3 tFragPos;
 flat out ivec4 tBoneIds;
 flat out vec4 tWeights;
 
-uniform mat4 uModel;
-uniform mat3 uNormal;
-uniform mat4 uCombined;
+uniform mat4 model;
+uniform mat3 normal;
+uniform mat4 combined;
 
 uniform mat4 boneMatrices[MAX_BONES];
 
@@ -41,7 +41,7 @@ void main()
         vec4 localPosition = boneMatrices[boneIds[i]] * vec4(iPosition, 1.0);
         bonedPosition += localPosition * weights[i];
 
-        vec3 localNormal = mat3(boneMatrices[boneIds[i]]) * uNormal * iNormal;
+        vec3 localNormal = mat3(boneMatrices[boneIds[i]]) * normal * iNormal;
         bonedNormal += localNormal * weights[i];
     }
 
@@ -52,8 +52,8 @@ void main()
 
     tNormal = normalize(bonedNormal);
     tTextureCoords = iTextureCoords;
-    tFragPos = vec3(uModel * bonedPosition);
-    gl_Position = uCombined * uModel * bonedPosition;
+    tFragPos = vec3(model * bonedPosition);
+    gl_Position = combined * model * bonedPosition;
     tBoneIds = boneIds;
     tWeights = weights;
 }

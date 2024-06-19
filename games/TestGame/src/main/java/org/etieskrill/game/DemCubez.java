@@ -240,10 +240,10 @@ public class DemCubez {
             
 //            renderer.prepare();
 //            screenShader.start();
-//            screenShader.setUniform("uSharpen", true);
-//            screenShader.setUniform("uSharpenOffset", 1f / 10000f);
+//            screenShader.setUniform("sharpen", true);
+//            screenShader.setUniform("sharpenOffset", 1f / 10000f);
 
-//            screenShader.setUniform("uColour", new Vector3f(1.0f));
+//            screenShader.setUniform("colour", new Vector3f(1.0f));
             glEnable(GL_FRAMEBUFFER_SRGB); //manual gamma correction for funsies
 //            renderer.render(screenQuad, screenShader, new Matrix4f());
             glDisable(GL_FRAMEBUFFER_SRGB);
@@ -430,13 +430,13 @@ public class DemCubez {
     
         //TODO consider passing fragment position to frag shader with view applied,
         // so this nonsense becomes unnecessary
-        containerShader.setUniform("uViewPosition", camera.getPosition());
-        containerShader.setUniform("uTime", (float) pacer.getTime(), false);
-    
-        swordShader.setUniform("uViewPosition", camera.getPosition());
-        swordShader.setUniform("uTime", (float) pacer.getTime(), false);
-    
-        backpackShader.setUniform("uViewPosition", camera.getPosition());
+        containerShader.setUniform("viewPosition", camera.getPosition());
+        containerShader.setUniform("time", (float) pacer.getTime(), false);
+
+        swordShader.setUniform("viewPosition", camera.getPosition());
+        swordShader.setUniform("time", (float) pacer.getTime(), false);
+
+        backpackShader.setUniform("viewPosition", camera.getPosition());
         
         lightShader.setUniform("light", lights[0]);
     }

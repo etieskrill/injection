@@ -353,8 +353,10 @@ public abstract class ShaderProgram implements Disposable {
         }
 
         if (location == -1) {
-            if (!missingUniforms.contains(name)) logger.warn("Attempted to set nonexistent uniform: " + name);
-            missingUniforms.add(name);
+            if (!missingUniforms.contains(name)) {
+                logger.warn("Attempted to set nonexistent uniform: " + name);
+                missingUniforms.add(name);
+            }
             return;
         }
 
@@ -434,7 +436,6 @@ public abstract class ShaderProgram implements Disposable {
                     glUniformMatrix4fv(location, false, matrix4s.rewind());
                 }
             }
-            System.out.println("memory used: " + (stack.getSize() - stack.getPointer()) + "/" + stack.getSize());
         }
     }
 

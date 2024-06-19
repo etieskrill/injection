@@ -23,6 +23,7 @@ import org.etieskrill.engine.time.SystemNanoTimePacer;
 import org.etieskrill.engine.util.FixedArrayDeque;
 import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.window.Window;
+import org.jetbrains.annotations.VisibleForTesting;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
@@ -337,9 +338,15 @@ public class Game {
             lastDelta = delta;
 
             pacer.nextFrame();
+
+            interrupt(window);
         }
 
         window.dispose();
+    }
+
+    @VisibleForTesting
+    void interrupt(Window window) {
     }
 
     private void terminate() {

@@ -115,7 +115,7 @@ public class Game {
     private void render() {
         renderer.prepare();
 
-        shader.setUniform("uTime", (float) pacer.getTime(), false);
+        shader.setUniform("time", (float) pacer.getTime(), false);
         shader.setUniform("sun", sunLight);
         sunShader.setUniform("light", sunLight);
 

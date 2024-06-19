@@ -39,7 +39,6 @@ import static org.etieskrill.engine.window.Window.WindowMode.BORDERLESS;
 import static org.lwjgl.opengl.GL15C.*;
 import static org.lwjgl.opengl.GL20C.*;
 import static org.lwjgl.opengl.GL30C.glBindVertexArray;
-import static org.lwjgl.opengl.GL45C.glCreateBuffers;
 import static org.lwjgl.opengl.GL45C.glCreateVertexArrays;
 
 public class Application extends GameApplication {
@@ -51,7 +50,6 @@ public class Application extends GameApplication {
     Label fpsLabel;
 
     ParticleEmitter fireEmitter;
-    Model quad;
     ShaderProgram fireShader;
 
     public Application() {
@@ -125,10 +123,6 @@ public class Application extends GameApplication {
                         .setWrapping(Wrapping.CLAMP_TO_BORDER).build(),
                 new Vector3f(1)
         );
-        quad = new Model.Builder("quad.obj")
-                .disableCulling()
-                .hasTransparency()
-                .build();
         fireShader = new ShaderProgram() {
             @Override
             protected void init() {

@@ -33,9 +33,9 @@ public class Batch {
     private static final Vector4f resetColour = new Vector4f(1);
 
     public void render(Vector3f position, Vector3f size, Vector4f colour) {
-        shader.setUniform("uColour", colour, false);
+        shader.setUniform("colour", colour, false);
         renderer.renderBox(position, size, shader, combined);
-        shader.setUniform("uColour", resetColour, false);
+        shader.setUniform("colour", resetColour, false);
     }
 
     public void render(String text, Font font, Vector2f position) {

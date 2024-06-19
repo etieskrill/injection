@@ -10,6 +10,7 @@ import org.etieskrill.engine.time.SystemNanoTimePacer;
 import org.etieskrill.engine.util.FixedArrayDeque;
 import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.window.Window;
+import org.jetbrains.annotations.VisibleForTesting;
 import org.lwjgl.opengl.GL;
 
 import java.util.ArrayDeque;
@@ -58,24 +59,28 @@ public abstract class GameApplication {
     protected void _loop() {
         pacer.start();
         while (!window.shouldClose()) {
-            renderer.prepare();
-
-            long time = System.nanoTime();
-
-            double delta = pacer.getDeltaTimeSeconds();
-            loop(delta);
-            entitySystem.update(delta);
-            window.update(delta);
-
-            cpuTimes.push((System.nanoTime() - time) / 1_000_000d);
-            avgCpuTime = cpuTimes.stream()
-                    .mapToDouble(value -> value)
-                    .average()
-                    .orElse(0);
-
+            doLoop();
             pacer.nextFrame();
         }
         window.dispose();
+    }
+
+    @VisibleForTesting
+    protected void doLoop() {
+        renderer.prepare();
+
+        long time = System.nanoTime();
+
+        double delta = pacer.getDeltaTimeSeconds();
+        loop(delta);
+        entitySystem.update(delta);
+        window.update(delta);
+
+        cpuTimes.push((System.nanoTime() - time) / 1_000_000d);
+        avgCpuTime = cpuTimes.stream()
+                .mapToDouble(value -> value)
+                .average()
+                .orElse(0);
     }
 
     protected abstract void loop(double delta);

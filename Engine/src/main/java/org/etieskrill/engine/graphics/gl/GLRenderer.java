@@ -95,8 +95,8 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
 
     @Override
     public void renderOutline(Model model, ShaderProgram shader, Matrix4fc combined, float thickness, Vector4fc colour, boolean writeToFront) {
-        getOutlineShader().setUniform("uThicknessFactor", thickness);
-        getOutlineShader().setUniform("uColour", colour);
+        getOutlineShader().setUniform("thicknessFactor", thickness);
+        getOutlineShader().setUniform("colour", colour);
 
         glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
@@ -145,11 +145,11 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
     }
 
     private void _render(TransformC transform, Model model, ShaderProgram shader, Matrix4fc combined, boolean instanced, int numInstances) {
-        shader.setUniform("uCombined", combined, false);
+        shader.setUniform("combined", combined, false);
         try (MemoryStack stack = MemoryStack.stackPush()) {
             Matrix4f transformMatrix = new Matrix4f(transform.getMatrix());// = new Matrix4f(model.getFinalTransform().getMatrix().get(stack.callocFloat(16)));
-            shader.setUniform("uModel", transformMatrix, false);
-            shader.setUniform("uNormal", transformMatrix.invert().transpose().get3x3(new Matrix3f(stack.callocFloat(9))), false);
+            shader.setUniform("model", transformMatrix, false);
+            shader.setUniform("normal", transformMatrix.invert().transpose().get3x3(new Matrix3f(stack.callocFloat(9))), false);
         }
 
         if (!model.doCulling()) glDisable(GL_CULL_FACE);
@@ -162,7 +162,7 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
     }
 
     private void renderNode(Node node, ShaderProgram shader, Matrix4fc meshTransform, boolean instanced, int numInstances) {
-        shader.setUniform("uMesh", meshTransform, false);
+        shader.setUniform("mesh", meshTransform, false);
 
         for (Mesh mesh : node.getMeshes())
             renderMesh(mesh, shader, instanced, numInstances);
@@ -237,7 +237,7 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
             AbstractTexture.clearBind(i);
         }
 
-        shader.setUniform("uNormalMapped", normal > 0, false);
+        shader.setUniform("normalMapped", normal > 0, false);
 
         //TODO add a way to map all available material props automatically with sensible default values
         //TODO add invalidation flag to uniform properties and update here only if invalid (do not forget about the first time)

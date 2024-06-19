@@ -22,7 +22,7 @@ struct DirectionalLight {
     vec3 specular;
 };
 
-uniform float uTime;
+uniform float time;
 
 uniform Material material;
 

@@ -9,7 +9,7 @@ flat in int tTexIndex[1];
 out vec2 oTexCoords;
 flat out int oTexIndex;
 
-uniform mat4 uCombined;
+uniform mat4 combined;
 
 uniform vec2 uGlyphTextureSize;
 
@@ -23,19 +23,19 @@ void main()
     vec2 glyphTexSize = glyphSize / uGlyphTextureSize;
     oTexIndex = tTexIndex[0];
 
-    gl_Position = uCombined * vec4(position, 0, 1);
+    gl_Position = combined * vec4(position, 0, 1);
     oTexCoords = vec2(0.0);
     EmitVertex();
 
-    gl_Position = uCombined * vec4(position.x + glyphSize.x, position.y, 0.0, 1.0);
+    gl_Position = combined * vec4(position.x + glyphSize.x, position.y, 0.0, 1.0);
     oTexCoords = vec2(glyphTexSize.x, 0.0);
     EmitVertex();
 
-    gl_Position = uCombined * vec4(position.x, position.y + glyphSize.y, 0.0, 1.0);
+    gl_Position = combined * vec4(position.x, position.y + glyphSize.y, 0.0, 1.0);
     oTexCoords = vec2(0.0, glyphTexSize.y);
     EmitVertex();
 
-    gl_Position = uCombined * vec4(position.x + glyphSize.x, position.y + glyphSize.y, 0.0, 1.0);
+    gl_Position = combined * vec4(position.x + glyphSize.x, position.y + glyphSize.y, 0.0, 1.0);
     oTexCoords = vec2(glyphTexSize);
     EmitVertex();
 }

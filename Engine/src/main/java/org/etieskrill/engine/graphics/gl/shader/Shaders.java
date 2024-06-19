@@ -71,12 +71,12 @@ public class Shaders {
         @Override
         protected void getUniformLocations() {
             //TODO theoretically, a sort of autodetect feature is entirely possible
-            addUniform("uViewPosition", VEC3);
-            addUniform("uTextureScale", VEC2, new Vector2f(1f));
+            addUniform("viewPosition", VEC3);
+            addUniform("textureScale", VEC2, new Vector2f(1f));
 
             addUniform("material.specularTexture", BOOLEAN);
-            addUniform("uNormalMapped", BOOLEAN);
-            addUniform("uBlinnPhong", BOOLEAN, true);
+            addUniform("normalMapped", BOOLEAN);
+            addUniform("blinnPhong", BOOLEAN, true);
 
             addUniformArray("globalLights", 1, STRUCT);
             addUniformArray("lights", 2, STRUCT);
@@ -88,19 +88,19 @@ public class Shaders {
         }
 
         public void setTextureScale(Vector2fc textureScale) {
-            setUniform("uTextureScale", textureScale);
+            setUniform("textureScale", textureScale);
         }
 
         public void setNormalMapped(boolean normalMapped) {
-            setUniform("uNormalMapped", normalMapped);
+            setUniform("normalMapped", normalMapped);
         }
 
         public void setBlinnPhong(boolean blinnPhong) {
-            setUniform("uBlinnPhong", blinnPhong);
+            setUniform("blinnPhong", blinnPhong);
         }
 
         public void setViewPosition(Vector3fc viewPosition) {
-            setUniform("uViewPosition", viewPosition);
+            setUniform("viewPosition", viewPosition);
         }
 
         public void setGlobalLights(DirectionalLight... lights) {
@@ -130,7 +130,7 @@ public class Shaders {
         @Override
         protected void getUniformLocations() {
             super.getUniformLocations();
-            addUniform("uTime", FLOAT);
+            addUniform("time", FLOAT);
         }
     }
 
@@ -148,7 +148,7 @@ public class Shaders {
         @Override
         protected void getUniformLocations() {
             super.getUniformLocations();
-            addUniform("uTime", FLOAT);
+            addUniform("time", FLOAT);
         }
     }
 
@@ -196,7 +196,7 @@ public class Shaders {
 
         @Override
         protected void getUniformLocations() {
-            addUniform("uColour", VEC4);
+            addUniform("colour", VEC4);
         }
     }
 
@@ -209,7 +209,7 @@ public class Shaders {
         @Override
         protected void getUniformLocations() {
             //TODO i've forgotten about this thing waaaay to often, either enforce via enums soon or rework this goddamned system
-            addUniform("uColour", VEC4);
+            addUniform("colour", VEC4);
         }
     }
 
@@ -221,9 +221,9 @@ public class Shaders {
 
         @Override
         protected void getUniformLocations() {
-            addUniform("uThicknessFactor", FLOAT);
+            addUniform("thicknessFactor", FLOAT);
 
-            addUniform("uColour", VEC4);
+            addUniform("colour", VEC4);
         }
     }
 
@@ -258,66 +258,66 @@ public class Shaders {
 
         @Override
         protected void getUniformLocations() {
-            addUniform("uInvert", BOOLEAN);
-            addUniform("uColour", VEC3);
-            addUniform("uGrayscale", BOOLEAN);
-            addUniform("uSharpen", BOOLEAN);
-            addUniform("uSharpenOffset", FLOAT);
-            addUniform("uBlur", BOOLEAN);
-            addUniform("uBlurOffset", FLOAT);
-            addUniform("uEdgeDetection", BOOLEAN);
-            addUniform("uEmboss", BOOLEAN);
-            addUniform("uEmbossOffset", FLOAT);
-            addUniform("uGammaCorrection", BOOLEAN);
-            addUniform("uGammaFactor", FLOAT);
+            addUniform("invert", BOOLEAN);
+            addUniform("colour", VEC3);
+            addUniform("grayscale", BOOLEAN);
+            addUniform("sharpen", BOOLEAN);
+            addUniform("sharpenOffset", FLOAT);
+            addUniform("blur", BOOLEAN);
+            addUniform("blurOffset", FLOAT);
+            addUniform("edgeDetection", BOOLEAN);
+            addUniform("emboss", BOOLEAN);
+            addUniform("embossOffset", FLOAT);
+            addUniform("gammaCorrection", BOOLEAN);
+            addUniform("gammaFactor", FLOAT);
         }
 
         public void doInvert(boolean invert) {
-            setUniform("uInvert", invert);
+            setUniform("invert", invert);
         }
 
         public void setColour(Vector3f colour) {
-            setUniform("uColour", colour);
+            setUniform("colour", colour);
         }
 
         public void doGrayscale(boolean grayscale) {
-            setUniform("uGrayscale", grayscale);
+            setUniform("grayscale", grayscale);
         }
 
         public void doSharpen(boolean sharpen) {
-            setUniform("uSharpen", sharpen);
+            setUniform("sharpen", sharpen);
         }
 
         public void setSharpenOffset(float sharpenOffset) {
-            setUniform("uSharpenOffset", sharpenOffset);
+            setUniform("sharpenOffset", sharpenOffset);
         }
 
         public void doBlur(boolean blur) {
-            setUniform("uBlur", blur);
+            setUniform("blur", blur);
         }
 
         public void setBlurOffset(float blurOffset) {
-            setUniform("uBlurOffset", blurOffset);
+            setUniform("blurOffset", blurOffset);
         }
 
         public void doEdgeDetection(boolean edgeDetection) {
-            setUniform("uEdgeDetection", edgeDetection);
+            setUniform("edgeDetection", edgeDetection);
         }
 
         public void doEmboss(boolean emboss) {
-            setUniform("uEmboss", emboss);
+            setUniform("emboss", emboss);
         }
 
         public void setEmbossOffset(float embossOffset) {
-            setUniform("uEmbossOffset", embossOffset);
+            setUniform("embossOffset", embossOffset);
         }
 
         public void doGammaCorrection(boolean gammaCorrection) {
-            setUniform("uGammaCorrection", gammaCorrection);
+            setUniform("gammaCorrection", gammaCorrection);
         }
 
         public void setGammaFactor(float gammaFactor) {
-            setUniform("uGammaFactor", gammaFactor);
+            setUniform("gammaFactor", gammaFactor);
         }
     }
 

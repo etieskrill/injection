@@ -5,14 +5,14 @@ layout (location = 0) in vec3 a_Pos;
 
 out vec4 fragPosition;
 
-uniform mat4 uModel;
-uniform mat4 uCombined;
+uniform mat4 model;
+uniform mat4 combined;
 
 void main()
 {
-    //    fragPosition = uModel * vec4(a_Pos, 1.0);
-    //    gl_Position = uCombined * fragPosition;
-    gl_Position = uCombined * uModel * vec4(a_Pos, 1.0);
+    //    fragPosition = model * vec4(a_Pos, 1.0);
+    //    gl_Position = combined * fragPosition;
+    gl_Position = combined * model * vec4(a_Pos, 1.0);
 }
 #endif
 
