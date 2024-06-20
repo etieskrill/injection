@@ -11,7 +11,7 @@ flat out int oTexIndex;
 
 uniform mat4 combined;
 
-uniform vec2 uGlyphTextureSize;
+uniform vec2 glyphTextureSize;
 
 //This is probably less efficient than calculating four vertices in the cpu and doing view transformation in the vertex
 //shader, but if this actually becomes a bottleneck, then either something has gone horribly wrong or terribly right
@@ -20,7 +20,7 @@ void main()
 {
     vec2 position = gl_in[0].gl_Position.xy;
     vec2 glyphSize = tGlyphSize[0];
-    vec2 glyphTexSize = glyphSize / uGlyphTextureSize;
+    vec2 glyphTexSize = glyphSize / glyphTextureSize;
     oTexIndex = tTexIndex[0];
 
     gl_Position = combined * vec4(position, 0, 1);

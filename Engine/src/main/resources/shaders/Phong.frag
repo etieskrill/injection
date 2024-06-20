@@ -72,7 +72,7 @@ uniform Material material;
 uniform DirectionalLight globalLights[NR_DIRECTIONAL_LIGHTS];
 uniform PointLight lights[NR_POINT_LIGHTS];
 
-uniform sampler2DShadow u_ShadowMap;
+uniform sampler2DShadow shadowMap;
 uniform samplerCubeArrayShadow pointShadowMaps;
 
 uniform float pointShadowFarPlane;
@@ -92,13 +92,13 @@ float getInPointShadow(int index, vec3 fragToLight);
 
 void main()
 {
-    vec3 normal;
+    vec3 normalVec;
     if (normalMapped) {
-        normal = texture(material.normal0, vert_out.texCoord).xyz * 2.0 - 1.0;
-        normal = normalize(normal);
-        normal = normalize(vert_out.tbn * normal);
+        normalVec = texture(material.normal0, vert_out.texCoord).xyz * 2.0 - 1.0;
+        normalVec = normalize(normalVec);
+        normalVec = normalize(vert_out.tbn * normalVec);
     } else {
-        normal = vert_out.normal;
+        normalVec = vert_out.normal;
     }
 
     vec4 texel = texture(material.diffuse0, vert_out.texCoord);
@@ -107,12 +107,12 @@ void main()
     vec4 combinedLight = vec4(0.0);
     for (int i = 0; i < NR_DIRECTIONAL_LIGHTS; i++) {
         float inShadow = getInShadow(vert_out.lightSpaceFragPos, globalLights[i].direction);
-        vec4 dirLight = getDirLight(globalLights[i], normal, vert_out.fragPos, viewPosition, inShadow);
+        vec4 dirLight = getDirLight(globalLights[i], normalVec, vert_out.fragPos, viewPosition, inShadow);
         combinedLight += dirLight;
     }
     for (int i = 0; i < NR_POINT_LIGHTS; i++) {
         float inShadow = getInPointShadow(i, vert_out.fragPos - lights[i].position);
-        vec4 pointLight = getPointLight(lights[i], normal, vert_out.fragPos, viewPosition, inShadow);
+        vec4 pointLight = getPointLight(lights[i], normalVec, vert_out.fragPos, viewPosition, inShadow);
         combinedLight += pointLight;
     }
 
@@ -120,10 +120,10 @@ void main()
     //    combinedLight += vec4(emission.rgb, 0);
 
     //TODO pack reflection mix factor into material property. until reflection maps are a thing, anyway
-    //    combinedLight += getCubeReflection(normal);
+    //    combinedLight += getCubeReflection(normalVec);
 
     //    if (combinedLight.a < 0.9) {
-    //        combinedLight = mix(combinedLight, getCubeRefraction(1 / 1.52, normal), 0.5);
+    //        combinedLight = mix(combinedLight, getCubeRefraction(1 / 1.52, normalVec), 0.5);
     //    }
 
     fragColour = combinedLight;
@@ -208,10 +208,10 @@ float getInShadow(vec4 lightSpaceFragPos, vec3 lightDirection) {
     depthSpace.z -= bias;
     float shadow = 0.0;
 
-    vec3 texelSize = vec3(1.0 / textureSize(u_ShadowMap, 0), 1.0);
+    vec3 texelSize = vec3(1.0 / textureSize(shadowMap, 0), 1.0);
     for (int x = -1; x <= 1; x++) {
         for (int y = -1; y <= 1; y++) {
-            shadow += texture(u_ShadowMap, depthSpace + vec3(x, y, 0.0) * texelSize);
+            shadow += texture(shadowMap, depthSpace + vec3(x, y, 0.0) * texelSize);
         }
     }
 

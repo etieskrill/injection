@@ -35,7 +35,7 @@ public class GLTextRenderer extends DebuggableRenderer implements TextRenderer, 
         GLUtils.clearError();
 
         shader.setUniform("combined", combined, false);
-        shader.setUniform("uGlyphTextureSize", new Vector2f(font.getPixelSize()), false);
+        shader.setUniform("glyphTextureSize", new Vector2f(font.getPixelSize()), false);
 
         if (font instanceof BitmapFont bitmapFont) renderBitmap(chars, bitmapFont, position, shader);
         else throw new UnsupportedOperationException( //TODO ttf

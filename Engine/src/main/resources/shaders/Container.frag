@@ -56,7 +56,7 @@ in vec2 tTextureCoords;
 in vec3 tFragPos;
 
 uniform vec3 viewPosition;
-uniform vec3 uViewDirection;
+uniform vec3 viewDirection;
 uniform float time;
 
 uniform DirectionalLight globalLights[NR_DIRECTIONAL_LIGHTS];
