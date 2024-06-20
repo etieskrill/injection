@@ -238,8 +238,8 @@ public class Application extends GameApplication {
     }
 
     private void renderScene(Shaders.StaticShader shader, Matrix4fc combined) {
-        renderer.bindNextFreeTexture(shader, "u_ShadowMap", directionalShadowMap.getTexture());
-        shader.setUniform("u_LightCombined", sunLightCombined, false);
+        renderer.bindNextFreeTexture(shader, "shadowMap", directionalShadowMap.getTexture());
+        shader.setUniform("lightCombined", sunLightCombined, false);
         renderer.bindNextFreeTexture(shader, "pointShadowMaps0", pointShadowMaps.getTexture());
         shader.setGlobalLights(sunLight);
         shader.setLights(new PointLight[]{light1, light2});

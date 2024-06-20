@@ -9,7 +9,7 @@ flat out int tTexIndex;
 
 uniform mat4 combined;
 
-uniform vec2 uGlyphTextureSize;
+uniform vec2 glyphTextureSize;
 
 void main()
 {

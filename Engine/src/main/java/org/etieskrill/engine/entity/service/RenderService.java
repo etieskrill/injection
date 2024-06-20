@@ -56,8 +56,8 @@ public class RenderService implements Service {
             if (directionalLightComponent == null) continue;
             //TODO expand to multiple directional lights
             if (directionalLightComponent.getShadowMap() != null) {
-                renderer.bindNextFreeTexture(shader, "u_ShadowMap", directionalLightComponent.getShadowMap().getTexture());
-                shader.setUniform("u_LightCombined", directionalLightComponent.getCombined(), false);
+                renderer.bindNextFreeTexture(shader, "shadowMap", directionalLightComponent.getShadowMap().getTexture());
+                shader.setUniform("lightCombined", directionalLightComponent.getCombined(), false);
             }
             shader.setGlobalLights(directionalLightComponent.getDirectionalLight());
             break;
