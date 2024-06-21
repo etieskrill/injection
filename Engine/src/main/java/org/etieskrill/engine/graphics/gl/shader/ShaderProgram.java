@@ -280,6 +280,10 @@ public abstract class ShaderProgram implements Disposable {
         setUniform(name, value, uniforms, true, false);
     }
 
+    public void setUniformNonStrict(@NotNull String name, @NotNull Object value) {
+        setUniform(name, value, uniforms, false, false);
+    }
+
     public void setUniform(@NotNull String name, @NotNull Object value, boolean strict) {
         setUniform(name, value, uniforms, strict, false);
     }
@@ -287,6 +291,11 @@ public abstract class ShaderProgram implements Disposable {
     public void setUniformArray(@NotNull String name, @NotNull Object[] values) {
         if (values.length == 0) return;
         setUniform(name, values, arrayUniforms, true, true);
+    }
+
+    public void setUniformArrayNonStrict(@NotNull String name, @NotNull Object[] values) {
+        if (values.length == 0) return;
+        setUniform(name, values, arrayUniforms, false, true);
     }
 
     public void setUniformArray(@NotNull String name, int index, @NotNull Object value) {
@@ -315,17 +324,21 @@ public abstract class ShaderProgram implements Disposable {
 
     private void setRegisteredUniform(Uniform uniform, Object value, boolean array) {
         if (uniform.getType() == Uniform.Type.STRUCT) {
-            if (array && ((Object[]) value)[0] instanceof UniformMappable) {
-                UniformMappable[] mappables = (UniformMappable[]) value;
-                for (int i = 0; i < mappables.length; i++) {
-                    mappables[i].map(UniformMapper.get(this, uniform.getName() + "[" + i + "]"));
+            if (array && value instanceof Object[] values) {
+                for (int i = 0; i < values.length; i++) {
+                    if (values[i] instanceof UniformMappable mappable) {
+                        mappable.map(UniformMapper.get(this, uniform.getName() + "[" + i + "]"));
+                    } else if (values[i] instanceof Object[]) {
+                        throw new IllegalArgumentException("Struct uniform array element was itself an array;" +
+                                " likely because of invalid varargs cast");
+                    } else {
+                        throw new IllegalArgumentException("Struct uniform must implement UniformMappable");
+                    }
                 }
-
-//                throw new UnsupportedOperationException("Mapping struct arrays is currently not supported");
             } else if (!array && value instanceof UniformMappable mappable) {
                 mappable.map(UniformMapper.get(this, uniform.getName()));
             } else {
-                throw new ShaderUniformException("Struct uniform must implement UniformMappable interface");
+                throw new ShaderUniformException("Struct uniform must implement UniformMappable");
             }
             return;
         }

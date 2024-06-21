@@ -22,7 +22,20 @@ public interface Service {
      */
     boolean canProcess(Entity entity);
 
+    /**
+     * Called once before any entities are processed.
+     *
+     * @param entities all entities
+     */
     default void preProcess(List<Entity> entities) {
+    }
+
+    /**
+     * Called once after all entities are processed.
+     *
+     * @param entities all entities
+     */
+    default void postProcess(List<Entity> entities) {
     }
 
     /**

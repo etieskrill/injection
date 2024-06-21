@@ -6,6 +6,7 @@ import org.etieskrill.engine.entity.component.PointLightComponent;
 import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.entity.component.TransformC;
 import org.etieskrill.engine.graphics.Renderer;
+import org.etieskrill.engine.graphics.gl.framebuffer.FrameBuffer;
 import org.etieskrill.engine.graphics.gl.shader.Shaders;
 
 import java.util.List;
@@ -37,11 +38,7 @@ public class PointShadowMappingService implements Service {
                 .map(PointLightComponent::getShadowMap)
                 .filter(Objects::nonNull)
                 .distinct()
-                .forEach(shadowMap -> {
-                    shadowMap.bind();
-                    glClear(GL_DEPTH_BUFFER_BIT);
-                    shadowMap.unbind();
-                });
+                .forEach(FrameBuffer::clear);
     }
 
     @Override

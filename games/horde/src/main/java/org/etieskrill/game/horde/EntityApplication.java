@@ -47,6 +47,9 @@ public class EntityApplication extends GameApplication {
 
     private DebugInterface debugInterface;
 
+    private boolean hdrReinhardMapping;
+    private float hdrExposure;
+
     public EntityApplication() {
         super(FRAME_RATE, new Window.Builder()
                 .setTitle("Horde")
@@ -65,15 +68,15 @@ public class EntityApplication extends GameApplication {
 
         world = new World(entitySystem);
 
-        glEnable(GL_FRAMEBUFFER_SRGB);
+//        glEnable(GL_FRAMEBUFFER_SRGB);
 
         debugInterface = new DebugInterface(window, renderer);
 
         entitySystem.addService(new BoundingBoxService());
         entitySystem.addService(new DirectionalShadowMappingService(renderer, new Shaders.DepthShader()));
         entitySystem.addService(new PointShadowMappingService(renderer, new Shaders.DepthCubeMapArrayShader()));
-        entitySystem.addService(new RenderService(renderer, camera, window.getSize().toVec()));
-        entitySystem.addService(new BoundingBoxRenderService(renderer, camera));
+        PostProcessingRenderService renderService = new PostProcessingRenderService(renderer, camera, window.getSize().toVec());
+        entitySystem.addService(renderService);
         entitySystem.addService(new JumpService());
         entitySystem.addService(new PhysicsService(AABB_SOLVER));
 
@@ -88,6 +91,9 @@ public class EntityApplication extends GameApplication {
         window.addKeyInputs(playerController);
         window.getCursor().disable();
 
+        hdrReinhardMapping = true;
+        hdrExposure = 1;
+
         window.addKeyInputs(Input.of(
                 Input.bind(Keys.Q).to(() -> {
                     light = !light;
@@ -97,6 +103,10 @@ public class EntityApplication extends GameApplication {
                     world.getSunLight().setDiffuse(light ? lightOn : lightOff);
                     world.getSunLight().setSpecular(light ? lightOn : lightOff);
                 }),
+                Input.bind(Keys.E).to(() -> {
+                    hdrReinhardMapping = !hdrReinhardMapping;
+                    renderService.getHdrShader().setUniform("reinhard", hdrReinhardMapping);
+                }),
                 Input.bind(Keys.CTRL).to(() -> {
                     if (playerController.getSpeed() == PLAYER_WALKING_SPEED)
                         playerController.setSpeed(PLAYER_RUNNING_SPEED);
@@ -104,6 +114,14 @@ public class EntityApplication extends GameApplication {
                 }),
                 Input.bind(Keys.C).to(() -> {
                     player.getCollider().setPreviousPosition(playerTransform.getPosition());
+                }),
+                Input.bind(Keys.T).to(() -> {
+                    hdrExposure += .25f;
+                    renderService.getHdrShader().setUniform("exposure", hdrExposure);
+                }),
+                Input.bind(Keys.G).to(() -> {
+                    hdrExposure -= .25f;
+                    renderService.getHdrShader().setUniform("exposure", hdrExposure);
                 })
         ));
     }
@@ -127,7 +145,13 @@ public class EntityApplication extends GameApplication {
                     "%5.2f".formatted(renderer.getAveragedGpuTime() / 1_000_000.0),
                     "%5.2f".formatted(renderer.getGpuDelay() / 1_000_000.0));
         }
-        debugInterface.getFpsLabel().setText(String.valueOf((int) pacer.getAverageFPS()));
+        debugInterface.getFpsLabel().setText(
+                "%d\nMapping: %s\nExposure: %4.2f".formatted(
+                        (int) pacer.getAverageFPS(),
+                        hdrReinhardMapping ? "Reinhard" : "Exposure",
+                        hdrExposure
+                )
+        );
     }
 
     public static void main(String[] args) {

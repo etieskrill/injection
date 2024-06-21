@@ -56,9 +56,11 @@ public abstract class AbstractTexture implements Disposable {
         NONE(GL_NONE, GL_NONE, 0),
         ALPHA(GL_RED, GL_RED, 1),
         GRAY(GL_RED, GL_RED, 1),
-        GA(GL_RG, GL_RG, 2), //TODO GA == gray/alpha not very intuitive, find better name,
+        GA(GL_RG, GL_RG, 2), //TODO GA == gray/alpha not very intuitive, find better name + i think non-internal format is not even valid teehee
         RGB(GL_RGB, GL_RGB, 3),
         RGBA(GL_RGBA, GL_RGBA, 4),
+        RGBA_F16(GL_RGBA, GL_RGBA16F, 4),
+        RGBA_F32(GL_RGBA, GL_RGBA32F, 4), //TODO if this does not just work, check for image pixel data type
         SRGB(GL_RGB, GL_SRGB, 3),
         SRGBA(GL_RGBA, GL_SRGB_ALPHA, 4),
         DEPTH(GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, 1),
@@ -319,7 +321,7 @@ public abstract class AbstractTexture implements Disposable {
                 case GRAY, DEPTH, STENCIL -> new int[]{GL_RED, GL_RED, GL_RED, GL_ONE};
                 case ALPHA -> new int[]{GL_ONE, GL_ONE, GL_ALPHA, GL_RED};
                 case GA -> new int[]{GL_RED, GL_RED, GL_RED, GL_GREEN};
-                case RGB, RGBA, SRGB, SRGBA -> new int[]{GL_RED, GL_GREEN, GL_BLUE, GL_ALPHA};
+                case RGB, RGBA, SRGB, SRGBA, RGBA_F16, RGBA_F32 -> new int[]{GL_RED, GL_GREEN, GL_BLUE, GL_ALPHA};
                 case NONE ->
                         throw new IllegalStateException("No swizzle mask for colour format: " + builder.format.name());
             };

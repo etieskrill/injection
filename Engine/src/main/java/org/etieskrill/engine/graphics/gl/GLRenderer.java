@@ -48,6 +48,7 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
         renderCalls = 0;
     }
 
+    //TODO move to shader
     @Override
     public void bindNextFreeTexture(ShaderProgram shader, String name, AbstractTexture texture) {
         texture.bind(nextTexture);

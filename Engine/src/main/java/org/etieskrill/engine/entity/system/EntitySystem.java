@@ -75,6 +75,7 @@ public class EntitySystem {
                     service.process(entity, entities, delta);
                 }
             });
+            service.postProcess(entities);
         });
     }
 
