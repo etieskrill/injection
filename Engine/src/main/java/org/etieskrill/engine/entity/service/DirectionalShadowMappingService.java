@@ -10,9 +10,6 @@ import org.etieskrill.engine.graphics.gl.shader.Shaders;
 
 import java.util.List;
 
-import static org.lwjgl.opengl.GL11C.GL_DEPTH_BUFFER_BIT;
-import static org.lwjgl.opengl.GL11C.glClear;
-
 public class DirectionalShadowMappingService implements Service {
 
     private final Renderer renderer;
@@ -34,8 +31,8 @@ public class DirectionalShadowMappingService implements Service {
 //        DirectionalLight light = (DirectionalLight) target.get(DirectionalLight.class).getComponent();
         DirectionalLightComponent shadowMapComponent = targetEntity.getComponent(DirectionalLightComponent.class);
 
+        shadowMapComponent.getShadowMap().clear();
         shadowMapComponent.getShadowMap().bind();
-        glClear(GL_DEPTH_BUFFER_BIT);
         for (int i = 0; i < entities.size(); i++) {
             //TODO abstracted access object for all components, buffering of components (and combinations thereof), can also help with the bloody casts
             if (i == targetEntity.getId()) continue;

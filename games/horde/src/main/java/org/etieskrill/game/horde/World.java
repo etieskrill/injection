@@ -63,7 +63,7 @@ public class World {
         Model sphere = MODELS.load("sphere", () -> Model.ofFile("Sphere.obj"));
 
         Entity sun = entitySystem.createEntity();
-        sunLight = new DirectionalLight(new Vector3f(-1), new Vector3f(.1f), new Vector3f(.5f), new Vector3f(2));
+        sunLight = new DirectionalLight(new Vector3f(-1), new Vector3f(1f), new Vector3f(5), new Vector3f(5));
         sun.addComponent(sunLight);
         Model sunModel = new Model(sphere);
         sunModel.getTransform().setPosition(new Vector3f(50)).setScale(new Vector3f(.35f));

@@ -21,7 +21,7 @@ public abstract class ShadowMap<T extends AbstractTexture & FrameBufferAttachmen
     protected final T texture;
 
     protected ShadowMap(Vector2ic size, T texture) {
-        super(size);
+        super(size, GL_DEPTH_BUFFER_BIT);
         this.texture = texture;
     }
 
