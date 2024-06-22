@@ -14,7 +14,6 @@ uniform Light light;
 void main()
 {
     fragColour = vec4(light.diffuse, 1.0);
-    fragColour.rgb = fragColour.rgb / (fragColour.rgb + vec3(1.0));
 
     float brightness = dot(light.diffuse, vec3(0.2126, 0.7152, 0.0722));
     if (brightness > 1.0) bloomColour = fragColour;

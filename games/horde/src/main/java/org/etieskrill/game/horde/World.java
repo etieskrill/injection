@@ -72,13 +72,13 @@ public class World {
         sun.addComponent(sunTransform);
 
         PointLight light1 = new PointLight(new Vector3f(10, 0, 10),
-                new Vector3f(2, 1, .5f), new Vector3f(5, 3, 2), new Vector3f(5, 3, 2),
+                new Vector3f(2, .3f, .25f), new Vector3f(5, 1.5f, 1), new Vector3f(5, 1.5f, 1),
                 1, .14f, .07f);
         Model lightModel1 = new Model(sphere);
         lightModel1.getTransform().setPosition(light1.getPosition()).setScale(.01f);
 
         PointLight light2 = new PointLight(new Vector3f(-10, 0, -10),
-                new Vector3f(2, 1, .5f), new Vector3f(5, 3, 2), new Vector3f(5, 3, 2),
+                new Vector3f(2, .3f, .25f), new Vector3f(5, 1.5f, 1), new Vector3f(5, 1.5f, 1),
                 1, .14f, .07f);
         Model lightModel2 = new Model(sphere);
         lightModel2.getTransform().setPosition(light2.getPosition()).setScale(.01f);

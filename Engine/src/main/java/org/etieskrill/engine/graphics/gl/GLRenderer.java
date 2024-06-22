@@ -12,7 +12,9 @@ import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.joml.*;
 import org.lwjgl.system.MemoryStack;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.etieskrill.engine.graphics.model.Material.Property.*;
 import static org.lwjgl.opengl.GL33C.*;
@@ -24,8 +26,12 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
     private static final float CLEAR_COLOUR = 0.25f;//0.025f;
     private static final int MAX_USABLE_TEXTURE_UNIT = 8; //TODO make more configurable
 
-    private int nextTexture; //TODO move to shader
-    private int manuallyBoundTextures;
+    private final Map<ShaderProgram, ShaderTextureContext> textureContexts = new HashMap<>();
+
+    private static class ShaderTextureContext {
+        int nextTexture = 1;
+        int manuallyBoundTextures = 0;
+    }
 
     @Override
     public void prepare() {
@@ -39,8 +45,10 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
         glClearColor(CLEAR_COLOUR, CLEAR_COLOUR, CLEAR_COLOUR, 1f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-        nextTexture = 1;
-        manuallyBoundTextures = 0;
+        textureContexts.forEach((shader, textureContext) -> {
+            textureContext.nextTexture = 1;
+            textureContext.manuallyBoundTextures = 0;
+        });
 
         lastTrianglesDrawn = trianglesDrawn;
         trianglesDrawn = 0;
@@ -48,12 +56,25 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
         renderCalls = 0;
     }
 
-    //TODO move to shader
+    //TODO consider moving to shader
     @Override
     public void bindNextFreeTexture(ShaderProgram shader, String name, AbstractTexture texture) {
-        texture.bind(nextTexture);
-        shader.setUniform(name, nextTexture++, false);
-        manuallyBoundTextures++;
+        var textureContext = getOrCreateShaderTextureContext(shader);
+        texture.bind(textureContext.nextTexture);
+        shader.setUniform(name, textureContext.nextTexture++, false);
+        textureContext.manuallyBoundTextures++;
+    }
+
+    private ShaderTextureContext getOrCreateShaderTextureContext(ShaderProgram shader) {
+        var textureContext = textureContexts.get(shader);
+
+        if (textureContext == null) {
+            var newContext = new ShaderTextureContext();
+            textureContexts.put(shader, newContext);
+            return newContext;
+        }
+
+        return textureContext;
     }
 
     @Override
@@ -180,7 +201,8 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
         if (!instanced) glDrawElements(mode, mesh.getNumIndices(), GL_UNSIGNED_INT, 0);
         else glDrawElementsInstanced(mode, mesh.getNumIndices(), GL_UNSIGNED_INT, 0, numInstances);
 
-        nextTexture = manuallyBoundTextures + 1;
+        var textureContext = getOrCreateShaderTextureContext(shader);
+        textureContext.nextTexture = textureContext.manuallyBoundTextures + 1;
 
         if (mesh.getDrawMode() == Mesh.DrawMode.TRIANGLES)
             trianglesDrawn += mesh.getNumIndices() / 3;
@@ -192,7 +214,8 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
         int diffuse = 0, specular = 0, normal = 0, emissive = 0, height = 0, shininess = 0, shadow = 0;
         List<AbstractTexture> textures = material.getTextures();
 
-        if (textures.size() + manuallyBoundTextures + 1 > MAX_USABLE_TEXTURE_UNIT) {
+        var textureContext = getOrCreateShaderTextureContext(shader);
+        if (textures.size() + textureContext.manuallyBoundTextures + 1 > MAX_USABLE_TEXTURE_UNIT) {
             throw new UnsupportedOperationException(
                     "No more than " + MAX_USABLE_TEXTURE_UNIT + " textures may be used for now");
         }
@@ -230,11 +253,11 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
                 case CUBEMAP -> uniform += "cubemap";
             }
 
-            texture.bind(nextTexture);
-            shader.setUniform(uniform + number, nextTexture++, false);
+            texture.bind(textureContext.nextTexture);
+            shader.setUniform(uniform + number, textureContext.nextTexture++, false);
         }
 
-        for (int i = nextTexture; i < MAX_USABLE_TEXTURE_UNIT; i++) { //TODO this is a little inefficient, but you don't have to unbind textures all the time like this
+        for (int i = textureContext.nextTexture; i < MAX_USABLE_TEXTURE_UNIT; i++) { //TODO this is a little inefficient, but you don't have to unbind textures all the time like this
             AbstractTexture.clearBind(i);
         }
 
@@ -254,7 +277,7 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
         shader.setUniform("material.specularity", (float) material.getProperties().getOrDefault(SHININESS_STRENGTH, 1f), false);
 
         //Optional information
-        shader.setUniform("material.numTextures", nextTexture, false); //TODO not accurate anymore if binding textures manually after this
+        shader.setUniform("material.numTextures", textureContext.nextTexture, false); //TODO not accurate anymore if binding textures manually after this
     }
 
     @Override
