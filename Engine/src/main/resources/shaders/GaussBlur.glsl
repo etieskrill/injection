@@ -15,7 +15,8 @@ void main()
 #ifdef FRAGMENT_SHADER
 varying vec2 texCoords;
 
-out vec4 fragColour;
+layout (location = 0) out vec4 fragColourHorizontal;
+layout (location = 1) out vec4 fragColourVertical;
 
 uniform sampler2D source;
 uniform bool horizontal;
@@ -33,14 +34,17 @@ void sampleWithOffset(inout vec3 result, vec2 offset) {
 void main()
 {
     vec2 texOffset = 1.0 / textureSize(source, 0);
-    vec3 result = texture(source, texCoords).rgb * weights[0];
+    vec3 texel = texture(source, texCoords).rgb;
+    vec3 result = texel * weights[0];
 
     if (horizontal) {
         sampleWithOffset(result, vec2(texOffset.x, 0));
+        fragColourHorizontal = vec4(result, 1.0);
+        fragColourVertical = vec4(texel, 1.0);
     } else {
         sampleWithOffset(result, vec2(0, texOffset.y));
+        fragColourVertical = vec4(result, 1.0);
+        fragColourHorizontal = vec4(texel, 1.0);
     }
-
-    fragColour = vec4(result, 1.0);
 }
 #endif

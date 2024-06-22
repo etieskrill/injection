@@ -10,26 +10,27 @@ import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.etieskrill.engine.graphics.texture.AbstractTexture.Format;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.texture.Textures;
-import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector2ic;
 
 import java.util.List;
 
+import static org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment.BufferAttachmentType.COLOUR0;
+import static org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment.BufferAttachmentType.COLOUR1;
 import static org.lwjgl.opengl.GL11C.*;
+import static org.lwjgl.opengl.GL20C.glDrawBuffers;
 
 public class PostProcessingRenderService extends RenderService {
 
-    private static final int GAUSS_BLUR_PING_PONGS = 6;
+    private static final int GAUSS_BLUR_ITERATIONS = 5;
 
     private final FrameBuffer frameBuffer;
     private final Texture2D hdrBuffer;
     private final Texture2D bloomBuffer;
     private final ShaderProgram hdrShader;
 
-    private final FrameBuffer blurFrameBuffer1;
+    private final FrameBuffer blurFrameBuffer;
     private final Texture2D blurTextureBuffer1;
-    private final FrameBuffer blurFrameBuffer2;
     private final Texture2D blurTextureBuffer2;
     private final ShaderProgram gaussBlurShader;
 
@@ -40,7 +41,7 @@ public class PostProcessingRenderService extends RenderService {
         this.bloomBuffer = Textures.genBlank(windowSize, Format.RGBA_F16);
         RenderBuffer depthStencilBuffer = new RenderBuffer(windowSize, RenderBuffer.Type.DEPTH_STENCIL);
         this.frameBuffer = new FrameBuffer.Builder(windowSize)
-                .attach(hdrBuffer, BufferAttachmentType.COLOUR0)
+                .attach(hdrBuffer, COLOUR0)
                 .attach(bloomBuffer, BufferAttachmentType.COLOUR1)
                 .attach(depthStencilBuffer, BufferAttachmentType.DEPTH_STENCIL)
                 .build();
@@ -62,12 +63,10 @@ public class PostProcessingRenderService extends RenderService {
         };
 
         this.blurTextureBuffer1 = Textures.genBlank(windowSize, Format.RGBA_F16);
-        this.blurFrameBuffer1 = new FrameBuffer.Builder(windowSize)
-                .attach(blurTextureBuffer1, BufferAttachmentType.COLOUR0)
-                .build();
         this.blurTextureBuffer2 = Textures.genBlank(windowSize, Format.RGBA_F16);
-        this.blurFrameBuffer2 = new FrameBuffer.Builder(windowSize)
-                .attach(blurTextureBuffer2, BufferAttachmentType.COLOUR0)
+        this.blurFrameBuffer = new FrameBuffer.Builder(windowSize)
+                .attach(blurTextureBuffer1, COLOUR0)
+                .attach(blurTextureBuffer2, BufferAttachmentType.COLOUR1)
                 .build();
 
         this.gaussBlurShader = new ShaderProgram() {
@@ -94,16 +93,32 @@ public class PostProcessingRenderService extends RenderService {
 
     @Override
     public void postProcess(List<Entity> entities) {
-        blurFrameBuffer1.bind();
-        renderer.bindNextFreeTexture(gaussBlurShader, "source", bloomBuffer);
+        //Changing framebuffers often is apparently really expensive, especially on some (mostly integrated) graphics
+        //units. And so, i've tried to do blur ping-pongs using a single framebuffer by binding multiple render targets,
+        //and then drawing only to the relevant one from a source texture, which in this case is bound as the other
+        //render target. The performance on my Laptop however has absolutely tanked with this seemingly more
+        //sophisticated solution, much in contrast to just using a different framebuffer for each half-iteration.
+        //Switching framebuffers can be quite expensive, according to some sources:
+        //https://stackoverflow.com/questions/24593276/how-expensive-is-binding-an-fbo-framebuffer-object
+        //And according to others, the issue may lie specifically with Intel Iris Xe and MRTs:
+        //https://community.khronos.org/t/performance-problem-with-multiple-render-targets/73591
+        //For the case of my laptop, i think the latter is closer to the truth - though, i have not done a detailed
+        //performance analysis to back my suspicion yet.
+
+        blurFrameBuffer.bind();
+        glDrawBuffers(new int[]{COLOUR0.toGLAttachment(), COLOUR1.toGLAttachment()});
+
+        bloomBuffer.bind(0);
+        gaussBlurShader.setUniform("source", 0);
+
         gaussBlurShader.setUniform("horizontal", true);
         gaussBlurShader.setUniform("sampleDistance", new Vector2f(2));
+
         gaussBlurShader.start();
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
         boolean blurBuffer1IsTarget = false;
-        for (int i = 0; i < GAUSS_BLUR_PING_PONGS - 1; i++) {
-            (blurBuffer1IsTarget ? blurFrameBuffer1 : blurFrameBuffer2).bind();
+        for (int i = 0; i < GAUSS_BLUR_ITERATIONS * 2 - 1; i++) {
             renderer.bindNextFreeTexture(gaussBlurShader, "source", blurBuffer1IsTarget ? blurTextureBuffer2 : blurTextureBuffer1);
             gaussBlurShader.setUniform("horizontal", blurBuffer1IsTarget);
             glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
