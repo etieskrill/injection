@@ -95,8 +95,7 @@ public class PostProcessingRenderService extends RenderService {
     @Override
     public void postProcess(List<Entity> entities) {
         blurFrameBuffer1.bind();
-        bloomBuffer.bind(0);
-        gaussBlurShader.setUniform("source", 0);
+        renderer.bindNextFreeTexture(gaussBlurShader, "source", bloomBuffer);
         gaussBlurShader.setUniform("horizontal", true);
         gaussBlurShader.setUniform("sampleDistance", new Vector2f(2));
         gaussBlurShader.start();
@@ -105,8 +104,7 @@ public class PostProcessingRenderService extends RenderService {
         boolean blurBuffer1IsTarget = false;
         for (int i = 0; i < GAUSS_BLUR_PING_PONGS - 1; i++) {
             (blurBuffer1IsTarget ? blurFrameBuffer1 : blurFrameBuffer2).bind();
-            (blurBuffer1IsTarget ? blurTextureBuffer2 : blurTextureBuffer1).bind(0);
-            gaussBlurShader.setUniform("source", 0);
+            renderer.bindNextFreeTexture(gaussBlurShader, "source", blurBuffer1IsTarget ? blurTextureBuffer2 : blurTextureBuffer1);
             gaussBlurShader.setUniform("horizontal", blurBuffer1IsTarget);
             glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
