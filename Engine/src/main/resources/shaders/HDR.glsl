@@ -3,9 +3,6 @@
 #ifdef VERTEX_SHADER
 const vec2 vertices[4] = vec2[](vec2(-1, -1), vec2(1, -1), vec2(-1, 1), vec2(1, 1));
 
-layout (location = 0) in vec4 a_Position;
-layout (location = 1) in vec2 a_TexCoords;
-
 varying vec2 texCoords;
 
 void main()
@@ -24,9 +21,13 @@ uniform sampler2D hdrBuffer;
 uniform float exposure;
 uniform bool reinhard;
 
+uniform sampler2D bloomBuffer;
+
 void main()
 {
     vec3 hdr = texture(hdrBuffer, texCoords).rgb;
+    vec3 bloom = texture(bloomBuffer, texCoords).rgb;
+    hdr += bloom;
 
     vec3 mapped;
     if (reinhard) {
