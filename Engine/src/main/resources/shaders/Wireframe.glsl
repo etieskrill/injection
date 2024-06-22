@@ -13,12 +13,14 @@ void main()
 #endif
 
 #ifdef FRAGMENT_SHADER
-out vec4 fragColour;
+layout (location = 0) out vec4 fragColour;
+layout (location = 1) out vec4 bloomColour;
 
 uniform vec4 colour;
 
 void main()
 {
     fragColour = colour;
+    bloomColour = vec4(0.0, 0.0, 0.0, 1.0);
 }
 #endif

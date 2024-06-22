@@ -23,7 +23,7 @@ import static org.etieskrill.engine.entity.service.PhysicsService.NarrowCollisio
 
 public class EntityApplication extends GameApplication {
 
-    private static final int FRAME_RATE = 60;
+    private static final int FRAME_RATE = 1000;
 
     static final Loaders.ModelLoader MODELS = Loaders.ModelLoader.get();
 
@@ -55,7 +55,6 @@ public class EntityApplication extends GameApplication {
                 .setTitle("Horde")
                 .setMode(Window.WindowMode.BORDERLESS)
                 .setSamples(4)
-                .setVSyncEnabled(true)
                 .build()
         );
     }

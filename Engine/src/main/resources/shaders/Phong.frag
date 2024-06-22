@@ -59,7 +59,8 @@ in Data {
     vec4 lightSpaceFragPos;
 } vert_out;
 
-out vec4 fragColour;
+layout (location = 0) out vec4 fragColour;
+layout (location = 1) out vec4 bloomColour;
 
 uniform vec3 viewPosition;
 uniform mat3 normal;
@@ -127,6 +128,10 @@ void main()
     //    }
 
     fragColour = combinedLight;
+
+    float brightness = dot(combinedLight.rgb, vec3(0.2126, 0.7152, 0.0722));
+    if (brightness > 2.0) bloomColour = combinedLight;
+    else bloomColour = vec4(0.0, 0.0, 0.0, 1.0);
 }
 
 vec4 getDirLight(DirectionalLight light, vec3 normal, vec3 fragPosition, vec3 viewPosition, float inShadow)

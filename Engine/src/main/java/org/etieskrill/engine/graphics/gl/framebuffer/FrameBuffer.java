@@ -3,21 +3,18 @@ package org.etieskrill.engine.graphics.gl.framebuffer;
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.graphics.gl.GLUtils;
 import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment.BufferAttachmentType;
-import org.etieskrill.engine.graphics.texture.CubeMapTexture;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.texture.Textures;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2ic;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
 import static org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment.BufferAttachmentType.*;
-import static org.etieskrill.engine.graphics.texture.CubeMapTexture.NUM_SIDES;
-import static org.etieskrill.engine.util.ClassUtils.getSimpleName;
 import static org.lwjgl.opengl.GL33C.*;
 
 public class FrameBuffer implements Disposable {
@@ -28,6 +25,7 @@ public class FrameBuffer implements Disposable {
     private final Vector2ic size;
     private final Map<BufferAttachmentType, FrameBufferAttachment> attachments;
     private final int glBufferClearMask;
+    private final int @Nullable [] glColourDrawBuffers;
 
     public static FrameBuffer getStandard(Vector2ic size) {
         // Colour buffer as a texture attachment
@@ -59,9 +57,14 @@ public class FrameBuffer implements Disposable {
             GLUtils.clearError();
             int glBufferClearMask =
                     getBufferBit(GL_COLOR_BUFFER_BIT, COLOUR0)
-                    | getBufferBit(GL_DEPTH_BUFFER_BIT, DEPTH, DEPTH_STENCIL)
-                    | getBufferBit(GL_STENCIL_BUFFER_BIT, STENCIL, DEPTH_STENCIL);
-            FrameBuffer frameBuffer = new FrameBuffer(requireNonNull(size), glBufferClearMask);
+                            | getBufferBit(GL_DEPTH_BUFFER_BIT, DEPTH, DEPTH_STENCIL)
+                            | getBufferBit(GL_STENCIL_BUFFER_BIT, STENCIL, DEPTH_STENCIL);
+            int[] glColourDrawBuffers = attachments.keySet().stream()
+                    .filter(attachment -> attachment.toGLAttachment() >= COLOUR0.toGLAttachment()
+                            && attachment.toGLAttachment() <= COLOUR31.toGLAttachment())
+                    .mapToInt(BufferAttachmentType::toGLAttachment)
+                    .toArray();
+            FrameBuffer frameBuffer = new FrameBuffer(requireNonNull(size), glBufferClearMask, glColourDrawBuffers);
             addAttachments(frameBuffer);
             return frameBuffer;
         }
@@ -109,9 +112,14 @@ public class FrameBuffer implements Disposable {
     }
 
     protected FrameBuffer(Vector2ic size, int glBufferClearMask) {
+        this(size, glBufferClearMask, null);
+    }
+
+    protected FrameBuffer(Vector2ic size, int glBufferClearMask, int @Nullable [] glColourDrawBuffers) {
         this.fbo = glGenFramebuffers();
         this.size = size;
         this.glBufferClearMask = glBufferClearMask;
+        this.glColourDrawBuffers = glColourDrawBuffers;
         this.attachments = new HashMap<>(3);
     }
 
@@ -131,9 +139,20 @@ public class FrameBuffer implements Disposable {
             case WRITE -> GL_DRAW_FRAMEBUFFER;
             case BOTH -> GL_FRAMEBUFFER;
         }, fbo);
+        if (glColourDrawBuffers != null) {
+            glDrawBuffers(glColourDrawBuffers);
+        }
     }
 
     public void unbind() {
+        if (glColourDrawBuffers != null) {
+            glDrawBuffers(COLOUR0.toGLAttachment());
+        }
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
+
+    public static void bindScreenBuffer() {
+        glDrawBuffers(COLOUR0.toGLAttachment());
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
