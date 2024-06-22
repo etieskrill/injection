@@ -20,8 +20,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.etieskrill.engine.entity.service.PhysicsService.NarrowCollisionSolver.AABB_SOLVER;
-import static org.lwjgl.opengl.GL11C.glEnable;
-import static org.lwjgl.opengl.GL30C.GL_FRAMEBUFFER_SRGB;
 
 public class EntityApplication extends GameApplication {
 
@@ -33,8 +31,10 @@ public class EntityApplication extends GameApplication {
 
     private Camera camera;
 
-    private boolean light = true;
-    private static final Vector3fc lightOn = new Vector3f(1);
+    private boolean light;
+    private static final Vector3fc lightOnAmbient = new Vector3f(1f);
+    private static final Vector3fc lightOnDiffuse = new Vector3f(5);
+    private static final Vector3fc lightOnSpecular = new Vector3f(5);
     private static final Vector3fc lightOff = new Vector3f(0);
 
     private World world;
@@ -68,8 +68,6 @@ public class EntityApplication extends GameApplication {
 
         world = new World(entitySystem);
 
-//        glEnable(GL_FRAMEBUFFER_SRGB);
-
         debugInterface = new DebugInterface(window, renderer);
 
         entitySystem.addService(new BoundingBoxService());
@@ -91,6 +89,8 @@ public class EntityApplication extends GameApplication {
         window.addKeyInputs(playerController);
         window.getCursor().disable();
 
+        light = true;
+
         hdrReinhardMapping = true;
         hdrExposure = 1;
 
@@ -99,9 +99,9 @@ public class EntityApplication extends GameApplication {
                     light = !light;
                     logger.info("Turning sunlight {}", light ? "on" : "off");
 
-                    world.getSunLight().setAmbient(light ? lightOn : lightOff);
-                    world.getSunLight().setDiffuse(light ? lightOn : lightOff);
-                    world.getSunLight().setSpecular(light ? lightOn : lightOff);
+                    world.getSunLight().setAmbient(light ? lightOnAmbient : lightOff);
+                    world.getSunLight().setDiffuse(light ? lightOnDiffuse : lightOff);
+                    world.getSunLight().setSpecular(light ? lightOnSpecular : lightOff);
                 }),
                 Input.bind(Keys.E).to(() -> {
                     hdrReinhardMapping = !hdrReinhardMapping;
@@ -147,7 +147,7 @@ public class EntityApplication extends GameApplication {
         }
         debugInterface.getFpsLabel().setText(
                 "%d\nMapping: %s\nExposure: %4.2f".formatted(
-                        (int) pacer.getAverageFPS(),
+                        Math.round(pacer.getAverageFPS()),
                         hdrReinhardMapping ? "Reinhard" : "Exposure",
                         hdrExposure
                 )

@@ -15,9 +15,13 @@ import org.lwjgl.opengl.GL;
 
 import java.util.ArrayDeque;
 
+import static org.etieskrill.engine.time.TimeResolutionUtils.resetSystemTimeResolution;
+import static org.etieskrill.engine.time.TimeResolutionUtils.setSystemTimeResolution;
 import static org.lwjgl.glfw.GLFW.glfwTerminate;
 
 public abstract class GameApplication {
+
+    private static final int SYSTEM_TIME_RESOLUTION_MILLIS = 1;
 
     protected final Window window;
     protected final LoopPacer pacer;
@@ -57,12 +61,12 @@ public abstract class GameApplication {
     protected abstract void init();
 
     protected void _loop() {
+        setSystemTimeResolution(SYSTEM_TIME_RESOLUTION_MILLIS);
         pacer.start();
         while (!window.shouldClose()) {
             doLoop();
             pacer.nextFrame();
         }
-        window.dispose();
     }
 
     @VisibleForTesting
@@ -86,7 +90,9 @@ public abstract class GameApplication {
     protected abstract void loop(double delta);
 
     protected void terminate() {
+        resetSystemTimeResolution(SYSTEM_TIME_RESOLUTION_MILLIS);
         window.close();
+        window.dispose();
         Loaders.disposeDefaultLoaders();
         TrueTypeFont.disposeLibrary();
         GL.destroy();

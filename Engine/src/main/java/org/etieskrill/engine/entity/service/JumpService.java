@@ -23,12 +23,15 @@ public class JumpService implements Service {
         float verticalAcceleration = acceleration.getForce().y();
         if (verticalAcceleration > 0) {
             if (onGround.isOnGround()) {
-                transform.getPosition().add(0, onGround.getJumpStrength(), 0);
+                transform.getPosition().add(0, (float) (onGround.getJumpStrength() * delta), 0);
                 onGround.setOnGround(false);
                 float bumpX = acceleration.getForce().x();
                 float bumpZ = acceleration.getForce().z();
-                float bumpStrength = .005f;
-                transform.getPosition().add(bumpX * bumpStrength, 0, bumpZ * bumpStrength);
+                transform.getPosition().add(
+                        (float) (bumpX * onGround.getBumpStrength() * delta),
+                        0,
+                        (float) (bumpZ * onGround.getBumpStrength() * delta)
+                );
             }
         }
     }

@@ -1,23 +1,21 @@
 package org.etieskrill.engine.time;
 
 import org.etieskrill.engine.util.FixedArrayDeque;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.LockSupport;
 
 
 public class SystemNanoTimePacer implements LoopPacer {
 
-    private static final Logger logger = LoggerFactory.getLogger(SystemNanoTimePacer.class);
-
-    private static final long NANO_FACTOR = 1000000000, MILLI_FACTOR = 1000000;
+    private static final long NANO_FACTOR = 1_000_000_000, MILLI_FACTOR = 1_000_000;
+    private static final int SPINLOCK_WINDOW_NANOS = 100_000;
     private static final int AVERAGE_FRAMERATE_SPAN = 20;
 
     private final FixedArrayDeque<Long> deltaBuffer = new FixedArrayDeque<>(AVERAGE_FRAMERATE_SPAN);
 
     private long targetDelta;
-    private volatile long timeNow, timeLast, delta;
+    private volatile long timeLast, frameTime, delta;
     private final AtomicLong timerTime = new AtomicLong();
     private volatile boolean timerPaused;
     private volatile double averageFPS;
@@ -36,7 +34,7 @@ public class SystemNanoTimePacer implements LoopPacer {
     public void start() {
         if (started) throw new IllegalStateException("Pacer was already started");
 
-        this.timeLast = System.nanoTime();
+        this.timeLast = getNanoTime();
         this.started = true;
     }
 
@@ -47,19 +45,19 @@ public class SystemNanoTimePacer implements LoopPacer {
             throw new WrongThreadException("nextFrame must not be called from more than one thread");
         else lastThread = thread;
 
-        updateTime();
-        delta = timeNow - timeLast;
-        if (!timerPaused) timerTime.addAndGet(delta);
+        frameTime = getNanoTime() - timeLast;
 
-        try {
-            long timeout = Math.max(targetDelta - delta, 0) / MILLI_FACTOR;
-            Thread.sleep(timeout); //TODO wait a bit shorter, then use spinlock for more accuracy (probably)
-        } catch (InterruptedException e) {
-            logger.warn("Could not sleep", e);
+        long timeout = Math.max(targetDelta - frameTime - SPINLOCK_WINDOW_NANOS, 0);
+        LockSupport.parkNanos(timeout);
+        while ((getNanoTime() - timeLast) < targetDelta) {
         }
 
-        updateAverageFPS(System.nanoTime() - timeLast);
-        timeLast = timeNow;
+        long now = getNanoTime();
+        delta = (now - timeLast);
+        if (!timerPaused) timerTime.addAndGet(delta / MILLI_FACTOR);
+
+        updateAverageFPS(delta);
+        timeLast = now;
 
         incrementFrameCounters();
     }
@@ -80,8 +78,7 @@ public class SystemNanoTimePacer implements LoopPacer {
 
     @Override
     public double getSecondsElapsedTotal() {
-        updateTime();
-        return (double) timeNow / NANO_FACTOR;
+        return (double) getNanoTime() / NANO_FACTOR;
     }
 
     @Override
@@ -139,8 +136,8 @@ public class SystemNanoTimePacer implements LoopPacer {
         this.targetDelta = (long) (targetDeltaSeconds * NANO_FACTOR);
     }
 
-    private void updateTime() {
-        this.timeNow = System.nanoTime();
+    private long getNanoTime() {
+        return System.nanoTime();
     }
 
     private synchronized void incrementFrameCounters() {
