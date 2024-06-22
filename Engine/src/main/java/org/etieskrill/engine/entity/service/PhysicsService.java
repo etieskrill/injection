@@ -10,6 +10,8 @@ import java.util.List;
 public class PhysicsService implements Service {
 
     private final NarrowCollisionSolver solver;
+    private double lastDelta = 0;
+    private boolean firstCall = true;
 
     public PhysicsService(@NotNull NarrowCollisionSolver solver) {
         this.solver = solver;
@@ -22,6 +24,11 @@ public class PhysicsService implements Service {
 
     @Override
     public void process(Entity targetEntity, List<Entity> entities, double delta) {
+        if (firstCall) {
+            lastDelta = delta;
+            firstCall = false;
+        }
+
         Transform transform = targetEntity.getComponent(Transform.class);
         DynamicCollider collider = targetEntity.getComponent(DynamicCollider.class);
         OnGround onGround = targetEntity.getComponent(OnGround.class);
@@ -42,15 +49,19 @@ public class PhysicsService implements Service {
         Friction friction = targetEntity.getComponent(Friction.class);
         if (friction != null) {
             float verticalVelocity = velocity.y();
-            velocity.mul((1 - friction.getCoefficient()));
+            velocity.mul((float) (1f - (friction.getCoefficient() * delta)));
             velocity.y = verticalVelocity;
         }
 
+        if (lastDelta > 0) velocity.mul((float) (delta / lastDelta));
+
         Vector3f newPosition = velocity.add(transform.getPosition());
+
+        float correctedAccelDelta = (float) (delta * ((delta + lastDelta) / 2));
 
         DirectionalForceComponent force = targetEntity.getComponent(DirectionalForceComponent.class);
         if (force != null) {
-            newPosition.add(new Vector3f(force.getForce()).mul((float) (delta * delta)));
+            newPosition.add(new Vector3f(force.getForce()).mul(correctedAccelDelta));
         }
 
         Acceleration acceleration = targetEntity.getComponent(Acceleration.class);
@@ -58,9 +69,10 @@ public class PhysicsService implements Service {
             if (onGround != null && !onGround.isOnGround()) {
                 ((Vector3f) acceleration.getForce()).y = 0;
             }
-            newPosition.add(new Vector3f(acceleration.getForce()).mul((float) (delta * delta)));
+            newPosition.add(new Vector3f(acceleration.getForce()).mul(correctedAccelDelta));
         }
 
+        lastDelta = delta;
         collider.setPreviousPosition(transform.getPosition());
         transform.setPosition(newPosition);
     }

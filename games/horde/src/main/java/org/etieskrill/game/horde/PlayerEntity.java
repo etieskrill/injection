@@ -23,8 +23,8 @@ public class PlayerEntity extends Entity {
         addComponent(collider);
         addComponent(new DirectionalForceComponent(new Vector3f(0, -15, 0)));
         addComponent(moveForce);
-        addComponent(new Friction(.05f));
-        addComponent(new OnGround(.075f));
+        addComponent(new Friction(3f));
+        addComponent(new OnGround(5f, .15f));
     }
 
     public Transform getTransform() {
