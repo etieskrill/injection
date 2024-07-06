@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.lwjgl.opengl.GL11C.glViewport;
 
-public class RenderService implements Service {
+public class RenderService extends GroupableService {
 
     protected final GLRenderer renderer;
     private final Camera camera;
@@ -89,6 +89,14 @@ public class RenderService implements Service {
     @Override
     public void preProcess(List<Entity> entities) {
 //        renderer.prepare(); //TODO make separate renderbuffer and then somehow combine with base buffer
+        //TODO rethink these kinds of calls:
+        // - preventative: call every time based on state
+        //   - helps with bounding issue scope - issues caused by service not resetting context are service-local
+        //   - can be (transparently) cached to mitigate unnecessary calls (though many drivers apparently already do this unofficially)
+        //   - *could* be done transparently  by the system without a service's knowledge
+        // - trusting: never do such calls, assuming previous service reset context to original state
+        //   - strictly more efficient
+        //   - difficult to debug
         glViewport(0, 0, windowSize.x(), windowSize.y());
 
         shaderParams.clear();

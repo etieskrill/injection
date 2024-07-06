@@ -55,6 +55,7 @@ public class EntityApplication extends GameApplication {
                 .setTitle("Horde")
                 .setMode(Window.WindowMode.BORDERLESS)
                 .setSamples(4)
+                .setVSyncEnabled(true)
                 .build()
         );
     }

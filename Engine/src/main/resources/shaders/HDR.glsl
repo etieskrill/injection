@@ -27,7 +27,8 @@ void main()
 {
     vec3 hdr = texture(hdrBuffer, texCoords).rgb;
     vec3 bloom = texture(bloomBuffer, texCoords).rgb;
-    hdr += bloom;
+    hdr += bloom - bloom;
+    //    hdr = bloom;
 
     vec3 mapped;
     if (reinhard) {

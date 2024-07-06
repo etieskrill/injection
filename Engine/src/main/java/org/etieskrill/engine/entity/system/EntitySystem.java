@@ -1,6 +1,7 @@
 package org.etieskrill.engine.entity.system;
 
 import org.etieskrill.engine.entity.Entity;
+import org.etieskrill.engine.entity.service.GroupableService;
 import org.etieskrill.engine.entity.service.Service;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -62,6 +63,7 @@ public class EntitySystem {
 
     private void createServiceExecutionPlan() {
         //TODO implement
+        // - check for cyclic inner services etc.
         serviceExecutionPlan.clear();
         serviceExecutionPlan.addAll(services);
     }
@@ -69,14 +71,26 @@ public class EntitySystem {
     public void update(double delta) {
         //TODO processable caching
         serviceExecutionPlan.forEach(service -> {
-            service.preProcess(entities);
-            entities.forEach(entity -> {
-                if (service.canProcess(entity)) {
-                    service.process(entity, entities, delta);
-                }
-            });
-            service.postProcess(entities);
+            updateService(delta, service);
         });
+    }
+
+    private void updateService(double delta, Service service) {
+        service.preProcess(entities);
+        if (service instanceof GroupableService groupableService) {
+            groupableService.getPreServices().forEach(innerService -> updateService(delta, innerService));
+        }
+
+        entities.stream()
+                .filter(service::canProcess)
+                .forEach(entity -> {
+                    service.process(entity, entities, delta);
+                });
+
+        if (service instanceof GroupableService groupableService) {
+            groupableService.getPostServices().forEach(innerService -> updateService(delta, innerService));
+        }
+        service.postProcess(entities);
     }
 
 }
