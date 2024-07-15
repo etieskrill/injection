@@ -16,15 +16,18 @@ public enum Keys {
     _0(GLFW_KEY_0), _1(GLFW_KEY_1), _2(GLFW_KEY_2), _3(GLFW_KEY_3), _4(GLFW_KEY_4), _5(GLFW_KEY_5), _6(GLFW_KEY_6),
     _7(GLFW_KEY_7), _8(GLFW_KEY_8), _9(GLFW_KEY_9),
     SPACE(GLFW_KEY_SPACE),
-    
+
     ESCAPE(GLFW_KEY_ESCAPE),
     ESC(ESCAPE),
+
+    F1(GLFW_KEY_F1), F2(GLFW_KEY_F2), F3(GLFW_KEY_F3), F4(GLFW_KEY_F4), F5(GLFW_KEY_F5), F6(GLFW_KEY_F6),
+    F7(GLFW_KEY_F7), F8(GLFW_KEY_F8), F9(GLFW_KEY_F9), F10(GLFW_KEY_F10), F11(GLFW_KEY_F11), F12(GLFW_KEY_F12),
 
     LEFT_MOUSE(GLFW_MOUSE_BUTTON_LEFT, Key.Type.MOUSE),
     RIGHT_MOUSE(GLFW_MOUSE_BUTTON_RIGHT, Key.Type.MOUSE),
     MIDDLE_MOUSE(GLFW_MOUSE_BUTTON_MIDDLE, Key.Type.MOUSE),
     MOUSE_4(GLFW_MOUSE_BUTTON_4, Key.Type.MOUSE), MOUSE_5(GLFW_MOUSE_BUTTON_5, Key.Type.MOUSE),
-    
+
     LEFT_SHIFT(GLFW_KEY_LEFT_SHIFT, Mod.SHIFT), RIGHT_SHIFT(GLFW_KEY_RIGHT_SHIFT, Mod.SHIFT),
     SHIFT(GLFW_KEY_LEFT_SHIFT, Mod.SHIFT),
     LEFT_CONTROL(GLFW_KEY_LEFT_CONTROL, Mod.CONTROL), RIGHT_CONTROL(GLFW_KEY_RIGHT_CONTROL, Mod.CONTROL),
@@ -35,12 +38,12 @@ public enum Keys {
     SUPER(GLFW_KEY_LEFT_SUPER, Mod.SUPER),
     CAPSLOCK(GLFW_MOD_CAPS_LOCK), CAPSLK(CAPSLOCK),
     NUMLOCK(GLFW_KEY_NUM_LOCK);
-    
+
     private final Mod modifierKey;
 
     private static final Map<Key, Map<Mod, Key>> keyCache = new HashMap<>(256);
     private final Key input;
-    
+
     public enum Mod {
         SHIFT(GLFW_MOD_SHIFT, Keys.SHIFT),
         CONTROL(GLFW_MOD_CAPS_LOCK, Keys.CONTROL),
@@ -55,23 +58,23 @@ public enum Keys {
         CONTROL_ALT(GLFW_MOD_CONTROL | GLFW_MOD_ALT),
         ALT_SHIFT(GLFW_MOD_ALT | GLFW_MOD_SHIFT),
         CONTROL_ALT_SHIFT(GLFW_MOD_CONTROL | GLFW_MOD_ALT | GLFW_MOD_SHIFT);
-        
+
         private final int glfwKey;
         private final Keys key;
-        
+
         Mod(int glfwKey) {
             this(glfwKey, null);
         }
-        
+
         Mod(int glfwKey, Keys key) {
             this.glfwKey = glfwKey;
             this.key = key;
         }
-        
+
         public int getGlfwKey() {
             return glfwKey;
         }
-        
+
         public Keys toKey() {
             return key;
         }
@@ -92,11 +95,11 @@ public enum Keys {
             };
         }
     }
-    
+
     Keys(int glfwKey) {
         this(glfwKey, (Mod) null);
     }
-    
+
     Keys(int glfwKey, Mod modifierKey) {
         this(glfwKey, modifierKey, Key.Type.KEYBOARD);
     }
@@ -109,7 +112,7 @@ public enum Keys {
         this.modifierKey = modifierKey;
         this.input = new Key(type, glfwKey);
     }
-    
+
     Keys(Keys key) {
         this.modifierKey = key.modifierKey;
         this.input = key.input;
@@ -129,7 +132,7 @@ public enum Keys {
         int glfwMods = Arrays.stream(mods).distinct().mapToInt(mod -> mod.glfwKey).sum(); //both adding and or-ing would work, since the modifiers are flags
         return input.computeIfAbsent(Mod.fromGlfw(glfwMods), k -> new Key(this.input.getType(), this.input.getValue(), glfwMods));
     }
-    
+
     public static Keys fromGlfw(int glfwKey) {
         for (Keys key : Keys.values()) {
             if (key.getInput().getValue() == glfwKey)

@@ -50,6 +50,7 @@ class Importer {
         int processFlags =
                 aiProcess_Triangulate |
                         aiProcess_CalcTangentSpace |
+                        aiProcess_GlobalScale |
 //                        aiProcess_SortByPType |
                         (options.flipTextureCoordinates() ? aiProcess_FlipUVs : 0) |
 //                        aiProcess_OptimizeMeshes |

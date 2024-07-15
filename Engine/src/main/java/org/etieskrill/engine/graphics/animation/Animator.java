@@ -56,12 +56,12 @@ public class Animator {
      * Construct a new animator for a specific {@link Model}. The skeletons of all {@link Animation Animations} passed
      * in this constructor must be compatible with the {@code Model's} skeleton.
      * <br>
-     * This is a rather clunky constructor, use {@link Animator#Animator(Model)} instead.
+     * This constructor is rather clunky, use {@link Animator#Animator(Model)} with the flow methods to add animation
+     * instances instead.
      *
      * @param animationProviders the animations in this group
      * @param animationMixer
-     * @param model the model influenced by added animations
-     *
+     * @param model              the model influenced by added animations
      * @see Animator#Animator(Model)
      */
     public Animator(
@@ -100,6 +100,17 @@ public class Animator {
      */
     public void play() {
         currentTimeSeconds = 0;
+        playing = true;
+    }
+
+    /**
+     * Sets the current time to {@code startTimeSeconds} and plays all {@link Animation Animations} bound to this
+     * {@code Animator}. Negative time values are clamped to zero.
+     *
+     * @param startTimeSeconds time to start the animation at
+     */
+    public void play(double startTimeSeconds) {
+        currentTimeSeconds = Math.max(0, startTimeSeconds);
         playing = true;
     }
 
@@ -186,7 +197,7 @@ public class Animator {
      * {@code 1} and disables it, meaning it has no influence, and no {@link NodeFilter} is set.
      *
      * @param animation the animation to add
-     * @param layer the animation layer for configuration
+     * @param layer     the animation layer for configuration
      * @return the {@code Animator} for chaining
      */
     public Animator add(@NotNull Animation animation, @NotNull Consumer<AnimationMixer.AnimationLayer> layer) {
@@ -206,9 +217,9 @@ public class Animator {
 
         if (container.animations.isEmpty()) return this;
 
-        double baseDuration = container.animations.getFirst().getDuration();
+        double baseDuration = container.animations.getFirst().getDurationTicks();
         for (int i = 0; i < container.animations.size(); i++) {
-            double duration = container.animations.get(i).getDuration() * container.layers.get(i).getPlaybackSpeed();
+            double duration = container.animations.get(i).getDurationTicks() * container.layers.get(i).getPlaybackSpeed();
             container.layers.get(i).playbackSpeed(playbackSpeed * duration / baseDuration);
             add(container.animations.get(i), container.layers.get(i));
         }

@@ -62,6 +62,10 @@ public class BoundingBoxRenderService implements Service {
         this.renderBoundingBoxes = renderBoundingBoxes;
     }
 
+    public void toggleRenderBoundingBoxes() {
+        renderBoundingBoxes = !renderBoundingBoxes;
+    }
+
     @Override
     public Set<Class<? extends Service>> runAfter() {
         return Set.of(BoundingBoxService.class);

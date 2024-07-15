@@ -97,8 +97,12 @@ public class Animation {
         return name;
     }
 
-    public int getDuration() {
+    public int getDurationTicks() {
         return duration;
+    }
+
+    public double getDurationSeconds() {
+        return duration / ticksPerSecond;
     }
 
     public double getTicksPerSecond() {

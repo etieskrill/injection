@@ -1,25 +1,27 @@
 package org.etieskrill.game.horde;
 
 import org.etieskrill.engine.application.GameApplication;
-import org.etieskrill.engine.entity.component.Acceleration;
-import org.etieskrill.engine.entity.component.Transform;
+import org.etieskrill.engine.entity.Entity;
 import org.etieskrill.engine.entity.service.*;
 import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera;
 import org.etieskrill.engine.graphics.gl.GLUtils;
-import org.etieskrill.engine.graphics.gl.shader.Shaders;
 import org.etieskrill.engine.input.Input;
 import org.etieskrill.engine.input.Keys;
 import org.etieskrill.engine.input.controller.CursorCameraController;
 import org.etieskrill.engine.input.controller.KeyCharacterTranslationController;
 import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.window.Window;
+import org.joml.Math;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+
 import static org.etieskrill.engine.entity.service.PhysicsService.NarrowCollisionSolver.AABB_SOLVER;
+import static org.etieskrill.engine.input.Input.bind;
 
 public class EntityApplication extends GameApplication {
 
@@ -39,8 +41,8 @@ public class EntityApplication extends GameApplication {
 
     private World world;
 
-    private Transform playerTransform;
-    private Acceleration playerMoveForce;
+    private PlayerEntity player;
+    private Zombie zombie;
 
     private static final float PLAYER_WALKING_SPEED = 10;
     private static final float PLAYER_RUNNING_SPEED = 30;
@@ -55,6 +57,7 @@ public class EntityApplication extends GameApplication {
                 .setTitle("Horde")
                 .setMode(Window.WindowMode.BORDERLESS)
                 .setSamples(4)
+                .setVSyncEnabled(true)
                 .build()
         );
     }
@@ -70,20 +73,41 @@ public class EntityApplication extends GameApplication {
         debugInterface = new DebugInterface(window, renderer);
 
         entitySystem.addService(new BoundingBoxService());
-        entitySystem.addService(new DirectionalShadowMappingService(renderer, new Shaders.DepthShader()));
-        entitySystem.addService(new PointShadowMappingService(renderer, new Shaders.DepthCubeMapArrayShader()));
+//        entitySystem.addService(new DirectionalShadowMappingService(renderer, new Shaders.DepthShader()));
+//        entitySystem.addService(new PointShadowMappingService(renderer, new Shaders.DepthCubeMapArrayShader()));
+        entitySystem.addService(new AnimationService());
+        entitySystem.addService(new Service() { //FIXME postprocessing service blur buffers are mixed up sometimes, seems to relate to num of services for some godforsaken reason
+            //maybe some fb calls are not actually sync, or need some time to complete, which would be stoopid, but
+            //probably solvable by glFlush()-ing at some point after setting fb opts
+            @Override
+            public boolean canProcess(Entity entity) {
+                return false;
+            }
+
+            @Override
+            public void process(Entity targetEntity, List<Entity> entities, double delta) {
+            }
+        });
         PostProcessingRenderService renderService = new PostProcessingRenderService(renderer, camera, window.getSize().toVec());
         entitySystem.addService(renderService);
         entitySystem.addService(new JumpService());
         entitySystem.addService(new PhysicsService(AABB_SOLVER));
+        entitySystem.addService(new SnippetsService());
 
-        PlayerEntity player = entitySystem.createEntity(PlayerEntity::new);
-        playerTransform = player.getTransform();
-        playerMoveForce = player.getMoveForce();
+        player = entitySystem.createEntity(PlayerEntity::new);
+
+        final int numZombies = 10;
+        for (int i = 0; i < numZombies; i++) {
+            float angle = Math.toRadians(((float) i / numZombies) * 360f);
+
+            zombie = entitySystem.createEntity(Zombie::new);
+            zombie.getTransform().getPosition().add(20 * Math.cos(angle), 0, 20 * Math.sin(angle));
+            zombie.getCollider().setPreviousPosition(zombie.getTransform().getPosition());
+        }
 
         window.addCursorInputs(new CursorCameraController(camera));
         KeyCharacterTranslationController playerController = (KeyCharacterTranslationController)
-                new KeyCharacterTranslationController((Vector3f) playerMoveForce.getForce(), camera)
+                new KeyCharacterTranslationController(player.getMoveForce().getForce(), camera)
                         .setSpeed(PLAYER_WALKING_SPEED);
         window.addKeyInputs(playerController);
         window.getCursor().disable();
@@ -94,7 +118,7 @@ public class EntityApplication extends GameApplication {
         hdrExposure = 1;
 
         window.addKeyInputs(Input.of(
-                Input.bind(Keys.Q).to(() -> {
+                bind(Keys.Q).to(() -> {
                     light = !light;
                     logger.info("Turning sunlight {}", light ? "on" : "off");
 
@@ -102,34 +126,37 @@ public class EntityApplication extends GameApplication {
                     world.getSunLight().setDiffuse(light ? lightOnDiffuse : lightOff);
                     world.getSunLight().setSpecular(light ? lightOnSpecular : lightOff);
                 }),
-                Input.bind(Keys.E).to(() -> {
+                bind(Keys.E).to(() -> {
                     hdrReinhardMapping = !hdrReinhardMapping;
-                    renderService.getHdrShader().setUniform("reinhard", hdrReinhardMapping);
+//                    renderService.getHdrShader().setUniform("reinhard", hdrReinhardMapping);
                 }),
-                Input.bind(Keys.CTRL).to(() -> {
+                bind(Keys.CTRL).to(() -> {
                     if (playerController.getSpeed() == PLAYER_WALKING_SPEED)
                         playerController.setSpeed(PLAYER_RUNNING_SPEED);
                     else playerController.setSpeed(PLAYER_WALKING_SPEED);
                 }),
-                Input.bind(Keys.C).to(() -> {
-                    player.getCollider().setPreviousPosition(playerTransform.getPosition());
-                }),
-                Input.bind(Keys.T).to(() -> {
+                bind(Keys.T).to(() -> {
                     hdrExposure += .25f;
-                    renderService.getHdrShader().setUniform("exposure", hdrExposure);
+//                    renderService.getHdrShader().setUniform("exposure", hdrExposure);
                 }),
-                Input.bind(Keys.G).to(() -> {
+                bind(Keys.G).to(() -> {
                     hdrExposure -= .25f;
-                    renderService.getHdrShader().setUniform("exposure", hdrExposure);
+//                    renderService.getHdrShader().setUniform("exposure", hdrExposure);
+                }),
+                bind(Keys.F1).to(() -> {
+//                    renderService.getBoundingBoxRenderService().toggleRenderBoundingBoxes();
                 })
         ));
     }
 
     @Override
     protected void loop(final double delta) {
+        player.getTransform().getPosition().sub(zombie.getTransform().getPosition(), zombie.getAcceleration().getForce());
+        zombie.getAcceleration().getForce().normalize().mul((float) delta * zombie.getAcceleration().getFactor());
+
         camera.setOrientation(-45, 45, 0);
         camera.setPosition(
-                new Vector3f(playerTransform.getPosition())
+                new Vector3f(player.getTransform().getPosition())
                         .add(0, 2, 0)
                         .sub(camera.getDirection().mul(8))
         );
@@ -145,8 +172,10 @@ public class EntityApplication extends GameApplication {
                     "%5.2f".formatted(renderer.getGpuDelay() / 1_000_000.0));
         }
         debugInterface.getFpsLabel().setText(
-                "%d\nMapping: %s\nExposure: %4.2f".formatted(
+                "Fps: %d\nRender calls: %d\nTriangles: %d\nMapping: %s\nExposure: %4.2f".formatted(
                         Math.round(pacer.getAverageFPS()),
+                        renderer.getRenderCalls(),
+                        renderer.getTrianglesDrawn(),
                         hdrReinhardMapping ? "Reinhard" : "Exposure",
                         hdrExposure
                 )

@@ -11,6 +11,7 @@ import org.etieskrill.engine.graphics.camera.PerspectiveCamera;
 import org.etieskrill.engine.graphics.data.DirectionalLight;
 import org.etieskrill.engine.graphics.gl.GLRenderer;
 import org.etieskrill.engine.graphics.gl.GLUtils;
+import org.etieskrill.engine.graphics.gl.shader.impl.AnimationShader;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.model.Node;
 import org.etieskrill.engine.graphics.texture.font.TrueTypeFont;
