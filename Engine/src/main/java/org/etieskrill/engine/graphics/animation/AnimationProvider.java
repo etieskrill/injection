@@ -65,7 +65,7 @@ public class AnimationProvider {
         // - bake bone animations into bones / create a map here or in model
         double currentTicks = currentTimeSeconds * animation.getTicksPerSecond() * playbackSpeed;
         switch (animation.getBehaviour()) {
-            case REPEAT -> currentTicks %= animation.getDuration();
+            case REPEAT -> currentTicks %= animation.getDurationTicks();
             default -> throw new IllegalArgumentException("Unexpected behaviour: " + animation.getBehaviour());
         }
 

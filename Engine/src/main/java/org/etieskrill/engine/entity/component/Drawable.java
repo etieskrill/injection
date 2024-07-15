@@ -16,10 +16,15 @@ public class Drawable {
     //TODO some kind of grouping mechanism
 
     public Drawable(Model model) {
+        this(model, null);
+    }
+
+    public Drawable(Model model, @Nullable ShaderProgram shader) {
         this.model = model;
         this.visible = true;
         this.textureScale = new Vector2f(1);
         this.drawWireframe = false;
+        this.shader = shader;
     }
 
     public Model getModel() {

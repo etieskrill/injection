@@ -67,9 +67,9 @@ public class PhysicsService implements Service {
         Acceleration acceleration = targetEntity.getComponent(Acceleration.class);
         if (acceleration != null) {
             if (onGround != null && !onGround.isOnGround()) {
-                ((Vector3f) acceleration.getForce()).y = 0;
+                acceleration.getForce().y = 0;
             }
-            newPosition.add(new Vector3f(acceleration.getForce()).mul(correctedAccelDelta));
+            newPosition.add(new Vector3f(acceleration.getForce()).mul(acceleration.getFactor() * correctedAccelDelta));
         }
 
         lastDelta = delta;

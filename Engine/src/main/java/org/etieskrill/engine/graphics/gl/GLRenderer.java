@@ -57,6 +57,7 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
     }
 
     //TODO consider moving to shader
+    //TODO override existing bind if same name
     @Override
     public void bindNextFreeTexture(ShaderProgram shader, String name, AbstractTexture texture) {
         var textureContext = getOrCreateShaderTextureContext(shader);

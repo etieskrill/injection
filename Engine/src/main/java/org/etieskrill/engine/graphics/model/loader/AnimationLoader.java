@@ -52,9 +52,7 @@ class AnimationLoader {
             //since there should be comparatively few bones in a model, extracting them every time should be fine
             Bone bone = bones.stream()
                     .filter(meshBone -> {
-//                        return meshBone.name().equals(name);
                         //TODO pretty lenient bone name matching for the time being to allow for several file formats - should be undone
-                        if (name.equals("mixamorig:HeadTop_End")) return false;
                         return meshBone.name().replace("_", "").replace(":", "")
                                 .equals(name.replace("_", "").replace(":", ""));
                     })

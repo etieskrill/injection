@@ -63,6 +63,8 @@ public class Loader {
         );
 
         AINode rootNode = aiScene.mRootNode();
+//        builder.setInitialTransform(new Transform().setScale(AssimpUtils.fromAI(rootNode.mTransformation()).getScale(new Vector3f())));
+//        builder.setInitialTransform(new Transform());
 
         if ((aiScene.mFlags() & AI_SCENE_FLAGS_INCOMPLETE) != 0
                 || rootNode == null) {

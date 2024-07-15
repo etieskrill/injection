@@ -8,11 +8,11 @@ public class DirectionalForceComponent {
 
     private final Vector3f force;
 
-    public DirectionalForceComponent(final Vector3fc force) {
-        this.force = new Vector3f(force);
+    public DirectionalForceComponent(Vector3f force) {
+        this.force = force;
     }
 
-    public Vector3fc getForce() {
+    public Vector3f getForce() {
         return force;
     }
 

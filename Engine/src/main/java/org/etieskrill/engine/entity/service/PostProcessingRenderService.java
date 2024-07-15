@@ -10,17 +10,17 @@ import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.etieskrill.engine.graphics.texture.AbstractTexture.Format;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.texture.Textures;
-import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector2ic;
 
 import java.util.List;
 
-import static org.lwjgl.opengl.GL11C.*;
+import static org.lwjgl.opengl.GL11C.GL_TRIANGLE_STRIP;
+import static org.lwjgl.opengl.GL11C.glDrawArrays;
 
 public class PostProcessingRenderService extends RenderService {
 
-    private static final int GAUSS_BLUR_PING_PONGS = 6;
+    private static final int GAUSS_BLUR_ITERATIONS = 3;
 
     private final FrameBuffer frameBuffer;
     private final Texture2D hdrBuffer;
@@ -102,7 +102,7 @@ public class PostProcessingRenderService extends RenderService {
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
         boolean blurBuffer1IsTarget = false;
-        for (int i = 0; i < GAUSS_BLUR_PING_PONGS - 1; i++) {
+        for (int i = 0; i < GAUSS_BLUR_ITERATIONS * 2 - 1; i++) {
             (blurBuffer1IsTarget ? blurFrameBuffer1 : blurFrameBuffer2).bind();
             renderer.bindNextFreeTexture(gaussBlurShader, "source", blurBuffer1IsTarget ? blurTextureBuffer2 : blurTextureBuffer1);
             gaussBlurShader.setUniform("horizontal", blurBuffer1IsTarget);
