@@ -63,6 +63,7 @@ public class FrameBuffer implements Disposable {
                     .filter(attachment -> attachment.toGLAttachment() >= COLOUR0.toGLAttachment()
                             && attachment.toGLAttachment() <= COLOUR31.toGLAttachment())
                     .mapToInt(BufferAttachmentType::toGLAttachment)
+                    .sorted()
                     .toArray();
             FrameBuffer frameBuffer = new FrameBuffer(requireNonNull(size), glBufferClearMask, glColourDrawBuffers);
             addAttachments(frameBuffer);
