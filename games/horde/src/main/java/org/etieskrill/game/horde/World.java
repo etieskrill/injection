@@ -60,7 +60,10 @@ public class World {
 
         floor.addComponent(new StaticCollider());
 
-        Model sphere = MODELS.load("sphere", () -> Model.ofFile("Sphere.obj"));
+        Model sphere = MODELS.load("sphere", () ->
+                new Model.Builder("Sphere.obj")
+                        .optimiseMeshes(5000, .05f)
+                        .build());
 
         Entity sun = entitySystem.createEntity();
         sunLight = new DirectionalLight(new Vector3f(-1), new Vector3f(1f), new Vector3f(5), new Vector3f(5));

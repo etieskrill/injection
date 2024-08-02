@@ -2,13 +2,11 @@ package org.etieskrill.engine.scene;
 
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.camera.Camera;
-import org.etieskrill.engine.graphics.camera.OrthographicCamera;
 import org.etieskrill.engine.input.CursorInputAdapter;
 import org.etieskrill.engine.input.Key;
 import org.etieskrill.engine.scene.component.Node;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector2f;
-import org.joml.Vector2fc;
 import org.joml.Vector2ic;
 import org.joml.Vector3f;
 
@@ -23,8 +21,9 @@ public class Scene implements CursorInputAdapter {
     private final Vector2f size;
 
     /**
-     * Available for more convenient construction in subclasses. Take care to set {@link Scene#batch},
-     * {@link Scene#root} and {@link Scene#camera} while still in the constructor. Use at your own peril.
+     * Available for more convenient construction in subclasses. Take care to <b>set {@link Scene#batch},
+     * {@link Scene#root} and {@link Scene#camera} using the setters</b> while still in the constructor.
+     * Use at your own peril.
      */
     @SuppressWarnings("DataFlowIssue")
     protected Scene() {

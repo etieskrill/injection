@@ -22,8 +22,8 @@ public class AnimationService implements Service {
 
         animator.update(delta);
 
-        if (drawable.getShader() instanceof AnimationShader shader) {
-            shader.setBoneMatrices(animator.getTransformMatrices());
+        if (drawable.getShader() != null) {
+            drawable.getShader().setUniformArray("boneMatrices", animator.getTransformMatrices().toArray());
         }
     }
 

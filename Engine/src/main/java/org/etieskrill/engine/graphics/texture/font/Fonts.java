@@ -26,7 +26,7 @@ public final class Fonts {
         TrueTypeFont generatorFont = (TrueTypeFont) Loaders.FontLoader.get().load(
                 "ttf:%s:%d".formatted(file.getPath().toLowerCase(), pixelHeight), () -> {
                     try {
-                        return new TrueTypeFont(DEFAULT_FONT);
+                        return new TrueTypeFont(file.getFullPath());
                     } catch (IOException e) {
                         try {
                             return new TrueTypeFont(DEFAULT_FONT);
@@ -35,7 +35,7 @@ public final class Fonts {
                         }
                     }
                 });
-        
+
         return Loaders.FontLoader.get().load(
                 "bmp:%s:%d".formatted(file.getPath().toLowerCase(), pixelHeight), () -> {
                     try {

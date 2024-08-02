@@ -1,6 +1,8 @@
 package org.etieskrill.engine.window;
 
 import org.etieskrill.engine.Disposable;
+import org.etieskrill.engine.config.InjectionConfig;
+import org.etieskrill.engine.config.SimpleLoggerConfig;
 import org.etieskrill.engine.input.*;
 import org.etieskrill.engine.scene.Scene;
 import org.jetbrains.annotations.Contract;
@@ -32,6 +34,10 @@ public class Window implements Disposable {
 
     static final int MIN_GL_CONTEXT_MAJOR_VERSION = 3;
     static final int MIN_GL_CONTEXT_MINOR_VERSION = 3;
+
+    static {
+        InjectionConfig.init();
+    }
 
     public static boolean USE_RAW_MOUSE_MOTION_IF_AVAILABLE = true;
 

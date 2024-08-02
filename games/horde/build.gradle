@@ -14,16 +14,16 @@ plugins {
 group = 'org.etieskrill.game.horde'
 version = '1.0.0-SNAPSHOT'
 
-applicationDefaultJvmArgs = ["-Dorg.slf4j.simpleLogger.defaultLogLevel=debug"]
-
 dependencies {
     implementation project(':engine')
 
-    implementation "org.lwjgl:lwjgl-opengl:3.3.3"
-    runtimeOnly "org.lwjgl:lwjgl-opengl::natives-windows"
+    implementation 'org.jetbrains:annotations:24.0.0'
 
+    implementation 'org.lwjgl:lwjgl-opengl:3.3.3'
     implementation 'org.lwjgl:lwjgl-stb:3.3.3'
-    runtimeOnly "org.lwjgl:lwjgl-stb::natives-windows"
+
+    runtimeOnly 'org.lwjgl:lwjgl-opengl::natives-windows'
+    runtimeOnly 'org.lwjgl:lwjgl-stb::natives-windows'
 
     testImplementation platform('org.junit:junit-bom:5.9.1')
     testImplementation 'org.junit.jupiter:junit-jupiter'

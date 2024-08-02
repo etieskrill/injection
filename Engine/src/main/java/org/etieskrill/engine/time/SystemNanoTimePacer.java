@@ -54,7 +54,7 @@ public class SystemNanoTimePacer implements LoopPacer {
 
         long now = getNanoTime();
         delta = (now - timeLast);
-        if (!timerPaused) timerTime.addAndGet(delta / MILLI_FACTOR);
+        if (!timerPaused) timerTime.addAndGet(delta);
 
         updateAverageFPS(delta);
         timeLast = now;

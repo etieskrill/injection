@@ -75,6 +75,7 @@ public class TrueTypeFont implements Font {
     public BitmapFont generateBitmapFont(int pixelWidth, int pixelHeight, boolean verticalUp) throws IOException {
         if (pixelHeight <= 0) throw new IllegalArgumentException("Font height must be greater than zero");
         if (pixelWidth < 0) throw new IllegalArgumentException("Font width must not be smaller than zero");
+        if (disposed) throw new IllegalStateException("Cannot generate bitmap as freetype resource was already disposed");
 
         //Is FT_Set_Char_Size ever going to be more practical than this?
         check(FT_Set_Pixel_Sizes(face, pixelWidth, pixelHeight),

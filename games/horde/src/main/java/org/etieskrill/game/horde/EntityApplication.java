@@ -1,11 +1,11 @@
 package org.etieskrill.game.horde;
 
 import org.etieskrill.engine.application.GameApplication;
-import org.etieskrill.engine.entity.Entity;
 import org.etieskrill.engine.entity.service.*;
 import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera;
 import org.etieskrill.engine.graphics.gl.GLUtils;
+import org.etieskrill.engine.graphics.gl.shader.Shaders;
 import org.etieskrill.engine.input.Input;
 import org.etieskrill.engine.input.Keys;
 import org.etieskrill.engine.input.controller.CursorCameraController;
@@ -17,8 +17,6 @@ import org.joml.Vector3f;
 import org.joml.Vector3fc;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
 
 import static org.etieskrill.engine.entity.service.PhysicsService.NarrowCollisionSolver.AABB_SOLVER;
 import static org.etieskrill.engine.input.Input.bind;
@@ -70,24 +68,11 @@ public class EntityApplication extends GameApplication {
 
         world = new World(entitySystem);
 
-        debugInterface = new DebugInterface(window, renderer);
-
         entitySystem.addService(new BoundingBoxService());
-//        entitySystem.addService(new DirectionalShadowMappingService(renderer, new Shaders.DepthShader()));
-//        entitySystem.addService(new PointShadowMappingService(renderer, new Shaders.DepthCubeMapArrayShader()));
+        //TODO fix static-animated root transform
+        entitySystem.addService(new DirectionalShadowMappingService(renderer));
+        entitySystem.addService(new PointShadowMappingService(renderer, new Shaders.DepthCubeMapArrayShader()));
         entitySystem.addService(new AnimationService());
-        entitySystem.addService(new Service() { //FIXME postprocessing service blur buffers are mixed up sometimes, seems to relate to num of services for some godforsaken reason
-            //maybe some fb calls are not actually sync, or need some time to complete, which would be stoopid, but
-            //probably solvable by glFlush()-ing at some point after setting fb opts
-            @Override
-            public boolean canProcess(Entity entity) {
-                return false;
-            }
-
-            @Override
-            public void process(Entity targetEntity, List<Entity> entities, double delta) {
-            }
-        });
         PostProcessingRenderService renderService = new PostProcessingRenderService(renderer, camera, window.getSize().toVec());
         entitySystem.addService(renderService);
         entitySystem.addService(new JumpService());
@@ -128,7 +113,7 @@ public class EntityApplication extends GameApplication {
                 }),
                 bind(Keys.E).to(() -> {
                     hdrReinhardMapping = !hdrReinhardMapping;
-//                    renderService.getHdrShader().setUniform("reinhard", hdrReinhardMapping);
+                    renderService.getHdrShader().setUniform("reinhard", hdrReinhardMapping);
                 }),
                 bind(Keys.CTRL).to(() -> {
                     if (playerController.getSpeed() == PLAYER_WALKING_SPEED)
@@ -137,16 +122,22 @@ public class EntityApplication extends GameApplication {
                 }),
                 bind(Keys.T).to(() -> {
                     hdrExposure += .25f;
-//                    renderService.getHdrShader().setUniform("exposure", hdrExposure);
+                    renderService.getHdrShader().setUniform("exposure", hdrExposure);
                 }),
                 bind(Keys.G).to(() -> {
                     hdrExposure -= .25f;
-//                    renderService.getHdrShader().setUniform("exposure", hdrExposure);
+                    renderService.getHdrShader().setUniform("exposure", hdrExposure);
                 }),
                 bind(Keys.F1).to(() -> {
-//                    renderService.getBoundingBoxRenderService().toggleRenderBoundingBoxes();
+                    renderService.getBoundingBoxRenderService().toggleRenderBoundingBoxes();
                 })
         ));
+
+        //FIXME loading the scene (the label font specifically) before the above stuff causes a segfault from freetype??
+        debugInterface = new DebugInterface(window.getSize().toVec(), renderer, pacer);
+        window.setScene(debugInterface);
+
+        renderer.setQueryGpuTime(false);
     }
 
     @Override

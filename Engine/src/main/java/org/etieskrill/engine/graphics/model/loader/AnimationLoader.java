@@ -3,6 +3,7 @@ package org.etieskrill.engine.graphics.model.loader;
 import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.graphics.animation.Animation;
 import org.etieskrill.engine.graphics.animation.BoneAnimation;
+import org.etieskrill.engine.graphics.animation.BoneMatcher;
 import org.etieskrill.engine.graphics.model.Bone;
 import org.etieskrill.engine.graphics.model.Vertex;
 import org.etieskrill.engine.graphics.util.AssimpUtils;
@@ -25,7 +26,7 @@ class AnimationLoader {
 
     private static final Logger logger = LoggerFactory.getLogger(AnimationLoader.class);
 
-    static void loadAnimations(AIScene scene, List<Bone> bones, List<Animation> animations) {
+    static void loadAnimations(AIScene scene, List<Bone> bones, List<Animation> animations, BoneMatcher boneMatcher) {
         PointerBuffer animationBuffer = scene.mAnimations();
         for (int i = 0; i < scene.mNumAnimations(); i++) {
             AIAnimation aiAnimation = AIAnimation.create(animationBuffer.get());
@@ -34,7 +35,7 @@ class AnimationLoader {
                     (int) aiAnimation.mDuration(),
                     aiAnimation.mTicksPerSecond(),
                     bones,
-                    loadNodeAnimations(aiAnimation.mNumChannels(), aiAnimation.mChannels(), bones),
+                    loadNodeAnimations(aiAnimation.mNumChannels(), aiAnimation.mChannels(), bones, boneMatcher),
                     null
             ));
         }
@@ -43,7 +44,7 @@ class AnimationLoader {
                 scene.mName().dataString(), animations.stream().map(Animation::getName).toList());
     }
 
-    private static List<BoneAnimation> loadNodeAnimations(int numAnims, PointerBuffer animBuffer, List<Bone> bones) {
+    private static List<BoneAnimation> loadNodeAnimations(int numAnims, PointerBuffer animBuffer, List<Bone> bones, BoneMatcher boneMatcher) {
         List<BoneAnimation> boneAnims = new ArrayList<>(numAnims);
         for (int i = 0; i < numAnims; i++) {
             AINodeAnim nodeAnim = AINodeAnim.create(animBuffer.get());
@@ -51,11 +52,7 @@ class AnimationLoader {
             String name = nodeAnim.mNodeName().dataString();
             //since there should be comparatively few bones in a model, extracting them every time should be fine
             Bone bone = bones.stream()
-                    .filter(meshBone -> {
-                        //TODO pretty lenient bone name matching for the time being to allow for several file formats - should be undone
-                        return meshBone.name().replace("_", "").replace(":", "")
-                                .equals(name.replace("_", "").replace(":", ""));
-                    })
+                    .filter(meshBone -> boneMatcher.test(meshBone.name(), name))
                     .findAny()
                     .orElse(null);
 //                    .orElseThrow(() -> new IllegalStateException(

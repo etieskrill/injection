@@ -4,7 +4,6 @@ import org.etieskrill.engine.entity.Entity;
 import org.etieskrill.engine.entity.component.*;
 import org.etieskrill.engine.graphics.animation.Animation;
 import org.etieskrill.engine.graphics.animation.Animator;
-import org.etieskrill.engine.graphics.gl.shader.impl.AnimationShader;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.model.loader.Loader;
 import org.etieskrill.engine.util.Loaders;
@@ -33,18 +32,20 @@ public class Zombie extends Entity {
         addComponent(new AABB(new Vector3f(-.5f, 0, -.5f), new Vector3f(.5f, 2, .5f)));
         addComponent(new WorldSpaceAABB());
 
-        Model model = Loaders.ModelLoader.get().load("zombie",
-                () -> Model.ofFile("mixamo_zombie_skinned_some_animation.dae"));
-//        addComponent(new Drawable(model, ShaderLoader.get().load("animation_shader", AnimationShader::new))); //TODO
-        addComponent(new Drawable(model, new AnimationShader()));
+        Model model = Loaders.ModelLoader.get().load("zombie", () ->
+                new Model.Builder("mixamo_zombie_skinned_walking.glb")
+                        .setName("zombie")
+                        .optimiseMeshes()
+                        .build());
+//        addComponent(new Drawable(model, ShaderLoader.get().load("animation_shader", AnimationShader::new))); //FIXME
+        addComponent(new Drawable(model, new ZombieShader()));
 
         Animator animator = new Animator(model);
         Animation walkingAnimation = AnimationLoader.get().load("zombie_walking", () ->
-                Loader.loadModelAnimations("mixamo_zombie_walking.dae", model).getFirst());
+                Loader.loadModelAnimations("mixamo_zombie_walking.glb", model).getFirst());
         animator.add(walkingAnimation, layer -> layer.setPlaybackSpeed(2));
 
         double offset = new Random().nextDouble(0, walkingAnimation.getDurationSeconds());
-        System.out.println(offset);
         animator.play(offset);
         addComponent(animator);
 
@@ -57,7 +58,7 @@ public class Zombie extends Entity {
         acceleration = new Acceleration(new Vector3f(), 20);
         addComponent(acceleration);
 
-        addComponent(new Snippets(List.of(
+        addComponent(new Scripts(List.of(
                 this::rotateToHeading
         )));
     }

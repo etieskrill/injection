@@ -12,7 +12,7 @@ import static org.lwjgl.assimp.Assimp.*;
 
 //TODO separate phong/pbr via inheritance
 public class Material implements Disposable {
-    
+
     //TODO number max gl texture units check
     private final List<AbstractTexture> textures;
 
@@ -32,7 +32,9 @@ public class Material implements Disposable {
         SHININESS(AI_MATKEY_SHININESS),
         SHININESS_STRENGTH(AI_MATKEY_SHININESS_STRENGTH),
         METALLIC_FACTOR(AI_MATKEY_METALLIC_FACTOR),
-        OPACITY(AI_MATKEY_OPACITY);
+        OPACITY(AI_MATKEY_OPACITY),
+        TRANSPARENCY(AI_MATKEY_TRANSPARENCYFACTOR),
+        BLEND_FUNCTION(AI_MATKEY_BLEND_FUNC);
 
         private final String aiPropertyName;
 
@@ -44,10 +46,10 @@ public class Material implements Disposable {
             return aiPropertyName;
         }
     }
-    
+
     public static final class Builder {
-        private List<AbstractTexture> textures = new LinkedList<>();
-        private Map<Property, Object> properties = new HashMap<>();
+        private final List<AbstractTexture> textures = new LinkedList<>();
+        private final Map<Property, Object> properties = new HashMap<>();
 
         public Builder addTextures(AbstractTexture... textures) {
             this.textures.addAll(List.of(textures));
@@ -60,6 +62,10 @@ public class Material implements Disposable {
             return this;
         }
 
+        public Map<Property, Object> getProperties() {
+            return properties;
+        }
+
         public Builder setProperty(Property property, Object value) {
             this.properties.put(property, value);
             return this;
@@ -69,7 +75,7 @@ public class Material implements Disposable {
             return new Material(textures, properties);
         }
     }
-    
+
     public static Material getBlank() {
         return new Material.Builder().build();
     }
@@ -78,7 +84,7 @@ public class Material implements Disposable {
         this.textures = new ArrayList<>(textures);
         this.properties = new HashMap<>(properties);
     }
-    
+
     public List<AbstractTexture> getTextures() {
         return textures;
     }
@@ -104,12 +110,12 @@ public class Material implements Disposable {
     }
 
     private boolean wasAlreadyDisposed = false;
-    
+
     @Override
     public void dispose() {
         if (wasAlreadyDisposed) return;
         textures.forEach(AbstractTexture::dispose);
         wasAlreadyDisposed = true;
     }
-    
+
 }

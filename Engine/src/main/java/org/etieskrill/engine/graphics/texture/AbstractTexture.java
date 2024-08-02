@@ -195,7 +195,8 @@ public abstract class AbstractTexture implements Disposable {
     public enum Type {
         UNKNOWN(aiTextureType_UNKNOWN), DIFFUSE(aiTextureType_DIFFUSE), SPECULAR(aiTextureType_SPECULAR),
         SHININESS(aiTextureType_SHININESS), HEIGHT(aiTextureType_HEIGHT), EMISSIVE(aiTextureType_EMISSIVE),
-        NORMAL(aiTextureType_NORMALS), SHADOW(-1);
+        NORMAL(aiTextureType_NORMALS), METALNESS(aiTextureType_METALNESS),
+        DIFFUSE_ROUGHNESS(aiTextureType_DIFFUSE_ROUGHNESS), SHADOW(-1);
 
         private final int aiType;
 
@@ -249,6 +250,10 @@ public abstract class AbstractTexture implements Disposable {
         public Builder<T> setTarget(Target target) {
             this.target = target;
             return this;
+        }
+
+        public Format getFormat() {
+            return format;
         }
 
         public Builder<T> setFormat(Format format) {
@@ -370,6 +375,15 @@ public abstract class AbstractTexture implements Disposable {
         if (wasAlreadyDisposed) return;
         glDeleteTextures(texture);
         wasAlreadyDisposed = true;
+    }
+
+    @Override
+    public String toString() {
+        return "AbstractTexture{" +
+                "format=" + format +
+                ", type=" + type +
+                ", target=" + target +
+                '}';
     }
 
     @Override

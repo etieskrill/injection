@@ -4,8 +4,11 @@ import org.etieskrill.engine.common.ResourceLoadException;
 import org.etieskrill.engine.graphics.model.Material;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
+import org.etieskrill.engine.graphics.texture.AbstractTexture.Format;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.texture.Textures;
+import org.etieskrill.engine.util.FileUtils;
+import org.etieskrill.engine.util.FileUtils.TypedFile;
 import org.etieskrill.engine.util.Loaders;
 import org.joml.Vector2i;
 import org.joml.Vector4f;
@@ -21,12 +24,14 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.function.Supplier;
 
 import static org.etieskrill.engine.graphics.model.Material.Property.SHININESS;
 import static org.etieskrill.engine.graphics.model.Material.Property.*;
 import static org.etieskrill.engine.graphics.texture.AbstractTexture.Type.*;
+import static org.etieskrill.engine.util.FileUtils.splitTypeFromPath;
 import static org.lwjgl.assimp.Assimp.*;
 
 class MaterialLoader {
@@ -55,10 +60,10 @@ class MaterialLoader {
                 continue;
             }
 
-            AbstractTexture.Format format = switch (image.getType()) {
-                case 5 ->
-                        AbstractTexture.Format.RGB; //TODO these are not the S* variants, i think, but this needs some more pondering
-                case 6 -> AbstractTexture.Format.RGBA;
+            Format format = switch (image.getType()) {
+                case 5 -> Format.RGB; //TODO these are not the S* variants, i think, but this needs some more pondering
+                case 6 -> Format.RGBA;
+                case 10 -> Format.GRAY;
                 //if this fails, refer to java.awt.image.BufferedImage#getType(), the formats are a bit cryptic, and i'd rather throw an exception than try to guess formats
                 default -> throw new ResourceLoadException("Unknown texture format: '" + image.getType() + "'");
             };
@@ -76,9 +81,10 @@ class MaterialLoader {
             embeddedTextures.put("*" + i, tex);
             embeddedTextures.put(filePath, tex); //materials usually reference the standard form of embedded textures (*0, *1 etc.) but some formats sometimes just use the path
             //TODO it's probably more correct to translate paths - if they exist - to the embedded format using a separate map, but this should do fine for now
+            logger.trace("Loaded embedded texture no. {} {}: {}", i, filePath, tex);
         }
 
-        logger.debug("{} of {} embedded textures loaded", embeddedTextures.size(), scene.mNumTextures());
+        logger.debug("{} of {} embedded textures loaded", embeddedTextures.size() / 2, scene.mNumTextures());
     }
 
     private static AbstractTexture.Type determineType(String filePath) {
@@ -93,32 +99,51 @@ class MaterialLoader {
         return type;
     }
 
-    static void loadMaterials(AIScene scene, Model.Builder builder, Map<String, Texture2D.Builder> embeddedTextures) {
+    static void loadMaterials(AIScene scene, Model.Builder builder) {
         logger.debug("{} materials found", scene.mNumMaterials());
         PointerBuffer mMaterials = scene.mMaterials();
         for (int i = 0; i < scene.mNumMaterials(); i++) {
             logger.trace("Processing material {}", i);
-            builder.getMaterials().add(processMaterial(AIMaterial.create(mMaterials.get()), builder.getEmbeddedTextures(), builder.getName()));
+            builder.getMaterials().add(
+                    processMaterial(i, AIMaterial.create(
+                                    mMaterials.get()),
+                            builder.getEmbeddedTextures(),
+                            builder.getName())
+            );
         }
     }
 
-    private static Material processMaterial(AIMaterial aiMaterial, Map<String, Texture2D.Builder> embeddedTextures, String modelName) {
+    private static Material processMaterial(
+            int materialIndex,
+            AIMaterial aiMaterial,
+            Map<String, Texture2D.Builder> embeddedTextures,
+            String modelName
+    ) {
         Material.Builder material = new Material.Builder();
 
         for (AbstractTexture.Type type : new AbstractTexture.Type[]{
-                DIFFUSE, SPECULAR, EMISSIVE, HEIGHT, AbstractTexture.Type.SHININESS, NORMAL
-        })
-            addTexturesToMaterial(material, aiMaterial, type, embeddedTextures, modelName);
+                DIFFUSE, SPECULAR, EMISSIVE, HEIGHT, AbstractTexture.Type.SHININESS, NORMAL, METALNESS, DIFFUSE_ROUGHNESS
+        }) {
+            addTexturesToMaterial(materialIndex, material, aiMaterial, type, embeddedTextures, modelName);
+        }
 
-        int numProperties = addPropertiesToMaterial(material, aiMaterial);
+        addPropertiesToMaterial(material, aiMaterial);
 
         Material mat = material.build();
-        logger.trace("Added {} texture{} and {} propert{} to material", mat.getTextures().size(),
+        int numProperties = material.getProperties().size();
+        logger.debug("Added {} texture{} and {} propert{} to material", mat.getTextures().size(),
                 mat.getTextures().size() == 1 ? "" : "s", numProperties, numProperties == 1 ? "y" : "ies");
         return mat;
     }
 
-    private static void addTexturesToMaterial(Material.Builder material, AIMaterial aiMaterial, AbstractTexture.Type type, Map<String, Texture2D.Builder> embeddedTextures, String modelName) {
+    private static void addTexturesToMaterial(
+            int materialIndex,
+            Material.Builder material,
+            AIMaterial aiMaterial,
+            AbstractTexture.Type type,
+            Map<String, Texture2D.Builder> embeddedTextures,
+            String modelName
+    ) {
         AIString file = AIString.create();
 
         int aiTextureType = type.ai();
@@ -133,22 +158,28 @@ class MaterialLoader {
 
             //TODO i think using the loader by default here is warranted, since textures are separate files, and
             // more often than not the bulk redundant data (probably), i should add an option to switch this off tho
-            String textureName = modelName + "_" + type.name().toLowerCase() + "_" + i;
-            String textureFile = file.dataString();
-            String[] splitTextureFile = textureFile.split("/");
-            String textureFileName = splitTextureFile[splitTextureFile.length - 1];
+            String textureName = modelName + "_mat" + materialIndex + "_" + type.name().toLowerCase() + "_" + i;
+            TypedFile textureFile = splitTypeFromPath(file.dataString());
 
             Supplier<AbstractTexture> supplier;
-            if (embeddedTextures.containsKey(textureFile)) {
+            if (embeddedTextures.containsKey(textureFile.getFullPath())) {
                 logger.trace("Texture '{}' is loaded from embedded textures", textureName);
-                supplier = () -> embeddedTextures.get(textureFile).setType(type).build();
-            } else if (Textures.exists(textureFile)) {
+                supplier = () -> {
+                    var textureBuilder = embeddedTextures.get(textureFile.getFullPath());
+                    return textureBuilder
+                            //textures having special formats (GL_RGB_{F16,I8,5} etc.) are not carried over by the below
+                            //call, which is probably fine for embedded textures
+                            .setFormat(Format.fromChannelsAndType(textureBuilder.getFormat().getChannels(), type))
+                            .setType(type)
+                            .build();
+                };
+            } else if (Textures.exists(textureFile.getFullPath())) {
                 logger.trace("Texture '{}' is loaded from file {}", textureName, textureFile);
-                supplier = () -> Textures.ofFile(textureFile, type);
-            } else if (Textures.exists(textureFileName)) {
+                supplier = () -> Textures.ofFile(textureFile.getFullPath(), type);
+            } else if (Textures.exists(textureFile.getName())) {
                 //TODO this is prone to breaking due to the undivided nature of model data/textures, should be proofed a bit more
-                logger.debug("Texture '{}' is loaded as fallback based on filename from file {}", textureFileName, textureFile);
-                supplier = () -> Textures.ofFile(textureFileName, type);
+                logger.debug("Texture '{}' is loaded as fallback based on filename from file {}", textureFile.getName(), textureFile);
+                supplier = () -> Textures.ofFile(textureFile.getName(), type);
             } else if (embeddedTextures.values().stream()
                     .map(AbstractTexture.Builder::getType)
                     .anyMatch(builderType -> builderType == type)) {
@@ -171,14 +202,11 @@ class MaterialLoader {
         logger.trace("{} {} textures loaded", validTextures, type.name().toLowerCase());
     }
 
-    private static int addPropertiesToMaterial(Material.Builder material, AIMaterial aiMaterial) {
-        int validProperties = 0;
-
+    private static void addPropertiesToMaterial(Material.Builder material, AIMaterial aiMaterial) {
         //String properties
         AIString matName = AIString.create();
         if (aiReturn_SUCCESS == aiGetMaterialString(aiMaterial, AI_MATKEY_NAME, aiTextureType_NONE, 0, matName)) {
             material.setProperty(Material.Property.NAME, matName.dataString());
-            validProperties++;
         }
 
         //Vector4f properties
@@ -189,23 +217,21 @@ class MaterialLoader {
             if (aiReturn_SUCCESS == aiGetMaterialColor(aiMaterial, property.ai(), aiTextureType_NONE, 0, colour)) {
                 Vector4fc colourProperty = new Vector4f(colour.r(), colour.g(), colour.b(), colour.a());
                 material.setProperty(property, colourProperty);
-                validProperties++;
             }
         }
 
         //Single value properties
         PointerBuffer propBuffer = BufferUtils.createPointerBuffer(1);
         for (Material.Property property : new Material.Property[]{
-                INTENSITY_EMISSIVE, SHININESS, SHININESS_STRENGTH, METALLIC_FACTOR, OPACITY
+                INTENSITY_EMISSIVE, SHININESS, SHININESS_STRENGTH, METALLIC_FACTOR, OPACITY, TRANSPARENCY, BLEND_FUNCTION
         }) {
             if (aiReturn_SUCCESS == aiGetMaterialProperty(aiMaterial, property.ai(), aiTextureType_NONE, 0, propBuffer)) {
                 material.setProperty(property, AIMaterialProperty.create(propBuffer.get()).mData().getFloat());
                 propBuffer.rewind();
-                validProperties++;
             }
         }
 
-        return validProperties;
+        logger.trace("Loaded properties: {}", material.getProperties());
     }
 
 }

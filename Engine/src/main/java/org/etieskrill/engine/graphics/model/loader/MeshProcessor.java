@@ -6,6 +6,7 @@ import org.joml.Vector2f;
 import org.joml.Vector2fc;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
+import org.lwjgl.BufferUtils;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.assimp.AIFace;
 import org.lwjgl.assimp.AIMesh;
@@ -14,6 +15,8 @@ import org.lwjgl.assimp.AIVector3D;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,8 +24,9 @@ import java.util.stream.Stream;
 
 import static org.etieskrill.engine.graphics.model.loader.AnimationLoader.getBones;
 import static org.lwjgl.assimp.Assimp.*;
+import static org.lwjgl.util.meshoptimizer.MeshOptimizer.meshopt_simplify;
 
-class MeshProcessor {
+public class MeshProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(MeshProcessor.class);
 
@@ -182,6 +186,28 @@ class MeshProcessor {
         }
 
         return new AABB(new Vector3f(minX, minY, minZ), new Vector3f(maxX, maxY, maxZ));
+    }
+
+    public static void optimiseMesh(Mesh mesh, int targetIndexCount, float maxDeformation) {
+        ByteBuffer vertexData = mesh.getVbo().getData();
+        IntBuffer indexData = mesh.getEbo().getData().asIntBuffer();
+
+        ByteBuffer newIndexData = BufferUtils.createByteBuffer(Integer.BYTES * indexData.capacity());
+
+        FloatBuffer errorBuffer = BufferUtils.createFloatBuffer(1);
+        long numIndices = meshopt_simplify(newIndexData.asIntBuffer(), indexData, vertexData.asFloatBuffer(),
+                vertexData.capacity() / Vertex.COMPONENT_BYTES, Vertex.COMPONENT_BYTES,
+                targetIndexCount, maxDeformation, 0, errorBuffer);
+
+        logger.trace("Original mesh has {} vertices and {} indices",
+                vertexData.capacity() / Vertex.COMPONENT_BYTES, indexData.capacity());
+        logger.trace("Optimised mesh has {} indices and a deformation of {}% (max {}%)", numIndices,
+                "%5.3f".formatted(100 * errorBuffer.get()), "%5.3f".formatted(100 * maxDeformation));
+        logger.debug("Mesh was compressed by a factor of {}",
+                "%4.1f".formatted((float) indexData.capacity() / numIndices));
+
+        mesh.getEbo().setData(newIndexData);
+        mesh.setNumIndices((int) numIndices);
     }
 
 }

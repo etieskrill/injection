@@ -13,7 +13,8 @@ public class Mesh implements Disposable {
 
     private final Material material;
     private final List<Bone> bones;
-    private final int vao, numIndices;
+    private final int vao;
+    private int numIndices;
     private final BufferObject vbo, ebo;
     private final AABB boundingBox;
     private final DrawMode drawMode;
@@ -69,8 +70,21 @@ public class Mesh implements Disposable {
         return numIndices;
     }
 
+    //TODO immutable
+    public void setNumIndices(int numIndices) {
+        this.numIndices = numIndices;
+    }
+
     public int getVao() {
         return vao;
+    }
+
+    public BufferObject getVbo() {
+        return vbo;
+    }
+
+    public BufferObject getEbo() {
+        return ebo;
     }
 
     public AABB getBoundingBox() {

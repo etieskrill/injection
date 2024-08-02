@@ -57,7 +57,7 @@ public class PlayerEntity extends Entity {
         animator.play();
         addComponent(animator);
 
-        addComponent(new Snippets(List.of(
+        addComponent(new Scripts(List.of(
                 this::rotatePlayerToHeading,
                 this::updateWalkingTransition
         )));

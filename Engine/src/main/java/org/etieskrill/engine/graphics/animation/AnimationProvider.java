@@ -197,10 +197,14 @@ public class AnimationProvider {
             throw new IllegalArgumentException("Animation contains bones which are not present in the model");
         }
 
+        List<Bone> nonAnimatedBones = model.getBones().stream()
+                .filter(bone -> !bones.contains(bone))
+                .toList();
+        if (nonAnimatedBones.size() == bones.size()) {
+            logger.warn("Animation does not animate any bones");
+            return;
+        }
         logger.atTrace().log(() -> {
-            List<Bone> nonAnimatedBones = model.getBones().stream()
-                    .filter(bone -> !bones.contains(bone))
-                    .toList();
             if (!nonAnimatedBones.isEmpty())
                 return "Bones contain no animation data: " + nonAnimatedBones;
             else
