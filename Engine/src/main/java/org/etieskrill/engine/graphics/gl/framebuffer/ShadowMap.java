@@ -63,7 +63,7 @@ public abstract class ShadowMap<T extends AbstractTexture & FrameBufferAttachmen
     @Override
     public void bind(Binding binding) {
         super.bind(binding);
-        glViewport(0, 0, getSize().x(), getSize().y());
+        glViewport(0, 0, getSize().x(), getSize().y()); //TODO do in framebuffer?
     }
 
     public T getTexture() {

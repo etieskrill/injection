@@ -13,7 +13,9 @@ import org.slf4j.LoggerFactory;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.etieskrill.engine.config.ResourcePaths.SHADER_PATH;
 import static org.etieskrill.engine.graphics.gl.GLUtils.*;
@@ -367,7 +369,7 @@ public abstract class ShaderProgram implements Disposable {
 
         if (location == -1) {
             if (!missingUniforms.contains(name)) {
-                logger.warn("Attempted to set nonexistent uniform: " + name);
+                logger.debug("Attempted to set nonexistent uniform: " + name);
                 missingUniforms.add(name);
             }
             return;
@@ -486,23 +488,24 @@ public abstract class ShaderProgram implements Disposable {
         private final int location;
 
         public enum Type {
-            INT(Integer.class),
-            FLOAT(Float.class),
-            BOOLEAN(Boolean.class),
-            VEC2(Vector2f.class),
-            VEC2I(Vector2i.class),
-            VEC3(Vector3f.class),
-            VEC4(Vector4f.class),
-            MAT3(Matrix3f.class),
-            MAT4(Matrix4f.class),
+            INT(Integer.class, () -> 0),
+            FLOAT(Float.class, () -> 0f),
+            BOOLEAN(Boolean.class, () -> false),
+            VEC2(Vector2f.class, Vector2f::new),
+            VEC2I(Vector2i.class, Vector2i::new),
+            VEC3(Vector3f.class, Vector3f::new),
+            VEC4(Vector4f.class, Vector4f::new),
+            MAT3(Matrix3f.class, Matrix3f::new),
+            MAT4(Matrix4f.class, Matrix4f::new),
 
-            SAMPLER2D(Integer.class),
-            SAMPLER_CUBE_MAP(Integer.class),
-            SAMPLER_CUBE_MAP_ARRAY(Integer.class),
+            SAMPLER2D(Integer.class, () -> 0),
+            SAMPLER_CUBE_MAP(Integer.class, () -> 0),
+            SAMPLER_CUBE_MAP_ARRAY(Integer.class, () -> 0),
 
-            STRUCT(UniformMappable.class);
+            STRUCT(UniformMappable.class, null);
 
             private final Class<?> type;
+            private final Supplier<?> defaultValueGenerator;
 
             private static final Type[] values = values();
 
@@ -514,12 +517,17 @@ public abstract class ShaderProgram implements Disposable {
                 return null;
             }
 
-            Type(Class<?> type) {
+            <T> Type(Class<T> type, Supplier<T> defaultValueGenerator) {
                 this.type = type;
+                this.defaultValueGenerator = defaultValueGenerator;
             }
 
             public Class<?> get() {
                 return type;
+            }
+
+            Object getDefaultValue() {
+                return defaultValueGenerator.get();
             }
         }
 
@@ -627,7 +635,7 @@ public abstract class ShaderProgram implements Disposable {
         int location = glGetUniformLocation(programID, name);
         if (location != INVALID_UNIFORM_LOCATION) {
             arrayUniforms.put(name, new ArrayUniform(name, size, type, location));
-            if (defaultValues) setStandardValue(type, location);
+            if (defaultValues) setStandardArrayValue(type, location, size);
             logger.trace("Registered array uniform '{}'", name);
             return;
         }
@@ -640,18 +648,12 @@ public abstract class ShaderProgram implements Disposable {
     }
 
     private void setStandardValue(Uniform.Type type, int location) {
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-            switch (type) {
-                case INT, BOOLEAN, SAMPLER2D -> glUniform1i(location, 0);
-                case FLOAT -> glUniform1f(location, 0f);
-                case VEC2 -> glUniform2fv(location, stack.callocFloat(2));
-                case VEC2I -> glUniform2iv(location, stack.callocInt(2));
-                case VEC3 -> glUniform3fv(location, stack.callocFloat(3));
-                case VEC4 -> glUniform4fv(location, stack.callocFloat(4));
-                case MAT3 -> glUniformMatrix3fv(location, false, new Matrix3f().identity().get(stack.callocFloat(9)));
-                case MAT4 -> glUniformMatrix4fv(location, false, new Matrix4f().identity().get(stack.callocFloat(16)));
-            }
-        }
+        setUniformValue(type, location, type.getDefaultValue());
+    }
+
+    private void setStandardArrayValue(Uniform.Type type, int location, int size) {
+        Object[] defaultValues = Stream.generate(type.defaultValueGenerator).limit(size).toArray();
+        setUniformArrayValue(type, location, defaultValues);
     }
 
     protected void disableStrictUniformChecking() {

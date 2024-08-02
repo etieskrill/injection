@@ -40,16 +40,17 @@ struct SpotLight {
     float quadratic;
 };
 
-struct Material {
+uniform struct Material {
     sampler2D diffuse0;
-    sampler2D specular0;
-    sampler2D normal0;
     bool specularTexture;
+    sampler2D specular0;
     float shininess;
     float specularity;
+    sampler2D normal0;
+    bool emissiveTexture;
     sampler2D emissive0;
     samplerCube cubemap0;
-};
+} material;
 
 in Data {
     vec3 normal;
@@ -67,8 +68,6 @@ uniform mat3 normal;
 
 uniform bool normalMapped;
 uniform bool blinnPhong;
-
-uniform Material material;
 
 uniform DirectionalLight globalLights[NR_DIRECTIONAL_LIGHTS];
 uniform PointLight lights[NR_POINT_LIGHTS];
@@ -117,8 +116,10 @@ void main()
         combinedLight += pointLight;
     }
 
-    //    vec4 emission = texture(material.emissive0, vert_out.texCoord);
-    //    combinedLight += vec4(emission.rgb, 0);
+    if (material.emissiveTexture) {
+        vec4 emission = texture(material.emissive0, vert_out.texCoord);
+        combinedLight = vec4(emission.rgb, 0);
+    }
 
     //TODO pack reflection mix factor into material property. until reflection maps are a thing, anyway
     //    combinedLight += getCubeReflection(normalVec);
@@ -184,10 +185,11 @@ vec4 getSpecular(vec3 lightDirection, vec3 lightPosition, vec3 normal, vec3 frag
         specularFactor = dot(viewDirection, reflectionDirection);
     }
 
-    float specularIntensity = material.specularity * pow(clamp(specularFactor, 0.0, 1.0), material.shininess);
-    vec4 specular = vec4(lightSpecular, 1.0) * specularIntensity;
+    float shininess = material.shininess > 0 ? material.shininess : 64;
+    float specularIntensity = material.specularity * pow(max(specularFactor, 0.0), shininess);
+    vec3 specular = lightSpecular * specularIntensity;
     if (material.specularTexture) specular *= texture(material.specular0, vert_out.texCoord);
-    return specular;
+    return vec4(specular, 1.0);
 }
 
 vec4 getCubeReflection(vec3 normal) {

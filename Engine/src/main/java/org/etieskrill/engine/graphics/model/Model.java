@@ -5,6 +5,7 @@ import org.etieskrill.engine.entity.component.AABB;
 import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.entity.component.TransformC;
 import org.etieskrill.engine.graphics.animation.Animation;
+import org.etieskrill.engine.graphics.model.loader.MeshProcessor;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -16,13 +17,14 @@ import java.util.*;
 import java.util.function.Supplier;
 
 import static org.etieskrill.engine.graphics.model.loader.Loader.loadModel;
+import static org.etieskrill.engine.graphics.model.loader.MeshProcessor.optimiseMesh;
 
 //TODO refactor: reduce to data in anticipation of ces
 //               find most comprehensive solution for multi-entry-point builders
 public class Model implements Disposable {
-    
+
     private static final Supplier<Model> ERROR_MODEL = () -> new Builder("cube.obj").build();
-    
+
     private static final Logger logger = LoggerFactory.getLogger(Model.class);
 
     private final List<Node> nodes;
@@ -34,7 +36,7 @@ public class Model implements Disposable {
     private final AABB boundingBox;
 
     private final String name;
-    
+
     private final Transform transform;
     private final Transform initialTransform;
     private final Transform finalTransform;
@@ -44,7 +46,7 @@ public class Model implements Disposable {
 
     //TODO move to entity eventually
     private boolean enabled;
-    
+
     public static class Builder {
         protected final String file;
         protected String name;
@@ -66,10 +68,11 @@ public class Model implements Disposable {
         protected Transform initialTransform = new Transform();
 
         protected AABB boundingBox;
-        
+
         public Builder(@NotNull String file) {
             if (file.isBlank()) throw new IllegalArgumentException("File name cannot be blank");
-            if (file.contains("/")) throw new IllegalArgumentException("Custom folder structure not implemented yet: " + file);
+            if (file.contains("/"))
+                throw new IllegalArgumentException("Custom folder structure not implemented yet: " + file);
             this.file = file;
             this.name = file.split("\\.")[0];
 
@@ -79,6 +82,17 @@ public class Model implements Disposable {
             this.animations = new LinkedList<>();
             this.bones = new ArrayList<>();
             this.embeddedTextures = new HashMap<>();
+
+            loadModelData();
+        }
+
+        protected void loadModelData() {
+            try {
+                logger.debug("Loading model {} from file {}", name, file);
+                loadModel(this);
+            } catch (IOException e) {
+                logger.warn("Could not load model {} from file {}", name, file, e);
+            }
         }
 
         public String getFile() {
@@ -159,14 +173,14 @@ public class Model implements Disposable {
             this.culling = false;
             return this;
         }
-    
+
         public Builder hasTransparency() {
             transparency = true;
             return this;
         }
-        
+
         //TODO add refractive toggle/mode (NONE, GLASS, WATER etc.)
-        
+
         public Builder setTransform(Transform transform) {
             this.transform = transform;
             return this;
@@ -181,38 +195,46 @@ public class Model implements Disposable {
             this.boundingBox = boundingBox;
         }
 
-        public @NotNull Model build() {
-            try {
-                logger.debug("Loading model {} from file {}", name, file);
-                loadModel(this);
-                return new Model(this);
-            } catch (IOException e) {
-                logger.info("Exception while loading model, using default: ", e);
-                return ERROR_MODEL.get();
+        public Builder optimiseMeshes() {
+            return optimiseMeshes(5000, 0.001f);
+        }
+
+        public Builder optimiseMeshes(int targetIndexCount, float maxDeformation) {
+            for (Mesh mesh : meshes) {
+                optimiseMesh(mesh, targetIndexCount, maxDeformation);
             }
+            return this;
+        }
+
+        public @NotNull Model build() {
+            return new Model(this);
         }
     }
-    
+
     public static class MemoryBuilder extends Builder {
         public MemoryBuilder(@NotNull String name) {
             super(name);
         }
-    
+
+        @Override
+        protected void loadModelData() {
+        }
+
         @Override
         public @NotNull Model build() {
             logger.debug("Loading model {} from memory", name);
             return new Model(this);
         }
     }
-    
+
     public static Model ofFile(String file) {
         return ofFile(file, true);
     }
-    
+
     public static Model ofFile(String file, boolean flipUVs) {
         return new Builder(file).setFlipUVs(flipUVs).build();
     }
-    
+
     /**
      * Copy constructor, for ... not cloning.
      */
@@ -239,7 +261,7 @@ public class Model implements Disposable {
 
         this.enabled = model.enabled;
     }
-    
+
     private Model(Builder builder) {
         this.nodes = Collections.unmodifiableList(builder.nodes);
         this.materials = Collections.unmodifiableList(builder.materials);
@@ -247,17 +269,17 @@ public class Model implements Disposable {
         this.bones = Collections.unmodifiableList(builder.bones);
         this.boundingBox = builder.boundingBox;
         this.name = builder.name;
-    
+
         this.culling = builder.culling;
         this.transparency = builder.transparency;
-        
+
         this.transform = new Transform(builder.transform);
         this.initialTransform = new Transform(builder.initialTransform);
         this.finalTransform = new Transform();
 
         enable();
     }
-    
+
     public AABB getBoundingBox() {
         return boundingBox;
     }
@@ -295,31 +317,31 @@ public class Model implements Disposable {
                 .applyRotation(quat -> quat.mul(initialTransform.getRotation()))
                 .applyScale(scale -> scale.mul(initialTransform.getScale()));
     }
-    
+
     public boolean doCulling() {
         return culling;
     }
-    
+
     public boolean hasTransparency() {
         return transparency;
     }
-    
+
     public boolean isEnabled() {
         return enabled;
     }
-    
+
     public void enable() {
         enabled = true;
     }
-    
+
     public void disable() {
         enabled = false;
     }
 
     @Override
     public void dispose() {
-        nodes.getFirst().dispose(); //Node trees dispose themselves recursively
+        if (!nodes.isEmpty()) nodes.getFirst().dispose(); //Node trees dispose themselves recursively
         materials.forEach(Material::dispose);
     }
-    
+
 }

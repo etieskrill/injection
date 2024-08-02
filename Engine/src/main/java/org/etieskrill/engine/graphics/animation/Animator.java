@@ -29,6 +29,7 @@ public class Animator {
     private final List<AnimationProvider> animationProviders;
     private final List<List<Transform>> providerTransforms;
     private final List<TransformC> transforms;
+    private Matrix4fc[] transformsArray;
 
     private final AnimationMixer animationMixer;
     private final AnimationAssembler animationAssembler;
@@ -70,8 +71,11 @@ public class Animator {
             @NotNull AnimationAssembler animationAssembler,
             @NotNull Model model
     ) {
-        logger.info("Loading {} animation{}: {}", animationProviders.size(), animationProviders.size() == 1 ? "" : "s",
-                animationProviders.stream().map(AnimationProvider::getAnimation).map(Animation::getName).toList());
+        if (!animationProviders.isEmpty()) {
+            logger.info("Loading {} animation{}: {}",
+                    animationProviders.size(), animationProviders.size() == 1 ? "" : "s",
+                    animationProviders.stream().map(AnimationProvider::getAnimation).map(Animation::getName).toList());
+        }
 
         this.animationProviders = animationProviders;
         this.providerTransforms = new ArrayList<>(animationProviders.size());
@@ -272,6 +276,16 @@ public class Animator {
 
     public List<Matrix4fc> getTransformMatrices() {
         return transforms.stream().map(TransformC::getMatrix).toList();
+    }
+
+    public Matrix4fc[] getTransformMatricesArray() {
+        if (transformsArray == null) {
+            transformsArray = new Matrix4fc[MAX_BONES];
+        }
+        for (int i = 0; i < transforms.size(); i++) {
+            transformsArray[i] = transforms.get(i).getMatrix();
+        }
+        return transformsArray;
     }
 
     public AnimationMixer getAnimationMixer() {

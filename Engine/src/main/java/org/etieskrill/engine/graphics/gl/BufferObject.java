@@ -3,6 +3,7 @@ package org.etieskrill.engine.graphics.gl;
 import org.etieskrill.engine.Disposable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.lwjgl.BufferUtils;
 
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
@@ -131,6 +132,14 @@ public class BufferObject implements Disposable {
 
     public void bind() {
         glBindBuffer(target.gl(), id);
+    }
+
+    public ByteBuffer getData() {
+        bind();
+        int size = glGetBufferParameteri(target.gl(), GL_BUFFER_SIZE);
+        ByteBuffer buffer = BufferUtils.createByteBuffer(size);
+        glGetBufferSubData(target.gl(), 0, buffer);
+        return buffer;
     }
 
     public void setData(ByteBuffer data) {

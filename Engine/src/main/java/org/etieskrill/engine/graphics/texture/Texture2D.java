@@ -25,6 +25,8 @@ public class Texture2D extends AbstractTexture implements FrameBufferAttachment 
     private final Vector2ic size;
 
     public static final class FileBuilder extends Builder {
+        private final String file;
+
         /**
          * Reads image attributes from the specified file and constructs a texture builder.
          *
@@ -32,6 +34,7 @@ public class Texture2D extends AbstractTexture implements FrameBufferAttachment 
          * @param type the type of texture, if any
          */
         public FileBuilder(String file, Type type) {
+            this.file = file;
             this.type = type;
 
             TextureData data = loadFileOrDefault(file, type);
@@ -44,6 +47,16 @@ public class Texture2D extends AbstractTexture implements FrameBufferAttachment 
         @Override
         protected void freeResources() {
             stbi_image_free(textureData);
+        }
+
+        @Override
+        public String toString() {
+            return "FileBuilder{" +
+                    "file='" + file + '\'' +
+                    ", type=" + type +
+                    ", pixelSize=" + pixelSize +
+                    ", format=" + format +
+                    '}';
         }
     }
 
@@ -58,6 +71,15 @@ public class Texture2D extends AbstractTexture implements FrameBufferAttachment 
         protected void freeResources() {
             //TODO free buffer if possible
         }
+
+        @Override
+        public String toString() {
+            return "BufferBuilder{" +
+                    "type=" + type +
+                    ", pixelSize=" + pixelSize +
+                    ", format=" + format +
+                    '}';
+        }
     }
 
     public static final class BlankBuilder extends Builder {
@@ -69,6 +91,15 @@ public class Texture2D extends AbstractTexture implements FrameBufferAttachment 
 
         @Override
         protected void freeResources() {
+        }
+
+        @Override
+        public String toString() {
+            return "BlankBuilder{" +
+                    "type=" + type +
+                    ", pixelSize=" + pixelSize +
+                    ", format=" + format +
+                    '}';
         }
     }
 
@@ -82,7 +113,7 @@ public class Texture2D extends AbstractTexture implements FrameBufferAttachment 
         protected Texture2D bufferTextureData() {
             logger.debug("Loading {}x{} {}-bit {} {} texture from {}", pixelSize.x(), pixelSize.y(),
                     NR_BITS_PER_COLOUR_CHANNEL * format.getChannels(), format.name().toLowerCase(),
-                    type.name().toLowerCase(), getClass().getSimpleName());
+                    type.name().toLowerCase(), this);
 
             Texture2D texture = new Texture2D(this);
             texture.bind(0);

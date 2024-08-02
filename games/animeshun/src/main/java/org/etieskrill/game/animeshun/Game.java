@@ -40,6 +40,9 @@ import static org.etieskrill.engine.graphics.model.loader.Loader.loadModelAnimat
 import static org.etieskrill.engine.input.InputBinding.Trigger.ON_PRESS;
 import static org.etieskrill.engine.input.InputBinding.Trigger.PRESSED;
 import static org.joml.Math.toRadians;
+import static org.lwjgl.opengl.GL11C.glDisable;
+import static org.lwjgl.opengl.GL11C.glEnable;
+import static org.lwjgl.opengl.GL30C.GL_FRAMEBUFFER_SRGB;
 
 public class Game {
 
@@ -175,7 +178,7 @@ public class Game {
         cube = Loaders.ModelLoader.get().load("cube", () -> new Model.Builder("cube.obj").disableCulling().build());
         cube.getTransform().setScale(10).setPosition(new Vector3f(2, -6, 0));
 
-        globalLight = new DirectionalLight(new Vector3f(1, 1, 1), new Vector3f(2), new Vector3f(2), new Vector3f(2));
+        globalLight = new DirectionalLight(new Vector3f(1, -1, 1), new Vector3f(2), new Vector3f(2), new Vector3f(2));
 
         pacer = new SystemNanoTimePacer(1d / FRAMERATE);
 
@@ -325,6 +328,7 @@ public class Game {
 
             renderer.prepare();
 
+            vampyShader.setViewPosition(camera.getPosition());
             renderer.render(vampy, vampyShader, camera.getCombined());
 //            vampyBB.getTransform().set(vampy.getTransform());
 //            renderer.renderWireframe(vampyBB, vampyShader, camera.getCombined());

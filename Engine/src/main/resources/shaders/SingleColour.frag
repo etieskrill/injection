@@ -1,10 +1,10 @@
 #version 330 core
 
-out vec4 oColour;
+out vec4 fragColour;
 
 uniform vec4 colour;
 
 void main()
 {
-    oColour = colour;
+    fragColour = colour;
 }

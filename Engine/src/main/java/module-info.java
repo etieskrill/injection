@@ -4,6 +4,7 @@ module injection.engine {
     requires org.lwjgl.glfw;
     requires org.lwjgl.opengl;
     requires org.lwjgl.stb;
+    requires org.lwjgl.meshoptimizer;
 
     requires org.joml;
 

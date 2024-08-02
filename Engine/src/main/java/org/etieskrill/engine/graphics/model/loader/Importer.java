@@ -55,7 +55,7 @@ class Importer {
                         (options.flipTextureCoordinates() ? aiProcess_FlipUVs : 0) |
 //                        aiProcess_OptimizeMeshes |
 //                        aiProcess_OptimizeGraph |
-//                        aiProcess_JoinIdenticalVertices |
+                        aiProcess_JoinIdenticalVertices |
 //                        aiProcess_RemoveRedundantMaterials |
 //                        aiProcess_FindInvalidData |
 //                        aiProcess_GenUVCoords |

@@ -2,6 +2,7 @@ package org.etieskrill.engine.entity;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import static org.etieskrill.engine.util.ClassUtils.getSimpleName;
@@ -24,9 +25,11 @@ public class Entity {
         return (T) components.get(type);
     }
 
-    public void addComponent(Object component) {
+    public Entity addComponent(Object component) {
         if (components.putIfAbsent(component.getClass(), component) != null)
             throw new IllegalStateException("Entity already has component of type '" + getSimpleName(component) + "'");
+
+        return this;
     }
 
     public boolean hasComponents(Class<?>... components) {
@@ -39,6 +42,19 @@ public class Entity {
                 "id=" + id +
                 ", components=" + components.keySet() +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Entity entity = (Entity) o;
+        return id == entity.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 
 }

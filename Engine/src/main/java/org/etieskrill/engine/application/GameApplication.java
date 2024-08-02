@@ -1,5 +1,6 @@
 package org.etieskrill.engine.application;
 
+import org.etieskrill.engine.config.InjectionConfig;
 import org.etieskrill.engine.entity.system.EntitySystem;
 import org.etieskrill.engine.graphics.gl.GLRenderer;
 import org.etieskrill.engine.graphics.texture.font.TrueTypeFont;
@@ -32,6 +33,10 @@ public abstract class GameApplication {
 
     private double avgCpuTime;
     private final ArrayDeque<Double> cpuTimes;
+
+    static {
+        InjectionConfig.init();
+    }
 
     public GameApplication(int frameRate, Window window) {
         this.window = window;

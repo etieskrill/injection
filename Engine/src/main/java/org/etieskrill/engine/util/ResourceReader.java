@@ -1,6 +1,8 @@
 package org.etieskrill.engine.util;
 
 import org.etieskrill.engine.common.ResourceLoadException;
+import org.etieskrill.engine.input.Input;
+import org.lwjgl.BufferUtils;
 
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -9,6 +11,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ResourceReader {
+
+    public static InputStream getClasspathResourceAsStream(String name) {
+        InputStream stream = ClassLoader.getSystemResourceAsStream(name);
+        if (stream == null) {
+            throw new ResourceLoadException("Could not load %s from classpath".formatted(name));
+        }
+        return stream;
+    }
 
     public static String getClasspathResource(String name) {
         try (InputStream inputStream = ResourceReader.class.getClassLoader().getResourceAsStream(name)) {
@@ -31,7 +41,7 @@ public class ResourceReader {
             if (inputStream == null)
                 throw new ResourceLoadException("Resource %s could not be located or access was denied".formatted(name));
             byte[] bytes = inputStream.readAllBytes();
-            ByteBuffer buffer = ByteBuffer.allocateDirect(bytes.length);
+            ByteBuffer buffer = BufferUtils.createByteBuffer(bytes.length);
             return buffer.put(bytes).rewind();
         } catch (IOException e) {
             throw new ResourceLoadException(e);

@@ -75,6 +75,7 @@ public class Shaders {
             addUniform("textureScale", VEC2, new Vector2f(1f));
 
             addUniform("material.specularTexture", BOOLEAN);
+            addUniform("material.emissiveTexture", BOOLEAN);
             addUniform("normalMapped", BOOLEAN);
             addUniform("blinnPhong", BOOLEAN, true);
 

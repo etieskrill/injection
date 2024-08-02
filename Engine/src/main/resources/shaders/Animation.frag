@@ -27,9 +27,12 @@ struct PointLight {
 
 struct Material {
     sampler2D diffuse0;
+    bool specularTexture;
     sampler2D specular0;
     float shininess;
     float specularity;
+    sampler2D normal0;
+    bool emissiveTexture;
     sampler2D emissive0;
     samplerCube cubemap0;
 };
@@ -38,6 +41,8 @@ layout (location = 0) out vec4 fragColour;
 layout (location = 1) out vec4 bloomColour;
 
 in vec3 tNormal;
+uniform bool normalMapped;
+in mat3 tbn;
 in vec2 tTextureCoords;
 in vec3 tFragPos;
 
@@ -65,24 +70,35 @@ vec4 getSpecular(vec3 lightDirection, vec3 normal, vec3 fragPosition, vec3 viewP
 //TODO shadow mapping
 void main()
 {
+    if (texture(material.diffuse0, tTextureCoords).a == 0) discard;
+
+    vec3 normal;
+    if (normalMapped) {
+        normal = texture(material.normal0, tTextureCoords).xyz * 2.0 - 1.0;
+        normal = normalize(tbn * normalize(normal));
+    } else {
+        normal = tNormal;
+    }
+
     vec4 combinedLight = vec4(0.0);
     for (int i = 0; i < NR_DIRECTIONAL_LIGHTS; i++) {
-        vec4 dirLight = getDirLight(globalLights[i], tNormal, tFragPos, viewPosition, 0);
+        vec4 dirLight = getDirLight(globalLights[i], normal, tFragPos, viewPosition, 1);
         combinedLight += dirLight;
     }
     for (int i = 0; i < NR_POINT_LIGHTS; i++) {
-        vec4 pointLight = getPointLight(lights[i], tNormal, tFragPos, viewPosition, 0);
+        vec4 pointLight = getPointLight(lights[i], normal, tFragPos, viewPosition, 1);
         combinedLight += pointLight;
     }
 
-    //    if (material.emissiveTexture) {
-    //        combinedLight += vec4(texture(material.emissive0, tTextureCoords).rgb, 0);
-    //    }
+    if (material.emissiveTexture) {
+        vec4 emissive = texture(material.emissive0, tTextureCoords);
+        combinedLight += vec4(emissive.rgb, 0);
+    }
 
     fragColour = combinedLight;
 
     float brightness = dot(combinedLight.rgb, vec3(0.2126, 0.7152, 0.0722));
-    if (brightness > 2.0) bloomColour = combinedLight;
+    if (brightness > 1.0) bloomColour = combinedLight;
     else bloomColour = vec4(0.0, 0.0, 0.0, 1.0);
 
     if (uShowBoneSelector != 4) {
@@ -136,9 +152,10 @@ vec4 getSpecular(vec3 lightDirection, vec3 normal, vec3 fragPosition, vec3 viewP
     float specularFactor;
 
     vec3 halfway = normalize(lightDirection + viewDirection);
-    specularFactor = dot(normal, halfway);
+    specularFactor = max(dot(normal, halfway), 0.0);
 
-    float specularIntensity = material.specularity * pow(clamp(specularFactor, 0.0, 1.0), material.shininess);
-    vec4 specular = vec4(lightSpecular, 1.0) * specularIntensity;
-    return specular;
+    float specularIntensity = material.specularity * pow(specularFactor, material.shininess);
+    vec3 specular = lightSpecular;
+    if (material.specularTexture) specular *= texture(material.specular0, tTextureCoords).rgb;
+    return vec4(specular * specularIntensity, 1.0);
 }

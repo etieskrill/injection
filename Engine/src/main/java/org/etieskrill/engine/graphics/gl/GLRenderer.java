@@ -175,6 +175,7 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
             shader.setUniform("normal", transformMatrix.invert().transpose().get3x3(new Matrix3f(stack.callocFloat(9))), false);
         }
 
+        //TODO move culling and transparency to and do per mesh, detect transparency in material loader via properties or based on if diffuse has alpha channel
         if (!model.doCulling()) glDisable(GL_CULL_FACE);
         if (model.hasTransparency()) glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         shader.start();
@@ -248,6 +249,7 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
                         case SHININESS -> shininess++;
                         case SHADOW -> shadow++;
                         case UNKNOWN -> throw new IllegalStateException("Texture has invalid type");
+                        default -> 0; //FIXME
                     };
                 }
                 case ARRAY -> uniform += "array";
@@ -272,7 +274,9 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
         shader.setUniform("material.emissiveIntensity", material.getProperties().getOrDefault(INTENSITY_EMISSIVE, 0), false);
         shader.setUniform("material.opacity", material.getProperties().getOrDefault(OPACITY, 1), false);
 
+        shader.setUniform("material.hasDiffuse", diffuse > 0, false);
         shader.setUniform("material.specularTexture", specular > 0, false);
+        shader.setUniform("material.emissiveTexture", emissive > 0, false);
         if (shininess == 0) //TODO this property thingies NEED type safety
             shader.setUniform("material.shininess", (float) material.getProperties().getOrDefault(SHININESS, 64f), false);
         shader.setUniform("material.specularity", (float) material.getProperties().getOrDefault(SHININESS_STRENGTH, 1f), false);
