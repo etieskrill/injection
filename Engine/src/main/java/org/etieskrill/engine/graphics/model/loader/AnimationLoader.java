@@ -124,16 +124,22 @@ class AnimationLoader {
                 .stream()
                 .limit(numWeights)
                 .forEach(aiWeight -> {
+                    if (aiWeight.mWeight() == 0)
+                        return; //TODO assimp *should* be able to remove these itself, maybe there is a pre-/post-processing step for this
+
                     Vertex.Builder vertex = vertices.get(aiWeight.mVertexId());
                     boolean wasSet = false;
                     for (int i = 0; i < MAX_BONE_INFLUENCES; i++) {
                         if (vertex.bones().get(i) == boneId) continue;
                         if (vertex.bones().get(i) != -1) continue;
+
                         vertex.bones().setComponent(i, boneId);
                         vertex.boneWeights().setComponent(i, aiWeight.mWeight());
+
                         wasSet = true;
                         break;
                     }
+
                     if (!wasSet && !maxAffectedLogged.contains(boneId)) {
                         maxAffectedLogged.add(boneId);
                         logger.warn("Vertex with id '{}' is influenced by more than the maximum of {} bones", aiWeight.mVertexId(), MAX_BONE_INFLUENCES);
