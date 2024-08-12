@@ -1,9 +1,6 @@
 package org.etieskrill.engine.graphics.animation;
 
-import org.etieskrill.engine.entity.component.Transform;
-import org.etieskrill.engine.entity.component.TransformC;
 import org.etieskrill.engine.graphics.model.Bone;
-import org.jetbrains.annotations.NotNull;
 import org.lwjgl.assimp.AINodeAnim;
 
 import java.util.Arrays;
@@ -35,7 +32,6 @@ public class Animation {
     private final List<BoneAnimation> boneAnimations;
     private final List<MeshAnimation> meshChannels;
 
-    private final TransformC baseTransform;
     //TODO add a map from Node/Bone to BoneAnimation so the search for every frame for every node in Animator#_updateBoneMatrices is unnecessary
 
     private final Map<Bone, BoneAnimation> bonerMap;
@@ -57,8 +53,6 @@ public class Animation {
 
         this.boneAnimations = boneAnimations;
         this.meshChannels = meshChannels;
-
-        this.baseTransform = new Transform();
 
         this.behaviour = Behaviour.REPEAT; //TODO insert in constructor
         this.bonerMap = new HashMap<>(boneAnimations.size());
@@ -119,14 +113,6 @@ public class Animation {
 
     public List<BoneAnimation> getBoneAnimations() {
         return boneAnimations;
-    }
-
-    public TransformC getBaseTransform() {
-        return baseTransform;
-    }
-
-    public void setBaseTransform(@NotNull TransformC baseTransform) {
-        ((Transform) this.baseTransform).set(baseTransform);
     }
 
 }

@@ -89,7 +89,7 @@ public class RenderService implements Service {
     @Override
     public void preProcess(List<Entity> entities) {
 //        renderer.prepare(); //TODO make separate renderbuffer and then somehow combine with base buffer
-        glViewport(0, 0, windowSize.x(), windowSize.y());
+        glViewport(0, 0, windowSize.x(), windowSize.y()); //TODO move to framebuffer
 
         shaderParams.clear();
 

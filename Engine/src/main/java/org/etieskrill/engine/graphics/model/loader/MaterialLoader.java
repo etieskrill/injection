@@ -7,7 +7,6 @@ import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.etieskrill.engine.graphics.texture.AbstractTexture.Format;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.texture.Textures;
-import org.etieskrill.engine.util.FileUtils;
 import org.etieskrill.engine.util.FileUtils.TypedFile;
 import org.etieskrill.engine.util.Loaders;
 import org.joml.Vector2i;
@@ -24,7 +23,6 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -220,13 +218,21 @@ class MaterialLoader {
             }
         }
 
-        //Single value properties
+        //Single value properties (except maybe buffer types??)
         PointerBuffer propBuffer = BufferUtils.createPointerBuffer(1);
         for (Material.Property property : new Material.Property[]{
-                INTENSITY_EMISSIVE, SHININESS, SHININESS_STRENGTH, METALLIC_FACTOR, OPACITY, TRANSPARENCY, BLEND_FUNCTION
+                INTENSITY_EMISSIVE, SHININESS, SHININESS_STRENGTH, METALLIC_FACTOR, OPACITY, TRANSPARENCY, BLEND_FUNCTION, TWO_SIDED
         }) {
-            if (aiReturn_SUCCESS == aiGetMaterialProperty(aiMaterial, property.ai(), aiTextureType_NONE, 0, propBuffer)) {
-                material.setProperty(property, AIMaterialProperty.create(propBuffer.get()).mData().getFloat());
+            if (aiReturn_SUCCESS == aiGetMaterialProperty(aiMaterial, property.ai(), propBuffer)) {
+                var aiProperty = AIMaterialProperty.create(propBuffer.get());
+                switch (aiProperty.mType()) {
+                    case aiPTI_Float -> material.setProperty(property, aiProperty.mData().getFloat());
+                    case aiPTI_Buffer -> {
+                        if (aiProperty.mDataLength() != 1) //assume boolean for simplicity
+                            throw new IllegalStateException("Material buffer property contains too many bytes for boolean");
+                        material.setProperty(property, aiProperty.mData().get() > 0);
+                    }
+                }
                 propBuffer.rewind();
             }
         }

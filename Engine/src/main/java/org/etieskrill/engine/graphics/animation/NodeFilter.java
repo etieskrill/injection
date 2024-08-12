@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * A {@code NodeFilter} can be used to only apply an {@link Animation} to a select group of {@link Node Nodes}.
@@ -15,7 +15,7 @@ import java.util.function.Function;
  * E.g. a waving animation would only affect the nodes of one or both arms, which can then be either overridden or
  * interpolated with over the previous animation layer.
  */
-public class NodeFilter implements Function<Node, Boolean> {
+public class NodeFilter implements Predicate<Node> {
 
     private final Set<Node> affectedNodes;
 
@@ -54,13 +54,13 @@ public class NodeFilter implements Function<Node, Boolean> {
     }
 
     @Override
-    public Boolean apply(@Nullable Node node) {
+    public boolean test(@Nullable Node node) {
         if (node == null) return false;
         return affectedNodes.contains(node);
     }
 
     public boolean allows(@Nullable Node node) {
-        return apply(node);
+        return test(node);
     }
 
 }

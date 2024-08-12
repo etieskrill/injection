@@ -3,21 +3,23 @@
 #define MAX_BONES 100
 #define MAX_BONE_INFLUENCES 4
 
-layout (location = 0) in vec3 iPosition;
-layout (location = 1) in vec3 iNormal;
-layout (location = 2) in vec2 iTextureCoords;
-layout (location = 3) in vec3 a_Tangent;
-layout (location = 4) in vec3 a_BiTangent;
-layout (location = 5) in ivec4 boneIds;
-layout (location = 6) in vec4 weights;
+layout (location = 0) attribute vec3 a_Position;
+layout (location = 1) attribute vec3 a_Normal;
+layout (location = 2) attribute vec2 a_TexCoords;
+layout (location = 3) attribute vec3 a_Tangent;
+layout (location = 4) attribute vec3 a_BiTangent;
+layout (location = 5) attribute ivec4 a_BoneIds;
+layout (location = 6) attribute vec4 a_BoneWeights;
 
-out vec3 tNormal;
-out mat3 tbn;
-out vec2 tTextureCoords;
-out vec3 tFragPos;
+varying Data {
+    vec3 normal;
+    mat3 tbn;
+    vec2 texCoords;
+    vec3 fragPos;
 
-flat out ivec4 tBoneIds;
-flat out vec4 tWeights;
+    flat ivec4 boneIds;
+    flat vec4 boneWeights;
+} vertex;
 
 uniform mat4 model;
 uniform mat3 normal;
@@ -25,42 +27,52 @@ uniform mat4 combined;
 
 uniform mat4 boneMatrices[MAX_BONES];
 
-uniform bool nomalMapped;
+uniform bool normalMapped;
 
 void main()
 {
     vec4 bonedPosition = vec4(0.0);
+
     vec3 bonedNormal = vec3(0.0);
+    vec3 bonedTangent = vec3(0.0);
+    vec3 bonedBiTangent = vec3(0.0);
 
     int bones = 0;
     for (int i = 0; i < MAX_BONE_INFLUENCES; i++) {
-        if (boneIds[i] == -1) break; //end of bone list
-        if (boneIds[i] >= MAX_BONES) break; //bones contain invalid data -> vertex is not animated
-        if (weights[i] <= 0.0) break; //either bone has an unset weight if negative, or no influence at all
+        if (a_BoneIds[i] == -1) break; //end of bone list
+        if (a_BoneIds[i] >= MAX_BONES) break; //bones contain invalid data -> vertex is not animated
+        if (a_BoneWeights[i] <= 0.0) break; //either bone has an unset weight if negative, or no influence at all
 
         bones++;
 
-        vec4 localPosition = boneMatrices[boneIds[i]] * vec4(iPosition, 1.0);
-        bonedPosition += localPosition * weights[i];
+        vec4 localPosition = boneMatrices[a_BoneIds[i]] * vec4(a_Position, 1.0);
+        bonedPosition += localPosition * a_BoneWeights[i];
 
-        vec3 localNormal = mat3(boneMatrices[boneIds[i]]) * normal * iNormal;
-        bonedNormal += localNormal * weights[i];
+        vec3 localNormal = mat3(boneMatrices[a_BoneIds[i]]) * a_Normal;
+        bonedNormal += localNormal * a_BoneWeights[i];
+        if (normalMapped) {
+            vec3 localTangent = mat3(boneMatrices[a_BoneIds[i]]) * a_Tangent;
+            bonedTangent += localTangent * a_BoneWeights[i];
+            vec3 localBiTangent = mat3(boneMatrices[a_BoneIds[i]]) * a_BiTangent;
+            bonedBiTangent += localBiTangent * a_BoneWeights[i];
+        }
     }
 
     if (bones == 0) { //no bones are set, thus vertex is not involved in animation
-        bonedPosition = vec4(iPosition, 1.0);
-        bonedNormal = iNormal;
+                      bonedPosition = vec4(a_Position, 1.0);
+                      bonedNormal = a_Normal;
     }
 
-    vec3 normalVec = normalize(normal * bonedNormal);
-    vec3 tangent = normalize(normal * a_Tangent);
-    vec3 biTangent = normalize(normal * a_BiTangent);
-    tNormal = normalVec;
-    tbn = mat3(tangent, biTangent, normalVec);
+    vertex.normal = normalize(normal * bonedNormal);
+    if (normalMapped) {
+        vec3 tangent = normalize(normal * bonedTangent);
+        vec3 biTangent = normalize(normal * bonedBiTangent);
+        vertex.tbn = mat3(tangent, biTangent, vertex.normal);
+    }
 
-    tTextureCoords = iTextureCoords;
-    tFragPos = vec3(model * bonedPosition);
+    vertex.texCoords = a_TexCoords;
+    vertex.fragPos = vec3(model * bonedPosition);
     gl_Position = combined * model * bonedPosition;
-    tBoneIds = boneIds;
-    tWeights = weights;
+    vertex.boneIds = a_BoneIds;
+    vertex.boneWeights = a_BoneWeights;
 }

@@ -1,9 +1,7 @@
 package org.etieskrill.game.animeshun;
 
-import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.entity.component.TransformC;
 import org.etieskrill.engine.graphics.Renderer;
-import org.etieskrill.engine.graphics.animation.Animation;
 import org.etieskrill.engine.graphics.animation.Animator;
 import org.etieskrill.engine.graphics.animation.NodeFilter;
 import org.etieskrill.engine.graphics.camera.Camera;
@@ -25,14 +23,12 @@ import org.etieskrill.engine.util.FixedArrayDeque;
 import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.window.Window;
 import org.jetbrains.annotations.VisibleForTesting;
-import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayDeque;
-import java.util.List;
 import java.util.OptionalDouble;
 
 import static org.etieskrill.engine.graphics.animation.AnimationMixer.AnimationBlendMode.OVERRIDING;
@@ -40,9 +36,6 @@ import static org.etieskrill.engine.graphics.model.loader.Loader.loadModelAnimat
 import static org.etieskrill.engine.input.InputBinding.Trigger.ON_PRESS;
 import static org.etieskrill.engine.input.InputBinding.Trigger.PRESSED;
 import static org.joml.Math.toRadians;
-import static org.lwjgl.opengl.GL11C.glDisable;
-import static org.lwjgl.opengl.GL11C.glEnable;
-import static org.lwjgl.opengl.GL30C.GL_FRAMEBUFFER_SRGB;
 
 public class Game {
 
@@ -145,13 +138,6 @@ public class Game {
                 .setScale(new Vector3f(vampy.getBoundingBox().getSize()).mul(.01f));
 
         vampyPosDelta = new Vector3f();
-
-        //Different formats sport different conventions or restrictions for the global up direction, one could either
-        // - try to deduce up (and scale for that matter) from the root node of a scene, which is not difficult at all
-        // - or at least stay consistent with file formats within the same bloody model
-        List<Animation> hipHopDance = loadModelAnimations("vampire_hip_hop.glb", vampy); //TODO -figure out why adding this animation breaks the animator- base transform is not respected in mixer
-        Transform vampyHipHopTransform = Transform.fromMatrix4f(new Matrix4f().m11(0).m12(-1).m21(1).m22(0).invert());
-        hipHopDance.getFirst().setBaseTransform(vampyHipHopTransform);
 
         Node rightArmNode = vampy.getNodes().stream()
                 .filter(node -> node.getName().equals("mixamorig_RightShoulder"))

@@ -22,6 +22,9 @@ dependencies {
     implementation 'org.lwjgl:lwjgl-opengl:3.3.3'
     implementation 'org.lwjgl:lwjgl-stb:3.3.3'
 
+    // https://mvnrepository.com/artifact/de.javagl/jgltf-model
+    implementation 'de.javagl:jgltf-model:2.0.4'
+
     runtimeOnly 'org.lwjgl:lwjgl-opengl::natives-windows'
     runtimeOnly 'org.lwjgl:lwjgl-stb::natives-windows'
 
