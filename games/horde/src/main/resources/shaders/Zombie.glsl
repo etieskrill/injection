@@ -5,9 +5,6 @@ varying Data {
     mat3 tbn;
     vec2 texCoords;
     vec3 fragPos;
-
-    flat ivec4 boneIds;
-    flat vec4 boneWeights;
 } vertex;
 
 #ifdef VERTEX_SHADER
@@ -47,7 +44,7 @@ void main()
         vec4 localPosition = boneMatrices[a_BoneIds[i]] * vec4(a_Position, 1.0);
         bonedPosition += localPosition * a_BoneWeights[i];
 
-        vec3 localNormal = mat3(boneMatrices[a_BoneIds[i]]) * normal * a_Normal;
+        vec3 localNormal = mat3(boneMatrices[a_BoneIds[i]]) * a_Normal;
         bonedNormal += localNormal * a_BoneWeights[i];
     }
 
@@ -66,8 +63,6 @@ void main()
     vertex.texCoords = a_TexCoords;
     vertex.fragPos = vec3(model * bonedPosition);
     gl_Position = combined * model * bonedPosition;
-    vertex.boneIds = a_BoneIds;
-    vertex.boneWeights = a_BoneWeights;
 }
 
 #endif

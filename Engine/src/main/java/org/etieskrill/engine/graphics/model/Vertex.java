@@ -39,7 +39,7 @@ public class Vertex {
 
     //TODO WOOOOOOOOOOOOOOOOOOOOOOOO LOMBOOOOOOK WHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEN
     public static class Builder {
-        private final Vector3fc position;
+        private Vector3fc position;
         private Vector3fc normal;
         private Vector2fc textureCoords;
         private Vector3fc tangent;
@@ -53,6 +53,11 @@ public class Vertex {
 
         public Vector3fc position() {
             return position;
+        }
+
+        public Builder position(Vector3fc position) {
+            this.position = position;
+            return this;
         }
 
         public Builder normal(Vector3fc normal) {

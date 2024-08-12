@@ -15,7 +15,6 @@ uniform struct PointLight {
 } light;
 
 uniform float farPlane;
-uniform float time;
 
 void main()
 {

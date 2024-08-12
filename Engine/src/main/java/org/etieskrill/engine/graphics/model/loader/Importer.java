@@ -50,12 +50,13 @@ class Importer {
         int processFlags =
                 aiProcess_Triangulate |
                         aiProcess_CalcTangentSpace |
-                        aiProcess_GlobalScale |
+                        aiProcess_GlobalScale | //FIXME does this even do anything?
 //                        aiProcess_SortByPType |
                         (options.flipTextureCoordinates() ? aiProcess_FlipUVs : 0) |
 //                        aiProcess_OptimizeMeshes |
 //                        aiProcess_OptimizeGraph |
                         aiProcess_JoinIdenticalVertices |
+//                        aiProcess_GenNormals |
 //                        aiProcess_RemoveRedundantMaterials |
 //                        aiProcess_FindInvalidData |
 //                        aiProcess_GenUVCoords |

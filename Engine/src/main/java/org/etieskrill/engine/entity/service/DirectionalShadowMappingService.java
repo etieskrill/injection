@@ -11,9 +11,7 @@ import org.etieskrill.engine.graphics.gl.shader.Shaders;
 import org.etieskrill.engine.graphics.gl.shader.impl.DepthAnimatedShader;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class DirectionalShadowMappingService implements Service {
 
@@ -25,6 +23,7 @@ public class DirectionalShadowMappingService implements Service {
     private final Shaders.DepthShader depthShader;
     private final DepthAnimatedShader depthAnimatedShader;
 
+    //TODO make superclass for sparsely executed services and entity round robin services
     private final int updateFrequency = DEFAULT_UPDATE_FREQUENCY;
     private int cycle = 0;
 
@@ -60,10 +59,10 @@ public class DirectionalShadowMappingService implements Service {
 
         if (++cycle >= updateFrequency) {
             cycle = 0;
-            shadowMapComponent.getShadowMap().clear();
         } else {
             return;
         }
+        shadowMapComponent.getShadowMap().clear();
         shadowMapComponent.getShadowMap().bind();
 
 //        var updateCycles = updateCycleMaps.computeIfAbsent(targetEntity, entity -> new HashMap<>());

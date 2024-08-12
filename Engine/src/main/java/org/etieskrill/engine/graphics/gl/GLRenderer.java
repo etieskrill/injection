@@ -206,6 +206,8 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
         var textureContext = getOrCreateShaderTextureContext(shader);
         textureContext.nextTexture = textureContext.manuallyBoundTextures + 1;
 
+        resetMaterial(mesh.getMaterial());
+
         if (mesh.getDrawMode() == Mesh.DrawMode.TRIANGLES)
             trianglesDrawn += mesh.getNumIndices() / 3;
         renderCalls++;
@@ -271,18 +273,28 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
         shader.setUniform("material.colour", material.getColourProperty(COLOUR_BASE), false);
         shader.setUniform("material.diffuseColour", material.getColourProperty(COLOUR_DIFFUSE), false);
         shader.setUniform("material.emissiveColour", material.getColourProperty(COLOUR_EMISSIVE), false);
-        shader.setUniform("material.emissiveIntensity", material.getProperties().getOrDefault(INTENSITY_EMISSIVE, 0), false);
-        shader.setUniform("material.opacity", material.getProperties().getOrDefault(OPACITY, 1), false);
+        shader.setUniform("material.emissiveIntensity", material.getPropertyOrDefault(INTENSITY_EMISSIVE, 0), false);
+        shader.setUniform("material.opacity", material.getPropertyOrDefault(OPACITY, 1), false);
 
         shader.setUniform("material.hasDiffuse", diffuse > 0, false);
         shader.setUniform("material.specularTexture", specular > 0, false);
         shader.setUniform("material.emissiveTexture", emissive > 0, false);
         if (shininess == 0) //TODO this property thingies NEED type safety
-            shader.setUniform("material.shininess", (float) material.getProperties().getOrDefault(SHININESS, 64f), false);
-        shader.setUniform("material.specularity", (float) material.getProperties().getOrDefault(SHININESS_STRENGTH, 1f), false);
+            shader.setUniform("material.shininess", (float) material.getPropertyOrDefault(SHININESS, 64f), false);
+        shader.setUniform("material.specularity", (float) material.getPropertyOrDefault(SHININESS_STRENGTH, 1f), false);
 
         //Optional information
         shader.setUniform("material.numTextures", textureContext.nextTexture, false); //TODO not accurate anymore if binding textures manually after this
+
+        if (material.getPropertyOrDefault(TWO_SIDED, false)) {
+            glDisable(GL_CULL_FACE);
+        }
+    }
+
+    private void resetMaterial(Material material) {
+        if (material.getPropertyOrDefault(TWO_SIDED, false)) {
+            glEnable(GL_CULL_FACE);
+        }
     }
 
     @Override

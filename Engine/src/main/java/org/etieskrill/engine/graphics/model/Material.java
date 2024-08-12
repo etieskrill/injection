@@ -10,7 +10,6 @@ import java.util.*;
 import static java.util.Objects.requireNonNullElse;
 import static org.lwjgl.assimp.Assimp.*;
 
-//TODO separate phong/pbr via inheritance
 public class Material implements Disposable {
 
     //TODO number max gl texture units check
@@ -18,6 +17,7 @@ public class Material implements Disposable {
 
     private final Map<Property, Object> properties;
 
+    //TODO split by type (string, colour, value - maybe further down to primitives)
     public enum Property {
         NAME(AI_MATKEY_NAME),
 
@@ -34,7 +34,8 @@ public class Material implements Disposable {
         METALLIC_FACTOR(AI_MATKEY_METALLIC_FACTOR),
         OPACITY(AI_MATKEY_OPACITY),
         TRANSPARENCY(AI_MATKEY_TRANSPARENCYFACTOR),
-        BLEND_FUNCTION(AI_MATKEY_BLEND_FUNC);
+        BLEND_FUNCTION(AI_MATKEY_BLEND_FUNC),
+        TWO_SIDED(AI_MATKEY_TWOSIDED);
 
         private final String aiPropertyName;
 
@@ -95,6 +96,10 @@ public class Material implements Disposable {
 
     public Object getProperty(Property property) {
         return properties.get(property);
+    }
+
+    public <V> V getPropertyOrDefault(Property property, V defaultValue) {
+        return (V) properties.getOrDefault(property, defaultValue);
     }
 
     public void setProperty(Property property, Object value) {

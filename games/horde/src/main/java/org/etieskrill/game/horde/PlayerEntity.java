@@ -3,6 +3,7 @@ package org.etieskrill.game.horde;
 import org.etieskrill.engine.entity.Entity;
 import org.etieskrill.engine.entity.component.*;
 import org.etieskrill.engine.graphics.animation.Animator;
+import org.etieskrill.engine.graphics.animation.NodeFilter;
 import org.etieskrill.engine.graphics.gl.shader.impl.AnimationShader;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.util.Loaders;
@@ -11,6 +12,7 @@ import org.joml.Vector3f;
 
 import java.util.List;
 
+import static org.etieskrill.engine.graphics.animation.AnimationMixer.AnimationBlendMode.OVERRIDING;
 import static org.etieskrill.engine.graphics.model.loader.Loader.loadModelAnimations;
 import static org.joml.Math.atan2;
 
@@ -42,18 +44,22 @@ public class PlayerEntity extends Entity {
         addComponent(new OnGround(5f, .15f));
 
         Model model = Loaders.ModelLoader.get().load("player", () ->
-                new Model.Builder("mixamo_walk_forward_skinned_vampire.dae")
-                        .disableCulling()
-//                        .setInitialTransform(new Transform().setScale(0.01f))
+                new Model.Builder("vampire.glb")
+                        .optimiseMeshes()
                         .build());
-        Drawable drawable = new Drawable(model);
-        drawable.setShader(new AnimationShader());
+        Drawable drawable = new Drawable(model, new AnimationShader());
         addComponent(drawable);
 
         animator = new Animator(model);
-        animator.add(loadModelAnimations("mixamo_orc_idle.dae", model).getFirst());
-        animator.add(loadModelAnimations("mixamo_walking_forward.dae", model).getFirst(),
+        animator.add(loadModelAnimations("vampire_idle.glb", model).getFirst());
+        animator.add(loadModelAnimations("vampire_walk.glb", model).getFirst(),
                 layer -> layer.playbackSpeed(1.2).weight(0));
+        animator.add(loadModelAnimations("vampire_run.glb", model).getFirst(), layer -> layer.setEnabled(false));
+        animator.add(loadModelAnimations("vampire_melee.glb", model).getFirst(), layer -> layer
+                .blendMode(OVERRIDING)
+                .filter(NodeFilter.tree(model.getNodes().stream().filter(node -> node.getName().equals("mixamorig:Spine1")).findAny().get()))
+                .playbackSpeed(1.5)
+                .enabled(false));
         animator.play();
         addComponent(animator);
 
