@@ -11,7 +11,7 @@ layout (location = 4) attribute vec3 a_BiTangent;
 layout (location = 5) attribute ivec4 a_BoneIds;
 layout (location = 6) attribute vec4 a_BoneWeights;
 
-varying Data {
+out Data {
     vec3 normal;
     mat3 tbn;
     vec2 texCoords;

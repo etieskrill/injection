@@ -46,6 +46,7 @@ uniform struct Material {
     sampler2D specular0;
     float shininess;
     float specularity;
+    bool hasNormalMap;
     sampler2D normal0;
     bool emissiveTexture;
     sampler2D emissive0;
@@ -66,7 +67,6 @@ layout (location = 1) out vec4 bloomColour;
 uniform vec3 viewPosition;
 uniform mat3 normal;
 
-uniform bool normalMapped;
 uniform bool blinnPhong;
 
 uniform DirectionalLight globalLights[NR_DIRECTIONAL_LIGHTS];
@@ -77,12 +77,12 @@ uniform samplerCubeArrayShadow pointShadowMaps;
 
 uniform float pointShadowFarPlane;
 
-vec4 getDirLight(DirectionalLight light, vec3 normal, vec3 fragPosition, vec3 viewPosition, float inShadow);
-vec4 getPointLight(PointLight light, vec3 normal, vec3 fragPosition, vec3 viewPosition, float inShadow);
+vec3 getDirLight(DirectionalLight light, vec3 normal, vec3 fragPosition, vec3 viewPosition, float inShadow);
+vec3 getPointLight(PointLight light, vec3 normal, vec3 fragPosition, vec3 viewPosition, float inShadow);
 
-vec4 getAmbient(vec3 lightAmbient);
-vec4 getDiffuse(vec3 lightDirection, vec3 normal, vec3 lightDiffuse);
-vec4 getSpecular(vec3 lightDirection, vec3 lightPosition, vec3 normal, vec3 fragPosition, vec3 lightDirFragPosition, vec3 viewPosition, vec3 lightSpecular);
+vec3 getAmbient(vec3 lightAmbient);
+vec3 getDiffuse(vec3 lightDirection, vec3 normal, vec3 lightDiffuse);
+vec3 getSpecular(vec3 lightDirection, vec3 lightPosition, vec3 normal, vec3 fragPosition, vec3 lightDirFragPosition, vec3 viewPosition, vec3 lightSpecular);
 
 vec4 getCubeReflection(vec3 normal);
 vec4 getCubeRefraction(float refractIndex, vec3 normal);
@@ -93,7 +93,7 @@ float getInPointShadow(int index, vec3 fragToLight);
 void main()
 {
     vec3 normalVec;
-    if (normalMapped) {
+    if (material.hasNormalMap) {
         normalVec = texture(material.normal0, vert_out.texCoord).xyz * 2.0 - 1.0;
         normalVec = normalize(normalVec);
         normalVec = normalize(vert_out.tbn * normalVec);
@@ -104,21 +104,20 @@ void main()
     vec4 texel = texture(material.diffuse0, vert_out.texCoord);
     if (texel.a == 0.0) discard;
 
-    vec4 combinedLight = vec4(0.0);
+    vec3 combinedLight = vec3(0.0);
     for (int i = 0; i < NR_DIRECTIONAL_LIGHTS; i++) {
         float inShadow = getInShadow(vert_out.lightSpaceFragPos, globalLights[i].direction);
-        vec4 dirLight = getDirLight(globalLights[i], normalVec, vert_out.fragPos, viewPosition, inShadow);
+        vec3 dirLight = getDirLight(globalLights[i], normalVec, vert_out.fragPos, viewPosition, inShadow);
         combinedLight += dirLight;
     }
     for (int i = 0; i < NR_POINT_LIGHTS; i++) {
         float inShadow = getInPointShadow(i, vert_out.fragPos - lights[i].position);
-        vec4 pointLight = getPointLight(lights[i], normalVec, vert_out.fragPos, viewPosition, inShadow);
+        vec3 pointLight = getPointLight(lights[i], normalVec, vert_out.fragPos, viewPosition, inShadow);
         combinedLight += pointLight;
     }
 
     if (material.emissiveTexture) {
-        vec4 emission = texture(material.emissive0, vert_out.texCoord);
-        combinedLight = vec4(emission.rgb, 0);
+        combinedLight += texture(material.emissive0, vert_out.texCoord).rgb;
     }
 
     //TODO pack reflection mix factor into material property. until reflection maps are a thing, anyway
@@ -128,51 +127,50 @@ void main()
     //        combinedLight = mix(combinedLight, getCubeRefraction(1 / 1.52, normalVec), 0.5);
     //    }
 
-    fragColour = combinedLight;
+    fragColour = vec4(combinedLight, texel.a);
 
     float brightness = dot(combinedLight.rgb, vec3(0.2126, 0.7152, 0.0722));
-    if (brightness > 2.0) bloomColour = combinedLight;
-    else bloomColour = vec4(0.0, 0.0, 0.0, 1.0);
+    if (brightness > 2.0) bloomColour = vec4(combinedLight, texel.a);
+    else bloomColour = vec4(0.0, 0.0, 0.0, texel.a);
 }
 
-vec4 getDirLight(DirectionalLight light, vec3 normal, vec3 fragPosition, vec3 viewPosition, float inShadow)
+vec3 getDirLight(DirectionalLight light, vec3 normal, vec3 fragPosition, vec3 viewPosition, float inShadow)
 {
     vec3 lightDirection = normalize(-light.direction);
-    vec4 ambient = getAmbient(light.ambient);
-    vec4 diffuse = getDiffuse(lightDirection, normal, light.diffuse);
-    vec4 specular = getSpecular(lightDirection, lightDirection, normal, fragPosition, vec3(0.0), viewPosition, light.specular);
+    vec3 ambient = getAmbient(light.ambient);
+    vec3 diffuse = getDiffuse(lightDirection, normal, light.diffuse);
+    vec3 specular = getSpecular(lightDirection, lightDirection, normal, fragPosition, vec3(0.0), viewPosition, light.specular);
 
     return ambient + inShadow * (diffuse + specular);
 }
 
-vec4 getPointLight(PointLight light, vec3 normal, vec3 fragPosition, vec3 viewPosition, float inShadow)
+vec3 getPointLight(PointLight light, vec3 normal, vec3 fragPosition, vec3 viewPosition, float inShadow)
 {
     vec3 lightDirection = normalize(light.position - fragPosition);
-    vec4 ambient = getAmbient(light.ambient);
-    vec4 diffuse = getDiffuse(lightDirection, normal, light.diffuse);
-    vec4 specular = getSpecular(lightDirection, light.position, normal, fragPosition, fragPosition, viewPosition, light.specular);
+    vec3 ambient = getAmbient(light.ambient);
+    vec3 diffuse = getDiffuse(lightDirection, normal, light.diffuse);
+    vec3 specular = getSpecular(lightDirection, light.position, normal, fragPosition, fragPosition, viewPosition, light.specular);
 
     float distance = length(light.position - fragPosition);
     float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * distance * distance);
     if (LIMIT_ATTENUATION) attenuation = min(attenuation, 1.0);
 
-    return vec4((ambient + inShadow * (diffuse + specular)).rgb * attenuation, 1.0);
+    return (ambient + inShadow * (diffuse + specular)) * attenuation;
 }
 
-vec4 getAmbient(vec3 lightAmbient)
+vec3 getAmbient(vec3 lightAmbient)
 {
-    vec4 ambient = vec4(lightAmbient, 1.0);
-    return ambient * texture(material.diffuse0, vert_out.texCoord);
+    return lightAmbient * texture(material.diffuse0, vert_out.texCoord).rgb;
 }
 
-vec4 getDiffuse(vec3 lightDirection, vec3 normal, vec3 lightDiffuse)
+vec3 getDiffuse(vec3 lightDirection, vec3 normal, vec3 lightDiffuse)
 {
     float diff = max(dot(normal, lightDirection), 0.0);
-    vec4 diffuse = vec4(lightDiffuse, 1.0) * diff;
-    return diffuse * texture(material.diffuse0, vert_out.texCoord);
+    vec3 diffuse = lightDiffuse * diff;
+    return diffuse * texture(material.diffuse0, vert_out.texCoord).rgb;
 }
 
-vec4 getSpecular(vec3 lightDirection, vec3 lightPosition, vec3 normal, vec3 fragPosition, vec3 lightDirFragPosition, vec3 viewPosition, vec3 lightSpecular)
+vec3 getSpecular(vec3 lightDirection, vec3 lightPosition, vec3 normal, vec3 fragPosition, vec3 lightDirFragPosition, vec3 viewPosition, vec3 lightSpecular)
 {
     vec3 viewDirection = normalize(viewPosition - fragPosition);
     float specularFactor;
@@ -188,8 +186,8 @@ vec4 getSpecular(vec3 lightDirection, vec3 lightPosition, vec3 normal, vec3 frag
     float shininess = material.shininess > 0 ? material.shininess : 64;
     float specularIntensity = material.specularity * pow(max(specularFactor, 0.0), shininess);
     vec3 specular = lightSpecular * specularIntensity;
-    if (material.specularTexture) specular *= texture(material.specular0, vert_out.texCoord);
-    return vec4(specular, 1.0);
+    if (material.specularTexture) specular *= texture(material.specular0, vert_out.texCoord).rgb;
+    return specular;
 }
 
 vec4 getCubeReflection(vec3 normal) {

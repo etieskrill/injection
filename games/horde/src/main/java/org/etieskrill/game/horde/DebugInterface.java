@@ -11,7 +11,6 @@ import org.etieskrill.engine.scene.component.Node;
 import org.etieskrill.engine.time.LoopPacer;
 import org.etieskrill.engine.window.Window;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Math;
 import org.joml.Vector2ic;
 import org.joml.Vector4f;
 
@@ -41,11 +40,11 @@ public class DebugInterface extends Scene {
 
     @Override
     public void update(double delta) {
-        fpsLabel.setText("Fps: %s\nRender calls: %d\nTriangles: %d".formatted(
-                pacer != null ? String.valueOf(Math.round(pacer.getAverageFPS())) : "n/a",
-                renderer.getRenderCalls(),
-                renderer.getTrianglesDrawn()
-        ));
+//        fpsLabel.setText("Fps: %s\nRender calls: %d\nTriangles: %d".formatted(
+//                pacer != null ? String.valueOf(Math.round(pacer.getAverageFPS())) : "n/a",
+//                renderer.getRenderCalls(),
+//                renderer.getTrianglesDrawn()
+//        ));
         super.update(delta);
     }
 

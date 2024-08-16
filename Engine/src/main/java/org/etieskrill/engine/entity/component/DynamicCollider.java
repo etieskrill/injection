@@ -7,6 +7,9 @@ public class DynamicCollider {
 
     private final Vector3f previousPosition;
 
+    //TODO add collision groups or marker based filtering for collision pairs
+    private boolean staticOnly = false;
+
     public DynamicCollider() {
         this(new Vector3f());
     }
@@ -21,6 +24,14 @@ public class DynamicCollider {
 
     public void setPreviousPosition(Vector3fc previousPosition) {
         this.previousPosition.set(previousPosition);
+    }
+
+    public boolean isStaticOnly() {
+        return staticOnly;
+    }
+
+    public void setStaticOnly(boolean staticOnly) {
+        this.staticOnly = staticOnly;
     }
 
 }

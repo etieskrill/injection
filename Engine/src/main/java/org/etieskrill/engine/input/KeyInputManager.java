@@ -19,7 +19,7 @@ import static org.lwjgl.glfw.GLFW.*;
 public class KeyInputManager implements KeyInputHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(KeyInputManager.class);
-    
+
     //TODO add <name,action> map to allow for rebinding and structural streamlining
     //TODO allow for keys to overrule/bind each other with activation policies; latest, oldest, all, none
     private final Map<Key, TriggerAction> bindings;
@@ -46,13 +46,20 @@ public class KeyInputManager implements KeyInputHandler {
     public record TriggerAction(
             Trigger trigger,
             Action action
-    ) {}
+    ) {
+    }
 
     public KeyInputManager addBindings(InputBinding... bindings) {
         for (InputBinding binding : bindings) {
             this.bindings.put(binding.getInput(), new TriggerAction(binding.getTrigger(), binding.getAction()));
             if (binding.getGroup() != null) addGroups(binding.getGroup());
         }
+        return this;
+    }
+
+    public KeyInputManager removeBindings(Key... keys) {
+        for (Key key : keys)
+            this.bindings.remove(key);
         return this;
     }
 
@@ -65,10 +72,10 @@ public class KeyInputManager implements KeyInputHandler {
                 }
             } //ik ik, this makes me puke too
         }
-        
+
         return this;
     }
-    
+
     @EveryFrame
     public void update(double delta) {
         for (Key key : pressed) {
@@ -86,16 +93,16 @@ public class KeyInputManager implements KeyInputHandler {
             if (triggerAction != null) handleAction(triggerAction.action(), delta);
         }
     }
-    
+
     private void handleAction(Action action, double delta) {
         if (action instanceof SimpleAction simpleAction) simpleAction.run();
         else if (action instanceof DeltaAction deltaAction) deltaAction.accept(delta);
     }
-    
+
     @Override
     public boolean invoke(Key.Type type, int key, int action, int modifiers) {
         if (action == GLFW_REPEAT) return false; //omitted for simplicity - for now
-        
+
         //TODO introduce a mixed polling system for continuous binds and callbacks for triggers
         Key keyInput = new Key(type, key, modifiers);
         TriggerAction triggerAction = bindings.get(keyInput); //try lookup with exact modifiers
@@ -104,7 +111,7 @@ public class KeyInputManager implements KeyInputHandler {
             keyInput = new Key(type, key, 0);
         }
         boolean handled = false;
-    
+
         //queue press trigger event
         if (triggerAction != null && triggerAction.trigger() == ON_PRESS) {
             if (action == GLFW_PRESS && !pressed.contains(keyInput)) {
@@ -112,7 +119,7 @@ public class KeyInputManager implements KeyInputHandler {
                 handled = true;
             }
         }
-        
+
         //queue toggle trigger event
         if (triggerAction != null) {
             if (triggerAction.trigger() == ON_TOGGLE &&
@@ -121,13 +128,13 @@ public class KeyInputManager implements KeyInputHandler {
                 handled = true;
             }
         }
-    
+
         //update toggle status
         if (action == GLFW_PRESS && !pressed.contains(keyInput)) {
             if (!toggled.contains(keyInput)) toggled.add(keyInput);
             else toggled.remove(keyInput);
         }
-        
+
         //update press status
         if (action != GLFW_RELEASE) {
             OverruleGroup group = groups.get(keyInput);
@@ -140,16 +147,16 @@ public class KeyInputManager implements KeyInputHandler {
             pressed.remove(keyInput);
             pressed.remove(keyInput.withoutModifiers());
         }
-        
+
         //TODO finish implementation of OverruleGroup.Mode#NONE
         OverruleGroup overruleGroup = groups.get(keyInput);
         if (overruleGroup != null) {
             groupKeysActive.compute(overruleGroup, (group, count) -> {
                 if (count == null) count = 0;
-                return action != GLFW_RELEASE ? count+1 : count-1;
+                return action != GLFW_RELEASE ? count + 1 : count - 1;
             });
         }
-        
+
         return handled;
     }
 
@@ -161,7 +168,9 @@ public class KeyInputManager implements KeyInputHandler {
             }
             case OLDEST -> {
                 AtomicBoolean contained = new AtomicBoolean(false);
-                group.getGroup().forEach(g -> { if (pressed.contains(g)) contained.set(true); }); //groups will be tiny, so this should be okay
+                group.getGroup().forEach(g -> {
+                    if (pressed.contains(g)) contained.set(true);
+                }); //groups will be tiny, so this should be okay
                 if (!contained.get()) pressed.add(key);
             }
             //TODO add NONE
@@ -172,7 +181,7 @@ public class KeyInputManager implements KeyInputHandler {
     public boolean isPressed(Key input) {
         return pressed.contains(input);
     }
-    
+
     public boolean isPressed(Keys input) {
         return isPressed(input.getInput());
     }

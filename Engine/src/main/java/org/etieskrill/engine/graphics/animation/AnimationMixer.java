@@ -9,6 +9,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.lang.Math.max;
 import static org.etieskrill.engine.graphics.animation.Animation.MAX_BONES;
 
 /**
@@ -195,7 +196,7 @@ public class AnimationMixer {
         }
 
         public void setWeight(float weight) {
-            this.weight = weight;
+            this.weight = max(0, weight);
         }
 
         public AnimationLayer weight(float weight) {

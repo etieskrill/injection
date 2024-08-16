@@ -42,9 +42,6 @@ public class EntityApplication extends GameApplication {
     private PlayerEntity player;
     private Zombie zombie;
 
-    private static final float PLAYER_WALKING_SPEED = 10;
-    private static final float PLAYER_RUNNING_SPEED = 30;
-
     private DebugInterface debugInterface;
 
     private boolean hdrReinhardMapping;
@@ -75,7 +72,6 @@ public class EntityApplication extends GameApplication {
         entitySystem.addService(new AnimationService());
         PostProcessingRenderService renderService = new PostProcessingRenderService(renderer, camera, window.getSize().toVec());
         entitySystem.addService(renderService);
-        entitySystem.addService(new JumpService());
         entitySystem.addService(new PhysicsService(AABB_SOLVER));
         entitySystem.addService(new SnippetsService());
 
@@ -91,9 +87,11 @@ public class EntityApplication extends GameApplication {
         }
 
         window.addCursorInputs(new CursorCameraController(camera));
-        KeyCharacterTranslationController playerController = (KeyCharacterTranslationController)
-                new KeyCharacterTranslationController(player.getMoveForce().getForce(), camera)
-                        .setSpeed(PLAYER_WALKING_SPEED);
+        KeyCharacterTranslationController playerController =
+                new KeyCharacterTranslationController(player.getMoveForce().getForce(), camera);
+        playerController
+                .removeBindings(Keys.SPACE.getInput(), Keys.SHIFT.getInput())
+                .addBindings(Input.bind(Keys.SPACE).to(player.getDashState()::trigger));
         window.addKeyInputs(playerController);
         window.getCursor().disable();
 
@@ -115,11 +113,6 @@ public class EntityApplication extends GameApplication {
                     hdrReinhardMapping = !hdrReinhardMapping;
                     renderService.getHdrShader().setUniform("reinhard", hdrReinhardMapping);
                 }),
-                bind(Keys.CTRL).to(() -> {
-                    if (playerController.getSpeed() == PLAYER_WALKING_SPEED)
-                        playerController.setSpeed(PLAYER_RUNNING_SPEED);
-                    else playerController.setSpeed(PLAYER_WALKING_SPEED);
-                }),
                 bind(Keys.T).to(() -> {
                     hdrExposure += .25f;
                     renderService.getHdrShader().setUniform("exposure", hdrExposure);
@@ -136,14 +129,12 @@ public class EntityApplication extends GameApplication {
         //FIXME loading the scene (the label font specifically) before the above stuff causes a segfault from freetype??
         debugInterface = new DebugInterface(window.getSize().toVec(), renderer, pacer);
         window.setScene(debugInterface);
-
-        renderer.setQueryGpuTime(false);
     }
 
     @Override
     protected void loop(final double delta) {
         player.getTransform().getPosition().sub(zombie.getTransform().getPosition(), zombie.getAcceleration().getForce());
-        zombie.getAcceleration().getForce().normalize().mul((float) delta * zombie.getAcceleration().getFactor());
+        zombie.getAcceleration().getForce().normalize().mul(.015f * zombie.getAcceleration().getFactor());
 
         camera.setOrientation(-45, 45, 0);
         camera.setPosition(
@@ -163,12 +154,13 @@ public class EntityApplication extends GameApplication {
                     "%5.2f".formatted(renderer.getGpuDelay() / 1_000_000.0));
         }
         debugInterface.getFpsLabel().setText(
-                "Fps: %d\nRender calls: %d\nTriangles: %d\nMapping: %s\nExposure: %4.2f".formatted(
+                "Fps: %d\nRender calls: %d\nTriangles: %d\nMapping: %s\nExposure: %4.2f\nDash cooldown: %.0f".formatted(
                         Math.round(pacer.getAverageFPS()),
                         renderer.getRenderCalls(),
                         renderer.getTrianglesDrawn(),
                         hdrReinhardMapping ? "Reinhard" : "Exposure",
-                        hdrExposure
+                        hdrExposure,
+                        Math.max(0, player.getDashState().getCooldown())
                 )
         );
     }

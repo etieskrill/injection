@@ -111,7 +111,7 @@ public class World {
             if (i == 0) cubeTransform = cubeModel.getTransform();
         }
 
-        DirectionalShadowMap directionalShadowMap = DirectionalShadowMap.generate(new Vector2i(1024));
+        DirectionalShadowMap directionalShadowMap = DirectionalShadowMap.generate(new Vector2i(2048));
         PointShadowMapArray pointShadowMaps = PointShadowMapArray.generate(new Vector2i(1024), 2);
 
         Matrix4f sunLightCombined = new Matrix4f()

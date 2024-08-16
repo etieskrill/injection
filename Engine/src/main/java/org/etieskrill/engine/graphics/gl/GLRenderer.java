@@ -267,6 +267,7 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
         }
 
         shader.setUniform("normalMapped", normal > 0, false);
+        shader.setUniform("material.hasNormalMap", normal > 0, false);
 
         //TODO add a way to map all available material props automatically with sensible default values
         //TODO add invalidation flag to uniform properties and update here only if invalid (do not forget about the first time)
