@@ -4,7 +4,6 @@ import org.etieskrill.engine.entity.Entity;
 import org.etieskrill.engine.entity.component.*;
 import org.etieskrill.engine.graphics.animation.Animator;
 import org.etieskrill.engine.graphics.animation.NodeFilter;
-import org.etieskrill.engine.graphics.gl.shader.impl.AnimationShader;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.util.Loaders;
 import org.joml.Math;
@@ -19,8 +18,11 @@ import static org.joml.Math.atan2;
 public class PlayerEntity extends Entity {
 
     private final Transform transform;
+    private final DynamicCollider collider;
     private final Acceleration moveForce;
+    private final VampireShader shader;
     private final Animator animator;
+    private final DashState dashState;
 
     private float rotationSmooth;
     private float walkingTransition;
@@ -29,25 +31,27 @@ public class PlayerEntity extends Entity {
         super(id);
 
         this.transform = new Transform();
-        this.moveForce = new Acceleration(new Vector3f(), 2);
+        this.moveForce = new Acceleration(new Vector3f(), 20);
 
         addComponent(transform);
 
         addComponent(new AABB(new Vector3f(-.5f, 0, -.5f), new Vector3f(.5f, 2, .5f)));
         addComponent(new WorldSpaceAABB());
 
-        addComponent(new DynamicCollider());
+        collider = new DynamicCollider();
+        addComponent(collider);
         addComponent(new DirectionalForceComponent(new Vector3f(0, -15, 0)));
 
         addComponent(moveForce);
         addComponent(new Friction(8f));
-        addComponent(new OnGround(5f, .15f));
 
         Model model = Loaders.ModelLoader.get().load("player", () ->
                 new Model.Builder("vampire.glb")
+                        .hasTransparency()
                         .optimiseMeshes()
                         .build());
-        Drawable drawable = new Drawable(model, new AnimationShader());
+        shader = new VampireShader();
+        Drawable drawable = new Drawable(model, shader);
         addComponent(drawable);
 
         animator = new Animator(model);
@@ -63,9 +67,13 @@ public class PlayerEntity extends Entity {
         animator.play();
         addComponent(animator);
 
+        dashState = new DashState(.6f, 5, 20, 100);
+        addComponent(dashState);
+
         addComponent(new Scripts(List.of(
                 this::rotatePlayerToHeading,
-                this::updateWalkingTransition
+                this::updateWalkingTransition,
+                this::updateDashAction
         )));
     }
 
@@ -97,12 +105,24 @@ public class PlayerEntity extends Entity {
         animator.getAnimationMixer().setWeight(1, walkingTransition);
     }
 
+    private void updateDashAction(double delta) {
+        dashState.update((float) delta);
+
+        shader.setUniform("material.alpha", (float) (dashState.isActive() ? .1 : 1));
+        moveForce.setFactor(dashState.isActive() ? dashState.getDashSpeed() : dashState.getRegularSpeed());
+        collider.setStaticOnly(dashState.isActive());
+    }
+
     public Transform getTransform() {
         return transform;
     }
 
     public Acceleration getMoveForce() {
         return moveForce;
+    }
+
+    public DashState getDashState() {
+        return dashState;
     }
 
 }

@@ -38,11 +38,9 @@ public class Scene implements CursorInputAdapter {
         this.batch = batch;
         this.root = root;
         this.camera = camera;
+        setCamera(camera);
 
         this.size = new Vector2f(0);
-
-        camera.setOrientation(0f, -90f, 0f);
-        camera.setPosition(new Vector3f(camera.getViewportSize(), 0).div(2));
     }
 
     public void update(double delta) {

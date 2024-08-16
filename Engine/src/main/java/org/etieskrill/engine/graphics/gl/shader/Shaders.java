@@ -74,9 +74,6 @@ public class Shaders {
             addUniform("viewPosition", VEC3);
             addUniform("textureScale", VEC2, new Vector2f(1f));
 
-            addUniform("material.specularTexture", BOOLEAN);
-            addUniform("material.emissiveTexture", BOOLEAN);
-            addUniform("normalMapped", BOOLEAN);
             addUniform("blinnPhong", BOOLEAN, true);
 
             addUniformArray("globalLights", 1, STRUCT);
@@ -90,10 +87,6 @@ public class Shaders {
 
         public void setTextureScale(Vector2fc textureScale) {
             setUniform("textureScale", textureScale);
-        }
-
-        public void setNormalMapped(boolean normalMapped) {
-            setUniform("normalMapped", normalMapped);
         }
 
         public void setBlinnPhong(boolean blinnPhong) {

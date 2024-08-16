@@ -162,6 +162,8 @@ public class PhysicsService implements Service {
                                      WorldSpaceAABB otherBB,
                                      DynamicCollider collider,
                                      DynamicCollider otherCollider) {
+                if (collider.isStaticOnly() || otherCollider.isStaticOnly()) return;
+
                 Vector3f overlap = new Vector3f(bb.getMax()).min(otherBB.getMax())
                         .sub(new Vector3f(bb.getMin()).max(otherBB.getMin()));
 

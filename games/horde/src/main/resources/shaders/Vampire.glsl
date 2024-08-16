@@ -108,15 +108,13 @@ uniform struct Material {
     bool specularTexture;
     sampler2D specular0;
     float shininess;
-    sampler2D shininess0;
     float specularity;
     bool hasNormalMap;
     sampler2D normal0;
     bool emissiveTexture;
     sampler2D emissive0;
-    samplerCube cubemap0;
     sampler2D metalness0;
-    sampler2D diffuse_roughness0;
+    float alpha;
 } material;
 
 layout (location = 0) out vec4 fragColour;
@@ -160,14 +158,15 @@ void main()
     }
 
     if (material.emissiveTexture) {
-        combinedLight += texture(material.emissive0, vertex.texCoords).rgb;
+        vec3 emission = texture(material.emissive0, vertex.texCoords).rgb;
+        combinedLight += emission * emission;
     }
 
-    fragColour = vec4(combinedLight, texel.a);
+    fragColour = vec4(combinedLight, texel.a * material.alpha);
 
     float brightness = dot(combinedLight.rgb, vec3(0.2126, 0.7152, 0.0722));
-    if (brightness > 1.0) bloomColour = vec4(combinedLight, texel.a);
-    else bloomColour = vec4(0.0, 0.0, 0.0, texel.a);
+    if (brightness > 1.0) bloomColour = vec4(combinedLight, texel.a * material.alpha);
+    else bloomColour = vec4(0.0, 0.0, 0.0, texel.a * material.alpha);
 }
 
 vec3 getDirLight(DirectionalLight light, vec3 normal, vec3 fragPosition, vec3 viewPosition, float inShadow)
@@ -214,10 +213,11 @@ vec3 getSpecular(vec3 lightDirection, vec3 normal, vec3 fragPosition, vec3 viewP
     vec3 halfway = normalize(lightDirection + viewDirection);
     specularFactor = max(dot(normal, halfway), 0.0);
 
-    float shininess = texture(material.metalness0, vertex.texCoords).g; //FBX2glTF compounded ao/metalness/roughness maps for some reason, with green being metalness
-    float specularIntensity = material.specularity * shininess * pow(specularFactor, shininess * 128);
-    vec3 specular = lightSpecular;
-    return specular * specularIntensity;
+    float shininess = material.shininess > 0 ? material.shininess : 64;
+    float specularIntensity = material.specularity * pow(specularFactor, shininess);
+    vec3 specular = specularIntensity * lightSpecular;
+    if (material.specularTexture) specular *= texture(material.specular0, vertex.texCoords).rgb;
+    return specular;
 }
 
 #endif
