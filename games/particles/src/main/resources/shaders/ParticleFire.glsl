@@ -1,4 +1,4 @@
-#version 330 core
+#version 410 core
 
 #ifdef VERTEX_SHADER
 layout (location = 0) attribute vec3 a_Position;

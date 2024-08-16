@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import static org.etieskrill.engine.entity.service.PhysicsService.NarrowCollisionSolver.AABB_SOLVER;
 import static org.etieskrill.engine.input.Input.bind;
+import static org.joml.Math.floor;
 
 public class EntityApplication extends GameApplication {
 
@@ -46,6 +47,8 @@ public class EntityApplication extends GameApplication {
 
     private boolean hdrReinhardMapping;
     private float hdrExposure;
+
+    private double previousTime;
 
     public EntityApplication() {
         super(FRAME_RATE, new Window.Builder()
@@ -129,6 +132,8 @@ public class EntityApplication extends GameApplication {
         //FIXME loading the scene (the label font specifically) before the above stuff causes a segfault from freetype??
         debugInterface = new DebugInterface(window.getSize().toVec(), renderer, pacer);
         window.setScene(debugInterface);
+
+        GLUtils.removeDebugLogging();
     }
 
     @Override
@@ -146,13 +151,14 @@ public class EntityApplication extends GameApplication {
         world.getSunTransform().setPosition(new Vector3f(50).add(camera.getPosition()));
         world.getCubeTransform().applyRotation(quat -> quat.rotateAxis((float) delta, 1, 1, 1));
 
-        if (pacer.getTotalFramesElapsed() % 60 == 0) {
+        if (floor(pacer.getTime()) != floor(previousTime)) {
             logger.info("Fps: {}, cpu time: {}ms, gpu time: {}ms, gpu delay: {}ms",
                     "%4.1f".formatted(pacer.getAverageFPS()),
                     "%5.2f".formatted(getAvgCpuTime()),
                     "%5.2f".formatted(renderer.getAveragedGpuTime() / 1_000_000.0),
                     "%5.2f".formatted(renderer.getGpuDelay() / 1_000_000.0));
         }
+        previousTime = pacer.getTime();
         debugInterface.getFpsLabel().setText(
                 "Fps: %d\nRender calls: %d\nTriangles: %d\nMapping: %s\nExposure: %4.2f\nDash cooldown: %.0f".formatted(
                         Math.round(pacer.getAverageFPS()),

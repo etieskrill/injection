@@ -29,6 +29,7 @@ import org.etieskrill.engine.scene.Scene;
 import org.etieskrill.engine.scene.component.Container;
 import org.etieskrill.engine.scene.component.Label;
 import org.etieskrill.engine.window.Window;
+import org.joml.Random;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 import org.lwjgl.BufferUtils;
@@ -51,6 +52,9 @@ public class Application extends GameApplication {
 
     ParticleEmitter fireEmitter;
     ShaderProgram fireShader;
+
+    ParticleEmitter riftSmokeEmitter;
+    ShaderProgram riftSmokeShader;
 
     public Application() {
         super(60, new Window.Builder()
@@ -113,7 +117,7 @@ public class Application extends GameApplication {
         fireEmitter = new ParticleEmitter(
                 10000,
                 2500,
-                new Transform(),
+                new Transform().setPosition(new Vector3f(6, 0, 0)),
                 new Vector3f(0, 4, 0),
                 4,
                 new Vector4f(1, .75f, 0, 1),
@@ -138,6 +142,20 @@ public class Application extends GameApplication {
             protected void getUniformLocations() {
             }
         };
+
+        Random random = new Random();
+        riftSmokeEmitter = new ParticleEmitter(
+                2500,
+                500,
+                new Transform(),
+                () -> new Vector3f(random.nextFloat(), random.nextFloat(), random.nextFloat()).mul(2).sub(1, 1, 1),
+                4,
+                new Vector4f(.15f, 0, .25f, .5f),
+                1,
+                new Texture2D.FileBuilder("particles/smoke_05.png", Type.DIFFUSE).build(),
+                new Vector3f(.5f, 1.5f, .5f)
+        );
+        riftSmokeShader = fireShader;
 
         glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
 
@@ -179,15 +197,20 @@ public class Application extends GameApplication {
         viewCenter.add(viewCenterDelta.mul((float) delta));
         camera.setPosition(camera.getDirection().negate().mul(5).add(viewCenter));
 
-        fireEmitter.update(delta);
+        renderParticles(delta, fireEmitter, fireShader);
+        renderParticles(delta, riftSmokeEmitter, riftSmokeShader);
+    }
 
-        renderer.bindNextFreeTexture(fireShader, "sprite", fireEmitter.getSprite());
-        fireShader.setUniform("size", fireEmitter.getSize());
-        fireShader.setUniform("view", camera.getView());
-        fireShader.setUniform("perspective", camera.getPerspective());
-        fireShader.setUniform("screenSize", window.getSize().toVec());
-        particleBuffer.rewind().limit(fireEmitter.getAliveParticles().size() * PARTICLE_TRANSFER_BYTES);
-        for (Particle particle : fireEmitter.getAliveParticles()) {
+    private void renderParticles(double delta, ParticleEmitter emitter, ShaderProgram shader) {
+        emitter.update(delta);
+
+        renderer.bindNextFreeTexture(shader, "sprite", emitter.getSprite());
+        shader.setUniform("size", emitter.getSize());
+        shader.setUniform("view", camera.getView());
+        shader.setUniform("perspective", camera.getPerspective());
+        shader.setUniform("screenSize", window.getSize().toVec());
+        particleBuffer.rewind().limit(emitter.getAliveParticles().size() * PARTICLE_TRANSFER_BYTES);
+        for (Particle particle : emitter.getAliveParticles()) {
             particle.getPosition().get(particleBuffer).position(particleBuffer.position() + PARTICLE_POSITION_BYTES);
 
             Vector4f colour = particle.getColour();
@@ -195,7 +218,7 @@ public class Application extends GameApplication {
             colour.w *= particle.getLifetime() / 4;
             colour.get(particleBuffer).position(particleBuffer.position() + PARTICLE_COLOUR_BYTES);
         }
-        if (particleBuffer.position() != fireEmitter.getAliveParticles().size() * PARTICLE_TRANSFER_BYTES)
+        if (particleBuffer.position() != emitter.getAliveParticles().size() * PARTICLE_TRANSFER_BYTES)
             throw new IllegalStateException("Particle buffer position does not align with particle byte number");
 
         //TODO maybe try glMapBuffer at some point?
@@ -213,7 +236,7 @@ public class Application extends GameApplication {
         glDisable(GL_CULL_FACE);
         glDepthMask(false);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glDrawArrays(GL_POINTS, 0, fireEmitter.getAliveParticles().size());
+        glDrawArrays(GL_POINTS, 0, emitter.getAliveParticles().size());
         glBlendFunc(GL_ONE, GL_ZERO);
         glDepthMask(true);
         glEnable(GL_CULL_FACE);

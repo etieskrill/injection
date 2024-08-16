@@ -9,11 +9,12 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.function.Supplier;
 
 public class ParticleEmitter {
 
     private final Transform transform;
-    private final Vector3f velocity;
+    private final Supplier<Vector3f> velocity;
     private final float lifetime;
     private final Vector4f colour;
     private final float size;
@@ -35,6 +36,18 @@ public class ParticleEmitter {
                            int particlesPerSecond,
                            Transform transform,
                            Vector3f velocity,
+                           float lifetime,
+                           Vector4f colour,
+                           float size,
+                           Texture2D sprite,
+                           Vector3f scatter) {
+        this(numParticles, particlesPerSecond, transform, () -> velocity, lifetime, colour, size, sprite, scatter);
+    }
+
+    public ParticleEmitter(int numParticles,
+                           int particlesPerSecond,
+                           Transform transform,
+                           Supplier<Vector3f> velocity,
                            float lifetime,
                            Vector4f colour,
                            float size,
@@ -80,7 +93,7 @@ public class ParticleEmitter {
                         2 * random.nextFloat(scatter.y()),
                         2 * random.nextFloat(scatter.z())
                 ).sub(scatter);
-                spawnedParticle.getVelocity().set(transform.getMatrix().transformPosition(velocity));
+                spawnedParticle.getVelocity().set(transform.getMatrix().transformDirection(velocity.get()));
                 spawnedParticle.getColour().set(colour);
                 spawnedParticle.setLifetime(lifetime);
                 aliveParticles.push(spawnedParticle);
