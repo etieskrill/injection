@@ -1,15 +1,15 @@
 #version 330 core
 
-varying Data {
-    vec3 normal;
-    vec3 fragPos;
-    vec4 lightSpaceFragPos;
-} vert_out;
-
 #ifdef VERTEX_SHADER
 
 layout (location = 0) attribute vec3 a_Position;
 layout (location = 1) attribute vec3 a_Normal;
+
+out Data {
+    vec3 normal;
+    vec3 fragPos;
+    vec4 lightSpaceFragPos;
+} vert_out;
 
 uniform mat4 model;
 uniform mat3 normal;
@@ -57,6 +57,12 @@ struct PointLight {
     float quadratic;
 };
 
+in Data {
+    vec3 normal;
+    vec3 fragPos;
+    vec4 lightSpaceFragPos;
+} vert_out;
+
 layout (location = 0) out vec4 fragColour;
 layout (location = 1) out vec4 bloomColour;
 
@@ -67,7 +73,9 @@ uniform bool blinnPhong;
 uniform DirectionalLight globalLights[NR_DIRECTIONAL_LIGHTS];
 uniform PointLight lights[NR_POINT_LIGHTS];
 
+uniform bool hasShadowMap;
 uniform sampler2DShadow shadowMap;
+uniform bool hasPointShadowMaps;
 uniform samplerCubeArrayShadow pointShadowMaps;
 
 uniform float pointShadowFarPlane;
@@ -155,6 +163,10 @@ vec4 getSpecular(vec3 lightDirection, vec3 lightPosition, vec3 normal, vec3 frag
 }
 
 float getInShadow(vec4 lightSpaceFragPos, vec3 lightDirection) {
+    if (!hasShadowMap) {
+        return 1.0;
+    }
+
     vec3 screenSpace = lightSpaceFragPos.xyz / lightSpaceFragPos.w;
     vec3 depthSpace = screenSpace * 0.5 + 0.5;
 
@@ -176,6 +188,10 @@ float getInShadow(vec4 lightSpaceFragPos, vec3 lightDirection) {
 }
 
 float getInPointShadow(int index, vec3 fragToLight) {
+    if (!hasPointShadowMaps) {
+        return 1.0;
+    }
+
     float currentDepth = length(fragToLight) / pointShadowFarPlane;
 
     float bias = min(0.005, 0.05 * (1.0 - dot(vert_out.normal, fragToLight)));

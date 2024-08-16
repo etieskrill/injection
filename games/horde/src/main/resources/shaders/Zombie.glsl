@@ -1,12 +1,5 @@
 #version 330 core
 
-varying Data {
-    vec3 normal;
-    mat3 tbn;
-    vec2 texCoords;
-    vec3 fragPos;
-} vertex;
-
 #ifdef VERTEX_SHADER
 
 #define MAX_BONES 100
@@ -19,6 +12,13 @@ layout (location = 3) in vec3 a_Tangent;
 layout (location = 4) in vec3 a_BiTangent;
 layout (location = 5) in ivec4 a_BoneIds;
 layout (location = 6) in vec4 a_BoneWeights;
+
+out Data {
+    vec3 normal;
+    mat3 tbn;
+    vec2 texCoords;
+    vec3 fragPos;
+} vertex;
 
 uniform mat4 model;
 uniform mat3 normal;
@@ -118,6 +118,13 @@ uniform struct Material {
     sampler2D metalness0;
     sampler2D diffuse_roughness0;
 } material;
+
+in Data {
+    vec3 normal;
+    mat3 tbn;
+    vec2 texCoords;
+    vec3 fragPos;
+} vertex;
 
 layout (location = 0) out vec4 fragColour;
 layout (location = 1) out vec4 bloomColour;

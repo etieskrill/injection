@@ -262,6 +262,7 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
             shader.setUniform(uniform + number, textureContext.nextTexture++, false);
         }
 
+        AbstractTexture.clearBind(0); //TODO apparently sampler 0 is the default for unset uniform samplers, making some shaders sample into textures with arbitrary formats and values - potentially causing undefined behaviour render errors
         for (int i = textureContext.nextTexture; i < MAX_USABLE_TEXTURE_UNIT; i++) { //TODO this is a little inefficient, but you don't have to unbind textures all the time like this
             AbstractTexture.clearBind(i);
         }

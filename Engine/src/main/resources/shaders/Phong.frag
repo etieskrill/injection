@@ -72,7 +72,9 @@ uniform bool blinnPhong;
 uniform DirectionalLight globalLights[NR_DIRECTIONAL_LIGHTS];
 uniform PointLight lights[NR_POINT_LIGHTS];
 
+uniform bool hasShadowMap;
 uniform sampler2DShadow shadowMap;
+uniform bool hasPointShadowMaps;
 uniform samplerCubeArrayShadow pointShadowMaps;
 
 uniform float pointShadowFarPlane;
@@ -203,6 +205,10 @@ vec4 getCubeRefraction(float refractIndex, vec3 normal) {
 }
 
 float getInShadow(vec4 lightSpaceFragPos, vec3 lightDirection) {
+    if (!hasShadowMap) {
+        return 1.0;
+    }
+
     vec3 screenSpace = lightSpaceFragPos.xyz / lightSpaceFragPos.w;
     vec3 depthSpace = screenSpace * 0.5 + 0.5;
 
@@ -216,6 +222,9 @@ float getInShadow(vec4 lightSpaceFragPos, vec3 lightDirection) {
     vec3 texelSize = vec3(1.0 / textureSize(shadowMap, 0), 1.0);
     for (int x = -1; x <= 1; x++) {
         for (int y = -1; y <= 1; y++) {
+            //FIXME on nvidia this texture call produces a warning for invalid textures, even if it is never called for
+            //FIXME said invalid state - so the one material to one shader paradigm seems to be almost enforced
+            //i know this because if it were called, the entire pipeline for the mesh would fail, and not produce any visible result
             shadow += texture(shadowMap, depthSpace + vec3(x, y, 0.0) * texelSize);
         }
     }
@@ -224,6 +233,10 @@ float getInShadow(vec4 lightSpaceFragPos, vec3 lightDirection) {
 }
 
 float getInPointShadow(int index, vec3 fragToLight) {
+    if (!hasPointShadowMaps) {
+        return 1.0;
+    }
+
     float currentDepth = length(fragToLight) / pointShadowFarPlane;
 
     float bias = min(0.005, 0.05 * (1.0 - dot(vert_out.normal, fragToLight)));

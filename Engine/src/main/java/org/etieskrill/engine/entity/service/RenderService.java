@@ -14,6 +14,7 @@ import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.joml.Vector2ic;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -97,6 +98,7 @@ public class RenderService implements Service {
             DirectionalLightComponent directionalLightComponent = entity.getComponent(DirectionalLightComponent.class);
             if (directionalLightComponent == null) continue;
             //TODO expand to multiple directional lights
+            shaderParams.addUniform("hasShadowMap", directionalLightComponent.getShadowMap() != null);
             if (directionalLightComponent.getShadowMap() != null) {
                 shaderParams.addTexture("shadowMap", directionalLightComponent.getShadowMap().getTexture());
                 shaderParams.addUniform("lightCombined", directionalLightComponent.getCombined());
@@ -116,14 +118,19 @@ public class RenderService implements Service {
                     .toArray(PointLight[]::new));
         }
 
+        AtomicBoolean hasPointShadowMap = new AtomicBoolean(false);
         AtomicInteger numPointShadowMaps = new AtomicInteger();
         Arrays.stream(pointLightComponents)
                 .map(PointLightComponent::getShadowMap)
                 .filter(Objects::nonNull)
                 .distinct()
-                .forEach(pointShadowMapArray -> shaderParams.addTexture(
-                        "pointShadowMaps" + numPointShadowMaps.getAndIncrement(),
-                        pointShadowMapArray.getTexture()));
+                .forEach(pointShadowMapArray -> {
+                    hasPointShadowMap.set(true);
+                    shaderParams.addTexture(
+                            "pointShadowMaps" + numPointShadowMaps.getAndIncrement(),
+                            pointShadowMapArray.getTexture());
+                });
+        shaderParams.addUniform("hasPointShadowMaps", hasPointShadowMap.get());
 
         shaderParams.addUniform("viewPosition", camera.getPosition());
 
