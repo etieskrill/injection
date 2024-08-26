@@ -35,7 +35,7 @@ public class Zombie extends Entity {
         Model model = Loaders.ModelLoader.get().load("zombie", () ->
                 new Model.Builder("mixamo_zombie_skinned_walking.glb")
                         .setName("zombie")
-//                        .optimiseMeshes()
+                        .optimiseMeshes()
                         .build());
 //        addComponent(new Drawable(model, ShaderLoader.get().load("animation_shader", AnimationShader::new))); //FIXME
         addComponent(new Drawable(model, new ZombieShader()));

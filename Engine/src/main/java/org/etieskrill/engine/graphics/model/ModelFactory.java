@@ -37,10 +37,10 @@ public class ModelFactory {
         }
 
         List<Vertex> vertices = new ArrayList<>();
-        vertices.add(new Vertex(new Vector3f(x, y, 0f), null, new Vector2f(0f)));
-        vertices.add(new Vertex(new Vector3f(x, y + height, 0f), null, new Vector2f(0f, 1f)));
-        vertices.add(new Vertex(new Vector3f(x + width, y, 0f), null, new Vector2f(1f, 0f)));
-        vertices.add(new Vertex(new Vector3f(x + width, y + height, 0f), null, new Vector2f(1f, 1f)));
+        vertices.add(Vertex.builder(new Vector3f(x, y, 0f)).textureCoords(new Vector2f(0f)).build());
+        vertices.add(Vertex.builder(new Vector3f(x, y + height, 0f)).textureCoords(new Vector2f(0f, 1f)).build());
+        vertices.add(Vertex.builder(new Vector3f(x + width, y, 0f)).textureCoords(new Vector2f(1f, 0f)).build());
+        vertices.add(Vertex.builder(new Vector3f(x + width, y + height, 0f)).textureCoords(new Vector2f(1f, 1f)).build());
 
         List<Integer> indices = new ArrayList<>(List.of(new Integer[]{0, 2, 1, 3, 1, 2}));
         

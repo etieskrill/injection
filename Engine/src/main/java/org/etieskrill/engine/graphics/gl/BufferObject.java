@@ -1,5 +1,6 @@
 package org.etieskrill.engine.graphics.gl;
 
+import lombok.Getter;
 import org.etieskrill.engine.Disposable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -19,6 +20,7 @@ import static org.lwjgl.opengl.GL15C.*;
 
 public class BufferObject implements Disposable {
 
+    @Getter
     private final Target target;
     private final int id;
 
@@ -42,7 +44,7 @@ public class BufferObject implements Disposable {
         private Frequency frequency = STATIC;
         private AccessType accessType = DRAW;
 
-        private Builder(Long byteSize, Buffer buffer) {
+        private Builder(@Nullable Long byteSize, @Nullable Buffer buffer) {
             this.byteSize = byteSize;
             this.buffer = buffer;
         }
@@ -171,10 +173,6 @@ public class BufferObject implements Disposable {
         data.rewind();
         bind();
         glBufferSubData(target.gl(), offset, data);
-    }
-
-    public Target getTarget() {
-        return target;
     }
 
     @Override

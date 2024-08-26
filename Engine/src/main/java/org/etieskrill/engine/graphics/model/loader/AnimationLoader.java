@@ -90,7 +90,7 @@ class AnimationLoader {
         return boneAnims;
     }
 
-    static List<Bone> getBones(AIMesh mesh, List<Vertex.Builder> vertices) {
+    static List<Bone> getBones(AIMesh mesh, List<Vertex.VertexBuilder> vertices) {
         if (mesh.mNumBones() == 0)
             return List.of();
 
@@ -119,7 +119,7 @@ class AnimationLoader {
         return bones;
     }
 
-    private static void loadBoneWeights(int boneId, int numWeights, AIVertexWeight.Buffer weightBuffer, List<Vertex.Builder> vertices, List<Integer> maxAffectedLogged) {
+    private static void loadBoneWeights(int boneId, int numWeights, AIVertexWeight.Buffer weightBuffer, List<Vertex.VertexBuilder> vertices, List<Integer> maxAffectedLogged) {
         weightBuffer
                 .stream()
                 .limit(numWeights)
@@ -127,7 +127,7 @@ class AnimationLoader {
                     if (aiWeight.mWeight() == 0)
                         return; //TODO assimp *should* be able to remove these itself, maybe there is a pre-/post-processing step for this
 
-                    Vertex.Builder vertex = vertices.get(aiWeight.mVertexId());
+                    Vertex.VertexBuilder vertex = vertices.get(aiWeight.mVertexId());
                     boolean wasSet = false;
                     for (int i = 0; i < MAX_BONE_INFLUENCES; i++) {
                         if (vertex.bones().get(i) == boneId) continue;

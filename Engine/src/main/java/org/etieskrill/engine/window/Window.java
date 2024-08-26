@@ -2,7 +2,6 @@ package org.etieskrill.engine.window;
 
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.config.InjectionConfig;
-import org.etieskrill.engine.config.SimpleLoggerConfig;
 import org.etieskrill.engine.input.*;
 import org.etieskrill.engine.scene.Scene;
 import org.jetbrains.annotations.Contract;
@@ -439,7 +438,7 @@ public class Window implements Disposable {
 
     public void setMode(WindowMode mode) {
         this.mode = mode;
-        glfwWindowHint(GLFW_DECORATED, switch (mode) {
+        glfwWindowHint(GLFW_DECORATED, switch (mode) { //TODO dis shid ain't working for existing windows blud
             case FULLSCREEN, BORDERLESS -> GLFW_FALSE;
             case WINDOWED -> GLFW_TRUE;
         });

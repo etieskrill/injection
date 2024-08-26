@@ -12,6 +12,7 @@ import java.nio.ByteBuffer;
 import java.util.Collection;
 
 import static lombok.AccessLevel.NONE;
+import static org.etieskrill.engine.graphics.gl.BufferObject.Target.ELEMENT_ARRAY;
 import static org.etieskrill.engine.graphics.gl.GLUtils.checkErrorThrowing;
 import static org.etieskrill.engine.graphics.gl.GLUtils.clearError;
 import static org.lwjgl.opengl.GL30C.*;
@@ -37,7 +38,7 @@ public class VertexArrayObject<T> implements Disposable {
     }
 
     @Builder
-    private VertexArrayObject(@Nullable Long vertexBufferByteSize, @Nullable BufferObject vertexBuffer, @Nullable BufferObject indexBuffer, VertexArrayAccessor<T> accessor) {
+    private VertexArrayObject(@Nullable Long numVertexElements, @Nullable Collection<T> vertexElements, @Nullable BufferObject vertexBuffer, @Nullable Integer numIndices, @Nullable Collection<Integer> indices, @Nullable BufferObject indexBuffer, VertexArrayAccessor<T> accessor) {
         clearError();
 
         if (accessor == null) {
@@ -48,26 +49,40 @@ public class VertexArrayObject<T> implements Disposable {
         this.id = glGenVertexArrays();
         bind();
 
-        if (vertexBufferByteSize != null) {
-            this.vertexBuffer = BufferObject.create(vertexBufferByteSize).build();
-        } else if (vertexBuffer != null) {
+        if (vertexBuffer != null) {
             if (vertexBuffer.getTarget() != BufferObject.Target.ARRAY) {
                 throw new IllegalArgumentException("Vertex buffer must be an array buffer");
             }
             this.vertexBuffer = vertexBuffer;
-            vertexBuffer.bind();
+            this.vertexBuffer.bind();
+        } else if (vertexElements != null) {
+            this.vertexBuffer = BufferObject.create((long) vertexElements.size() * accessor.getElementByteSize()).build();
+            this.vertexBuffer.bind();
+            setVertices(vertexElements);
+        } else if (numVertexElements != null) {
+            this.vertexBuffer = BufferObject.create(numVertexElements * accessor.getElementByteSize()).build();
+            this.vertexBuffer.bind();
         } else {
-            throw new BufferCreationException("Vertex buffer size or buffer data must be set");
+            throw new BufferCreationException("Vertex buffer size, data or buffer object must be set");
         }
 
         configureAttributeArrays(accessor);
 
-        this.indexBuffer = indexBuffer;
         if (indexBuffer != null) {
-            if (indexBuffer.getTarget() != BufferObject.Target.ELEMENT_ARRAY) {
+            if (indexBuffer.getTarget() != ELEMENT_ARRAY) {
                 throw new IllegalArgumentException("Index buffer must be an element array buffer");
             }
-            indexBuffer.bind();
+            this.indexBuffer = indexBuffer;
+            this.indexBuffer.bind();
+        } else if (indices != null) {
+            this.indexBuffer = BufferObject.create((long) indices.size() * Integer.BYTES).target(ELEMENT_ARRAY).build();
+            this.indexBuffer.bind();
+            setIndices(indices);
+        } else if (numIndices != null) {
+            this.indexBuffer = BufferObject.create(numIndices * Integer.BYTES).target(ELEMENT_ARRAY).build();
+            this.indexBuffer.bind();
+        } else {
+            this.indexBuffer = null;
         }
 
         checkErrorThrowing("Failed to create vertex array object", BufferCreationException::new);
@@ -82,7 +97,7 @@ public class VertexArrayObject<T> implements Disposable {
         int bindingIndex = 0;
         int currentStrideBytes = 0;
 
-        String configLog = "";
+        StringBuilder configLog = new StringBuilder();
 
         for (var field : accessor.getFields()) {
             for (int matrixRow = 0; matrixRow < field.getNumMatrixRows(); matrixRow++) {
@@ -97,11 +112,13 @@ public class VertexArrayObject<T> implements Disposable {
                     //TODO attrib divisors for instancing
                 }
 
-                configLog += "\tbinding index " + bindingIndex + " to " + field.getType().getSimpleName()
-                        + " (transformed to " + numComponents + "d-" + componentType.getSimpleName().toLowerCase()
-                        + (field.getNumMatrixRows() > 1 ? ", matrix row " + (matrixRow + 1) + " of " + field.getNumMatrixRows() : "") + ") "
-                        + (field.isNormalised() ? "normalised " : "")
-                        + "with offset of " + currentStrideBytes + " bytes, and total stride of " + totalStrideBytes + " bytes\n";
+                configLog.append("\tbinding index ").append(bindingIndex).append(" to ")
+                        .append(field.getType().getSimpleName()).append(" (transformed to ").append(numComponents)
+                        .append("d-").append(componentType.getSimpleName().toLowerCase())
+                        .append(field.getNumMatrixRows() > 1 ? ", matrix row " + (matrixRow + 1) + " of " + field.getNumMatrixRows() : "")
+                        .append(") ").append(field.isNormalised() ? "normalised " : "").append("with offset of ")
+                        .append(currentStrideBytes).append(" bytes, and total stride of ").append(totalStrideBytes)
+                        .append(" bytes\n");
 
                 bindingIndex++;
                 currentStrideBytes += numComponents * field.getComponentByteSize();
@@ -112,16 +129,16 @@ public class VertexArrayObject<T> implements Disposable {
             }
         }
 
-        configLog = configLog.substring(0, configLog.length() - 1); //remove last newline
+        configLog.deleteCharAt(configLog.length() - 1); //Remove last newline
         logger.debug("Configured vertex attribute pointers:\n{}", configLog);
     }
 
-    public void setAll(Collection<T> values) {
+    public void setVertices(Collection<T> vertices) {
         ByteBuffer buffer = vertexBuffer.getBuffer()
                 .rewind()
-                .limit(accessor.getElementByteSize() * values.size());
+                .limit(accessor.getElementByteSize() * vertices.size());
         int position = 0;
-        for (T value : values) {
+        for (T value : vertices) {
             for (var field : accessor.getFields()) {
                 buffer.position(position);
                 position += field.getFieldByteSize(); //FIXME maybe too much handholding?
@@ -136,6 +153,20 @@ public class VertexArrayObject<T> implements Disposable {
         vertexBuffer.setData(buffer);
     }
 
+    public void setIndices(Collection<Integer> indices) {
+        if (indexBuffer == null) {
+            throw new IllegalStateException("Vertex array object is not indexed");
+        }
+
+        ByteBuffer indexBuffer = this.indexBuffer.getBuffer().rewind();
+        if (indices.size() > indexBuffer.capacity() * Integer.BYTES) {
+            throw new IllegalArgumentException("Too many indices for index buffer object");
+        }
+
+        indices.forEach(indexBuffer::putInt);
+        this.indexBuffer.setData(indexBuffer);
+    }
+
     public void bind() {
         glBindVertexArray(id);
     }
@@ -145,7 +176,7 @@ public class VertexArrayObject<T> implements Disposable {
     }
 
     public boolean isIndexed() {
-        return indexBuffer == null;
+        return indexBuffer != null;
     }
 
     @Override

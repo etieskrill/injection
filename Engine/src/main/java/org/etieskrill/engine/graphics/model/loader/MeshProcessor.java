@@ -69,8 +69,8 @@ public class MeshProcessor {
             aiMesh.mBitangents().forEach(bitangent -> biTangents.add(new Vector3f(bitangent.x(), bitangent.y(), bitangent.z())));
         }
 
-        List<Vertex.Builder> vertexBuilders = new ArrayList<>(numVertices);
-        for (int i = 0; i < aiMesh.mNumVertices(); i++) vertexBuilders.add(new Vertex.Builder(positions.get(i)));
+        List<Vertex.VertexBuilder> vertexBuilders = new ArrayList<>(numVertices);
+        for (int i = 0; i < aiMesh.mNumVertices(); i++) vertexBuilders.add(Vertex.builder(positions.get(i)));
         if (!normals.isEmpty()) {
             for (int i = 0; i < aiMesh.mNumVertices(); i++)
                 vertexBuilders.get(i).normal(normals.get(i));
@@ -137,7 +137,7 @@ public class MeshProcessor {
         List<Bone> bones = getBones(aiMesh, vertexBuilders);
 
         List<Vertex> vertices = vertexBuilders.stream()
-                .map(Vertex.Builder::build)
+                .map(Vertex.VertexBuilder::build)
                 .toList();
 
         AIVector3D min = aiMesh.mAABB().mMin();
@@ -189,24 +189,30 @@ public class MeshProcessor {
     }
 
     public static void optimiseMesh(Mesh mesh, int targetIndexCount, float maxDeformation) {
-        ByteBuffer vertexData = mesh.getVbo().getData();
-        IntBuffer indexData = mesh.getEbo().getData().asIntBuffer();
+        if (!mesh.getVao().isIndexed()) {
+            throw new IllegalArgumentException("Can only optimise indexed meshes"); //TODO workaround: temporary 1-1 vertex-index buffer? duplicate vertices did make the algorithm shit itself tho, so probably do an actual index run using... assimp? can it even do that?
+        }
+
+        ByteBuffer vertexData = mesh.getVao().getVertexBuffer().getData();
+        IntBuffer indexData = mesh.getVao().getIndexBuffer().getData().asIntBuffer();
 
         ByteBuffer newIndexData = BufferUtils.createByteBuffer(Integer.BYTES * indexData.capacity());
 
         FloatBuffer errorBuffer = BufferUtils.createFloatBuffer(1);
+        int vertexBytes = VertexAccessor.getInstance().getElementByteSize();
         long numIndices = meshopt_simplify(newIndexData.asIntBuffer(), indexData, vertexData.asFloatBuffer(),
-                vertexData.capacity() / Vertex.COMPONENT_BYTES, Vertex.COMPONENT_BYTES,
+                vertexData.capacity() / vertexBytes, vertexBytes,
                 targetIndexCount, maxDeformation, 0, errorBuffer);
+        //TODO compress vertex buffer using new indices
 
         logger.trace("Original mesh has {} vertices and {} indices",
-                vertexData.capacity() / Vertex.COMPONENT_BYTES, indexData.capacity());
+                vertexData.capacity() / vertexBytes, indexData.capacity());
         logger.trace("Optimised mesh has {} indices and a deformation of {}% (max {}%)", numIndices,
                 "%5.3f".formatted(100 * errorBuffer.get()), "%5.3f".formatted(100 * maxDeformation));
         logger.debug("Mesh was compressed by a factor of {}",
                 "%4.1f".formatted((float) indexData.capacity() / numIndices));
 
-        mesh.getEbo().setData(newIndexData);
+        mesh.getVao().getIndexBuffer().setData(newIndexData);
         mesh.setNumIndices((int) numIndices);
     }
 
