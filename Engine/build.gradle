@@ -30,6 +30,8 @@ dependencies {
     runtimeOnly "org.lwjgl:lwjgl-meshoptimizer::$lwjglNatives"
 
     implementation 'org.jetbrains:annotations:24.0.0'
+    compileOnly "org.projectlombok:lombok:$lombokVersion"
+    annotationProcessor "org.projectlombok:lombok:$lombokVersion"
 
     //OpenGL-oriented maths library
     api "org.joml:joml:$jomlVersion"

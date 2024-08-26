@@ -20,6 +20,7 @@ import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.window.Window;
 import org.etieskrill.orbes.scene.*;
 import org.jetbrains.annotations.VisibleForTesting;
+import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 import org.joml.Vector3f;
@@ -172,7 +173,7 @@ public class Game {
             screenShader.setColour(pacer.isPaused() ? pauseColour : unpauseColour);
             screenShader.doGammaCorrection(true);
 
-            renderer.render(screenQuad, screenShader, null);
+            renderer.render(screenQuad.getTransform(), screenQuad, screenShader, new Matrix4f());
 
             if (stage == GAME) {
                 gameUIScene.getScoreLabel().setText("Orbes collectered: " + gameScene.getOrbsCollected());

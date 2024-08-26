@@ -1,6 +1,7 @@
 package org.etieskrill.games.particles;
 
 import org.etieskrill.engine.application.GameApplication;
+import org.etieskrill.engine.common.Interpolator;
 import org.etieskrill.engine.entity.Entity;
 import org.etieskrill.engine.entity.component.Drawable;
 import org.etieskrill.engine.entity.component.Transform;
@@ -9,12 +10,13 @@ import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.camera.OrthographicCamera;
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera;
-import org.etieskrill.engine.graphics.gl.BufferObject;
-import org.etieskrill.engine.graphics.gl.GLUtils;
+import org.etieskrill.engine.graphics.gl.VertexArrayObject;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.particle.Particle;
 import org.etieskrill.engine.graphics.particle.ParticleEmitter;
+import org.etieskrill.engine.graphics.particle.ParticleRoot;
+import org.etieskrill.engine.graphics.particle.ParticleVertexAccessor;
 import org.etieskrill.engine.graphics.texture.AbstractTexture.MagFilter;
 import org.etieskrill.engine.graphics.texture.AbstractTexture.MinFilter;
 import org.etieskrill.engine.graphics.texture.AbstractTexture.Type;
@@ -29,18 +31,20 @@ import org.etieskrill.engine.scene.Scene;
 import org.etieskrill.engine.scene.component.Container;
 import org.etieskrill.engine.scene.component.Label;
 import org.etieskrill.engine.window.Window;
-import org.joml.Random;
+import org.joml.Matrix4f;
+import org.joml.Matrix4fc;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 import org.lwjgl.BufferUtils;
 
 import java.nio.ByteBuffer;
 
+import static java.lang.Math.cos;
+import static java.lang.Math.sin;
+import static org.etieskrill.engine.graphics.gl.shader.ShaderProgram.Uniform.Type.*;
 import static org.etieskrill.engine.window.Window.WindowMode.BORDERLESS;
 import static org.lwjgl.opengl.GL15C.*;
-import static org.lwjgl.opengl.GL20C.*;
-import static org.lwjgl.opengl.GL30C.glBindVertexArray;
-import static org.lwjgl.opengl.GL45C.glCreateVertexArrays;
+import static org.lwjgl.opengl.GL20C.GL_VERTEX_PROGRAM_POINT_SIZE;
 
 public class Application extends GameApplication {
 
@@ -51,10 +55,12 @@ public class Application extends GameApplication {
     Label fpsLabel;
 
     ParticleEmitter fireEmitter;
-    ShaderProgram fireShader;
 
     ParticleEmitter riftSmokeEmitter;
-    ShaderProgram riftSmokeShader;
+    ParticleEmitter riftSparkEmitter;
+    ParticleEmitter riftShineEmitter;
+
+    ShaderProgram particleShader;
 
     public Application() {
         super(60, new Window.Builder()
@@ -114,79 +120,81 @@ public class Application extends GameApplication {
         gridDrawable.setShader(gridShader);
         gridEntity.addComponent(gridDrawable);
 
-        fireEmitter = new ParticleEmitter(
-                10000,
-                2500,
-                new Transform().setPosition(new Vector3f(6, 0, 0)),
-                new Vector3f(0, 4, 0),
-                4,
-                new Vector4f(1, .75f, 0, 1),
-                1,
-                new Texture2D.FileBuilder("particles/fire_01_low_res.png", Type.DIFFUSE)
-                        .setMipMapping(MinFilter.LINEAR, MagFilter.LINEAR)
-                        .setWrapping(Wrapping.CLAMP_TO_BORDER).build(),
-                new Vector3f(1)
-        );
-        fireShader = new ShaderProgram() {
+        fireEmitter = ParticleEmitter.builder(
+                        4,
+                        new Texture2D.FileBuilder("particles/fire_01.png", Type.DIFFUSE)
+                                .setMipMapping(MinFilter.LINEAR, MagFilter.LINEAR)
+                                .setWrapping(Wrapping.CLAMP_TO_BORDER).build())
+                .particlesPerSecond(2500)
+                .transform(new Transform().setPosition(new Vector3f(6, 0, 0)))
+                .velocity(() -> new Vector3f(0, 4, 0))
+                .colour(new Vector4f(1, .75f, 0, 1))
+                .scatter(new Vector3f(1))
+                .build();
+
+        riftSparkEmitter = ParticleEmitter.builder(
+                        .05f,
+                        new Texture2D.FileBuilder("particles/spark_04.png", Type.DIFFUSE).build())
+                .lifetimeSpread(.05f)
+                .particlesPerSecond(10)
+                .particleDelaySpreadSeconds(1)
+                .colour(.85f, .6f, .85f)
+                .size(2)
+                .scatter(.5f, 1.5f, .5f)
+                .maxScatterAngle(360)
+                .build();
+
+        riftShineEmitter = ParticleEmitter.builder(
+                        1,
+                        new Texture2D.FileBuilder("particles/star_01.png", Type.DIFFUSE).build())
+                .particlesPerSecond(.5f)
+                .colour(1, .75f, 1, .5f)
+                .updateAlphaFunction(Interpolator.SMOOTHSTEP)
+                .size(5)
+                .build();
+
+        riftSmokeEmitter = ParticleEmitter.builder(
+                        1,
+                        new Texture2D.FileBuilder("particles/smoke_05.png", Type.DIFFUSE).build())
+                .particlesPerSecond(500)
+                .randomVelocity(2)
+                .colour(new Vector4f(.15f, 0, .25f, .5f))
+                .updateAlphaFunction(Interpolator.QUADRATIC)
+                .scatter(new Vector3f(.5f, 1.5f, .5f))
+                .emitter(riftSparkEmitter)
+                .emitter(riftShineEmitter)
+                .build();
+
+        particleShader = new ShaderProgram() {
             @Override
             protected void init() {
-                disableStrictUniformChecking();
+                hasGeometryShader();
             }
 
             @Override
             protected String[] getShaderFileNames() {
-                return new String[]{"ParticleFire.glsl"};
+                return new String[]{"ParticlePointVertex.glsl"};
             }
 
             @Override
             protected void getUniformLocations() {
+                addUniform("model", MAT4);
+                addUniform("camera", STRUCT);
+                addUniform("size", FLOAT);
+                addUniform("sprite", SAMPLER2D);
             }
         };
 
-        Random random = new Random();
-        riftSmokeEmitter = new ParticleEmitter(
-                2500,
-                500,
-                new Transform(),
-                () -> new Vector3f(random.nextFloat(), random.nextFloat(), random.nextFloat()).mul(2).sub(1, 1, 1),
-                4,
-                new Vector4f(.15f, 0, .25f, .5f),
-                1,
-                new Texture2D.FileBuilder("particles/smoke_05.png", Type.DIFFUSE).build(),
-                new Vector3f(.5f, 1.5f, .5f)
-        );
-        riftSmokeShader = fireShader;
-
         glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
 
-        particleBuffer = BufferUtils.createByteBuffer(MAX_PARTICLES * PARTICLE_TRANSFER_BYTES);
-        initParticleVAO();
+        particleBuffer = BufferUtils.createByteBuffer(10000 * ParticleVertexAccessor.BYTE_SIZE);
+        particleVAO = VertexArrayObject
+                .builder(ParticleVertexAccessor.getInstance())
+                .vertexBufferByteSize((long) particleBuffer.capacity())
+                .build();
     }
 
-    private int particleVAO;
-    private BufferObject particleVBO;
-
-    private void initParticleVAO() {
-        GLUtils.clearError();
-
-        particleVAO = glCreateVertexArrays();
-        glBindVertexArray(particleVAO);
-
-        particleVBO = BufferObject.create(particleBuffer.capacity()).build();
-
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, false, PARTICLE_TRANSFER_BYTES, 0L);
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 4, GL_FLOAT, false, PARTICLE_TRANSFER_BYTES, PARTICLE_POSITION_BYTES);
-
-        GLUtils.checkErrorThrowing();
-    }
-
-    public static final int PARTICLE_POSITION_BYTES = 3 * Float.BYTES;
-    public static final int PARTICLE_COLOUR_BYTES = 4 * Float.BYTES;
-    public static final int PARTICLE_TRANSFER_BYTES = PARTICLE_POSITION_BYTES + PARTICLE_COLOUR_BYTES;
-
-    public static final int MAX_PARTICLES = 10000;
+    private VertexArrayObject<ParticleVertexAccessor> particleVAO;
 
     private ByteBuffer particleBuffer;
 
@@ -197,41 +205,51 @@ public class Application extends GameApplication {
         viewCenter.add(viewCenterDelta.mul((float) delta));
         camera.setPosition(camera.getDirection().negate().mul(5).add(viewCenter));
 
-        renderParticles(delta, fireEmitter, fireShader);
-        renderParticles(delta, riftSmokeEmitter, riftSmokeShader);
+        fireEmitter.getTransform().getPosition()
+                .set(cos(pacer.getTime()), 0, -sin(pacer.getTime()))
+                .mul(6);
+
+        if (new Vector3f(camera.getPosition()).sub(fireEmitter.getTransform().getPosition()).length() >
+                new Vector3f(camera.getPosition()).sub(riftSmokeEmitter.getTransform().getPosition()).length()) {
+            renderParticles(delta, fireEmitter, particleShader);
+            renderParticles(delta, riftSmokeEmitter, particleShader);
+        } else {
+            renderParticles(delta, riftSmokeEmitter, particleShader);
+            renderParticles(delta, fireEmitter, particleShader);
+        }
     }
 
-    private void renderParticles(double delta, ParticleEmitter emitter, ShaderProgram shader) {
+    private void renderParticles(double delta, ParticleRoot rootEmitter, ShaderProgram shader) {
+        if (rootEmitter instanceof ParticleEmitter emitter) {
+            renderParticles(delta, new Matrix4f(), emitter, shader);
+        } else {
+            for (ParticleEmitter childEmitter : rootEmitter.getEmitters()) {
+                renderParticles(delta, new Matrix4f(rootEmitter.getTransform().getMatrix()), childEmitter, shader);
+            }
+        }
+    }
+
+    private void renderParticles(double delta, Matrix4fc transform, ParticleEmitter emitter, ShaderProgram shader) {
         emitter.update(delta);
 
-        renderer.bindNextFreeTexture(shader, "sprite", emitter.getSprite());
+        shader.setUniform("model", transform);
+        shader.setUniform("camera", camera);
         shader.setUniform("size", emitter.getSize());
-        shader.setUniform("view", camera.getView());
-        shader.setUniform("perspective", camera.getPerspective());
-        shader.setUniform("screenSize", window.getSize().toVec());
-        particleBuffer.rewind().limit(emitter.getAliveParticles().size() * PARTICLE_TRANSFER_BYTES);
+        renderer.bindNextFreeTexture(shader, "sprite", emitter.getSprite());
+        particleBuffer.rewind().limit(emitter.getAliveParticles().size() * ParticleVertexAccessor.BYTE_SIZE);
         for (Particle particle : emitter.getAliveParticles()) {
-            particle.getPosition().get(particleBuffer).position(particleBuffer.position() + PARTICLE_POSITION_BYTES);
-
-            Vector4f colour = particle.getColour();
-            colour.y *= particle.getLifetime() / 4;
-            colour.w *= particle.getLifetime() / 4;
-            colour.get(particleBuffer).position(particleBuffer.position() + PARTICLE_COLOUR_BYTES);
+            particle.getPosition().get(particleBuffer)
+                    .position(particleBuffer.position() + 3 * Float.BYTES);
+            particle.getTransform().get(particleBuffer)
+                    .position(particleBuffer.position() + 4 * Float.BYTES);
+            particle.getColour().get(particleBuffer)
+                    .position(particleBuffer.position() + 4 * Float.BYTES);
         }
-        if (particleBuffer.position() != emitter.getAliveParticles().size() * PARTICLE_TRANSFER_BYTES)
+        if (particleBuffer.position() != emitter.getAliveParticles().size() * ParticleVertexAccessor.BYTE_SIZE)
             throw new IllegalStateException("Particle buffer position does not align with particle byte number");
 
-        //TODO maybe try glMapBuffer at some point?
-        particleVBO.setData(particleBuffer);
-
-        glBindVertexArray(particleVAO);
-
-//        renderer.render(
-//                quad.getTransform(),
-//                quad,
-//                fireShader,
-//                camera.getCombined()
-//        );
+        particleVAO.getVertexBuffer().setData(particleBuffer);
+        particleVAO.bind();
 
         glDisable(GL_CULL_FACE);
         glDepthMask(false);
@@ -241,7 +259,16 @@ public class Application extends GameApplication {
         glDepthMask(true);
         glEnable(GL_CULL_FACE);
 
-        glBindVertexArray(0);
+        VertexArrayObject.unbind();
+
+        for (ParticleEmitter childEmitter : emitter.getEmitters()) {
+            renderParticles(
+                    delta,
+                    transform.mul(emitter.getTransform().getMatrix(), new Matrix4f()),
+                    childEmitter,
+                    shader
+            );
+        }
     }
 
     public static void main(String[] args) {

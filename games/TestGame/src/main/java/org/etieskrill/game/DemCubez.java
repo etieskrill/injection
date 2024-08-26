@@ -468,16 +468,17 @@ public class DemCubez {
 
         setShaderUniforms();
 
-        for (Model model : models)
-            renderer.render(model, containerShader, camera.getCombined());
+        for (Model model : models) {
+            renderer.render(model.getTransform(), model, containerShader, camera);
+        }
 
-        renderer.render(sword, swordShader, camera.getCombined());
+        renderer.render(sword.getTransform(), sword, swordShader, camera);
 
         //TODO this is gonna look weird no matter what, since here a phong shader attempts to render a pbr model
-        renderer.render(backpack, backpackShader, camera.getCombined());
+        renderer.render(backpack.getTransform(), backpack, backpackShader, camera);
 
         for (int i = 0; i < lightSources.length; i++) {
-            renderer.render(lightSources[i], lightShader, camera.getCombined());
+            renderer.render(lightSources[i].getTransform(), lightSources[i], lightShader, camera);
         }
 
         //TODO 1. draw opaque, 2. sort transparent by decreasing distance to viewer, 3. draw sorted transparent
@@ -487,7 +488,7 @@ public class DemCubez {
                 new Vector3f(camPos).sub(model1.getTransform().getPosition()).length())
         );
         for (Model grass : grassModels) {
-            renderer.render(grass, containerShader, camera.getCombined());
+            renderer.render(grass.getTransform(), grass, containerShader, camera);
         }
     }
     

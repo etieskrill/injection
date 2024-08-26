@@ -39,7 +39,10 @@ public class SimpleLoggerConfig {
         try {
             userProperties.load(getClasspathResourceAsStream(USER_CONFIG_FILE));
         } catch (ResourceLoadException | IOException e) {
-            LoggerFactory.getLogger(SimpleLoggerConfig.class).info("No user logger config detected");
+            String reason = e instanceof ResourceLoadException ?
+                    "No user logger config detected" :
+                    "User logger config could not be loaded";
+            LoggerFactory.getLogger(SimpleLoggerConfig.class).info(reason, e);
         }
 
         for (String propertyName : properties.stringPropertyNames()) {
@@ -47,7 +50,7 @@ public class SimpleLoggerConfig {
                     || userProperties.getProperty(propertyName) != null) {
                 continue;
             }
-            System.setProperty(propertyName, properties.getProperty(propertyName));
+            System.setProperty(propertyName, properties.getProperty(propertyName)); //FIXME just ignored if classpath does not contain "simplelogger.properties" file???
         }
 
         LoggerFactory.getLogger(SimpleLoggerConfig.class).info("Loaded logger config");

@@ -206,8 +206,8 @@ public class GameScene {
         shader.setViewPosition(camera.getPosition());
         shader.setLights(pointLights);
 
-        renderer.render(cube, shader, camera.getCombined());
-        renderer.render(skelly, shader, camera.getCombined());
+        renderer.render(cube.getTransform(), cube, shader, camera);
+        renderer.render(skelly.getTransform(), skelly, shader, camera);
 
 //        localSkellyBBModel.getTransform().set(skelly.getFinalTransform());
 //        renderer.renderWireframe(localSkellyBBModel, shader, camera.getCombined());
@@ -216,11 +216,11 @@ public class GameScene {
 
         for (Model orb : orbs) {
             if (!orb.isEnabled()) continue;
-            renderer.render(orb, shader, camera.getCombined());
+            renderer.render(orb.getTransform(), orb, shader, camera);
         }
 
         lightShader.setLight(pointLight);
-        renderer.render(light, lightShader, camera.getCombined());
+        renderer.render(light.getTransform(), light, lightShader, camera);
     }
 
     public Camera getCamera() {

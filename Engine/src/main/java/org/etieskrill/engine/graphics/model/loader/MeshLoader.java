@@ -14,12 +14,10 @@ import java.nio.IntBuffer;
 import java.util.List;
 
 import static org.etieskrill.engine.graphics.gl.BufferObject.AccessType.READ;
-import static org.etieskrill.engine.graphics.gl.BufferObject.Frequency.STATIC;
-import static org.etieskrill.engine.graphics.gl.BufferObject.Target.ARRAY;
 import static org.etieskrill.engine.graphics.gl.BufferObject.Target.ELEMENT_ARRAY;
 import static org.etieskrill.engine.graphics.model.Vertex.*;
 import static org.lwjgl.opengl.GL11C.GL_FLOAT;
-import static org.lwjgl.opengl.GL15C.*;
+import static org.lwjgl.opengl.GL15C.GL_INT;
 import static org.lwjgl.opengl.GL20C.glEnableVertexAttribArray;
 import static org.lwjgl.opengl.GL20C.glVertexAttribPointer;
 import static org.lwjgl.opengl.GL30C.*;
@@ -39,7 +37,7 @@ public final class MeshLoader {
     }
 
     public static Mesh loadToVAO(List<Vertex> vertices, List<Integer> indices, Material material, List<Bone> bones, AABB boundingBox, Mesh.DrawMode drawMode) {
-        int vao = createVAO();
+        int vao = createVAO(); //TODO use VertexArrayObject
 
         ByteBuffer data = BufferUtils.createByteBuffer(vertices.size() * COMPONENT_BYTES);
         vertices.forEach(vertex -> vertex.buffer(data));

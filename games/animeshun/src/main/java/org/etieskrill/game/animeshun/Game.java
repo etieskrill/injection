@@ -315,11 +315,11 @@ public class Game {
             renderer.prepare();
 
             vampyShader.setViewPosition(camera.getPosition());
-            renderer.render(vampy, vampyShader, camera.getCombined());
+            renderer.render(vampy.getTransform(), vampy, vampyShader, camera);
 //            vampyBB.getTransform().set(vampy.getTransform());
 //            renderer.renderWireframe(vampyBB, vampyShader, camera.getCombined());
 //            renderer.renderBox(vampy.getTransform().getPosition(), vampy.getBoundingBox().getSize().mul(.01f), vampyShader, camera.getCombined());
-            renderer.render(cube, vampyShader, camera.getCombined());
+            renderer.render(vampy.getTransform(), cube, vampyShader, camera);
 
             window.update(delta);
 

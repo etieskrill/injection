@@ -157,9 +157,9 @@ public class RenderService implements Service {
 
         ShaderProgram shader = getConfiguredShader(targetEntity, drawable);
         if (!drawable.isDrawWireframe()) {
-            renderer.render(transform, drawable.getModel(), shader, camera.getCombined());
+            renderer.render(transform, drawable.getModel(), shader, camera);
         } else {
-            renderer.renderWireframe(transform, drawable.getModel(), shader, camera.getCombined());
+            renderer.renderWireframe(transform, drawable.getModel(), shader, camera);
         }
     }
 

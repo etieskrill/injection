@@ -387,15 +387,18 @@ public abstract class ShaderProgram implements Disposable {
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
             switch (type) {
-                case INT, SAMPLER2D, SAMPLER_CUBE_MAP -> glUniform1i(location, (Integer) value);
+                case INT, SAMPLER2D, SAMPLER_CUBE_MAP, SAMPLER_CUBE_MAP_ARRAY -> glUniform1i(location, (Integer) value);
                 case FLOAT -> glUniform1f(location, (Float) value);
                 case BOOLEAN -> glUniform1f(location, (boolean) value ? 1 : 0);
                 case VEC2 -> glUniform2fv(location, ((Vector2f) value).get(stack.mallocFloat(2)));
                 case VEC2I -> glUniform2iv(location, ((Vector2i) value).get(stack.mallocInt(2)));
                 case VEC3 -> glUniform3fv(location, ((Vector3f) value).get(stack.mallocFloat(3)));
                 case VEC4 -> glUniform4fv(location, ((Vector4f) value).get(stack.mallocFloat(4)));
+                case MAT2 -> glUniformMatrix2fv(location, false, ((Matrix2f) value).get(stack.mallocFloat(4)));
                 case MAT3 -> glUniformMatrix3fv(location, false, ((Matrix3f) value).get(stack.mallocFloat(9)));
                 case MAT4 -> glUniformMatrix4fv(location, false, ((Matrix4f) value).get(stack.mallocFloat(16)));
+                default ->
+                        throw new IllegalArgumentException("Unknown uniform value type: " + type + " (" + type.get().getSimpleName() + ")");
             }
         }
     }
@@ -440,6 +443,11 @@ public abstract class ShaderProgram implements Disposable {
                     for (Object o : value) ((Vector4f) o).get(vector4s).position(vector4s.position() + 4);
                     glUniform4fv(location, vector4s.rewind());
                 }
+                case MAT2 -> {
+                    FloatBuffer matrix2s = stack.mallocFloat(4 * value.length);
+                    for (Object o : value) ((Matrix2f) o).get(matrix2s).position(matrix2s.position() + 4);
+                    glUniformMatrix2fv(location, false, matrix2s.rewind());
+                }
                 case MAT3 -> {
                     FloatBuffer matrix3s = stack.mallocFloat(9 * value.length);
                     for (Object o : value) ((Matrix3f) o).get(matrix3s).position(matrix3s.position() + 9);
@@ -450,6 +458,8 @@ public abstract class ShaderProgram implements Disposable {
                     for (Object o : value) ((Matrix4f) o).get(matrix4s).position(matrix4s.position() + 16);
                     glUniformMatrix4fv(location, false, matrix4s.rewind());
                 }
+                default ->
+                        throw new IllegalArgumentException("Unknown uniform array value type: " + type.get().getSimpleName());
             }
         }
     }
@@ -495,6 +505,7 @@ public abstract class ShaderProgram implements Disposable {
             VEC2I(Vector2i.class, Vector2i::new),
             VEC3(Vector3f.class, Vector3f::new),
             VEC4(Vector4f.class, Vector4f::new),
+            MAT2(Matrix2f.class, Matrix2f::new),
             MAT3(Matrix3f.class, Matrix3f::new),
             MAT4(Matrix4f.class, Matrix4f::new),
 

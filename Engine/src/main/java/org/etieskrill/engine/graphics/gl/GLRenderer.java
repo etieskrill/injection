@@ -5,6 +5,7 @@ import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.entity.component.TransformC;
 import org.etieskrill.engine.graphics.Renderer;
 import org.etieskrill.engine.graphics.TextRenderer;
+import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shader.Shaders;
 import org.etieskrill.engine.graphics.model.*;
@@ -79,12 +80,18 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
     }
 
     @Override
-    public void render(TransformC transform, Model model, ShaderProgram shader, Matrix4fc combined) {
+    public void render(TransformC transform, Model model, ShaderProgram shader, Camera camera) {
         if (shader.isPlaceholder()) {
-            renderOutline(model, shader, combined, 1f, new Vector4f(1, 0, 1, 1), true);
+            renderOutline(model, shader, camera, 1f, new Vector4f(1, 0, 1, 1), true);
             return;
         }
 
+        _render(transform, model, shader, camera);
+    }
+
+    @Override
+    public void render(TransformC transform, Model model, ShaderProgram shader, Matrix4fc combined) {
+        //TODO invalid indicator - speaking of; should invalid models/shaders even be rendered? i think so (it'll be easily toggleable later)
         _render(transform, model, shader, combined);
     }
 
@@ -112,12 +119,12 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
     }
 
     //TODO add outline & wireframe as flag in render
-    public void renderOutline(Model model, ShaderProgram shader, Matrix4fc combined) {
-        renderOutline(model, shader, combined, 0.5f, new Vector4f(1f, 0f, 0f, 1f), false);
+    public void renderOutline(Model model, ShaderProgram shader, Camera camera) {
+        renderOutline(model, shader, camera, 0.5f, new Vector4f(1f, 0f, 0f, 1f), false);
     }
 
     @Override
-    public void renderOutline(Model model, ShaderProgram shader, Matrix4fc combined, float thickness, Vector4fc colour, boolean writeToFront) {
+    public void renderOutline(Model model, ShaderProgram shader, Camera camera, float thickness, Vector4fc colour, boolean writeToFront) {
         getOutlineShader().setUniform("thicknessFactor", thickness);
         getOutlineShader().setUniform("colour", colour);
 
@@ -138,10 +145,10 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
     }
 
     @Override
-    public void renderWireframe(TransformC transform, Model model, ShaderProgram shader, Matrix4fc combined) {
+    public void renderWireframe(TransformC transform, Model model, ShaderProgram shader, Camera camera) {
         glDisable(GL_CULL_FACE);
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        _render(transform, model, shader, combined);
+        _render(transform, model, shader, camera);
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         glEnable(GL_CULL_FACE);
     }
@@ -159,8 +166,12 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
                                 Model model,
                                 int numInstances,
                                 ShaderProgram shader,
-                                Matrix4fc combined) {
-        _render(transform, model, shader, combined, true, numInstances);
+                                Camera camera) {
+        _render(transform, model, shader, camera, true, numInstances);
+    }
+
+    private void _render(TransformC transform, Model model, ShaderProgram shader, Camera camera) {
+        _render(transform, model, shader, camera, false, 0);
     }
 
     private void _render(TransformC transform, Model model, ShaderProgram shader, Matrix4fc combined) {
@@ -169,6 +180,16 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
 
     private void _render(TransformC transform, Model model, ShaderProgram shader, Matrix4fc combined, boolean instanced, int numInstances) {
         shader.setUniform("combined", combined, false);
+        _render(transform, model, shader, instanced, numInstances);
+    }
+
+    private void _render(TransformC transform, Model model, ShaderProgram shader, Camera camera, boolean instanced, int numInstances) {
+        shader.setUniform("combined", camera.getCombined(), false); //TODO leave be?
+        shader.setUniform("camera", camera, false);
+        _render(transform, model, shader, instanced, numInstances);
+    }
+
+    private void _render(TransformC transform, Model model, ShaderProgram shader, boolean instanced, int numInstances) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             Matrix4f transformMatrix = new Matrix4f(transform.getMatrix());// = new Matrix4f(model.getFinalTransform().getMatrix().get(stack.callocFloat(16)));
             shader.setUniform("model", transformMatrix, false);
