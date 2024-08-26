@@ -22,12 +22,14 @@ public class BufferObject implements Disposable {
     private final Target target;
     private final int id;
 
+    //TODO add vao slot to ensure in-use (bound) buffers are not accidentally used elsewhere
+
     public static Builder create(long byteSize) {
-        return new Builder(byteSize);
+        return new Builder(byteSize, null);
     }
 
     public static Builder create(Buffer buffer) {
-        return new Builder(buffer);
+        return new Builder(null, buffer);
     }
 
     public static class Builder {
@@ -38,13 +40,8 @@ public class BufferObject implements Disposable {
         private Frequency frequency = STATIC;
         private AccessType accessType = DRAW;
 
-        public Builder(long byteSize) {
+        private Builder(Long byteSize, Buffer buffer) {
             this.byteSize = byteSize;
-            this.buffer = null;
-        }
-
-        public Builder(Buffer buffer) {
-            this.byteSize = null;
             this.buffer = buffer;
         }
 
@@ -68,7 +65,7 @@ public class BufferObject implements Disposable {
         }
     }
 
-    public BufferObject(Long byteSize, Buffer buffer, Target target, Frequency frequency, AccessType accessType) {
+    private BufferObject(Long byteSize, Buffer buffer, Target target, Frequency frequency, AccessType accessType) {
         clearError();
 
         this.target = target;

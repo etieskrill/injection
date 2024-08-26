@@ -276,7 +276,7 @@ public class Game {
             renderer.prepare();
             screenShader.setUniform("emboss", true);
             screenShader.setUniform("colour", pacer.isPaused() ? pauseColour : unpauseColour);
-            renderer.render(screenQuad, screenShader, null);
+            renderer.render(screenQuad.getTransform(), screenQuad, screenShader, (Camera) null);
             
             glDisable(GL_DEPTH_TEST);
             
@@ -374,20 +374,20 @@ public class Game {
     private void render() {
         shader.setViewPosition(camera.getPosition());
         shader.setLights(pointLights);
-    
-        renderer.render(cube, shader, camera.getCombined());
-        renderer.render(skelly, shader, camera.getCombined());
+
+        renderer.render(cube.getTransform(), cube, shader, camera);
+        renderer.render(skelly.getTransform(), skelly, shader, camera);
 //            renderer.renderWireframe(skellyBBModel, shader, camera.getCombined());
     
         for (Model orb : orbs) {
             if (!orb.isEnabled()) continue;
-            renderer.render(orb, shader, camera.getCombined());
+            renderer.render(orb.getTransform(), orb, shader, camera);
 //                orbBBModel.getTransform().set(orb.getTransform());
 //                renderer.renderWireframe(orbBBModel, shader, camera.getCombined());
         }
     
         lightShader.setLight(pointLight);
-        renderer.render(light, lightShader, camera.getCombined());
+        renderer.render(light.getTransform(), light, lightShader, camera);
     }
     
     private void exit() {

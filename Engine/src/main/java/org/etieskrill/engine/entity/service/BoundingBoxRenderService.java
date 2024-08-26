@@ -54,7 +54,7 @@ public class BoundingBoxRenderService implements Service {
                         .setScale(worldSpaceBoundingBox.getSize()),
                 box,
                 shader,
-                camera.getCombined()
+                camera
         );
     }
 

@@ -1,29 +1,37 @@
 package org.etieskrill.engine.graphics.camera;
 
+import lombok.Getter;
+import lombok.Setter;
+import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
+import org.etieskrill.engine.graphics.gl.shader.UniformMappable;
 import org.jetbrains.annotations.Contract;
 import org.joml.*;
 
 import java.lang.Math;
 
-public abstract class Camera {
+public abstract class Camera implements UniformMappable {
 
     protected final Vector3f position;
     protected float rotation;
     protected final Vector3f rotationAxis;
+    @Getter
     protected float zoom;
 
     protected final Vector2i viewportSize;
 
+    @Getter
     protected final Matrix4f view, perspective;
-    protected Matrix4fc combined;
+    protected final Matrix4f combined;
 
     protected float near, far;
     protected final Vector3f front, right, up, worldUp;
 
+    @Getter
     protected double pitch, yaw, roll;
     protected boolean clampPitch;
 
     //TODO transform perform updates lazily instead of eagerly
+    @Setter
     protected boolean autoUpdate;
 
     protected Camera(Vector2ic viewportSize) {
@@ -108,10 +116,6 @@ public abstract class Camera {
         this.viewportSize.set(viewportSize);
     }
 
-    public float getZoom() {
-        return zoom;
-    }
-
     public Camera setZoom(float zoom) {
         this.zoom = Math.clamp(zoom, .01f, 10f);
         if (autoUpdate) update();
@@ -141,10 +145,6 @@ public abstract class Camera {
         return this;
     }
 
-    private void updateCombined() {
-        this.combined = new Matrix4f(perspective).mul(view);
-    }
-
     @Contract("-> new")
     public Vector3f getDirection() {
         return new Vector3f(
@@ -154,17 +154,13 @@ public abstract class Camera {
                 .normalize();
     }
 
-    public Matrix4f getView() {
-        return view;
-    }
-
-    public Matrix4f getPerspective() {
-        return perspective;
-    }
-
     public Matrix4fc getCombined() {
         updateCombined();
         return combined;
+    }
+
+    private void updateCombined() {
+        this.combined.set(perspective).mul(view);
     }
 
     public Camera setNear(float near) {
@@ -183,18 +179,6 @@ public abstract class Camera {
         this.worldUp.set(worldUp);
         if (autoUpdate) update();
         return this;
-    }
-
-    public double getPitch() {
-        return pitch;
-    }
-
-    public double getYaw() {
-        return yaw;
-    }
-
-    public double getRoll() {
-        return roll;
     }
 
     public Camera setOrientation(double pitch, double yaw, double roll) {
@@ -229,10 +213,6 @@ public abstract class Camera {
         return this;
     }
 
-    public void setAutoUpdate(boolean autoUpdate) {
-        this.autoUpdate = autoUpdate;
-    }
-
     @Override
     public String toString() {
         return "Camera{" +
@@ -250,6 +230,15 @@ public abstract class Camera {
                 ", yaw=" + yaw +
                 ", roll=" + roll +
                 '}';
+    }
+
+    @Override
+    public boolean map(ShaderProgram.UniformMapper mapper) {
+        mapper
+                .map("view", view)
+                .map("perspective", perspective)
+                .map("combined", combined);
+        return true;
     }
 
 }

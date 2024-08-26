@@ -5,7 +5,6 @@ import org.etieskrill.engine.entity.component.AABB;
 import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.entity.component.TransformC;
 import org.etieskrill.engine.graphics.animation.Animation;
-import org.etieskrill.engine.graphics.model.loader.MeshProcessor;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -300,6 +299,7 @@ public class Model implements Disposable {
         return bones;
     }
 
+    @Deprecated(forRemoval = true)
     public Transform getTransform() {
         return transform;
     }

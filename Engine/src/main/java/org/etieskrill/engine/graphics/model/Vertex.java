@@ -37,7 +37,7 @@ public class Vertex {
     private final @Nullable Vector4ic bones;
     private final @Nullable Vector4fc boneWeights;
 
-    //TODO WOOOOOOOOOOOOOOOOOOOOOOOO LOMBOOOOOOK WHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEN
+    //TODO WOOOOOOOOOOOOOOOOOOOOOOOO LOMBOOOOOOK WHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEN - now
     public static class Builder {
         private Vector3fc position;
         private Vector3fc normal;

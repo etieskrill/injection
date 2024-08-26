@@ -11,4 +11,5 @@ module injection.engine {
     requires org.slf4j;
     requires java.desktop;
     requires org.jetbrains.annotations;
+    requires lombok;
 }

@@ -16,10 +16,13 @@ uniform ivec2 screenSize;
 void main()
 {
     vec4 eyePosition = view * vec4(a_Position, 1.0);
-    vec4 perspectiveVoxel = perspective * vec4(1, 1, eyePosition.z, eyePosition.w);
-    vec2 perspectiveSize = screenSize * (perspectiveVoxel.xy / perspectiveVoxel.w);
-    gl_PointSize = 0.25 * (perspectiveSize.x + perspectiveSize.y);
-    gl_Position = size * perspective * eyePosition;
+    float dist = distance(a_Position, eyePosition.xyz);
+    //    vec4 perspectiveVoxel = perspective * vec4(1, 1, eyePosition.z, eyePosition.w);
+    //    vec2 perspectiveSize = screenSize * (perspectiveVoxel.xy / perspectiveVoxel.w);
+    //    gl_PointSize = 0.25 * (perspectiveSize.x + perspectiveSize.y);
+    //    gl_Position = perspective * eyePosition;
+    gl_PointSize = 1000.0 * (size / dist);
+    gl_Position = perspective * view * vec4(a_Position, 1.0);
     colour = a_Colour;
 }
 #endif
