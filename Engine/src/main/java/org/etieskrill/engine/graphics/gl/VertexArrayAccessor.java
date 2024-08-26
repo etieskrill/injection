@@ -19,7 +19,7 @@ import static org.lwjgl.opengl.GL11C.*;
 public abstract class VertexArrayAccessor<T> {
 
     protected final @Getter(PACKAGE) List<FieldAccessor<?>> fields;
-    private final @Getter(PACKAGE) int elementByteSize;
+    private final @Getter int elementByteSize;
 
     @Getter
     protected final class FieldAccessor<F> {

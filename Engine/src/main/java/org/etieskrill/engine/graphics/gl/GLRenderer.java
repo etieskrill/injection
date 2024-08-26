@@ -218,7 +218,7 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
 
     private void renderMesh(Mesh mesh, ShaderProgram shader, boolean instanced, int numInstances) {
         bindMaterial(mesh.getMaterial(), shader);
-        glBindVertexArray(mesh.getVao());
+        mesh.getVao().bind();
 
         int mode = shader instanceof Shaders.ShowNormalsShader ? GL_POINTS : mesh.getDrawMode().gl();
         if (!instanced) glDrawElements(mode, mesh.getNumIndices(), GL_UNSIGNED_INT, 0);

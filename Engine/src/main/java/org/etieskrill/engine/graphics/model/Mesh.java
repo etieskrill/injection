@@ -1,21 +1,24 @@
 package org.etieskrill.engine.graphics.model;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.entity.component.AABB;
-import org.etieskrill.engine.graphics.gl.BufferObject;
+import org.etieskrill.engine.graphics.gl.VertexArrayObject;
 
 import java.util.Collections;
 import java.util.List;
 
 import static org.lwjgl.opengl.GL33C.*;
 
+@Getter
 public class Mesh implements Disposable {
 
     private final Material material;
     private final List<Bone> bones;
-    private final int vao;
-    private int numIndices;
-    private final BufferObject vbo, ebo;
+    private final VertexArrayObject<Vertex> vao;
+    //TODO immutable
+    private @Setter int numIndices;
     private final AABB boundingBox;
     private final DrawMode drawMode;
 
@@ -42,7 +45,7 @@ public class Mesh implements Disposable {
 
     public Mesh(Material material,
                 List<Bone> bones,
-                int vao, int numIndices, BufferObject vbo, BufferObject ebo,
+                VertexArrayObject<Vertex> vao, int numIndices,
                 AABB boundingBox,
                 DrawMode drawMode) {
         this.material = material;
@@ -50,57 +53,16 @@ public class Mesh implements Disposable {
 
         this.vao = vao;
         this.numIndices = numIndices;
-        this.vbo = vbo;
-        this.ebo = ebo;
 
         this.boundingBox = boundingBox;
 
         this.drawMode = drawMode;
     }
 
-    public Material getMaterial() {
-        return material;
-    }
-
-    public List<Bone> getBones() {
-        return bones;
-    }
-
-    public int getNumIndices() {
-        return numIndices;
-    }
-
-    //TODO immutable
-    public void setNumIndices(int numIndices) {
-        this.numIndices = numIndices;
-    }
-
-    public int getVao() {
-        return vao;
-    }
-
-    public BufferObject getVbo() {
-        return vbo;
-    }
-
-    public BufferObject getEbo() {
-        return ebo;
-    }
-
-    public AABB getBoundingBox() {
-        return boundingBox;
-    }
-
-    public DrawMode getDrawMode() {
-        return drawMode;
-    }
-
     @Override
     public void dispose() {
         material.dispose();
-        vbo.dispose();
-        ebo.dispose();
-        glDeleteVertexArrays(vao);
+        vao.dispose();
     }
 
 }

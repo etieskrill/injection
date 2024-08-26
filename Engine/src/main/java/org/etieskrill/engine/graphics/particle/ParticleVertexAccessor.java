@@ -8,8 +8,6 @@ import org.joml.Vector4fc;
 
 public class ParticleVertexAccessor extends VertexArrayAccessor<Particle> {
 
-    public static final int BYTE_SIZE = (3 + 4 + 4) * Float.BYTES;
-
     @Getter
     private static final ParticleVertexAccessor instance = new ParticleVertexAccessor();
 

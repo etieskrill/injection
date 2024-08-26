@@ -185,7 +185,7 @@ public class Application extends GameApplication {
 
         particleVAO = VertexArrayObject
                 .builder(ParticleVertexAccessor.getInstance())
-                .vertexBufferByteSize(10000L * ParticleVertexAccessor.BYTE_SIZE)
+                .numVertexElements(10000L)
                 .build();
     }
 
@@ -228,7 +228,7 @@ public class Application extends GameApplication {
         shader.setUniform("size", emitter.getSize());
         renderer.bindNextFreeTexture(shader, "sprite", emitter.getSprite());
 
-        particleVAO.setAll(emitter.getAliveParticles());
+        particleVAO.setVertices(emitter.getAliveParticles());
         particleVAO.bind();
 
         glDisable(GL_CULL_FACE);
@@ -249,6 +249,14 @@ public class Application extends GameApplication {
                     shader
             );
         }
+    }
+
+    @Override
+    protected void terminate() {
+        grid.dispose();
+        particleVAO.dispose();
+        particleShader.dispose();
+        super.terminate();
     }
 
     public static void main(String[] args) {
