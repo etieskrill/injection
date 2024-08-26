@@ -15,9 +15,9 @@ public class ParticleVertexAccessor extends VertexArrayAccessor<Particle> {
 
     @Override
     protected void registerFields() {
-        addField(Vector3fc.class, Particle::getPosition);
-        addField(Matrix2fc.class, Particle::getTransform);
-        addField(Vector4fc.class, Particle::getColour);
+        addField(Vector3fc.class, (particle, byteBuffer) -> particle.getPosition().get(byteBuffer));
+        addField(Matrix2fc.class, (particle, byteBuffer) -> particle.getTransform().get(byteBuffer));
+        addField(Vector4fc.class, (particle, byteBuffer) -> particle.getColour().get(byteBuffer));
     }
 
 }

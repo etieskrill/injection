@@ -2,45 +2,48 @@ package org.etieskrill.engine.graphics.gl;
 
 import lombok.Builder;
 import lombok.Getter;
+import lombok.experimental.Delegate;
 import lombok.extern.slf4j.Slf4j;
 import org.etieskrill.engine.Disposable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.joml.*;
 
-import static java.lang.Integer.toHexString;
-import static java.util.Objects.requireNonNullElse;
+import java.nio.ByteBuffer;
+import java.util.Collection;
+
 import static lombok.AccessLevel.NONE;
 import static org.etieskrill.engine.graphics.gl.GLUtils.checkErrorThrowing;
 import static org.etieskrill.engine.graphics.gl.GLUtils.clearError;
 import static org.lwjgl.opengl.GL30C.*;
 
 /**
- * @param <A> type of data accessor
+ * @param <T> type of vertex data
  */
 @Slf4j
 @Getter
-public class VertexArrayObject<A extends VertexArrayAccessor<?>> implements Disposable {
+public class VertexArrayObject<T> implements Disposable {
 
     public static final int MAX_VERTEX_ATTRIB_BINDINGS = 16;
 
-    @Getter(NONE)
-    private final int id;
+    private final @Getter(NONE) int id;
     private final @NotNull BufferObject vertexBuffer;
     private final @Nullable BufferObject indexBuffer;
 
+    private final @Delegate VertexArrayAccessor<T> accessor;
+
     @SuppressWarnings("unchecked")
-    public static <A extends VertexArrayAccessor<?>> VertexArrayObjectBuilder<A> builder(A accessor) {
-        return (VertexArrayObjectBuilder<A>) new VertexArrayObjectBuilder<>().accessor(accessor);
+    public static <T> VertexArrayObjectBuilder<T> builder(VertexArrayAccessor<T> accessor) {
+        return (VertexArrayObjectBuilder<T>) new VertexArrayObjectBuilder<>().accessor((VertexArrayAccessor<Object>) accessor);
     }
 
     @Builder
-    private VertexArrayObject(@Nullable Long vertexBufferByteSize, @Nullable BufferObject vertexBuffer, @Nullable BufferObject indexBuffer, A accessor) {
+    private VertexArrayObject(@Nullable Long vertexBufferByteSize, @Nullable BufferObject vertexBuffer, @Nullable BufferObject indexBuffer, VertexArrayAccessor<T> accessor) {
         clearError();
 
         if (accessor == null) {
             throw new IllegalArgumentException("Accessor cannot be null");
         }
+        this.accessor = accessor;
 
         this.id = glGenVertexArrays();
         bind();
@@ -70,14 +73,9 @@ public class VertexArrayObject<A extends VertexArrayAccessor<?>> implements Disp
         checkErrorThrowing("Failed to create vertex array object", BufferCreationException::new);
     }
 
-    private void configureAttributeArrays(A accessor) {
-        record FieldType(int componentType, int componentsNumber) {
-        }
+    private void configureAttributeArrays(VertexArrayAccessor<T> accessor) {
         int totalStrideBytes = accessor.getFields().stream()
-                .map(field -> new FieldType(
-                        parseComponentType(requireNonNullElse(field.getComponentType(), field.getType())),
-                        parseMatrixRowNumber(field.getType()) * parseComponentNumber(field.getType())))
-                .mapToInt(type -> type.componentsNumber * getByteSize(type.componentType))
+                .mapToInt(VertexArrayAccessor.FieldAccessor::getFieldByteSize)
                 .sum();
 
         //TODO if standard attrib naming - use glGetAttribLocation instead
@@ -87,26 +85,26 @@ public class VertexArrayObject<A extends VertexArrayAccessor<?>> implements Disp
         String configLog = "";
 
         for (var field : accessor.getFields()) {
-            int glComponentType = parseComponentType(requireNonNullElse(field.getComponentType(), field.getType()));
-
-            final int numMatrixRows = parseMatrixRowNumber(field.getType());
-            for (int matrixRow = 0; matrixRow < numMatrixRows; matrixRow++) {
-                int componentNumber = parseComponentNumber(field.getType());
+            for (int matrixRow = 0; matrixRow < field.getNumMatrixRows(); matrixRow++) {
+                int numComponents = field.getNumComponents();
 
                 glEnableVertexAttribArray(bindingIndex);
-                if (glComponentType == GL_INT || glComponentType == GL_BYTE || glComponentType == GL_SHORT) {
-                    glVertexAttribIPointer(bindingIndex, componentNumber, glComponentType, totalStrideBytes, currentStrideBytes);
+                var componentType = field.getComponentType();
+                if (componentType == Integer.class || componentType == Byte.class || componentType == Short.class) {
+                    glVertexAttribIPointer(bindingIndex, numComponents, field.getGlComponentType(), totalStrideBytes, currentStrideBytes);
                 } else {
-                    glVertexAttribPointer(bindingIndex, componentNumber, glComponentType, field.isNormalised(), totalStrideBytes, currentStrideBytes);
+                    glVertexAttribPointer(bindingIndex, numComponents, field.getGlComponentType(), field.isNormalised(), totalStrideBytes, currentStrideBytes);
                     //TODO attrib divisors for instancing
                 }
 
                 configLog += "\tbinding index " + bindingIndex + " to " + field.getType().getSimpleName()
-                        + " (transformed to " + componentNumber + "d-" + (field.getComponentType() != null ? field.getComponentType() : field.getType()).getSimpleName().toLowerCase() + (numMatrixRows > 1 ? ", matrix row " + (matrixRow + 1) + " of " + numMatrixRows : "") + ") "
-                        + (field.isNormalised() ? "normalised " : "") + "with offset of " + currentStrideBytes + " bytes, and total stride of " + totalStrideBytes + " bytes\n";
+                        + " (transformed to " + numComponents + "d-" + componentType.getSimpleName().toLowerCase()
+                        + (field.getNumMatrixRows() > 1 ? ", matrix row " + (matrixRow + 1) + " of " + field.getNumMatrixRows() : "") + ") "
+                        + (field.isNormalised() ? "normalised " : "")
+                        + "with offset of " + currentStrideBytes + " bytes, and total stride of " + totalStrideBytes + " bytes\n";
 
                 bindingIndex++;
-                currentStrideBytes += componentNumber * getByteSize(glComponentType);
+                currentStrideBytes += numComponents * field.getComponentByteSize();
             }
 
             if (bindingIndex >= MAX_VERTEX_ATTRIB_BINDINGS) {
@@ -118,55 +116,24 @@ public class VertexArrayObject<A extends VertexArrayAccessor<?>> implements Disp
         logger.debug("Configured vertex attribute pointers:\n{}", configLog);
     }
 
-    private static int parseComponentNumber(Class<?> type) {
-        if (anyMatch(type, Integer.class, Long.class, Boolean.class, Float.class, Double.class)) return 1;
-        else if (anyMatch(type, Vector2i.class, Vector2f.class, Vector2d.class, Matrix2f.class, Matrix2d.class))
-            return 2;
-        else if (anyMatch(type, Vector3i.class, Vector3f.class, Vector3d.class)) return 3;
-        else if (anyMatch(type, Matrix3f.class, Matrix3d.class, Matrix3x2f.class, Matrix3x2d.class)) return 3;
-        else if (anyMatch(type, Vector4i.class, Vector4f.class, Vector4d.class)) return 4;
-        else if (anyMatch(type, Matrix4f.class, Matrix4d.class, Matrix4x3f.class, Matrix4x3d.class)) return 4;
-        else throw new IllegalStateException("Cannot determine component number for type: " + type);
-    }
-
-    private static int parseMatrixRowNumber(Class<?> type) {
-        if (anyMatch(type, Matrix2f.class, Matrix2d.class, Matrix3x2f.class, Matrix3x2d.class)) return 2;
-        else if (anyMatch(type, Matrix3f.class, Matrix3f.class, Matrix4x3f.class, Matrix4x3d.class)) return 3;
-        else if (anyMatch(type, Matrix4f.class, Matrix4d.class)) return 4;
-        else return 1; //Unexpected types throw above already, so no further types needed
-    }
-
-    private static int parseComponentType(Class<?> object) {
-        if (anyMatch(object, Integer.class, Boolean.class, Vector2i.class, Vector3i.class, Vector4i.class))
-            return GL_INT;
-        else if (anyMatch(object, Float.class, Vector2f.class, Vector3f.class, Vector4f.class)) return GL_FLOAT;
-        else if (anyMatch(object, Matrix2f.class, Matrix3f.class, Matrix3x2f.class, Matrix4f.class, Matrix4x3f.class))
-            return GL_FLOAT;
-        else if (anyMatch(object, Double.class, Vector2d.class, Vector3d.class, Vector4d.class)) return GL_DOUBLE;
-        else if (anyMatch(object, Matrix2d.class, Matrix3d.class, Matrix3x2d.class, Matrix4d.class, Matrix4x3d.class))
-            return GL_DOUBLE;
-        else if (anyMatch(object, Byte.class)) return GL_BYTE;
-        else if (anyMatch(object, Short.class)) return GL_SHORT;
-        else throw new IllegalStateException("Cannot determine component type for type: " + object);
-    }
-
-    private static boolean anyMatch(Class<?> clazz, Class<?>... matches) {
-        for (Class<?> match : matches) {
-            if (clazz.isAssignableFrom(match)) return true;
+    public void setAll(Collection<T> values) {
+        ByteBuffer buffer = vertexBuffer.getBuffer()
+                .rewind()
+                .limit(accessor.getElementByteSize() * values.size());
+        int position = 0;
+        for (T value : values) {
+            for (var field : accessor.getFields()) {
+                buffer.position(position);
+                position += field.getFieldByteSize(); //FIXME maybe too much handholding?
+                field.getAccessor().accept(value, buffer);
+            }
         }
-        return false;
-    }
 
-    private static int getByteSize(int glDataType) {
-        return switch (glDataType) {
-            case GL_INT -> Integer.BYTES;
-            case GL_FLOAT -> Float.BYTES;
-            case GL_DOUBLE -> Double.BYTES;
-            case GL_BYTE -> Byte.BYTES;
-            case GL_SHORT -> Short.BYTES;
-            default ->
-                    throw new IllegalStateException("Cannot determine byte size for gl data type: 0x" + toHexString(glDataType));
-        };
+        if (position != buffer.limit()) {
+            throw new IllegalStateException("Vertex buffer position does not align with data byte length");
+        }
+
+        vertexBuffer.setData(buffer);
     }
 
     public void bind() {
