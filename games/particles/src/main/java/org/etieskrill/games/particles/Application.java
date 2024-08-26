@@ -35,16 +35,12 @@ import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
-import org.lwjgl.BufferUtils;
-
-import java.nio.ByteBuffer;
 
 import static java.lang.Math.cos;
 import static java.lang.Math.sin;
 import static org.etieskrill.engine.graphics.gl.shader.ShaderProgram.Uniform.Type.*;
 import static org.etieskrill.engine.window.Window.WindowMode.BORDERLESS;
 import static org.lwjgl.opengl.GL15C.*;
-import static org.lwjgl.opengl.GL20C.GL_VERTEX_PROGRAM_POINT_SIZE;
 
 public class Application extends GameApplication {
 
@@ -61,6 +57,8 @@ public class Application extends GameApplication {
     ParticleEmitter riftShineEmitter;
 
     ShaderProgram particleShader;
+
+    VertexArrayObject<Particle> particleVAO;
 
     public Application() {
         super(60, new Window.Builder()
@@ -185,18 +183,11 @@ public class Application extends GameApplication {
             }
         };
 
-        glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
-
-        particleBuffer = BufferUtils.createByteBuffer(10000 * ParticleVertexAccessor.BYTE_SIZE);
         particleVAO = VertexArrayObject
                 .builder(ParticleVertexAccessor.getInstance())
-                .vertexBufferByteSize((long) particleBuffer.capacity())
+                .vertexBufferByteSize(10000L * ParticleVertexAccessor.BYTE_SIZE)
                 .build();
     }
-
-    private VertexArrayObject<ParticleVertexAccessor> particleVAO;
-
-    private ByteBuffer particleBuffer;
 
     @Override
     protected void loop(double delta) {
@@ -236,19 +227,8 @@ public class Application extends GameApplication {
         shader.setUniform("camera", camera);
         shader.setUniform("size", emitter.getSize());
         renderer.bindNextFreeTexture(shader, "sprite", emitter.getSprite());
-        particleBuffer.rewind().limit(emitter.getAliveParticles().size() * ParticleVertexAccessor.BYTE_SIZE);
-        for (Particle particle : emitter.getAliveParticles()) {
-            particle.getPosition().get(particleBuffer)
-                    .position(particleBuffer.position() + 3 * Float.BYTES);
-            particle.getTransform().get(particleBuffer)
-                    .position(particleBuffer.position() + 4 * Float.BYTES);
-            particle.getColour().get(particleBuffer)
-                    .position(particleBuffer.position() + 4 * Float.BYTES);
-        }
-        if (particleBuffer.position() != emitter.getAliveParticles().size() * ParticleVertexAccessor.BYTE_SIZE)
-            throw new IllegalStateException("Particle buffer position does not align with particle byte number");
 
-        particleVAO.getVertexBuffer().setData(particleBuffer);
+        particleVAO.setAll(emitter.getAliveParticles());
         particleVAO.bind();
 
         glDisable(GL_CULL_FACE);

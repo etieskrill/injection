@@ -22,6 +22,8 @@ public class BufferObject implements Disposable {
     private final Target target;
     private final int id;
 
+    private ByteBuffer buffer;
+
     //TODO add vao slot to ensure in-use (bound) buffers are not accidentally used elsewhere
 
     public static Builder create(long byteSize) {
@@ -131,11 +133,33 @@ public class BufferObject implements Disposable {
         glBindBuffer(target.gl(), id);
     }
 
+    /**
+     * Returns a {@link ByteBuffer} sized to this {@link BufferObject}. On the first call to this method (or
+     * {@link BufferObject#getData()}), a new buffer is created, after which point the same object is always returned.
+     *
+     * @return a buffer sized to this buffer object
+     */
+    public ByteBuffer getBuffer() {
+        if (buffer == null) {
+            int size = glGetBufferParameteri(target.gl(), GL_BUFFER_SIZE);
+            buffer = BufferUtils.createByteBuffer(size);
+        }
+        return buffer;
+    }
+
+    /**
+     * Returns a {@link ByteBuffer} containing the data in the buffer object. On the first call to this method (or
+     * {@link BufferObject#getBuffer()}), a new buffer sized to this buffer object is created, after which point this
+     * same object is always returned.
+     * <p>
+     * Writing to the buffer does not affect this {@link BufferObject}. Instead, the usual
+     * {@link BufferObject#setData(ByteBuffer)} can be used to write back any changes to the object.
+     *
+     * @return a buffer containing the buffer object's data
+     */
     public ByteBuffer getData() {
         bind();
-        int size = glGetBufferParameteri(target.gl(), GL_BUFFER_SIZE);
-        ByteBuffer buffer = BufferUtils.createByteBuffer(size);
-        glGetBufferSubData(target.gl(), 0, buffer);
+        glGetBufferSubData(target.gl(), 0, getBuffer().rewind());
         return buffer;
     }
 

@@ -23,8 +23,7 @@ public class Particle {
     private final @Getter(PACKAGE) Vector4f baseColour;
     private final Vector4f colour;
 
-    @Setter(PACKAGE)
-    private float lifetime;
+    private @Setter(PACKAGE) float lifetime;
 
     public Particle() {
         this.position = new Vector3f();
