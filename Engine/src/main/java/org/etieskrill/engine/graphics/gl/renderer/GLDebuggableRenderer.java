@@ -1,4 +1,4 @@
-package org.etieskrill.engine.graphics.gl;
+package org.etieskrill.engine.graphics.gl.renderer;
 
 import org.etieskrill.engine.util.FixedArrayDeque;
 import org.slf4j.Logger;
@@ -9,7 +9,7 @@ import static org.lwjgl.opengl.GL33C.GL_TIME_ELAPSED;
 import static org.lwjgl.opengl.GL33C.glGetQueryObjectui64;
 import static org.lwjgl.opengl.GL45C.glCreateQueries;
 
-public abstract class DebuggableRenderer {
+public abstract class GLDebuggableRenderer {
 
     protected int trianglesDrawn, renderCalls;
     protected int lastTrianglesDrawn, lastRenderCalls;
@@ -21,13 +21,13 @@ public abstract class DebuggableRenderer {
     protected long averagedGpuTime;
     protected long gpuDelay;
 
-    private static final Logger logger = LoggerFactory.getLogger(DebuggableRenderer.class);
+    private static final Logger logger = LoggerFactory.getLogger(GLDebuggableRenderer.class);
 
-    public DebuggableRenderer() {
+    public GLDebuggableRenderer() {
         this(true, 100);
     }
 
-    public DebuggableRenderer(boolean queryGpuTime, int numGpuTimeSamples) {
+    public GLDebuggableRenderer(boolean queryGpuTime, int numGpuTimeSamples) {
         this.queryGpuTime = queryGpuTime;
         this.gpuTimes = new FixedArrayDeque<>(numGpuTimeSamples);
     }

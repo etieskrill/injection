@@ -17,24 +17,33 @@ import java.util.Random;
 import java.util.function.Supplier;
 
 import static java.lang.Math.clamp;
-import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNullElse;
 import static lombok.AccessLevel.PACKAGE;
 import static org.joml.Math.*;
 
-public class ParticleEmitter extends ParticleRoot {
+/**
+ * A particle emitter keeps track of a set of {@link Particle Particles}, which are spawned at a semi-fixed interval.
+ * <p>
+ * Various parameters define a particle's behaviour, including lifetime, starting position, starting angle, velocity,
+ * angular velocity, base colour and texture.
+ * <p>
+ * Additionally, a custom {@link UpdateFunction} may be passed in order to update the colour of a particle based on its
+ * lifetime. By default, this function decreases the particle colour's alpha value linearly from 1 to 0 over the
+ * particle's lifetime.
+ * <p>
+ * If particles are spawned more quickly than their lifetime expires, the particle pool will experience starvation, as
+ * new particles wait for a free particle slot instead of eagerly overwriting existing ones.
+ */
+public class ParticleEmitter {
 
-    @Getter
-    private final boolean particlesMoveWithEmitter;
+    private final @Getter Transform transform;
+    private final @Getter boolean particlesMoveWithEmitter;
     private final Supplier<Vector3f> velocity;
-    @Getter
-    private final float lifetime;
+    private final @Getter float lifetime;
     private final float lifetimeSpread;
     private final Vector4f colour;
-    @Getter
-    private final float size;
-    @Getter
-    private final Texture2D sprite;
+    private final @Getter float size;
+    private final @Getter Texture2D sprite;
 
     @Range(from = 0, to = Integer.MAX_VALUE)
     private final Vector3f scatter;
@@ -46,12 +55,11 @@ public class ParticleEmitter extends ParticleRoot {
     private final float particleDelaySeconds;
     private final float particleDelaySpreadSeconds;
 
-    @Getter(PACKAGE)
-    private final UpdateFunction updateFunction;
+    private final @Getter(PACKAGE) UpdateFunction updateFunction;
 
+    private final @Getter int maxNumParticles;
     private final List<Particle> particles;
-    @Getter
-    private final ArrayDeque<Particle> aliveParticles;
+    private final @Getter ArrayDeque<Particle> aliveParticles;
 
     private int nextParticle;
     private float secondsSinceLastParticle;
@@ -60,7 +68,7 @@ public class ParticleEmitter extends ParticleRoot {
 
     @FunctionalInterface
     public interface UpdateFunction {
-        void update(float normalisedLifetime, Vector4f colour);
+        void update(float normalisedLifetime, Vector4f colour); //TODO generalise over other params?
     }
 
     public static ParticleEmitterBuilder builder(float lifetime, Texture2D sprite) {
@@ -69,7 +77,7 @@ public class ParticleEmitter extends ParticleRoot {
                 .sprite(sprite);
     }
 
-    public static class ParticleEmitterBuilder extends ParticleRootBuilder<ParticleEmitter, ParticleEmitterBuilder> {
+    public static class ParticleEmitterBuilder {
         private UpdateFunction updateFunction = (lifetime, colour) -> {
             colour.w *= Interpolator.LINEAR.interpolate(lifetime);
         };
@@ -127,25 +135,11 @@ public class ParticleEmitter extends ParticleRoot {
             this.updateFunction = (lifetime, colour) -> colour.w *= interpolator.interpolate(lifetime);
             return this;
         }
-
-        @Override
-        protected ParticleEmitterBuilder self() {
-            return this;
-        }
-
-        public ParticleEmitter build() {
-            return new ParticleEmitter(transform != null ? transform : super.getTransform(),
-                    emitters != null ? emitters : super.getEmitters(), particlesMoveWithEmitter, velocity, lifetime,
-                    lifetimeSpread, colour, size, sprite, scatter, numParticles, particlesPerSecond,
-                    particleDelaySpreadSeconds, minScatterAngle, maxScatterAngle, revolutionsPerSecond,
-                    revolutionSpread, updateFunction);
-        }
     }
 
     @Builder(builderMethodName = "create")
     private ParticleEmitter(
             Transform transform,
-            List<ParticleEmitter> emitters,
             boolean particlesMoveWithEmitter,
             Supplier<Vector3f> velocity,
             float lifetime,
@@ -163,8 +157,7 @@ public class ParticleEmitter extends ParticleRoot {
             float revolutionSpread,
             UpdateFunction updateFunction
     ) {
-        super(requireNonNullElse(transform, new Transform()), requireNonNullElse(emitters, emptyList()));
-
+        this.transform = requireNonNullElse(transform, new Transform());
         this.particlesMoveWithEmitter = particlesMoveWithEmitter;
         this.velocity = requireNonNullElse(velocity, () -> new Vector3f(0));
         this.lifetime = lifetime;
@@ -189,6 +182,7 @@ public class ParticleEmitter extends ParticleRoot {
             numParticles = (int) ceil((lifetime + lifetimeSpread + particleDelaySpreadSeconds) * particlesPerSecond);
         }
 
+        this.maxNumParticles = numParticles;
         this.particles = new ArrayList<>(numParticles);
         for (int i = 0; i < numParticles; i++) {
             this.particles.add(new Particle());

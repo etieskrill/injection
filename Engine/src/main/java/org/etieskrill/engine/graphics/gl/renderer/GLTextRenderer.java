@@ -1,8 +1,10 @@
-package org.etieskrill.engine.graphics.gl;
+package org.etieskrill.engine.graphics.gl.renderer;
 
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.graphics.TextRenderer;
+import org.etieskrill.engine.graphics.gl.BufferObject;
 import org.etieskrill.engine.graphics.gl.BufferObject.Frequency;
+import org.etieskrill.engine.graphics.gl.GLUtils;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.etieskrill.engine.graphics.texture.font.BitmapFont;
 import org.etieskrill.engine.graphics.texture.font.Font;
@@ -17,7 +19,7 @@ import java.nio.ByteBuffer;
 import static java.util.Objects.requireNonNullElse;
 import static org.lwjgl.opengl.GL46C.*;
 
-public class GLTextRenderer extends DebuggableRenderer implements TextRenderer, Disposable {
+public class GLTextRenderer extends GLDebuggableRenderer implements TextRenderer, Disposable {
 
     public static final int MAX_BATCH_LENGTH = 1 << 10; //Max text length is 1024 characters per draw call
 

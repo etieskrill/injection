@@ -28,7 +28,6 @@ public final class MeshLoader {
                 .vertexElements(vertices)
                 .indices(indices)
                 .build();
-        vao.setIndices(indices);
         unbindVAO();
 
         return new Mesh(material, bones != null ? bones : List.of(),
