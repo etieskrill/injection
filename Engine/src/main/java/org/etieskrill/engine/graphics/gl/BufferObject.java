@@ -135,6 +135,10 @@ public class BufferObject implements Disposable {
         glBindBuffer(target.gl(), id);
     }
 
+    public void unbind() {
+        glBindBuffer(target.gl(), 0);
+    }
+
     /**
      * Returns a {@link ByteBuffer} sized to this {@link BufferObject}. On the first call to this method (or
      * {@link BufferObject#getData()}), a new buffer is created, after which point the same object is always returned.
@@ -143,6 +147,7 @@ public class BufferObject implements Disposable {
      */
     public ByteBuffer getBuffer() {
         if (buffer == null) {
+            bind();
             int size = glGetBufferParameteri(target.gl(), GL_BUFFER_SIZE);
             buffer = BufferUtils.createByteBuffer(size);
         }

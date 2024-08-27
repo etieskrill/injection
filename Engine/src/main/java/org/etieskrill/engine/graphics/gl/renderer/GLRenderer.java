@@ -1,4 +1,4 @@
-package org.etieskrill.engine.graphics.gl;
+package org.etieskrill.engine.graphics.gl.renderer;
 
 import org.etieskrill.engine.ApplicationDisposed;
 import org.etieskrill.engine.Disposable;

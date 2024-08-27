@@ -2,7 +2,7 @@ package org.etieskrill.game.horde;
 
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.camera.OrthographicCamera;
-import org.etieskrill.engine.graphics.gl.GLRenderer;
+import org.etieskrill.engine.graphics.gl.renderer.GLRenderer;
 import org.etieskrill.engine.graphics.texture.font.Fonts;
 import org.etieskrill.engine.scene.Scene;
 import org.etieskrill.engine.scene.component.Container;

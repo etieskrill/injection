@@ -2,10 +2,10 @@ package org.etieskrill.engine.entity.service;
 
 import org.etieskrill.engine.entity.Entity;
 import org.etieskrill.engine.graphics.camera.Camera;
-import org.etieskrill.engine.graphics.gl.GLRenderer;
 import org.etieskrill.engine.graphics.gl.framebuffer.FrameBuffer;
 import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment.BufferAttachmentType;
 import org.etieskrill.engine.graphics.gl.framebuffer.RenderBuffer;
+import org.etieskrill.engine.graphics.gl.renderer.GLRenderer;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.etieskrill.engine.graphics.texture.AbstractTexture.Format;
 import org.etieskrill.engine.graphics.texture.Texture2D;

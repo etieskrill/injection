@@ -7,7 +7,7 @@ import org.etieskrill.engine.entity.component.PointLightComponent;
 import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.data.PointLight;
-import org.etieskrill.engine.graphics.gl.GLRenderer;
+import org.etieskrill.engine.graphics.gl.renderer.GLRenderer;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shader.Shaders;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;

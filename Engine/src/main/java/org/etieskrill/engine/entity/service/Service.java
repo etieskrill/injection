@@ -22,6 +22,9 @@ public interface Service {
      */
     boolean canProcess(Entity entity);
 
+    //TODO ordered processing
+//    Comparator<Entity> comparator();
+
     /**
      * Called once before any entities are processed.
      *

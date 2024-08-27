@@ -1,6 +1,6 @@
 package org.etieskrill.engine.graphics;
 
-import org.etieskrill.engine.graphics.gl.GLRenderer;
+import org.etieskrill.engine.graphics.gl.renderer.GLRenderer;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shader.Shaders;
 import org.etieskrill.engine.graphics.texture.font.Font;
