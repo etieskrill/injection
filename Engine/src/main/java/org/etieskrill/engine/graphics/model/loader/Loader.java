@@ -1,5 +1,6 @@
 package org.etieskrill.engine.graphics.model.loader;
 
+import lombok.extern.slf4j.Slf4j;
 import org.etieskrill.engine.entity.component.AABB;
 import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.graphics.animation.Animation;
@@ -9,21 +10,17 @@ import org.etieskrill.engine.graphics.model.Mesh;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.model.Node;
 import org.etieskrill.engine.graphics.util.AssimpUtils;
+import org.etieskrill.engine.time.StepTimer;
 import org.joml.Matrix4fc;
 import org.joml.Vector3f;
 import org.lwjgl.PointerBuffer;
-import org.lwjgl.assimp.AILogStream;
 import org.lwjgl.assimp.AINode;
 import org.lwjgl.assimp.AIScene;
-import org.lwjgl.system.MemoryUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.BiPredicate;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toCollection;
@@ -34,6 +31,7 @@ import static org.etieskrill.engine.graphics.model.loader.MaterialLoader.loadMat
 import static org.etieskrill.engine.graphics.model.loader.MeshProcessor.loadMeshes;
 import static org.lwjgl.assimp.Assimp.*;
 
+@Slf4j
 public class Loader {
 
     public static final BoneMatcher DEFAULT_BONE_MATCHER = (modelBone, animBone) -> {
@@ -42,7 +40,7 @@ public class Loader {
                 .equals(animBone.replace("_", "").replace(":", ""));
     };
 
-    private static final Logger logger = LoggerFactory.getLogger(Loader.class);
+    private static final StepTimer timer = new StepTimer(logger);
 
     //TODO loading animations is probs to be separated from model loading: either
     // - load bones with animation every time, and resolve stuff when assigning an animation to a model/animator or
@@ -72,10 +70,14 @@ public class Loader {
 //                    logger.info("Assimp: {}", message);
 //                }));
 
+        timer.start();
+
         AIScene aiScene = importScene(
                 builder.getFile(),
                 new Importer.Options(builder.shouldFlipUVs(), builder.shouldFlipWinding())
         );
+
+        timer.log("Import");
 
         AINode rootNode = aiScene.mRootNode();
 
@@ -85,10 +87,14 @@ public class Loader {
         }
 
         loadEmbeddedTextures(aiScene, builder.getEmbeddedTextures());
+        timer.log("Embedded");
         loadMaterials(aiScene, builder);
+        timer.log("Materials");
         loadMeshes(aiScene, builder);
+        timer.log("Meshes");
         processNode(null, rootNode, builder);
         loadAnimations(aiScene, builder.getBones(), builder.getAnimations(), DEFAULT_BONE_MATCHER); //animations reference bones, which need first be loaded from the meshes, and also require the nodes to resolve the back reference
+        timer.log("Animations");
         calculateModelBoundingBox(builder);
 
         aiReleaseImport(aiScene);
