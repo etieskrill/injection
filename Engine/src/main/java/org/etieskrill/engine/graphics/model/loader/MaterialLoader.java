@@ -1,12 +1,13 @@
 package org.etieskrill.engine.graphics.model.loader;
 
-import org.etieskrill.engine.common.ResourceLoadException;
+import lombok.extern.slf4j.Slf4j;
 import org.etieskrill.engine.graphics.model.Material;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.etieskrill.engine.graphics.texture.AbstractTexture.Format;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.texture.Textures;
+import org.etieskrill.engine.time.StepTimer;
 import org.etieskrill.engine.util.FileUtils.TypedFile;
 import org.etieskrill.engine.util.Loaders;
 import org.joml.Vector2i;
@@ -15,13 +16,7 @@ import org.joml.Vector4fc;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.assimp.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -31,10 +26,13 @@ import static org.etieskrill.engine.graphics.model.Material.Property.*;
 import static org.etieskrill.engine.graphics.texture.AbstractTexture.Type.*;
 import static org.etieskrill.engine.util.FileUtils.splitTypeFromPath;
 import static org.lwjgl.assimp.Assimp.*;
+import static org.lwjgl.stb.STBImage.stbi_failure_reason;
+import static org.lwjgl.stb.STBImage.stbi_load_from_memory;
 
+@Slf4j
 class MaterialLoader {
 
-    private static final Logger logger = LoggerFactory.getLogger(MaterialLoader.class);
+    private static final StepTimer timer = new StepTimer(logger);
 
     static void loadEmbeddedTextures(AIScene scene, Map<String, Texture2D.Builder> embeddedTextures) {
         PointerBuffer textures = scene.mTextures();
@@ -50,31 +48,23 @@ class MaterialLoader {
             byte[] compressedData = new byte[compressedBuffer.remaining()];
             compressedBuffer.get(compressedData);
 
-            BufferedImage image;
-            try {
-                image = ImageIO.read(new ByteArrayInputStream(compressedData)); //TODO dunno if i like depending on plugins, but isss brobably fiiine
-            } catch (IOException e) {
-                logger.warn("Failed to decode embedded texture {}:\n{}", i, e.getMessage());
+            timer.start();
+
+            int[] width = new int[1], height = new int[1], channels = new int[1];
+            ByteBuffer imageData = stbi_load_from_memory(texture.pcDataCompressed(), width, height, channels, 0);
+            if (imageData == null) {
+                logger.warn("Failed to decode embedded texture {}: {}", i, stbi_failure_reason());
                 continue;
             }
 
-            Format format = switch (image.getType()) {
-                case 5 -> Format.RGB; //TODO these are not the S* variants, i think, but this needs some more pondering
-                case 6 -> Format.RGBA;
-                case 10 -> Format.GRAY;
-                //if this fails, refer to java.awt.image.BufferedImage#getType(), the formats are a bit cryptic, and i'd rather throw an exception than try to guess formats
-                default -> throw new ResourceLoadException("Unknown texture format: '" + image.getType() + "'");
-            };
+            timer.log("stb image embedded texture decode");
 
             String filePath = texture.mFilename().dataString();
 
-            int[] data = image.getData().getPixels(0, 0, image.getWidth(), image.getHeight(), (int[]) null);
-            ByteBuffer buffer = BufferUtils.createByteBuffer(data.length);
-            for (int pixel : data) buffer.put((byte) pixel);
-            buffer.rewind();
-
-            Texture2D.Builder tex = new Texture2D.BufferBuilder(buffer,
-                    new Vector2i(image.getWidth(), image.getHeight()), format);
+            Texture2D.Builder tex = new Texture2D.BufferBuilder(
+                    imageData,
+                    new Vector2i(width[0], height[0]),
+                    Format.fromChannels(channels[0]));
             tex.setType(determineType(filePath)); //take a guess at the type, since there is no way i see to get the type otherwise. the type is overridden when an embedded texture is loaded anyway
             embeddedTextures.put("*" + i, tex);
             embeddedTextures.put(filePath, tex); //materials usually reference the standard form of embedded textures (*0, *1 etc.) but some formats sometimes just use the path
