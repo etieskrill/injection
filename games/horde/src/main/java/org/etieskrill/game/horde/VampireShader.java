@@ -1,6 +1,7 @@
 package org.etieskrill.game.horde;
 
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
+import org.joml.Vector3f;
 
 import static org.etieskrill.engine.graphics.gl.shader.ShaderProgram.Uniform.Type.*;
 
@@ -20,6 +21,7 @@ public class VampireShader extends ShaderProgram {
         addUniformArray("globalLights", 1, STRUCT);
         addUniformArray("lights", 2, STRUCT);
 
+        addUniform("material._colour", VEC3, new Vector3f(1));
         addUniform("material.alpha", FLOAT, 1f);
     }
 

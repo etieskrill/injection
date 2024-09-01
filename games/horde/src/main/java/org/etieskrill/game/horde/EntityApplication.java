@@ -1,7 +1,7 @@
 package org.etieskrill.game.horde;
 
 import org.etieskrill.engine.application.GameApplication;
-import org.etieskrill.engine.entity.service.*;
+import org.etieskrill.engine.entity.service.impl.*;
 import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera;
 import org.etieskrill.engine.graphics.gl.GLUtils;
@@ -13,14 +13,14 @@ import org.etieskrill.engine.input.controller.KeyCharacterTranslationController;
 import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.window.Window;
 import org.joml.Math;
-import org.joml.Vector3f;
-import org.joml.Vector3fc;
+import org.joml.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.etieskrill.engine.entity.service.PhysicsService.NarrowCollisionSolver.AABB_SOLVER;
+import static org.etieskrill.engine.entity.service.impl.PhysicsService.NarrowCollisionSolver.AABB_SOLVER;
 import static org.etieskrill.engine.input.Input.bind;
 import static org.joml.Math.floor;
+import static org.joml.Math.toRadians;
 
 public class EntityApplication extends GameApplication {
 
@@ -31,6 +31,8 @@ public class EntityApplication extends GameApplication {
     private static final Logger logger = LoggerFactory.getLogger(EntityApplication.class);
 
     private Camera camera;
+
+    private RenderService secondaryRenderService;
 
     private boolean light;
     private static final Vector3fc lightOnAmbient = new Vector3f(1f);
@@ -69,12 +71,31 @@ public class EntityApplication extends GameApplication {
         world = new World(entitySystem);
 
         entitySystem.addService(new BoundingBoxService());
+
         //TODO fix static-animated root transform
         entitySystem.addService(new DirectionalShadowMappingService(renderer));
         entitySystem.addService(new PointShadowMappingService(renderer, new DepthCubeMapArrayAnimatedShader()));
         entitySystem.addService(new AnimationService());
-        PostProcessingRenderService renderService = new PostProcessingRenderService(renderer, camera, window.getSize().toVec());
+        RenderService renderService = new RenderService(renderer, camera, window.getSize().toVec());
         entitySystem.addService(renderService);
+
+        float smolFactor = 4;
+        secondaryRenderService = new RenderService(renderer,
+                new PerspectiveCamera(window.getSize().toVec())
+                        .setPosition(new Vector3f(-10, 10, -10))
+                        .setOrientation(-60, 45, 0)
+                        .setZoom(10f),
+                new Vector2i(window.getSize().toVec()).div(smolFactor))
+                .cullingCamera(camera)
+                .blur(false)
+                .customViewport(new Vector4i(
+                        (int) (window.getSize().getWidth() * (1f - 1f / smolFactor)),
+                        (int) (window.getSize().getHeight() * (1f - 1f / smolFactor)),
+                        (int) (window.getSize().getWidth() * 1f / smolFactor),
+                        (int) (window.getSize().getHeight() * 1f / smolFactor))
+                );
+        entitySystem.addService(secondaryRenderService);
+
         entitySystem.addService(new PhysicsService(AABB_SOLVER));
         entitySystem.addService(new SnippetsService());
 
@@ -82,7 +103,7 @@ public class EntityApplication extends GameApplication {
 
         final int numZombies = 10;
         for (int i = 0; i < numZombies; i++) {
-            float angle = Math.toRadians(((float) i / numZombies) * 360f);
+            float angle = toRadians(((float) i / numZombies) * 360f);
 
             zombie = entitySystem.createEntity(Zombie::new);
             zombie.getTransform().getPosition().add(20 * Math.cos(angle), 0, 20 * Math.sin(angle));
@@ -138,8 +159,8 @@ public class EntityApplication extends GameApplication {
 
     @Override
     protected void loop(final double delta) {
-        player.getTransform().getPosition().sub(zombie.getTransform().getPosition(), zombie.getAcceleration().getForce());
-        zombie.getAcceleration().getForce().normalize().mul(.015f * zombie.getAcceleration().getFactor());
+//        player.getTransform().getPosition().sub(zombie.getTransform().getPosition(), zombie.getAcceleration().getForce());
+//        zombie.getAcceleration().getForce().normalize().mul(.015f * zombie.getAcceleration().getFactor());
 
         camera.setOrientation(-45, 45, 0);
         camera.setPosition(

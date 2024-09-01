@@ -1,7 +1,8 @@
-package org.etieskrill.engine.entity.service;
+package org.etieskrill.engine.entity.service.impl;
 
 import org.etieskrill.engine.entity.Entity;
 import org.etieskrill.engine.entity.component.*;
+import org.etieskrill.engine.entity.service.Service;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 

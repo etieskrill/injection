@@ -1,9 +1,12 @@
 package org.etieskrill.engine.graphics.camera;
 
-import org.joml.*;
+import org.joml.Matrix4f;
+import org.joml.Vector2ic;
+import org.joml.Vector3f;
+import org.joml.Vector3fc;
 
 public class OrthographicCamera extends Camera {
-    
+
     private float top, bottom, left, right;
 
     public OrthographicCamera(Vector2ic viewportSize, Vector3fc origin) {
@@ -46,5 +49,10 @@ public class OrthographicCamera extends Camera {
         bottom = 0.5f * viewportSize.y();
         top = -bottom;
     }
-    
+
+    @Override
+    public boolean frustumTestSphere(Vector3fc center, float radius) {
+        return false; //TODO implement
+    }
+
 }

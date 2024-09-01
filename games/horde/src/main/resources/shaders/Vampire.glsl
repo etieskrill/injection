@@ -114,6 +114,7 @@ uniform struct Material {
     bool emissiveTexture;
     sampler2D emissive0;
     sampler2D metalness0;
+    vec3 _colour;
     float alpha;
 } material;
 
@@ -143,6 +144,8 @@ vec3 getSpecular(vec3 lightDirection, vec3 normal, vec3 fragPosition, vec3 viewP
 //TODO shadow mapping
 void main()
 {
+    if (material.alpha == 0) discard;
+
     vec4 texel = texture(material.diffuse0, vertex.texCoords);
     if (texel.a == 0) discard;
 
@@ -169,6 +172,7 @@ void main()
         combinedLight += emission * emission;
     }
 
+    combinedLight *= material._colour;
     fragColour = vec4(combinedLight, texel.a * material.alpha);
 
     float brightness = dot(combinedLight.rgb, vec3(0.2126, 0.7152, 0.0722));

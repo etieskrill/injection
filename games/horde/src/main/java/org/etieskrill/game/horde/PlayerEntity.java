@@ -8,6 +8,7 @@ import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.util.Loaders;
 import org.joml.Math;
 import org.joml.Vector3f;
+import org.joml.Vector3fc;
 
 import java.util.List;
 
@@ -19,10 +20,12 @@ public class PlayerEntity extends Entity {
 
     private final Transform transform;
     private final DynamicCollider collider;
+    private final AABB boundingBox;
     private final Acceleration moveForce;
     private final VampireShader shader;
     private final Animator animator;
     private final DashState dashState;
+    private final DashParticles dashParticles;
 
     private float rotationSmooth;
     private float walkingTransition;
@@ -35,7 +38,8 @@ public class PlayerEntity extends Entity {
 
         addComponent(transform);
 
-        addComponent(new AABB(new Vector3f(-.5f, 0, -.5f), new Vector3f(.5f, 2, .5f)));
+        boundingBox = new AABB(new Vector3f(-.5f, 0, -.5f), new Vector3f(.5f, 2, .5f));
+        addComponent(boundingBox);
         addComponent(new WorldSpaceAABB());
 
         collider = new DynamicCollider();
@@ -69,6 +73,9 @@ public class PlayerEntity extends Entity {
 
         dashState = new DashState(.6f, 5, 20, 100);
         addComponent(dashState);
+
+        dashParticles = new DashParticles();
+        addComponent(dashParticles.getParticles());
 
         addComponent(new Scripts(List.of(
                 this::rotatePlayerToHeading,
@@ -105,12 +112,21 @@ public class PlayerEntity extends Entity {
         animator.getAnimationMixer().setWeight(1, walkingTransition);
     }
 
+    private final Vector3fc ONE = new Vector3f(1);
+    private final Vector3fc DASH_COLOUR = new Vector3f(.005f, 0, .01f);
+
     private void updateDashAction(double delta) {
         dashState.update((float) delta);
 
-        shader.setUniform("material.alpha", (float) (dashState.isActive() ? .1 : 1));
+        shader.setUniform("material._colour", ONE.lerp(DASH_COLOUR, dashState.getActiveFactor(), new Vector3f()));
+        shader.setUniform("material.alpha", 1 - dashState.getActiveFactor());
         moveForce.setFactor(dashState.isActive() ? dashState.getDashSpeed() : dashState.getRegularSpeed());
         collider.setStaticOnly(dashState.isActive());
+
+        dashParticles.getParticles().setSpawnParticles(dashState.isActive());
+        dashParticles.getParticles().getTransform()
+                .setPosition(transform.getPosition())
+                .getPosition().add(boundingBox.getCenter());
     }
 
     public Transform getTransform() {

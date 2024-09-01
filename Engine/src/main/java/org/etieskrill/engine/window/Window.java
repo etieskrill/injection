@@ -417,6 +417,7 @@ public class Window implements Disposable {
     public void update(double delta) {
         if (scene != null) {
             scene.update(delta);
+            glViewport(0, 0, size.getWidth(), size.getHeight()); //TODO viewport wrapper/system
             scene.render();
         }
 

@@ -43,7 +43,7 @@ void main()
 {
     for (int i = 0; i < 4; i++) {
         vec2 offset = (camera.perspective * vec4(vertices[i], 0, 0)).xy;
-        gl_Position = gl_in[0].gl_Position + vec4(offset * size, 0, 0);
+        gl_Position = gl_in[0].gl_Position + vec4(offset * size, -0.05, 0);
         texCoords = (transform[0] * (vertices[i])) + vec2(0.5, 0.5);
         colour = particleColour[0];
         EmitVertex();
@@ -56,13 +56,17 @@ void main()
 in vec2 texCoords;
 flat in vec4 colour;
 
-out vec4 fragColour;
+layout (location = 0) out vec4 fragColour;
+layout (location = 1) out vec4 bloomColour;
 
 uniform sampler2D sprite;
 
 void main()
 {
-    fragColour = texture(sprite, texCoords) * colour * 2;
+    fragColour = texture(sprite, texCoords) * colour;
     if (fragColour.a == 0.0) discard;
+
+    float brightness = dot(fragColour.rgb, vec3(0.2126, 0.7152, 0.0722));
+    if (brightness > 1.0) bloomColour = fragColour;
 }
 #endif

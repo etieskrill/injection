@@ -1,5 +1,7 @@
 package org.etieskrill.engine.entity;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -21,7 +23,7 @@ public class Entity {
         return id;
     }
 
-    public <T> T getComponent(Class<T> type) {
+    public <T> @Nullable T getComponent(Class<T> type) {
         return (T) components.get(type);
     }
 

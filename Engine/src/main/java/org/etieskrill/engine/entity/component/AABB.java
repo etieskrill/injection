@@ -1,5 +1,6 @@
 package org.etieskrill.engine.entity.component;
 
+import lombok.Getter;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
@@ -9,6 +10,7 @@ public class AABB {
     protected final Vector3f max;
     protected final Vector3f center;
     protected final Vector3f size;
+    protected @Getter float boundingRadius;
 
     public AABB(Vector3fc min, Vector3fc max) {
         this(min, max,
@@ -27,6 +29,7 @@ public class AABB {
         this.max = (Vector3f) max;
         this.center = (Vector3f) center;
         this.size = (Vector3f) size;
+        this.boundingRadius = size.length() / 2;
     }
 
     public Vector3fc getMin() {
@@ -50,6 +53,7 @@ public class AABB {
         this.max.set(max);
         this.max.sub(this.min, this.center).mul(.5f).add(this.min);
         this.max.sub(this.min, this.size).absolute();
+        this.boundingRadius = this.size.length() / 2f;
     }
 
     public boolean overlapsWith(AABB other) {

@@ -1,10 +1,11 @@
-package org.etieskrill.engine.entity.service;
+package org.etieskrill.engine.entity.service.impl;
 
 import org.etieskrill.engine.entity.Entity;
 import org.etieskrill.engine.entity.component.AABB;
 import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.entity.component.TransformC;
 import org.etieskrill.engine.entity.component.WorldSpaceAABB;
+import org.etieskrill.engine.entity.service.Service;
 import org.joml.Matrix4fc;
 import org.joml.Vector3f;
 

@@ -23,7 +23,8 @@ public class Particle {
     private final @Getter(PACKAGE) Vector4f baseColour;
     private final Vector4f colour;
 
-    private @Setter(PACKAGE) float lifetime;
+    private float initialLifetime;
+    private float lifetime;
 
     public Particle() {
         this.position = new Vector3f();
@@ -43,7 +44,7 @@ public class Particle {
             position.add(emitter.getTransform().getPosition());
         }
         transform.rotate(angularVelocity * delta);
-        emitter.getUpdateFunction().update(lifetime / emitter.getLifetime(), colour.set(baseColour));
+        emitter.getUpdateFunction().update(lifetime / initialLifetime, colour.set(baseColour));
     }
 
     public Vector3fc getPosition() {
@@ -56,6 +57,11 @@ public class Particle {
 
     public Vector4fc getColour() {
         return colour;
+    }
+
+    void setInitialLifetime(float initialLifetime) {
+        this.initialLifetime = initialLifetime;
+        this.lifetime = initialLifetime;
     }
 
 }

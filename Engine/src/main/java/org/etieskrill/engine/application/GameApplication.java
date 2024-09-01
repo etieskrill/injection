@@ -76,7 +76,7 @@ public abstract class GameApplication {
 
     @VisibleForTesting
     protected void doLoop() {
-        renderer.prepare();
+        renderer.nextFrame();
 
         long time = System.nanoTime();
 
