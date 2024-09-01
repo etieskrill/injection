@@ -19,9 +19,14 @@ import org.joml.Vector4fc;
 public interface Renderer {
 
     /**
-     * Clears and prepares the scene for the next frame.
+     * Only for the currently bound buffers: clears the buffers and prepares the renderer state for the next frame.
      */
     void prepare();
+
+    /**
+     * Advances the renderer to draw the next frame to the screen buffer. Should only be called once every frame.
+     */
+    void nextFrame();
 
     void bindNextFreeTexture(ShaderProgram shader, String name, AbstractTexture texture);
 

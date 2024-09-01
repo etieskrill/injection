@@ -1,5 +1,7 @@
 package org.etieskrill.engine.graphics.gl.framebuffer;
 
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.graphics.gl.GLUtils;
 import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment.BufferAttachmentType;
@@ -7,8 +9,6 @@ import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.texture.Textures;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2ic;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -17,13 +17,12 @@ import static java.util.Objects.requireNonNull;
 import static org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment.BufferAttachmentType.*;
 import static org.lwjgl.opengl.GL33C.*;
 
+@Slf4j
 public class FrameBuffer implements Disposable {
 
-    private static final Logger logger = LoggerFactory.getLogger(FrameBuffer.class);
-
     private final int fbo;
-    private final Vector2ic size;
-    private final Map<BufferAttachmentType, FrameBufferAttachment> attachments;
+    private final @Getter Vector2ic size;
+    private final @Getter Map<BufferAttachmentType, FrameBufferAttachment> attachments;
     private final int glBufferClearMask;
     private final int @Nullable [] glColourDrawBuffers;
 
@@ -163,14 +162,6 @@ public class FrameBuffer implements Disposable {
         unbind();
     }
 
-    public Vector2ic getSize() {
-        return size;
-    }
-
-    public Map<BufferAttachmentType, FrameBufferAttachment> getAttachments() {
-        return attachments;
-    }
-
     public FrameBufferAttachment getAttachment(BufferAttachmentType type) {
         return attachments.get(type);
     }
@@ -178,6 +169,7 @@ public class FrameBuffer implements Disposable {
     @Override
     public void dispose() {
         glDeleteFramebuffers(fbo);
+        attachments.values().forEach(Disposable::dispose);
     }
 
 }

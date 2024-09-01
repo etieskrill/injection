@@ -1,5 +1,7 @@
 package org.etieskrill.game.horde;
 
+import static java.lang.Math.clamp;
+
 public class DashState {
 
     private final float duration;
@@ -12,6 +14,8 @@ public class DashState {
     private float time;
     private float cooldown;
 
+    private float activeFactor;
+
     public DashState(float duration, float cooldownDuration, float regularSpeed, float dashSpeed) {
         this.duration = duration;
         this.cooldownDuration = cooldownDuration;
@@ -21,9 +25,13 @@ public class DashState {
         this.triggered = false;
         this.time = 0;
         this.cooldown = 0;
+        this.activeFactor = 0;
     }
 
     public void update(float delta) {
+        activeFactor -= (activeFactor - (active ? 1 : 0)) * delta * 15;
+        activeFactor = clamp(activeFactor, 0, 1);
+
         if (triggered) {
             if (!active && cooldown <= 0) {
                 active = true;
@@ -66,6 +74,10 @@ public class DashState {
 
     public float getCooldown() {
         return cooldown;
+    }
+
+    public float getActiveFactor() {
+        return activeFactor;
     }
 
 }

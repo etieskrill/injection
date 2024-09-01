@@ -5,9 +5,8 @@ import org.etieskrill.engine.entity.Entity;
 import org.etieskrill.engine.entity.component.DirectionalLightComponent;
 import org.etieskrill.engine.entity.component.Drawable;
 import org.etieskrill.engine.entity.component.Transform;
-import org.etieskrill.engine.entity.service.AnimationService;
-import org.etieskrill.engine.entity.service.DirectionalShadowMappingService;
-import org.etieskrill.engine.entity.service.PostProcessingRenderService;
+import org.etieskrill.engine.entity.service.impl.AnimationService;
+import org.etieskrill.engine.entity.service.impl.DirectionalShadowMappingService;
 import org.etieskrill.engine.graphics.animation.Animator;
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera;
 import org.etieskrill.engine.graphics.data.DirectionalLight;
@@ -47,7 +46,7 @@ public class RuntimeMeshOptimisation extends GameApplication {
 
         entitySystem.addService(new AnimationService());
         entitySystem.addService(new DirectionalShadowMappingService(renderer));
-        entitySystem.addService(new PostProcessingRenderService(renderer, camera, window.getSize().toVec()));
+//        entitySystem.addService(new PostProcessingRenderService(renderer, camera, window.getSize().toVec()));
 
         entitySystem.createEntity(id -> new Entity(id)
                 .addComponent(new Transform().setPosition(new Vector3f(0, -1.5f, 0)))

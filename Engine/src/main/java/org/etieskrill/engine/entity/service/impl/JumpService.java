@@ -1,9 +1,10 @@
-package org.etieskrill.engine.entity.service;
+package org.etieskrill.engine.entity.service.impl;
 
 import org.etieskrill.engine.entity.Entity;
 import org.etieskrill.engine.entity.component.Acceleration;
 import org.etieskrill.engine.entity.component.OnGround;
 import org.etieskrill.engine.entity.component.Transform;
+import org.etieskrill.engine.entity.service.Service;
 
 import java.util.List;
 import java.util.Set;

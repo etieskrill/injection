@@ -14,20 +14,17 @@ public abstract class Camera implements UniformMappable {
     protected final Vector3f position;
     protected float rotation;
     protected final Vector3f rotationAxis;
-    @Getter
-    protected float zoom;
+    protected @Getter float zoom;
 
     protected final Vector2i viewportSize;
 
-    @Getter
-    protected final Matrix4f view, perspective;
+    protected final @Getter Matrix4f view, perspective;
     protected final Matrix4f combined;
 
-    protected float near, far;
+    protected @Getter float near, far;
     protected final Vector3f front, right, up, worldUp;
 
-    @Getter
-    protected double pitch, yaw, roll;
+    protected @Getter double pitch, yaw, roll;
     protected boolean clampPitch;
 
     //TODO transform perform updates lazily instead of eagerly
@@ -212,6 +209,16 @@ public abstract class Camera implements UniformMappable {
         if (autoUpdate) update();
         return this;
     }
+
+    /**
+     * Tests whether the world-space sphere at {@code center} with size {@code radius} intersects the volume projected
+     * by the camera's view frustum in any point. Useful e.g. for simple frustum culling.
+     *
+     * @param center the center point of the sphere
+     * @param radius the radius of the sphere
+     * @return whether the sphere intersects the view frustum in any point
+     */
+    public abstract boolean frustumTestSphere(Vector3fc center, float radius);
 
     @Override
     public String toString() {

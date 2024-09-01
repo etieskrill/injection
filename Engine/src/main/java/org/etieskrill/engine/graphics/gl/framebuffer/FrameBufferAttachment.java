@@ -1,10 +1,11 @@
 package org.etieskrill.engine.graphics.gl.framebuffer;
 
+import org.etieskrill.engine.Disposable;
 import org.joml.Vector2ic;
 
 import static org.lwjgl.opengl.GL30C.*;
 
-public interface FrameBufferAttachment {
+public interface FrameBufferAttachment extends Disposable {
 
     Vector2ic getSize();
 

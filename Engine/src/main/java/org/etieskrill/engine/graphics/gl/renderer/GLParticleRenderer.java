@@ -23,11 +23,14 @@ public class GLParticleRenderer implements ParticleRenderer {
 
     public static final int MAX_PARTICLES = 10_000;
 
+    private static final Matrix4fc IDENTITY = new Matrix4f();
+
     private final VertexArrayObject<Particle> vao;
     private final ShaderProgram particleShader;
 
     private final Set<ParticleEmitter> invalidEmitters;
 
+    //TODO render stats
     public GLParticleRenderer() {
         this.vao = VertexArrayObject
                 .builder(ParticleVertexAccessor.getInstance())
@@ -63,7 +66,7 @@ public class GLParticleRenderer implements ParticleRenderer {
     }
 
     private void renderEmitter(Matrix4fc transform, ParticleEmitter emitter, Camera camera, ShaderProgram shader) {
-        shader.setUniform("model", transform);
+        shader.setUniform("model", emitter.isParticlesMoveWithEmitter() ? transform : IDENTITY);
         shader.setUniform("camera", camera);
         shader.setUniform("size", emitter.getSize());
         emitter.getSprite().bind(0);

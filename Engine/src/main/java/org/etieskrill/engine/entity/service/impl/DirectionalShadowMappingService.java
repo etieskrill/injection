@@ -1,10 +1,11 @@
-package org.etieskrill.engine.entity.service;
+package org.etieskrill.engine.entity.service.impl;
 
 import org.etieskrill.engine.entity.Entity;
 import org.etieskrill.engine.entity.component.DirectionalLightComponent;
 import org.etieskrill.engine.entity.component.Drawable;
 import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.entity.component.TransformC;
+import org.etieskrill.engine.entity.service.Service;
 import org.etieskrill.engine.graphics.Renderer;
 import org.etieskrill.engine.graphics.animation.Animator;
 import org.etieskrill.engine.graphics.gl.shader.Shaders;

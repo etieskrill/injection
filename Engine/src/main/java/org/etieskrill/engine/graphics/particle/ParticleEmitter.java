@@ -2,8 +2,10 @@ package org.etieskrill.engine.graphics.particle;
 
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 import org.etieskrill.engine.common.Interpolator;
 import org.etieskrill.engine.entity.component.Transform;
+import org.etieskrill.engine.entity.component.TransformC;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.jetbrains.annotations.Range;
 import org.joml.Math;
@@ -54,6 +56,9 @@ public class ParticleEmitter {
 
     private final float particleDelaySeconds;
     private final float particleDelaySpreadSeconds;
+
+    private @Getter
+    @Setter boolean spawnParticles;
 
     private final @Getter(PACKAGE) UpdateFunction updateFunction;
 
@@ -176,6 +181,8 @@ public class ParticleEmitter {
         this.revolutionsPerSecond = revolutionsPerSecond;
         this.revolutionSpread = abs(revolutionSpread);
 
+        this.spawnParticles = true;
+
         this.updateFunction = updateFunction;
 
         if (numParticles <= 0) {
@@ -192,22 +199,24 @@ public class ParticleEmitter {
         this.secondsSinceLastParticle = 0;
     }
 
-    public void update(double delta) {
+    public void update(double delta, TransformC transform) {
         aliveParticles.forEach(particle -> particle.update((float) delta, this));
 
         while (!aliveParticles.isEmpty() && aliveParticles.getLast().getLifetime() <= 0) {
             aliveParticles.removeLast();
         }
 
+        TransformC localTransform = transform.apply(this.transform, new Transform());
+
         secondsSinceLastParticle += delta;
 
         float nextParticleDelay = particleDelaySeconds + (random.nextFloat() * 2 - 1) * particleDelaySpreadSeconds;
         while (secondsSinceLastParticle >= nextParticleDelay) {
-            if (particles.get(nextParticle).getLifetime() <= 0) { //TODO maybe override particles instead of waiting
+            if (spawnParticles && particles.get(nextParticle).getLifetime() <= 0) { //TODO maybe override particles instead of waiting
                 Particle spawnedParticle = particles.get(nextParticle);
                 spawnedParticle.withPosition(position -> {
                     if (particlesMoveWithEmitter) position.zero();
-                    else position.set(transform.getPosition());
+                    else position.set(localTransform.getPosition());
                 });
                 if (scatter.x() != 0 || scatter.y() != 0 || scatter.z() != 0) spawnedParticle.withPosition(position ->
                         position.add(
@@ -223,7 +232,7 @@ public class ParticleEmitter {
                 spawnedParticle.setAngularVelocity(
                         (float) (2 * PI * (revolutionsPerSecond + revSpread) * (random.nextBoolean() ? 1 : -1))
                 );
-                spawnedParticle.setLifetime(lifetime + lerp(-lifetimeSpread, lifetimeSpread, random.nextFloat()));
+                spawnedParticle.setInitialLifetime(lifetime + lerp(-lifetimeSpread, lifetimeSpread, random.nextFloat()));
                 spawnedParticle.update(0, this);
                 aliveParticles.push(spawnedParticle);
 

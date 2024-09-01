@@ -1,9 +1,9 @@
-package org.etieskrill.engine.entity.service;
+package org.etieskrill.engine.entity.service.impl;
 
 import org.etieskrill.engine.entity.Entity;
 import org.etieskrill.engine.entity.component.Drawable;
+import org.etieskrill.engine.entity.service.Service;
 import org.etieskrill.engine.graphics.animation.Animator;
-import org.etieskrill.engine.graphics.gl.shader.impl.AnimationShader;
 
 import java.util.List;
 import java.util.Set;
@@ -29,7 +29,7 @@ public class AnimationService implements Service {
 
     @Override
     public Set<Class<? extends Service>> runBefore() {
-        return Set.of(RenderService.class, PostProcessingRenderService.class);
+        return Set.of(RenderService.class);
     }
 
 }

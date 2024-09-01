@@ -1,5 +1,6 @@
 package org.etieskrill.engine.graphics.gl.renderer;
 
+import lombok.Getter;
 import org.etieskrill.engine.util.FixedArrayDeque;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,10 +17,10 @@ public abstract class GLDebuggableRenderer {
     protected int timeQuery = -1;
 
     protected boolean queryGpuTime;
-    protected long gpuTime;
+    protected @Getter long gpuTime;
     protected final FixedArrayDeque<Long> gpuTimes;
-    protected long averagedGpuTime;
-    protected long gpuDelay;
+    protected @Getter long averagedGpuTime;
+    protected @Getter long gpuDelay;
 
     private static final Logger logger = LoggerFactory.getLogger(GLDebuggableRenderer.class);
 
@@ -49,19 +50,16 @@ public abstract class GLDebuggableRenderer {
         logger.info("Turned gpu time querying {}", queryGpuTime ? "on" : "off");
     }
 
-    public long getGpuTime() {
-        return gpuTime;
-    }
-
-    public long getAveragedGpuTime() {
-        return averagedGpuTime;
-    }
-
-    public long getGpuDelay() {
-        return gpuDelay;
-    }
-
     protected void queryGpuTime() {
+        if (queryGpuTime) _queryGpuTime();
+        else {
+            gpuTime = 0;
+            averagedGpuTime = 0;
+            gpuDelay = 0;
+        }
+    }
+
+    private void _queryGpuTime() {
         if (timeQuery == -1) {
             timeQuery = glCreateQueries(GL_TIME_ELAPSED);
         }
@@ -76,6 +74,13 @@ public abstract class GLDebuggableRenderer {
         averagedGpuTime = (long) gpuTimes.stream().mapToLong(value -> value).average().orElse(0d);
 
         glBeginQuery(GL_TIME_ELAPSED, timeQuery);
+    }
+
+    public void resetCounters() {
+        lastTrianglesDrawn = trianglesDrawn;
+        trianglesDrawn = 0;
+        lastRenderCalls = renderCalls;
+        renderCalls = 0;
     }
 
 }

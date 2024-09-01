@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Singular;
 import org.etieskrill.engine.entity.component.Transform;
+import org.etieskrill.engine.entity.component.TransformC;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -27,8 +28,19 @@ public class ParticleNode {
     private final @Singular List<@NotNull ParticleEmitter> emitters;
 
     public void update(double delta) {
-        emitters.forEach(emitter -> emitter.update(delta));
-        children.forEach(child -> child.update(delta));
+        update(delta, new Transform());
+    }
+
+    private void update(double delta, TransformC transform) {
+        transform = transform.apply(this.transform, new Transform());
+        TransformC finalTransform = transform;
+        emitters.forEach(emitter -> emitter.update(delta, finalTransform));
+        children.forEach(child -> child.update(delta, new Transform(finalTransform)));
+    }
+
+    public void setSpawnParticles(boolean spawnParticles) {
+        emitters.forEach(emitter -> emitter.setSpawnParticles(spawnParticles));
+        children.forEach(child -> child.setSpawnParticles(spawnParticles));
     }
 
 }

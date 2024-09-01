@@ -6,6 +6,7 @@ import org.etieskrill.engine.entity.component.TransformC;
 import org.etieskrill.engine.graphics.Renderer;
 import org.etieskrill.engine.graphics.TextRenderer;
 import org.etieskrill.engine.graphics.camera.Camera;
+import org.etieskrill.engine.graphics.gl.framebuffer.FrameBuffer;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shader.Shaders;
 import org.etieskrill.engine.graphics.model.*;
@@ -36,13 +37,6 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
 
     @Override
     public void prepare() {
-        if (queryGpuTime) queryGpuTime();
-        else {
-            gpuTime = 0;
-            averagedGpuTime = 0;
-            gpuDelay = 0;
-        }
-
         glClearColor(CLEAR_COLOUR, CLEAR_COLOUR, CLEAR_COLOUR, 1f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
@@ -50,11 +44,15 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
             textureContext.nextTexture = 1;
             textureContext.manuallyBoundTextures = 0;
         });
+    }
 
-        lastTrianglesDrawn = trianglesDrawn;
-        trianglesDrawn = 0;
-        lastRenderCalls = renderCalls;
-        renderCalls = 0;
+    @Override
+    public void nextFrame() {
+        FrameBuffer.bindScreenBuffer();
+        prepare();
+
+        queryGpuTime();
+        resetCounters();
     }
 
     //TODO consider moving to shader
