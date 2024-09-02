@@ -29,14 +29,14 @@ import java.util.Arrays;
 
 public class Game {
 
-    private Window window = new Window.Builder()
+    private Window window = Window.builder()
             .setTitle("Some Shader Buggery")
             .setMode(Window.WindowMode.BORDERLESS)
             .setVSyncEnabled(true)
             .setSamples(4)
             .build();
 
-    private Camera camera = new PerspectiveCamera(window.getSize().toVec());
+    private Camera camera = new PerspectiveCamera(window.getSize().getVec());
 
     private Model hallway;
     private Model sun;
@@ -74,7 +74,7 @@ public class Game {
         window.setScene(new Scene(
                 new Batch((GLRenderer) renderer).setShader(Shaders.getTextShader()),
                 new VBox(fpsLabel).setAlignment(Node.Alignment.TOP_LEFT),
-                new OrthographicCamera(window.getSize().toVec()))
+                new OrthographicCamera(window.getSize().getVec()))
         );
 
         loop();

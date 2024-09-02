@@ -37,7 +37,7 @@ public abstract class Camera implements UniformMappable {
         this.rotationAxis = new Vector3f();
         this.zoom = 1f;
 
-        this.viewportSize = (Vector2i) viewportSize;
+        this.viewportSize = new Vector2i(viewportSize);
 
         this.view = new Matrix4f();
         this.perspective = new Matrix4f();
@@ -244,7 +244,12 @@ public abstract class Camera implements UniformMappable {
         mapper
                 .map("view", view)
                 .map("perspective", perspective)
-                .map("combined", combined);
+                .map("combined", combined)
+                .map("position", position)
+                .map("near", near)
+                .map("far", far)
+                .map("viewport", viewportSize)
+                .map("aspect", viewportSize.x() / viewportSize.y());
         return true;
     }
 

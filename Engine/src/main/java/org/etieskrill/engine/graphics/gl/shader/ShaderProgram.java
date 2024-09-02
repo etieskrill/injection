@@ -1,5 +1,7 @@
 package org.etieskrill.engine.graphics.gl.shader;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.util.FileUtils;
 import org.etieskrill.engine.util.ResourceReader;
@@ -59,17 +61,11 @@ public abstract class ShaderProgram implements Disposable {
         //LIBRARY
     }
 
-    protected record ShaderFile(
-            String name,
-            ShaderType type
-    ) {
-        public String getName() {
-            return name;
-        }
-
-        public ShaderType getType() {
-            return type;
-        }
+    @Getter
+    @AllArgsConstructor
+    protected static final class ShaderFile {
+        private final String name;
+        private final ShaderType type;
 
         @Override
         public boolean equals(Object o) {
@@ -85,16 +81,10 @@ public abstract class ShaderProgram implements Disposable {
         }
     }
 
-    //TODO replace this by implementing main constructor with files argument
-    protected ShaderProgram(boolean mock) {
-        this.uniforms = null;
-        this.arrayUniforms = null;
-        this.placeholder = false;
-    }
-
     /**
-     * A shader file with the <i>glsl</i> extension is presumed to contain exactly a vertex and a fragment shader in the
-     * corresponding definition guards.
+     * A shader file with the <i>glsl</i> extension is presumed to contain exactly a vertex shader, a fragment shader
+     * and - if the flag was set with {@link #hasGeometryShader()} - a geometry shader in the corresponding
+     * definition guards.
      */
     protected ShaderProgram() {
         Set<ShaderFile> files = Arrays.stream(getShaderFileNames()).map(file -> {

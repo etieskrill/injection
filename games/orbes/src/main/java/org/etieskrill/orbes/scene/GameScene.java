@@ -54,7 +54,7 @@ public class GameScene {
         shader = (Shaders.StaticShader) Loaders.ShaderLoader.get().load("standard", Shaders::getStandardShader);
         lightShader = (Shaders.LightSourceShader) Loaders.ShaderLoader.get().load("light", Shaders::getLightSourceShader);
 
-        camera = new PerspectiveCamera(game.getWindow().getSize().toVec());
+        camera = new PerspectiveCamera(game.getWindow().getSize().getVec());
         camera.setZoom(4.81f);
 
         pointLight = new PointLight(light.getTransform().getPosition(),

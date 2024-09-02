@@ -1,4 +1,4 @@
-package org.etieskrill.game.horde;
+package org.etieskrill.game.horde3d;
 
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.camera.OrthographicCamera;
@@ -22,7 +22,7 @@ public class DebugInterface extends Scene {
     private final Label fpsLabel;
 
     public DebugInterface(Window window, GLRenderer renderer) {
-        this(window.getSize().toVec(), renderer, null);
+        this(window.getSize().getVec(), renderer, null);
     }
 
     public DebugInterface(Vector2ic windowSize, GLRenderer renderer, @Nullable LoopPacer pacer) {

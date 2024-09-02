@@ -1,13 +1,15 @@
 package org.etieskrill.engine.window;
 
+import lombok.Builder;
+import lombok.Getter;
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.config.InjectionConfig;
 import org.etieskrill.engine.input.*;
 import org.etieskrill.engine.scene.Scene;
-import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
+import org.joml.Vector2ic;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFWVidMode;
@@ -44,21 +46,21 @@ public class Window implements Disposable {
 
     private long window;
 
-    private WindowMode mode;
+    private @Getter WindowMode mode;
     //TODO provide methods to change primary monitor
     private long monitor;
-    private WindowSize size;
+    private @Getter WindowSize size;
     private Vector2f position;
     private float targetFrameRate;
     private boolean vSyncEnabled;
     private int samples;
-    private String title;
+    private @Getter String title;
 
-    private Cursor cursor;
+    private @Getter Cursor cursor;
 
     private final List<KeyInputHandler> keyInputs;
     private final List<CursorInputHandler> cursorInputs;
-    private Scene scene;
+    private @Getter Scene scene;
 
     private boolean built = false;
 
@@ -68,6 +70,7 @@ public class Window implements Disposable {
         WINDOWED
     }
 
+    @Getter
     public enum WindowSize {
         HD(720, 1280),
         FHD(1080, 1920),
@@ -90,10 +93,12 @@ public class Window implements Disposable {
 
             this.width = width;
             this.height = height;
+            this.vec = new Vector2i(width, height);
         }
 
         private final int width;
         private final int height;
+        private final Vector2ic vec;
 
         /**
          * Maximises width over height.
@@ -112,21 +117,8 @@ public class Window implements Disposable {
             return largestFit;
         }
 
-        @Contract("-> new")
-        public Vector2i toVec() {
-            return new Vector2i(width, height);
-        }
-
         public float getAspectRatio() {
             return (float) width / height;
-        }
-
-        public int getWidth() {
-            return width;
-        }
-
-        public int getHeight() {
-            return height;
         }
 
         @Override
@@ -135,84 +127,26 @@ public class Window implements Disposable {
         }
     }
 
-    public static class Builder {
-
-        private Window.WindowMode mode;
-        private Window.WindowSize size;
-        private Vector2f position;
-
-        private float refreshRate;
-        private boolean vSyncEnabled;
-        private int samples;
-
-        private String title;
-        private Cursor cursor;
-
-        private final List<KeyInputHandler> keyInputs = new ArrayList<>();
-        private final List<CursorInputHandler> cursorInputs = new ArrayList<>();
-
-        public Builder() {
-        }
-
-        public Builder setMode(Window.WindowMode mode) {
-            this.mode = mode;
-            return this;
-        }
-
-        public Builder setSize(Window.WindowSize size) {
-            this.size = size;
-            return this;
-        }
-
-        public Builder setPosition(Vector2f position) {
-            this.position = position;
-            return this;
-        }
-
-        public Builder setRefreshRate(float refreshRate) {
-            this.refreshRate = refreshRate;
-            return this;
-        }
-
-        public Builder setVSyncEnabled(boolean vSyncEnabled) {
-            this.vSyncEnabled = vSyncEnabled;
-            return this;
-        }
-
-        public Builder setSamples(int samples) {
-            this.samples = samples;
-            return this;
-        }
-
-        public Builder setTitle(String title) {
-            this.title = title;
-            return this;
-        }
-
-        public Builder setCursor(Cursor cursor) {
-            this.cursor = cursor;
-            return this;
-        }
-
-        public Builder setKeyInputHandlers(KeyInputHandler... keyInputs) {
+    public static class WindowBuilder {
+        public WindowBuilder setKeyInputHandlers(KeyInputHandler... keyInputs) {
             this.keyInputs.clear();
             this.keyInputs.addAll(asList(keyInputs));
             return this;
         }
 
-        public Builder addKeyInputHandler(KeyInputHandler keyInputs) {
-            this.keyInputs.add(keyInputs);
+        public WindowBuilder addKeyInputHandler(KeyInputHandler keyInput) {
+            this.keyInputs.add(keyInput);
             return this;
         }
 
-        public Builder setCursorInputHandler(CursorInputHandler... cursorInputs) {
+        public WindowBuilder setCursorInputHandler(CursorInputHandler... cursorInputs) {
             this.keyInputs.clear();
             this.cursorInputs.addAll(asList(cursorInputs));
             return this;
         }
 
-        public Builder addCursorInputHandler(CursorInputHandler cursorInputs) {
-            this.cursorInputs.add(cursorInputs);
+        public WindowBuilder addCursorInputHandler(CursorInputHandler cursorInput) {
+            this.cursorInputs.add(cursorInput);
             return this;
         }
 
@@ -221,22 +155,22 @@ public class Window implements Disposable {
                     mode != null ? mode : Window.WindowMode.WINDOWED,
                     size != null ? size : Window.WindowSize.LARGEST_FIT,
                     position != null ? position : new Vector2f(),
-                    refreshRate >= 0 ? refreshRate : GLFW_DONT_CARE,
+                    refreshRate > 0 ? refreshRate : GLFW_DONT_CARE,
                     vSyncEnabled,
                     Math.max(samples, 0),
                     title != null ? title : "Window",
                     cursor != null ? cursor : Cursor.getDefault(),
-                    keyInputs,
-                    cursorInputs
+                    keyInputs != null ? keyInputs : new ArrayList<>(),
+                    cursorInputs != null ? cursorInputs : new ArrayList<>()
             );
         }
-
     }
 
+    @Builder(setterPrefix = "set")
     private Window(
             WindowMode mode,
             WindowSize size, Vector2f position,
-            float targetFrameRate, boolean vSyncEnabled, int samples,
+            float refreshRate, boolean vSyncEnabled, int samples,
             String title,
             Cursor cursor,
             List<KeyInputHandler> keyInputs,
@@ -245,7 +179,7 @@ public class Window implements Disposable {
         this.mode = mode;
         this.size = size;
         this.position = position;
-        this.targetFrameRate = targetFrameRate;
+        this.targetFrameRate = refreshRate;
         this.vSyncEnabled = vSyncEnabled;
         this.samples = samples;
 
@@ -269,8 +203,7 @@ public class Window implements Disposable {
 
     @SuppressWarnings("resource")
     private void init() {
-        if (!glfwInit())
-            throw new IllegalStateException("Unable to initialize glfw library");
+        if (!glfwInit()) throw new IllegalStateException("Unable to initialize glfw library");
 
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, MIN_GL_CONTEXT_MAJOR_VERSION);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, MIN_GL_CONTEXT_MINOR_VERSION);
@@ -281,8 +214,7 @@ public class Window implements Disposable {
 
         //TODO more sophisticated & consumer-controlled monitor choice / general window configuration
         monitor = glfwGetPrimaryMonitor();
-        if (monitor == NULL)
-            throw new IllegalStateException("Could not find primary monitor");
+        if (monitor == NULL) throw new IllegalStateException("Could not find primary monitor");
 
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
@@ -293,8 +225,13 @@ public class Window implements Disposable {
             targetFrameRate = targetFrameRate < 0 ? 60f : targetFrameRate;
         }
 
-        if (size == WindowSize.LARGEST_FIT)
+        if (size == WindowSize.LARGEST_FIT) {
+            if (videoMode == null) {
+                throw new IllegalStateException("Cannot auto-size window as video mode for monitor could not be retrieved");
+            }
+            
             size = WindowSize.getLargestFit(videoMode.width(), videoMode.height());
+        }
 
         if (targetFrameRate == GLFW_DONT_CARE) targetFrameRate = videoMode.refreshRate();
 
@@ -310,8 +247,7 @@ public class Window implements Disposable {
                 },
                 NULL);
         checkErrorThrowing();
-        if (this.window == NULL)
-            throw new IllegalStateException("Could not create glfw window");
+        if (this.window == NULL) throw new IllegalStateException("Could not create glfw window");
 
         glfwMakeContextCurrent(window);
         initGl();
@@ -330,8 +266,9 @@ public class Window implements Disposable {
 
     @SuppressWarnings("resource")
     private void configInput() {
-        if (USE_RAW_MOUSE_MOTION_IF_AVAILABLE && glfwRawMouseMotionSupported())
+        if (USE_RAW_MOUSE_MOTION_IF_AVAILABLE && glfwRawMouseMotionSupported()) {
             glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+        }
 
         glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
             if (window == this.window) {
@@ -349,7 +286,7 @@ public class Window implements Disposable {
                 Key keyWithMods = key.withMods(Keys.Mod.fromGlfw(glfwMods));
 
                 glfwGetCursorPos(window, posX, posY);
-                cursorInputs.forEach(cursorInputHandler ->
+                if (cursorInputs != null) cursorInputs.forEach(cursorInputHandler ->
                         cursorInputHandler.invokeClick(keyWithMods, action, posX[0], posY[0]));
                 if (scene != null) scene.invokeClick(keyWithMods, action, posX[0], posY[0]);
             }
@@ -409,6 +346,7 @@ public class Window implements Disposable {
         glfwSetWindowShouldClose(window, true);
     }
 
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public boolean shouldClose() {
         return glfwWindowShouldClose(window);
     }
@@ -433,20 +371,12 @@ public class Window implements Disposable {
         return window;
     }
 
-    public WindowMode getMode() {
-        return mode;
-    }
-
     public void setMode(WindowMode mode) {
         this.mode = mode;
         glfwWindowHint(GLFW_DECORATED, switch (mode) { //TODO dis shid ain't working for existing windows blud
             case FULLSCREEN, BORDERLESS -> GLFW_FALSE;
             case WINDOWED -> GLFW_TRUE;
         });
-    }
-
-    public WindowSize getSize() {
-        return size;
     }
 
     public void setSize(WindowSize size) {
@@ -459,14 +389,10 @@ public class Window implements Disposable {
     }
 
     public void setRefreshRate(float refreshRate) {
-        if (refreshRate < 0)
-            throw new IllegalArgumentException("Refresh rate must not be negative");
+        if (refreshRate <= 0)
+            throw new IllegalArgumentException("Refresh rate must be larger than zero");
         this.targetFrameRate = refreshRate;
         glfwWindowHint(GLFW_REFRESH_RATE, (int) targetFrameRate);
-    }
-
-    public String getTitle() {
-        return title;
     }
 
     public void setTitle(String title) {
@@ -479,10 +405,6 @@ public class Window implements Disposable {
     //on Windows, will only succeed if entire window is still within screen space after translation
     public void setPos(Vector2f pos) {
         glfwSetWindowPos(this.window, (int) pos.x(), (int) pos.y());
-    }
-
-    public Cursor getCursor() {
-        return cursor;
     }
 
     public void setCursor(Cursor cursor) {
@@ -516,13 +438,9 @@ public class Window implements Disposable {
         cursorInputs.clear();
     }
 
-    public Scene getScene() {
-        return scene;
-    }
-
     public void setScene(Scene scene) {
         this.scene = scene;
-        this.scene.setSize(this.size.toVec());
+        this.scene.setSize(this.size.getVec());
     }
 
     private static void checkError() {

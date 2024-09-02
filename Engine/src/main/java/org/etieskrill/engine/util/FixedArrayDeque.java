@@ -24,14 +24,14 @@ public class FixedArrayDeque<E> extends ArrayDeque<E> {
 
     @Override
     public void addFirst(@NotNull E e) {
-        if (size() >= size)
+        if (size() > 0 && size() >= size)
             super.removeLast();
         super.addFirst(e);
     }
 
     @Override
     public void addLast(@NotNull E e) {
-        if (size() >= size)
+        if (size() > 0 && size() >= size)
             super.removeFirst();
         super.addLast(e);
     }

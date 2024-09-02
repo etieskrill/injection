@@ -80,8 +80,8 @@ public class DemCubez {
 //        if (true) throw new RuntimeException("Will compile and run, but is currently broken"); //TODO fix
 
         Window.USE_RAW_MOUSE_MOTION_IF_AVAILABLE = false;
-        
-        this.window = new Window.Builder()
+
+        this.window = Window.builder()
                 .setMode(Window.WindowMode.BORDERLESS)
                 .setRefreshRate(TARGET_FPS)
                 .setTitle("DemCubez")
@@ -98,7 +98,7 @@ public class DemCubez {
         loadShaders();
 
         renderer = new GLRenderer();
-        camera = (PerspectiveCamera) new PerspectiveCamera(window.getSize().toVec())
+        camera = (PerspectiveCamera) new PerspectiveCamera(window.getSize().getVec())
                 .setPosition(new Vector3f(0f, 0f, 3f))
                 .setOrientation(0f, -90f, 0f)
                 .setFar(-1000f);
@@ -200,7 +200,7 @@ public class DemCubez {
         pacer.start();
         
         FrameBuffer frameBuffer = FrameBuffer.getStandard(
-                new Vector2i(window.getSize().toVec()));
+                new Vector2i(window.getSize().getVec()));
         frameBuffer.unbind();
         
         ShaderProgram screenShader = Shaders.getPostprocessingShader();
@@ -416,7 +416,7 @@ public class DemCubez {
 //        //menu.getLayout().setAlignment(Layout.Alignment.CENTER);
 //        container.setChild(menu);
 //
-//        window.setScene(new Scene(new Batch(renderer), container, new OrthographicCamera(window.getSize().toVec())));
+//        window.setScene(new Scene(new Batch(renderer), container, new OrthographicCamera(window.getSize().getVec())));
 //        window.getScene().hide();
     }
     

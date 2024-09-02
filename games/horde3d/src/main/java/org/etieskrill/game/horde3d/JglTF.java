@@ -1,4 +1,4 @@
-package org.etieskrill.game.horde;
+package org.etieskrill.game.horde3d;
 
 import de.javagl.jgltf.impl.v2.GlTF;
 import de.javagl.jgltf.model.io.GltfAssetReader;

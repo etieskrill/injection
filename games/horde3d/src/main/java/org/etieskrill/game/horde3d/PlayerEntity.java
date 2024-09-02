@@ -1,4 +1,4 @@
-package org.etieskrill.game.horde;
+package org.etieskrill.game.horde3d;
 
 import org.etieskrill.engine.entity.Entity;
 import org.etieskrill.engine.entity.component.*;
@@ -127,6 +127,23 @@ public class PlayerEntity extends Entity {
         dashParticles.getParticles().getTransform()
                 .setPosition(transform.getPosition())
                 .getPosition().add(boundingBox.getCenter());
+    }
+
+    private void updateJumpAction(double delta) {
+//        float verticalAcceleration = acceleration.getForce().y();
+//        if (verticalAcceleration > 0) {
+//            if (onGround.isOnGround()) {
+//                transform.getPosition().add(0, (float) (onGround.getJumpStrength() * delta), 0);
+//                onGround.setOnGround(false);
+//                float bumpX = acceleration.getForce().x();
+//                float bumpZ = acceleration.getForce().z();
+//                transform.getPosition().add(
+//                        (float) (bumpX * onGround.getBumpStrength() * delta),
+//                        0,
+//                        (float) (bumpZ * onGround.getBumpStrength() * delta)
+//                );
+//            }
+//        }
     }
 
     public Transform getTransform() {

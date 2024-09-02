@@ -115,7 +115,7 @@ public class Game {
     }
 
     private void init() {
-        window = new Window.Builder()
+        window = Window.builder()
                 .setTitle("Animeshun yeeees")
                 .setMode(Window.WindowMode.BORDERLESS)
                 .setRefreshRate(FRAMERATE)
@@ -125,7 +125,7 @@ public class Game {
 
         GLUtils.addDebugLogging();
 
-        camera = new PerspectiveCamera(window.getSize().toVec()).setOrientation(0, 0, 0);
+        camera = new PerspectiveCamera(window.getSize().getVec()).setOrientation(0, 0, 0);
         window.addCursorInputs(new CursorCameraController(camera));
 
         vampy = Loaders.ModelLoader.get().load("vampy", () -> new Model.Builder("mixamo_walk_forward_skinned_vampire.dae").disableCulling().build());
@@ -169,7 +169,7 @@ public class Game {
         pacer = new SystemNanoTimePacer(1d / FRAMERATE);
 
         window.getCursor().disable();
-        window.setScene(new DebugOverlay((GLRenderer) renderer, pacer, window.getSize().toVec()));
+        window.setScene(new DebugOverlay((GLRenderer) renderer, pacer, window.getSize().getVec()));
 
         GLUtils.removeDebugLogging();
     }
