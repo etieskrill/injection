@@ -1,5 +1,6 @@
-package org.etieskrill.games.particles;
+package org.etieskrill.games.horde;
 
+import org.etieskrill.games.particles.Application;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;

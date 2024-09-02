@@ -1,4 +1,4 @@
-package org.etieskrill.game.horde;
+package org.etieskrill.game.horde3d;
 
 import org.etieskrill.engine.entity.Entity;
 import org.etieskrill.engine.entity.component.*;
@@ -19,7 +19,7 @@ import java.lang.Math;
 import java.util.Random;
 
 import static org.etieskrill.engine.graphics.texture.AbstractTexture.Type.*;
-import static org.etieskrill.game.horde.EntityApplication.MODELS;
+import static org.etieskrill.game.horde3d.EntityApplication.MODELS;
 
 public class World {
 

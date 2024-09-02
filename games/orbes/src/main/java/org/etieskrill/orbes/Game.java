@@ -95,7 +95,7 @@ public class Game {
     }
 
     private void setupWindow() {
-        window = new Window.Builder()
+        window = new Window.WindowBuilder()
                 .setRefreshRate(0)
                 .setMode(Window.WindowMode.BORDERLESS)
                 .setTitle("Walk")
@@ -103,7 +103,7 @@ public class Game {
     }
 
     private void setupUI() {
-        Vector2i windowSize = window.getSize().toVec();
+        Vector2i windowSize = window.getSize().getVec();
 
         mainMenuScene = new MainMenuUIScene(
                 new Batch((GLRenderer) renderer),
@@ -133,7 +133,7 @@ public class Game {
         //TODO figure out a smart way to link the pacer and window refresh rates
         pacer = new SystemNanoTimePacer(1 / 60f);
 
-        Vector2i windowSize = window.getSize().toVec();
+        Vector2i windowSize = window.getSize().getVec();
         FrameBuffer postBuffer = FrameBuffer.getStandard(windowSize);
         Material mat = new Material.Builder() //TODO okay, the fact models, or rather meshes simply ignore these mats is getting frustrating now, that builder needs some serious rework
                 .addTextures((Texture2D) postBuffer.getAttachment(BufferAttachmentType.COLOUR0))

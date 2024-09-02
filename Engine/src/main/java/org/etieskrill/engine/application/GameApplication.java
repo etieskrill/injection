@@ -38,9 +38,8 @@ public abstract class GameApplication {
         InjectionConfig.init();
     }
 
-    public GameApplication(int frameRate, Window window) {
+    public GameApplication(Window window) {
         this.window = window;
-        this.window.setRefreshRate(frameRate);
         this.window.addKeyInputs((type, key, action, modifiers) -> {
             if (type == Key.Type.KEYBOARD
                     && key == Keys.ESC.getInput().getValue()
@@ -50,10 +49,10 @@ public abstract class GameApplication {
             }
             return false;
         });
-        this.pacer = new SystemNanoTimePacer(1d / frameRate);
+        this.pacer = new SystemNanoTimePacer(1d / window.getRefreshRate());
         this.renderer = new GLRenderer();
         this.entitySystem = new EntitySystem();
-        this.cpuTimes = new FixedArrayDeque<>(frameRate);
+        this.cpuTimes = new FixedArrayDeque<>((int) window.getRefreshRate());
 
         try {
             init();
@@ -83,6 +82,7 @@ public abstract class GameApplication {
         double delta = pacer.getDeltaTimeSeconds();
         loop(delta);
         entitySystem.update(delta);
+        render();
         window.update(delta);
 
         cpuTimes.push((System.nanoTime() - time) / 1_000_000d);
@@ -93,6 +93,9 @@ public abstract class GameApplication {
     }
 
     protected abstract void loop(double delta);
+
+    protected void render() {
+    }
 
     protected void terminate() {
         resetSystemTimeResolution(SYSTEM_TIME_RESOLUTION_MILLIS);

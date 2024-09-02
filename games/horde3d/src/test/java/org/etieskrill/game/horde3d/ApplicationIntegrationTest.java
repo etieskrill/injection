@@ -1,4 +1,4 @@
-package org.etieskrill.game.horde;
+package org.etieskrill.game.horde3d;
 
 import org.junit.jupiter.api.Test;
 

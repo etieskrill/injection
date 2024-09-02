@@ -1,4 +1,4 @@
-package org.etieskrill.game.horde;
+package org.etieskrill.game.horde3d;
 
 import org.etieskrill.engine.application.GameApplication;
 import org.etieskrill.engine.entity.service.impl.*;
@@ -53,9 +53,10 @@ public class EntityApplication extends GameApplication {
     private double previousTime;
 
     public EntityApplication() {
-        super(FRAME_RATE, new Window.Builder()
-                .setTitle("Horde")
+        super(Window.builder()
+                .setTitle("Horde3d")
                 .setMode(Window.WindowMode.BORDERLESS)
+                .setRefreshRate(FRAME_RATE)
                 .setSamples(4)
                 .setVSyncEnabled(true)
                 .build()
@@ -66,7 +67,7 @@ public class EntityApplication extends GameApplication {
     protected void init() {
         GLUtils.addDebugLogging();
 
-        camera = new PerspectiveCamera(window.getSize().toVec());
+        camera = new PerspectiveCamera(window.getSize().getVec());
 
         world = new World(entitySystem);
 
@@ -76,16 +77,16 @@ public class EntityApplication extends GameApplication {
         entitySystem.addService(new DirectionalShadowMappingService(renderer));
         entitySystem.addService(new PointShadowMappingService(renderer, new DepthCubeMapArrayAnimatedShader()));
         entitySystem.addService(new AnimationService());
-        RenderService renderService = new RenderService(renderer, camera, window.getSize().toVec());
+        RenderService renderService = new RenderService(renderer, camera, window.getSize().getVec());
         entitySystem.addService(renderService);
 
         float smolFactor = 4;
         secondaryRenderService = new RenderService(renderer,
-                new PerspectiveCamera(window.getSize().toVec())
+                new PerspectiveCamera(window.getSize().getVec())
                         .setPosition(new Vector3f(-10, 10, -10))
                         .setOrientation(-60, 45, 0)
                         .setZoom(10f),
-                new Vector2i(window.getSize().toVec()).div(smolFactor))
+                new Vector2i(window.getSize().getVec()).div(smolFactor))
                 .cullingCamera(camera)
                 .blur(false)
                 .customViewport(new Vector4i(
@@ -151,7 +152,7 @@ public class EntityApplication extends GameApplication {
         ));
 
         //FIXME loading the scene (the label font specifically) before the above stuff causes a segfault from freetype??
-        debugInterface = new DebugInterface(window.getSize().toVec(), renderer, pacer);
+        debugInterface = new DebugInterface(window.getSize().getVec(), renderer, pacer);
         window.setScene(debugInterface);
 
         GLUtils.removeDebugLogging();

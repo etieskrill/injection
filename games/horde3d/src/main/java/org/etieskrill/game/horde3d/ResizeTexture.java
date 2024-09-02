@@ -1,4 +1,4 @@
-package org.etieskrill.game.horde;
+package org.etieskrill.game.horde3d;
 
 import org.etieskrill.engine.util.ResourceReader;
 import org.lwjgl.stb.STBImage;

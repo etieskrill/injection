@@ -1,4 +1,4 @@
-package org.etieskrill.game.horde;
+package org.etieskrill.game.horde3d;
 
 import org.etieskrill.engine.application.GameApplication;
 import org.etieskrill.engine.entity.Entity;
@@ -7,6 +7,7 @@ import org.etieskrill.engine.entity.component.Drawable;
 import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.entity.service.impl.AnimationService;
 import org.etieskrill.engine.entity.service.impl.DirectionalShadowMappingService;
+import org.etieskrill.engine.entity.service.impl.RenderService;
 import org.etieskrill.engine.graphics.animation.Animator;
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera;
 import org.etieskrill.engine.graphics.data.DirectionalLight;
@@ -25,8 +26,6 @@ import org.joml.Matrix4f;
 import org.joml.Random;
 import org.joml.Vector2i;
 import org.joml.Vector3f;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,18 +34,16 @@ import static org.joml.Math.*;
 
 public class RuntimeMeshOptimisation extends GameApplication {
 
-    private static final Logger logger = LoggerFactory.getLogger(RuntimeMeshOptimisation.class);
-
     List<Transform> zombieTransforms;
 
     @Override
     protected void init() {
-        PerspectiveCamera camera = new PerspectiveCamera(window.getSize().toVec());
+        PerspectiveCamera camera = new PerspectiveCamera(window.getSize().getVec());
         camera.setOrientation(0, -90, 0);
 
         entitySystem.addService(new AnimationService());
         entitySystem.addService(new DirectionalShadowMappingService(renderer));
-//        entitySystem.addService(new PostProcessingRenderService(renderer, camera, window.getSize().toVec()));
+        entitySystem.addService(new RenderService(renderer, camera, window.getSize().getVec()));
 
         entitySystem.createEntity(id -> new Entity(id)
                 .addComponent(new Transform().setPosition(new Vector3f(0, -1.5f, 0)))
@@ -76,7 +73,7 @@ public class RuntimeMeshOptimisation extends GameApplication {
         window.getCursor().disable();
         window.addKeyInputs(new KeyCameraController(camera));
 
-        window.setScene(new DebugInterface(window.getSize().toVec(), renderer, pacer));
+        window.setScene(new DebugInterface(window.getSize().getVec(), renderer, pacer));
     }
 
     private void spawnZombies() {
@@ -111,7 +108,9 @@ public class RuntimeMeshOptimisation extends GameApplication {
             float angle = toRadians(360 * i / numSkellyZombies);
 
             Model model = ModelLoader.get().load("skeleton_zombie", () ->
-                    new Model.Builder("mixamo_skeletonzombie_skin.glb").optimiseMeshes().build());
+                    new Model.Builder("mixamo_skeletonzombie_skin.glb")
+                            .optimiseMeshes()
+                            .build());
 
             Animator animator = new Animator(model);
             animator.add(Loaders.AnimationLoader.get().load("silly_dancing",
@@ -144,7 +143,7 @@ public class RuntimeMeshOptimisation extends GameApplication {
     }
 
     public RuntimeMeshOptimisation() {
-        super(60, new Window.Builder()
+        super(Window.builder()
                 .setVSyncEnabled(true)
                 .setMode(Window.WindowMode.BORDERLESS)
                 .build());

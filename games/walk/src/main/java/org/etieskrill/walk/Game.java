@@ -35,7 +35,6 @@ import org.etieskrill.engine.util.Loaders.ModelLoader;
 import org.etieskrill.engine.util.Loaders.ShaderLoader;
 import org.etieskrill.engine.window.Window;
 import org.joml.Vector2f;
-import org.joml.Vector2i;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 import org.slf4j.Logger;
@@ -103,7 +102,7 @@ public class Game {
     }
     
     private void setupWindow() {
-        window = new Window.Builder()
+        window = Window.builder()
                 .setRefreshRate(0)
                 .setMode(Window.WindowMode.BORDERLESS)
                 .setTitle("Walk")
@@ -111,7 +110,7 @@ public class Game {
                 .build();
         window.getCursor().disable();
 
-        camera = new PerspectiveCamera(window.getSize().toVec());
+        camera = new PerspectiveCamera(window.getSize().getVec());
         camera.setZoom(4.81f);
 
         setupCursor();
@@ -125,8 +124,7 @@ public class Game {
     }
     
     private void setupUI() {
-        Vector2i windowSize = window.getSize().toVec();
-        uiCamera = new OrthographicCamera(windowSize);
+        uiCamera = new OrthographicCamera(window.getSize().getVec());
         
         scoreLabel = new Label("", Fonts.getDefault(48));
         scoreLabel.setAlignment(Alignment.TOP).setMargin(new Vector4f(20));
@@ -234,8 +232,8 @@ public class Game {
 //        System.out.println(new Vector2i(1000));
 //        System.out.println(new Vector2i(1000).times(1.5f));
 //        System.out.println(new Vector2i(1000).times(2f));
-    
-        FrameBuffer postBuffer = FrameBuffer.getStandard(window.getSize().toVec());
+
+        FrameBuffer postBuffer = FrameBuffer.getStandard(window.getSize().getVec());
         Material mat = new Material.Builder() //TODO okay, the fact models, or rather meshes simply ignore these mats is getting frustrating now, that builder needs some serious rework
                 .addTextures((Texture2D) postBuffer.getAttachment(BufferAttachmentType.COLOUR0))
                 .build();

@@ -5,3 +5,6 @@ include 'engine'
 file('games').eachDir {
     include "games:$it.name"
 }
+include 'games:horde'
+findProject(':games:horde')?.name = 'horde'
+

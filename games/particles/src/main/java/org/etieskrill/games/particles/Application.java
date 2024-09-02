@@ -48,7 +48,7 @@ public class Application extends GameApplication {
     Transform fireEmitterTransform;
 
     public Application() {
-        super(60, new Window.Builder()
+        super(Window.builder()
                 .setTitle("Particles")
                 .setMode(BORDERLESS)
                 .setSamples(4)
@@ -59,7 +59,7 @@ public class Application extends GameApplication {
 
     @Override
     protected void init() {
-        camera = new PerspectiveCamera(window.getSize().toVec());
+        camera = new PerspectiveCamera(window.getSize().getVec());
         camera.setOrientation(-25, 45, 0);
 
         viewCenter = new Vector3f();
@@ -80,10 +80,10 @@ public class Application extends GameApplication {
         window.setScene(new Scene(
                 new Batch(renderer),
                 new Container(fpsLabel),
-                new OrthographicCamera(window.getSize().toVec())
+                new OrthographicCamera(window.getSize().getVec())
         ));
 
-        entitySystem.addService(new RenderService(renderer, camera, window.getSize().toVec()));
+        entitySystem.addService(new RenderService(renderer, camera, window.getSize().getVec()));
         entitySystem.addService(new ParticleRenderService(new GLParticleRenderer(), camera));
 
         Entity gridEntity = entitySystem.createEntity();
