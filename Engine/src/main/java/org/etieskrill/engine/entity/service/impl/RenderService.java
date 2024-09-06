@@ -257,7 +257,7 @@ public class RenderService implements Service, Disposable {
 
     @Override
     public void postProcess(List<Entity> entities) {
-        for (Entity entity : entities) {
+        for (Entity entity : entities) { //FIXME particle rendering is suddenly really fucking slow for some reason
             if (particleRenderService.canProcess(entity)) {
                 particleRenderService.process(entity, entities, lastDelta);
             }

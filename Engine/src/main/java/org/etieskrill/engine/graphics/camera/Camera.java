@@ -2,6 +2,7 @@ package org.etieskrill.engine.graphics.camera;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shader.UniformMappable;
 import org.jetbrains.annotations.Contract;
@@ -29,8 +30,10 @@ public abstract class Camera implements UniformMappable {
     protected Vector3f eulerAngles;
     protected boolean clampPitch;
 
-    protected @Setter boolean orbit;
-    protected @Setter float orbitDistance;
+    protected @Accessors(chain = true)
+    @Setter boolean orbit;
+    protected @Accessors(chain = true)
+    @Setter float orbitDistance;
 
     protected boolean dirty;
 
@@ -157,8 +160,8 @@ public abstract class Camera implements UniformMappable {
             Vector3f target = new Vector3f(position).add(front);
             this.view.setLookAt(position, target, worldUp);
         } else {
-            Vector3f target = new Vector3f(position).sub(front.mul(orbitDistance));
-            this.view.setLookAt(target, position, worldUp);
+            Vector3f orbitPosition = new Vector3f(position).sub(front.mul(orbitDistance));
+            this.view.setLookAt(orbitPosition, position, worldUp);
         }
     }
 

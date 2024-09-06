@@ -2,6 +2,7 @@ package org.etieskrill.engine.graphics.particle;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import org.joml.*;
 
 import java.util.function.Consumer;
@@ -10,6 +11,7 @@ import static lombok.AccessLevel.NONE;
 import static lombok.AccessLevel.PACKAGE;
 
 @Getter
+@ToString(exclude = {"relativePosition", "transform"})
 public class Particle {
 
     private final Vector3f position;

@@ -15,7 +15,7 @@ public class Transform implements TransformC {
     private final Vector3f scale;
 
     private final Matrix4f transform;
-    
+
     private boolean dirty = false;
 
     /**
@@ -35,7 +35,7 @@ public class Transform implements TransformC {
      *
      * @param position the 3d position vector
      * @param rotation the unit rotation quaternion
-     * @param scale the 3d axis scaling vector
+     * @param scale    the 3d axis scaling vector
      */
     public Transform(Vector3f position, Quaternionf rotation, Vector3f scale) {
         this.position = position;
@@ -85,7 +85,7 @@ public class Transform implements TransformC {
         dirty();
         return this;
     }
-    
+
     public Transform setPosition(@NotNull TransformC transform) {
         return setPosition(requireNonNull(transform).getPosition());
     }
@@ -95,7 +95,7 @@ public class Transform implements TransformC {
         dirty();
         return this;
     }
-    
+
     public Transform translate(@NotNull TransformC transform) {
         return translate(requireNonNull(transform).getPosition());
     }
@@ -110,11 +110,11 @@ public class Transform implements TransformC {
         dirty();
         return this;
     }
-    
+
     public Transform setScale(float scale) {
         return setScale(new Vector3f(scale));
     }
-    
+
     public Transform setScale(TransformC transform) {
         return setScale(transform.getScale());
     }
@@ -179,7 +179,9 @@ public class Transform implements TransformC {
     @Override
     public Matrix4fc getMatrix() {
         //Transform is lazily updated
-        if (shouldUpdate()) updateTransform();
+//        if (shouldUpdate()) { //FIXME worth the trouble?
+        updateTransform();
+//        }
         return transform;
     }
 
@@ -255,7 +257,7 @@ public class Transform implements TransformC {
 
         return this;
     }
-    
+
     void updateTransform() {
         this.transform.identity()
                 .translate(position)
@@ -263,7 +265,7 @@ public class Transform implements TransformC {
                 .scale(scale)
         ;
     }
-    
+
     private void dirty() {
         dirty = true;
     }
@@ -278,7 +280,7 @@ public class Transform implements TransformC {
     public boolean isDirty() {
         return dirty;
     }
-    
+
     @Override
     public String toString() {
         return "Transform{" +
