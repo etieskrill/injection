@@ -26,7 +26,8 @@ public class PerspectiveCamera extends Camera {
         setPerspective(new Matrix4f().perspective((float) Math.toRadians(fov),
                 (float) viewportSize.x() / viewportSize.y(), near, far));
 
-        if (autoUpdate) update();
+        dirty();
+        update();
     }
 
     @Override

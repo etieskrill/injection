@@ -47,7 +47,7 @@ public class CursorCameraController implements CursorInputAdapter {
         if (shouldUpdate())
             camera.rotate(
                     (float) (lookSensitivity * -previousPosition.y()),
-                    (float) (lookSensitivity * previousPosition.x()), //FIXME what the shit why is this always inverted and negating it does noting???
+                    (float) (lookSensitivity * previousPosition.x()),
                     0);
 
         previousPosition.set(posX, posY);
