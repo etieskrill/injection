@@ -14,7 +14,8 @@ public class OrthographicCamera extends Camera {
         setPosition(origin);
         setPerspective(new Matrix4f().ortho(left, right, bottom, top, near, far));
 
-        if (autoUpdate) update();
+        dirty();
+        update();
     }
 
     public OrthographicCamera(Vector2ic viewportSize) {
@@ -32,7 +33,7 @@ public class OrthographicCamera extends Camera {
     public Camera setPosition(Vector3fc position) {
         this.position.set(position);
         updateDimensions();
-        if (autoUpdate) update();
+        dirty();
         return this;
     }
 
@@ -40,7 +41,7 @@ public class OrthographicCamera extends Camera {
     public void setViewportSize(Vector2ic size) {
         this.viewportSize.set(size);
         updateDimensions();
-        if (autoUpdate) update();
+        dirty();
     }
 
     private void updateDimensions() {
