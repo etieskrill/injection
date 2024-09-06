@@ -57,7 +57,7 @@ uniform vec3 viewPosition;
 uniform DirectionalLight globalLights[NR_DIRECTIONAL_LIGHTS];
 uniform PointLight lights[NR_POINT_LIGHTS];
 
-uniform int uShowBoneSelector;
+uniform /*@Range(from = 0, to = 4)*/ int uShowBoneSelector;
 uniform bool uShowBoneWeights;
 
 vec3 getDirLight(DirectionalLight light, vec3 normal, float inShadow);

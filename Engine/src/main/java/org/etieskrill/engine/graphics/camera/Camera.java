@@ -2,18 +2,22 @@ package org.etieskrill.engine.graphics.camera;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.Delegate;
+import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shader.UniformMappable;
 import org.jetbrains.annotations.Contract;
 import org.joml.*;
 
 import java.lang.Math;
+import java.util.function.Consumer;
+
+import static org.joml.Math.*;
 
 public abstract class Camera implements UniformMappable {
 
     protected final Vector3f position;
-    protected float rotation;
-    protected final Vector3f rotationAxis;
+    protected final Quaternionf rotation;
     protected @Getter float zoom;
 
     protected final Vector2i viewportSize;
@@ -22,19 +26,20 @@ public abstract class Camera implements UniformMappable {
     protected final Matrix4f combined;
 
     protected @Getter float near, far;
-    protected final Vector3f front, right, up, worldUp;
+    protected final Vector3f worldUp;
 
-    protected @Getter double pitch, yaw, roll;
+    protected Vector3f eulerAngles;
     protected boolean clampPitch;
 
     //TODO transform perform updates lazily instead of eagerly
     @Setter
     protected boolean autoUpdate;
 
+    protected boolean dirty;
+
     protected Camera(Vector2ic viewportSize) {
         this.position = new Vector3f();
-        this.rotation = 0f;
-        this.rotationAxis = new Vector3f();
+        this.rotation = new Quaternionf();
         this.zoom = 1f;
 
         this.viewportSize = new Vector2i(viewportSize);
@@ -46,41 +51,15 @@ public abstract class Camera implements UniformMappable {
         //the near fucking clipping plane needs to be positive in order for the z-buffer to work, but only for perspective projection?
         this.near = 0.1f;
         this.far = -100f;
-        this.front = new Vector3f();
-        this.right = new Vector3f();
-        this.up = new Vector3f();
-        this.worldUp = new Vector3f(0f, -1f, 0f);
+        this.worldUp = new Vector3f(0, 1, 0);
+
+        this.eulerAngles = new Vector3f();
 
         this.clampPitch = true;
         this.autoUpdate = true;
-    }
 
-    public void update() {
-        updateView();
-        updatePerspective();
-        updateCombined();
-    }
-
-    /**
-     * Moves the camera relative to its rotation.
-     *
-     * @param translation vector to move by
-     * @return itself for chaining
-     */
-    //TODO optimise
-    public Camera translate(Vector3fc translation) {
-        Vector3f delta = relativeTranslation(translation);
-        this.position.add(delta);
-        if (autoUpdate) update();
-        return this;
-    }
-
-    @Contract("_ -> new")
-    public Vector3f relativeTranslation(Vector3fc translation) {
-        return new Vector3f()
-                .add(front.mul(translation.z()))
-                .add(right.mul(-translation.x()))
-                .add(up.mul(translation.y()));
+        this.dirty = true;
+        update();
     }
 
     public Vector3fc getPosition() {
@@ -89,20 +68,78 @@ public abstract class Camera implements UniformMappable {
 
     public Camera setPosition(Vector3fc position) {
         this.position.set(position);
-        if (autoUpdate) update();
+        dirty();
         return this;
     }
 
-    @Deprecated
-    public Camera setRotation(float rotation) {
-        this.rotation = rotation;
+    /**
+     * Moves the camera relative to its rotation.
+     *
+     * @param translation vector to move by
+     * @return itself for chaining
+     */
+    public Camera translate(Vector3fc translation) {
+        position.add(relativeTranslation(translation));
+        dirty();
         return this;
     }
 
-    @Deprecated
-    public Camera setRotationAxis(Vector3fc rotationAxis) {
-        this.rotationAxis.set(rotationAxis);
+    @Contract("_ -> new")
+    public Vector3f relativeTranslation(Vector3fc translation) {
+        return rotation.transform(translation, new Vector3f());
+    }
+
+    public Quaternionfc getRotation() {
+        return rotation;
+    }
+
+    public Camera setRotation(Quaternionf rotation) {
+        this.rotation.set(rotation);
+        dirty();
         return this;
+    }
+
+    public Camera setRotation(float pitch, float yaw, float roll) {
+        if (clampPitch) {
+            pitch %= 360;
+            if (pitch > 89f) pitch = 89f;
+            else if (pitch < -89f) pitch = -89f;
+        }
+
+        rotation.rotationYXZ(-toRadians(yaw), -toRadians(pitch), toRadians(roll)); //TODO should roll affect worldUp?
+
+        dirty();
+        return this;
+    }
+
+    public Camera rotate(Consumer<Quaternionf> rotation) {
+        rotation.accept(this.rotation);
+        dirty();
+        return this;
+    }
+
+    public Camera rotate(float pitch, float yaw, float roll) {
+        pitch += getPitch();
+        yaw += getYaw();
+        roll += getRoll();
+//        if (clampPitch) {
+//            pitch %= 360;
+//            if (pitch > 89f) pitch = 89f;
+//            else if (pitch < -89f) pitch = -89f;
+//        }
+        System.out.println(eulerAngles);
+        System.out.println(pitch + " " + yaw + " " + roll);
+        System.out.println(getPitch() + " " + getYaw() + " " + getRoll());
+
+        return setRotation(-pitch, -yaw, roll);
+//        pitch = toRadians(pitch);
+//        yaw = toRadians(yaw);
+//        roll = toRadians(roll);
+////        rotation.rotateYXZ(-pitch, -yaw, roll);
+//        rotation.rotateY(yaw).rotateX(pitch);
+//
+//        dirty();
+//        return this;
     }
 
     public Vector2ic getViewportSize() {
@@ -115,99 +152,91 @@ public abstract class Camera implements UniformMappable {
 
     public Camera setZoom(float zoom) {
         this.zoom = Math.clamp(zoom, .01f, 10f);
-        if (autoUpdate) update();
+        dirty();
         return this;
+    }
+
+    protected void dirty() {
+        dirty = true;
+    }
+
+    public void update() {
+        if (!dirty) return;
+        else dirty = false;
+
+        rotation.getEulerAnglesYXZ(eulerAngles).mul(57.29577951308232f); //rad to deg constant
+        System.out.println("muh dick: " + eulerAngles + " " + rotation);
+
+        updateView();
+        updatePerspective();
+        updateCombined();
     }
 
     protected void updateView() {
-        front.set(
-                Math.cos(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch)),
-                Math.sin(Math.toRadians(pitch)),
-                Math.sin(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch)));
-        front.normalize();
-
-        right.set(front.cross(worldUp, new Vector3f()).normalize());
-        up.set(front.cross(right, new Vector3f()).normalize());
-
+        Vector3f front = rotation.transform(new Vector3f(0, 0, 1)).normalize();
+//        Vector3f up = rotation.transform(new Vector3f(0, 1, 0)).normalize();
         Vector3f target = new Vector3f(position).add(front);
 
-        this.view.setLookAt(position, target, up);
+        this.view.setLookAt(position, target, worldUp);
     }
+
+    //TODO orbit cam using arcball
 
     protected abstract void updatePerspective();
 
-    protected Camera setPerspective(Matrix4fc perspective) {
+    protected void setPerspective(Matrix4fc perspective) {
         this.perspective.set(perspective);
-        if (autoUpdate) update();
-        return this;
+        dirty();
     }
 
     @Contract("-> new")
     public Vector3f getDirection() {
-        return new Vector3f(
-                (float) (Math.cos(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch))),
-                (float) Math.sin(Math.toRadians(pitch)),
-                (float) (Math.sin(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch))))
-                .normalize();
+        return rotation.transform(new Vector3f(0, 0, 1)).normalize();
     }
 
     public Matrix4fc getCombined() {
-        updateCombined();
+        update();
         return combined;
     }
 
     private void updateCombined() {
-        this.combined.set(perspective).mul(view);
+        combined.set(perspective).mul(view);
     }
 
     public Camera setNear(float near) {
         this.near = near;
-        if (autoUpdate) update();
+        dirty();
         return this;
     }
 
     public Camera setFar(float far) { //TODO far is negative, 1.: find out why, 2.: adjust if necessary
         this.far = far;
-        if (autoUpdate) update();
+        dirty();
         return this;
     }
 
     public Camera setWorldUp(Vector3fc worldUp) {
         this.worldUp.set(worldUp);
-        if (autoUpdate) update();
+        dirty();
         return this;
     }
 
-    public Camera setOrientation(double pitch, double yaw, double roll) {
-        if (clampPitch) {
-            if (pitch > 89f) pitch = 89f;
-            else if (pitch < -89f) pitch = -89f;
-        }
-        this.pitch = pitch;
-        this.yaw = yaw;
-
-        if (roll != 0f) throw new UnsupportedOperationException("plz dont use roll yet");
-        this.roll = roll;
-
-        if (autoUpdate) update();
-        return this;
+    public Vector3f getEulerAngles() {
+        update();
+        return eulerAngles;
     }
 
-    public Camera orient(double pitch, double yaw, double roll) {
-        this.pitch -= pitch;
-        if (clampPitch) {
-            if (this.pitch > 89.0) this.pitch = 89.0;
-            else if (this.pitch < -89.0) this.pitch = -89.0;
-        }
+    public float getPitch() {
+        return getEulerAngles().x();
+    }
 
-        this.yaw -= yaw;
-        this.yaw %= 360.0;
+    public float getYaw() {
+        return getEulerAngles().y();
+    }
 
-        if (roll != 0.0) throw new UnsupportedOperationException("plz dont use roll yet");
-        this.roll += roll;
-
-        if (autoUpdate) update();
-        return this;
+    public float getRoll() {
+        update();
+        return getEulerAngles().z();
     }
 
     /**
@@ -223,28 +252,24 @@ public abstract class Camera implements UniformMappable {
     @Override
     public String toString() {
         return "Camera{" +
-                "position=" + position +
+                ", position=" + position +
                 ", rotation=" + rotation +
-                ", rotationAxis=" + rotationAxis +
+                ", rotationEulerAngles=" + eulerAngles +
                 ", zoom=" + zoom +
                 ", near=" + near +
                 ", far=" + far +
-                ", front=" + front +
-                ", right=" + right +
-                ", up=" + up +
                 ", worldUp=" + worldUp +
-                ", pitch=" + pitch +
-                ", yaw=" + yaw +
-                ", roll=" + roll +
+                ", viewportSize=" + viewportSize +
                 '}';
     }
 
     @Override
     public boolean map(ShaderProgram.UniformMapper mapper) {
+        update();
         mapper
-                .map("view", view)
-                .map("perspective", perspective)
-                .map("combined", combined)
+                .map("view", getView())
+                .map("perspective", getPerspective())
+                .map("combined", getCombined())
                 .map("position", position)
                 .map("near", near)
                 .map("far", far)

@@ -89,7 +89,8 @@ public class Scene implements CursorInputAdapter {
      * @param camera the camera to set this scene to
      */
     public void setCamera(@NotNull Camera camera) {
-        this.camera = camera.setOrientation(0f, -90f, 0f);
+        this.camera = camera;
+        this.camera.setRotation(0, 180, 0);
         this.camera.setPosition(new Vector3f(camera.getViewportSize(), 0).div(2));
     }
 
