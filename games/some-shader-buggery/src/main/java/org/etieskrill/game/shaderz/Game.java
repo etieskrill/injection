@@ -67,7 +67,7 @@ public class Game {
         sunLight = new DirectionalLight(sun.getTransform().getPosition().normalize(), new Vector3f(.2f), new Vector3f(.5f), new Vector3f(.5f));
 
         camera.setFar(500);
-        camera.orient(0, 0, 0);
+        camera.rotate(0, 0, 0);
         camera.setPosition(new Vector3f(0, 4, 0));
 
         fpsLabel = (Label) new Label("", Fonts.getDefault(48)).setMargin(new Vector4f(10));

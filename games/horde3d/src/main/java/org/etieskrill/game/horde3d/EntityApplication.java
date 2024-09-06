@@ -84,7 +84,7 @@ public class EntityApplication extends GameApplication {
         secondaryRenderService = new RenderService(renderer,
                 new PerspectiveCamera(window.getSize().getVec())
                         .setPosition(new Vector3f(-10, 10, -10))
-                        .setOrientation(-60, 45, 0)
+                        .setRotation(-45, -45, 0)
                         .setZoom(10f),
                 new Vector2i(window.getSize().getVec()).div(smolFactor))
                 .cullingCamera(camera)
@@ -163,7 +163,7 @@ public class EntityApplication extends GameApplication {
 //        player.getTransform().getPosition().sub(zombie.getTransform().getPosition(), zombie.getAcceleration().getForce());
 //        zombie.getAcceleration().getForce().normalize().mul(.015f * zombie.getAcceleration().getFactor());
 
-        camera.setOrientation(-45, 45, 0);
+        camera.setRotation(-45, -45, 0);
         camera.setPosition(
                 new Vector3f(player.getTransform().getPosition())
                         .add(0, 2, 0)

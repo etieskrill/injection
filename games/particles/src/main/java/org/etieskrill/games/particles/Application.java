@@ -60,7 +60,7 @@ public class Application extends GameApplication {
     @Override
     protected void init() {
         camera = new PerspectiveCamera(window.getSize().getVec());
-        camera.setOrientation(-25, 45, 0);
+        camera.setRotation(-25, 45, 0);
 
         viewCenter = new Vector3f();
         viewCenterDelta = new Vector3f();
@@ -71,7 +71,7 @@ public class Application extends GameApplication {
 
         window.addKeyInputs(Input.of(
                 Input.bind(Keys.C).to(() -> {
-                    camera.setOrientation(-25, 45, 0);
+                    camera.setRotation(-25, 45, 0);
                     viewCenter.zero();
                 })
         ));

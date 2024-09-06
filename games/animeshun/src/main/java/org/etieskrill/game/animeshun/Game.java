@@ -125,7 +125,7 @@ public class Game {
 
         GLUtils.addDebugLogging();
 
-        camera = new PerspectiveCamera(window.getSize().getVec()).setOrientation(0, 0, 0);
+        camera = new PerspectiveCamera(window.getSize().getVec()).setRotation(0, 0, 0);
         window.addCursorInputs(new CursorCameraController(camera));
 
         vampy = Loaders.ModelLoader.get().load("vampy", () -> new Model.Builder("mixamo_walk_forward_skinned_vampire.dae").disableCulling().build());

@@ -1,5 +1,7 @@
 package org.etieskrill.engine.input.controller;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.input.CursorInputAdapter;
 import org.jetbrains.annotations.Nullable;
@@ -11,8 +13,8 @@ public class CursorCameraController implements CursorInputAdapter {
 
     private final Camera camera;
 
-    private double lookSensitivity;
-    private double zoomSensitivity;
+    private @Getter @Setter double lookSensitivity;
+    private @Getter @Setter double zoomSensitivity;
 
     private @Nullable Supplier<Boolean> updateCondition;
 
@@ -43,9 +45,9 @@ public class CursorCameraController implements CursorInputAdapter {
 
         previousPosition.sub(posX, posY);
         if (shouldUpdate())
-            camera.orient(
-                    lookSensitivity * -previousPosition.y(),
-                    lookSensitivity * previousPosition.x(),
+            camera.rotate(
+                    (float) (lookSensitivity * -previousPosition.y()),
+                    (float) (lookSensitivity * previousPosition.x()), //FIXME what the shit why is this always inverted and negating it does noting???
                     0);
 
         previousPosition.set(posX, posY);
@@ -57,22 +59,6 @@ public class CursorCameraController implements CursorInputAdapter {
         double zoom = camera.getZoom() - deltaY * zoomSensitivity;
         if (shouldUpdate()) camera.setZoom((float) zoom);
         return true;
-    }
-
-    public double getLookSensitivity() {
-        return lookSensitivity;
-    }
-
-    public void setLookSensitivity(double lookSensitivity) {
-        this.lookSensitivity = lookSensitivity;
-    }
-
-    public double getZoomSensitivity() {
-        return zoomSensitivity;
-    }
-
-    public void setZoomSensitivity(double zoomSensitivity) {
-        this.zoomSensitivity = zoomSensitivity;
     }
 
     public CursorCameraController setUpdateCondition(@Nullable Supplier<Boolean> updateCondition) {

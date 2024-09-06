@@ -39,7 +39,7 @@ public class RuntimeMeshOptimisation extends GameApplication {
     @Override
     protected void init() {
         PerspectiveCamera camera = new PerspectiveCamera(window.getSize().getVec());
-        camera.setOrientation(0, -90, 0);
+        camera.setRotation(0, -90, 0);
 
         entitySystem.addService(new AnimationService());
         entitySystem.addService(new DirectionalShadowMappingService(renderer));

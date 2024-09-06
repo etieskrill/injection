@@ -14,6 +14,7 @@ import org.etieskrill.engine.input.Input;
 import org.etieskrill.engine.input.Keys;
 import org.etieskrill.engine.input.controller.KeyCharacterController;
 import org.etieskrill.engine.window.Window;
+import org.joml.Quaternionf;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
@@ -73,7 +74,7 @@ public class Application extends GameApplication {
 
         dummyVao = glGenVertexArrays();
 
-        floorTexture = new Texture2D.FileBuilder("grass.png", AbstractTexture.Type.DIFFUSE)
+        floorTexture = new Texture2D.FileBuilder("grass.png")
                 .setMipMapping(MinFilter.NEAREST, MagFilter.NEAREST).build();
         floorShader = new ShaderProgram() {
             @Override
@@ -98,7 +99,7 @@ public class Application extends GameApplication {
         dudeTransform = new Transform();
         dude.addComponent(dudeTransform);
         dudeBillBoard = new BillBoard(
-                new Texture2D.FileBuilder("dude.png", AbstractTexture.Type.DIFFUSE)
+                new Texture2D.FileBuilder("dude.png")
                         .setMipMapping(MinFilter.NEAREST, MagFilter.NEAREST).build(),
                 new Vector2f()
         );
@@ -113,7 +114,7 @@ public class Application extends GameApplication {
             }
 
             deltaPosition.z = -deltaPosition.z;
-            deltaPosition.rotateY((float) toRadians(90 + camera.getYaw()));
+            deltaPosition.rotateY(toRadians(90 + camera.getYaw()));
             target.add(deltaPosition.mul((float) delta));
         }));
         window.addKeyInputs(Input.of(
@@ -124,7 +125,7 @@ public class Application extends GameApplication {
         Entity bush = entitySystem.createEntity();
         bush.addComponent(new Transform().setPosition(new Vector3f(1, 0, -1)));
         bush.addComponent(new BillBoard(
-                new Texture2D.FileBuilder("bush1.png", AbstractTexture.Type.DIFFUSE)
+                new Texture2D.FileBuilder("bush1.png")
                         .setMipMapping(MinFilter.NEAREST, MagFilter.NEAREST)
                         .setWrapping(AbstractTexture.Wrapping.CLAMP_TO_EDGE)
                         .build(),
@@ -134,14 +135,14 @@ public class Application extends GameApplication {
 
     @Override
     protected void loop(double delta) {
-        camera.setOrientation(-45, 90, 0);
+        camera.setRotation(-45, 90, 0);
         camera.setPosition(new Vector3f(dudeTransform.getPosition())
                 .sub(camera.getDirection().mul(4).add(0, -0.5f, 0))
         );
 
-        dudeBillBoard.setSize(new Vector2f(dudeLooksRight ? 1 : -1, 1).mul(0.5f));
+        dudeBillBoard.getSize().set(dudeLooksRight ? .5f : -.5f, .5f);
         float verticalOffset = dudeWalking ? (float) (0.075f * sin(20 * pacer.getTime()) + 0.075f) : 0;
-        dudeBillBoard.setOffset(new Vector3f(0, verticalOffset, 0));
+        dudeBillBoard.getOffset().set(0, verticalOffset, 0);
     }
 
     @Override

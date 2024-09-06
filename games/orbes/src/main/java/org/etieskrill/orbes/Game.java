@@ -20,12 +20,11 @@ import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.window.Window;
 import org.etieskrill.orbes.scene.*;
 import org.jetbrains.annotations.VisibleForTesting;
-import org.joml.Matrix4f;
-import org.joml.Vector2f;
-import org.joml.Vector2i;
-import org.joml.Vector3f;
+import org.joml.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.lang.Math;
 
 import static org.etieskrill.orbes.Game.Stage.*;
 
@@ -95,7 +94,7 @@ public class Game {
     }
 
     private void setupWindow() {
-        window = new Window.WindowBuilder()
+        window = Window.builder()
                 .setRefreshRate(0)
                 .setMode(Window.WindowMode.BORDERLESS)
                 .setTitle("Walk")
@@ -103,7 +102,7 @@ public class Game {
     }
 
     private void setupUI() {
-        Vector2i windowSize = window.getSize().getVec();
+        Vector2ic windowSize = window.getSize().getVec();
 
         mainMenuScene = new MainMenuUIScene(
                 new Batch((GLRenderer) renderer),
@@ -133,7 +132,7 @@ public class Game {
         //TODO figure out a smart way to link the pacer and window refresh rates
         pacer = new SystemNanoTimePacer(1 / 60f);
 
-        Vector2i windowSize = window.getSize().getVec();
+        Vector2ic windowSize = window.getSize().getVec();
         FrameBuffer postBuffer = FrameBuffer.getStandard(windowSize);
         Material mat = new Material.Builder() //TODO okay, the fact models, or rather meshes simply ignore these mats is getting frustrating now, that builder needs some serious rework
                 .addTextures((Texture2D) postBuffer.getAttachment(BufferAttachmentType.COLOUR0))
@@ -200,7 +199,7 @@ public class Game {
 
                 Vector3f pos = new Vector3f((float) Math.cos(time), 0.5f, (float) Math.sin(time)).mul(15);
                 camera.setPosition(pos);
-                camera.setOrientation(-20, Math.toDegrees(Math.atan2(-pos.z(), -pos.x())), 0); //TODO camera utils for orbiting / lookat (literally is the implementation already)
+                camera.setRotation(-20, (float) Math.toDegrees(Math.atan2(-pos.z(), -pos.x())), 0); //TODO camera utils for orbiting / lookat (literally is the implementation already)
             }
             case GAME -> {
                 if (!pacer.isPaused()) {

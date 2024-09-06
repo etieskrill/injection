@@ -100,7 +100,7 @@ public class DemCubez {
         renderer = new GLRenderer();
         camera = (PerspectiveCamera) new PerspectiveCamera(window.getSize().getVec())
                 .setPosition(new Vector3f(0f, 0f, 3f))
-                .setOrientation(0f, -90f, 0f)
+                .setRotation(0f, -90f, 0f)
                 .setFar(-1000f);
         
         initUI();
@@ -262,7 +262,7 @@ public class DemCubez {
     
     private void updatePlayerCamera() {
         if (!paused) {
-            camera.orient(dPitch, dYaw, 0f);
+            camera.rotate((float) dPitch, (float) dYaw, 0f);
             dPitch = 0f;
             dYaw = 0f;
         }

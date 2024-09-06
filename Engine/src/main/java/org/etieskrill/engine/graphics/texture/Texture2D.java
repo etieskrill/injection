@@ -28,6 +28,17 @@ public class Texture2D extends AbstractTexture implements FrameBufferAttachment 
         private final String file;
 
         /**
+         * Reads image attributes from the specified file and constructs a texture builder with the texture type being
+         * set to {@link Type#DIFFUSE diffuse} by default, meaning the texture data is interpreted to be in the SRGB
+         * colour space.
+         *
+         * @param file name of the texture file relative to the resources/textures folder
+         */
+        public FileBuilder(String file) {
+            this(file, Type.DIFFUSE);
+        }
+
+        /**
          * Reads image attributes from the specified file and constructs a texture builder.
          *
          * @param file name of the texture file relative to the resources/textures folder

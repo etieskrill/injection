@@ -315,6 +315,17 @@ public abstract class ShaderProgram implements Disposable {
     }
 
     private void setRegisteredUniform(Uniform uniform, Object value, boolean array) {
+        if (array) {
+            if (uniform instanceof ArrayUniform arrayUniform) {
+                if (((Object[]) value).length > arrayUniform.getSize()) {
+                    throw new ShaderUniformException("Uniform array value is larger (" + ((Object[]) value).length
+                            + ") than uniform array size (" + arrayUniform.getSize() + ")");
+                }
+            } else {
+                throw new ShaderUniformException("Attempted to set non-array value for array uniform: " + value.getClass());
+            }
+        }
+
         if (uniform.getType() == Uniform.Type.STRUCT) {
             if (array && value instanceof Object[] values) {
                 for (int i = 0; i < values.length; i++) {
@@ -346,7 +357,7 @@ public abstract class ShaderProgram implements Disposable {
     }
 
     private void setUnregisteredUniform(String name, Object value, boolean array) {
-        if (value instanceof UniformMappable mappable) {
+        if (value instanceof UniformMappable mappable) { //TODO struct arrays
             mappable.map(UniformMapper.get(this, name));
             return;
         }
