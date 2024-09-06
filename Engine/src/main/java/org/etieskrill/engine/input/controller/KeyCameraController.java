@@ -6,6 +6,7 @@ public class KeyCameraController extends KeyCharacterController<Camera> {
 
     public KeyCameraController(Camera target) {
         super(target, (delta, camera, deltaPosition, speed) -> {
+            deltaPosition.x *= -1;
             camera.translate(deltaPosition.mul((float) (delta * speed)));
         });
     }

@@ -25,7 +25,7 @@ import org.etieskrill.engine.graphics.texture.font.Fonts;
 import org.etieskrill.engine.input.Input;
 import org.etieskrill.engine.input.Keys;
 import org.etieskrill.engine.input.controller.CursorCameraController;
-import org.etieskrill.engine.input.controller.KeyCharacterTranslationController;
+import org.etieskrill.engine.input.controller.KeyCameraController;
 import org.etieskrill.engine.scene.Scene;
 import org.etieskrill.engine.scene.component.Container;
 import org.etieskrill.engine.scene.component.Label;
@@ -45,6 +45,7 @@ public class Application extends GameApplication {
 
     Label fpsLabel;
 
+    ParticleEmitter fireEmitter;
     Transform fireEmitterTransform;
 
     public Application() {
@@ -59,14 +60,16 @@ public class Application extends GameApplication {
 
     @Override
     protected void init() {
-        camera = new PerspectiveCamera(window.getSize().getVec());
+        camera = new PerspectiveCamera(window.getSize().getVec())
+                .setOrbit(true)
+                .setOrbitDistance(5);
         camera.setRotation(-25, 45, 0);
 
         viewCenter = new Vector3f();
         viewCenterDelta = new Vector3f();
 
         window.addCursorInputs(new CursorCameraController(camera));
-        window.addKeyInputs(new KeyCharacterTranslationController(viewCenterDelta, camera, false));
+        window.addKeyInputs(new KeyCameraController(camera));
         window.getCursor().disable();
 
         window.addKeyInputs(Input.of(
@@ -83,7 +86,8 @@ public class Application extends GameApplication {
                 new OrthographicCamera(window.getSize().getVec())
         ));
 
-        entitySystem.addService(new RenderService(renderer, camera, window.getSize().getVec()));
+        entitySystem.addService(new RenderService(renderer, camera, window.getSize().getVec())
+                .blur(false));
         entitySystem.addService(new ParticleRenderService(new GLParticleRenderer(), camera));
 
         Entity gridEntity = entitySystem.createEntity();
@@ -106,9 +110,9 @@ public class Application extends GameApplication {
         gridDrawable.setShader(gridShader);
         gridEntity.addComponent(gridDrawable);
 
-        ParticleEmitter fireEmitter = ParticleEmitter.builder(
+        fireEmitter = ParticleEmitter.builder(
                         4,
-                        new Texture2D.FileBuilder("particles/fire_01.png", Type.DIFFUSE)
+                        new Texture2D.FileBuilder("particles/fire_01.png")
                                 .setMipMapping(MinFilter.LINEAR, MagFilter.LINEAR)
                                 .setWrapping(Wrapping.CLAMP_TO_BORDER).build())
                 .particlesPerSecond(2500)
@@ -123,7 +127,7 @@ public class Application extends GameApplication {
 
         ParticleEmitter riftSmokeEmitter = ParticleEmitter.builder(
                         1,
-                        new Texture2D.FileBuilder("particles/smoke_05.png", Type.DIFFUSE).build())
+                        new Texture2D.FileBuilder("particles/smoke_05.png").build())
                 .particlesPerSecond(500)
                 .randomVelocity(2)
                 .colour(new Vector4f(.15f, 0, .25f, .5f))
@@ -133,7 +137,7 @@ public class Application extends GameApplication {
 
         ParticleEmitter riftSparkEmitter = ParticleEmitter.builder(
                         .05f,
-                        new Texture2D.FileBuilder("particles/spark_04.png", Type.DIFFUSE).build())
+                        new Texture2D.FileBuilder("particles/spark_04.png").build())
                 .lifetimeSpread(.05f)
                 .particlesPerSecond(10)
                 .particleDelaySpreadSeconds(1)
@@ -165,9 +169,6 @@ public class Application extends GameApplication {
     @Override
     protected void loop(double delta) {
         fpsLabel.setText(String.valueOf((int) pacer.getAverageFPS()));
-
-        viewCenter.add(viewCenterDelta.mul((float) delta));
-        camera.setPosition(camera.getDirection().negate().mul(5).add(viewCenter));
 
         fireEmitterTransform.getPosition()
                 .set(cos(pacer.getTime()), 0, -sin(pacer.getTime()))
