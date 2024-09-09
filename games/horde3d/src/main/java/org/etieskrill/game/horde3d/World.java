@@ -47,18 +47,18 @@ public class World {
         Entity floor = entitySystem.createEntity();
         Drawable floorDrawable = new Drawable(floorModel);
         floorDrawable.setTextureScale(new Vector2f(15));
-        floor.addComponent(floorDrawable);
+        floor.withComponent(floorDrawable);
 
         floorModel.getTransform().setPosition(new Vector3f(0, -1, 0));
-        floor.addComponent(floorModel.getTransform());
+        floor.withComponent(floorModel.getTransform());
 
-        floor.addComponent(new AABB(
+        floor.withComponent(new AABB(
                 floorModel.getBoundingBox().getMin().mul(floorModel.getInitialTransform().getScale(), new Vector3f()),
                 floorModel.getBoundingBox().getMax().mul(floorModel.getInitialTransform().getScale(), new Vector3f())
         ));
-        floor.addComponent(new WorldSpaceAABB());
+        floor.withComponent(new WorldSpaceAABB());
 
-        floor.addComponent(new StaticCollider());
+        floor.withComponent(new StaticCollider());
 
         Model sphere = MODELS.load("sphere", () ->
                 new Model.Builder("Sphere.obj")
@@ -67,12 +67,12 @@ public class World {
 
         Entity sun = entitySystem.createEntity();
         sunLight = new DirectionalLight(new Vector3f(-1), new Vector3f(1f), new Vector3f(5), new Vector3f(5));
-        sun.addComponent(sunLight);
+        sun.withComponent(sunLight);
         Model sunModel = new Model(sphere);
         sunModel.getTransform().setPosition(new Vector3f(50)).setScale(new Vector3f(.35f));
-        sun.addComponent(new Drawable(sunModel));
+        sun.withComponent(new Drawable(sunModel));
         sunTransform = new Transform(sunModel.getTransform());
-        sun.addComponent(sunTransform);
+        sun.withComponent(sunTransform);
 
         PointLight light1 = new PointLight(new Vector3f(10, 0, 10),
                 new Vector3f(2, .3f, .25f), new Vector3f(5, 1.5f, 1), new Vector3f(5, 1.5f, 1),
@@ -98,14 +98,14 @@ public class World {
                                     .normalize()))
                     .setScale(3);
             Entity cube = entitySystem.createEntity();
-            cube.addComponent(new Drawable(cubeModel));
-            cube.addComponent(cubeModel.getTransform());
-            cube.addComponent(cubeModel.getBoundingBox());
-            cube.addComponent(new WorldSpaceAABB());
+            cube.withComponent(new Drawable(cubeModel));
+            cube.withComponent(cubeModel.getTransform());
+            cube.withComponent(cubeModel.getBoundingBox());
+            cube.withComponent(new WorldSpaceAABB());
             if (i == 1) {
-                cube.addComponent(new DynamicCollider(new Vector3f(cubeModel.getTransform().getPosition())));
+                cube.withComponent(new DynamicCollider(new Vector3f(cubeModel.getTransform().getPosition())));
             } else {
-                cube.addComponent(new StaticCollider());
+                cube.withComponent(new StaticCollider());
             }
 
             if (i == 0) cubeTransform = cubeModel.getTransform();
@@ -117,22 +117,22 @@ public class World {
         Matrix4f sunLightCombined = new Matrix4f()
                 .ortho(-30, 30, -30, 30, .1f, 40)
                 .mul(new Matrix4f().lookAt(new Vector3f(10, 20, 10), new Vector3f(-10, 0, -10), new Vector3f(0, 1, 0)));
-        sun.addComponent(new DirectionalLightComponent(sunLight, directionalShadowMap, sunLightCombined));
+        sun.withComponent(new DirectionalLightComponent(sunLight, directionalShadowMap, sunLightCombined));
 
         final float pointShadowNearPlane = .1f;
         final float pointShadowFarPlane = 40;
 
         Entity pointLight1 = entitySystem.createEntity();
-        pointLight1.addComponent(lightModel1.getTransform());
-        pointLight1.addComponent(new Drawable(lightModel1));
+        pointLight1.withComponent(lightModel1.getTransform());
+        pointLight1.withComponent(new Drawable(lightModel1));
         Matrix4fc[] pointLightCombined1 = pointShadowMaps.getCombinedMatrices(pointShadowNearPlane, pointShadowFarPlane, light1);
-        pointLight1.addComponent(new PointLightComponent(light1, pointShadowMaps, 0, pointLightCombined1, pointShadowFarPlane));
+        pointLight1.withComponent(new PointLightComponent(light1, pointShadowMaps, 0, pointLightCombined1, pointShadowFarPlane));
 
         Entity pointLight2 = entitySystem.createEntity();
-        pointLight2.addComponent(lightModel2.getTransform());
-        pointLight2.addComponent(new Drawable(lightModel2));
+        pointLight2.withComponent(lightModel2.getTransform());
+        pointLight2.withComponent(new Drawable(lightModel2));
         Matrix4fc[] pointLightCombined2 = pointShadowMaps.getCombinedMatrices(pointShadowNearPlane, pointShadowFarPlane, light2);
-        pointLight2.addComponent(new PointLightComponent(light2, pointShadowMaps, 1, pointLightCombined2, pointShadowFarPlane));
+        pointLight2.withComponent(new PointLightComponent(light2, pointShadowMaps, 1, pointLightCombined2, pointShadowFarPlane));
     }
 
     public DirectionalLight getSunLight() {

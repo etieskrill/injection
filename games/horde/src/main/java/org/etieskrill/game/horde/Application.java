@@ -3,6 +3,7 @@ package org.etieskrill.game.horde;
 import org.etieskrill.engine.application.GameApplication;
 import org.etieskrill.engine.entity.Entity;
 import org.etieskrill.engine.entity.component.Transform;
+import org.etieskrill.engine.entity.service.impl.SnippetsService;
 import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
@@ -13,10 +14,12 @@ import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.input.Input;
 import org.etieskrill.engine.input.Keys;
 import org.etieskrill.engine.input.controller.KeyCharacterController;
+import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.window.Window;
-import org.joml.Quaternionf;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
+
+import java.util.Random;
 
 import static org.joml.Math.sin;
 import static org.joml.Math.toRadians;
@@ -49,8 +52,12 @@ public class Application extends GameApplication {
 
     @Override
     protected void init() {
-        camera = new PerspectiveCamera(window.getSize().getVec());
+        camera = new PerspectiveCamera(window.getSize().getVec())
+                .setOrbit(true)
+                .setOrbitDistance(2)
+                .setZoom(7);
         entitySystem.addService(new BillBoardRenderService(camera));
+        entitySystem.addService(new SnippetsService());
 
         window.getCursor().disable();
 
@@ -96,14 +103,12 @@ public class Application extends GameApplication {
         };
 
         Entity dude = entitySystem.createEntity();
-        dudeTransform = new Transform();
-        dude.addComponent(dudeTransform);
-        dudeBillBoard = new BillBoard(
+        dudeTransform = dude.addComponent(new Transform());
+        dudeBillBoard = dude.addComponent(new BillBoard(
                 new Texture2D.FileBuilder("dude.png")
                         .setMipMapping(MinFilter.NEAREST, MagFilter.NEAREST).build(),
                 new Vector2f()
-        );
-        dude.addComponent(dudeBillBoard);
+        ));
         window.addKeyInputs(new KeyCharacterController<>(dudeTransform.getPosition(), (delta, target, deltaPosition, speed) -> {
             deltaPosition.y = 0;
             if (!deltaPosition.equals(0, 0, 0)) {
@@ -113,8 +118,8 @@ public class Application extends GameApplication {
                 dudeWalking = false;
             }
 
-            deltaPosition.z = -deltaPosition.z;
-            deltaPosition.rotateY(toRadians(90 + camera.getYaw()));
+            deltaPosition.x = -deltaPosition.x;
+            deltaPosition.rotateY(toRadians(camera.getYaw()));
             target.add(deltaPosition.mul((float) delta));
         }));
         window.addKeyInputs(Input.of(
@@ -122,31 +127,54 @@ public class Application extends GameApplication {
                 Input.bind(Keys.D).to(() -> dudeLooksRight = true)
         ));
 
-        Entity bush = entitySystem.createEntity();
-        bush.addComponent(new Transform().setPosition(new Vector3f(1, 0, -1)));
-        bush.addComponent(new BillBoard(
-                new Texture2D.FileBuilder("bush1.png")
+        entitySystem.createEntity(id -> new Enemy(id, dudeTransform.getPosition()));
+
+        Random random = new Random(69420);
+
+        var bushTexture = getPixelTexture("bush1.png");
+        for (int i = 0; i < 100; i++) {
+            entitySystem.createEntity()
+                    .withComponent(new Transform().setPosition(new Vector3f(random.nextFloat(-10, 10), 0, random.nextFloat(-10, 10))))
+                    .withComponent(new BillBoard(
+                            bushTexture,
+                            new Vector2f(0.5f)
+                    ));
+        }
+
+        var treeTexture = getPixelTexture("tree01.png");
+        for (int i = 0; i < 50; i++) {
+            entitySystem.createEntity()
+                    .withComponent(new Transform().setPosition(new Vector3f(random.nextFloat(-10, 10), 0, random.nextFloat(-10, 10))))
+                    .withComponent(new BillBoard(
+                            treeTexture,
+                            new Vector2f(2, 4),
+                            true
+                    ));
+        }
+    }
+
+    static Texture2D getPixelTexture(String file) {
+        return (Texture2D) Loaders.TextureLoader.get().load(file, () ->
+                new Texture2D.FileBuilder(file)
                         .setMipMapping(MinFilter.NEAREST, MagFilter.NEAREST)
                         .setWrapping(AbstractTexture.Wrapping.CLAMP_TO_EDGE)
-                        .build(),
-                new Vector2f(0.5f)
-        ));
+                        .build());
     }
 
     @Override
     protected void loop(double delta) {
-        camera.setRotation(-45, 90, 0);
-        camera.setPosition(new Vector3f(dudeTransform.getPosition())
-                .sub(camera.getDirection().mul(4).add(0, -0.5f, 0))
-        );
+        camera.setRotation(-45, 0, 0);
+        camera.setPosition(new Vector3f(dudeTransform.getPosition()).add(0, 0.5f, 0));
 
-        dudeBillBoard.getSize().set(dudeLooksRight ? .5f : -.5f, .5f);
+        dudeBillBoard.getSize().set(dudeLooksRight ? -.5f : .5f, .5f);
         float verticalOffset = dudeWalking ? (float) (0.075f * sin(20 * pacer.getTime()) + 0.075f) : 0;
         dudeBillBoard.getOffset().set(0, verticalOffset, 0);
+
+        renderFloor(); //not in #render because floor needs to be drawn first
+//        renderGrid();
     }
 
-    @Override
-    protected void render() {
+    private void renderFloor() {
         glBindVertexArray(dummyVao);
 
         glDisable(GL_CULL_FACE);
@@ -158,15 +186,17 @@ public class Application extends GameApplication {
         floorShader.start();
 
         glDrawArrays(GL_POINTS, 0, 1);
+    }
 
-//        gridShader.setUniform("camera", camera);
-//        gridShader.start();
-//
-//        glDisable(GL_DEPTH_TEST);
-//        glDepthMask(false);
-//        glDrawArrays(GL_POINTS, 0, 1);
-//        glDepthMask(true);
-//        glEnable(GL_DEPTH_TEST);
+    private void renderGrid() {
+        gridShader.setUniform("camera", camera);
+        gridShader.start();
+
+        glDisable(GL_DEPTH_TEST);
+        glDepthMask(false);
+        glDrawArrays(GL_POINTS, 0, 1);
+        glDepthMask(true);
+        glEnable(GL_DEPTH_TEST);
     }
 
     public static void main(String[] args) {

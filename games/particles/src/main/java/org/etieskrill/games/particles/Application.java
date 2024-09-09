@@ -91,7 +91,7 @@ public class Application extends GameApplication {
         entitySystem.addService(new ParticleRenderService(new GLParticleRenderer(), camera));
 
         Entity gridEntity = entitySystem.createEntity();
-        gridEntity.addComponent(new Transform());
+        gridEntity.withComponent(new Transform());
 
         grid = new Model.Builder("grid.obj")
                 .disableCulling()
@@ -108,7 +108,7 @@ public class Application extends GameApplication {
             }
         };
         gridDrawable.setShader(gridShader);
-        gridEntity.addComponent(gridDrawable);
+        gridEntity.withComponent(gridDrawable);
 
         fireEmitter = ParticleEmitter.builder(
                         4,
@@ -122,8 +122,8 @@ public class Application extends GameApplication {
                 .build();
         fireEmitterTransform = fireEmitter.getTransform();
         entitySystem.createEntity(id -> new Entity(id)
-                .addComponent(fireEmitter.getTransform())
-                .addComponent(ParticleNode.builder().emitter(fireEmitter).build()));
+                .withComponent(fireEmitter.getTransform())
+                .withComponent(ParticleNode.builder().emitter(fireEmitter).build()));
 
         ParticleEmitter riftSmokeEmitter = ParticleEmitter.builder(
                         1,
@@ -162,8 +162,8 @@ public class Application extends GameApplication {
                 .emitter(riftShineEmitter)
                 .build();
         entitySystem.createEntity(id -> new Entity(id)
-                .addComponent(riftParticles.getTransform())
-                .addComponent(riftParticles));
+                .withComponent(riftParticles.getTransform())
+                .withComponent(riftParticles));
     }
 
     @Override

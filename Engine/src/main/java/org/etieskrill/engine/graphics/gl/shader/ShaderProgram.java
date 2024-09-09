@@ -3,6 +3,7 @@ package org.etieskrill.engine.graphics.gl.shader;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.etieskrill.engine.Disposable;
+import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.etieskrill.engine.util.FileUtils;
 import org.etieskrill.engine.util.ResourceReader;
 import org.jetbrains.annotations.NotNull;
@@ -50,6 +51,8 @@ public abstract class ShaderProgram implements Disposable {
     private final Map<String, Integer> nonstrictUniformCache = new HashMap<>();
     private final Set<String> unregisteredUniforms = new HashSet<>();
     private final Set<String> missingUniforms = new HashSet<>();
+
+    private int currentTextureUnit;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -129,6 +132,8 @@ public abstract class ShaderProgram implements Disposable {
             STRICT_UNIFORM_DETECTION = prevStrictState;
             placeholder = true;
         }
+
+        this.currentTextureUnit = 0;
 
         this.placeholder = placeholder;
 
@@ -261,6 +266,7 @@ public abstract class ShaderProgram implements Disposable {
     }
 
     public void start() {
+        currentTextureUnit = 0;
         glUseProgram(programID);
     }
 
@@ -292,6 +298,33 @@ public abstract class ShaderProgram implements Disposable {
 
     public void setUniformArray(@NotNull String name, int index, @NotNull Object value) {
         setUniform(name + "[" + index + "]", value, false);
+    }
+
+    /**
+     * Binds a {@link AbstractTexture Texture} to a shader's uniform sampler. This requires {@link #start()} to be
+     * called before beginning a render pass and before calling this method to work properly.
+     *
+     * @param name    the sampler name in the shader
+     * @param texture the texture to be bound
+     */
+    public void setTexture(@NotNull String name, @NotNull AbstractTexture texture) {
+        setTexture(name, texture, false);
+    }
+
+    /**
+     * Binds a {@link AbstractTexture Texture} to a shader's uniform sampler. This requires {@link #start()} to be
+     * called before beginning a render pass and before calling this method to work properly.
+     *
+     * @param name    the sampler name in the shader
+     * @param texture the texture to be bound
+     */
+    public void setTexture(@NotNull String name, @NotNull AbstractTexture texture, boolean strict) {
+        if (currentTextureUnit + 1 > 8) {
+            throw new ShaderUniformException("No texture unit available");
+        }
+
+        setUniform(name, currentTextureUnit, strict);
+        texture.bind(currentTextureUnit++);
     }
 
     private <T extends Uniform> void setUniform(String name, Object value, Map<String, T> uniformMap, boolean strict, boolean array) {
@@ -482,9 +515,28 @@ public abstract class ShaderProgram implements Disposable {
         private UniformMapper() {
         }
 
-        public UniformMapper map(String varName, Object value) {
+        /**
+         * Maps a {@code texture} to a struct uniform sampler named {@code name}. {@code null} values are ignored.
+         *
+         * @param name    uniform struct member name
+         * @param texture texture to sample
+         * @return the {@link UniformMapper UniformMapper} for chaining
+         */
+        public UniformMapper map(String name, @Nullable AbstractTexture texture) {
+            if (texture != null) shader.setTexture(name, texture);
+            return this;
+        }
+
+        /**
+         * Maps a field {@code value} to a struct uniform member named {@code name}. {@code null} values are ignored.
+         *
+         * @param name  uniform struct member name
+         * @param value uniform value
+         * @return the {@link UniformMapper UniformMapper} for chaining
+         */
+        public UniformMapper map(String name, @Nullable Object value) {
             //TODO strict nested uniforms: probably hook into here for registration
-            shader.setUniform(structName + "." + varName, value, false);
+            if (value != null) shader.setUniform(structName + "." + name, value, false);
             return this;
         }
     }

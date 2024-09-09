@@ -28,9 +28,9 @@ public class Zombie extends Entity {
         super(id);
 
         transform = new Transform();
-        addComponent(transform);
-        addComponent(new AABB(new Vector3f(-.5f, 0, -.5f), new Vector3f(.5f, 2, .5f)));
-        addComponent(new WorldSpaceAABB());
+        withComponent(transform);
+        withComponent(new AABB(new Vector3f(-.5f, 0, -.5f), new Vector3f(.5f, 2, .5f)));
+        withComponent(new WorldSpaceAABB());
 
         Model model = Loaders.ModelLoader.get().load("zombie", () ->
                 new Model.Builder("mixamo_zombie_skinned_walking.glb")
@@ -38,7 +38,7 @@ public class Zombie extends Entity {
                         .optimiseMeshes()
                         .build());
 //        addComponent(new Drawable(model, ShaderLoader.get().load("animation_shader", AnimationShader::new))); //FIXME
-        addComponent(new Drawable(model, new ZombieShader()));
+        withComponent(new Drawable(model, new ZombieShader()));
 
         Animator animator = new Animator(model);
         Animation walkingAnimation = AnimationLoader.get().load("zombie_walking", () ->
@@ -47,18 +47,18 @@ public class Zombie extends Entity {
 
         double offset = new Random().nextDouble(0, walkingAnimation.getDurationSeconds());
         animator.play(offset);
-        addComponent(animator);
+        withComponent(animator);
 
-        addComponent(new DirectionalForceComponent(new Vector3f(0, -15, 0)));
-        addComponent(new Friction(8));
+        withComponent(new DirectionalForceComponent(new Vector3f(0, -15, 0)));
+        withComponent(new Friction(8));
         collider = new DynamicCollider();
         collider.setPreviousPosition(transform.getPosition());
-        addComponent(collider);
+        withComponent(collider);
 
         acceleration = new Acceleration(new Vector3f(), 20);
-        addComponent(acceleration);
+        withComponent(acceleration);
 
-        addComponent(new Scripts(List.of(
+        withComponent(new Scripts(List.of(
                 this::rotateToHeading
         )));
     }

@@ -27,7 +27,14 @@ public class Entity {
         return (T) components.get(type);
     }
 
-    public Entity addComponent(Object component) {
+    public <T> T addComponent(T component) {
+        if (components.putIfAbsent(component.getClass(), component) != null)
+            throw new IllegalStateException("Entity already has component of type '" + getSimpleName(component) + "'");
+
+        return component;
+    }
+
+    public Entity withComponent(Object component) {
         if (components.putIfAbsent(component.getClass(), component) != null)
             throw new IllegalStateException("Entity already has component of type '" + getSimpleName(component) + "'");
 

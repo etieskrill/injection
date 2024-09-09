@@ -46,7 +46,7 @@ public class Particle {
             position.add(emitter.getTransform().getPosition());
         }
         transform.rotate(angularVelocity * delta);
-        emitter.getUpdateFunction().update(lifetime / initialLifetime, colour.set(baseColour));
+        emitter.getUpdateFunction().update(lifetime / initialLifetime, colour.set(baseColour)); //TODO these lambda calls are really not good for performance
     }
 
     public Vector3fc getPosition() {
