@@ -5,9 +5,12 @@ import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.entity.service.Service;
 import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.Comparator;
 import java.util.List;
 
+import static java.util.Comparator.comparingDouble;
 import static org.lwjgl.opengl.GL11C.*;
 import static org.lwjgl.opengl.GL30C.glBindVertexArray;
 import static org.lwjgl.opengl.GL30C.glGenVertexArrays;
@@ -27,16 +30,14 @@ public class BillBoardRenderService implements Service {
 
             @Override
             protected String[] getShaderFileNames() {
-                return new String[]{"Blit.glsl"};
+                return new String[]{"BillBoard.glsl"};
             }
 
             @Override
             protected void getUniformLocations() {
                 addUniform("camera", Uniform.Type.STRUCT);
                 addUniform("position", Uniform.Type.VEC3);
-                addUniform("offset", Uniform.Type.VEC3);
-                addUniform("size", Uniform.Type.VEC2);
-                addUniform("diffuse", Uniform.Type.SAMPLER2D);
+                addUniform("billBoard", Uniform.Type.STRUCT);
             }
         };
         ;
@@ -50,17 +51,21 @@ public class BillBoardRenderService implements Service {
     }
 
     @Override
+    @SuppressWarnings({"rawtypes", "unchecked", "DataFlowIssue"})
+    public @Nullable Comparator<Entity> comparator() {
+        return (Comparator)
+                comparingDouble(billBoard -> ((Entity) billBoard).getComponent(Transform.class).getPosition().z())
+                        .reversed();
+    }
+
+    @Override
     public void process(Entity targetEntity, List<Entity> entities, double delta) {
+        shader.start();
+
         shader.setUniform("camera", camera);
         shader.setUniform("position", targetEntity.getComponent(Transform.class).getPosition());
 
-        BillBoard billBoard = targetEntity.getComponent(BillBoard.class);
-        shader.setUniform("diffuse", 0);
-        billBoard.getSprite().bind(0);
-        shader.setUniform("size", billBoard.getSize());
-        shader.setUniform("offset", billBoard.getOffset());
-
-        shader.start();
+        shader.setUniform("billBoard", targetEntity.getComponent(BillBoard.class));
 
         glDisable(GL_CULL_FACE);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

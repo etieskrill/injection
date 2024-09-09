@@ -36,18 +36,18 @@ public class PlayerEntity extends Entity {
         this.transform = new Transform();
         this.moveForce = new Acceleration(new Vector3f(), 20);
 
-        addComponent(transform);
+        withComponent(transform);
 
         boundingBox = new AABB(new Vector3f(-.5f, 0, -.5f), new Vector3f(.5f, 2, .5f));
-        addComponent(boundingBox);
-        addComponent(new WorldSpaceAABB());
+        withComponent(boundingBox);
+        withComponent(new WorldSpaceAABB());
 
         collider = new DynamicCollider();
-        addComponent(collider);
-        addComponent(new DirectionalForceComponent(new Vector3f(0, -15, 0)));
+        withComponent(collider);
+        withComponent(new DirectionalForceComponent(new Vector3f(0, -15, 0)));
 
-        addComponent(moveForce);
-        addComponent(new Friction(8f));
+        withComponent(moveForce);
+        withComponent(new Friction(8f));
 
         Model model = Loaders.ModelLoader.get().load("player", () ->
                 new Model.Builder("vampire.glb")
@@ -56,7 +56,7 @@ public class PlayerEntity extends Entity {
                         .build());
         shader = new VampireShader();
         Drawable drawable = new Drawable(model, shader);
-        addComponent(drawable);
+        withComponent(drawable);
 
         animator = new Animator(model);
         animator.add(loadModelAnimations("vampire_idle.glb", model).getFirst());
@@ -69,15 +69,15 @@ public class PlayerEntity extends Entity {
                 .playbackSpeed(1.5)
                 .enabled(false));
         animator.play();
-        addComponent(animator);
+        withComponent(animator);
 
         dashState = new DashState(.6f, 5, 20, 100);
-        addComponent(dashState);
+        withComponent(dashState);
 
         dashParticles = new DashParticles();
-        addComponent(dashParticles.getParticles());
+        withComponent(dashParticles.getParticles());
 
-        addComponent(new Scripts(List.of(
+        withComponent(new Scripts(List.of(
                 this::rotatePlayerToHeading,
                 this::updateWalkingTransition,
                 this::updateDashAction

@@ -2,7 +2,9 @@ package org.etieskrill.engine.entity.service;
 
 import org.etieskrill.engine.entity.Entity;
 import org.etieskrill.engine.entity.system.EntitySystem;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 
@@ -22,8 +24,14 @@ public interface Service {
      */
     boolean canProcess(Entity entity);
 
-    //TODO ordered processing
-//    Comparator<Entity> comparator();
+    /**
+     * Optionally specifies the order in which entities are {@link #process(Entity, List, double) processed}.
+     *
+     * @return an optional process ordering
+     */
+    default @Nullable Comparator<Entity> comparator() {
+        return null;
+    }
 
     /**
      * Called once before any entities are processed.
@@ -43,7 +51,8 @@ public interface Service {
 
     /**
      * Tells the service to do its processing on the given entity. The entity is guaranteed to have the requisite
-     * components, which are accessible via the component's type.
+     * components, which are accessible via the component's type. Entities are presented in the order specified by the
+     * {@link #comparator() comparator}, if any is set.
      *
      * @param targetEntity the entity
      * @param entities     all entities

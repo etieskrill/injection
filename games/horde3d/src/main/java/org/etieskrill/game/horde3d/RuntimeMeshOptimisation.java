@@ -46,12 +46,12 @@ public class RuntimeMeshOptimisation extends GameApplication {
         entitySystem.addService(new RenderService(renderer, camera, window.getSize().getVec()));
 
         entitySystem.createEntity(id -> new Entity(id)
-                .addComponent(new Transform().setPosition(new Vector3f(0, -1.5f, 0)))
-                .addComponent(new Drawable(ModelFactory.box(new Vector3f(30, 1, 30)), new PhongNoMaterialShader()))
+                .withComponent(new Transform().setPosition(new Vector3f(0, -1.5f, 0)))
+                .withComponent(new Drawable(ModelFactory.box(new Vector3f(30, 1, 30)), new PhongNoMaterialShader()))
         );
 
         entitySystem.createEntity(id -> new Entity(id)
-                .addComponent(new DirectionalLightComponent(new DirectionalLight(
+                .withComponent(new DirectionalLightComponent(new DirectionalLight(
                         new Vector3f(1, -1, -1), new Vector3f(1), new Vector3f(1), new Vector3f(1)),
                         DirectionalShadowMap.generate(new Vector2i(4096)),
                         new Matrix4f()
@@ -93,10 +93,10 @@ public class RuntimeMeshOptimisation extends GameApplication {
             animator.play(random.nextFloat() * .25f);
 
             var zombie = entitySystem.createEntity(id -> new Entity(id)
-                    .addComponent(new Transform()
+                    .withComponent(new Transform()
                             .setPosition(new Vector3f(8 * cos(angle), -1, 8 * sin(angle))))
-                    .addComponent(new Drawable(model, new ZombieShader()))
-                    .addComponent(animator));
+                    .withComponent(new Drawable(model, new ZombieShader()))
+                    .withComponent(animator));
             zombieTransforms.add(zombie.getComponent(Transform.class));
         }
     }
@@ -120,11 +120,11 @@ public class RuntimeMeshOptimisation extends GameApplication {
             animator.play(random.nextFloat() * .175f);
 
             entitySystem.createEntity(id -> new Entity(id)
-                    .addComponent(new Transform()
+                    .withComponent(new Transform()
                             .setPosition(new Vector3f(8 * cos(angle), 1, 8 * sin(angle)))
                             .applyRotation(quat -> quat.rotateY(-angle - toRadians(90))))
-                    .addComponent(new Drawable(model, new AnimationShader()))
-                    .addComponent(animator)
+                    .withComponent(new Drawable(model, new AnimationShader()))
+                    .withComponent(animator)
             );
         }
 

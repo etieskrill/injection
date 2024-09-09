@@ -8,7 +8,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 public class EntitySystem {
@@ -17,6 +19,7 @@ public class EntitySystem {
 
     private final List<Service> services; //TODO replace with set when execution plan is established
     private final List<Service> serviceExecutionPlan;
+    private final Map<Service, List<Entity>> orderedEntities;
 
     private int nextEntityId;
 
@@ -27,6 +30,7 @@ public class EntitySystem {
 
         this.services = new ArrayList<>();
         this.serviceExecutionPlan = new ArrayList<>();
+        this.orderedEntities = new HashMap<>();
 
         this.nextEntityId = 0;
     }
@@ -43,6 +47,7 @@ public class EntitySystem {
 
         entities.ensureCapacity(entity.getId());
         entities.add(entity.getId(), entity);
+        orderedEntities.forEach(((service, entities) -> entities.add(entity))); //TODO custom list impl with cached views?
         return entity;
     }
 
@@ -52,6 +57,9 @@ public class EntitySystem {
 
     public void addService(@NotNull Service service) {
         services.add(service);
+        if (service.comparator() != null) {
+            orderedEntities.put(service, new ArrayList<>());
+        }
         createServiceExecutionPlan();
     }
 
@@ -69,10 +77,18 @@ public class EntitySystem {
     public void update(double delta) {
         //TODO processable caching
         serviceExecutionPlan.forEach(service -> {
-            service.preProcess(entities);
+            List<Entity> entities = orderedEntities.get(service);
+            if (entities != null) {
+                entities.sort(service.comparator());
+            } else {
+                entities = this.entities;
+            }
+
+            service.preProcess(entities); //TODO pass unmodifiable view and add removeEntity to system/service
+            final List<Entity> finalEntities = entities;
             entities.forEach(entity -> {
                 if (service.canProcess(entity)) {
-                    service.process(entity, entities, delta);
+                    service.process(entity, finalEntities, delta);
                 }
             });
             service.postProcess(entities);
