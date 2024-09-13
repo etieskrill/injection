@@ -9,6 +9,7 @@ import org.etieskrill.engine.entity.service.impl.AnimationService;
 import org.etieskrill.engine.entity.service.impl.DirectionalShadowMappingService;
 import org.etieskrill.engine.entity.service.impl.RenderService;
 import org.etieskrill.engine.graphics.animation.Animator;
+import org.etieskrill.engine.graphics.camera.OrthographicCamera;
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera;
 import org.etieskrill.engine.graphics.data.DirectionalLight;
 import org.etieskrill.engine.graphics.gl.framebuffer.DirectionalShadowMap;
@@ -22,7 +23,6 @@ import org.etieskrill.engine.input.controller.KeyCameraController;
 import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.util.Loaders.ModelLoader;
 import org.etieskrill.engine.window.Window;
-import org.joml.Matrix4f;
 import org.joml.Random;
 import org.joml.Vector2i;
 import org.joml.Vector3f;
@@ -54,14 +54,10 @@ public class RuntimeMeshOptimisation extends GameApplication {
                 .withComponent(new DirectionalLightComponent(new DirectionalLight(
                         new Vector3f(1, -1, -1), new Vector3f(1), new Vector3f(1), new Vector3f(1)),
                         DirectionalShadowMap.generate(new Vector2i(4096)),
-                        new Matrix4f()
-                                .ortho(-20, 20, -20, 20, .1f, 40)
-                                .mul(new Matrix4f().lookAt(
-                                        new Vector3f(10),
-//                                        new Vector3f(.01f, 10, 0), //TODO looking perfectly down does not work for some reason, do some checks
-                                        new Vector3f(0),
-                                        new Vector3f(0, 1, 0)
-                                ))
+                        new OrthographicCamera(new Vector2i(4096), 20, -20, -20, 20)
+                                .setPosition(new Vector3f(10))
+                                .setRotation(-45, 215, 0)
+                                .setFar(40)
                 )));
 
         zombieTransforms = new ArrayList<>();

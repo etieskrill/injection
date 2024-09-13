@@ -151,7 +151,7 @@ public class RenderService implements Service, Disposable {
             shaderParams.addUniform("hasShadowMap", directionalLightComponent.getShadowMap() != null);
             if (directionalLightComponent.getShadowMap() != null) {
                 shaderParams.addTexture("shadowMap", directionalLightComponent.getShadowMap().getTexture());
-                shaderParams.addUniform("lightCombined", directionalLightComponent.getCombined());
+                shaderParams.addUniform("lightCombined", directionalLightComponent.getCamera().getCombined());
             }
             shaderParams.addUniformArray("globalLights", directionalLightComponent.getDirectionalLight());
             break;

@@ -3,6 +3,7 @@ package org.etieskrill.engine.window;
 import lombok.Builder;
 import lombok.Getter;
 import org.etieskrill.engine.Disposable;
+import org.etieskrill.engine.config.GLContextConfig;
 import org.etieskrill.engine.config.InjectionConfig;
 import org.etieskrill.engine.input.*;
 import org.etieskrill.engine.scene.Scene;
@@ -25,6 +26,7 @@ import java.util.Objects;
 
 import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNullElse;
+import static org.etieskrill.engine.util.ResourceReader.getClasspathItems;
 import static org.etieskrill.engine.window.Window.GLFWError.NO_ERROR;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL33C.*;
@@ -305,6 +307,11 @@ public class Window implements Disposable {
 
     private void initGl() {
         GLCapabilities caps = GL.createCapabilities();
+
+        GLContextConfig.CONFIG.set(new GLContextConfig(
+                glGetInteger(GL_MAX_TEXTURE_IMAGE_UNITS)
+        ));
+
 //        System.out.println("woooo " + caps.GL_ARB_shading_language_include);
 
 //        int[] buf = new int[1];

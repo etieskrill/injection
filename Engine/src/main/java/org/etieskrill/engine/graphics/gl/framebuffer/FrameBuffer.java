@@ -152,7 +152,6 @@ public class FrameBuffer implements Disposable {
     }
 
     public static void bindScreenBuffer() {
-        glDrawBuffers(COLOUR0.toGLAttachment());
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 

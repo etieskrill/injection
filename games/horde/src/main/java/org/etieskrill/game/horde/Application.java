@@ -2,10 +2,15 @@ package org.etieskrill.game.horde;
 
 import org.etieskrill.engine.application.GameApplication;
 import org.etieskrill.engine.entity.Entity;
+import org.etieskrill.engine.entity.component.DirectionalLightComponent;
 import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.entity.service.impl.SnippetsService;
 import org.etieskrill.engine.graphics.camera.Camera;
+import org.etieskrill.engine.graphics.camera.OrthographicCamera;
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera;
+import org.etieskrill.engine.graphics.data.DirectionalLight;
+import org.etieskrill.engine.graphics.gl.GLUtils;
+import org.etieskrill.engine.graphics.gl.framebuffer.DirectionalShadowMap;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.etieskrill.engine.graphics.texture.AbstractTexture.MagFilter;
@@ -17,12 +22,16 @@ import org.etieskrill.engine.input.controller.KeyCharacterController;
 import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.window.Window;
 import org.joml.Vector2f;
+import org.joml.Vector2i;
 import org.joml.Vector3f;
+import org.lwjgl.opengl.GL46C;
 
 import java.util.Random;
 
 import static org.joml.Math.sin;
 import static org.joml.Math.toRadians;
+import static org.lwjgl.opengl.ARBShadingLanguageInclude.GL_SHADER_INCLUDE_ARB;
+import static org.lwjgl.opengl.ARBShadingLanguageInclude.glNamedStringARB;
 import static org.lwjgl.opengl.GL11C.*;
 import static org.lwjgl.opengl.GL30C.glBindVertexArray;
 import static org.lwjgl.opengl.GL30C.glGenVertexArrays;
@@ -41,6 +50,9 @@ public class Application extends GameApplication {
     boolean dudeWalking = false;
     boolean dudeLooksRight = true;
 
+    ShaderProgram stoopidShader;
+    DirectionalLightComponent dirLight;
+
     public Application() {
         super(Window.builder()
                 .setTitle("Horde")
@@ -56,6 +68,7 @@ public class Application extends GameApplication {
                 .setOrbit(true)
                 .setOrbitDistance(2)
                 .setZoom(7);
+        entitySystem.addService(new DirectionalBillBoardShadowMappingService(camera));
         entitySystem.addService(new BillBoardRenderService(camera));
         entitySystem.addService(new SnippetsService());
 
@@ -86,6 +99,7 @@ public class Application extends GameApplication {
         floorShader = new ShaderProgram() {
             @Override
             protected void init() {
+                disableStrictUniformChecking();
                 hasGeometryShader();
             }
 
@@ -99,6 +113,8 @@ public class Application extends GameApplication {
                 addUniform("camera", Uniform.Type.STRUCT);
                 addUniform("position", Uniform.Type.VEC3);
                 addUniform("diffuse", Uniform.Type.SAMPLER2D);
+                addUniform("dirShadowMap", Uniform.Type.SAMPLER2D);
+                addUniform("dirLightCombined", Uniform.Type.MAT4);
             }
         };
 
@@ -151,6 +167,34 @@ public class Application extends GameApplication {
                             true
                     ));
         }
+
+        dirLight = entitySystem.createEntity()
+                .addComponent(new DirectionalLightComponent(
+                        new DirectionalLight(new Vector3f(1, -1, 1)),
+                        DirectionalShadowMap.generate(new Vector2i(2048)),
+                        new OrthographicCamera(new Vector2i(2048),
+                                -10, 10, -10, 10)
+                                .setPosition(new Vector3f(10))
+                                .setRotation(-45, 150, 0)
+                                .setFar(100)
+                ));
+
+        stoopidShader = new ShaderProgram() {
+            @Override
+            protected void init() {
+                hasGeometryShader();
+            }
+
+            @Override
+            protected String[] getShaderFileNames() {
+                return new String[]{"Blit.glsl"};
+            }
+
+            @Override
+            protected void getUniformLocations() {
+                addUniform("tex", Uniform.Type.SAMPLER2D);
+            }
+        };
     }
 
     static Texture2D getPixelTexture(String file) {
@@ -174,23 +218,39 @@ public class Application extends GameApplication {
 //        renderGrid();
     }
 
+    @Override
+    protected void render() {
+//        stoopidShader.start();
+//        stoopidShader.setTexture("tex", dirLight.getShadowMap().getTexture());
+//
+//        glBindVertexArray(dummyVao);
+//
+//        glDisable(GL_DEPTH_TEST);
+//        glDrawArrays(GL_POINTS, 0, 1);
+//        glEnable(GL_DEPTH_TEST);
+    }
+
     private void renderFloor() {
         glBindVertexArray(dummyVao);
 
         glDisable(GL_CULL_FACE);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        floorShader.setUniform("camera", camera);
-        floorShader.setUniform("diffuse", 0);
-        floorTexture.bind(0);
         floorShader.start();
+        floorShader.setUniform("camera", camera);
+        floorShader.setTexture("diffuse", floorTexture);
+        floorShader.setUniformNonStrict("dirLight", dirLight.getDirectionalLight());
+        floorShader.setTexture("dirShadowMap", dirLight.getShadowMap().getTexture());
+        floorShader.setUniform("dirLightCombined", dirLight.getCamera().getCombined());
 
         glDrawArrays(GL_POINTS, 0, 1);
     }
 
     private void renderGrid() {
-        gridShader.setUniform("camera", camera);
         gridShader.start();
+        gridShader.setUniform("camera", camera);
+
+        glBindVertexArray(dummyVao);
 
         glDisable(GL_DEPTH_TEST);
         glDepthMask(false);

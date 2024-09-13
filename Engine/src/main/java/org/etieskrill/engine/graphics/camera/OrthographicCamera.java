@@ -1,25 +1,27 @@
 package org.etieskrill.engine.graphics.camera;
 
-import org.joml.Matrix4f;
 import org.joml.Vector2ic;
-import org.joml.Vector3f;
-import org.joml.Vector3fc;
 
 public class OrthographicCamera extends Camera {
 
     private float top, bottom, left, right;
 
-    public OrthographicCamera(Vector2ic viewportSize, Vector3fc origin) {
-        super(viewportSize);
-        setPosition(origin);
-        setPerspective(new Matrix4f().ortho(left, right, bottom, top, near, far));
+    public OrthographicCamera(Vector2ic viewport, float top, float bottom, float left, float right) {
+        super(viewport);
+
+        this.top = top;
+        this.bottom = bottom;
+        this.left = left;
+        this.right = right;
 
         dirty();
         update();
     }
 
     public OrthographicCamera(Vector2ic viewportSize) {
-        this(viewportSize, new Vector3f(0f));
+        this(viewportSize,
+                -.5f * viewportSize.x(), .5f * viewportSize.x(),
+                -.5f * viewportSize.y(), .5f * viewportSize.y());
     }
 
     @Override
@@ -27,33 +29,6 @@ public class OrthographicCamera extends Camera {
         //TODO proper zoom
         float zoom = 1f / this.zoom;
         perspective.setOrtho(zoom * left, zoom * right, zoom * bottom, zoom * top, zoom * near, zoom * far);
-    }
-
-    @Override
-    public Camera setPosition(Vector3fc position) {
-        this.position.set(position);
-        updateDimensions();
-        dirty();
-        return this;
-    }
-
-    @Override
-    public void setViewportSize(Vector2ic size) {
-        this.viewportSize.set(size);
-        updateDimensions();
-        dirty();
-    }
-
-    private void updateDimensions() {
-        right = 0.5f * viewportSize.x();
-        left = -right;
-        bottom = 0.5f * viewportSize.y();
-        top = -bottom;
-    }
-
-    @Override
-    public boolean frustumTestSphere(Vector3fc center, float radius) {
-        return false; //TODO implement
     }
 
 }

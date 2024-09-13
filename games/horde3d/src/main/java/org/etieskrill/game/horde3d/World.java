@@ -3,6 +3,8 @@ package org.etieskrill.game.horde3d;
 import org.etieskrill.engine.entity.Entity;
 import org.etieskrill.engine.entity.component.*;
 import org.etieskrill.engine.entity.system.EntitySystem;
+import org.etieskrill.engine.graphics.camera.Camera;
+import org.etieskrill.engine.graphics.camera.OrthographicCamera;
 import org.etieskrill.engine.graphics.data.DirectionalLight;
 import org.etieskrill.engine.graphics.data.PointLight;
 import org.etieskrill.engine.graphics.gl.framebuffer.DirectionalShadowMap;
@@ -13,9 +15,11 @@ import org.etieskrill.engine.graphics.model.ModelFactory;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.texture.Textures;
-import org.joml.*;
+import org.joml.Matrix4fc;
+import org.joml.Vector2f;
+import org.joml.Vector2i;
+import org.joml.Vector3f;
 
-import java.lang.Math;
 import java.util.Random;
 
 import static org.etieskrill.engine.graphics.texture.AbstractTexture.Type.*;
@@ -114,10 +118,11 @@ public class World {
         DirectionalShadowMap directionalShadowMap = DirectionalShadowMap.generate(new Vector2i(2048));
         PointShadowMapArray pointShadowMaps = PointShadowMapArray.generate(new Vector2i(1024), 2);
 
-        Matrix4f sunLightCombined = new Matrix4f()
-                .ortho(-30, 30, -30, 30, .1f, 40)
-                .mul(new Matrix4f().lookAt(new Vector3f(10, 20, 10), new Vector3f(-10, 0, -10), new Vector3f(0, 1, 0)));
-        sun.withComponent(new DirectionalLightComponent(sunLight, directionalShadowMap, sunLightCombined));
+        Camera sunLightCamera = new OrthographicCamera(directionalShadowMap.getSize(), 30, -30, -30, 30)
+                .setFar(40)
+                .setPosition(new Vector3f(10, 20, 10))
+                .setRotation(-45, 135, 0);
+        sun.withComponent(new DirectionalLightComponent(sunLight, directionalShadowMap, sunLightCamera));
 
         final float pointShadowNearPlane = .1f;
         final float pointShadowFarPlane = 40;

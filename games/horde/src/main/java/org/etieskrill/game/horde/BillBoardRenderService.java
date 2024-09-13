@@ -1,9 +1,11 @@
 package org.etieskrill.game.horde;
 
 import org.etieskrill.engine.entity.Entity;
+import org.etieskrill.engine.entity.component.DirectionalLightComponent;
 import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.entity.service.Service;
 import org.etieskrill.engine.graphics.camera.Camera;
+import org.etieskrill.engine.graphics.gl.framebuffer.FrameBuffer;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.jetbrains.annotations.Nullable;
 
@@ -25,6 +27,7 @@ public class BillBoardRenderService implements Service {
         this.shader = new ShaderProgram() {
             @Override
             protected void init() {
+                disableStrictUniformChecking();
                 hasGeometryShader();
             }
 
@@ -37,10 +40,12 @@ public class BillBoardRenderService implements Service {
             protected void getUniformLocations() {
                 addUniform("camera", Uniform.Type.STRUCT);
                 addUniform("position", Uniform.Type.VEC3);
+                addUniform("dirLightCombined", Uniform.Type.MAT4);
+                addUniform("dirLight", Uniform.Type.STRUCT);
+                addUniform("dirShadowMap", Uniform.Type.SAMPLER2D);
                 addUniform("billBoard", Uniform.Type.STRUCT);
             }
         };
-        ;
         this.camera = camera;
         this.dummyVAO = glGenVertexArrays();
     }
@@ -51,20 +56,37 @@ public class BillBoardRenderService implements Service {
     }
 
     @Override
-    @SuppressWarnings({"rawtypes", "unchecked", "DataFlowIssue"})
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public @Nullable Comparator<Entity> comparator() {
         return (Comparator)
-                comparingDouble(billBoard -> ((Entity) billBoard).getComponent(Transform.class).getPosition().z())
-                        .reversed();
+                comparingDouble(billBoard -> {
+                    var transform = ((Entity) billBoard).getComponent(Transform.class);
+                    return transform != null ? transform.getPosition().z() : 0; //FIXME comparator should never be served unprocessable entities, but that requires keeping the ordered lists in EntitySystem up to date, which will take some effort
+                }).reversed();
+    }
+
+    @Override
+    public void preProcess(List<Entity> entities) {
+        FrameBuffer.bindScreenBuffer();
+        glViewport(0, 0, camera.getViewportSize().x(), camera.getViewportSize().y());
+
+        shader.start();
+        for (Entity entity : entities) {
+            var dirLight = entity.getComponent(DirectionalLightComponent.class);
+            if (dirLight != null) {
+                shader.setUniform("dirLightCamera", dirLight.getCamera());
+                shader.setUniform("dirLight", dirLight.getDirectionalLight());
+                shader.setTexture("dirShadowMap", dirLight.getShadowMap().getTexture());
+                break; //the sun will probs be the only dir light, and interiors will use a different shader or something
+            }
+        }
+
+        shader.setUniform("camera", camera);
     }
 
     @Override
     public void process(Entity targetEntity, List<Entity> entities, double delta) {
-        shader.start();
-
-        shader.setUniform("camera", camera);
         shader.setUniform("position", targetEntity.getComponent(Transform.class).getPosition());
-
         shader.setUniform("billBoard", targetEntity.getComponent(BillBoard.class));
 
         glDisable(GL_CULL_FACE);
