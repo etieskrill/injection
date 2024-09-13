@@ -65,7 +65,7 @@ public abstract class ShaderProgram implements Disposable {
         GEOMETRY,
         FRAGMENT,
         COMPOSITE,
-        //LIBRARY
+        LIBRARY //TODO probably remove??
     }
 
     @Getter

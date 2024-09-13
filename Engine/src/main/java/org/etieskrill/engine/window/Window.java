@@ -5,8 +5,10 @@ import lombok.Getter;
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.config.GLContextConfig;
 import org.etieskrill.engine.config.InjectionConfig;
+import org.etieskrill.engine.graphics.gl.GLUtils;
 import org.etieskrill.engine.input.*;
 import org.etieskrill.engine.scene.Scene;
+import org.etieskrill.engine.util.ResourceReader;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
@@ -26,9 +28,13 @@ import java.util.Objects;
 
 import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNullElse;
+import static org.etieskrill.engine.config.ResourcePaths.SHADER_INCLUDE_PATH;
+import static org.etieskrill.engine.config.ResourcePaths.SHADER_PATH;
 import static org.etieskrill.engine.util.ResourceReader.getClasspathItems;
 import static org.etieskrill.engine.window.Window.GLFWError.NO_ERROR;
 import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.opengl.ARBShadingLanguageInclude.GL_SHADER_INCLUDE_ARB;
+import static org.lwjgl.opengl.ARBShadingLanguageInclude.glNamedStringARB;
 import static org.lwjgl.opengl.GL33C.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 import static org.lwjgl.system.MemoryUtil.memUTF8;
@@ -330,6 +336,8 @@ public class Window implements Disposable {
                 glExtensions.length == 1 && glExtensions[0].isBlank() ? 0 : glExtensions.length, glExtensions,
                 glGetString(GL_RENDERER), glGetString(GL_VENDOR));
 
+        loadStaticShaderLibraries();
+
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LESS);
         glEnable(GL_STENCIL_TEST);
@@ -339,6 +347,22 @@ public class Window implements Disposable {
         glCullFace(GL_BACK);
 
         if (samples > 0) glEnable(GL_MULTISAMPLE);
+    }
+
+    //TODO modularise better
+    private static void loadStaticShaderLibraries() {
+        var classpathNames = getClasspathItems(SHADER_INCLUDE_PATH);
+
+        for (String classpathName : classpathNames) {
+            GLUtils.clearError();
+            glNamedStringARB(GL_SHADER_INCLUDE_ARB,
+                    "/" + classpathName.substring(SHADER_PATH.length()),
+                    ResourceReader.getClasspathResource(classpathName)
+            );
+            GLUtils.checkErrorThrowing("Failed to load shader library: " + classpathName);
+        }
+
+        logger.info("Loaded {} shader librar{}: {}", classpathNames.size(), classpathNames.size() == 1 ? "y" : "ies", classpathNames);
     }
 
     public void show() {
