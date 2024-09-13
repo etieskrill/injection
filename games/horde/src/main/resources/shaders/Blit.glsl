@@ -1,14 +1,5 @@
 #version 330 core
 
-uniform struct Camera {
-    mat4 perspective;
-    mat4 combined;
-    vec3 position;
-    float far;
-    ivec2 viewport;
-    float aspect;
-} camera;
-
 #ifdef VERTEX_SHADER
 void main()
 {}
@@ -20,24 +11,19 @@ layout (triangle_strip, max_vertices = 4) out;
 
 out vec2 texCoords;
 
-uniform vec3 position;
-uniform vec3 offset;
-uniform vec2 size;
+//uniform vec2 position;
+//uniform vec2 size;
 
-const vec2 corners[4] = vec2[](vec2(-1, -1), vec2(1, -1), vec2(-1, 1), vec2(1, 1));
+const vec2 corners[4] = vec2[](vec2(0, 0), vec2(1, 0), vec2(0, 1), vec2(1, 1));
 
 void main()
 {
-    vec4 quadOffset = camera.perspective * vec4(size, 1, 1);
-    quadOffset.xyz /= quadOffset.w;
-
-    vec4 pos = camera.combined * vec4(position + offset, 1);
-    pos.y -= quadOffset.y;
+    const vec2 position = vec2(0);
+    const vec2 size = vec2(0.5, 0.5 * 16 / 9);
 
     for (int i = 0; i < 4; i++) {
-        vec4 cornerPos = pos + vec4(quadOffset.xy * corners[i], 0, 0);
-        texCoords = (corners[i] / 2.0) + 0.5;
-        gl_Position = cornerPos;
+        gl_Position = vec4(position + size * corners[i], 0, 1);
+        texCoords = corners[i];
         EmitVertex();
     }
     EndPrimitive();
@@ -47,14 +33,12 @@ void main()
 #ifdef FRAGMENT_SHADER
 in vec2 texCoords;
 
-out vec4 fragColour;
+uniform sampler2D tex;
 
-uniform sampler2D diffuse;
-
-void main() {
-    fragColour = texture(diffuse, texCoords);
-    if (fragColour.a == 0) discard;
-
-    fragColour = vec4(pow(fragColour.xyz, vec3(1 / 2.2)), fragColour.a);
+void main()
+{
+    //    vec4 depth = texture(tex, texCoords);
+    //    gl_FragColor = vec4(depth, depth, depth, 1.0);
+    gl_FragColor = texture(tex, texCoords);
 }
 #endif

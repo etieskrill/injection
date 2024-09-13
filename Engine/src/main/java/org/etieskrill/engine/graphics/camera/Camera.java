@@ -129,6 +129,7 @@ public abstract class Camera implements UniformMappable {
 
     public void setViewportSize(Vector2ic viewportSize) {
         this.viewportSize.set(viewportSize);
+        dirty();
     }
 
     public Camera setZoom(float zoom) {
@@ -232,7 +233,10 @@ public abstract class Camera implements UniformMappable {
      * @param radius the radius of the sphere
      * @return whether the sphere intersects the view frustum in any point
      */
-    public abstract boolean frustumTestSphere(Vector3fc center, float radius);
+    public boolean frustumTestSphere(Vector3fc center, float radius) {
+        //TODO FrustumIntersection for more complicated stuff
+        return getCombined().testSphere(center.x(), center.y(), center.z(), radius);
+    }
 
     @Override
     public String toString() {

@@ -94,7 +94,7 @@ public class DirectionalShadowMappingService implements Service {
                     finalTransform,
                     drawable.getModel(),
                     shader,
-                    shadowMapComponent.getCombined()
+                    shadowMapComponent.getCamera()
             );
         }
         shadowMapComponent.getShadowMap().unbind();

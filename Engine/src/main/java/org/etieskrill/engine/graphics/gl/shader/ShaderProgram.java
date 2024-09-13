@@ -3,6 +3,7 @@ package org.etieskrill.engine.graphics.gl.shader;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.etieskrill.engine.Disposable;
+import org.etieskrill.engine.config.GLContextConfig;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.etieskrill.engine.util.FileUtils;
 import org.etieskrill.engine.util.ResourceReader;
@@ -46,13 +47,16 @@ public abstract class ShaderProgram implements Disposable {
     private final Map<String, Uniform> uniforms;
     private final Map<String, ArrayUniform> arrayUniforms;
 
+    @Getter
     private final boolean placeholder;
 
     private final Map<String, Integer> nonstrictUniformCache = new HashMap<>();
     private final Set<String> unregisteredUniforms = new HashSet<>();
     private final Set<String> missingUniforms = new HashSet<>();
 
+    private final int MAX_TEXTURE_UNITS;
     private int currentTextureUnit;
+    private final Map<String, Integer> boundTextures; //TODO this is actually per context, so it could use a ThreadLocal - it also causes incoherent state if #start() is not called properly
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -118,6 +122,10 @@ public abstract class ShaderProgram implements Disposable {
         this.uniforms = new HashMap<>();
         this.arrayUniforms = new HashMap<>();
 
+        this.MAX_TEXTURE_UNITS = GLContextConfig.getMaxTextureUnits();
+        this.currentTextureUnit = 0;
+        this.boundTextures = new HashMap<>(MAX_TEXTURE_UNITS);
+
         boolean placeholder = false;
         try {
             createShader(files);
@@ -132,8 +140,6 @@ public abstract class ShaderProgram implements Disposable {
             STRICT_UNIFORM_DETECTION = prevStrictState;
             placeholder = true;
         }
-
-        this.currentTextureUnit = 0;
 
         this.placeholder = placeholder;
 
@@ -194,6 +200,12 @@ public abstract class ShaderProgram implements Disposable {
             throw new ShaderCreationException("Shader program could not be linked", glGetProgramInfoLog(programID));
 
         disposeShaders();
+
+        //TODO debug manual / why links may fail
+        // - cannot link without reason
+        //   - geometry shader in/output primitives not defined
+        // - no display with geometry shader
+        //   - geometry shader does not call EmitVertex/EndPrimitive
 
         //TODO write test engine to validate shaders and such pre-launch/via a separate script (unit-test-esque)
         //this actually validates based on the current OpenGL state, meaning that here, a completely uninitialised
@@ -267,6 +279,11 @@ public abstract class ShaderProgram implements Disposable {
 
     public void start() {
         currentTextureUnit = 0;
+        boundTextures.clear();
+        bind();
+    }
+
+    private void bind() {
         glUseProgram(programID);
     }
 
@@ -308,23 +325,34 @@ public abstract class ShaderProgram implements Disposable {
      * @param texture the texture to be bound
      */
     public void setTexture(@NotNull String name, @NotNull AbstractTexture texture) {
-        setTexture(name, texture, false);
+        setTexture(name, texture, true);
     }
 
     /**
-     * Binds a {@link AbstractTexture Texture} to a shader's uniform sampler. This requires {@link #start()} to be
+     * Binds a {@link AbstractTexture Texture} to a shader's uniform sampler called {@code name}. This requires {@link #start()} to be
      * called before beginning a render pass and before calling this method to work properly.
      *
      * @param name    the sampler name in the shader
      * @param texture the texture to be bound
      */
     public void setTexture(@NotNull String name, @NotNull AbstractTexture texture, boolean strict) {
-        if (currentTextureUnit + 1 > 8) {
-            throw new ShaderUniformException("No texture unit available");
+        int unit;
+        var boundUnit = boundTextures.get(name);
+        if (boundUnit != null) {
+            unit = boundUnit;
+        } else {
+            if (currentTextureUnit + 1 > MAX_TEXTURE_UNITS) {
+                throw new ShaderUniformException("No texture unit available");
+            }
+
+            unit = currentTextureUnit++;
+            boundTextures.put(name, unit);
         }
 
-        setUniform(name, currentTextureUnit, strict);
-        texture.bind(currentTextureUnit++);
+        //TODO validate texture type
+
+        setUniform(name, unit, strict);
+        texture.bind(unit);
     }
 
     private <T extends Uniform> void setUniform(String name, Object value, Map<String, T> uniformMap, boolean strict, boolean array) {
@@ -403,7 +431,7 @@ public abstract class ShaderProgram implements Disposable {
 
         if (location == -1) {
             if (!missingUniforms.contains(name)) {
-                logger.debug("Attempted to set nonexistent uniform: " + name);
+                logger.debug("Attempted to set nonexistent uniform: {}", name);
                 missingUniforms.add(name);
             }
             return;
@@ -417,7 +445,7 @@ public abstract class ShaderProgram implements Disposable {
         if (type == null)
             throw new ShaderUniformException("Could not determine uniform type for " + value.getClass().getSimpleName());
 
-        if (AUTO_START_ON_VARIABLE_SET) start();
+        if (AUTO_START_ON_VARIABLE_SET) bind(); //TODO replace with dsa if viable
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
             switch (type) {
@@ -438,7 +466,7 @@ public abstract class ShaderProgram implements Disposable {
     }
 
     void setUniformArrayValue(Uniform.Type type, int location, Object[] value) {
-        if (AUTO_START_ON_VARIABLE_SET) start();
+        if (AUTO_START_ON_VARIABLE_SET) bind();
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
             switch (type) {
@@ -523,7 +551,7 @@ public abstract class ShaderProgram implements Disposable {
          * @return the {@link UniformMapper UniformMapper} for chaining
          */
         public UniformMapper map(String name, @Nullable AbstractTexture texture) {
-            if (texture != null) shader.setTexture(name, texture);
+            if (texture != null) shader.setTexture(structName + "." + name, texture);
             return this;
         }
 
@@ -542,6 +570,7 @@ public abstract class ShaderProgram implements Disposable {
     }
 
     //TODO move to separate class and replace constructors with factory methods
+    @Getter
     public static class Uniform {
         protected static final int INVALID_UNIFORM_LOCATION = -1;
         protected static final int NESTED_UNIFORM_LOCATION = -2;
@@ -601,18 +630,6 @@ public abstract class ShaderProgram implements Disposable {
             this.location = location;
         }
 
-        public String getName() {
-            return name;
-        }
-
-        public Type getType() {
-            return type;
-        }
-
-        public int getLocation() {
-            return location;
-        }
-
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
@@ -630,6 +647,7 @@ public abstract class ShaderProgram implements Disposable {
         }
     }
 
+    @Getter
     protected static class ArrayUniform extends Uniform {
         private final int size;
 
@@ -643,9 +661,6 @@ public abstract class ShaderProgram implements Disposable {
             return getName().replace("$", Integer.toString(index));
         }
 
-        public int getSize() {
-            return size;
-        }
     }
 
     protected void init() {
@@ -743,10 +758,6 @@ public abstract class ShaderProgram implements Disposable {
         glDetachShader(programID, vertID);
         glDetachShader(programID, fragID);
         glDeleteProgram(programID);
-    }
-
-    public boolean isPlaceholder() {
-        return placeholder;
     }
 
 }
