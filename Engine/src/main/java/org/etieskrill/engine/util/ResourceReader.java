@@ -1,13 +1,17 @@
 package org.etieskrill.engine.util;
 
 import org.etieskrill.engine.common.ResourceLoadException;
-import org.etieskrill.engine.input.Input;
 import org.lwjgl.BufferUtils;
 
 import java.io.*;
+import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class ResourceReader {
@@ -44,6 +48,31 @@ public class ResourceReader {
             ByteBuffer buffer = BufferUtils.createByteBuffer(bytes.length);
             return buffer.put(bytes).rewind();
         } catch (IOException e) {
+            throw new ResourceLoadException(e);
+        }
+    }
+
+    /**
+     * Recursively searches the classpath in the folder specified by {@code prefix} for any regular files, but not
+     * directories. Links are resolved and followed recursively.
+     *
+     * @param folder subfolder to search
+     * @return all regular files
+     */
+    public static List<String> getClasspathItems(String folder) {
+        var parentResource = ClassLoader.getSystemResource(folder);
+        if (parentResource == null) {
+            throw new ResourceLoadException("Classpath folder %s could not be located or access was denied".formatted(folder));
+        }
+
+        try (var fileSystem = FileSystems.newFileSystem(parentResource.toURI(), Collections.emptyMap())) {
+            try (var files = Files.walk(fileSystem.getPath(folder))) {
+                return files
+                        .filter(Files::isRegularFile)
+                        .map(Path::toString)
+                        .toList();
+            }
+        } catch (IOException | URISyntaxException e) {
             throw new ResourceLoadException(e);
         }
     }

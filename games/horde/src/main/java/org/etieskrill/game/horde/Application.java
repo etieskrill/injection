@@ -64,6 +64,20 @@ public class Application extends GameApplication {
 
     @Override
     protected void init() {
+        GLUtils.addDebugLogging();
+        GLUtils.clearError();
+        glNamedStringARB(GL_SHADER_INCLUDE_ARB, "/Camera.glsl", """
+                    struct Camera {
+                    mat4 perspective;
+                    mat4 combined;
+                    vec3 position;
+                    float near;
+                    float far;
+                    ivec2 viewport;
+                    float aspect;
+                };""");
+        GLUtils.checkErrorThrowing();
+
         camera = new PerspectiveCamera(window.getSize().getVec())
                 .setOrbit(true)
                 .setOrbitDistance(2)
@@ -231,6 +245,8 @@ public class Application extends GameApplication {
     }
 
     private void renderFloor() {
+        GL46C.glBindTextureUnit(0, 0);
+
         glBindVertexArray(dummyVao);
 
         glDisable(GL_CULL_FACE);
