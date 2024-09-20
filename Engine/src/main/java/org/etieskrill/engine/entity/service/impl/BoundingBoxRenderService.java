@@ -1,5 +1,6 @@
 package org.etieskrill.engine.entity.service.impl;
 
+import lombok.Setter;
 import org.etieskrill.engine.entity.Entity;
 import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.entity.component.WorldSpaceAABB;
@@ -20,6 +21,7 @@ public class BoundingBoxRenderService implements Service {
     private final WireframeShader shader;
     private final Camera camera;
 
+    @Setter
     private boolean renderBoundingBoxes;
 
     private Model box;
@@ -49,18 +51,9 @@ public class BoundingBoxRenderService implements Service {
             box = ModelFactory.box(new Vector3f(1));
         }
 
-        renderer.renderWireframe(
-                boundingBoxTransform
-                        .setPosition(worldSpaceBoundingBox.getCenter())
-                        .setScale(worldSpaceBoundingBox.getSize()),
-                box,
-                shader,
-                camera
-        );
-    }
-
-    public void setRenderBoundingBoxes(boolean renderBoundingBoxes) {
-        this.renderBoundingBoxes = renderBoundingBoxes;
+        worldSpaceBoundingBox.center(boundingBoxTransform.getPosition());
+        worldSpaceBoundingBox.getSize(boundingBoxTransform.getScale());
+        renderer.renderWireframe(boundingBoxTransform, box, shader, camera);
     }
 
     public void toggleRenderBoundingBoxes() {

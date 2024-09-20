@@ -1,7 +1,6 @@
 package org.etieskrill.engine.graphics.model.loader;
 
 import lombok.extern.slf4j.Slf4j;
-import org.etieskrill.engine.entity.component.AABB;
 import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.graphics.animation.Animation;
 import org.etieskrill.engine.graphics.animation.BoneMatcher;
@@ -12,7 +11,7 @@ import org.etieskrill.engine.graphics.model.Node;
 import org.etieskrill.engine.graphics.util.AssimpUtils;
 import org.etieskrill.engine.time.StepTimer;
 import org.joml.Matrix4fc;
-import org.joml.Vector3f;
+import org.joml.primitives.AABBf;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.assimp.AINode;
 import org.lwjgl.assimp.AIScene;
@@ -150,12 +149,11 @@ public class Loader {
     }
 
     private static void calculateModelBoundingBox(Model.Builder builder) {
-        Vector3f min = new Vector3f(), max = new Vector3f();
+        AABBf modelAabb = new AABBf();
         for (Mesh mesh : builder.getMeshes()) {
-            mesh.getBoundingBox().getMin().min(min, min);
-            mesh.getBoundingBox().getMax().max(max, max);
+            modelAabb.union(mesh.getBoundingBox());
         }
-        builder.setBoundingBox(new AABB(min, max));
+        builder.setBoundingBox(modelAabb);
     }
 
 }

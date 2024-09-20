@@ -1,13 +1,15 @@
 package org.etieskrill.engine.graphics.model;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.etieskrill.engine.Disposable;
-import org.etieskrill.engine.entity.component.AABB;
 import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.entity.component.TransformC;
 import org.etieskrill.engine.graphics.animation.Animation;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.joml.primitives.AABBf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,17 +28,23 @@ public class Model implements Disposable {
 
     private static final Logger logger = LoggerFactory.getLogger(Model.class);
 
+    @Getter
     private final List<Node> nodes;
     private final List<Material> materials; //TODO since meshes know their materials, these here may not be necessary?
 
+    @Getter
     private final List<Animation> animations;
+    @Getter
     private final List<Bone> bones;
 
-    private final AABB boundingBox;
+    @Getter
+    private final AABBf boundingBox;
 
+    @Getter
     private final String name;
 
     private final Transform transform;
+    @Getter
     private final Transform initialTransform;
     private final Transform finalTransform;
 
@@ -44,18 +52,27 @@ public class Model implements Disposable {
     private final boolean transparency;
 
     //TODO move to entity eventually
+    @Getter
     private boolean enabled;
 
     public static class Builder {
+        @Getter
         protected final String file;
+        @Getter
         protected String name;
 
+        @Getter
         protected final List<Node> nodes;
+        @Getter
         protected final List<Mesh> meshes;
+        @Getter
         protected final List<Material> materials;
+        @Getter
         protected final List<Animation> animations;
+        @Getter
         protected final List<Bone> bones;
 
+        @Getter
         protected final Map<String, Texture2D.Builder> embeddedTextures;
 
         protected boolean flipUVs = true;
@@ -66,7 +83,8 @@ public class Model implements Disposable {
         protected Transform transform = new Transform();
         protected Transform initialTransform = new Transform();
 
-        protected AABB boundingBox;
+        @Setter
+        protected AABBf boundingBox;
 
         public Builder(@NotNull String file) {
             if (file.isBlank()) throw new IllegalArgumentException("File name cannot be blank");
@@ -94,18 +112,6 @@ public class Model implements Disposable {
             }
         }
 
-        public String getFile() {
-            return file;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public List<Node> getNodes() {
-            return nodes;
-        }
-
         public void addNodes(Node... nodes) {
             addNodes(List.of(nodes));
         }
@@ -114,30 +120,10 @@ public class Model implements Disposable {
             this.nodes.addAll(nodes);
         }
 
-        public List<Mesh> getMeshes() {
-            return meshes;
-        }
-
         public Builder setMaterials(Material... materials) {
             this.materials.clear();
             this.materials.addAll(List.of(materials));
             return this;
-        }
-
-        public List<Material> getMaterials() {
-            return materials;
-        }
-
-        public List<Animation> getAnimations() {
-            return animations;
-        }
-
-        public List<Bone> getBones() {
-            return bones;
-        }
-
-        public Map<String, Texture2D.Builder> getEmbeddedTextures() {
-            return embeddedTextures;
         }
 
         public Builder setName(String name) {
@@ -188,10 +174,6 @@ public class Model implements Disposable {
         public Builder setInitialTransform(Transform initialTransform) {
             this.initialTransform = initialTransform;
             return this;
-        }
-
-        public void setBoundingBox(AABB boundingBox) {
-            this.boundingBox = boundingBox;
         }
 
         public Builder optimiseMeshes() {
@@ -279,33 +261,9 @@ public class Model implements Disposable {
         enable();
     }
 
-    public AABB getBoundingBox() {
-        return boundingBox;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public List<Node> getNodes() {
-        return nodes;
-    }
-
-    public List<Animation> getAnimations() {
-        return animations;
-    }
-
-    public List<Bone> getBones() {
-        return bones;
-    }
-
     @Deprecated(forRemoval = true)
     public Transform getTransform() {
         return transform;
-    }
-
-    public Transform getInitialTransform() {
-        return initialTransform;
     }
 
     //TODO what is this operation called? composition? move to transform
@@ -324,10 +282,6 @@ public class Model implements Disposable {
 
     public boolean hasTransparency() {
         return transparency;
-    }
-
-    public boolean isEnabled() {
-        return enabled;
     }
 
     public void enable() {

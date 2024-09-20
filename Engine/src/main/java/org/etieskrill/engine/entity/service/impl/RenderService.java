@@ -20,10 +20,7 @@ import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.texture.Textures;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Vector2f;
-import org.joml.Vector2ic;
-import org.joml.Vector4f;
-import org.joml.Vector4i;
+import org.joml.*;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -206,9 +203,9 @@ public class RenderService implements Service, Disposable {
         );
 
         WorldSpaceAABB aabb = targetEntity.getComponent(WorldSpaceAABB.class);
-        if (aabb != null &&
-                !cullingCamera.frustumTestSphere(aabb.getCenter(), aabb.getBoundingRadius())
-        ) return;
+        if (aabb != null && !cullingCamera.frustumTestAABB(aabb)) {
+            return;
+        }
 
         ShaderProgram shader = getConfiguredShader(targetEntity, drawable);
         if (!drawable.isDrawWireframe()) {
@@ -443,12 +440,12 @@ class BoundingSphereRenderer implements Disposable {
     }
 
     private void drawBoundingSpherePerspective(Camera cullingCamera, WorldSpaceAABB aabb) {
-        Vector4f position = cullingCamera.getCombined().transform(new Vector4f(aabb.getCenter(), 1));
+        Vector4f position = cullingCamera.getCombined().transform(new Vector4f(aabb.center(new Vector3f()), 1));
         position.x /= position.w;
         position.y /= position.w;
 
         //TODO play with joml env: joml.debug=true;joml.fastmath=true;joml.sinLookup=true
-        float boundRad = aabb.getBoundingRadius() / max(1, abs(position.z));
+        float boundRad = (aabb.getSize(new Vector3f()).length() / 2) / max(1, abs(position.z));
 
         Vector2ic viewport = cullingCamera.getViewportSize();
         float aspect = (float) viewport.x() / (float) viewport.y();

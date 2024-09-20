@@ -1,8 +1,8 @@
 package org.etieskrill.engine.graphics.model.loader;
 
-import org.etieskrill.engine.entity.component.AABB;
 import org.etieskrill.engine.graphics.gl.VertexArrayObject;
 import org.etieskrill.engine.graphics.model.*;
+import org.joml.primitives.AABBf;
 
 import java.util.List;
 
@@ -14,7 +14,7 @@ public final class MeshLoader {
         return loadToVAO(vertices, indices, material, null, null, null);
     }
 
-    public static Mesh loadToVAO(List<Vertex> vertices, List<Integer> indices, Material material, AABB boundingBox) {
+    public static Mesh loadToVAO(List<Vertex> vertices, List<Integer> indices, Material material, AABBf boundingBox) {
         return loadToVAO(vertices, indices, material, null, boundingBox, null);
     }
 
@@ -22,7 +22,7 @@ public final class MeshLoader {
         return loadToVAO(vertices, indices, material, null, null, drawMode);
     }
 
-    public static Mesh loadToVAO(List<Vertex> vertices, List<Integer> indices, Material material, List<Bone> bones, AABB boundingBox, Mesh.DrawMode drawMode) {
+    public static Mesh loadToVAO(List<Vertex> vertices, List<Integer> indices, Material material, List<Bone> bones, AABBf boundingBox, Mesh.DrawMode drawMode) {
         VertexArrayObject<Vertex> vao = VertexArrayObject
                 .builder(VertexAccessor.getInstance())
                 .vertexElements(vertices)

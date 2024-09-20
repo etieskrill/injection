@@ -5,6 +5,7 @@ import org.etieskrill.engine.entity.component.*;
 import org.etieskrill.engine.entity.service.Service;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
+import org.joml.primitives.AABBf;
 
 import java.util.List;
 
@@ -99,7 +100,7 @@ public class PhysicsService implements Service {
             WorldSpaceAABB otherBB = entity.getComponent(WorldSpaceAABB.class);
             Transform otherTransform = entity.getComponent(Transform.class);
             if (otherBB == null || otherTransform == null) continue;
-            if (!bb.overlapsWith(otherBB)) {
+            if (!bb.intersectsAABB(otherBB)) {
                 continue;
             }
 
@@ -137,15 +138,12 @@ public class PhysicsService implements Service {
                                     DynamicCollider collider,
                                     StaticCollider otherCollider,
                                     OnGround onGround) {
-                Vector3f overlap = new Vector3f(bb.getMax()).min(otherBB.getMax())
-                        .sub(new Vector3f(bb.getMin()).max(otherBB.getMin()));
+                Vector3f overlap = bb.intersection(otherBB, new AABBf()).getSize(new Vector3f());
 
                 int component = overlap.minComponent();
                 float overlapComponent = overlap.get(component);
-                if (overlapComponent <= 0) {
-                    return;
-                }
-                if (bb.getCenter().get(component) < otherBB.getCenter().get(component)) {
+                if (overlapComponent <= 0) return;
+                if (bb.center(new Vector3f()).get(component) < otherBB.center(new Vector3f()).get(component)) {
                     overlapComponent = -overlapComponent;
                 }
                 if (component == 1 && onGround != null) {
@@ -165,14 +163,13 @@ public class PhysicsService implements Service {
                                      DynamicCollider otherCollider) {
                 if (collider.isStaticOnly() || otherCollider.isStaticOnly()) return;
 
-                Vector3f overlap = new Vector3f(bb.getMax()).min(otherBB.getMax())
-                        .sub(new Vector3f(bb.getMin()).max(otherBB.getMin()));
+                Vector3f overlap = bb.intersection(otherBB, new AABBf()).getSize(new Vector3f());
 
                 int component = overlap.minComponent();
                 float overlapComponent = overlap.get(component);
                 if (overlapComponent <= 0)
                     return;
-                if (bb.getCenter().get(component) < otherBB.getCenter().get(component)) {
+                if (bb.center(new Vector3f()).get(component) < otherBB.center(new Vector3f()).get(component)) {
                     overlapComponent = -overlapComponent;
                 }
                 transform.getPosition().setComponent(component,
