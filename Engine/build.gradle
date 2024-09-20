@@ -35,6 +35,7 @@ dependencies {
 
     //OpenGL-oriented maths library
     api "org.joml:joml:$jomlVersion"
+    api "org.joml:joml-primitives:$jomlPrimitivesVersion"
 
     //Logging
     api "org.slf4j:slf4j-api:$slf4jVersion"

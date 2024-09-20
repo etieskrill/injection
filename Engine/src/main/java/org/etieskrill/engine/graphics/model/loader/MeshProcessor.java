@@ -1,11 +1,11 @@
 package org.etieskrill.engine.graphics.model.loader;
 
-import org.etieskrill.engine.entity.component.AABB;
 import org.etieskrill.engine.graphics.model.*;
 import org.joml.Vector2f;
 import org.joml.Vector2fc;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
+import org.joml.primitives.AABBf;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.assimp.AIFace;
@@ -142,12 +142,11 @@ public class MeshProcessor {
 
         AIVector3D min = aiMesh.mAABB().mMin();
         AIVector3D max = aiMesh.mAABB().mMax();
-        AABB boundingBox = new AABB(new Vector3f(min.x(), min.y(), min.z()),
-                new Vector3f(max.x(), max.y(), max.z()));
+        AABBf boundingBox = new AABBf(min.x(), min.y(), min.z(), max.x(), max.y(), max.z());
 
-        if (boundingBox.getMin().equals(new Vector3f(), 0.00001f)
-                || boundingBox.getMax().equals(new Vector3f(), 0.00001f))
+        if (boundingBox.getSize(new Vector3f()).equals(0, 0, 0)) {
             boundingBox = calculateBoundingBox(vertices);
+        }
 
         Material material = materials.get(aiMesh.mMaterialIndex());
 
@@ -169,23 +168,17 @@ public class MeshProcessor {
         return ret;
     }
 
-    private static AABB calculateBoundingBox(List<Vertex> vertices) {
-        float minX = 0, maxX = 0, minY = 0, maxY = 0, minZ = 0, maxZ = 0;
+    private static AABBf calculateBoundingBox(List<Vertex> vertices) {
+        AABBf boundingBox = new AABBf();
 
         //for models as complicated as the skeleton, a stream variant presents a slight improvement in performance,
         //measurable in the single milliseconds, which is not worth the cost of initialising a stream for a model with
         //very few vertices
         for (Vertex vertex : vertices) {
-            Vector3fc pos = vertex.getPosition();
-            minX = Math.min(pos.x(), minX);
-            minY = Math.min(pos.y(), minY);
-            minZ = Math.min(pos.z(), minZ);
-            maxX = Math.max(pos.x(), maxX);
-            maxY = Math.max(pos.y(), maxY);
-            maxZ = Math.max(pos.z(), maxZ);
+            boundingBox.union(vertex.getPosition());
         }
 
-        return new AABB(new Vector3f(minX, minY, minZ), new Vector3f(maxX, maxY, maxZ));
+        return boundingBox;
     }
 
     public static void optimiseMesh(Mesh mesh, int targetIndexCount, float maxDeformation) {

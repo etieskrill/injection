@@ -3,8 +3,8 @@ package org.etieskrill.engine.graphics.model;
 import lombok.Getter;
 import lombok.Setter;
 import org.etieskrill.engine.Disposable;
-import org.etieskrill.engine.entity.component.AABB;
 import org.etieskrill.engine.graphics.gl.VertexArrayObject;
+import org.joml.primitives.AABBf;
 
 import java.util.Collections;
 import java.util.List;
@@ -19,7 +19,7 @@ public class Mesh implements Disposable {
     private final VertexArrayObject<Vertex> vao;
     //TODO immutable
     private @Setter int numIndices;
-    private final AABB boundingBox;
+    private final AABBf boundingBox;
     private final DrawMode drawMode;
 
     public enum DrawMode {
@@ -46,7 +46,7 @@ public class Mesh implements Disposable {
     public Mesh(Material material,
                 List<Bone> bones,
                 VertexArrayObject<Vertex> vao, int numIndices,
-                AABB boundingBox,
+                AABBf boundingBox,
                 DrawMode drawMode) {
         this.material = material;
         this.bones = Collections.unmodifiableList(bones);

@@ -9,6 +9,7 @@ import org.etieskrill.engine.util.Loaders;
 import org.joml.Math;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
+import org.joml.primitives.AABBf;
 
 import java.util.List;
 
@@ -20,7 +21,7 @@ public class PlayerEntity extends Entity {
 
     private final Transform transform;
     private final DynamicCollider collider;
-    private final AABB boundingBox;
+    private final AABBf boundingBox;
     private final Acceleration moveForce;
     private final VampireShader shader;
     private final Animator animator;
@@ -38,7 +39,7 @@ public class PlayerEntity extends Entity {
 
         withComponent(transform);
 
-        boundingBox = new AABB(new Vector3f(-.5f, 0, -.5f), new Vector3f(.5f, 2, .5f));
+        boundingBox = new AABBf(-.5f, 0, -.5f, .5f, 2, .5f);
         withComponent(boundingBox);
         withComponent(new WorldSpaceAABB());
 
@@ -124,9 +125,8 @@ public class PlayerEntity extends Entity {
         collider.setStaticOnly(dashState.isActive());
 
         dashParticles.getParticles().setSpawnParticles(dashState.isActive());
-        dashParticles.getParticles().getTransform()
-                .setPosition(transform.getPosition())
-                .getPosition().add(boundingBox.getCenter());
+        boundingBox.center(dashParticles.getParticles().getTransform().getPosition())
+                .add(transform.getPosition());
     }
 
     private void updateJumpAction(double delta) {

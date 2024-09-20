@@ -336,7 +336,7 @@ public class Window implements Disposable {
                 glExtensions.length == 1 && glExtensions[0].isBlank() ? 0 : glExtensions.length, glExtensions,
                 glGetString(GL_RENDERER), glGetString(GL_VENDOR));
 
-        loadStaticShaderLibraries();
+//        loadStaticShaderLibraries();
 
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LESS);

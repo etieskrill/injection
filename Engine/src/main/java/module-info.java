@@ -7,9 +7,10 @@ module injection.engine {
     requires org.lwjgl.meshoptimizer;
 
     requires org.joml;
+    requires org.joml.primitives;
 
     requires org.slf4j;
-    requires java.desktop;
+
     requires org.jetbrains.annotations;
     requires lombok;
 }

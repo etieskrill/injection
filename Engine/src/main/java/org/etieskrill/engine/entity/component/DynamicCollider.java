@@ -1,37 +1,26 @@
 package org.etieskrill.engine.entity.component;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
+@Getter
+@RequiredArgsConstructor
 public class DynamicCollider {
 
     private final Vector3f previousPosition;
 
     //TODO add collision groups or marker based filtering for collision pairs
-    private boolean staticOnly = false;
+    private @Setter boolean staticOnly = false;
 
     public DynamicCollider() {
         this(new Vector3f());
     }
 
-    public DynamicCollider(Vector3f previousPosition) {
-        this.previousPosition = previousPosition;
-    }
-
-    public Vector3f getPreviousPosition() {
-        return previousPosition;
-    }
-
     public void setPreviousPosition(Vector3fc previousPosition) {
         this.previousPosition.set(previousPosition);
-    }
-
-    public boolean isStaticOnly() {
-        return staticOnly;
-    }
-
-    public void setStaticOnly(boolean staticOnly) {
-        this.staticOnly = staticOnly;
     }
 
 }

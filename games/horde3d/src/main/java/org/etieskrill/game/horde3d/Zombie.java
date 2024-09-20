@@ -10,6 +10,7 @@ import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.util.Loaders.AnimationLoader;
 import org.joml.Math;
 import org.joml.Vector3f;
+import org.joml.primitives.AABBf;
 
 import java.util.List;
 import java.util.Random;
@@ -29,7 +30,7 @@ public class Zombie extends Entity {
 
         transform = new Transform();
         withComponent(transform);
-        withComponent(new AABB(new Vector3f(-.5f, 0, -.5f), new Vector3f(.5f, 2, .5f)));
+        withComponent(new AABBf(new Vector3f(-.5f, 0, -.5f), new Vector3f(.5f, 2, .5f)));
         withComponent(new WorldSpaceAABB());
 
         Model model = Loaders.ModelLoader.get().load("zombie", () ->

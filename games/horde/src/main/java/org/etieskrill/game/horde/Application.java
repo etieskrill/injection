@@ -30,8 +30,6 @@ import java.util.Random;
 
 import static org.joml.Math.sin;
 import static org.joml.Math.toRadians;
-import static org.lwjgl.opengl.ARBShadingLanguageInclude.GL_SHADER_INCLUDE_ARB;
-import static org.lwjgl.opengl.ARBShadingLanguageInclude.glNamedStringARB;
 import static org.lwjgl.opengl.GL11C.*;
 import static org.lwjgl.opengl.GL30C.glBindVertexArray;
 import static org.lwjgl.opengl.GL30C.glGenVertexArrays;
@@ -65,18 +63,6 @@ public class Application extends GameApplication {
     @Override
     protected void init() {
         GLUtils.addDebugLogging();
-        GLUtils.clearError();
-        glNamedStringARB(GL_SHADER_INCLUDE_ARB, "/Camera.glsl", """
-                    struct Camera {
-                    mat4 perspective;
-                    mat4 combined;
-                    vec3 position;
-                    float near;
-                    float far;
-                    ivec2 viewport;
-                    float aspect;
-                };""");
-        GLUtils.checkErrorThrowing();
 
         camera = new PerspectiveCamera(window.getSize().getVec())
                 .setOrbit(true)

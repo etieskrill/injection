@@ -7,6 +7,7 @@ import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shader.UniformMappable;
 import org.jetbrains.annotations.Contract;
 import org.joml.*;
+import org.joml.primitives.AABBf;
 
 import java.lang.Math;
 import java.util.function.Consumer;
@@ -227,15 +228,27 @@ public abstract class Camera implements UniformMappable {
 
     /**
      * Tests whether the world-space sphere at {@code center} with size {@code radius} intersects the volume projected
-     * by the camera's view frustum in any point. Useful e.g. for simple frustum culling.
+     * by the camera's view frustum in any point.
      *
      * @param center the center point of the sphere
      * @param radius the radius of the sphere
-     * @return whether the sphere intersects the view frustum in any point
+     * @return {@code true} if the sphere intersects the view frustum partially or fully, {@code false} otherwise
      */
     public boolean frustumTestSphere(Vector3fc center, float radius) {
         //TODO FrustumIntersection for more complicated stuff
+//        FrustumIntersection
         return getCombined().testSphere(center.x(), center.y(), center.z(), radius);
+    }
+
+    /**
+     * Tests whether the world-space axis-aligned bounding box {@code aabb} intersects the volume projected by the
+     * camera's view frustum in any point.
+     *
+     * @param aabb the axis-aligned bounding box
+     * @return {@code true} if the aabb intersects the view frustum partially or fully, {@code false} otherwise
+     */
+    public boolean frustumTestAABB(AABBf aabb) {
+        return getCombined().testAab(aabb.minX(), aabb.minY(), aabb.minZ(), aabb.maxX(), aabb.maxY(), aabb.maxZ());
     }
 
     @Override

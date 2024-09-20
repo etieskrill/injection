@@ -1,10 +1,14 @@
 #version 330 core
 
-#extension GL_ARB_shading_language_include: require
-
-#include "/include/InjectionCore.glsl"
-
-uniform Camera camera, dirLightCamera;
+uniform struct Camera {
+    mat4 perspective;
+    mat4 combined;
+    vec3 position;
+    float near;
+    float far;
+    ivec2 viewport;
+    float aspect;
+} camera, dirLightCamera;
 
 uniform struct BillBoard {
     sampler2D sprite;
@@ -64,7 +68,12 @@ in vec4 dirLightSpaceFragPos;
 
 out vec4 fragColour;
 
-uniform DirectionalLight dirLight;
+uniform struct DirectionalLight {
+    vec3 direction;
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+} dirLight;
 
 uniform sampler2DShadow dirShadowMap;
 

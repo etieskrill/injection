@@ -19,6 +19,7 @@ import org.joml.Matrix4fc;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 import org.joml.Vector3f;
+import org.joml.primitives.AABBf;
 
 import java.util.Random;
 
@@ -53,12 +54,12 @@ public class World {
         floorDrawable.setTextureScale(new Vector2f(15));
         floor.withComponent(floorDrawable);
 
-        floorModel.getTransform().setPosition(new Vector3f(0, -1, 0));
-        floor.withComponent(floorModel.getTransform());
+        floor.withComponent(floorModel.getTransform().setPosition(new Vector3f(0, -1, 0)));
 
-        floor.withComponent(new AABB(
-                floorModel.getBoundingBox().getMin().mul(floorModel.getInitialTransform().getScale(), new Vector3f()),
-                floorModel.getBoundingBox().getMax().mul(floorModel.getInitialTransform().getScale(), new Vector3f())
+        var floorAABB = floorModel.getBoundingBox();
+        floor.withComponent(new AABBf(
+                new Vector3f(floorAABB.minX(), floorAABB.minY(), floorAABB.minZ()).mul(floorModel.getInitialTransform().getScale()),
+                new Vector3f(floorAABB.maxX(), floorAABB.maxY(), floorAABB.maxZ()).mul(floorModel.getInitialTransform().getScale())
         ));
         floor.withComponent(new WorldSpaceAABB());
 
