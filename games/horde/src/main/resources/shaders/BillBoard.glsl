@@ -31,9 +31,6 @@ out vec4 dirLightSpaceFragPos;
 
 uniform vec3 position;
 
-uniform mat4 dirLightPerspective;
-uniform mat4 dirLightCombined;
-
 const vec2 corners[4] = vec2[](vec2(-1, -1), vec2(1, -1), vec2(-1, 1), vec2(1, 1));
 
 void main()
@@ -45,16 +42,18 @@ void main()
     vec4 pos = camera.combined * vec4(position + billBoard.offset, 1);
     pos.y -= quadOffset.y;
 
-    vec4 lightSpacePos = vec4(position + billBoard.offset, 1);
+    vec3 lightSpacePos = position - billBoard.offset;
     lightSpacePos.y -= billBoard.size.y;
 
     for (int i = 0; i < 4; i++) {
         vec4 cornerOffset = vec4(quadOffset.xy * corners[i], 0, 0);
         gl_Position = pos + cornerOffset;
+
         texCoords = (corners[i] / 2.0) + 0.5;
 
-        vec4 dirLightCornerOffset = vec4(billBoard.size * corners[i], 0, 0);
-        dirLightSpaceFragPos = dirLightCamera.combined * (lightSpacePos + dirLightCornerOffset);
+        vec2 lightCornerOffset = billBoard.size.xy * corners[i];
+        lightCornerOffset.x = -lightCornerOffset.x;
+        dirLightSpaceFragPos = dirLightCamera.combined * vec4(lightSpacePos + vec3(lightCornerOffset, 0), 1);
 
         EmitVertex();
     }
@@ -120,27 +119,20 @@ float getInShadow(vec4 lightSpaceFragPos, vec3 lightDirection) {
     vec3 screenSpace = lightSpaceFragPos.xyz / lightSpaceFragPos.w;
     vec3 depthSpace = screenSpace * 0.5 + 0.5;
 
-    //    if (depthSpace.z > 1.0) return 1.0;
+    if (depthSpace.z > 1.0) return 1.0;
 
     //    float bias = min(0.005, 0.05 * (1.0 - dot(vert_out.normal, lightDirection)));
     float bias = 0.005;
     depthSpace.z -= bias;
     float shadow = 0.0;
-    //    depthSpace.z = 1 - depthSpace.z;
-    //    depthSpace.z = 1.0;
 
-    //    vec3 texelSize = vec3(1.0 / textureSize(dirShadowMap, 0), 1.0);
-    //    for (int x = -1; x <= 1; x++) {
-    //        for (int y = -1; y <= 1; y++) {
-    //            FIXME on nvidia this texture call produces a warning for invalid textures, even if it is never called for
-    //            FIXME said invalid state - so the one material to one shader paradigm seems to be almost enforced
-    //            i know this because if it were called, the entire pipeline for the mesh would fail, and not produce any visible result
-    //            shadow += texture(dirShadowMap, depthSpace + vec3(x, y, 0.0) * texelSize);
-    //        }
-    //    }
-    shadow += texture(dirShadowMap, depthSpace);
+    vec3 texelSize = vec3(1.0 / textureSize(dirShadowMap, 0), 1.0);
+    for (int x = -1; x <= 1; x++) {
+        for (int y = -1; y <= 1; y++) {
+            shadow += texture(dirShadowMap, depthSpace + vec3(x, y, 0.0) * texelSize);
+        }
+    }
 
-    return shadow;
-    //    return shadow / 9.0;
+    return shadow / 9.0;
 }
 #endif
