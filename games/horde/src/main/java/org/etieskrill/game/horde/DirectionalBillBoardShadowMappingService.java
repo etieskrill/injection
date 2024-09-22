@@ -13,8 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static java.util.Comparator.comparingDouble;
-import static org.lwjgl.opengl.GL11C.GL_POINTS;
-import static org.lwjgl.opengl.GL11C.glDrawArrays;
+import static org.lwjgl.opengl.GL11C.*;
 import static org.lwjgl.opengl.GL30C.glBindVertexArray;
 import static org.lwjgl.opengl.GL45C.glCreateVertexArrays;
 
@@ -84,6 +83,7 @@ public class DirectionalBillBoardShadowMappingService implements Service {
             billboardDepthShader.setUniform("position", transform.getPosition());
             billboardDepthShader.setUniform("billBoard", billBoard);
 
+            glEnable(GL_DEPTH_TEST);
             glDrawArrays(GL_POINTS, 0, 1);
         }
 

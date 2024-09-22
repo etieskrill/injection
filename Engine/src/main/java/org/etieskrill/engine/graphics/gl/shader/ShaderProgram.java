@@ -551,7 +551,7 @@ public abstract class ShaderProgram implements Disposable {
          * @return the {@link UniformMapper UniformMapper} for chaining
          */
         public UniformMapper map(String name, @Nullable AbstractTexture texture) {
-            if (texture != null) shader.setTexture(structName + "." + name, texture);
+            if (texture != null) shader.setTexture(structName + "." + name, texture, false);
             return this;
         }
 

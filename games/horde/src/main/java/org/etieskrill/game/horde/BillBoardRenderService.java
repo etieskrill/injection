@@ -27,7 +27,6 @@ public class BillBoardRenderService implements Service {
         this.shader = new ShaderProgram() {
             @Override
             protected void init() {
-                disableStrictUniformChecking();
                 hasGeometryShader();
             }
 
@@ -40,8 +39,8 @@ public class BillBoardRenderService implements Service {
             protected void getUniformLocations() {
                 addUniform("camera", Uniform.Type.STRUCT);
                 addUniform("position", Uniform.Type.VEC3);
-                addUniform("dirLightCombined", Uniform.Type.MAT4);
                 addUniform("dirLight", Uniform.Type.STRUCT);
+                addUniform("dirLightCamera", Uniform.Type.STRUCT);
                 addUniform("dirShadowMap", Uniform.Type.SAMPLER2D);
                 addUniform("billBoard", Uniform.Type.STRUCT);
             }

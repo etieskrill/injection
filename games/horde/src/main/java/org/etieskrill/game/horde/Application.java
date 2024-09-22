@@ -17,6 +17,7 @@ import org.etieskrill.engine.graphics.texture.AbstractTexture.MagFilter;
 import org.etieskrill.engine.graphics.texture.AbstractTexture.MinFilter;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.input.Input;
+import org.etieskrill.engine.input.InputBinding;
 import org.etieskrill.engine.input.Keys;
 import org.etieskrill.engine.input.controller.KeyCharacterController;
 import org.etieskrill.engine.util.Loaders;
@@ -24,7 +25,6 @@ import org.etieskrill.engine.window.Window;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 import org.joml.Vector3f;
-import org.lwjgl.opengl.GL46C;
 
 import java.util.Random;
 
@@ -50,6 +50,8 @@ public class Application extends GameApplication {
 
     ShaderProgram stoopidShader;
     DirectionalLightComponent dirLight;
+
+    float daylightCycleRotation = 0;
 
     public Application() {
         super(Window.builder()
@@ -140,7 +142,8 @@ public class Application extends GameApplication {
         }));
         window.addKeyInputs(Input.of(
                 Input.bind(Keys.A).to(() -> dudeLooksRight = false),
-                Input.bind(Keys.D).to(() -> dudeLooksRight = true)
+                Input.bind(Keys.D).to(() -> dudeLooksRight = true),
+                Input.bind(Keys.Q).on(InputBinding.Trigger.TOGGLED).to(delta -> daylightCycleRotation += 20 * delta)
         ));
 
         entitySystem.createEntity(id -> new Enemy(id, dudeTransform.getPosition()));
@@ -173,10 +176,12 @@ public class Application extends GameApplication {
                         new DirectionalLight(new Vector3f(1, -1, 1)),
                         DirectionalShadowMap.generate(new Vector2i(2048)),
                         new OrthographicCamera(new Vector2i(2048),
-                                -10, 10, -10, 10)
-                                .setPosition(new Vector3f(10))
-                                .setRotation(-45, 150, 0)
-                                .setFar(100)
+                                -15, 15, -15, 15)
+                                .setRotation(45, 150, 0)
+                                .setFar(40)
+                                .setNear(-10)
+                                .setOrbit(true)
+                                .setOrbitDistance(10)
                 ));
 
         stoopidShader = new ShaderProgram() {
@@ -214,25 +219,26 @@ public class Application extends GameApplication {
         float verticalOffset = dudeWalking ? (float) (0.075f * sin(20 * pacer.getTime()) + 0.075f) : 0;
         dudeBillBoard.getOffset().set(0, verticalOffset, 0);
 
+        dirLight.getCamera().setPosition(camera.getPosition());
+        dirLight.getCamera().setRotation(45, daylightCycleRotation, 0);
+
         renderFloor(); //not in #render because floor needs to be drawn first
 //        renderGrid();
     }
 
     @Override
     protected void render() {
-//        stoopidShader.start();
-//        stoopidShader.setTexture("tex", dirLight.getShadowMap().getTexture());
-//
-//        glBindVertexArray(dummyVao);
-//
-//        glDisable(GL_DEPTH_TEST);
-//        glDrawArrays(GL_POINTS, 0, 1);
-//        glEnable(GL_DEPTH_TEST);
+        stoopidShader.start();
+        stoopidShader.setTexture("tex", dirLight.getShadowMap().getTexture());
+
+        glBindVertexArray(dummyVao);
+
+        glDisable(GL_DEPTH_TEST);
+        glDrawArrays(GL_POINTS, 0, 1);
+        glEnable(GL_DEPTH_TEST);
     }
 
     private void renderFloor() {
-        GL46C.glBindTextureUnit(0, 0);
-
         glBindVertexArray(dummyVao);
 
         glDisable(GL_CULL_FACE);

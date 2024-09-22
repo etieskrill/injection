@@ -18,8 +18,8 @@ const vec2 corners[4] = vec2[](vec2(0, 0), vec2(1, 0), vec2(0, 1), vec2(1, 1));
 
 void main()
 {
-    const vec2 position = vec2(0);
-    const vec2 size = vec2(0.5, 0.5 * 16 / 9);
+    const vec2 size = vec2(0.33, 0.33 * 16 / 9);
+    const vec2 position = vec2(1) - size;
 
     for (int i = 0; i < 4; i++) {
         gl_Position = vec4(position + size * corners[i], 0, 1);
