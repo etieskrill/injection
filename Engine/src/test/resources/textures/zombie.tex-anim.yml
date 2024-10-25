@@ -1,0 +1,32 @@
+$schema: ./tex-anim.schema.json
+
+resources:
+  texture:
+    file: zombie.png
+
+frames:
+  default:
+    x: 0
+    y: 0
+    w: 32
+    h: 32
+    duration: 125
+  0:
+  1:
+    x: 32
+  2:
+    x: 64
+  3:
+    x: 96
+    duration: 100
+  4:
+    x: 128
+  5:
+    x: 160
+    duration: 150
+  6:
+    x: 192
+  7:
+    x: 224
+  8:
+    x: 256

@@ -304,6 +304,8 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
             shader.setUniform("material.shininess", (float) material.getPropertyOrDefault(SHININESS, 64f), false);
         shader.setUniform("material.specularity", (float) material.getPropertyOrDefault(SHININESS_STRENGTH, 1f), false);
 
+        shader.setUniform("material.colourDiffuse", material.getColourProperty(COLOUR_DIFFUSE), false);
+
         //Optional information
         shader.setUniform("material.numTextures", textureContext.nextTexture, false); //TODO not accurate anymore if binding textures manually after this
 

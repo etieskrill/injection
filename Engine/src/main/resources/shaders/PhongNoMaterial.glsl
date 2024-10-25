@@ -12,6 +12,7 @@ out Data {
 } vert_out;
 
 uniform mat4 model;
+uniform mat4 mesh;
 uniform mat3 normal;
 uniform mat4 combined;
 
@@ -21,9 +22,9 @@ void main()
 {
     vert_out.normal = normalize(normal * a_Normal);
 
-    vert_out.fragPos = vec3(model * vec4(a_Position, 1.0));
+    vert_out.fragPos = vec3(model * mesh * vec4(a_Position, 1.0));
     vert_out.lightSpaceFragPos = lightCombined * vec4(vert_out.fragPos, 1.0);
-    gl_Position = combined * model * vec4(a_Position, 1.0);
+    gl_Position = combined * model * mesh * vec4(a_Position, 1.0);
 }
 
 #endif
@@ -129,7 +130,8 @@ vec4 getPointLight(PointLight light, vec3 normal, vec3 fragPosition, vec3 viewPo
     float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * distance * distance);
     if (LIMIT_ATTENUATION) attenuation = min(attenuation, 1.0);
 
-    return vec4((ambient + inShadow * (diffuse + specular)).rgb * attenuation, 1.0);
+    //    return vec4((ambient + inShadow * (diffuse + specular)).rgb * attenuation, 1.0);
+    return vec4(0.2, 0.2, 0.2, 1.0);
 }
 
 vec4 getAmbient(vec3 lightAmbient)

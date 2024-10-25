@@ -10,6 +10,7 @@ public class PhongNoMaterialShader extends ShaderProgram {
 
     @Override
     protected void getUniformLocations() {
+        addUniform("mesh", Uniform.Type.MAT4);
         addUniform("model", Uniform.Type.MAT4);
         addUniform("combined", Uniform.Type.MAT4);
         addUniform("normal", Uniform.Type.MAT3);

@@ -9,6 +9,8 @@ module injection.engine {
     requires org.joml;
     requires org.joml.primitives;
 
+    requires org.yaml.snakeyaml;
+
     requires org.slf4j;
 
     requires org.jetbrains.annotations;
