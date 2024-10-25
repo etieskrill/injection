@@ -1,5 +1,6 @@
 package org.etieskrill.engine.graphics.texture;
 
+import lombok.Getter;
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.graphics.gl.GLUtils;
 import org.jetbrains.annotations.NotNull;
@@ -215,6 +216,7 @@ public abstract class AbstractTexture implements Disposable {
         }
     }
 
+    @Getter
     public static abstract class Builder<T extends AbstractTexture> {
         protected static final int INVALID_PIXEL_SIZE = -1;
 
@@ -243,17 +245,9 @@ public abstract class AbstractTexture implements Disposable {
             return this;
         }
 
-        public Type getType() {
-            return type;
-        }
-
         public Builder<T> setTarget(Target target) {
             this.target = target;
             return this;
-        }
-
-        public Format getFormat() {
-            return format;
         }
 
         public Builder<T> setFormat(Format format) {

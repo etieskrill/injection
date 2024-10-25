@@ -51,6 +51,8 @@ uniform struct Material {
     bool emissiveTexture;
     sampler2D emissive0;
     samplerCube cubemap0;
+
+    vec4 colourDiffuse;
 } material;
 
 in Data {

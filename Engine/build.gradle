@@ -37,6 +37,8 @@ dependencies {
     api "org.joml:joml:$jomlVersion"
     api "org.joml:joml-primitives:$jomlPrimitivesVersion"
 
+    implementation "org.yaml:snakeyaml:$snakeYamlVersion"
+
     //Logging
     api "org.slf4j:slf4j-api:$slf4jVersion"
     api "org.slf4j:slf4j-simple:$slf4jVersion"

@@ -32,7 +32,7 @@ void main()
     vert_out.tbn = mat3(tangent, biTangent, normalVec);
 
     vert_out.texCoord = a_TexCoord * textureScale;
-    vert_out.fragPos = vec3(model * vec4(a_Position, 1.0));
+    vert_out.fragPos = vec3(model * mesh * vec4(a_Position, 1.0));
     vert_out.lightSpaceFragPos = lightCombined * vec4(vert_out.fragPos, 1.0);
-    gl_Position = combined * model * vec4(a_Position, 1.0);
+    gl_Position = combined * model * mesh * vec4(a_Position, 1.0);
 }

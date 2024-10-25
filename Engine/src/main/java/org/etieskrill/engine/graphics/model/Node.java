@@ -1,5 +1,7 @@
 package org.etieskrill.engine.graphics.model;
 
+import lombok.Getter;
+import lombok.ToString;
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.entity.component.TransformC;
@@ -9,6 +11,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 
+@Getter
+@ToString(exclude = {"parent"})
 public final class Node implements Disposable {
 
     private final String name;
@@ -25,30 +29,6 @@ public final class Node implements Disposable {
         this.children = new ArrayList<>();
         this.meshes = meshes;
         this.bone = bone;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public TransformC getTransform() {
-        return transform;
-    }
-
-    public @Nullable Node getParent() {
-        return parent;
-    }
-
-    public List<Node> getChildren() {
-        return children;
-    }
-
-    public List<Mesh> getMeshes() {
-        return meshes;
-    }
-
-    public @Nullable Bone getBone() {
-        return bone;
     }
 
     public Transform getHierarchyTransform() {

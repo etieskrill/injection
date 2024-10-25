@@ -1,5 +1,6 @@
 package org.etieskrill.engine.graphics.texture;
 
+import lombok.Getter;
 import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2i;
@@ -115,7 +116,7 @@ public class Texture2D extends AbstractTexture implements FrameBufferAttachment 
     }
 
     public abstract static class Builder extends AbstractTexture.Builder<Texture2D> {
-        protected ByteBuffer textureData;
+        protected @Getter ByteBuffer textureData;
 
         private Builder() {
         }
