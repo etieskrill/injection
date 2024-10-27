@@ -51,8 +51,9 @@ public class AnimatedTexturePlayer {
             case null -> throw new IllegalStateException("Animation behaviour may not be null");
         }
 
+        int numFrames = texture.getMetaData().getFrames().size();
         int index = -1;
-        for (int i = 0; i < texture.getMetaData().getFrames().size() - 1; i++) {
+        for (int i = 0; i < numFrames - 1; i++) {
             float previousTime = texture.getMetaData().getFrames().get(i).getTime();
             float frameTime = texture.getMetaData().getFrames().get(i + 1).getTime();
 
@@ -60,6 +61,12 @@ public class AnimatedTexturePlayer {
                 index = i;
                 break;
             }
+        }
+
+        float lastFrameTime = texture.getMetaData().getFrames().get(numFrames - 1).getTime();
+        float animationDuration = texture.getMetaData().getDuration();
+        if (index == -1 && time >= lastFrameTime && time < animationDuration) {
+            index = numFrames - 1;
         }
 
         if (index == -1) {

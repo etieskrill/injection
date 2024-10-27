@@ -21,7 +21,7 @@ class AnimatedTextureTest {
 
     @BeforeEach
     void setUp() {
-        fixture = new AnimatedTexture(ANIMATED_TEXTURE_FILE);
+        fixture = AnimatedTexture.builder().file(ANIMATED_TEXTURE_FILE).build();
     }
 
     @Test

@@ -20,6 +20,7 @@ import static org.lwjgl.opengl.GL30C.glGenVertexArrays;
 public class BillBoardRenderService implements Service {
 
     private final ShaderProgram shader;
+    private final ShaderProgram animatedShader;
     private final Camera camera;
     private final int dummyVAO;
 
@@ -45,13 +46,35 @@ public class BillBoardRenderService implements Service {
                 addUniform("billBoard", Uniform.Type.STRUCT);
             }
         };
+        this.animatedShader = new ShaderProgram() {
+            @Override
+            protected void init() {
+                hasGeometryShader();
+            }
+
+            @Override
+            protected String[] getShaderFileNames() {
+                return new String[]{"AnimatedBillBoard.glsl"};
+            }
+
+            @Override
+            protected void getUniformLocations() {
+                addUniform("camera", Uniform.Type.STRUCT);
+                addUniform("position", Uniform.Type.VEC3);
+                addUniform("dirLight", Uniform.Type.STRUCT);
+                addUniform("dirLightCamera", Uniform.Type.STRUCT);
+                addUniform("dirShadowMap", Uniform.Type.SAMPLER2D);
+                addUniform("animatedBillBoard", Uniform.Type.STRUCT);
+            }
+        };
         this.camera = camera;
         this.dummyVAO = glGenVertexArrays();
     }
 
     @Override
     public boolean canProcess(Entity entity) {
-        return entity.hasComponents(Transform.class, BillBoard.class);
+        return entity.hasComponents(Transform.class, BillBoard.class)
+                || entity.hasComponents(Transform.class, AnimatedBillBoard.class);
     }
 
     @Override
@@ -69,6 +92,12 @@ public class BillBoardRenderService implements Service {
         FrameBuffer.bindScreenBuffer();
         glViewport(0, 0, camera.getViewportSize().x(), camera.getViewportSize().y());
 
+        configureShader(entities, shader);
+        configureShader(entities, animatedShader);
+    }
+
+    //TODO eww
+    private void configureShader(List<Entity> entities, ShaderProgram shader) {
         shader.start();
         for (Entity entity : entities) {
             var dirLight = entity.getComponent(DirectionalLightComponent.class);
@@ -85,8 +114,14 @@ public class BillBoardRenderService implements Service {
 
     @Override
     public void process(Entity targetEntity, List<Entity> entities, double delta) {
-        shader.setUniform("position", targetEntity.getComponent(Transform.class).getPosition());
-        shader.setUniform("billBoard", targetEntity.getComponent(BillBoard.class));
+        var billBoard = targetEntity.getComponent(BillBoard.class);
+        if (billBoard != null) {
+            shader.setUniform("position", targetEntity.getComponent(Transform.class).getPosition());
+            shader.setUniform("billBoard", billBoard);
+        } else {
+            animatedShader.setUniform("position", targetEntity.getComponent(Transform.class).getPosition());
+            animatedShader.setUniform("animatedBillBoard", targetEntity.getComponent(AnimatedBillBoard.class));
+        }
 
         glDisable(GL_CULL_FACE);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

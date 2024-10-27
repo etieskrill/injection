@@ -1,5 +1,6 @@
 package org.etieskrill.engine.graphics.texture;
 
+import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2ic;
@@ -14,6 +15,7 @@ import static org.etieskrill.engine.graphics.texture.Textures.NR_BITS_PER_COLOUR
 import static org.lwjgl.opengl.GL11C.GL_UNSIGNED_BYTE;
 import static org.lwjgl.opengl.GL12C.glTexImage3D;
 
+@Getter
 public class ArrayTexture extends AbstractTexture {
 
     private static final Logger logger = LoggerFactory.getLogger(ArrayTexture.class);
@@ -21,16 +23,24 @@ public class ArrayTexture extends AbstractTexture {
     private final Vector2ic pixelSize;
     private final Integer length;
 
-    public static final class BufferBuilder extends Builder<ArrayTexture> {
-        private final Integer length; //TODO increase length (and expand buffer) with #addTexture calls
+    public static abstract class Builder<T extends ArrayTexture> extends AbstractTexture.Builder<T> {
+        protected @NotNull Integer length;
+
+        public Builder(@NotNull Vector2ic pixelSize, @NotNull Integer length, @NotNull Format format) {
+            this.pixelSize = pixelSize;
+            this.length = length;
+            this.format = format;
+        }
+    }
+
+    public static class BufferBuilder extends ArrayTexture.Builder<ArrayTexture> {
+        //TODO increase length (and expand buffer) with #addTexture calls
         private final ByteBuffer buffer;
 
         private final int numBytesPerTexture;
 
         public BufferBuilder(@NotNull Vector2ic pixelSize, @NotNull Integer length, @NotNull Format format) {
-            this.pixelSize = pixelSize;
-            this.length = length;
-            this.format = format;
+            super(pixelSize, length, format);
 
             this.buffer = BufferUtils.createByteBuffer(pixelSize.x() * pixelSize.y() * length * format.getChannels());
             this.numBytesPerTexture = pixelSize.x() * pixelSize.y() * format.getChannels();
@@ -75,19 +85,11 @@ public class ArrayTexture extends AbstractTexture {
         }
     }
 
-    protected ArrayTexture(BufferBuilder builder) {
+    protected ArrayTexture(Builder<? extends ArrayTexture> builder) {
         super(builder.setTarget(ARRAY));
 
         this.pixelSize = builder.pixelSize;
         this.length = builder.length;
-    }
-
-    public Vector2ic getPixelSize() {
-        return pixelSize;
-    }
-
-    public Integer getLength() {
-        return length;
     }
 
 }

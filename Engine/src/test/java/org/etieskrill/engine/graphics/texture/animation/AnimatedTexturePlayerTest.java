@@ -15,7 +15,7 @@ class AnimatedTexturePlayerTest {
     @BeforeEach
     void setUp() {
         Window.builder().build();
-        texture = new AnimatedTexture("zombie.png");
+        texture = AnimatedTexture.builder().file("zombie.png").build();
         fixture = new AnimatedTexturePlayer(texture);
     }
 
@@ -28,22 +28,22 @@ class AnimatedTexturePlayerTest {
     void update() {
         fixture.play();
 
-        fixture.update(100);
+        fixture.update(.1);
         assertEquals(0, fixture.getFrame());
 
-        fixture.update(100);
+        fixture.update(.1);
         assertEquals(1, fixture.getFrame());
 
-        fixture.update(100);
+        fixture.update(.1);
         assertEquals(2, fixture.getFrame());
     }
 
     @Test
     void shouldNotUpdateWhenNotPlaying() {
-        fixture.update(200);
+        fixture.update(.2);
         assertEquals(0, fixture.getFrame());
 
-        fixture.update(200);
+        fixture.update(.2);
         assertEquals(0, fixture.getFrame());
 
         assertFalse(fixture.isPlaying());
@@ -53,7 +53,7 @@ class AnimatedTexturePlayerTest {
     void shouldLoopOnRepeat() {
         fixture.play();
 
-        float duration = fixture.getTexture().getMetaData().getDuration();
+        float duration = fixture.getTexture().getMetaData().getDuration() / 1000;
 
         assertEquals(0, fixture.getFrame());
 
@@ -76,7 +76,7 @@ class AnimatedTexturePlayerTest {
 
         fixture.play();
 
-        float duration = fixture.getTexture().getMetaData().getDuration();
+        float duration = fixture.getTexture().getMetaData().getDuration() / 1000;
 
         assertEquals(0, fixture.getFrame());
 
@@ -91,17 +91,31 @@ class AnimatedTexturePlayerTest {
     }
 
     @Test
+    void shouldPlayAllFrames() {
+        fixture.play();
+
+        fixture.update(.975);
+        assertEquals(7, fixture.getFrame());
+
+        fixture.update(.1);
+        assertEquals(8, fixture.getFrame());
+
+        fixture.update(.1);
+        assertEquals(0, fixture.getFrame());
+    }
+
+    @Test
     void setSpeed() {
         fixture.setSpeed(2);
         fixture.play();
 
-        fixture.update(50);
+        fixture.update(.05);
         assertEquals(0, fixture.getFrame());
 
-        fixture.update(50);
+        fixture.update(.05);
         assertEquals(1, fixture.getFrame());
 
-        fixture.update(50);
+        fixture.update(.05);
         assertEquals(2, fixture.getFrame());
     }
 
