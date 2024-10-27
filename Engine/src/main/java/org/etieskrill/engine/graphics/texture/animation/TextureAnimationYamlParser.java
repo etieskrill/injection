@@ -1,10 +1,8 @@
 package org.etieskrill.engine.graphics.texture.animation;
 
-import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.etieskrill.engine.config.ResourcePaths;
 import org.joml.Vector2i;
-import org.joml.Vector2ic;
 import org.joml.primitives.Rectanglei;
 import org.yaml.snakeyaml.Yaml;
 
@@ -18,6 +16,8 @@ import static java.lang.Math.max;
 import static org.etieskrill.engine.util.ResourceReader.getClasspathResourceAsStream;
 
 public class TextureAnimationYamlParser {
+
+    private static final float MILLIS_TO_SECONDS = 0.001f;
 
     static TextureAnimationMetadata loadAnimationMetadata(String metaFile) {
         Yaml yaml = new Yaml();
@@ -44,8 +44,9 @@ public class TextureAnimationYamlParser {
         return new TextureAnimationMetadata(
                 yamlMetaData.resources.get("texture").file,
                 new Vector2i(maxX.get(), maxY.get()),
+                null, //TODO
                 frames,
-                currentTimeMillis.get()
+                currentTimeMillis.get() * MILLIS_TO_SECONDS
         );
     }
 
@@ -57,7 +58,7 @@ public class TextureAnimationYamlParser {
                     new Rectanglei(getElse(frame.x, defaultFrame.x), getElse(frame.y, defaultFrame.y),
                             getElse(frame.x, defaultFrame.x) + getElse(frame.w, defaultFrame.w),
                             getElse(frame.y, defaultFrame.y) + getElse(frame.h, defaultFrame.h)),
-                    currentTimeMillis.get());
+                    currentTimeMillis.get() * MILLIS_TO_SECONDS);
             currentTimeMillis.updateAndGet(currentTime -> currentTime + getElse(frame.duration, defaultFrame.duration));
             return newFrame;
         }
@@ -66,7 +67,7 @@ public class TextureAnimationYamlParser {
     private static TextureAnimationFrame parseDefaultFrame(YamlTextureAnimationFrame yamlFrame, AtomicReference<Float> currentTimeMillis) {
         var frame = new TextureAnimationFrame(
                 new Rectanglei(yamlFrame.x, yamlFrame.y, yamlFrame.x + yamlFrame.w, yamlFrame.y + yamlFrame.h),
-                currentTimeMillis.get());
+                currentTimeMillis.get() * MILLIS_TO_SECONDS);
         currentTimeMillis.updateAndGet(currentTime -> currentTime + yamlFrame.duration);
         return frame;
     }
@@ -75,20 +76,6 @@ public class TextureAnimationYamlParser {
         return object == null ? defaultObject : object;
     }
 
-}
-
-@Data
-class TextureAnimationMetadata {
-    private final String textureFile;
-    private final Vector2ic frameSize;
-    private final List<TextureAnimationFrame> frames;
-    private final float duration;
-}
-
-@Data
-class TextureAnimationFrame {
-    private final Rectanglei atlasArea;
-    private final float time;
 }
 
 @NoArgsConstructor
