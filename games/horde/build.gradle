@@ -11,8 +11,6 @@ dependencies {
 
     implementation 'org.lwjgl:lwjgl-opengl:3.3.3'
 
-    runtimeOnly 'org.lwjgl:lwjgl-opengl::natives-windows'
-
     implementation 'org.jetbrains:annotations:24.0.0'
     compileOnly 'org.projectlombok:lombok:1.18.34'
     annotationProcessor 'org.projectlombok:lombok:1.18.34'

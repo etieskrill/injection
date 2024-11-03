@@ -3,6 +3,7 @@ package org.etieskrill.game.horde;
 import org.etieskrill.engine.entity.Entity;
 import org.etieskrill.engine.entity.component.Scripts;
 import org.etieskrill.engine.entity.component.Transform;
+import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.texture.AbstractTexture.MagFilter;
 import org.etieskrill.engine.graphics.texture.AbstractTexture.MinFilter;
 import org.etieskrill.engine.graphics.texture.AbstractTexture.Wrapping;
@@ -13,16 +14,22 @@ import org.joml.Vector3f;
 
 import java.util.List;
 
+import static org.joml.Math.toRadians;
+
 public class Enemy extends Entity {
 
     private final Transform transform;
+    private final Vector3f deltaPosition;
 
-    public Enemy(int id, Vector3f playerPosition) {
+    private final AnimatedBillBoard billBoard;
+
+    public Enemy(int id, Vector3f playerPosition, Camera camera) {
         super(id);
 
         transform = addComponent(new Transform().setPosition(new Vector3f(10, 0, 10)));
+        deltaPosition = new Vector3f();
 
-        var sprite = addComponent(new AnimatedBillBoard(
+        billBoard = addComponent(new AnimatedBillBoard(
                 new AnimatedTexturePlayer(
                         AnimatedTexture.builder()
                                 .file("zombie.png")
@@ -32,16 +39,22 @@ public class Enemy extends Entity {
                 ),
                 new Vector2f(.5f)
         ));
-        sprite.getSpritePlayer().play();
+        billBoard.getSpritePlayer().play();
 
         addComponent(new Scripts(List.of(
-//                delta -> transform.translate(new Vector3f(playerPosition)
-//                        .sub(transform.getPosition()).normalize().mul(0.5f * delta.floatValue())),
-                delta -> sprite.getSpritePlayer().update(delta)
+                delta -> {
+                    deltaPosition.set(new Vector3f(playerPosition)
+                            .sub(transform.getPosition())
+                            .normalize()
+                            .mul(0.5f * delta.floatValue()));
+                    transform.translate(deltaPosition);
+                },
+                delta -> billBoard.getSpritePlayer().update(delta),
+                delta -> {
+                    boolean lookingRight = deltaPosition.rotateY(toRadians(camera.getYaw())).x() >= 0;
+                    billBoard.getSize().set(lookingRight ? -.5f : .5f, .5f);
+                }
         )));
-    }
-
-    private void rotateToHeading(double delta) {
     }
 
 }

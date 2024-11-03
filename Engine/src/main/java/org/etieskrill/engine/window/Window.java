@@ -136,6 +136,11 @@ public class Window implements Disposable {
     }
 
     public static class WindowBuilder {
+        private WindowBuilder() {
+            this.keyInputs = new ArrayList<>();
+            this.cursorInputs = new ArrayList<>();
+        }
+
         public WindowBuilder setKeyInputHandlers(KeyInputHandler... keyInputs) {
             this.keyInputs.clear();
             this.keyInputs.addAll(asList(keyInputs));
