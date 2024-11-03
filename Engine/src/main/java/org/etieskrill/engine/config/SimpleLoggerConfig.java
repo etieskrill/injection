@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Properties;
 
+import static org.etieskrill.engine.config.ResourcePaths.ENGINE_RESOURCE_PATH;
 import static org.etieskrill.engine.util.ResourceReader.getClasspathResourceAsStream;
 
 /**
@@ -23,7 +24,7 @@ import static org.etieskrill.engine.util.ResourceReader.getClasspathResourceAsSt
  */
 public class SimpleLoggerConfig {
 
-    private static final String INJECTION_CONFIG_FILE = "injection-simplelogger.properties";
+    private static final String INJECTION_CONFIG_FILE = ENGINE_RESOURCE_PATH + "injection-simplelogger.properties";
     private static final String USER_CONFIG_FILE = "simplelogger.properties";
 
     static {

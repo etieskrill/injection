@@ -135,7 +135,7 @@ public class Game {
         vampyBB = Loaders.ModelLoader.get().load("vampyBB", () -> Model.ofFile("box.obj"));
         vampyBB.getInitialTransform()
                 .set(vampy.getInitialTransform())
-                .setScale(new Vector3f(vampy.getBoundingBox().getSize()).mul(.01f));
+                .setScale(vampy.getBoundingBox().getSize(new Vector3f()).mul(.01f));
 
         vampyPosDelta = new Vector3f();
 

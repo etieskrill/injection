@@ -1,7 +1,6 @@
 package org.etieskrill.game.horde;
 
 import org.etieskrill.engine.application.GameApplication;
-import org.etieskrill.engine.entity.Entity;
 import org.etieskrill.engine.entity.component.DirectionalLightComponent;
 import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.entity.service.impl.SnippetsService;
@@ -28,7 +27,6 @@ import org.joml.Vector3f;
 
 import java.util.Random;
 
-import static org.joml.Math.sin;
 import static org.joml.Math.toRadians;
 import static org.lwjgl.opengl.GL11C.*;
 import static org.lwjgl.opengl.GL30C.glBindVertexArray;
@@ -43,10 +41,7 @@ public class Application extends GameApplication {
     Texture2D floorTexture;
     ShaderProgram floorShader;
 
-    Transform dudeTransform;
-    BillBoard dudeBillBoard;
-    boolean dudeWalking = false;
-    boolean dudeLooksRight = true;
+    Player dude;
 
     ShaderProgram stoopidShader;
     DirectionalLightComponent dirLight;
@@ -120,33 +115,28 @@ public class Application extends GameApplication {
             }
         };
 
-        Entity dude = entitySystem.createEntity();
-        dudeTransform = dude.addComponent(new Transform());
-        dudeBillBoard = dude.addComponent(new BillBoard(
-                new Texture2D.FileBuilder("dude.png")
-                        .setMipMapping(MinFilter.NEAREST, MagFilter.NEAREST).build(),
-                new Vector2f()
-        ));
-        window.addKeyInputs(new KeyCharacterController<>(dudeTransform.getPosition(), (delta, target, deltaPosition, speed) -> {
+        dude = entitySystem.createEntity(id -> new Player(id, pacer));
+
+        window.addKeyInputs(new KeyCharacterController<>(dude.getTransform().getPosition(), (delta, target, deltaPosition, speed) -> {
             deltaPosition.y = 0;
             if (!deltaPosition.equals(0, 0, 0)) {
-                dudeWalking = true;
+                dude.setWalking(true);
                 deltaPosition.normalize();
             } else {
-                dudeWalking = false;
+                dude.setWalking(false);
             }
 
             deltaPosition.x = -deltaPosition.x;
             deltaPosition.rotateY(toRadians(camera.getYaw()));
             target.add(deltaPosition.mul((float) delta));
         }));
+
         window.addKeyInputs(Input.of(
-                Input.bind(Keys.A).to(() -> dudeLooksRight = false),
-                Input.bind(Keys.D).to(() -> dudeLooksRight = true),
-                Input.bind(Keys.Q).on(InputBinding.Trigger.TOGGLED).to(delta -> daylightCycleRotation += 20 * delta)
+                Input.bind(Keys.A).to(() -> dude.setLookingRight(false)),
+                Input.bind(Keys.D).to(() -> dude.setLookingRight(true))
         ));
 
-        entitySystem.createEntity(id -> new Enemy(id, dudeTransform.getPosition()));
+        entitySystem.createEntity(id -> new Enemy(id, dude.getTransform().getPosition(), camera));
 
         Random random = new Random(69420);
 
@@ -200,6 +190,10 @@ public class Application extends GameApplication {
                 addUniform("tex", Uniform.Type.SAMPLER2D);
             }
         };
+
+        window.addKeyInputs(Input.of(
+                Input.bind(Keys.Q).on(InputBinding.Trigger.TOGGLED).to(delta -> daylightCycleRotation += 20 * delta)
+        ));
     }
 
     static Texture2D getPixelTexture(String file) {
@@ -213,11 +207,7 @@ public class Application extends GameApplication {
     @Override
     protected void loop(double delta) {
         camera.setRotation(-45, 0, 0);
-        camera.setPosition(new Vector3f(dudeTransform.getPosition()).add(0, 0.5f, 0));
-
-        dudeBillBoard.getSize().set(dudeLooksRight ? -.5f : .5f, .5f);
-        float verticalOffset = dudeWalking ? (float) (0.075f * sin(20 * pacer.getTime()) + 0.075f) : 0;
-        dudeBillBoard.getOffset().set(0, verticalOffset, 0);
+        camera.setPosition(new Vector3f(dude.getTransform().getPosition()).add(0, 0.5f, 0));
 
         dirLight.getCamera().setPosition(camera.getPosition());
         dirLight.getCamera().setRotation(45, daylightCycleRotation, 0);
