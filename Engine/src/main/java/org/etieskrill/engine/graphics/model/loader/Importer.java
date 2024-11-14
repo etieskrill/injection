@@ -20,7 +20,7 @@ class Importer {
 
     private static final Supplier<AIFileIO> fileIO = () -> AIFileIO.create().OpenProc((pFileIO, fileName, openMode) -> {
         String name = MemoryUtil.memUTF8(fileName);
-        ByteBuffer buffer = ResourceReader.getRawClassPathResource(MODEL_PATH + name);
+        ByteBuffer buffer = ResourceReader.getRawClasspathResource(MODEL_PATH + name);
 
         AIFile aiFile = AIFile.create().ReadProc((pFile, pBuffer, size, count) -> {
             long blocksRead = Math.min(buffer.remaining() / size, count);

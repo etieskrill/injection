@@ -23,7 +23,7 @@ public class PhongNoMaterialShader extends ShaderProgram {
         addUniformArray("pointLights", 2, Uniform.Type.STRUCT);
 
         addUniform("shadowMap", Uniform.Type.SAMPLER2D); //TODO additional sampler types + uniform autodetect
-        addUniform("pointShadowMaps", Uniform.Type.SAMPLER2D);
+        addUniform("pointShadowMaps", Uniform.Type.SAMPLER_CUBE_MAP_ARRAY);
         addUniform("pointShadowFarPlane", Uniform.Type.FLOAT);
     }
 }
