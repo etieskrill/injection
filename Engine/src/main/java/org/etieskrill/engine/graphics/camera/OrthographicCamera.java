@@ -20,8 +20,9 @@ public class OrthographicCamera extends Camera {
 
     public OrthographicCamera(Vector2ic viewportSize) {
         this(viewportSize,
-                -.5f * viewportSize.x(), .5f * viewportSize.x(),
-                -.5f * viewportSize.y(), .5f * viewportSize.y());
+                -.5f * viewportSize.y(), .5f * viewportSize.y(),
+                -.5f * viewportSize.x(), .5f * viewportSize.x()
+        );
     }
 
     @Override

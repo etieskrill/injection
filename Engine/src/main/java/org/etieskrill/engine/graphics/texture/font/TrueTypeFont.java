@@ -41,7 +41,7 @@ public class TrueTypeFont implements Font {
         if (library == 0) initLibrary();
 
         PointerBuffer faceBuffer = BufferUtils.createPointerBuffer(1);
-        ByteBuffer fontFile = ResourceReader.getRawClassPathResource(FONT_PATH + file);
+        ByteBuffer fontFile = ResourceReader.getRawClasspathResource(FONT_PATH + file);
         check(FT_New_Memory_Face(library, fontFile, 0, faceBuffer),
                 "Font could not be loaded from file \"" + file + "\"");
 

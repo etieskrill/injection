@@ -1,5 +1,7 @@
 package org.etieskrill.game.animeshun;
 
+import org.etieskrill.engine.config.InjectionConfig;
+import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.entity.component.TransformC;
 import org.etieskrill.engine.graphics.Renderer;
 import org.etieskrill.engine.graphics.animation.Animator;
@@ -9,6 +11,8 @@ import org.etieskrill.engine.graphics.camera.PerspectiveCamera;
 import org.etieskrill.engine.graphics.data.DirectionalLight;
 import org.etieskrill.engine.graphics.gl.GLUtils;
 import org.etieskrill.engine.graphics.gl.renderer.GLRenderer;
+import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
+import org.etieskrill.engine.graphics.gl.shader.Shaders;
 import org.etieskrill.engine.graphics.gl.shader.impl.AnimationShader;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.model.Node;
@@ -39,9 +43,13 @@ import static org.joml.Math.toRadians;
 
 public class Game {
 
-    private static final int FRAMERATE = 60;
+    private static final int FRAMERATE = 144; //FIXME seems arbitrarily capped way lower than whatever is put here (on desktop) - except when being profiled (classic vw move)
 
-    private static final Vector3fc WORLD_UP = new Vector3f(0, -1, 0);
+    private static final Vector3fc WORLD_UP = new Vector3f(0, 1, 0);
+
+    static {
+        InjectionConfig.init();
+    }
 
     private static final Logger logger = LoggerFactory.getLogger(Game.class);
 
@@ -54,11 +62,14 @@ public class Game {
 
     private Model vampy;
     private Model vampyBB;
+    private Transform vampyTransform, vampyFinalTransform;
 
     private Vector3f vampyPosDelta;
     private AnimationShader vampyShader;
 
     private Model cube;
+    private Transform cubeTransform;
+    private ShaderProgram shader;
 
     private DirectionalLight globalLight;
 
@@ -128,14 +139,15 @@ public class Game {
         camera = new PerspectiveCamera(window.getSize().getVec()).setRotation(0, 0, 0);
         window.addCursorInputs(new CursorCameraController(camera));
 
-        vampy = Loaders.ModelLoader.get().load("vampy", () -> new Model.Builder("mixamo_walk_forward_skinned_vampire.dae").disableCulling().build());
-        vampy.getInitialTransform()
-                .setPosition(new Vector3f(2.5f, -1f, 0f))
-                .applyRotation(quat -> quat.rotateY(toRadians(90)));
+        vampy = Loaders.ModelLoader.get().load("vampy", () ->
+                new Model.Builder("mixamo_walk_forward_skinned_vampire.dae").disableCulling().build());
+        vampy.getInitialTransform().setPosition(new Vector3f(2.5f, -1f, 0f));
         vampyBB = Loaders.ModelLoader.get().load("vampyBB", () -> Model.ofFile("box.obj"));
         vampyBB.getInitialTransform()
                 .set(vampy.getInitialTransform())
                 .setScale(vampy.getBoundingBox().getSize(new Vector3f()).mul(.01f));
+        vampyTransform = new Transform();
+        vampyFinalTransform = new Transform();
 
         vampyPosDelta = new Vector3f();
 
@@ -162,7 +174,9 @@ public class Game {
         vampyShader.setShowBoneWeights(showBoneWeights);
 
         cube = Loaders.ModelLoader.get().load("cube", () -> new Model.Builder("cube.obj").disableCulling().build());
-        cube.getTransform().setScale(10).setPosition(new Vector3f(2, -6, 0));
+        cubeTransform = new Transform().setScale(10).setPosition(new Vector3f(2, -6, 0));
+
+        shader = Shaders.getStandardShader();
 
         globalLight = new DirectionalLight(new Vector3f(1, -1, 1), new Vector3f(2), new Vector3f(2), new Vector3f(2));
 
@@ -205,7 +219,7 @@ public class Game {
             if (!vampyPosDelta.equals(0, 0, 0)) {
                 acceleration.set(vampyPosDelta);
                 acceleration.y = 0;
-                acceleration.rotateY((float) toRadians(-camera.getYaw() + 90));
+                acceleration.rotateY(toRadians(camera.getYaw()));
                 acceleration.normalize();
                 acceleration.mul(controls.isPressed(Keys.W) && controls.isPressed(Keys.SHIFT)
                         && !controls.isPressed(Keys.A) && !controls.isPressed(Keys.S)
@@ -216,10 +230,10 @@ public class Game {
 
             //time-corrected verlet with second order taylor derivation + universal friction: p_n+1 = p_n + (1 - f) * (p_n - p_n-1) * (dt_n / dt_n-1) + a_n * dt_n * ((dt_n + dt_n-1) / 2)
             final float friction = .075f;
-            currentPosition.set(vampy.getTransform().getPosition());
+            currentPosition.set(vampyTransform.getPosition());
             final float correctedDelta = (float) (delta / lastDelta);
-            vampy.getTransform().getPosition()
-                    .add(velocity.set(vampy.getTransform().getPosition())
+            vampyTransform.getPosition()
+                    .add(velocity.set(vampyTransform.getPosition())
                             .sub(lastPosition)
                             .mul(Float.isFinite(correctedDelta) ? correctedDelta : 1)
                             .mul(1 - friction))
@@ -227,7 +241,7 @@ public class Game {
             lastPosition.set(currentPosition);
             vampyPosDelta.zero();
 
-            vampy.getTransform().applyRotation(quat -> quat.rotationY((float) toRadians(-camera.getYaw())));
+            vampyTransform.applyRotation(quat -> quat.rotationY(toRadians(camera.getYaw())));
 
             float diff = (controls.isPressed(Keys.W)
                     || controls.isPressed(Keys.A)
@@ -282,6 +296,8 @@ public class Game {
             vampyShader.setBoneMatrices(vampyAnimator.getTransformMatrices());
             vampyShader.setGlobalLight(globalLight);
 
+            shader.setUniformArray("globalLights", 0, globalLight);
+
             diff = thirdPerson ? 1 - perspectiveTransition : -perspectiveTransition;
             perspectiveTransition += (float) (diff * delta * 10);
             Vector3f orbitPosition = null, worldUp = null;
@@ -289,16 +305,16 @@ public class Game {
                 if (perspectiveTransition < 1) {
                     TransformC headTransform = vampyAnimator.getTransforms().get(vampyHeadNode.getBone().id());
                     Vector3f headAnimPosition = headTransform.getMatrix().transformPosition(vampyHeadBindPosition, new Vector3f());
-                    headAnimPosition.mul(vampy.getFinalTransform().getScale());
-                    Vector3f headAnimWorldPosition = vampy.getFinalTransform().getMatrix().transformPosition(headAnimPosition);
+                    headAnimPosition.mul(vampyFinalTransform.getScale());
+                    Vector3f headAnimWorldPosition = vampyFinalTransform.getMatrix().transformPosition(headAnimPosition);
 
                     orbitPosition = new Vector3f()
                             .add(headAnimWorldPosition)
                             .add(0, .22f, 0);
-                    worldUp = vampy.getFinalTransform().getRotation().transform(headTransform.getRotation().transform(new Vector3f(WORLD_UP)));
+                    worldUp = vampyFinalTransform.getRotation().transform(headTransform.getRotation().transform(new Vector3f(WORLD_UP)));
                 }
                 if (perspectiveTransition > 0) {
-                    Vector3f tpOrbitPosition = new Vector3f(vampy.getFinalTransform().getPosition())
+                    Vector3f tpOrbitPosition = new Vector3f(vampyFinalTransform.getPosition())
                             .add(0, 1.75f, 0)
                             .sub(camera.getDirection().mul(1.75f));
                     Vector3f tpWorldUp = new Vector3f(WORLD_UP);
@@ -312,14 +328,16 @@ public class Game {
             camera.setPosition(orbitPosition);
             camera.setWorldUp(worldUp);
 
+            //TODO tone map + gamma correct
             renderer.prepare();
 
             vampyShader.setViewPosition(camera.getPosition());
-            renderer.render(vampy.getTransform(), vampy, vampyShader, camera);
+            vampyFinalTransform.set(vampy.getInitialTransform()).compose(vampyTransform);
+            renderer.render(vampyFinalTransform, vampy, vampyShader, camera);
 //            vampyBB.getTransform().set(vampy.getTransform());
 //            renderer.renderWireframe(vampyBB, vampyShader, camera.getCombined());
 //            renderer.renderBox(vampy.getTransform().getPosition(), vampy.getBoundingBox().getSize().mul(.01f), vampyShader, camera.getCombined());
-            renderer.render(vampy.getTransform(), cube, vampyShader, camera);
+            renderer.render(cubeTransform, cube, shader, camera);
 
             window.update(delta);
 

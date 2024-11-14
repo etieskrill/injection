@@ -21,10 +21,12 @@ import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import static org.etieskrill.engine.config.ResourcePaths.TEXTURE_PATH;
 import static org.etieskrill.engine.graphics.model.Material.Property.SHININESS;
 import static org.etieskrill.engine.graphics.model.Material.Property.*;
 import static org.etieskrill.engine.graphics.texture.AbstractTexture.Type.*;
 import static org.etieskrill.engine.util.FileUtils.splitTypeFromPath;
+import static org.etieskrill.engine.util.ResourceReader.classpathResourceExists;
 import static org.lwjgl.assimp.Assimp.*;
 import static org.lwjgl.stb.STBImage.stbi_failure_reason;
 import static org.lwjgl.stb.STBImage.stbi_load_from_memory;
@@ -161,10 +163,10 @@ class MaterialLoader {
                             .setType(type)
                             .build();
                 };
-            } else if (Textures.exists(textureFile.getFullPath())) {
+            } else if (classpathResourceExists(TEXTURE_PATH + textureFile.getFullPath())) {
                 logger.trace("Texture '{}' is loaded from file {}", textureName, textureFile);
                 supplier = () -> Textures.ofFile(textureFile.getFullPath(), type);
-            } else if (Textures.exists(textureFile.getName())) {
+            } else if (classpathResourceExists(TEXTURE_PATH + textureFile.getName())) {
                 //TODO this is prone to breaking due to the undivided nature of model data/textures, should be proofed a bit more
                 logger.debug("Texture '{}' is loaded as fallback based on filename from file {}", textureFile.getName(), textureFile);
                 supplier = () -> Textures.ofFile(textureFile.getName(), type);
@@ -178,7 +180,7 @@ class MaterialLoader {
                         .get()
                         .build();
             } else {
-                logger.warn("Failed to find any texture for '{}' at {}", textureName, textureFile);
+                logger.warn("Failed to find any texture for '{}' at {}", textureName, textureFile.getFullPath());
                 continue;
             }
 

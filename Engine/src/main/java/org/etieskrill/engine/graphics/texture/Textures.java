@@ -66,7 +66,7 @@ public class Textures {
 
         //stbi_set_flip_vertically_on_load(true); the uv coords are already flipped while loading the models
         ByteBuffer textureData = stbi_load_from_memory(
-                ResourceReader.getRawClassPathResource(TEXTURE_PATH + file),
+                ResourceReader.getRawClasspathResource(TEXTURE_PATH + file),
                 bufferWidth, bufferHeight, bufferColourChannels, 0);
         if (textureData == null || !textureData.hasRemaining())
             throw new MissingResourceException("Texture %s could not be loaded:%n%s".formatted(file, stbi_failure_reason()),
@@ -77,10 +77,6 @@ public class Textures {
         AbstractTexture.Format format = AbstractTexture.Format.fromChannelsAndType(bufferColourChannels.get(), type);
 
         return new AbstractTexture.TextureData(textureData, new Vector2i(pixelWidth, pixelHeight), format);
-    }
-
-    public static boolean exists(String file) {
-        return null != Textures.class.getClassLoader().getResource(TEXTURE_PATH + file);
     }
 
     public static Texture2D ofFile(String file, AbstractTexture.Type type) {

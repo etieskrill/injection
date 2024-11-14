@@ -23,11 +23,15 @@ import static org.etieskrill.engine.config.ResourcePaths.ENGINE_RESOURCE_PATH;
 public class ResourceReader {
 
     public static InputStream getClasspathResourceAsStream(String name) {
-        return getResourceOrFromEngine(name);
+        return getResourceOrFromEngine(name, true, true);
+    }
+
+    public static InputStream getClasspathResourceAsStream(String name, boolean includeApplication, boolean includeEngine) {
+        return getResourceOrFromEngine(name, includeApplication, includeEngine);
     }
 
     public static String getClasspathResource(String name) {
-        InputStream inputStream = getResourceOrFromEngine(name);
+        InputStream inputStream = getResourceOrFromEngine(name, true, true);
 
         try (BufferedInputStream bis = new BufferedInputStream(inputStream)) {
             ByteArrayOutputStream buf = new ByteArrayOutputStream();
@@ -41,8 +45,8 @@ public class ResourceReader {
         }
     }
 
-    public static ByteBuffer getRawClassPathResource(String name) {
-        InputStream inputStream = getResourceOrFromEngine(name);
+    public static ByteBuffer getRawClasspathResource(String name) {
+        InputStream inputStream = getResourceOrFromEngine(name, true, true);
 
         try {
             byte[] bytes = inputStream.readAllBytes();
@@ -53,20 +57,20 @@ public class ResourceReader {
         }
     }
 
-    private static InputStream getResourceOrFromEngine(String name) {
-        InputStream inputStream = ClassLoader.getSystemResourceAsStream(name);
-        if (inputStream != null) {
+    private static InputStream getResourceOrFromEngine(String name, boolean includeApplication, boolean includeEngine) {
+        InputStream inputStream;
+
+        if (includeApplication && (inputStream = ClassLoader.getSystemResourceAsStream(name)) != null) {
             logger.trace("Loading {} from application classpath", name);
             return inputStream;
         }
 
-        inputStream = ClassLoader.getSystemResourceAsStream(ENGINE_RESOURCE_PATH + name);
-        if (inputStream == null) {
-            throw new ResourceLoadException("Could not load %s from classpath".formatted(name));
+        if (includeEngine && (inputStream = ClassLoader.getSystemResourceAsStream(ENGINE_RESOURCE_PATH + name)) != null) {
+            logger.trace("Loading {} from engine classpath", name);
+            return inputStream;
         }
 
-        logger.trace("Loading {} from engine classpath", name);
-        return inputStream;
+        throw new ResourceLoadException("Could not load %s from classpath".formatted(name));
     }
 
     /**
@@ -92,6 +96,11 @@ public class ResourceReader {
         } catch (IOException | URISyntaxException e) {
             throw new ResourceLoadException(e);
         }
+    }
+
+    public static boolean classpathResourceExists(String file) {
+        return null != ClassLoader.getSystemResource(file)
+               || null != ClassLoader.getSystemResource(ENGINE_RESOURCE_PATH + file);
     }
 
 }
