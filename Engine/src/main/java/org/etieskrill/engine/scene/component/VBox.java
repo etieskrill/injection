@@ -1,7 +1,7 @@
 package org.etieskrill.engine.scene.component;
 
-import org.joml.Vector2f;
 import org.jetbrains.annotations.NotNull;
+import org.joml.Vector2f;
 
 import java.util.List;
 

@@ -94,7 +94,7 @@ public class Application extends GameApplication {
         gridEntity.withComponent(new Transform());
 
         grid = new Model.Builder("grid.obj")
-                .disableCulling()
+                .setCulling(false)
                 .build();
         Drawable gridDrawable = new Drawable(grid);
         var gridShader = new ShaderProgram() {

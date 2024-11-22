@@ -198,9 +198,7 @@ public class RenderService implements Service, Disposable {
 
         Transform transform = targetEntity.getComponent(Transform.class);
         final Transform finalTransform = transform;
-        transform = cachedTransform.updateAndGet(t ->
-                t.set(finalTransform).compose(drawable.getModel().getInitialTransform())
-        );
+        transform = cachedTransform.updateAndGet(t -> t.set(finalTransform));
 
         WorldSpaceAABB aabb = targetEntity.getComponent(WorldSpaceAABB.class);
         if (aabb != null && !cullingCamera.frustumTestAABB(aabb)) {

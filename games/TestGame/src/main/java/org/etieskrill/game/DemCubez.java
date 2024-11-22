@@ -36,29 +36,29 @@ import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL33C.*;
 
 public class DemCubez {
-    
+
     private static final float TARGET_FPS = 60f;
-    
+
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private final ModelLoader modelLoader = new ModelLoader();
-    
+
     private volatile boolean wPressed, aPressed, sPressed, dPressed, spacePressed, shiftPressed, qPressed, ePressed,
             escPressed, escPressedPrev, ctrlPressed;
     private volatile boolean paused;
     private volatile double dPitch, dYaw, dRoll, prevMouseX, prevMouseY;
 
     private Window window;
-    
+
     private PerspectiveCamera camera;
     private LoopPacer pacer;
-    
+
     ShaderProgram containerShader;
     ShaderProgram lightShader;
     ShaderProgram swordShader;
     ShaderProgram backpackShader;
     ShaderProgram skyboxShader;
-    
+
     CubeMapModel skybox;
     Model[] models;
     List<Model> grassModels;
@@ -67,15 +67,15 @@ public class DemCubez {
     PointLight[] lights;
     Model sword;
     Model backpack;
-    
+
     Renderer renderer;
-    
+
     public DemCubez() {
         init();
         loop();
         terminate();
     }
-    
+
     private void init() {
 //        if (true) throw new RuntimeException("Will compile and run, but is currently broken"); //TODO fix
 
@@ -87,13 +87,13 @@ public class DemCubez {
                 .setTitle("DemCubez")
                 .build();
         logger.info("Window initialised");
-        
+
         glfwSetErrorCallback(((error, description) -> logger.warn("GLFW error {}: {}", error, description)));
-        
+
         if (!initGL()) throw new IllegalStateException("Could not initialise graphics settings");
         if (!initKeybinds()) throw new IllegalStateException("Could not initialise keybinds");
         if (!initMouse()) throw new IllegalStateException("Could not initialise mouse");
-    
+
         loadModels();
         loadShaders();
 
@@ -102,14 +102,14 @@ public class DemCubez {
                 .setPosition(new Vector3f(0f, 0f, 3f))
                 .setRotation(0f, -90f, 0f)
                 .setFar(-1000f);
-        
+
         initUI();
         window.show();
     }
 
     private boolean initGL() {
         GL.createCapabilities();
-        
+
 //        GLUtil.setupDebugMessageCallback(System.out); //TODO unbind when done
 //        GL33C.glViewport(0, 0, 1920, 1080); //this is apparently done ... somewhere behind the scenes?
 //
@@ -120,18 +120,18 @@ public class DemCubez {
 //        System.out.println(glGetInteger(GL_MAX_TEXTURE_IMAGE_UNITS));
 //        System.out.println(glGetInteger(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS));
 //        System.out.println(glGetInteger(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS));
-        
+
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LESS);
         glEnable(GL_STENCIL_TEST);
         glEnable(GL_BLEND);
-        
+
         glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
 
         return glGetError() == GL_NO_ERROR;
     }
-    
+
     private boolean initKeybinds() {
         window.addKeyInputs((type, key, action, modifiers) -> {
             switch (key) {
@@ -151,15 +151,15 @@ public class DemCubez {
             }
             return true;
         });
-        
+
         return glfwGetError(null) == GLFW_NO_ERROR;
     }
-    
+
     private boolean initMouse() {
         window.getCursor().setMode(CursorMode.DISABLED);
-        
+
         resetPreviousMousePosition();
-        
+
         float mouseSensitivity = 0.15f, zoomSensitivity = 0.5f;
         window.addCursorInputs(new CursorInputAdapter() {
             @Override
@@ -185,10 +185,10 @@ public class DemCubez {
                 return true;
             }
         });
-    
+
         return glfwGetError(null) == GLFW_NO_ERROR;
     }
-    
+
     private void resetPreviousMousePosition() {
         Vector2d mousePos = window.getCursor().getPosition();
         prevMouseX = (float) mousePos.x();
@@ -198,20 +198,20 @@ public class DemCubez {
     private void loop() {
         pacer = new SystemNanoTimePacer(1d / TARGET_FPS);
         pacer.start();
-        
+
         FrameBuffer frameBuffer = FrameBuffer.getStandard(
                 new Vector2i(window.getSize().getVec()));
         frameBuffer.unbind();
-        
+
         ShaderProgram screenShader = Shaders.getPostprocessingShader();
 
         FrameBufferAttachment attachment = frameBuffer.getAttachments().get(BufferAttachmentType.COLOUR0);
         Texture2D textureBuffer = (Texture2D) attachment;
         textureBuffer.bind(0);
-    
+
         Material mat = new Material.Builder().addTextures(textureBuffer).build();
         Model screenQuad = ModelFactory.rectangle(-1, -1, 2, 2, mat).build();
-        
+
         while (!window.shouldClose()) {
             //Toggle escape button and related behaviour
             if (escPressed && !escPressedPrev) {
@@ -220,8 +220,7 @@ public class DemCubez {
                 window.getCursor().enable();
                 window.getScene().show();
                 escPressedPrev = true;
-            }
-            else if (!escPressed && escPressedPrev) {
+            } else if (!escPressed && escPressedPrev) {
                 paused = false;
                 pacer.resumeTimer();
                 resetPreviousMousePosition();
@@ -229,15 +228,15 @@ public class DemCubez {
                 window.getScene().hide();
                 escPressedPrev = false;
             }
-    
+
             updatePlayerCamera();
-            
+
             updateModels();
-            
+
 //            frameBuffer.bind();
             renderModels();
 //            frameBuffer.unbind();
-            
+
 //            renderer.prepare();
 //            screenShader.start();
 //            screenShader.setUniform("sharpen", true);
@@ -249,26 +248,26 @@ public class DemCubez {
             glDisable(GL_FRAMEBUFFER_SRGB);
 
             window.update(pacer.getDeltaTimeSeconds());
-            
+
             if (pacer.getFramesElapsed() > TARGET_FPS) {
                 String fpsString = "%.3f".formatted(pacer.getAverageFPS());
                 logger.info("Current fps: {}", fpsString);
                 pacer.resetFrameCounter();
             }
-            
+
             pacer.nextFrame();
         }
     }
-    
+
     private void updatePlayerCamera() {
         if (!paused) {
             camera.rotate((float) dPitch, (float) dYaw, 0f);
             dPitch = 0f;
             dYaw = 0f;
         }
-        
+
         Vector3f deltaPosition = new Vector3f();
-    
+
         float camSpeed = !ctrlPressed ? 2f : 4f;
         if (wPressed) deltaPosition.add(new Vector3f(0f, 0f, 1f));
         if (sPressed) deltaPosition.add(new Vector3f(0f, 0f, -1f));
@@ -276,37 +275,37 @@ public class DemCubez {
         if (dPressed) deltaPosition.add(new Vector3f(1f, 0f, 0f));
         if (spacePressed) deltaPosition.add(new Vector3f(0f, -1f, 0f));
         if (shiftPressed) deltaPosition.add(new Vector3f(0f, 1f, 0f));
-    
+
         deltaPosition.normalize();
-    
+
         float delta = (float) pacer.getDeltaTimeSeconds();
         deltaPosition.mul(camSpeed).mul(delta);
         if (!paused) camera.translate(deltaPosition);
-    
+
         float camRollSpeed = 1f, camRoll = 0;
         if (qPressed) camRoll -= camRollSpeed;
         if (ePressed) camRoll += camRollSpeed;
-    
+
         dRoll = camRoll % 360;
         //up.set(new Mat3().rotateZ(Math.toRadians(roll)).mul(new Vector3f(0f, 1f, 0f)));
     }
-    
+
     private void loadModels() {
         skybox = new CubeMapModel("space");
-        
+
         Vector3f[] cubePositions = {
                 //new Vector3f( 0.0f,  0.0f,  0.0f),
-                new Vector3f( 2.0f,  5.0f, -15.0f),
+                new Vector3f(2.0f, 5.0f, -15.0f),
                 new Vector3f(-1.5f, -2.2f, -2.5f),
                 new Vector3f(-3.8f, -2.0f, -12.3f),
-                new Vector3f( 2.4f, -0.4f, -3.5f),
-                new Vector3f(-1.7f,  3.0f, -7.5f),
-                new Vector3f( 1.3f, -2.0f, -2.5f),
-                new Vector3f( 1.5f,  2.0f, -2.5f),
-                new Vector3f( 1.5f,  0.2f, -1.5f),
-                new Vector3f(-1.3f,  1.0f, -1.5f)
+                new Vector3f(2.4f, -0.4f, -3.5f),
+                new Vector3f(-1.7f, 3.0f, -7.5f),
+                new Vector3f(1.3f, -2.0f, -2.5f),
+                new Vector3f(1.5f, 2.0f, -2.5f),
+                new Vector3f(1.5f, 0.2f, -1.5f),
+                new Vector3f(-1.3f, 1.0f, -1.5f)
         };
-    
+
         models = new Model[cubePositions.length];
         Random random = new Random(69420);
         ModelLoader.get().load("cube", () -> Model.ofFile("cube.obj"));
@@ -332,21 +331,21 @@ public class DemCubez {
                                     random.nextFloat(-1f, 1f)))
                     );
         }
-    
+
         Vector3f[] grassPosition = {
-                new Vector3f(-1.5f,  0.0f, -0.48f),
-                new Vector3f( 1.5f,  0.0f,  0.51f),
-                new Vector3f( 0.0f,  0.0f,  0.7f),
-                new Vector3f(-0.3f,  0.0f, -2.3f),
-                new Vector3f( 0.5f,  0.0f, -0.6f)
+                new Vector3f(-1.5f, 0.0f, -0.48f),
+                new Vector3f(1.5f, 0.0f, 0.51f),
+                new Vector3f(0.0f, 0.0f, 0.7f),
+                new Vector3f(-0.3f, 0.0f, -2.3f),
+                new Vector3f(0.5f, 0.0f, -0.6f)
         };
         grassModels = new ArrayList<>(grassPosition.length);
         for (Vector3f position : grassPosition) {
             //TODO contemplate how to make copy on repeated load (so e.g. no individual transform) more obvious
             Model grassModel = ModelLoader.get().load("grass", () ->
                     new Model.Builder("grass.obj")
-                            .disableCulling()
-                            .hasTransparency()
+                            .setCulling(false)
+                            .hasTransparency(true)
                             .build());
             grassModel.getTransform().setPosition(position);
             grassModels.add(grassModel);
@@ -355,37 +354,33 @@ public class DemCubez {
         lightSources = new Model[2];
         for (int i = 0; i < lightSources.length; i++) {
             lightSources[i] = ModelLoader.get().load("light", () ->
-                            new Model.Builder("cube.obj")
-                                    .setName("light")
-                                    .setTransform(new Transform()
-                                            .setScale(0.2f)
-                                            .setPosition(new Vector3f(0f, 0f, -5f)))
-                                    .build());
+                    new Model.Builder("cube.obj")
+                            .setName("light")
+                            .build());
+            var lightSourceTransform = new Transform()
+                    .setScale(0.2f)
+                    .setPosition(new Vector3f(0f, 0f, -5f));
         }
 
-        sword = ModelLoader.get().load("sword", () ->
-                new Model.Builder("Sting-Sword.obj")
-                        .setTransform(new Transform(
-                                new Vector3f(0, 0, -2),
-                                new Quaternionf().rotateAxis((float) Math.toRadians(90), new Vector3f(1, 0, 0)),
-                                new Vector3f(0.1f)))
-                        .build()
-        );
-    
+        sword = ModelLoader.get().load("sword", () -> Model.ofFile("Sting-Sword.obj"));
+        var swordTransform = new Transform(
+                new Vector3f(0, 0, -2),
+                new Quaternionf().rotateAxis((float) Math.toRadians(90), new Vector3f(1, 0, 0)),
+                new Vector3f(0.1f));
+
         backpack = ModelLoader.get().load("backpack", () ->
-                new Model.Builder("backpack.obj")
-                        .setTransform(new Transform(
-                                new Vector3f(3, .5f, -2),
-                                new Quaternionf().rotateAxis((float) Math.toRadians(-90), new Vector3f(0, 1, 0)),
-                                new Vector3f(0.15f)))
-                        .build()
+                Model.ofFile("backpack.obj")
         );
-    
+        var backpackTransform = new Transform(
+                new Vector3f(3, .5f, -2),
+                new Quaternionf().rotateAxis((float) Math.toRadians(-90), new Vector3f(0, 1, 0)),
+                new Vector3f(0.15f));
+
         //These are essentially intensity factors
         //TODO isn't this kind of stupid? why would a light SOURCE have different kinds of intensities?
         globalLight = new DirectionalLight(new Vector3f(1),
                 new Vector3f(.01f), new Vector3f(.1f), new Vector3f(.2f));
-    
+
         lights = new PointLight[lightSources.length];
         for (int i = 0; i < lights.length; i++) {
             lights[i] = new PointLight(lightSources[i].getTransform().getPosition(),
@@ -393,7 +388,7 @@ public class DemCubez {
                     1f, .03f, .005f);
         }
     }
-    
+
     private void loadShaders() {
         containerShader = Shaders.getStandardShader();//getContainerShader();
         lightShader = Shaders.getLightSourceShader();
@@ -401,7 +396,7 @@ public class DemCubez {
         backpackShader = Shaders.getBackpackShader();
         skyboxShader = Shaders.getCubeMapShader();
     }
-    
+
     private void initUI() {
 //        Container container = new Container();
 //        //container.getLayout().setAlignment(Layout.Alignment.BOTTOM_RIGHT);
@@ -419,15 +414,15 @@ public class DemCubez {
 //        window.setScene(new Scene(new Batch(renderer), container, new OrthographicCamera(window.getSize().getVec())));
 //        window.getScene().hide();
     }
-    
+
     private void setShaderUniforms() {
         ShaderProgram[] doLighting = {containerShader, swordShader, backpackShader};
-        
+
         for (ShaderProgram shader : doLighting) {
             shader.setUniformArray("globalLights[$]", 0, globalLight);
             shader.setUniformArray("lights[$]", lights);
         }
-    
+
         //TODO consider passing fragment position to frag shader with view applied,
         // so this nonsense becomes unnecessary
         containerShader.setUniform("viewPosition", camera.getPosition());
@@ -437,10 +432,10 @@ public class DemCubez {
         swordShader.setUniform("time", (float) pacer.getTime(), false);
 
         backpackShader.setUniform("viewPosition", camera.getPosition());
-        
+
         lightShader.setUniform("light", lights[0]);
     }
-    
+
     private void updateModels() {
         double radius = 4f, speed = 50f, time = speed * pacer.getTime();
         Vector3f offset = new Vector3f(0f, 0f, -2f);
@@ -453,13 +448,13 @@ public class DemCubez {
             lightSources[0].getTransform().setPosition(new Vector3f(newLightSourcePos).add(offset));
             lightSources[1].getTransform().setPosition(newLightSourcePos.negate().add(offset));
         }
-    
+
         if (!paused) {
             for (Model cube : models)
                 cube.getTransform().getRotation().w = (cube.getTransform().getRotation().w() + .01f);
         }
     }
-    
+
     private void renderModels() {
         renderer.prepare();
 
@@ -491,24 +486,24 @@ public class DemCubez {
             renderer.render(grass.getTransform(), grass, containerShader, camera);
         }
     }
-    
+
     private void terminate() {
         containerShader.dispose();
         swordShader.dispose();
         backpackShader.dispose();
         lightShader.dispose();
         skyboxShader.dispose();
-    
+
         modelLoader.dispose();
-    
+
         glfwTerminate();
-        
+
         glFlush();
         GL.destroy();
     }
-    
+
     public static void main(String[] args) {
         new DemCubez();
     }
-    
+
 }

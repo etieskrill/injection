@@ -4,7 +4,6 @@ import org.etieskrill.engine.entity.Entity;
 import org.etieskrill.engine.entity.component.DirectionalLightComponent;
 import org.etieskrill.engine.entity.component.Drawable;
 import org.etieskrill.engine.entity.component.Transform;
-import org.etieskrill.engine.entity.component.TransformC;
 import org.etieskrill.engine.entity.service.Service;
 import org.etieskrill.engine.graphics.Renderer;
 import org.etieskrill.engine.graphics.animation.Animator;
@@ -76,7 +75,6 @@ public class DirectionalShadowMappingService implements Service {
             Transform transform = entity.getComponent(Transform.class);
             Drawable drawable = entity.getComponent(Drawable.class);
             if (transform == null || drawable == null) continue;
-            TransformC finalTransform = new Transform(transform).compose(drawable.getModel().getInitialTransform());
 
             Shaders.DepthShader shader = this.shader;
 
@@ -91,7 +89,7 @@ public class DirectionalShadowMappingService implements Service {
             }
 
             renderer.render(
-                    finalTransform,
+                    transform,
                     drawable.getModel(),
                     shader,
                     shadowMapComponent.getCamera()

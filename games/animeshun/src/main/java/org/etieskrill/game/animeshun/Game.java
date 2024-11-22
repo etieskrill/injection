@@ -62,7 +62,7 @@ public class Game {
 
     private Model vampy;
     private Model vampyBB;
-    private Transform vampyTransform, vampyFinalTransform;
+    private Transform vampyTransform;
 
     private Vector3f vampyPosDelta;
     private AnimationShader vampyShader;
@@ -140,14 +140,16 @@ public class Game {
         window.addCursorInputs(new CursorCameraController(camera));
 
         vampy = Loaders.ModelLoader.get().load("vampy", () ->
-                new Model.Builder("mixamo_walk_forward_skinned_vampire.dae").disableCulling().build());
-        vampy.getInitialTransform().setPosition(new Vector3f(2.5f, -1f, 0f));
-        vampyBB = Loaders.ModelLoader.get().load("vampyBB", () -> Model.ofFile("box.obj"));
-        vampyBB.getInitialTransform()
-                .set(vampy.getInitialTransform())
-                .setScale(vampy.getBoundingBox().getSize(new Vector3f()).mul(.01f));
+                new Model.Builder("mixamo_walk_forward_skinned_vampire.dae")
+                        .setInitialTransform(new Transform().setPosition(new Vector3f(0f, -1f, 0f)))
+                        .setCulling(false)
+                        .build());
+        vampyBB = Loaders.ModelLoader.get().load("vampyBB", () -> new Model.Builder("box.obj")
+                .setInitialTransform(new Transform()
+                        .setPosition(new Vector3f(2.5f, -1f, 0f))
+                        .setScale(vampy.getBoundingBox().getSize(new Vector3f()).mul(.01f)))
+                .build());
         vampyTransform = new Transform();
-        vampyFinalTransform = new Transform();
 
         vampyPosDelta = new Vector3f();
 
@@ -173,7 +175,7 @@ public class Game {
         vampyShader.setShowBoneSelector(boneSelector);
         vampyShader.setShowBoneWeights(showBoneWeights);
 
-        cube = Loaders.ModelLoader.get().load("cube", () -> new Model.Builder("cube.obj").disableCulling().build());
+        cube = Loaders.ModelLoader.get().load("cube", () -> new Model.Builder("cube.obj").setCulling(false).build());
         cubeTransform = new Transform().setScale(10).setPosition(new Vector3f(2, -6, 0));
 
         shader = Shaders.getStandardShader();
@@ -305,17 +307,17 @@ public class Game {
                 if (perspectiveTransition < 1) {
                     TransformC headTransform = vampyAnimator.getTransforms().get(vampyHeadNode.getBone().id());
                     Vector3f headAnimPosition = headTransform.getMatrix().transformPosition(vampyHeadBindPosition, new Vector3f());
-                    headAnimPosition.mul(vampyFinalTransform.getScale());
-                    Vector3f headAnimWorldPosition = vampyFinalTransform.getMatrix().transformPosition(headAnimPosition);
+                    headAnimPosition.mul(vampyTransform.getScale());
+                    Vector3f headAnimWorldPosition = vampyTransform.getMatrix().transformPosition(headAnimPosition);
 
                     orbitPosition = new Vector3f()
                             .add(headAnimWorldPosition)
                             .add(0, .22f, 0);
-                    worldUp = vampyFinalTransform.getRotation().transform(headTransform.getRotation().transform(new Vector3f(WORLD_UP)));
+                    worldUp = vampyTransform.getRotation().transform(headTransform.getRotation().transform(new Vector3f(WORLD_UP)));
                 }
                 if (perspectiveTransition > 0) {
-                    Vector3f tpOrbitPosition = new Vector3f(vampyFinalTransform.getPosition())
-                            .add(0, 1.75f, 0)
+                    Vector3f tpOrbitPosition = new Vector3f(vampyTransform.getPosition())
+                            .add(0, 1f, 0)
                             .sub(camera.getDirection().mul(1.75f));
                     Vector3f tpWorldUp = new Vector3f(WORLD_UP);
 
@@ -332,8 +334,7 @@ public class Game {
             renderer.prepare();
 
             vampyShader.setViewPosition(camera.getPosition());
-            vampyFinalTransform.set(vampy.getInitialTransform()).compose(vampyTransform);
-            renderer.render(vampyFinalTransform, vampy, vampyShader, camera);
+            renderer.render(vampyTransform, vampy, vampyShader, camera);
 //            vampyBB.getTransform().set(vampy.getTransform());
 //            renderer.renderWireframe(vampyBB, vampyShader, camera.getCombined());
 //            renderer.renderBox(vampy.getTransform().getPosition(), vampy.getBoundingBox().getSize().mul(.01f), vampyShader, camera.getCombined());

@@ -12,7 +12,7 @@ public class CubeMapModel extends Model {
                                 .addTextures(
                                         Textures.getSkybox(name))
                                 .build())
-                .disableCulling()
+                .setCulling(false)
                 .build());
     }
     

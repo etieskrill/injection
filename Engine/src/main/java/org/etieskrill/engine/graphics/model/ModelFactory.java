@@ -133,17 +133,20 @@ public class ModelFactory {
 
     @ApplicationDisposed
     public static Model box(Vector3f size) {
-        Model baseBox = Loaders.ModelLoader.get().load("internal-model-factory:box", () -> new Model.Builder("box.obj").disableCulling().build());
-        Model box = new Model(baseBox);
-        box.getInitialTransform().setScale(size);
-        return box;
+        Model baseBox = Loaders.ModelLoader.get().load("internal-model-factory:box", () ->
+                new Model.Builder("box.obj")
+                        .setInitialTransform(new Transform().setScale(size))
+                        .setCulling(false)
+                        .build());
+        return new Model(baseBox);
     }
 
     @ApplicationDisposed
     public static Model quadBox(Vector3f size) {
-        Model quadBox = Loaders.ModelLoader.get().load("internal-model-loader:quad-box", () -> new Model.Builder("quad-box.obj").build());
-        quadBox.getInitialTransform().setScale(size);
-        return quadBox;
+        return Loaders.ModelLoader.get().load("internal-model-loader:quad-box", () ->
+                new Model.Builder("quad-box.obj")
+                        .setInitialTransform(new Transform().setScale(size))
+                        .build());
     }
 
     //TODO probs fibonacci or subdivision, test with phong, gouraud and flat shading

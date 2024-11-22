@@ -52,7 +52,7 @@ public class PlayerEntity extends Entity {
 
         Model model = Loaders.ModelLoader.get().load("player", () ->
                 new Model.Builder("vampire.glb")
-                        .hasTransparency()
+                        .hasTransparency(true)
                         .optimiseMeshes()
                         .build());
         shader = new VampireShader();

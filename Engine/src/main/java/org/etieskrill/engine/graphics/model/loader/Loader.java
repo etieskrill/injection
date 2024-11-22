@@ -73,7 +73,7 @@ public class Loader {
 
         AIScene aiScene = importScene(
                 builder.getFile(),
-                new Importer.Options(builder.shouldFlipUVs(), builder.shouldFlipWinding())
+                new Importer.Options(builder.isFlipUVs(), builder.isFlipWinding())
         );
 
         timer.log("Import");
@@ -112,6 +112,9 @@ public class Loader {
 
         Matrix4fc transformationMatrix = AssimpUtils.fromAI(aiNode.mTransformation());
         Transform transform = Transform.fromMatrix4f(transformationMatrix);
+//        if (aiNode.mParent() == null && builder.getInitialTransform() != null) { //FIXME see Model#Model()
+//            transform = new Transform(builder.getInitialTransform()).compose(transform);
+//        }
 
         Bone bone = builder.getBones().stream()
                 .filter(_bone -> _bone.name().equals(nodeName))

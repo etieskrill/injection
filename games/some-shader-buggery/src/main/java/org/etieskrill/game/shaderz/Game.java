@@ -60,7 +60,7 @@ public class Game {
                 new CursorCameraController(camera, .05, 0)
         );
 
-        hallway = new Model.Builder("scifi-hallway.glb").disableCulling().build(); //TODO implement per-mesh culling, then enable here
+        hallway = new Model.Builder("scifi-hallway.glb").setCulling(false).build(); //TODO implement per-mesh culling, then enable here
 
         sun = Model.ofFile("box.obj");
         sun.getTransform().setScale(0).setPosition(new Vector3f(0, 10, 0));

@@ -1,7 +1,9 @@
 package org.etieskrill.engine.graphics.gl.renderer;
 
+import lombok.Getter;
 import org.etieskrill.engine.ApplicationDisposed;
 import org.etieskrill.engine.Disposable;
+import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.entity.component.TransformC;
 import org.etieskrill.engine.graphics.Renderer;
 import org.etieskrill.engine.graphics.TextRenderer;
@@ -94,27 +96,19 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
     }
 
     @ApplicationDisposed
-    private Model box;
-
-    private Model getBox() {
-        if (box == null) box = ModelFactory.box(new Vector3f(1));
-        return box;
-    }
+    @Getter(lazy = true)
+    private final Model box = ModelFactory.box(new Vector3f(1));
+    private final @Getter(lazy = true) Transform boxTransform = new Transform();
 
     @Override
     public void renderBox(Vector3fc position, Vector3fc size, ShaderProgram shader, Matrix4fc combined) {
-        getBox().getTransform().setPosition(position).setScale(size);
-        _render(getBox().getTransform(), getBox(), shader, combined);
+        getBoxTransform().setPosition(position).setScale(size);
+        _render(getBoxTransform(), getBox(), shader, combined);
     }
 
     //TODO update spec: all factory methods use loaders by default, constructors/builders do not
-    private static ShaderProgram outlineShader;
-
-    private static ShaderProgram getOutlineShader() {
-        if (outlineShader == null)
-            outlineShader = Shaders.getOutlineShader();
-        return outlineShader;
-    }
+    @Getter(lazy = true)
+    private static final ShaderProgram outlineShader = Shaders.getOutlineShader();
 
     //TODO add outline & wireframe as flag in render
     public void renderOutline(Model model, ShaderProgram shader, Camera camera) {
@@ -323,7 +317,7 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
     @Override
     public void dispose() {
         super.dispose();
-        outlineShader.dispose();
+        getOutlineShader().dispose();
     }
 
 }

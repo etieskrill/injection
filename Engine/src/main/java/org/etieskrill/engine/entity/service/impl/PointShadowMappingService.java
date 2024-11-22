@@ -4,7 +4,6 @@ import org.etieskrill.engine.entity.Entity;
 import org.etieskrill.engine.entity.component.Drawable;
 import org.etieskrill.engine.entity.component.PointLightComponent;
 import org.etieskrill.engine.entity.component.Transform;
-import org.etieskrill.engine.entity.component.TransformC;
 import org.etieskrill.engine.entity.service.Service;
 import org.etieskrill.engine.graphics.Renderer;
 import org.etieskrill.engine.graphics.animation.Animator;
@@ -76,8 +75,7 @@ public class PointShadowMappingService implements Service {
                 shader.setUniformArrayNonStrict("boneMatrices", animator.getTransformMatricesArray());
             }
 
-            TransformC finalTransform = new Transform(transform).compose(drawable.getModel().getInitialTransform());
-            renderer.render(finalTransform, drawable.getModel(), shader, DUMMY_MATRIX);
+            renderer.render(transform, drawable.getModel(), shader, DUMMY_MATRIX);
         }
         component.getShadowMap().unbind();
     }
