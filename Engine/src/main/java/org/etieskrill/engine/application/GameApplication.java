@@ -13,6 +13,8 @@ import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.window.Window;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.lwjgl.opengl.GL;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayDeque;
 
@@ -34,8 +36,12 @@ public abstract class GameApplication {
     private double avgCpuTime;
     private final ArrayDeque<Double> cpuTimes;
 
+    private static final Logger logger;
+
     static {
         InjectionConfig.init();
+        logger = LoggerFactory.getLogger(GameApplication.class);
+        logger.info("Loaded static application configuration");
     }
 
     public GameApplication(Window window) {
@@ -54,11 +60,17 @@ public abstract class GameApplication {
         this.entitySystem = new EntitySystem();
         this.cpuTimes = new FixedArrayDeque<>((int) window.getRefreshRate());
 
+        logger.info("Initialised window configuration");
+
         try {
             init();
+            logger.info("Initialised application");
             _loop();
+        } catch (Exception e) {
+            logger.warn("Caught application exception", e);
         } finally {
             terminate();
+            logger.info("Terminated application");
         }
     }
 

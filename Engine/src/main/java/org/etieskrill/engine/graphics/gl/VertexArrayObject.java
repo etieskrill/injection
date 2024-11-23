@@ -3,10 +3,11 @@ package org.etieskrill.engine.graphics.gl;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.experimental.Delegate;
-import lombok.extern.slf4j.Slf4j;
 import org.etieskrill.engine.Disposable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.Collection;
@@ -20,7 +21,6 @@ import static org.lwjgl.opengl.GL30C.*;
 /**
  * @param <T> type of vertex data
  */
-@Slf4j
 @Getter
 public class VertexArrayObject<T> implements Disposable {
 
@@ -31,6 +31,8 @@ public class VertexArrayObject<T> implements Disposable {
     private final @Nullable BufferObject indexBuffer;
 
     private final @Delegate VertexArrayAccessor<T> accessor;
+
+    private static final Logger logger = LoggerFactory.getLogger(VertexArrayObject.class);
 
     @SuppressWarnings("unchecked")
     public static <T> VertexArrayObjectBuilder<T> builder(VertexArrayAccessor<T> accessor) {

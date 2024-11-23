@@ -10,9 +10,9 @@ import java.util.function.Supplier;
 
 public abstract class Loader<T> {
 
-    protected Logger logger = LoggerFactory.getLogger(getClass());
-
     protected final Map<String, T> map = new HashMap<>();
+
+    private static final Logger logger = LoggerFactory.getLogger(Loader.class);
 
     public T load(String name, Supplier<T> supplier) {
         Objects.requireNonNull(supplier, "Supplier must not be null");

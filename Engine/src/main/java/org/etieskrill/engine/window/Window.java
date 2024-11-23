@@ -44,7 +44,7 @@ public class Window implements Disposable {
     static final int MIN_GL_CONTEXT_MAJOR_VERSION = 3;
     static final int MIN_GL_CONTEXT_MINOR_VERSION = 3;
 
-    static {
+    static { //TODO maybe remove in favour of GameApplication?
         InjectionConfig.init();
     }
 
@@ -71,6 +71,10 @@ public class Window implements Disposable {
     private @Getter Scene scene;
 
     private boolean built = false;
+
+    public static WindowBuilder builder() {
+        return new WindowBuilder();
+    }
 
     public enum WindowMode {
         FULLSCREEN,
@@ -139,6 +143,56 @@ public class Window implements Disposable {
         private WindowBuilder() {
             this.keyInputs = new ArrayList<>();
             this.cursorInputs = new ArrayList<>();
+        }
+
+        public WindowBuilder setMode(WindowMode mode) {
+            this.mode = mode;
+            return this;
+        }
+
+        public WindowBuilder setSize(WindowSize size) {
+            this.size = size;
+            return this;
+        }
+
+        public WindowBuilder setPosition(Vector2f position) {
+            this.position = position;
+            return this;
+        }
+
+        public WindowBuilder setRefreshRate(float refreshRate) {
+            this.refreshRate = refreshRate;
+            return this;
+        }
+
+        public WindowBuilder setVSyncEnabled(boolean vSyncEnabled) {
+            this.vSyncEnabled = vSyncEnabled;
+            return this;
+        }
+
+        public WindowBuilder setSamples(int samples) {
+            this.samples = samples;
+            return this;
+        }
+
+        public WindowBuilder setTitle(String title) {
+            this.title = title;
+            return this;
+        }
+
+        public WindowBuilder setCursor(Cursor cursor) {
+            this.cursor = cursor;
+            return this;
+        }
+
+        public WindowBuilder setKeyInputs(List<KeyInputHandler> keyInputs) {
+            this.keyInputs = keyInputs;
+            return this;
+        }
+
+        public WindowBuilder setCursorInputs(List<CursorInputHandler> cursorInputs) {
+            this.cursorInputs = cursorInputs;
+            return this;
         }
 
         public WindowBuilder setKeyInputHandlers(KeyInputHandler... keyInputs) {
@@ -242,7 +296,7 @@ public class Window implements Disposable {
             if (videoMode == null) {
                 throw new IllegalStateException("Cannot auto-size window as video mode for monitor could not be retrieved");
             }
-            
+
             size = WindowSize.getLargestFit(videoMode.width(), videoMode.height());
         }
 

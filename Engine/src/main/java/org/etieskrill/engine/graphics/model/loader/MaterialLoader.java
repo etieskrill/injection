@@ -1,6 +1,5 @@
 package org.etieskrill.engine.graphics.model.loader;
 
-import lombok.extern.slf4j.Slf4j;
 import org.etieskrill.engine.graphics.model.Material;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
@@ -16,6 +15,8 @@ import org.joml.Vector4fc;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.assimp.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.Map;
@@ -31,8 +32,9 @@ import static org.lwjgl.assimp.Assimp.*;
 import static org.lwjgl.stb.STBImage.stbi_failure_reason;
 import static org.lwjgl.stb.STBImage.stbi_load_from_memory;
 
-@Slf4j
 class MaterialLoader {
+
+    private static final Logger logger = LoggerFactory.getLogger(MaterialLoader.class);
 
     private static final StepTimer timer = new StepTimer(logger);
 

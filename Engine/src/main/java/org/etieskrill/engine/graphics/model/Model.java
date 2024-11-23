@@ -175,6 +175,8 @@ public class Model implements Disposable {
             var transform = ((Transform) builder.getNodes().getFirst().getTransform());
             var initialTransform = new Transform(builder.getInitialTransform()).compose(transform);
             transform.set(initialTransform);
+
+            builder.getBoundingBox().transform(builder.getInitialTransform().getMatrix());
         }
 
         this.nodes = Collections.unmodifiableList(builder.nodes);

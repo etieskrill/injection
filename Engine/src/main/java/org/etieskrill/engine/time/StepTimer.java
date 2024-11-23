@@ -1,13 +1,14 @@
 package org.etieskrill.engine.time;
 
-import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-@Slf4j
 public class StepTimer {
 
     private long time = 0;
     private final Logger targetLogger;
+
+    private static final Logger logger = LoggerFactory.getLogger(StepTimer.class);
 
     public StepTimer() {
         this(logger);

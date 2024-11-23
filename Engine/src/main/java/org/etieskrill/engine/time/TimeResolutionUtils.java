@@ -23,6 +23,7 @@ public class TimeResolutionUtils {
                     }
                 }
             }
+            default -> throw new UnsupportedOperationException("Unsupported platform: " + Platform.get());
         }
     }
 
@@ -39,6 +40,7 @@ public class TimeResolutionUtils {
                     }
                 }
             }
+            default -> throw new UnsupportedOperationException("Unsupported platform: " + Platform.get());
         }
     }
 

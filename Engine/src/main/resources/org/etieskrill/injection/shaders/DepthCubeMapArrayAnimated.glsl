@@ -9,6 +9,8 @@ layout (location = 0) in vec3 a_Position;
 layout (location = 5) in ivec4 a_BoneIds;
 layout (location = 6) in vec4 a_BoneWeights;
 
+//FIXME e.g. horde3d - zombie has correct shadows whether mesh transform is included or not, while player does not??? - same for other animated depth shaders
+//uniform mat4 mesh;
 uniform mat4 model;
 uniform mat4 combined;
 

@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'java-library'
+    id 'io.freefair.lombok' version '8.11'
 }
 
 java {
@@ -9,7 +10,13 @@ java {
     }
 }
 
+kotlin {
+    jvmToolchain(21)
+}
+
 dependencies {
+    api "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.0.0"
+
     //LWJGL native interfaces
     implementation platform("org.lwjgl:lwjgl-bom:$lwjglVersion")
 
@@ -47,6 +54,7 @@ dependencies {
     testImplementation "org.junit.jupiter:junit-jupiter:$junitVersion"
     testImplementation "org.hamcrest:hamcrest:$hamcrestVersion"
     testImplementation "org.mockito:mockito-junit-jupiter:$mockitoVersion"
+    testImplementation 'org.jetbrains.kotlin:kotlin-test:2.0.21'
 }
 
 test {

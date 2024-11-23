@@ -1,8 +1,9 @@
 package org.etieskrill.engine.util;
 
-import lombok.extern.slf4j.Slf4j;
 import org.etieskrill.engine.common.ResourceLoadException;
 import org.lwjgl.BufferUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
@@ -19,8 +20,9 @@ import java.util.List;
 
 import static org.etieskrill.engine.config.ResourcePaths.ENGINE_RESOURCE_PATH;
 
-@Slf4j
 public class ResourceReader {
+
+    private static final Logger logger = LoggerFactory.getLogger(ResourceReader.class);
 
     public static InputStream getClasspathResourceAsStream(String name) {
         return getResourceOrFromEngine(name, true, true);

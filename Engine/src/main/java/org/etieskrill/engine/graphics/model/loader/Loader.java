@@ -1,6 +1,5 @@
 package org.etieskrill.engine.graphics.model.loader;
 
-import lombok.extern.slf4j.Slf4j;
 import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.graphics.animation.Animation;
 import org.etieskrill.engine.graphics.animation.BoneMatcher;
@@ -15,6 +14,8 @@ import org.joml.primitives.AABBf;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.assimp.AINode;
 import org.lwjgl.assimp.AIScene;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.IntBuffer;
@@ -30,7 +31,6 @@ import static org.etieskrill.engine.graphics.model.loader.MaterialLoader.loadMat
 import static org.etieskrill.engine.graphics.model.loader.MeshProcessor.loadMeshes;
 import static org.lwjgl.assimp.Assimp.*;
 
-@Slf4j
 public class Loader {
 
     public static final BoneMatcher DEFAULT_BONE_MATCHER = (modelBone, animBone) -> {
@@ -38,6 +38,8 @@ public class Loader {
         return modelBone.replace("_", "").replace(":", "")
                 .equals(animBone.replace("_", "").replace(":", ""));
     };
+
+    private static final Logger logger = LoggerFactory.getLogger(Loader.class);
 
     private static final StepTimer timer = new StepTimer(logger);
 

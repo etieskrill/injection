@@ -1,4 +1,6 @@
 module injection.engine {
+    requires kotlin.stdlib;
+
     requires org.lwjgl.assimp;
     requires org.lwjgl.freetype;
     requires org.lwjgl.glfw;
@@ -22,16 +24,20 @@ module injection.engine {
     exports org.etieskrill.engine.entity.service;
     exports org.etieskrill.engine.entity.service.impl;
     exports org.etieskrill.engine.entity.system;
+    exports org.etieskrill.engine.graphics;
     exports org.etieskrill.engine.graphics.camera;
     exports org.etieskrill.engine.graphics.data;
     exports org.etieskrill.engine.graphics.gl;
     exports org.etieskrill.engine.graphics.gl.framebuffer;
+    exports org.etieskrill.engine.graphics.gl.renderer;
     exports org.etieskrill.engine.graphics.gl.shader;
+    exports org.etieskrill.engine.graphics.model;
     exports org.etieskrill.engine.graphics.texture;
     exports org.etieskrill.engine.graphics.texture.animation;
     exports org.etieskrill.engine.input;
     exports org.etieskrill.engine.input.action;
     exports org.etieskrill.engine.input.controller;
+    exports org.etieskrill.engine.scene;
     exports org.etieskrill.engine.time;
     exports org.etieskrill.engine.util;
     exports org.etieskrill.engine.window;

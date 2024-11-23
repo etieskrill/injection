@@ -7,6 +7,8 @@ import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.etieskrill.engine.graphics.texture.font.Font;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class Loaders {
 
@@ -47,6 +49,7 @@ public final class Loaders {
      */
     public static final class ModelLoader extends DisposableLoader<Model> {
         private static ModelLoader instance;
+        private static final Logger logger = LoggerFactory.getLogger(ModelLoader.class);
 
         public static ModelLoader get() {
             if (instance == null)

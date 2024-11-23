@@ -1,6 +1,5 @@
 package org.etieskrill.engine.graphics.gl.renderer;
 
-import lombok.extern.slf4j.Slf4j;
 import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.gl.VertexArrayObject;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
@@ -11,6 +10,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -18,7 +19,6 @@ import java.util.Set;
 import static java.util.Objects.requireNonNullElse;
 import static org.lwjgl.opengl.GL11C.*;
 
-@Slf4j
 public class GLParticleRenderer implements ParticleRenderer {
 
     public static final int MAX_PARTICLES = 10_000;
@@ -29,6 +29,8 @@ public class GLParticleRenderer implements ParticleRenderer {
     private final ShaderProgram particleShader;
 
     private final Set<ParticleEmitter> invalidEmitters;
+
+    private static final Logger logger = LoggerFactory.getLogger(GLParticleRenderer.class);
 
     //TODO render stats
     public GLParticleRenderer() {
