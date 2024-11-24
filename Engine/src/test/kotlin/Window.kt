@@ -14,10 +14,6 @@ class Window {
     @Test
     fun shouldLoadModel() {
         val model = Model.ofFile("backpack.obj")
-        println(model.name)
-        println(model.nodes)
-        println(model.boundingBox)
-        println(model.hasTransparency())
     }
 
 }

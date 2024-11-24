@@ -25,6 +25,7 @@ module injection.engine {
     exports org.etieskrill.engine.entity.service.impl;
     exports org.etieskrill.engine.entity.system;
     exports org.etieskrill.engine.graphics;
+    exports org.etieskrill.engine.graphics.animation;
     exports org.etieskrill.engine.graphics.camera;
     exports org.etieskrill.engine.graphics.data;
     exports org.etieskrill.engine.graphics.gl;

@@ -27,10 +27,10 @@ public class Input {
     
     //TODO this is basically a builder, so label it as such
     public static final class BindPassOn {
-        private final Key binding;
-        
-        private InputBinding.Trigger trigger = InputBinding.Trigger.ON_PRESS;
-        private OverruleGroup group;
+        public final Key binding;
+
+        public InputBinding.Trigger trigger = InputBinding.Trigger.ON_PRESS;
+        public OverruleGroup group;
 
         private BindPassOn(Key binding) {
             this.binding = binding;

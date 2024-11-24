@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Stack;
 
 @Getter
-@ToString(exclude = {"parent"})
+@ToString(exclude = {"parent", "children"})
 public final class Node implements Disposable {
 
     private final String name;
