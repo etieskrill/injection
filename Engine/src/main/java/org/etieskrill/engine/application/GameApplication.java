@@ -1,5 +1,6 @@
 package org.etieskrill.engine.application;
 
+import lombok.Getter;
 import org.etieskrill.engine.config.InjectionConfig;
 import org.etieskrill.engine.entity.system.EntitySystem;
 import org.etieskrill.engine.graphics.gl.renderer.GLRenderer;
@@ -16,6 +17,7 @@ import org.lwjgl.opengl.GL;
 
 import java.util.ArrayDeque;
 
+import static lombok.AccessLevel.PROTECTED;
 import static org.etieskrill.engine.time.TimeResolutionUtils.resetSystemTimeResolution;
 import static org.etieskrill.engine.time.TimeResolutionUtils.setSystemTimeResolution;
 import static org.lwjgl.glfw.GLFW.glfwTerminate;
@@ -29,9 +31,9 @@ public abstract class GameApplication {
 
     protected final GLRenderer renderer;
 
-    protected final EntitySystem entitySystem;
+    protected final @Getter EntitySystem entitySystem;
 
-    private double avgCpuTime;
+    private @Getter(PROTECTED) double avgCpuTime;
     private final ArrayDeque<Double> cpuTimes;
 
     static {
@@ -105,10 +107,6 @@ public abstract class GameApplication {
         TrueTypeFont.disposeLibrary();
         GL.destroy();
         glfwTerminate();
-    }
-
-    protected double getAvgCpuTime() {
-        return avgCpuTime;
     }
 
 }

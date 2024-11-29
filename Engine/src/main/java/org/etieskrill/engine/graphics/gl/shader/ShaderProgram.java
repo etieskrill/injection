@@ -368,7 +368,7 @@ public abstract class ShaderProgram implements Disposable {
             throw new ShaderUniformException("Attempted to set unregistered uniform in strict mode", name);
 
         if (!unregisteredUniforms.contains(name)) {
-            logger.debug("Setting unregistered uniform '{}'", name);
+            logger.trace("Setting unregistered uniform '{}'", name);
             unregisteredUniforms.add(name);
         }
 

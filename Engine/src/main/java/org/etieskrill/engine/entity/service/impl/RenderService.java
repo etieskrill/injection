@@ -196,6 +196,8 @@ public class RenderService implements Service, Disposable {
         Drawable drawable = targetEntity.getComponent(Drawable.class);
         if (!drawable.isVisible()) return;
 
+        System.out.println("is visible and enabled: " + targetEntity);
+
         Transform transform = targetEntity.getComponent(Transform.class);
         final Transform finalTransform = transform;
         transform = cachedTransform.updateAndGet(t ->
@@ -203,10 +205,11 @@ public class RenderService implements Service, Disposable {
         );
 
         WorldSpaceAABB aabb = targetEntity.getComponent(WorldSpaceAABB.class);
-        if (aabb != null && !cullingCamera.frustumTestAABB(aabb)) {
+        if (aabb != null && !cullingCamera.frustumTestAABB(aabb)) { //TODO check if relevant service is even present
             return;
         }
 
+        System.out.println("drawing: " + targetEntity);
         ShaderProgram shader = getConfiguredShader(targetEntity, drawable);
         if (!drawable.isDrawWireframe()) {
             renderer.render(transform, drawable.getModel(), shader, camera);
@@ -225,7 +228,7 @@ public class RenderService implements Service, Disposable {
 
         DirectionalLightComponent directionalLightComponent = entity.getComponent(DirectionalLightComponent.class);
         PointLightComponent pointLightComponent = entity.getComponent(PointLightComponent.class);
-        if (directionalLightComponent != null) {
+        if (directionalLightComponent != null) { //TODO decorator or something instead of hardcoded??
             lightSourceShader.setLight(directionalLightComponent.getDirectionalLight());
             return lightSourceShader;
         } else if (pointLightComponent != null) {
