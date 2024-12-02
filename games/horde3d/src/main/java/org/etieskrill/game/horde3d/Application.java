@@ -40,6 +40,7 @@ import static org.etieskrill.engine.graphics.texture.AbstractTexture.Type.*;
 import static org.lwjgl.opengl.GL11C.*;
 import static org.lwjgl.opengl.GL30C.GL_FRAMEBUFFER_SRGB;
 
+//FIXME
 public class Application extends GameApplication {
 
     private static final int FRAME_RATE = 60;

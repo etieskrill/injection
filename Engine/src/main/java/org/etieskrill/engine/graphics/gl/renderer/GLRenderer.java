@@ -13,6 +13,7 @@ import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shader.Shaders;
 import org.etieskrill.engine.graphics.model.*;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
+import org.etieskrill.engine.util.Loaders;
 import org.joml.*;
 import org.lwjgl.system.MemoryStack;
 
@@ -108,7 +109,7 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
 
     //TODO update spec: all factory methods use loaders by default, constructors/builders do not
     @Getter(lazy = true)
-    private static final ShaderProgram outlineShader = Shaders.getOutlineShader();
+    private static final ShaderProgram outlineShader = Loaders.ShaderLoader.get().load("outline", Shaders::getOutlineShader);
 
     //TODO add outline & wireframe as flag in render
     public void renderOutline(Model model, ShaderProgram shader, Camera camera) {
@@ -312,12 +313,6 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
         if (material.getPropertyOrDefault(TWO_SIDED, false)) {
             glEnable(GL_CULL_FACE);
         }
-    }
-
-    @Override
-    public void dispose() {
-        super.dispose();
-        getOutlineShader().dispose();
     }
 
 }

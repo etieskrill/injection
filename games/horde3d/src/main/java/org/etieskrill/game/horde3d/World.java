@@ -53,17 +53,11 @@ public class World {
         floorDrawable.setTextureScale(new Vector2f(15));
         floor.withComponent(floorDrawable);
 
-        floor.withComponent(new Transform().setPosition(new Vector3f(0, -1, 0)));
-
-        var floorAABB = floorModel.getBoundingBox();
-        floor.withComponent(floorModel.getBoundingBox());
-//        floor.withComponent(new AABBf(
-//                new Vector3f(floorAABB.minX(), floorAABB.minY(), floorAABB.minZ()).mul(floorModel.getInitialTransform().getScale()),
-//                new Vector3f(floorAABB.maxX(), floorAABB.maxY(), floorAABB.maxZ()).mul(floorModel.getInitialTransform().getScale())
-//        ));
-        floor.withComponent(new WorldSpaceAABB());
-
-        floor.withComponent(new StaticCollider());
+        floor
+                .withComponent(new Transform().setPosition(new Vector3f(0, -1, 0)))
+                .withComponent(floorModel.getBoundingBox())
+                .withComponent(new WorldSpaceAABB())
+                .withComponent(new StaticCollider());
 
         Model sphere = MODELS.load("sphere", () ->
                 new Model.Builder("Sphere.obj")
@@ -99,9 +93,9 @@ public class World {
                                     .mul(2).sub(1, 1, 1)
                                     .normalize()))
                     .setScale(3));
-            cube.withComponent(new Drawable(cubeModel));
-            cube.withComponent(cubeModel.getBoundingBox());
-            cube.withComponent(new WorldSpaceAABB());
+            cube.withComponent(new Drawable(cubeModel))
+                    .withComponent(cubeModel.getBoundingBox())
+                    .withComponent(new WorldSpaceAABB());
             if (i == 1) {
                 cube.withComponent(new DynamicCollider(new Vector3f(transform.getPosition())));
             } else {

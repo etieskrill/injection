@@ -4,7 +4,6 @@ import lombok.Builder;
 import lombok.Getter;
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.config.GLContextConfig;
-import org.etieskrill.engine.config.InjectionConfig;
 import org.etieskrill.engine.graphics.gl.GLUtils;
 import org.etieskrill.engine.input.*;
 import org.etieskrill.engine.scene.Scene;
@@ -43,10 +42,6 @@ public class Window implements Disposable {
 
     static final int MIN_GL_CONTEXT_MAJOR_VERSION = 3;
     static final int MIN_GL_CONTEXT_MINOR_VERSION = 3;
-
-    static { //TODO maybe remove in favour of GameApplication?
-        InjectionConfig.init();
-    }
 
     public static boolean USE_RAW_MOUSE_MOTION_IF_AVAILABLE = true;
 

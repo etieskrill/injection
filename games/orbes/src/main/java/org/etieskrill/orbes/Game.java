@@ -1,42 +1,26 @@
 package org.etieskrill.orbes;
 
+import org.etieskrill.engine.application.GameApplication;
+import org.etieskrill.engine.entity.service.impl.BoundingBoxRenderService;
+import org.etieskrill.engine.entity.service.impl.BoundingBoxService;
+import org.etieskrill.engine.entity.service.impl.RenderService;
 import org.etieskrill.engine.graphics.Batch;
-import org.etieskrill.engine.graphics.Renderer;
 import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.camera.OrthographicCamera;
 import org.etieskrill.engine.graphics.gl.GLUtils;
-import org.etieskrill.engine.graphics.gl.framebuffer.FrameBuffer;
-import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment.BufferAttachmentType;
-import org.etieskrill.engine.graphics.gl.renderer.GLRenderer;
-import org.etieskrill.engine.graphics.gl.shader.Shaders;
-import org.etieskrill.engine.graphics.model.Material;
-import org.etieskrill.engine.graphics.model.Model;
-import org.etieskrill.engine.graphics.model.ModelFactory;
-import org.etieskrill.engine.graphics.texture.Texture2D;
-import org.etieskrill.engine.graphics.texture.font.TrueTypeFont;
 import org.etieskrill.engine.time.LoopPacer;
-import org.etieskrill.engine.time.SystemNanoTimePacer;
-import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.window.Window;
 import org.etieskrill.orbes.scene.*;
 import org.jetbrains.annotations.VisibleForTesting;
-import org.joml.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.lang.Math;
+import org.joml.Vector2f;
+import org.joml.Vector2i;
+import org.joml.Vector2ic;
+import org.joml.Vector3f;
 
 import static org.etieskrill.orbes.Game.Stage.*;
 
-public class Game {
-
-    private static final Logger logger = LoggerFactory.getLogger(Game.class);
-
-    private LoopPacer pacer;
-
-    private Window window;
-
-    private Renderer renderer = new GLRenderer();
+//FIXME
+public class Game extends GameApplication {
 
     private static final double MAX_TIME = 40.0;
 
@@ -56,13 +40,58 @@ public class Game {
     }
 
     public Game() {
-        setupWindow();
+        super(Window.builder()
+                .setRefreshRate(0)
+                .setMode(Window.WindowMode.BORDERLESS)
+                .setTitle("Walk")
+                .build());
+    }
+
+    @Override
+    protected void init() {
+        GLUtils.addDebugLogging();
         setupUI();
         this.gameScene = new GameScene(this);
 
-        GLUtils.addDebugLogging();
-        loop();
-        exit();
+//        Material mat = new Material.Builder() //TODO okay, the fact models, or rather meshes simply ignore these mats is getting frustrating now, that builder needs some serious rework
+//                .addTextures((Texture2D) postBuffer.getAttachment(BufferAttachmentType.COLOUR0))
+//                .build();
+        Vector3f unpauseColour = new Vector3f(1.0f), pauseColour = new Vector3f(0.65f);
+
+        showMainMenu();
+
+        entitySystem.addServices(
+                new BoundingBoxService(),
+                new RenderService(renderer, gameScene.getCamera(), window.getSize().getVec()),
+                new BoundingBoxRenderService(renderer, gameScene.getCamera())
+        );
+    }
+
+    private void setupUI() {
+        Vector2ic windowSize = window.getSize().getVec();
+
+        mainMenuScene = new MainMenuUIScene(
+                new Batch(renderer),
+                new OrthographicCamera(new Vector2i(windowSize)),
+                this
+        );
+
+        gameUIScene = new GameUIScene(
+                new Batch(renderer),
+                new OrthographicCamera(new Vector2i(windowSize)),
+                new Vector2f(windowSize));
+
+        pauseUIScene = new GameUIPauseScene(
+                new Batch(renderer),
+                new OrthographicCamera(new Vector2i(windowSize)),
+                this
+        );
+
+        endScene = new EndScene(
+                new Batch(renderer),
+                new OrthographicCamera(new Vector2i(windowSize)),
+                this
+        );
     }
 
     public void unpause() {
@@ -93,100 +122,39 @@ public class Game {
         return pacer;
     }
 
-    private void setupWindow() {
-        window = Window.builder()
-                .setRefreshRate(0)
-                .setMode(Window.WindowMode.BORDERLESS)
-                .setTitle("Walk")
-                .build();
-    }
+    @Override
+    protected void loop(double delta) {
+        update(pacer.getDeltaTimeSeconds());
 
-    private void setupUI() {
-        Vector2ic windowSize = window.getSize().getVec();
+        //TODO add animation, fixed / skeletal
+        //     create component system
+        //     pack common components
+        //     create "world" for updateable objects    mfw when i learned about entity systems: *surprised pikachu*
+        //     abstract all gl/ram resources from objects and share accordingly
+        //     add options menu
+        //      - screen options
+        //      - sens options
+        //      - keybinds
 
-        mainMenuScene = new MainMenuUIScene(
-                new Batch((GLRenderer) renderer),
-                new OrthographicCamera(new Vector2i(windowSize)),
-                this
-        );
+        //TODO meta
+        //     editorconfig
 
-        gameUIScene = new GameUIScene(
-                new Batch((GLRenderer) renderer),
-                new OrthographicCamera(new Vector2i(windowSize)),
-                new Vector2f(windowSize));
+//        renderer.prepare();
+//        screenShader.doEmboss(false);
+//        screenShader.setColour(pacer.isPaused() ? pauseColour : unpauseColour);
+//        screenShader.doGammaCorrection(true);
 
-        pauseUIScene = new GameUIPauseScene(
-                new Batch((GLRenderer) renderer),
-                new OrthographicCamera(new Vector2i(windowSize)),
-                this
-        );
+//        renderer.render(screenQuad.getTransform(), screenQuad, screenShader, new Matrix4f());
 
-        endScene = new EndScene(
-                new Batch((GLRenderer) renderer),
-                new OrthographicCamera(new Vector2i(windowSize)),
-                this
-        );
-    }
+        if (stage == GAME) {
+            gameUIScene.getScoreLabel().setText("Orbes collectered: " + gameScene.getOrbsCollected());
+            gameUIScene.getFpsLabel().setText("%5.3f\n%7.6f".formatted(pacer.getAverageFPS(), pacer.getDeltaTimeSeconds()));
 
-    private void loop() {
-        //TODO figure out a smart way to link the pacer and window refresh rates
-        pacer = new SystemNanoTimePacer(1 / 60f);
-
-        Vector2ic windowSize = window.getSize().getVec();
-        FrameBuffer postBuffer = FrameBuffer.getStandard(windowSize);
-        Material mat = new Material.Builder() //TODO okay, the fact models, or rather meshes simply ignore these mats is getting frustrating now, that builder needs some serious rework
-                .addTextures((Texture2D) postBuffer.getAttachment(BufferAttachmentType.COLOUR0))
-                .build();
-        Model screenQuad = ModelFactory.rectangle(-1, -1, 2, 2, mat) //Hey hey people, these, are in fact, regular    screeeeen coordinates, not viewport, meaning, for post processing, these effectively *always* need to be    (-1, -1) and (2, 2).
-                .build();
-        screenQuad.getTransform().setPosition(new Vector3f(0, 0, 1));
-        Shaders.PostprocessingShader screenShader = Shaders.getPostprocessingShader();
-        Vector3f unpauseColour = new Vector3f(1.0f), pauseColour = new Vector3f(0.65f);
-
-        showMainMenu();
-
-        pacer.start();
-        while (!window.shouldClose()) {
-            update(pacer.getDeltaTimeSeconds());
-
-            //TODO add animation, fixed / skeletal
-            //     create component system
-            //     pack common components
-            //     create "world" for updateable objects    mfw when i learned about entity systems: *surprised pikachu*
-            //     abstract all gl/ram resources from objects and share accordingly
-            //     add options menu
-            //      - screen options
-            //      - sens options
-            //      - keybinds
-
-            //TODO meta
-            //     editorconfig
-
-            postBuffer.bind();
-            renderer.prepare();
-            gameScene.render(renderer);
-            postBuffer.unbind();
-
-            renderer.prepare();
-            screenShader.doEmboss(false);
-            screenShader.setColour(pacer.isPaused() ? pauseColour : unpauseColour);
-            screenShader.doGammaCorrection(true);
-
-            renderer.render(screenQuad.getTransform(), screenQuad, screenShader, new Matrix4f());
-
-            if (stage == GAME) {
-                gameUIScene.getScoreLabel().setText("Orbes collectered: " + gameScene.getOrbsCollected());
-                gameUIScene.getFpsLabel().setText("%5.3f\n%7.6f".formatted(pacer.getAverageFPS(), pacer.getDeltaTimeSeconds()));
-
-                if (pacer.getTime() > MAX_TIME) {
-                    showEndScreen(EndScene.Status.TIMEOUT, gameScene.getOrbsCollected());
-                } else if (gameScene.getOrbsCollected() == GameScene.NUM_ORBS) {
-                    showEndScreen(EndScene.Status.VICTORY, gameScene.getOrbsCollected());
-                }
+            if (pacer.getTime() > MAX_TIME) {
+                showEndScreen(EndScene.Status.TIMEOUT, gameScene.getOrbsCollected());
+            } else if (gameScene.getOrbsCollected() == GameScene.NUM_ORBS) {
+                showEndScreen(EndScene.Status.VICTORY, gameScene.getOrbsCollected());
             }
-
-            window.update(pacer.getDeltaTimeSeconds());
-            pacer.nextFrame();
         }
     }
 
@@ -230,12 +198,6 @@ public class Game {
         window.setScene(endScene.setStatus(status).setScore(score));
         window.getCursor().capture();
         stage = END;
-    }
-
-    private void exit() {
-        window.dispose();
-        Loaders.disposeDefaultLoaders();
-        TrueTypeFont.disposeLibrary();
     }
 
     public static void main(String[] args) {

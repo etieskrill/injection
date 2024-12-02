@@ -1,6 +1,7 @@
 package org.etieskrill.engine.entity.system;
 
 import org.etieskrill.engine.entity.Entity;
+import org.etieskrill.engine.entity.component.Enabled;
 import org.etieskrill.engine.entity.service.Service;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -55,6 +56,12 @@ public class EntitySystem {
         return entities.contains(entity);
     }
 
+    public void addServices(Service @NotNull ... services) {
+        for (Service service : services) {
+            addService(service);
+        }
+    }
+
     public void addService(@NotNull Service service) {
         services.add(service);
         if (service.comparator() != null) {
@@ -87,6 +94,11 @@ public class EntitySystem {
             service.preProcess(entities); //TODO pass unmodifiable view and add removeEntity to system/service
             final List<Entity> finalEntities = entities;
             entities.forEach(entity -> {
+                var enabled = entity.getComponent(Enabled.class);
+                if (enabled != null && !enabled.isEnabled()) { //TODO add config toggle
+                    return;
+                }
+
                 if (service.canProcess(entity)) {
                     service.process(entity, finalEntities, delta);
                 }

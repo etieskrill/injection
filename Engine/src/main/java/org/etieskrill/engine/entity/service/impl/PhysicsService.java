@@ -105,9 +105,9 @@ public class PhysicsService implements Service {
             }
 
             if (dynamicCollider != null) {
-                solver.solveDynamic(transform, otherTransform, bb, otherBB, collider, dynamicCollider);
+                solver.solveDynamic(transform, otherTransform, bb, otherBB, collider, dynamicCollider, targetEntity, entity);
             } else {
-                solver.solveStatic(transform, otherTransform, bb, otherBB, collider, staticCollider, onGround);
+                solver.solveStatic(transform, otherTransform, bb, otherBB, collider, staticCollider, targetEntity, entity, onGround);
             }
         }
     }
@@ -120,6 +120,8 @@ public class PhysicsService implements Service {
                          WorldSpaceAABB otherBB,
                          DynamicCollider collider,
                          StaticCollider otherCollider,
+                         Entity entity,
+                         Entity otherEntity,
                          OnGround onGround);
 
         void solveDynamic(Transform transform,
@@ -127,7 +129,9 @@ public class PhysicsService implements Service {
                           WorldSpaceAABB bb,
                           WorldSpaceAABB otherBB,
                           DynamicCollider collider,
-                          DynamicCollider otherCollider);
+                          DynamicCollider otherCollider,
+                          Entity entity,
+                          Entity otherEntity);
 
         NarrowCollisionSolver AABB_SOLVER = new NarrowCollisionSolver() {
             @Override
@@ -137,6 +141,8 @@ public class PhysicsService implements Service {
                                     WorldSpaceAABB otherBB,
                                     DynamicCollider collider,
                                     StaticCollider otherCollider,
+                                    Entity entity,
+                                    Entity otherEntity,
                                     OnGround onGround) {
                 Vector3f overlap = bb.intersection(otherBB, new AABBf()).getSize(new Vector3f());
 
@@ -160,7 +166,9 @@ public class PhysicsService implements Service {
                                      WorldSpaceAABB bb,
                                      WorldSpaceAABB otherBB,
                                      DynamicCollider collider,
-                                     DynamicCollider otherCollider) {
+                                     DynamicCollider otherCollider,
+                                     Entity entity,
+                                     Entity otherEntity) {
                 if (collider.isStaticOnly() || otherCollider.isStaticOnly()) return;
 
                 Vector3f overlap = bb.intersection(otherBB, new AABBf()).getSize(new Vector3f());

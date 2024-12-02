@@ -87,7 +87,7 @@ public class Application extends GameApplication {
         ));
 
         entitySystem.addService(new RenderService(renderer, camera, window.getSize().getVec())
-                .blur(false));
+                .blur(false)); //TODO remove inner services
         entitySystem.addService(new ParticleRenderService(new GLParticleRenderer(), camera));
 
         Entity gridEntity = entitySystem.createEntity();

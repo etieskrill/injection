@@ -25,7 +25,6 @@ import org.joml.*;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static java.lang.Math.abs;
 import static java.lang.Math.max;
@@ -67,8 +66,6 @@ public class RenderService implements Service, Disposable {
 
     private final ShaderParams shaderParams;
 
-    private final AtomicReference<Transform> cachedTransform;
-
     //TODO remove jury-rigged service
     // - "inner services"?
     // - service groups?
@@ -90,8 +87,6 @@ public class RenderService implements Service, Disposable {
         this.lightSourceShader = new Shaders.LightSourceShader();
 
         this.shaderParams = new ShaderParams(new HashMap<>(), new HashMap<>(), new HashMap<>(), new HashSet<>());
-
-        this.cachedTransform = new AtomicReference<>(new Transform());
 
         this.boundingBoxRenderService = new BoundingBoxRenderService(renderer, camera);
         this.particleRenderService = new ParticleRenderService(new GLParticleRenderer(), camera);
@@ -197,11 +192,9 @@ public class RenderService implements Service, Disposable {
         if (!drawable.isVisible()) return;
 
         Transform transform = targetEntity.getComponent(Transform.class);
-        final Transform finalTransform = transform;
-        transform = cachedTransform.updateAndGet(t -> t.set(finalTransform));
 
         WorldSpaceAABB aabb = targetEntity.getComponent(WorldSpaceAABB.class);
-        if (aabb != null && !cullingCamera.frustumTestAABB(aabb)) {
+        if (aabb != null && !cullingCamera.frustumTestAABB(aabb)) { //TODO check if relevant service is even present
             return;
         }
 

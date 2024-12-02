@@ -135,7 +135,7 @@ public class ModelFactory {
     public static Model box(Vector3f size) {
         Model baseBox = Loaders.ModelLoader.get().load("internal-model-factory:box", () ->
                 new Model.Builder("box.obj")
-                        .setInitialTransform(new Transform().setScale(size))
+                        .setInitialTransform(new Transform().setScale(size)) //FIXME there is no way this works as intended
                         .setCulling(false)
                         .build());
         return new Model(baseBox);
@@ -145,7 +145,7 @@ public class ModelFactory {
     public static Model quadBox(Vector3f size) {
         return Loaders.ModelLoader.get().load("internal-model-loader:quad-box", () ->
                 new Model.Builder("quad-box.obj")
-                        .setInitialTransform(new Transform().setScale(size))
+                        .setInitialTransform(new Transform().setScale(size)) //FIXME neither does this
                         .build());
     }
 

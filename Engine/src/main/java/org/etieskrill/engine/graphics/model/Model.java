@@ -14,7 +14,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.function.Supplier;
 
 import static org.etieskrill.engine.graphics.model.loader.Loader.loadModel;
 import static org.etieskrill.engine.graphics.model.loader.MeshProcessor.optimiseMesh;
@@ -22,8 +21,6 @@ import static org.etieskrill.engine.graphics.model.loader.MeshProcessor.optimise
 //TODO refactor: reduce to data in anticipation of ces
 //               find most comprehensive solution for multi-entry-point builders
 public class Model implements Disposable {
-
-    private static final Supplier<Model> ERROR_MODEL = () -> new Builder("cube.obj").build();
 
     private static final Logger logger = LoggerFactory.getLogger(Model.class);
 
@@ -39,9 +36,6 @@ public class Model implements Disposable {
 
     private final boolean culling;
     private final boolean transparency;
-
-    //TODO move to entity eventually
-    private @Getter boolean enabled;
 
     public static class Builder {
         protected final @Getter String file;
@@ -166,8 +160,6 @@ public class Model implements Disposable {
 
         this.culling = model.culling;
         this.transparency = model.transparency;
-
-        this.enabled = model.enabled;
     }
 
     private Model(Builder builder) {
@@ -188,8 +180,6 @@ public class Model implements Disposable {
 
         this.culling = builder.culling;
         this.transparency = builder.hasTransparency;
-
-        enable();
     }
 
     public boolean doCulling() {
@@ -198,14 +188,6 @@ public class Model implements Disposable {
 
     public boolean hasTransparency() {
         return transparency;
-    }
-
-    public void enable() {
-        enabled = true;
-    }
-
-    public void disable() {
-        enabled = false;
     }
 
     @Override

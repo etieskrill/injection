@@ -33,6 +33,7 @@ module injection.engine {
     exports org.etieskrill.engine.graphics.gl.renderer;
     exports org.etieskrill.engine.graphics.gl.shader;
     exports org.etieskrill.engine.graphics.model;
+    exports org.etieskrill.engine.graphics.particle;
     exports org.etieskrill.engine.graphics.texture;
     exports org.etieskrill.engine.graphics.texture.animation;
     exports org.etieskrill.engine.input;
