@@ -21,6 +21,13 @@ import org.etieskrill.engine.input.Keys;
 import org.etieskrill.engine.input.controller.KeyCharacterController;
 import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.window.Window;
+import org.etieskrill.game.horde.component.*;
+import org.etieskrill.game.horde.entity.Enemy;
+import org.etieskrill.game.horde.entity.Player;
+import org.etieskrill.game.horde.service.BillBoardRenderService;
+import org.etieskrill.game.horde.service.DirectionalBillBoardShadowMappingService;
+import org.etieskrill.game.horde.service.EffectService;
+import org.etieskrill.game.horde.service.SimpleCollisionService;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 import org.joml.Vector3f;
@@ -42,6 +49,7 @@ public class Application extends GameApplication {
     ShaderProgram floorShader;
 
     Player dude;
+    KeyCharacterController<Vector3f> playerController;
 
     ShaderProgram stoopidShader;
     DirectionalLightComponent dirLight;
@@ -65,6 +73,13 @@ public class Application extends GameApplication {
                 .setOrbit(true)
                 .setOrbitDistance(2)
                 .setZoom(7);
+
+        entitySystem.addService(new EffectService());
+        entitySystem.addService(new SimpleCollisionService());
+        entitySystem.addService(new SimpleCollisionService((entity, otherEntity) -> {
+            var container = entity.getComponent(EffectContainer.class);
+            if (container != null) container.add(new SlowEffect(1.25f, 1, "bush"), entity);
+        }));
         entitySystem.addService(new DirectionalBillBoardShadowMappingService(camera));
         entitySystem.addService(new BillBoardRenderService(camera));
         entitySystem.addService(new SnippetsService());
@@ -115,9 +130,9 @@ public class Application extends GameApplication {
             }
         };
 
-        dude = entitySystem.createEntity(id -> new Player(id, pacer));
+        dude = entitySystem.createEntity(id -> new Player(id, pacer)); //FIXME why tf does the player's billboard not render if this is put before the service definitions
 
-        window.addKeyInputs(new KeyCharacterController<>(dude.getTransform().getPosition(), (delta, target, deltaPosition, speed) -> {
+        playerController = new KeyCharacterController<>(dude.getTransform().getPosition(), (delta, target, deltaPosition, speed) -> {
             deltaPosition.y = 0;
             if (!deltaPosition.equals(0, 0, 0)) {
                 dude.setWalking(true);
@@ -128,8 +143,9 @@ public class Application extends GameApplication {
 
             deltaPosition.x = -deltaPosition.x;
             deltaPosition.rotateY(toRadians(camera.getYaw()));
-            target.add(deltaPosition.mul((float) delta));
-        }));
+            target.add(deltaPosition.mul((float) delta * speed));
+        });
+        window.addKeyInputs(playerController);
 
         window.addKeyInputs(Input.of(
                 Input.bind(Keys.A).to(() -> dude.setLookingRight(false)),
@@ -146,8 +162,8 @@ public class Application extends GameApplication {
                     .withComponent(new Transform().setPosition(new Vector3f(random.nextFloat(-10, 10), 0, random.nextFloat(-10, 10))))
                     .withComponent(new BillBoard(
                             bushTexture,
-                            new Vector2f(0.5f)
-                    ));
+                            new Vector2f(0.5f)))
+                    .withComponent(new Collider(0.25f, true, false));
         }
 
         var treeTexture = getPixelTexture("tree01.png");
@@ -157,8 +173,8 @@ public class Application extends GameApplication {
                     .withComponent(new BillBoard(
                             treeTexture,
                             new Vector2f(2, 4),
-                            true
-                    ));
+                            true))
+                    .withComponent(new Collider(.5f, true, true));
         }
 
         dirLight = entitySystem.createEntity()
@@ -206,6 +222,9 @@ public class Application extends GameApplication {
 
     @Override
     protected void loop(double delta) {
+        var dudeSpeed = dude.getComponent(MovementSpeed.class);
+        playerController.setSpeed(dudeSpeed.getSpeed());
+
         camera.setRotation(-45, 0, 0);
         camera.setPosition(new Vector3f(dude.getTransform().getPosition()).add(0, 0.5f, 0));
 

@@ -1,4 +1,4 @@
-package org.etieskrill.game.horde;
+package org.etieskrill.game.horde.entity;
 
 import org.etieskrill.engine.entity.Entity;
 import org.etieskrill.engine.entity.component.Scripts;
@@ -9,6 +9,8 @@ import org.etieskrill.engine.graphics.texture.AbstractTexture.MinFilter;
 import org.etieskrill.engine.graphics.texture.AbstractTexture.Wrapping;
 import org.etieskrill.engine.graphics.texture.animation.AnimatedTexture;
 import org.etieskrill.engine.graphics.texture.animation.AnimatedTexturePlayer;
+import org.etieskrill.game.horde.component.AnimatedBillBoard;
+import org.etieskrill.game.horde.component.Collider;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
@@ -40,6 +42,8 @@ public class Enemy extends Entity {
                 new Vector2f(.5f)
         ));
         billBoard.getSpritePlayer().play();
+
+        addComponent(new Collider(.2f));
 
         addComponent(new Scripts(List.of(
                 delta -> {

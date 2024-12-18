@@ -1,4 +1,4 @@
-package org.etieskrill.game.horde;
+package org.etieskrill.game.horde.component;
 
 import lombok.Getter;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;

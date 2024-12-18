@@ -1,4 +1,4 @@
-package org.etieskrill.game.horde;
+package org.etieskrill.game.horde.entity;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -9,6 +9,8 @@ import org.etieskrill.engine.graphics.texture.AbstractTexture.MagFilter;
 import org.etieskrill.engine.graphics.texture.AbstractTexture.MinFilter;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.time.LoopPacer;
+import org.etieskrill.game.horde.component.BillBoard;
+import org.etieskrill.game.horde.component.Collider;
 import org.joml.Vector2f;
 
 import java.util.List;
@@ -35,6 +37,7 @@ public class Player extends Entity {
                         .setMipMapping(MinFilter.NEAREST, MagFilter.NEAREST).build(),
                 new Vector2f()
         ));
+        addComponent(new Collider(.2f));
 
         addComponent(new Scripts(List.of(
                 delta -> billBoard.getSize().set(lookingRight ? -.5f : .5f, .5f),

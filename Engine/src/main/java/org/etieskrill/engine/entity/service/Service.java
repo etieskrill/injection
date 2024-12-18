@@ -2,6 +2,7 @@ package org.etieskrill.engine.entity.service;
 
 import org.etieskrill.engine.entity.Entity;
 import org.etieskrill.engine.entity.system.EntitySystem;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Comparator;
@@ -22,7 +23,7 @@ public interface Service {
      * @param entity components belonging to an entity
      * @return whether the entity can be processed
      */
-    boolean canProcess(Entity entity);
+    boolean canProcess(@NotNull Entity entity);
 
     /**
      * Optionally specifies the order in which entities are {@link #process(Entity, List, double) processed}.
@@ -58,7 +59,7 @@ public interface Service {
      * @param entities     all entities
      * @param delta        delta time of the last two frames
      */
-    void process(Entity targetEntity, List<Entity> entities, double delta);
+    void process(@NotNull Entity targetEntity, @NotNull List<Entity> entities, double delta);
 
     /**
      * Specifies an absolute set of services which, if present, must be run after this service does its processing.

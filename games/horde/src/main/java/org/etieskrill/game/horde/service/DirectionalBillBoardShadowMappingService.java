@@ -1,4 +1,4 @@
-package org.etieskrill.game.horde;
+package org.etieskrill.game.horde.service;
 
 import org.etieskrill.engine.entity.Entity;
 import org.etieskrill.engine.entity.component.DirectionalLightComponent;
@@ -7,6 +7,7 @@ import org.etieskrill.engine.entity.service.Service;
 import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shader.Shaders;
+import org.etieskrill.game.horde.component.BillBoard;
 import org.joml.Matrix3f;
 
 import java.util.ArrayList;

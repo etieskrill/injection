@@ -1,4 +1,4 @@
-package org.etieskrill.game.horde;
+package org.etieskrill.game.horde.component;
 
 import org.etieskrill.engine.entity.Entity;
 

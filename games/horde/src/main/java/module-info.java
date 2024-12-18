@@ -1,5 +1,6 @@
 module injection.games.horde {
     requires injection.engine;
+    requires kotlin.stdlib;
 
     requires org.joml;
 

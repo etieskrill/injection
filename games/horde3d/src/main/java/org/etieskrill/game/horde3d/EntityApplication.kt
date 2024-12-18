@@ -20,19 +20,7 @@ fun main() {
                 Keys.R bindTo { { delta -> println("Current delta: $delta"); window.close() } }
 //                keyInput {} // <- does not compile due to dsl marker :) - so cool
                 Keys.E.bindTo(mode = OverruleGroup.Mode.ALL, keys = listOf(Keys.Q)) { { window.close() } }
-            }
-            cursorInputHandler {
-                //TODO separate mouse key enum and add mouse manager
-//                Keys.MIDDLE_MOUSE bindTo {{ window.close() }}
-                object : CursorInputAdapter {
-                    override fun invokeClick(button: Key?, action: Int, posX: Double, posY: Double): Boolean {
-                        when (button) {
-                            Keys.MIDDLE_MOUSE.input -> window.close()
-                            else -> return false
-                        }
-                        return true
-                    }
-                }
+                Keys.MIDDLE_MOUSE bindTo { { window.close() } }
             }
         }
     }
