@@ -82,7 +82,7 @@ public class DirectionalBillBoardShadowMappingService implements Service {
             if (transform == null || billBoard == null) continue;
 
             billboardDepthShader.setUniform("position", transform.getPosition());
-            billboardDepthShader.setUniform("billBoard", billBoard);
+            billboardDepthShader.setUniform("billBoard", billBoard); //TODO add AnimatedBillBoard
 
             glEnable(GL_DEPTH_TEST);
             glDrawArrays(GL_POINTS, 0, 1);

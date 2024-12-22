@@ -21,7 +21,10 @@ import org.etieskrill.engine.input.Keys;
 import org.etieskrill.engine.input.controller.KeyCharacterController;
 import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.window.Window;
-import org.etieskrill.game.horde.component.*;
+import org.etieskrill.game.horde.component.BillBoard;
+import org.etieskrill.game.horde.component.Collider;
+import org.etieskrill.game.horde.component.EffectContainer;
+import org.etieskrill.game.horde.component.SlowEffect;
 import org.etieskrill.game.horde.entity.Enemy;
 import org.etieskrill.game.horde.entity.Player;
 import org.etieskrill.game.horde.service.BillBoardRenderService;
@@ -78,7 +81,7 @@ public class Application extends GameApplication {
         entitySystem.addService(new SimpleCollisionService());
         entitySystem.addService(new SimpleCollisionService((entity, otherEntity) -> {
             var container = entity.getComponent(EffectContainer.class);
-            if (container != null) container.add(new SlowEffect(1.25f, 1, "bush"), entity);
+            if (container != null) container.add(new SlowEffect(1.5f, 1, "bush"), entity);
         }));
         entitySystem.addService(new DirectionalBillBoardShadowMappingService(camera));
         entitySystem.addService(new BillBoardRenderService(camera));
@@ -222,8 +225,7 @@ public class Application extends GameApplication {
 
     @Override
     protected void loop(double delta) {
-        var dudeSpeed = dude.getComponent(MovementSpeed.class);
-        playerController.setSpeed(dudeSpeed.getSpeed());
+        playerController.setSpeed(dude.getMovementSpeed().getSpeed());
 
         camera.setRotation(-45, 0, 0);
         camera.setPosition(new Vector3f(dude.getTransform().getPosition()).add(0, 0.5f, 0));

@@ -11,6 +11,8 @@ import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.time.LoopPacer;
 import org.etieskrill.game.horde.component.BillBoard;
 import org.etieskrill.game.horde.component.Collider;
+import org.etieskrill.game.horde.component.EffectContainer;
+import org.etieskrill.game.horde.component.MovementSpeed;
 import org.joml.Vector2f;
 
 import java.util.List;
@@ -23,6 +25,7 @@ public class Player extends Entity {
 
     private final Transform transform;
     private final BillBoard billBoard;
+    private final MovementSpeed movementSpeed;
 
     private boolean walking = false;
     private boolean lookingRight = true;
@@ -46,6 +49,10 @@ public class Player extends Entity {
                     billBoard.getOffset().set(0, verticalOffset, 0);
                 }
         )));
+
+        movementSpeed = addComponent(new MovementSpeed());
+
+        addComponent(new EffectContainer());
     }
 
 }
