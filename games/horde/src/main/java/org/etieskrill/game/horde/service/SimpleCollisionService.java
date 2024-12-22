@@ -1,28 +1,14 @@
 package org.etieskrill.game.horde.service;
 
-import lombok.AllArgsConstructor;
 import org.etieskrill.engine.entity.Entity;
 import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.entity.service.Service;
 import org.etieskrill.game.horde.component.Collider;
-import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
 import java.util.List;
-import java.util.function.BiConsumer;
 
-@AllArgsConstructor
 public class SimpleCollisionService implements Service {
-
-    private final @Nullable Effect effect;
-
-    public SimpleCollisionService() {
-        this(null);
-    }
-
-    @FunctionalInterface
-    public interface Effect extends BiConsumer<Entity, Entity> {
-    }
 
     @Override
     public boolean canProcess(Entity entity) {
@@ -33,7 +19,6 @@ public class SimpleCollisionService implements Service {
     public void process(Entity targetEntity, List<Entity> entities, double delta) {
         var transform = targetEntity.getComponent(Transform.class);
         var collider = targetEntity.getComponent(Collider.class);
-        if (collider.isImmobile()) return;
 
         for (Entity otherEntity : entities) {
             var otherTransform = otherEntity.getComponent(Transform.class);
@@ -48,12 +33,9 @@ public class SimpleCollisionService implements Service {
             float overlap = (collider.getRadius() + otherCollider.getRadius()) - dir.length();
             if (overlap <= 0) continue;
 
-            if (effect != null) {
-                effect.accept(targetEntity, otherEntity);
-                continue;
-            }
+            collider.getOnCollide().accept(targetEntity, otherEntity);
 
-            if (otherCollider.isSolid()) {
+            if (!collider.isImmobile() && otherCollider.isSolid()) {
                 if (otherCollider.isImmobile()) {
                     transform.translate(dir.normalize().mul(-overlap));
                 } else {

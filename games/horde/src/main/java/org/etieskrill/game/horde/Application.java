@@ -79,10 +79,7 @@ public class Application extends GameApplication {
 
         entitySystem.addService(new EffectService());
         entitySystem.addService(new SimpleCollisionService());
-        entitySystem.addService(new SimpleCollisionService((entity, otherEntity) -> {
-            var container = entity.getComponent(EffectContainer.class);
-            if (container != null) container.add(new SlowEffect(1.5f, 1, "bush"), entity);
-        }));
+        entitySystem.addService(new SimpleCollisionService());
         entitySystem.addService(new DirectionalBillBoardShadowMappingService(camera));
         entitySystem.addService(new BillBoardRenderService(camera));
         entitySystem.addService(new SnippetsService());
@@ -166,7 +163,11 @@ public class Application extends GameApplication {
                     .withComponent(new BillBoard(
                             bushTexture,
                             new Vector2f(0.5f)))
-                    .withComponent(new Collider(0.25f, true, false));
+                    .withComponent(new Collider(0.25f, true, false, (entity, otherEntity) -> {
+                        var effectContainer = otherEntity.getComponent(EffectContainer.class);
+                        if (effectContainer != null)
+                            effectContainer.add(new SlowEffect(1.5f, 1, "bush"), otherEntity);
+                    }));
         }
 
         var treeTexture = getPixelTexture("tree01.png");
