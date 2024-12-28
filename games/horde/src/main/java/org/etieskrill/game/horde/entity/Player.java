@@ -45,8 +45,15 @@ public class Player extends Entity {
         addComponent(new Scripts(List.of(
                 delta -> billBoard.getSize().set(lookingRight ? -.5f : .5f, .5f),
                 delta -> {
-                    float verticalOffset = walking ? (float) (0.075f * sin(20 * pacer.getTime()) + 0.075f) : 0;
-                    billBoard.getOffset().set(0, verticalOffset, 0);
+                    float horizontalOffset = 0, verticalOffset = 0, rotation = 0;
+                    if (walking) {
+                        verticalOffset = (float) (0.075f * sin(20 * pacer.getTime()) + 0.075f);
+                        horizontalOffset = (float) (0.05f * sin(10 * pacer.getTime()));
+                        rotation = (float) (0.1f * sin(10 * pacer.getTime()));
+                    }
+
+                    billBoard.getOffset().set(horizontalOffset, verticalOffset, 0);
+                    billBoard.setRotation(rotation);
                 }
         )));
 

@@ -214,6 +214,8 @@ public class Application extends GameApplication {
         window.addKeyInputs(Input.of(
                 Input.bind(Keys.Q).on(InputBinding.Trigger.TOGGLED).to(delta -> daylightCycleRotation += 20 * delta)
         ));
+
+        GLUtils.removeDebugLogging();
     }
 
     static Texture2D getPixelTexture(String file) {

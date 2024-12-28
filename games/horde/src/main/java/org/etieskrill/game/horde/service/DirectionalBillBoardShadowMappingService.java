@@ -7,6 +7,7 @@ import org.etieskrill.engine.entity.service.Service;
 import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shader.Shaders;
+import org.etieskrill.game.horde.component.AnimatedBillBoard;
 import org.etieskrill.game.horde.component.BillBoard;
 import org.joml.Matrix3f;
 
@@ -22,6 +23,7 @@ public class DirectionalBillBoardShadowMappingService implements Service {
 
     private final Camera billBoardCamera;
     private final ShaderProgram billboardDepthShader;
+    private final ShaderProgram animatedBillboardDepthShader;
 
     private final int dummyVao;
     private final List<Entity> orderedEntities = new ArrayList<>();
@@ -45,6 +47,26 @@ public class DirectionalBillBoardShadowMappingService implements Service {
                 addUniform("camera", Uniform.Type.STRUCT);
                 addUniform("cameraRotation", Uniform.Type.MAT3);
                 addUniform("billBoard", Uniform.Type.STRUCT);
+                addUniform("position", Uniform.Type.VEC3);
+            }
+        };
+        this.animatedBillboardDepthShader = new Shaders.DepthShader() {
+            @Override
+            protected void init() {
+                disableStrictUniformChecking();
+                hasGeometryShader();
+            }
+
+            @Override
+            protected String[] getShaderFileNames() {
+                return new String[]{"AnimatedDepthBillBoard.glsl"};
+            }
+
+            @Override
+            protected void getUniformLocations() {
+                addUniform("camera", Uniform.Type.STRUCT);
+                addUniform("cameraRotation", Uniform.Type.MAT3);
+                addUniform("animatedBillBoard", Uniform.Type.STRUCT);
                 addUniform("position", Uniform.Type.VEC3);
             }
         };
@@ -72,17 +94,29 @@ public class DirectionalBillBoardShadowMappingService implements Service {
             return transform != null ? transform.getPosition().z() : Double.MAX_VALUE;
         }));
 
-        billboardDepthShader.start();
         billboardDepthShader.setUniform("camera", shadowMapComponent.getCamera());
         billboardDepthShader.setUniform("cameraRotation", billBoardCamera.getRotation().get(new Matrix3f()));
+
+        animatedBillboardDepthShader.setUniform("camera", shadowMapComponent.getCamera());
+        animatedBillboardDepthShader.setUniform("cameraRotation", billBoardCamera.getRotation().get(new Matrix3f()));
 
         for (Entity entity : entities) {
             Transform transform = entity.getComponent(Transform.class);
             BillBoard billBoard = entity.getComponent(BillBoard.class);
-            if (transform == null || billBoard == null) continue;
+            AnimatedBillBoard animatedBillBoard = entity.getComponent(AnimatedBillBoard.class);
+            if (transform == null) continue;
 
-            billboardDepthShader.setUniform("position", transform.getPosition());
-            billboardDepthShader.setUniform("billBoard", billBoard); //TODO add AnimatedBillBoard
+            if (billBoard != null) {
+                billboardDepthShader.setUniform("position", transform.getPosition());
+                billboardDepthShader.setUniform("billBoard", billBoard);
+                billboardDepthShader.start();
+            } else if (animatedBillBoard != null) {
+                animatedBillboardDepthShader.setUniform("position", transform.getPosition());
+                animatedBillboardDepthShader.setUniform("animatedBillBoard", animatedBillBoard);
+                animatedBillboardDepthShader.start();
+            } else {
+                return;
+            }
 
             glEnable(GL_DEPTH_TEST);
             glDrawArrays(GL_POINTS, 0, 1);

@@ -602,7 +602,8 @@ public abstract class ShaderProgram implements Disposable {
 
             private static final Type[] values = values();
 
-            public static @Nullable Type getFromValue(Object value) {
+            public static @Nullable Type getFromValue(@Nullable Object value) {
+                if (value == null) return null;
                 if (value instanceof UniformMappable) return STRUCT;
                 for (Type type : values) {
                     if (type.get().equals(value.getClass())) return type;

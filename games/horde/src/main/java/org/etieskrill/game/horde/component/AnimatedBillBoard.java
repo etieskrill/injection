@@ -1,6 +1,7 @@
 package org.etieskrill.game.horde.component;
 
 import lombok.Getter;
+import lombok.Setter;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shader.UniformMappable;
 import org.etieskrill.engine.graphics.texture.animation.AnimatedTexturePlayer;
@@ -13,6 +14,7 @@ public class AnimatedBillBoard implements UniformMappable {
     private final AnimatedTexturePlayer spritePlayer;
     private final Vector2f size;
     private final Vector3f offset = new Vector3f(0);
+    private @Setter float rotation = 0;
     private final boolean punchThrough;
 
     public AnimatedBillBoard(AnimatedTexturePlayer sprite, Vector2f size) {
@@ -32,6 +34,7 @@ public class AnimatedBillBoard implements UniformMappable {
                 .map("layer", spritePlayer.getFrame())
                 .map("size", size)
                 .map("offset", offset)
+                .map("rotation", rotation)
                 .map("punchThrough", punchThrough);
         return true;
     }

@@ -15,6 +15,7 @@ uniform struct AnimatedBillBoard {
     int layer;
     vec2 size;
     vec3 offset;
+    float rotation;
     bool punchThrough;
 } animatedBillBoard;
 
@@ -46,8 +47,16 @@ void main()
     vec3 lightSpacePos = position - animatedBillBoard.offset;
     lightSpacePos.y -= animatedBillBoard.size.y;
 
+    float rotSin = sin(animatedBillBoard.rotation);
+    float rotCos = cos(animatedBillBoard.rotation);
+    mat2 rotation = mat2(rotCos, rotSin, -rotSin, rotCos);
+
     for (int i = 0; i < 4; i++) {
-        vec4 cornerOffset = vec4(quadOffset.xy * corners[i], 0, 0);
+        vec4 cornerOffset = camera.perspective * vec4(rotation * (animatedBillBoard.size * corners[i]), 1, 1);
+        cornerOffset.xyz /= cornerOffset.w;
+        cornerOffset.x = -cornerOffset.x;
+        cornerOffset.zw = vec2(0);
+
         gl_Position = pos + cornerOffset;
 
         texCoords = (corners[i] / 2.0) + 0.5;
