@@ -53,7 +53,7 @@ public class Application extends GameApplication {
                 .setTitle("Particles")
                 .setMode(BORDERLESS)
                 .setSamples(4)
-                .setVSyncEnabled(true)
+                .setRefreshRate(1000)
                 .build()
         );
     }

@@ -1,5 +1,6 @@
 package org.etieskrill.engine.graphics.model;
 
+import lombok.ToString;
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.jetbrains.annotations.Nullable;
@@ -10,6 +11,7 @@ import java.util.*;
 import static java.util.Objects.requireNonNullElse;
 import static org.lwjgl.assimp.Assimp.*;
 
+@ToString
 public class Material implements Disposable {
 
     //TODO number max gl texture units check
