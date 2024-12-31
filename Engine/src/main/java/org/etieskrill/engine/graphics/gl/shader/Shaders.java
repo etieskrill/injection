@@ -2,6 +2,7 @@ package org.etieskrill.engine.graphics.gl.shader;
 
 import org.etieskrill.engine.graphics.data.DirectionalLight;
 import org.etieskrill.engine.graphics.data.PointLight;
+import org.etieskrill.engine.graphics.gl.shader.impl.SingleColourShader;
 import org.etieskrill.engine.graphics.texture.CubeMapTexture;
 import org.joml.*;
 
@@ -193,19 +194,6 @@ public class Shaders {
 
         @Override
         protected void getUniformLocations() {
-            addUniform("colour", VEC4);
-        }
-    }
-
-    public static class SingleColourShader extends ShaderProgram {
-        @Override
-        protected String[] getShaderFileNames() {
-            return new String[]{"SingleColour.vert", "SingleColour.frag"};
-        }
-
-        @Override
-        protected void getUniformLocations() {
-            //TODO i've forgotten about this thing waaaay to often, either enforce via enums soon or rework this goddamned system
             addUniform("colour", VEC4);
         }
     }

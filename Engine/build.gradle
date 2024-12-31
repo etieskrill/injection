@@ -1,5 +1,6 @@
 plugins {
     id 'java-library'
+    id 'shader-reflection'
 }
 
 group = 'org.etieskrill.engine'
@@ -26,6 +27,8 @@ dependencies {
     runtimeOnly "org.lwjgl:lwjgl-opengl::$lwjglNatives"
     runtimeOnly "org.lwjgl:lwjgl-stb::$lwjglNatives"
     runtimeOnly "org.lwjgl:lwjgl-meshoptimizer::$lwjglNatives"
+
+    api project(":shader-reflection")
 
     implementation "org.jetbrains:annotations:$jbAnnotationsVersion"
     compileOnly "org.projectlombok:lombok:$lombokVersion"
