@@ -36,6 +36,8 @@ dependencies {
     api "org.joml:joml:$jomlVersion"
     api "org.joml:joml-primitives:$jomlPrimitivesVersion"
 
+    api project(":shader-interface")
+
     implementation "org.yaml:snakeyaml:$snakeYamlVersion"
 
     //Logging
