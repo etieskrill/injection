@@ -1,5 +1,6 @@
 package org.etieskrill.engine.graphics.gl.shader;
 
+import io.github.etieskrill.extension.shaderreflection.AbstractShader;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.etieskrill.engine.Disposable;
@@ -30,7 +31,9 @@ import static org.lwjgl.opengl.ARBShadingLanguageInclude.GL_SHADER_INCLUDE_ARB;
 import static org.lwjgl.opengl.ARBShadingLanguageInclude.glNamedStringARB;
 import static org.lwjgl.opengl.GL46C.*;
 
-public abstract class ShaderProgram implements Disposable {
+public abstract class ShaderProgram implements Disposable,
+        AbstractShader //i think this is the cleanest solution without moving the entire class out of the engine
+{
 
     public static boolean AUTO_START_ON_VARIABLE_SET = true;
     public static boolean CLEAR_ERROR_BEFORE_SHADER_CREATION = true;
@@ -303,7 +306,7 @@ public abstract class ShaderProgram implements Disposable {
         setUniform(name, value, uniforms, strict, false);
     }
 
-    public void setUniformArray(@NotNull String name, @NotNull Object[] values) {
+    public void setUniformArray(@NotNull String name, @NotNull Object @NotNull [] values) {
         if (values.length == 0) return;
         setUniform(name, values, arrayUniforms, true, true);
     }

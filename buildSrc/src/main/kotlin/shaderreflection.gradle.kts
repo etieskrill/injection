@@ -55,7 +55,7 @@ abstract class ShaderReflectionTask : DefaultTask() {
     fun generateShaderReflections() {
         val annotatedShaders = inputSources
             .map { it to it.readText() }
-            .filter { (_, content) -> content.contains("@ReflectShader") } //TODO with param extraction
+            .filter { (_, content) -> content.contains("@ReflectShader") } //TODO with param extraction TODO restrict to classes implementing ShaderProgram (which may be renamed to Shader mayhaps)
             .map { (file, content) -> Shader(
                 file.nameWithoutExtension.removeSuffix("Shader"),
                 """package ([\w\.]+[^;\s])""".toRegex().find(content.lines().first())!!.groupValues[1], //FIXME you don't put "documentation" in front of the package statement, right?
@@ -84,21 +84,12 @@ abstract class ShaderReflectionTask : DefaultTask() {
                 //Auto-generated
                 package ${shader.`package`}
                 
-                import org.etieskrill.engine.extension.*
+                import io.etieskrill.injection.extension.shaderreflection.*
             """.trimIndent() + "\n\n")
 
             uniforms.forEach { (uniformName, uniformType) ->
-                outputFile.appendText("""
-                    var ${shader.`class`}.$uniformName: $uniformType
-                        get() = TODO()
-                        set(value) = setUniform("$uniformName", value)
-                """.trimIndent() + "\n\n")
+                outputFile.appendText("var ${shader.`class`}.$uniformName: $uniformType by uniform()" + "\n")
             }
         }
     }
 }
-
-//class Uniform<T : Any>(val name: String) {
-//    operator fun getValue(singleColourShader: SingleColourShader, property: KProperty<*>): T = TODO()//singleColourShader.getUniform()
-//    operator fun setValue(singleColourShader: SingleColourShader, property: KProperty<*>, value: T) = singleColourShader.setUniform(name, value)
-//}

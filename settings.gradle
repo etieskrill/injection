@@ -6,3 +6,5 @@ include 'shader-reflection'
 file('games').eachDir {
     include "games:$it.name"
 }
+include 'shader-interface'
+
