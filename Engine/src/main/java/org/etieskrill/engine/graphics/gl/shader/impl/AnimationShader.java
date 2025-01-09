@@ -1,14 +1,13 @@
 package org.etieskrill.engine.graphics.gl.shader.impl;
 
 import org.etieskrill.engine.graphics.data.DirectionalLight;
-import org.etieskrill.engine.graphics.gl.shader.Shaders;
 import org.joml.Matrix4fc;
 
 import java.util.List;
 
 import static org.etieskrill.engine.graphics.gl.shader.ShaderProgram.Uniform.Type.*;
 
-public class AnimationShader extends Shaders.StaticShader {
+public class AnimationShader extends StaticShader {
 
     private static final int MAX_BONES = 100;
 

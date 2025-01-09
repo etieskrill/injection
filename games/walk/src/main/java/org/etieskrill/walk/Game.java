@@ -9,6 +9,7 @@ import org.etieskrill.engine.graphics.gl.framebuffer.FrameBuffer;
 import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment.BufferAttachmentType;
 import org.etieskrill.engine.graphics.gl.renderer.GLRenderer;
 import org.etieskrill.engine.graphics.gl.shader.Shaders;
+import org.etieskrill.engine.graphics.gl.shader.impl.StaticShader;
 import org.etieskrill.engine.graphics.model.Material;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.model.ModelFactory;
@@ -89,8 +90,8 @@ public class Game {
             Input.bind(Keys.A).on(Trigger.PRESSED).group(OverruleGroup.Mode.YOUNGEST, Keys.D).to(() -> deltaPos.add(-1, 0, 0)),
             Input.bind(Keys.D).on(Trigger.PRESSED).to(() -> deltaPos.add(1, 0, 0))
     );
-    
-    Shaders.StaticShader shader;
+
+    StaticShader shader;
     Shaders.LightSourceShader lightShader;
     Shaders.TextShader fontShader;
     
@@ -192,8 +193,8 @@ public class Game {
         orbBBModel.getInitialTransform().setPosition(
                 orbBBModel.getBoundingBox().getCenter()
         );
-        
-        shader = (Shaders.StaticShader) ShaderLoader.get().load("standard", Shaders::getStandardShader);
+
+        shader = (StaticShader) ShaderLoader.get().load("standard", StaticShader::new);
         lightShader = (Shaders.LightSourceShader) ShaderLoader.get().load("light", Shaders::getLightSourceShader);
         fontShader = (Shaders.TextShader) ShaderLoader.get().load("font", Shaders::getTextShader);
 

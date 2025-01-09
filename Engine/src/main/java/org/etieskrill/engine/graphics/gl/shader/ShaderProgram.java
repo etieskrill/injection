@@ -104,13 +104,48 @@ public abstract class ShaderProgram implements Disposable,
         }
     }
 
+    protected static UniformEntry uniform(String name, Uniform.Type type) {
+        return uniform(name, type, null);
+    }
+
+    protected static UniformEntry uniform(String name, Uniform.Type type, Object defaultValue) {
+        return new UniformEntry(name, type, false, 0, defaultValue);
+    }
+
+    protected static UniformEntry uniformArray(String name, int size, Uniform.Type type) {
+        return uniformArray(name, size, type, null);
+    }
+
+    protected static UniformEntry uniformArray(String name, int size, Uniform.Type type, Object[] defaultValue) {
+        return new UniformEntry(name, type, true, size, defaultValue);
+    }
+
+    @Getter
+    @AllArgsConstructor
+    @SuppressWarnings("ClassCanBeRecord")
+    public static class UniformEntry {
+        private final String name;
+        private final Uniform.Type type;
+        private final boolean array;
+        private final int size;
+        private final @Nullable Object defaultValue;
+    }
+
+    protected ShaderProgram(List<String> shaderFiles) {
+        this(shaderFiles, List.of());
+    }
+
+    protected ShaderProgram(List<String> shaderFiles, List<UniformEntry> uniforms) {
+        this(shaderFiles, uniforms, false);
+    }
+
     /**
      * A shader file with the <i>glsl</i> extension is presumed to contain exactly a vertex shader, a fragment shader
      * and - if the flag was set with {@link #hasGeometryShader()} - a geometry shader in the corresponding
      * definition guards.
      */
-    protected ShaderProgram() {
-        Set<ShaderFile> files = Arrays.stream(getShaderFileNames()).map(fileName -> {
+    protected ShaderProgram(List<String> shaderFiles, List<UniformEntry> uniforms, boolean strictUniformDetection) {
+        Set<ShaderFile> files = shaderFiles.stream().map(fileName -> {
             var typedFile = FileUtils.splitTypeFromPath(fileName);
             ShaderType type = switch (typedFile.getExtension()) {
                 case "vert" -> VERTEX;
@@ -143,20 +178,27 @@ public abstract class ShaderProgram implements Disposable,
         this.currentTextureUnit = 0;
         this.boundTextures = new HashMap<>(MAX_TEXTURE_UNITS);
 
-        createShader(files);
+        this.STRICT_UNIFORM_DETECTION = strictUniformDetection;
+
+        createShader(files, uniforms);
 
         if (checkError("OpenGL error during shader creation"))
             logger.info("Successfully created shader");
     }
 
-    private void createShader(Set<ShaderFile> files) {
-        init();
+    private void createShader(Set<ShaderFile> files, List<UniformEntry> uniforms) {
         if (CLEAR_ERROR_BEFORE_SHADER_CREATION) clearError();
         if (files.size() > 1) createProgram(files);
         else createSingleFileProgram(files.stream().findAny().get());
 
         start();
-        getUniformLocations();
+        for (UniformEntry uniform : uniforms) {
+            if (!uniform.isArray()) {
+                addUniform(uniform.getName(), uniform.getType(), uniform.getDefaultValue());
+            } else {
+                addUniformArray(uniform.getName(), uniform.getSize(), uniform.getType(), uniform.getDefaultValue());
+            }
+        }
         stop();
     }
 
@@ -238,6 +280,9 @@ public abstract class ShaderProgram implements Disposable,
             case FRAGMENT -> GL_FRAGMENT_SHADER;
             default -> throw new IllegalStateException("Unexpected value: " + type);
         });
+
+        //TODO
+        // - auto geometry stage detection
 
         String shaderSource = file.getSource();
         if (file.getType() == COMPOSITE) {
@@ -709,13 +754,6 @@ public abstract class ShaderProgram implements Disposable,
         }
 
     }
-
-    protected void init() {
-    }
-
-    protected abstract String[] getShaderFileNames();
-
-    protected abstract void getUniformLocations();
 
     protected void addUniform(String name, Uniform.Type type) {
         addUniform(name, type, null);

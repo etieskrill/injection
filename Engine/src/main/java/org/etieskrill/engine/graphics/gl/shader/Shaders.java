@@ -2,29 +2,17 @@ package org.etieskrill.engine.graphics.gl.shader;
 
 import org.etieskrill.engine.graphics.data.DirectionalLight;
 import org.etieskrill.engine.graphics.data.PointLight;
-import org.etieskrill.engine.graphics.gl.shader.impl.SingleColourShader;
+import org.etieskrill.engine.graphics.gl.shader.impl.StaticShader;
 import org.etieskrill.engine.graphics.texture.CubeMapTexture;
-import org.joml.*;
+import org.joml.Matrix4fc;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
+
+import java.util.List;
 
 import static org.etieskrill.engine.graphics.gl.shader.ShaderProgram.Uniform.Type.*;
 
 public class Shaders {
-
-    public static StaticShader getStandardShader() {
-        return new StaticShader();
-    }
-
-    public static ContainerShader getContainerShader() {
-        return new ContainerShader();
-    }
-
-    public static SwordShader getSwordShader() {
-        return new SwordShader();
-    }
-
-    public static RoundedBoxShader getRoundedBoxShader() {
-        return new RoundedBoxShader();
-    }
 
     public static LightSourceShader getLightSourceShader() {
         return new LightSourceShader();
@@ -34,20 +22,12 @@ public class Shaders {
         return new TextureShader();
     }
 
-    public static SingleColourShader getSingleColourShader() {
-        return new SingleColourShader();
-    }
-
     public static OutlineShader getOutlineShader() {
         return new OutlineShader();
     }
 
     public static PhongShininessMapShader getBackpackShader() {
         return new PhongShininessMapShader();
-    }
-
-    public static ScreenQuadShader getScreenShader() {
-        return new ScreenQuadShader();
     }
 
     public static CubeMapShader getCubeMapShader() {
@@ -62,59 +42,12 @@ public class Shaders {
         return new TextShader();
     }
 
-    //TODO evaluate whether to put uniforms as variables
-    public static class StaticShader extends ShaderProgram {
-        @Override
-        protected String[] getShaderFileNames() {
-            return new String[]{"Phong.vert", "Phong.frag"};
-        }
-
-        @Override
-        protected void getUniformLocations() {
-            //TODO theoretically, a sort of autodetect feature is entirely possible
-            addUniform("viewPosition", VEC3);
-            addUniform("textureScale", VEC2, new Vector2f(1f));
-
-            addUniform("blinnPhong", BOOLEAN, true);
-
-            addUniformArray("globalLights", 1, STRUCT);
-            addUniformArray("lights", 2, STRUCT);
-
-//            addUniform("globalShadowMap", SAMPLER2D);
-            addUniform("hasShadowMap", BOOLEAN, false);
-            addUniform("shadowMap", SAMPLER2D);
-            addUniform("hasPointShadowMaps", BOOLEAN, false);
-            addUniform("pointShadowMaps", SAMPLER_CUBE_MAP_ARRAY);
-
-            addUniform("pointShadowFarPlane", FLOAT, 20f);
-        }
-
-        public void setTextureScale(Vector2fc textureScale) {
-            setUniform("textureScale", textureScale);
-        }
-
-        public void setBlinnPhong(boolean blinnPhong) {
-            setUniform("blinnPhong", blinnPhong);
-        }
-
-        public void setViewPosition(Vector3fc viewPosition) {
-            setUniform("viewPosition", viewPosition);
-        }
-
-        public void setGlobalLights(DirectionalLight... lights) {
-            setUniformArray("globalLights", lights);
-        }
-
-        public void setLights(PointLight[] pointLights) {
-            setUniformArray("lights", pointLights);
-        }
-
-        public void setPointShadowFarPlane(float farPlane) {
-            setUniform("pointShadowFarPlane", farPlane);
-        }
-    }
-
     public static class ContainerShader extends StaticShader {
+        public ContainerShader() {
+            this(List.of("Container.vert", "Container.frag"), StaticShader.UNIFORMS);
+            disableStrictUniformChecking();
+        }
+
         @Override
         protected void init() {
             disableStrictUniformChecking();

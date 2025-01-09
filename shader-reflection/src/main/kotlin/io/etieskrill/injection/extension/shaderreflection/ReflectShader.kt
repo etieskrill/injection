@@ -1,4 +1,5 @@
 package io.etieskrill.injection.extension.shaderreflection
 
 @Target(AnnotationTarget.CLASS)
-annotation class ReflectShader
+@Retention(AnnotationRetention.SOURCE)
+annotation class ReflectShader(val files: Array<String> = [])

@@ -12,8 +12,8 @@ import org.etieskrill.engine.graphics.data.DirectionalLight;
 import org.etieskrill.engine.graphics.gl.GLUtils;
 import org.etieskrill.engine.graphics.gl.renderer.GLRenderer;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
-import org.etieskrill.engine.graphics.gl.shader.Shaders;
 import org.etieskrill.engine.graphics.gl.shader.impl.AnimationShader;
+import org.etieskrill.engine.graphics.gl.shader.impl.StaticShader;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.model.Node;
 import org.etieskrill.engine.graphics.texture.font.TrueTypeFont;
@@ -178,7 +178,7 @@ public class Game {
         cube = Loaders.ModelLoader.get().load("cube", () -> new Model.Builder("cube.obj").setCulling(false).build());
         cubeTransform = new Transform().setScale(10).setPosition(new Vector3f(2, -6, 0));
 
-        shader = Shaders.getStandardShader();
+        shader = new StaticShader();
 
         globalLight = new DirectionalLight(new Vector3f(1, -1, 1), new Vector3f(2), new Vector3f(2), new Vector3f(2));
 

@@ -12,4 +12,5 @@ class UniformDelegate<T : Any> : ReadWriteProperty<AbstractShader, T> {
         shader.setUniform(property.name, value)
 }
 
+//TODO register uniforms here
 fun <T : Any> uniform() = UniformDelegate<T>()
