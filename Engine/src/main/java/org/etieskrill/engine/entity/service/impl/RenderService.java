@@ -16,6 +16,7 @@ import org.etieskrill.engine.graphics.gl.renderer.GLParticleRenderer;
 import org.etieskrill.engine.graphics.gl.renderer.GLRenderer;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shader.Shaders;
+import org.etieskrill.engine.graphics.gl.shader.impl.StaticShader;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.texture.Textures;
@@ -58,7 +59,7 @@ public class RenderService implements Service, Disposable {
     private @Accessors(fluent = true)
     @Setter
     @Nullable Vector4i customViewport;
-    private final Shaders.StaticShader shader;
+    private final StaticShader shader;
     private final Shaders.LightSourceShader lightSourceShader;
 
     private @Accessors(fluent = true)
@@ -83,7 +84,7 @@ public class RenderService implements Service, Disposable {
         this.camera = camera;
         this.cullingCamera = camera;
         this.windowSize = windowSize;
-        this.shader = new Shaders.StaticShader();
+        this.shader = new StaticShader();
         this.lightSourceShader = new Shaders.LightSourceShader();
 
         this.shaderParams = new ShaderParams(new HashMap<>(), new HashMap<>(), new HashMap<>(), new HashSet<>());

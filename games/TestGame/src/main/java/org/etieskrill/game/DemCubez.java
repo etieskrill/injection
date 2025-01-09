@@ -11,6 +11,7 @@ import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment.Buffe
 import org.etieskrill.engine.graphics.gl.renderer.GLRenderer;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shader.Shaders;
+import org.etieskrill.engine.graphics.gl.shader.impl.StaticShader;
 import org.etieskrill.engine.graphics.model.CubeMapModel;
 import org.etieskrill.engine.graphics.model.Material;
 import org.etieskrill.engine.graphics.model.Model;
@@ -22,12 +23,10 @@ import org.etieskrill.engine.time.SystemNanoTimePacer;
 import org.etieskrill.engine.util.Loaders.ModelLoader;
 import org.etieskrill.engine.window.Cursor.CursorMode;
 import org.etieskrill.engine.window.Window;
-import org.joml.*;
 import org.lwjgl.opengl.GL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.Math;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -390,9 +389,9 @@ public class DemCubez {
     }
 
     private void loadShaders() {
-        containerShader = Shaders.getStandardShader();//getContainerShader();
+        containerShader = new StaticShader();//getContainerShader();
         lightShader = Shaders.getLightSourceShader();
-        swordShader = Shaders.getSwordShader();
+        swordShader = new Shaders.SwordShader();
         backpackShader = Shaders.getBackpackShader();
         skyboxShader = Shaders.getCubeMapShader();
     }

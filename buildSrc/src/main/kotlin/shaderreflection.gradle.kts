@@ -1,8 +1,5 @@
 package io.github.etieskrill.injection
 
-import kotlin.collections.component1
-import kotlin.collections.component2
-
 tasks.register<ShaderReflectionTask>("generateShaderReflection") {
     group = "code generation"
     description = "Generates attribute accessors for shaders annotated with @ReflectShader"
@@ -95,7 +92,7 @@ class ShaderReflector {
             }
 
     fun getPrimitiveUniforms(annotatedShaders: List<Shader>) =
-        annotatedShaders.map {
+        annotatedShaders.associate {
             it to it.sources.flatMap { shaderContent ->
                 val uniformRegex = """uniform (\w+) (\w+);""".toRegex()
 
@@ -103,7 +100,7 @@ class ShaderReflector {
                     it.groupValues[2] to it.groupValues[1]
                 }
             }.toMap()
-        }.toMap()
+        }
 
     fun appendPrimitiveUniforms(shader: Shader, uniforms: Map<String, String>, outputFile: File) =
         uniforms.forEach { (uniformName, uniformType) ->
@@ -123,3 +120,44 @@ data class Shader(
 ) {
     override fun toString(): String = "Shader{name=$name, package=$`package`, class=$`class`}"
 }
+
+//------------------------------------------ KSP ------------------------------------------
+
+//plugins {
+//    id("com.google.devtools.ksp")
+//}
+
+//dependencies {
+//    "ksp"(project("io.github.etieskrill.injection:shaderreflection"))
+//}
+//
+//class ShaderReflectorSymbolProcessorProvider : SymbolProcessorProvider {
+//    override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor =
+//        ShaderReflectorSymbolProcessor(environment.codeGenerator, environment.logger)
+//}
+//
+//class ShaderReflectorSymbolProcessor(
+//    private val generator: CodeGenerator,
+//    private val logger: KSPLogger
+//) : SymbolProcessor {
+//    override fun process(resolver: Resolver): List<KSAnnotated> {
+//        val symbols = resolver.getSymbolsWithAnnotation("ReflectShader")
+//
+//        logger.warn(symbols.toString())
+//
+//        val shaderReflectionMetaFile = generator.createNewFile(
+//            dependencies = com.google.devtools.ksp.processing.Dependencies.Companion.ALL_FILES,
+//            packageName = "io.github.etieskrill.injection.extension.shaderreflection",
+//            fileName = "shader-reflection-meta",
+//            extensionName = "csv"
+//        )
+//
+//        shaderReflectionMetaFile.use { output ->
+//            output.write("""
+//                yoyoyo dis sum mat shite
+//            """.trimIndent().toByteArray())
+//        }
+//
+//        return emptyList()
+//    }
+//}

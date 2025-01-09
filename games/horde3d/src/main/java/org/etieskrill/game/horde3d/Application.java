@@ -12,6 +12,7 @@ import org.etieskrill.engine.graphics.gl.GLUtils;
 import org.etieskrill.engine.graphics.gl.framebuffer.DirectionalShadowMap;
 import org.etieskrill.engine.graphics.gl.framebuffer.PointShadowMapArray;
 import org.etieskrill.engine.graphics.gl.shader.Shaders;
+import org.etieskrill.engine.graphics.gl.shader.impl.StaticShader;
 import org.etieskrill.engine.graphics.model.Material;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.model.ModelFactory;
@@ -29,11 +30,9 @@ import org.etieskrill.engine.scene.component.Label;
 import org.etieskrill.engine.scene.component.Node;
 import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.window.Window;
-import org.joml.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.Math;
 import java.util.Random;
 
 import static org.etieskrill.engine.graphics.texture.AbstractTexture.Type.*;
@@ -53,7 +52,7 @@ public class Application extends GameApplication {
     private Transform floorTransform;
     private Model[] brickCubes;
     private Transform[] brickCubeTransforms;
-    private Shaders.StaticShader shader;
+    private StaticShader shader;
     private Camera camera;
 
     private DirectionalLight sunLight;
@@ -146,7 +145,7 @@ public class Application extends GameApplication {
         }
 
         lightShader = Shaders.getLightSourceShader();
-        shader = new Shaders.StaticShader();
+        shader = new StaticShader();
 
         camera = new PerspectiveCamera(window.getSize().getVec());
         window.addCursorInputs(new CursorCameraController(camera));
@@ -248,7 +247,7 @@ public class Application extends GameApplication {
         }
     }
 
-    private void renderScene(Shaders.StaticShader shader, Matrix4fc combined) {
+    private void renderScene(StaticShader shader, Matrix4fc combined) {
         renderer.bindNextFreeTexture(shader, "shadowMap", directionalShadowMap.getTexture());
         shader.setUniform("lightCombined", sunLightCombined, false);
         renderer.bindNextFreeTexture(shader, "pointShadowMaps0", pointShadowMaps.getTexture());
