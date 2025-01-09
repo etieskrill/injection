@@ -8,4 +8,10 @@ repositories {
 
 dependencies {
     implementation(gradleApi())
+
+    implementation(kotlin("test"))
+}
+
+tasks.test {
+    useJUnitPlatform()
 }

@@ -20,6 +20,7 @@ import java.util.List;
 
 import static org.etieskrill.engine.config.ResourcePaths.ENGINE_RESOURCE_PATH;
 
+//TODO rework finally for external resources, use classpath as fallback
 public class ResourceReader {
 
     private static final Logger logger = LoggerFactory.getLogger(ResourceReader.class);

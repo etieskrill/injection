@@ -11,6 +11,7 @@ import org.etieskrill.engine.graphics.data.DirectionalLight;
 import org.etieskrill.engine.graphics.gl.GLUtils;
 import org.etieskrill.engine.graphics.gl.framebuffer.DirectionalShadowMap;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
+import org.etieskrill.engine.graphics.gl.shader.impl.GridShader;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.etieskrill.engine.graphics.texture.AbstractTexture.MagFilter;
 import org.etieskrill.engine.graphics.texture.AbstractTexture.MinFilter;
@@ -86,23 +87,7 @@ public class Application extends GameApplication {
 
         window.getCursor().disable();
 
-        gridShader = new ShaderProgram() {
-            @Override
-            protected void init() {
-                hasGeometryShader();
-            }
-
-            @Override
-            protected String[] getShaderFileNames() {
-                return new String[]{"Grid.glsl"};
-            }
-
-            @Override
-            protected void getUniformLocations() {
-                addUniform("position", Uniform.Type.VEC3);
-                addUniform("camera", Uniform.Type.STRUCT);
-            }
-        };
+        gridShader = new GridShader();
 
         dummyVao = glGenVertexArrays();
 

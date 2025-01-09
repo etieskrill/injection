@@ -1,6 +1,6 @@
 package org.etieskrill.engine.graphics.gl.shader.impl;
 
-import org.etieskrill.engine.extension.ReflectShader;
+import io.etieskrill.injection.extension.shaderreflection.ReflectShader;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 
 import static org.etieskrill.engine.graphics.gl.shader.ShaderProgram.Uniform.Type.VEC4;

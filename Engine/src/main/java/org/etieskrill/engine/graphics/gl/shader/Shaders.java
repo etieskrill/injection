@@ -441,15 +441,4 @@ public class Shaders {
         }
     }
 
-    public static class GridShader extends ShaderProgram {
-        @Override
-        protected String[] getShaderFileNames() {
-            return new String[]{"Grid.glsl"};
-        }
-
-        @Override
-        protected void getUniformLocations() {
-        }
-    }
-
 }
