@@ -1,12 +1,17 @@
 package org.etieskrill.engine.graphics.gl.shader;
 
 import io.github.etieskrill.extension.shaderreflection.AbstractShader;
+import kotlin.text.MatchResult;
+import kotlin.text.Regex;
+import kotlin.text.RegexOption;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.config.GLContextConfig;
+import org.etieskrill.engine.graphics.gl.shader.impl.MissingShader;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.etieskrill.engine.util.FileUtils;
+import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.util.ResourceReader;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -38,9 +43,8 @@ public abstract class ShaderProgram implements Disposable,
     public static boolean AUTO_START_ON_VARIABLE_SET = true;
     public static boolean CLEAR_ERROR_BEFORE_SHADER_CREATION = true;
 
-    //TODO move placeholder shader here
-    private static final String DEFAULT_VERTEX_FILE = SHADER_PATH + "Phong.vert";
-    private static final String DEFAULT_FRAGMENT_FILE = SHADER_PATH + "Phong.frag";
+    private static final @Getter(lazy = true) ShaderProgram missingShader = Loaders.ShaderLoader.get()
+            .load("missing_shader", () -> new MissingShader()); //FIXME potential class load deadlock
 
     private boolean STRICT_UNIFORM_DETECTION = true;
 
@@ -50,9 +54,6 @@ public abstract class ShaderProgram implements Disposable,
     private final Map<String, Uniform> uniforms;
     private final Map<String, ArrayUniform> arrayUniforms;
 
-    @Getter
-    private final boolean placeholder;
-
     private final Map<String, Integer> nonstrictUniformCache = new HashMap<>();
     private final Set<String> unregisteredUniforms = new HashSet<>();
     private final Set<String> missingUniforms = new HashSet<>();
@@ -61,6 +62,7 @@ public abstract class ShaderProgram implements Disposable,
     private int currentTextureUnit;
     private final Map<String, Integer> boundTextures; //TODO this is actually per context, so it could use a ThreadLocal - it also causes incoherent state if #start() is not called properly
 
+    private static final Logger genericLogger = LoggerFactory.getLogger(ShaderProgram.class);
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     public enum ShaderType {
@@ -73,9 +75,11 @@ public abstract class ShaderProgram implements Disposable,
 
     @Getter
     @AllArgsConstructor
+    @SuppressWarnings("ClassCanBeRecord")
     protected static final class ShaderFile {
         private final String name;
         private final ShaderType type;
+        private final String source;
 
         @Override
         public boolean equals(Object o) {
@@ -91,22 +95,32 @@ public abstract class ShaderProgram implements Disposable,
         }
     }
 
+    public static <T extends ShaderProgram> ShaderProgram create(Supplier<T> supplier) {
+        try {
+            return supplier.get();
+        } catch (ShaderCreationException e) {
+            genericLogger.warn("Exception during shader creation, using default shader", e);
+            return getMissingShader();
+        }
+    }
+
     /**
      * A shader file with the <i>glsl</i> extension is presumed to contain exactly a vertex shader, a fragment shader
      * and - if the flag was set with {@link #hasGeometryShader()} - a geometry shader in the corresponding
      * definition guards.
      */
     protected ShaderProgram() {
-        Set<ShaderFile> files = Arrays.stream(getShaderFileNames()).map(file -> {
-            var typedFile = FileUtils.splitTypeFromPath(file);
+        Set<ShaderFile> files = Arrays.stream(getShaderFileNames()).map(fileName -> {
+            var typedFile = FileUtils.splitTypeFromPath(fileName);
             ShaderType type = switch (typedFile.getExtension()) {
                 case "vert" -> VERTEX;
                 case "geom" -> GEOMETRY;
                 case "frag" -> FRAGMENT;
                 case "glsl" -> COMPOSITE;
-                default -> throw new ShaderCreationException("Cannot load shader with unknown file extension: " + file);
+                default ->
+                        throw new ShaderCreationException("Cannot load shader with unknown file extension: " + fileName);
             };
-            return new ShaderFile(file, type);
+            return new ShaderFile(fileName, type, ResourceReader.getClasspathResource(SHADER_PATH + fileName));
         }).collect(Collectors.toSet());
 
         if (files.size() == 1 && !files.stream().allMatch(file -> file.getType() == COMPOSITE)) {
@@ -129,22 +143,7 @@ public abstract class ShaderProgram implements Disposable,
         this.currentTextureUnit = 0;
         this.boundTextures = new HashMap<>(MAX_TEXTURE_UNITS);
 
-        boolean placeholder = false;
-        try {
-            createShader(files);
-        } catch (ShaderException e) {
-            logger.warn("Exception during shader creation, using default shader", e); //TODO remove and add explicit alternative declaration
-            boolean prevStrictState = STRICT_UNIFORM_DETECTION;
-            STRICT_UNIFORM_DETECTION = false; //TODO quick and dirty solution bcs faulty shader's uniforms are still added
-            createShader(Set.of(
-                    new ShaderFile(DEFAULT_VERTEX_FILE, VERTEX),
-                    new ShaderFile(DEFAULT_FRAGMENT_FILE, FRAGMENT)
-            ));
-            STRICT_UNIFORM_DETECTION = prevStrictState;
-            placeholder = true;
-        }
-
-        this.placeholder = placeholder;
+        createShader(files);
 
         if (checkError("OpenGL error during shader creation"))
             logger.info("Successfully created shader");
@@ -240,8 +239,10 @@ public abstract class ShaderProgram implements Disposable,
             default -> throw new IllegalStateException("Unexpected value: " + type);
         });
 
-        String shaderSource = getShaderSource(file);
+        String shaderSource = file.getSource();
         if (file.getType() == COMPOSITE) {
+            shaderSource = resolveShaderStagePragmaDirectives(shaderSource);
+            //TODO filter for missing required directives - and add default?
             shaderSource = injectShaderCompileDirective(shaderSource, type);
         }
         glShaderSource(shaderID, shaderSource);
@@ -254,12 +255,54 @@ public abstract class ShaderProgram implements Disposable,
         return shaderID;
     }
 
-    private String getShaderSource(ShaderFile file) {
-        String qualifiedName = SHADER_PATH + file.getName();
-        return ResourceReader.getClasspathResource(qualifiedName);
+    public enum ShaderStage {NONE, VERTEX, GEOMETRY, FRAGMENT}
+
+    private static String resolveShaderStagePragmaDirectives(String shaderSource) {
+        StringBuilder resolvedSource = new StringBuilder();
+        ShaderStage currentStage = ShaderStage.NONE;
+
+        Regex stageMatcher = new Regex("#pragma stage (\\w+)", RegexOption.IGNORE_CASE);
+
+        for (String line : shaderSource.lines().toList()) {
+            var matches = stageMatcher.findAll(line, 0).iterator();
+
+            if (!matches.hasNext()) {
+                resolvedSource.append(line).append("\n");
+                continue;
+            }
+
+            if (currentStage != ShaderStage.NONE) {
+                resolvedSource.append("#endif\n");
+            }
+
+            currentStage = getNextStage(matches);
+
+            if (currentStage == ShaderStage.NONE) continue;
+
+            resolvedSource.append("#ifdef ").append(currentStage.name()).append("_SHADER\n");
+        }
+
+        if (currentStage != ShaderStage.NONE) {
+            resolvedSource.append("#endif\n");
+        }
+
+        return resolvedSource.toString();
     }
 
-    private String injectShaderCompileDirective(String shaderSource, ShaderType type) {
+    private static ShaderStage getNextStage(Iterator<MatchResult> matches) {
+        MatchResult lastMatch = null;
+        while (matches.hasNext()) lastMatch = matches.next(); //we only want the last directive in the line //FIXME
+        return switch (lastMatch.getGroupValues().get(1).toLowerCase()) {
+            case "none" -> ShaderStage.NONE;
+            case "vert", "vertex" -> ShaderStage.VERTEX;
+            case "geom", "geometry" -> ShaderStage.GEOMETRY;
+            case "frag", "fragment" -> ShaderStage.FRAGMENT;
+            default ->
+                    throw new ShaderCreationException("Unexpected shader stage value: " + lastMatch.getGroupValues().get(1));
+        };
+    }
+
+    private static String injectShaderCompileDirective(String shaderSource, ShaderType type) {
         List<String> shaderSourceLines = new ArrayList<>(shaderSource.lines().toList());
         for (int i = 0; i < shaderSourceLines.size(); i++) {
             String line = shaderSourceLines.get(i);

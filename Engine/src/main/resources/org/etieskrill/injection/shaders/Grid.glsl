@@ -6,12 +6,11 @@ uniform struct Camera {
     float far;
 } camera;
 
-#ifdef VERTEX_SHADER
+#pragma stage vert
 void main()
 {}
-#endif
 
-#ifdef GEOMETRY_SHADER
+#pragma stage geom
 layout (points) in;
 layout (triangle_strip, max_vertices = 12) out;
 
@@ -45,9 +44,8 @@ void main()
     }
     EndPrimitive();
 }
-#endif
 
-#ifdef FRAGMENT_SHADER
+#pragma stage frag
 in vec4 fragPos;
 
 out vec4 fragColour;
@@ -92,4 +90,3 @@ void main() {
 
     fragColour = vec4(pow(fragColour.xyz, vec3(1 / 2.2)), fragColour.a);
 }
-#endif

@@ -11,6 +11,7 @@ import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.gl.framebuffer.FrameBuffer;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shader.Shaders;
+import org.etieskrill.engine.graphics.gl.shader.impl.MissingShader;
 import org.etieskrill.engine.graphics.model.*;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.etieskrill.engine.util.Loaders;
@@ -82,7 +83,7 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
 
     @Override
     public void render(TransformC transform, Model model, ShaderProgram shader, Camera camera) {
-        if (shader.isPlaceholder()) {
+        if (shader instanceof MissingShader) {
             renderOutline(model, shader, camera, 1f, new Vector4f(1, 0, 1, 1), true);
             return;
         }

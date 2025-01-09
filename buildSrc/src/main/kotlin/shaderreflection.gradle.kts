@@ -1,5 +1,8 @@
 package io.github.etieskrill.injection
 
+import kotlin.collections.component1
+import kotlin.collections.component2
+
 tasks.register<ShaderReflectionTask>("generateShaderReflection") {
     group = "code generation"
     description = "Generates attribute accessors for shaders annotated with @ReflectShader"
@@ -26,15 +29,6 @@ dependencies {
     "implementation"(project(":shader-reflection"))
 }
 
-data class Shader(
-    val name: String,
-    val `package`: String,
-    val `class`: String,
-    val sources: List<String>
-) {
-    override fun toString(): String = "Shader{name=$name, package=$`package`, class=$`class`}"
-}
-
 abstract class ShaderReflectionTask : DefaultTask() {
     private val generatedSourceDir = "build/generated/kotlin"
 
@@ -53,19 +47,55 @@ abstract class ShaderReflectionTask : DefaultTask() {
 
     @TaskAction
     fun generateShaderReflections() {
-        val annotatedShaders = inputSources
+        ShaderReflector().reflectShaders(inputSources, inputResources, outputDir)
+    }
+}
+
+//-------------------------- THIS SHIT HATES BEING IN ANOTHER FILE -----------------------------
+
+class ShaderReflector {
+    fun reflectShaders(inputSources: ConfigurableFileTree, inputResources: ConfigurableFileTree, outputDir: File) {
+        val annotatedShaders = getAnnotatedShaders(inputSources, inputResources)
+
+        outputDir.mkdirs()
+
+        val uniforms = getPrimitiveUniforms(annotatedShaders)
+        println("Detected primitive uniform accessors: ${uniforms}")
+
+        uniforms.forEach { (shader, uniforms) ->
+            val outputFile = outputDir.resolve("${shader.`class`}.kt")
+            outputFile.writeText(
+                """
+            //Auto-generated
+            package ${shader.`package`}
+            
+            import io.etieskrill.injection.extension.shaderreflection.*
+        """.trimIndent() + "\n\n"
+            )
+
+            appendPrimitiveUniforms(shader, uniforms, outputFile)
+        }
+    }
+
+    fun getAnnotatedShaders(inputSources: ConfigurableFileTree, inputResources: ConfigurableFileTree) =
+        inputSources
             .map { it to it.readText() }
             .filter { (_, content) -> content.contains("@ReflectShader") } //TODO with param extraction TODO restrict to classes implementing ShaderProgram (which may be renamed to Shader mayhaps)
-            .map { (file, content) -> Shader(
-                file.nameWithoutExtension.removeSuffix("Shader"),
-                """package ([\w\.]+[^;\s])""".toRegex().find(content.lines().first())!!.groupValues[1], //FIXME you don't put "documentation" in front of the package statement, right?
-                file.nameWithoutExtension,
-                inputResources
-                    .filter { file.nameWithoutExtension.removeSuffix("Shader") == it.nameWithoutExtension }
-                    .map { it.readText() }
-            ) }
+            .map { (file, content) ->
+                Shader(
+                    file.nameWithoutExtension.removeSuffix("Shader"),
+                    """package ([\w\.]+[^;\s])""".toRegex().find(
+                        content.lines().first()
+                    )!!.groupValues[1], //FIXME you don't put "documentation" in front of the package statement, right?
+                    file.nameWithoutExtension,
+                    inputResources
+                        .filter { file.nameWithoutExtension.removeSuffix("Shader") == it.nameWithoutExtension }
+                        .map { it.readText() }
+                )
+            }
 
-        val uniforms = annotatedShaders.map {
+    fun getPrimitiveUniforms(annotatedShaders: List<Shader>) =
+        annotatedShaders.map {
             it to it.sources.flatMap { shaderContent ->
                 val uniformRegex = """uniform (\w+) (\w+);""".toRegex()
 
@@ -74,22 +104,22 @@ abstract class ShaderReflectionTask : DefaultTask() {
                 }
             }.toMap()
         }.toMap()
-        println("Generating uniform accessors: ${uniforms}")
 
-        outputDir.mkdirs()
-
-        uniforms.forEach { (shader, uniforms) ->
-            val outputFile = outputDir.resolve("${shader.`class`}.kt")//.apply { createNewFile() }
-            outputFile.writeText("""
-                //Auto-generated
-                package ${shader.`package`}
-                
-                import io.etieskrill.injection.extension.shaderreflection.*
-            """.trimIndent() + "\n\n")
-
-            uniforms.forEach { (uniformName, uniformType) ->
-                outputFile.appendText("var ${shader.`class`}.$uniformName: $uniformType by uniform()" + "\n")
-            }
+    fun appendPrimitiveUniforms(shader: Shader, uniforms: Map<String, String>, outputFile: File) =
+        uniforms.forEach { (uniformName, uniformType) ->
+            outputFile.appendText("var ${shader.`class`}.$uniformName: $uniformType by uniform()" + "\n")
         }
+
+    fun getStructUniforms() {
+
     }
+}
+
+data class Shader(
+    val name: String,
+    val `package`: String,
+    val `class`: String,
+    val sources: List<String>
+) {
+    override fun toString(): String = "Shader{name=$name, package=$`package`, class=$`class`}"
 }
