@@ -1,17 +1,13 @@
 package org.etieskrill.engine.graphics.gl.shader.impl;
 
-import org.etieskrill.engine.graphics.gl.shader.Shaders;
+import io.etieskrill.injection.extension.shaderreflection.ReflectShader;
+import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 
-public class DepthCubeMapArrayAnimatedShader extends Shaders.DepthCubeMapArrayShader {
+import java.util.List;
 
-    @Override
-    protected void init() {
-        hasGeometryShader();
+@ReflectShader
+public class DepthCubeMapArrayAnimatedShader extends ShaderProgram {
+    public DepthCubeMapArrayAnimatedShader() {
+        super(List.of("DepthCubeMapArrayAnimated.glsl"));
     }
-
-    @Override
-    protected String[] getShaderFileNames() {
-        return new String[]{"DepthCubeMapArrayAnimated.glsl"};
-    }
-
 }

@@ -6,8 +6,19 @@ import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector4f
 
-class vec2 : Vector2f()
-class vec3 : Vector3f()
-class vec4 : Vector4f()
-class mat3 : Matrix3f()
-class mat4 : Matrix4f()
+typealias int = Int
+typealias float = Float
+typealias bool = Boolean
+
+typealias vec2 = Vector2f
+typealias vec3 = Vector3f
+typealias vec4 = Vector4f
+
+typealias mat3 = Matrix3f
+typealias mat4 = Matrix4f
+
+typealias sampler2D = int
+typealias sampler2DShadow = int
+typealias samplerCubeArrayShadow = int
+
+typealias struct = Any

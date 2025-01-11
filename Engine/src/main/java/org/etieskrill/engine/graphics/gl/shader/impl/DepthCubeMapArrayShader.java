@@ -6,8 +6,8 @@ import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import java.util.List;
 
 @ReflectShader
-public class DepthAnimatedShader extends ShaderProgram {
-    public DepthAnimatedShader() {
-        super(List.of("DepthAnimated.glsl"));
+public class DepthCubeMapArrayShader extends ShaderProgram {
+    public DepthCubeMapArrayShader() {
+        super(List.of("DepthCubeMapArray.vert", "DepthCubeMapArray.geom", "DepthCubeMapArray.frag"));
     }
 }

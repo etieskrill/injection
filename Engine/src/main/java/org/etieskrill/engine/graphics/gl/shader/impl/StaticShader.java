@@ -30,7 +30,7 @@ public class StaticShader extends ShaderProgram {
 //                uniform("pointShadowMaps", SAMPLER_CUBE_MAP_ARRAY),
 //
 //                uniform("pointShadowFarPlane", FLOAT, 20f)
-        //TODO readd defaults by setting via generated accessors
+        //TODO re-add defaults by setting via generated accessors
     }
 
     public void setTextureScale(Vector2fc textureScale) {

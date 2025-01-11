@@ -15,7 +15,7 @@ import org.etieskrill.engine.graphics.gl.framebuffer.RenderBuffer;
 import org.etieskrill.engine.graphics.gl.renderer.GLParticleRenderer;
 import org.etieskrill.engine.graphics.gl.renderer.GLRenderer;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
-import org.etieskrill.engine.graphics.gl.shader.Shaders;
+import org.etieskrill.engine.graphics.gl.shader.impl.LightSourceShader;
 import org.etieskrill.engine.graphics.gl.shader.impl.StaticShader;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.etieskrill.engine.graphics.texture.Texture2D;
@@ -60,7 +60,7 @@ public class RenderService implements Service, Disposable {
     @Setter
     @Nullable Vector4i customViewport;
     private final StaticShader shader;
-    private final Shaders.LightSourceShader lightSourceShader;
+    private final LightSourceShader lightSourceShader;
 
     private @Accessors(fluent = true)
     @Setter boolean blur = true;
@@ -85,7 +85,7 @@ public class RenderService implements Service, Disposable {
         this.cullingCamera = camera;
         this.windowSize = windowSize;
         this.shader = new StaticShader();
-        this.lightSourceShader = new Shaders.LightSourceShader();
+        this.lightSourceShader = new LightSourceShader();
 
         this.shaderParams = new ShaderParams(new HashMap<>(), new HashMap<>(), new HashMap<>(), new HashSet<>());
 
@@ -301,26 +301,14 @@ class GaussBlurPostBuffers implements Disposable {
                 .attach(depthStencilBuffer, BufferAttachmentType.DEPTH_STENCIL)
                 .build();
 
-        this.hdrShader = new ShaderProgram() {
+        this.hdrShader = new ShaderProgram(List.of("HDR.glsl"), false) {
             @Override
-            protected void init() {
-                disableStrictUniformChecking();
-            }
-
-            @Override
-            protected String[] getShaderFileNames() {
-                return new String[]{"HDR.glsl"};
-            }
-
-            @Override
-            protected void getUniformLocations() {
+            protected void setUniformDefaults() {
+                //cannot generated accessors for anonymous classes
                 addUniform("position", Uniform.Type.VEC4, new Vector4f(-1, -1, 1, 1));
 
                 addUniform("exposure", Uniform.Type.FLOAT, 1f);
                 addUniform("reinhard", Uniform.Type.BOOLEAN, true);
-
-                addUniform("hdrBuffer", Uniform.Type.SAMPLER2D);
-                addUniform("bloomBuffer", Uniform.Type.SAMPLER2D);
             }
         };
 
@@ -333,16 +321,10 @@ class GaussBlurPostBuffers implements Disposable {
                 .attach(blurTextureBuffer2, COLOUR0)
                 .build();
 
-        this.gaussBlurShader = new ShaderProgram() {
+        this.gaussBlurShader = new ShaderProgram(List.of("GaussBlur.glsl")) {
             @Override
-            protected String[] getShaderFileNames() {
-                return new String[]{"GaussBlur.glsl"};
-            }
-
-            @Override
-            protected void getUniformLocations() {
-                addUniform("source", Uniform.Type.SAMPLER2D);
-                addUniform("horizontal", Uniform.Type.BOOLEAN);
+            protected void setUniformDefaults() {
+                //see above
                 addUniform("sampleDistance", Uniform.Type.VEC2, new Vector2f(1));
             }
         };
@@ -411,22 +393,7 @@ class BoundingSphereRenderer implements Disposable {
     private final int dummyVao;
 
     BoundingSphereRenderer(ShaderProgram boundingSphereShader) {
-        this.boundingSphereShader = new ShaderProgram() {
-            @Override
-            protected void init() {
-                disableStrictUniformChecking();
-                hasGeometryShader();
-            }
-
-            @Override
-            protected String[] getShaderFileNames() {
-                return new String[]{"BoundingSphere.glsl"};
-            }
-
-            @Override
-            protected void getUniformLocations() {
-            }
-        };
+        this.boundingSphereShader = new ShaderProgram(List.of("BoundingSphere.glsl"), false) {};
 
         this.dummyVao = glGenVertexArrays();
     }

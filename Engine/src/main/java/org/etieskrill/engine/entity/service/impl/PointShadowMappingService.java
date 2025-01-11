@@ -8,7 +8,7 @@ import org.etieskrill.engine.entity.service.Service;
 import org.etieskrill.engine.graphics.Renderer;
 import org.etieskrill.engine.graphics.animation.Animator;
 import org.etieskrill.engine.graphics.gl.framebuffer.FrameBuffer;
-import org.etieskrill.engine.graphics.gl.shader.Shaders;
+import org.etieskrill.engine.graphics.gl.shader.impl.*;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
 
@@ -18,14 +18,14 @@ import java.util.Objects;
 public class PointShadowMappingService implements Service {
 
     private final Renderer renderer;
-    private final Shaders.DepthCubeMapArrayShader shader;
+    private final DepthCubeMapArrayShader shader;
 
     private static final Matrix4fc DUMMY_MATRIX = new Matrix4f();
 
     private final int updateFrequency = 2;
     private int cycle = 0;
 
-    public PointShadowMappingService(Renderer renderer, Shaders.DepthCubeMapArrayShader shader) {
+    public PointShadowMappingService(Renderer renderer, DepthCubeMapArrayShader shader) {
         this.renderer = renderer;
         this.shader = shader;
     }
@@ -57,10 +57,10 @@ public class PointShadowMappingService implements Service {
         PointLightComponent component = targetEntity.getComponent(PointLightComponent.class);
         if (component.getShadowMap() == null) return; //TODO resolve by using separate component for shadow maps
 
-        shader.setLight(component.getLight());
-        shader.setIndex(component.getShadowMapIndex());
+        DepthCubeMapArrayShaderKt.setLight(shader, component.getLight());
+        DepthCubeMapArrayShaderKt.setIndex(shader, component.getShadowMapIndex() != null ? component.getShadowMapIndex() : 0);
         shader.setShadowCombined(component.getCombinedMatrices());
-        shader.setFarPlane(component.getFarPlane());
+        DepthCubeMapArrayShaderKt.setFarPlane(shader, component.getFarPlane() != null ? component.getFarPlane() : 0);
 
         component.getShadowMap().bind();
         for (Entity entity : entities) {

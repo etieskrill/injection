@@ -1,27 +1,15 @@
 package org.etieskrill.engine.graphics.gl.shader.impl;
 
+import io.etieskrill.injection.extension.shaderreflection.ReflectShader;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
+
+import java.util.List;
 
 import static org.etieskrill.engine.graphics.gl.shader.ShaderProgram.Uniform.Type.*;
 
+@ReflectShader
 public class ParticleShader extends ShaderProgram {
-
-    @Override
-    protected void init() {
-        hasGeometryShader();
+    public ParticleShader() {
+        super(List.of("ParticlePointVertex.glsl"));
     }
-
-    @Override
-    protected String[] getShaderFileNames() {
-        return new String[]{"ParticlePointVertex.glsl"};
-    }
-
-    @Override
-    protected void getUniformLocations() {
-        addUniform("model", MAT4);
-        addUniform("camera", STRUCT);
-        addUniform("size", FLOAT);
-        addUniform("sprite", SAMPLER2D);
-    }
-
 }

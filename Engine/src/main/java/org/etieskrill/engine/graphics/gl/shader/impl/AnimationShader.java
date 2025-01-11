@@ -1,37 +1,28 @@
 package org.etieskrill.engine.graphics.gl.shader.impl;
 
 import org.etieskrill.engine.graphics.data.DirectionalLight;
+import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.joml.Matrix4fc;
 
 import java.util.List;
 
 import static org.etieskrill.engine.graphics.gl.shader.ShaderProgram.Uniform.Type.*;
 
-public class AnimationShader extends StaticShader {
+public class AnimationShader extends ShaderProgram {
 
     private static final int MAX_BONES = 100;
 
-    @Override
-    protected void init() {
-        disableStrictUniformChecking();
-    }
+    public AnimationShader() {
+        super(List.of("Animation.vert", "Animation.frag"), false);
 
-    @Override
-    protected String[] getShaderFileNames() {
-        return new String[]{"Animation.vert", "Animation.frag"};
-    }
-
-    @Override
-    protected void getUniformLocations() {
-        super.getUniformLocations();
-
-        addUniformArray("boneMatrices", MAX_BONES, MAT4);
-
-        addUniformArray("globalLights", 1, STRUCT);
-        addUniformArray("lights", 2, STRUCT);
-
-        addUniform("uShowBoneSelector", INT, 4);
-        addUniform("uShowBoneWeights", BOOLEAN, false);
+        //Defaults
+//        addUniformArray("boneMatrices", MAX_BONES, MAT4);
+//
+//        addUniformArray("globalLights", 1, STRUCT);
+//        addUniformArray("lights", 2, STRUCT);
+//
+//        addUniform("uShowBoneSelector", INT, 4);
+//        addUniform("uShowBoneWeights", BOOLEAN, false);
     }
 
     public void setBoneMatrices(List<Matrix4fc> boneMatrices) {
