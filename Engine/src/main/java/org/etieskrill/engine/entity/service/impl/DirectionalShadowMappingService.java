@@ -7,6 +7,7 @@ import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.entity.service.Service;
 import org.etieskrill.engine.graphics.Renderer;
 import org.etieskrill.engine.graphics.animation.Animator;
+import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shader.Shaders;
 import org.etieskrill.engine.graphics.gl.shader.impl.DepthAnimatedShader;
 import org.jetbrains.annotations.Nullable;
@@ -76,13 +77,14 @@ public class DirectionalShadowMappingService implements Service {
             Drawable drawable = entity.getComponent(Drawable.class);
             if (transform == null || drawable == null) continue;
 
-            Shaders.DepthShader shader = this.shader;
+            ShaderProgram shader = this.shader;
 
             if (shader == null) {
                 shader = depthShader;
 
                 Animator animator = entity.getComponent(Animator.class);
                 if (animator != null) {
+                    //TODO figure some compile-time thing to ensure property exists on shader, probably kotlin interface property?
                     depthAnimatedShader.setUniformArrayNonStrict("boneMatrices", animator.getTransformMatricesArray());
                     shader = depthAnimatedShader;
                 }

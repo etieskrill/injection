@@ -105,19 +105,11 @@ public abstract class ShaderProgram implements Disposable,
     }
 
     protected static UniformEntry uniform(String name, Uniform.Type type) {
-        return uniform(name, type, null);
-    }
-
-    protected static UniformEntry uniform(String name, Uniform.Type type, Object defaultValue) {
-        return new UniformEntry(name, type, false, 0, defaultValue);
+        return new UniformEntry(name, type, false, 0, null);
     }
 
     protected static UniformEntry uniformArray(String name, int size, Uniform.Type type) {
-        return uniformArray(name, size, type, null);
-    }
-
-    protected static UniformEntry uniformArray(String name, int size, Uniform.Type type, Object[] defaultValue) {
-        return new UniformEntry(name, type, true, size, defaultValue);
+        return new UniformEntry(name, type, true, size, null);
     }
 
     @Getter
@@ -136,7 +128,11 @@ public abstract class ShaderProgram implements Disposable,
     }
 
     protected ShaderProgram(List<String> shaderFiles, List<UniformEntry> uniforms) {
-        this(shaderFiles, uniforms, false);
+        this(shaderFiles, uniforms, true);
+    }
+
+    protected ShaderProgram(List<String> shaderFiles, boolean strictUniformDetection) {
+        this(shaderFiles, List.of(), strictUniformDetection);
     }
 
     /**
@@ -186,17 +182,25 @@ public abstract class ShaderProgram implements Disposable,
             logger.info("Successfully created shader");
     }
 
+    /**
+     * This method exists only to provide an overridable config entrypoint to anonymous classes.
+     */
+    protected void setUniformDefaults() {}
+
     private void createShader(Set<ShaderFile> files, List<UniformEntry> uniforms) {
         if (CLEAR_ERROR_BEFORE_SHADER_CREATION) clearError();
         if (files.size() > 1) createProgram(files);
         else createSingleFileProgram(files.stream().findAny().get());
 
         start();
+        setUniformDefaults();
+        //TODO find and add uniforms from files
+        //TODO filter and warn on duplicates, prefer config, then UniformEntries, then autodetected
         for (UniformEntry uniform : uniforms) {
             if (!uniform.isArray()) {
-                addUniform(uniform.getName(), uniform.getType(), uniform.getDefaultValue());
+                addUniform(uniform.getName(), uniform.getType());
             } else {
-                addUniformArray(uniform.getName(), uniform.getSize(), uniform.getType(), uniform.getDefaultValue());
+                addUniformArray(uniform.getName(), uniform.getSize(), uniform.getType());
             }
         }
         stop();
@@ -283,6 +287,7 @@ public abstract class ShaderProgram implements Disposable,
 
         //TODO
         // - auto geometry stage detection
+        // - use #line <nr> to improve debugging experience
 
         String shaderSource = file.getSource();
         if (file.getType() == COMPOSITE) {
