@@ -28,7 +28,7 @@ class ShaderReflector(private val logger: Logger) {
 
             appendPrimitiveUniforms(shader, uniforms, outputFile)
             appendArrayUniforms(shader, arrayUniforms[shader], outputFile)
-            appendDirectStructUniforms(shader, structs[shader].orEmpty(), outputFile)
+            appendDirectStructUniforms(shader, structs[shader], outputFile)
         }
     }
 
@@ -142,10 +142,10 @@ class ShaderReflector(private val logger: Logger) {
             outputFile.appendText("var ${shader.`class`}.$name: Array<$type> by arrayUniform($size)\n\n")
         }
 
-    private fun appendDirectStructUniforms(shader: Shader, structs: List<Struct>, outputFile: File) {
+    private fun appendDirectStructUniforms(shader: Shader, structs: List<Struct>?, outputFile: File) {
         structs
-            .filter { it.instance != null }
-            .forEach { (_, _, instance) ->
+            ?.filter { it.instance != null }
+            ?.forEach { (_, _, instance) ->
                 outputFile.appendText("val ${shader.`class`}.${instance}Name by uniformName()\n")
                 outputFile.appendText("var ${shader.`class`}.$instance: struct by uniform()\n\n")
             }
