@@ -10,7 +10,7 @@ import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 import java.io.File
 
-class ShaderAccessorGeneratorPlugin : Plugin<Project> {
+class ShaderReflectionGeneratorPlugin : Plugin<Project> {
     override fun apply(project: Project): Unit = project.run {
         tasks.register("generateShaderReflection", ShaderReflectionTask::class.java).configure {
             group = "code generation"
@@ -30,11 +30,15 @@ class ShaderAccessorGeneratorPlugin : Plugin<Project> {
         plugins.apply("org.jetbrains.kotlin.jvm")
 
         tasks.apply {
-            findByName("compileJava")!!.apply { dependsOn("generateShaderReflection") }
-            findByName("compileKotlin")!!.apply { dependsOn("generateShaderReflection") }
+            getByName("compileJava").apply { dependsOn("generateShaderReflection") }
+            getByName("compileKotlin").apply { dependsOn("generateShaderReflection") }
         }
 
-        dependencies.add("implementation", "io.github.etieskrill.injection.extension.shaderreflection:shader-reflection-plugin")
+        //TODO add as api if target has `java-library`?
+        dependencies.apply {
+            add("implementation", "io.github.etieskrill.injection.extension.shaderreflection:shader-interface")
+            add("implementation", "io.github.etieskrill.injection.extension.shaderreflection:shader-reflection-plugin")
+        }
     }
 }
 
