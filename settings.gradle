@@ -1,8 +1,10 @@
 rootProject.name = 'injection'
 
 include 'engine'
-include 'shader-interface'
 include 'shader-reflection'
+
+includeBuild 'shader-interface'
+includeBuild 'shader-reflection-plugin'
 
 file('games').eachDir {
     include "games:$it.name"

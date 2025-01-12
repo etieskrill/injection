@@ -1,4 +1,4 @@
-package io.etieskrill.injection.extension.shaderreflection
+package io.github.etieskrill.injection.extension.shaderreflection
 
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.SOURCE)

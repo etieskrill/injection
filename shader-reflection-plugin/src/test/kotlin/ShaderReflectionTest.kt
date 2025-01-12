@@ -1,5 +1,3 @@
-package io.github.etieskrill.injection
-
 //FIXME
 class ShaderReflectionTest {
 

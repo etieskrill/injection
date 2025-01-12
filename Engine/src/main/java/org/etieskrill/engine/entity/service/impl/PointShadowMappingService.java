@@ -59,7 +59,7 @@ public class PointShadowMappingService implements Service {
 
         DepthCubeMapArrayShaderKt.setLight(shader, component.getLight());
         DepthCubeMapArrayShaderKt.setIndex(shader, component.getShadowMapIndex() != null ? component.getShadowMapIndex() : 0);
-        shader.setShadowCombined(component.getCombinedMatrices());
+        DepthCubeMapArrayShaderKt.setShadowCombined(shader, component.getCombinedMatrices());
         DepthCubeMapArrayShaderKt.setFarPlane(shader, component.getFarPlane() != null ? component.getFarPlane() : 0);
 
         component.getShadowMap().bind();
