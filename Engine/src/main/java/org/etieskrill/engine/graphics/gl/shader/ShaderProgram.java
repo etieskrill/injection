@@ -1,6 +1,6 @@
 package org.etieskrill.engine.graphics.gl.shader;
 
-import io.github.etieskrill.extension.shaderreflection.AbstractShader;
+import io.github.etieskrill.injection.extension.shaderreflection.AbstractShader;
 import kotlin.text.MatchResult;
 import kotlin.text.Regex;
 import kotlin.text.RegexOption;

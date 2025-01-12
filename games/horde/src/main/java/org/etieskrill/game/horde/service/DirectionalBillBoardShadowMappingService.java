@@ -30,45 +30,9 @@ public class DirectionalBillBoardShadowMappingService implements Service {
 
     public DirectionalBillBoardShadowMappingService(Camera billBoardCamera) {
         this.billBoardCamera = billBoardCamera;
-        this.billboardDepthShader = new Shaders.DepthShader() {
-            @Override
-            protected void init() {
-                disableStrictUniformChecking();
-                hasGeometryShader();
-            }
-
-            @Override
-            protected String[] getShaderFileNames() {
-                return new String[]{"DepthBillBoard.glsl"};
-            }
-
-            @Override
-            protected void getUniformLocations() {
-                addUniform("camera", Uniform.Type.STRUCT);
-                addUniform("cameraRotation", Uniform.Type.MAT3);
-                addUniform("billBoard", Uniform.Type.STRUCT);
-                addUniform("position", Uniform.Type.VEC3);
-            }
+        this.billboardDepthShader = new ShaderProgram(List.of("DepthBillBoard.glsl"), false) {
         };
-        this.animatedBillboardDepthShader = new Shaders.DepthShader() {
-            @Override
-            protected void init() {
-                disableStrictUniformChecking();
-                hasGeometryShader();
-            }
-
-            @Override
-            protected String[] getShaderFileNames() {
-                return new String[]{"AnimatedDepthBillBoard.glsl"};
-            }
-
-            @Override
-            protected void getUniformLocations() {
-                addUniform("camera", Uniform.Type.STRUCT);
-                addUniform("cameraRotation", Uniform.Type.MAT3);
-                addUniform("animatedBillBoard", Uniform.Type.STRUCT);
-                addUniform("position", Uniform.Type.VEC3);
-            }
+        this.animatedBillboardDepthShader = new ShaderProgram(List.of("AnimatedDepthBillBoard.glsl"), false) {
         };
         this.dummyVao = glCreateVertexArrays();
     }

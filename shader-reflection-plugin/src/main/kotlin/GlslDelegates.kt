@@ -1,6 +1,5 @@
-package io.etieskrill.injection.extension.shaderreflection
+package io.github.etieskrill.injection.extension.shaderreflection
 
-import io.github.etieskrill.extension.shaderreflection.AbstractShader
 import kotlin.properties.ReadOnlyProperty
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
@@ -22,3 +21,15 @@ class UniformName : ReadOnlyProperty<Any?, String> {
 }
 
 fun uniformName() = UniformName()
+
+class ArrayUniformDelegate<T : Any>(private val size: Int) : ReadWriteProperty<AbstractShader, Array<T>> {
+    override fun getValue(thisRef: AbstractShader, property: KProperty<*>): Array<T> =
+        TODO()
+
+    override fun setValue(thisRef: AbstractShader, property: KProperty<*>, value: Array<T>) {
+        require(size == value.size)
+        thisRef.setUniformArray(property.name, value as Array<Any>) //FIXME wut? T is upper-bounded by Any though, so why does T not upcast to Any?
+    }
+}
+
+fun <T : Any> arrayUniform(size: Int) = ArrayUniformDelegate<T>(size)

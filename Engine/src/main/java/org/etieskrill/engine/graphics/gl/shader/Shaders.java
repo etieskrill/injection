@@ -1,6 +1,6 @@
 package org.etieskrill.engine.graphics.gl.shader;
 
-import io.etieskrill.injection.extension.shaderreflection.ReflectShader;
+import io.github.etieskrill.injection.extension.shaderreflection.ReflectShader;
 import org.etieskrill.engine.graphics.gl.shader.impl.LightSourceShader;
 
 import java.util.List;

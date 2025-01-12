@@ -204,12 +204,15 @@ public class AnimationProvider {
             logger.warn("Animation does not animate any bones");
             return;
         }
-        logger.atTrace().log(() -> {
+
+        if (logger.isTraceEnabled()) { //FIXME tf Logger#at<level>() of fluent api do not exist anymore? unexpected version fallback from build fiddling?
+            String message;
             if (!nonAnimatedBones.isEmpty())
-                return "Bones contain no animation data: " + nonAnimatedBones;
+                message =  "Bones contain no animation data: " + nonAnimatedBones;
             else
-                return "All bones are animated";
-        });
+                message = "All bones are animated";
+            logger.trace(message);
+        }
     }
 
 }

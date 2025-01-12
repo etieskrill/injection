@@ -36,7 +36,7 @@ dependencies {
     api "org.joml:joml:$jomlVersion"
     api "org.joml:joml-primitives:$jomlPrimitivesVersion"
 
-    api project(":shader-interface")
+    api "io.github.etieskrill.injection.extension.shaderreflection:shader-interface"
 
     implementation "org.yaml:snakeyaml:$snakeYamlVersion"
 

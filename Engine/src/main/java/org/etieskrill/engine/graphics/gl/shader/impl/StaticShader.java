@@ -1,6 +1,6 @@
 package org.etieskrill.engine.graphics.gl.shader.impl;
 
-import io.etieskrill.injection.extension.shaderreflection.ReflectShader;
+import io.github.etieskrill.injection.extension.shaderreflection.ReflectShader;
 import org.etieskrill.engine.graphics.data.DirectionalLight;
 import org.etieskrill.engine.graphics.data.PointLight;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;

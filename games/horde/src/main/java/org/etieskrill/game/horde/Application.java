@@ -36,6 +36,7 @@ import org.joml.Vector2f;
 import org.joml.Vector2i;
 import org.joml.Vector3f;
 
+import java.util.List;
 import java.util.Random;
 
 import static org.joml.Math.toRadians;
@@ -93,26 +94,7 @@ public class Application extends GameApplication {
 
         floorTexture = new Texture2D.FileBuilder("grass.png")
                 .setMipMapping(MinFilter.NEAREST, MagFilter.NEAREST).build();
-        floorShader = new ShaderProgram() {
-            @Override
-            protected void init() {
-                disableStrictUniformChecking();
-                hasGeometryShader();
-            }
-
-            @Override
-            protected String[] getShaderFileNames() {
-                return new String[]{"Floor.glsl"};
-            }
-
-            @Override
-            protected void getUniformLocations() {
-                addUniform("camera", Uniform.Type.STRUCT);
-                addUniform("position", Uniform.Type.VEC3);
-                addUniform("diffuse", Uniform.Type.SAMPLER2D);
-                addUniform("dirShadowMap", Uniform.Type.SAMPLER2D);
-                addUniform("dirLightCombined", Uniform.Type.MAT4);
-            }
+        floorShader = new ShaderProgram(List.of("Floor.glsl"), false) {
         };
 
         dude = entitySystem.createEntity(id -> new Player(id, pacer)); //FIXME why tf does the player's billboard not render if this is put before the service definitions
@@ -179,21 +161,7 @@ public class Application extends GameApplication {
                                 .setOrbitDistance(10)
                 ));
 
-        stoopidShader = new ShaderProgram() {
-            @Override
-            protected void init() {
-                hasGeometryShader();
-            }
-
-            @Override
-            protected String[] getShaderFileNames() {
-                return new String[]{"Blit.glsl"};
-            }
-
-            @Override
-            protected void getUniformLocations() {
-                addUniform("tex", Uniform.Type.SAMPLER2D);
-            }
+        stoopidShader = new ShaderProgram(List.of("Blit.glsl")) {
         };
 
         window.addKeyInputs(Input.of(

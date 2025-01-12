@@ -16,6 +16,7 @@ import org.etieskrill.engine.graphics.gl.renderer.GLParticleRenderer;
 import org.etieskrill.engine.graphics.gl.renderer.GLRenderer;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shader.impl.LightSourceShader;
+import org.etieskrill.engine.graphics.gl.shader.impl.LightSourceShaderKt;
 import org.etieskrill.engine.graphics.gl.shader.impl.StaticShader;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.etieskrill.engine.graphics.texture.Texture2D;
@@ -218,10 +219,10 @@ public class RenderService implements Service, Disposable {
         DirectionalLightComponent directionalLightComponent = entity.getComponent(DirectionalLightComponent.class);
         PointLightComponent pointLightComponent = entity.getComponent(PointLightComponent.class);
         if (directionalLightComponent != null) {
-            lightSourceShader.setLight(directionalLightComponent.getDirectionalLight());
+            LightSourceShaderKt.setLight(lightSourceShader, directionalLightComponent.getDirectionalLight());
             return lightSourceShader;
         } else if (pointLightComponent != null) {
-            lightSourceShader.setLight(pointLightComponent.getLight());
+            LightSourceShaderKt.setLight(lightSourceShader, pointLightComponent.getLight());
             if (pointLightComponent.getFarPlane() != null)
                 shader.setPointShadowFarPlane(pointLightComponent.getFarPlane()); //TODO make per-light?
             return lightSourceShader;

@@ -27,47 +27,9 @@ public class BillBoardRenderService implements Service {
     private final int dummyVAO;
 
     public BillBoardRenderService(Camera camera) {
-        this.shader = new ShaderProgram() {
-            @Override
-            protected void init() {
-                hasGeometryShader();
-            }
-
-            @Override
-            protected String[] getShaderFileNames() {
-                return new String[]{"BillBoard.glsl"};
-            }
-
-            @Override
-            protected void getUniformLocations() {
-                addUniform("camera", Uniform.Type.STRUCT);
-                addUniform("position", Uniform.Type.VEC3);
-                addUniform("dirLight", Uniform.Type.STRUCT);
-                addUniform("dirLightCamera", Uniform.Type.STRUCT);
-                addUniform("dirShadowMap", Uniform.Type.SAMPLER2D);
-                addUniform("billBoard", Uniform.Type.STRUCT);
-            }
+        this.shader = new ShaderProgram(List.of("BillBoard.glsl")) {
         };
-        this.animatedShader = new ShaderProgram() {
-            @Override
-            protected void init() {
-                hasGeometryShader();
-            }
-
-            @Override
-            protected String[] getShaderFileNames() {
-                return new String[]{"AnimatedBillBoard.glsl"};
-            }
-
-            @Override
-            protected void getUniformLocations() {
-                addUniform("camera", Uniform.Type.STRUCT);
-                addUniform("position", Uniform.Type.VEC3);
-                addUniform("dirLight", Uniform.Type.STRUCT);
-                addUniform("dirLightCamera", Uniform.Type.STRUCT);
-                addUniform("dirShadowMap", Uniform.Type.SAMPLER2D);
-                addUniform("animatedBillBoard", Uniform.Type.STRUCT);
-            }
+        this.animatedShader = new ShaderProgram(List.of("AnimatedBillBoard.glsl")) {
         };
         this.camera = camera;
         this.dummyVAO = glGenVertexArrays();
