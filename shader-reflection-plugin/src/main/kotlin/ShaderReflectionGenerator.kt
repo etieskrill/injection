@@ -125,9 +125,11 @@ class ShaderReflector(private val logger: Logger) {
 
                 val size = match.groups["size"]!!.value
                     .toIntOrNull()
-                    ?: run { //FIXME see e.g. DepthCubeMapArrayShader.kt - does not work
-                        val defineDirectiveRegex = """^#define (?<name>\w+) (?<value>\d+)\n""".toRegex()
-                        val matches = defineDirectiveRegex.findAll(source).toList()
+                    ?: run {
+                        val defineDirectiveRegex = """^#define (?<name>\w+) (?<value>\d+)\n""".toRegex(RegexOption.MULTILINE)
+                        val matches = defineDirectiveRegex.findAll(
+                            source.trimIndent() //FIXME find out why this works
+                        ).toList()
                         matches
                             .find { it.groups["name"]!!.value == match.groups["size"]!!.value }
                             ?.let {
