@@ -21,16 +21,14 @@ import static org.lwjgl.opengl.GL30C.glGenVertexArrays;
 
 public class BillBoardRenderService implements Service {
 
-    private final ShaderProgram shader;
-    private final ShaderProgram animatedShader;
+    private final BillBoardShader shader;
+    private final AnimatedBillBoardShader animatedShader;
     private final Camera camera;
     private final int dummyVAO;
 
     public BillBoardRenderService(Camera camera) {
-        this.shader = new ShaderProgram(List.of("BillBoard.glsl")) {
-        };
-        this.animatedShader = new ShaderProgram(List.of("AnimatedBillBoard.glsl")) {
-        };
+        this.shader = new BillBoardShader();
+        this.animatedShader = new AnimatedBillBoardShader();
         this.camera = camera;
         this.dummyVAO = glGenVertexArrays();
     }
@@ -66,25 +64,26 @@ public class BillBoardRenderService implements Service {
         for (Entity entity : entities) {
             var dirLight = entity.getComponent(DirectionalLightComponent.class);
             if (dirLight != null) {
-                shader.setUniform("dirLightCamera", dirLight.getCamera());
-                shader.setUniform("dirLight", dirLight.getDirectionalLight());
-                shader.setTexture("dirShadowMap", dirLight.getShadowMap().getTexture());
+                //TODO here a property generalisation would be nice
+                shader.setUniformNonStrict("dirLightCamera", dirLight.getCamera());
+                shader.setUniformNonStrict("dirLight", dirLight.getDirectionalLight());
+                shader.setTexture("dirShadowMap", dirLight.getShadowMap().getTexture(), false);
                 break; //the sun will probs be the only dir light, and interiors will use a different shader or something
             }
         }
 
-        shader.setUniform("camera", camera);
+        shader.setUniformNonStrict("camera", camera);
     }
 
     @Override
     public void process(Entity targetEntity, List<Entity> entities, double delta) {
         var billBoard = targetEntity.getComponent(BillBoard.class);
         if (billBoard != null) {
-            shader.setUniform("position", targetEntity.getComponent(Transform.class).getPosition());
-            shader.setUniform("billBoard", billBoard);
+            BillBoardShaderKt.setPosition(shader, targetEntity.getComponent(Transform.class).getPosition());
+            BillBoardShaderKt.setBillBoard(shader, billBoard);
         } else {
-            animatedShader.setUniform("position", targetEntity.getComponent(Transform.class).getPosition());
-            animatedShader.setUniform("animatedBillBoard", targetEntity.getComponent(AnimatedBillBoard.class));
+            AnimatedBillBoardShaderKt.setPosition(animatedShader, targetEntity.getComponent(Transform.class).getPosition());
+            AnimatedBillBoardShaderKt.setAnimatedBillBoard(animatedShader, targetEntity.getComponent(AnimatedBillBoard.class));
         }
 
         glDisable(GL_CULL_FACE);
