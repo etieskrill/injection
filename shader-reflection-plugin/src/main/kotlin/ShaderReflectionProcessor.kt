@@ -22,14 +22,18 @@ class ShaderReflectorProcessor(
             .forEach { (classDeclaration, output) ->
                 val fields = listOf(
                     classDeclaration.packageName.asString(),
+                    classDeclaration.simpleName.asString(),
                     classDeclaration.fullClassName,
                     classDeclaration.annotations
                         .find { it.shortName.asString() == ReflectShader::class.simpleName!! }!!
                         .arguments
                         .find { it.name?.asString() == "files" && it.value != null }
                         .run {
-                            val files = this!!.value as List<String> //FIXME more type-safe solution
-                            files.joinToString(",")
+                            when (val value = this!!.value) {
+                                is String -> value
+                                is List<*> -> (value as List<String>).joinToString(",") //FIXME more type-safe solution
+                                else -> throw IllegalArgumentException("Unsupported shader file type: $value::class, must be one of [String, String[] (List<String> in kotlin)]")
+                            }
                         }
                 )
 

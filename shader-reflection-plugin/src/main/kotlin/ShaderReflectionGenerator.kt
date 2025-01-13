@@ -17,36 +17,46 @@ class ShaderReflector(private val logger: Logger) {
             .associateWith { getArrayUniforms(it, structs[it]) }
 
         uniforms.forEach { (shader, uniforms) ->
-            val outputFile = outputDir.resolve("${shader.`class`}.kt")
-            outputFile.writeText(
-                """
-            package ${shader.`package`}
+            val outputBuilder = StringBuilder()
 
-            import io.github.etieskrill.injection.extension.shaderreflection.*
-        """.trimIndent() + "\n\n"
+            outputBuilder.append(
+                """
+                package ${shader.`package`}
+
+                import io.github.etieskrill.injection.extension.shaderreflection.*
+                """.trimIndent() + "\n\n"
             )
 
-            appendPrimitiveUniforms(shader, uniforms, outputFile)
-            appendArrayUniforms(shader, arrayUniforms[shader], outputFile)
-            appendDirectStructUniforms(shader, structs[shader], outputFile)
+            appendPrimitiveUniforms(shader, uniforms, outputBuilder)
+            appendArrayUniforms(shader, arrayUniforms[shader], outputBuilder)
+            appendDirectStructUniforms(shader, structs[shader], outputBuilder)
+
+            val outputFile = outputDir.resolve("${shader.`class`}.kt")
+            outputFile.writeText(outputBuilder.toString())
         }
     }
 
     private fun getAnnotatedShaders(inputSources: ConfigurableFileTree, inputResources: ConfigurableFileTree) =
         inputSources
-            .map { it to it.readText() }
-            .filter { (_, content) -> content.contains("@ReflectShader") } //TODO with param extraction TODO restrict to classes implementing ShaderProgram (which may be renamed to Shader mayhaps)
-            .map { (file, content) ->
-                Shader(
-                    file.nameWithoutExtension.removeSuffix("Shader"),
-                    """package ([\w\.]+[^;\s])""".toRegex().find(
-                        content.lines().first()
-                    )!!.groupValues[1], //FIXME you don't put "documentation" in front of the package statement, right?
-                    file.nameWithoutExtension,
-                    inputResources
-                        .filter { file.nameWithoutExtension.removeSuffix("Shader") == it.nameWithoutExtension }
-                        .map { it.readText() }
-                )
+            .map {
+                it.readText()
+                    .split(',')
+                    .filter { content -> content.isNotBlank() }
+            }
+            .map { content ->
+                val `package` = content[0]
+                val `class` = content[1]
+                val fullClass = content[2]
+                val name = `class`.removeSuffix("Shader")
+
+                val sources = if (content.size > 3) {
+                    content.subList(3, content.size)
+                        .mapNotNull { source -> inputResources.find { it.name == source } }
+                } else {
+                    inputResources.filter { it.nameWithoutExtension == name }
+                }.map { it.readText() }
+
+                Shader(name, `package`, fullClass, sources)
             }
 
     private fun getStructUniforms(annotatedShaders: List<Shader>): Map<Shader, List<Struct>> {
@@ -119,10 +129,12 @@ class ShaderReflector(private val logger: Logger) {
                         val matches = defineDirectiveRegex.findAll(source).toList()
                         matches
                             .find { it.groups["name"]!!.value == match.groups["size"]!!.value }
-                            ?.let { it.groups["value"]!!.value.toIntOrNull() ?: run {
-                                logger.warn("Could not determine array size for uniform ${it.groups["name"]} in shader $shader")
-                                0
-                            } } ?: 0
+                            ?.let {
+                                it.groups["value"]!!.value.toIntOrNull() ?: run {
+                                    logger.warn("Could not determine array size for uniform ${it.groups["name"]} in shader $shader")
+                                    0
+                                }
+                            } ?: 0
                     }
 
                 ArrayUniform(match.groups["name"]!!.value, type, size)
@@ -130,24 +142,24 @@ class ShaderReflector(private val logger: Logger) {
         }
     }
 
-    private fun appendPrimitiveUniforms(shader: Shader, uniforms: Map<String, String>, outputFile: File) =
+    private fun appendPrimitiveUniforms(shader: Shader, uniforms: Map<String, String>, outputBuilder: StringBuilder) =
         uniforms.forEach { (uniformName, uniformType) ->
-            outputFile.appendText("val ${shader.`class`}.${uniformName}Name by uniformName()\n")
-            outputFile.appendText("var ${shader.`class`}.$uniformName: $uniformType by uniform()\n\n")
+            outputBuilder.append("val ${shader.`class`}.${uniformName}Name by uniformName()\n")
+            outputBuilder.append("var ${shader.`class`}.$uniformName: $uniformType by uniform()\n\n")
         }
 
-    private fun appendArrayUniforms(shader: Shader, arrayUniforms: List<ArrayUniform>?, outputFile: File) =
+    private fun appendArrayUniforms(shader: Shader, arrayUniforms: List<ArrayUniform>?, outputBuilder: StringBuilder) =
         arrayUniforms?.forEach { (name, type, size) ->
-            outputFile.appendText("val ${shader.`class`}.${name}Name by uniformName()\n")
-            outputFile.appendText("var ${shader.`class`}.$name: Array<$type> by arrayUniform($size)\n\n")
+            outputBuilder.append("val ${shader.`class`}.${name}Name by uniformName()\n")
+            outputBuilder.append("var ${shader.`class`}.$name: Array<$type> by arrayUniform($size)\n\n")
         }
 
-    private fun appendDirectStructUniforms(shader: Shader, structs: List<Struct>?, outputFile: File) {
+    private fun appendDirectStructUniforms(shader: Shader, structs: List<Struct>?, outputBuilder: StringBuilder) {
         structs
             ?.filter { it.instance != null }
             ?.forEach { (_, _, instance) ->
-                outputFile.appendText("val ${shader.`class`}.${instance}Name by uniformName()\n")
-                outputFile.appendText("var ${shader.`class`}.$instance: struct by uniform()\n\n")
+                outputBuilder.append("val ${shader.`class`}.${instance}Name by uniformName()\n")
+                outputBuilder.append("var ${shader.`class`}.$instance: struct by uniform()\n\n")
             }
     }
 }

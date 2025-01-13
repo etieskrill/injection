@@ -14,6 +14,7 @@ typealias mat3 = Matrix3fc
 typealias mat4 = Matrix4fc
 
 typealias sampler2D = int //TODO use texture classes
+typealias sampler2DArray = int
 typealias sampler2DShadow = int
 typealias samplerCubeArrayShadow = int
 
