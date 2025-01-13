@@ -44,6 +44,7 @@ class ShaderReflector(private val logger: Logger) {
                     .filter { content -> content.isNotBlank() }
             }
             .map { content ->
+                //FIXME import outer classes to discard disgusting accessor property stuff
                 val `package` = content[0]
                 val `class` = content[1]
                 val fullClass = content[2]

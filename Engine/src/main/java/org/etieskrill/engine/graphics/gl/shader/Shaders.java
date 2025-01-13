@@ -1,15 +1,10 @@
 package org.etieskrill.engine.graphics.gl.shader;
 
 import io.github.etieskrill.injection.extension.shaderreflection.ReflectShader;
-import org.etieskrill.engine.graphics.gl.shader.impl.LightSourceShader;
 
 import java.util.List;
 
 public class Shaders {
-
-    public static LightSourceShader getLightSourceShader() {
-        return new LightSourceShader();
-    }
 
     public static TextureShader getTextureShader() {
         return new TextureShader();
@@ -19,22 +14,11 @@ public class Shaders {
         return new OutlineShader();
     }
 
-    public static PhongShininessMapShader getBackpackShader() {
-        return new PhongShininessMapShader();
-    }
-
-    public static CubeMapShader getCubeMapShader() {
-        return new CubeMapShader();
-    }
-
-    public static PostprocessingShader getPostprocessingShader() {
-        return new PostprocessingShader();
-    }
-
     public static TextShader getTextShader() {
         return new TextShader();
     }
 
+    //TODO move em fuckers to their game module - with the resources!!!
     @ReflectShader
     public static class ContainerShader extends ShaderProgram {
         public ContainerShader() {

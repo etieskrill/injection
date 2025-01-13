@@ -72,6 +72,7 @@ public class PointShadowMappingService implements Service {
 
             Animator animator = entity.getComponent(Animator.class);
             if (animator != null) {
+                //FIXME actually use animated shader
                 shader.setUniformArrayNonStrict("boneMatrices", animator.getTransformMatricesArray());
             }
 
