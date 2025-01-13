@@ -1,6 +1,7 @@
 package org.etieskrill.engine.graphics.gl.shader;
 
 import io.github.etieskrill.injection.extension.shaderreflection.AbstractShader;
+import kotlin.reflect.KClass;
 import kotlin.text.MatchResult;
 import kotlin.text.Regex;
 import kotlin.text.RegexOption;
@@ -50,7 +51,6 @@ public abstract class ShaderProgram implements Disposable,
 
     protected int programID;
     private int vertID, geomID = -1, fragID;
-    private boolean geometry = false;
     private final Map<String, Uniform> uniforms;
     private final Map<String, ArrayUniform> arrayUniforms;
 
@@ -137,8 +137,7 @@ public abstract class ShaderProgram implements Disposable,
 
     /**
      * A shader file with the <i>glsl</i> extension is presumed to contain exactly a vertex shader, a fragment shader
-     * and - if the flag was set with {@link #hasGeometryShader()} - a geometry shader in the corresponding
-     * definition guards.
+     * and - if the rudimentary detection catches it - a geometry shader in the corresponding definition guards.
      */
     protected ShaderProgram(List<String> shaderFiles, List<UniformEntry> uniforms, boolean strictUniformDetection) {
         Set<ShaderFile> files = shaderFiles.stream().map(fileName -> {
@@ -228,7 +227,7 @@ public abstract class ShaderProgram implements Disposable,
 
         vertID = loadShader(file, VERTEX);
         glAttachShader(programID, vertID);
-        if (geometry) {
+        if (checkForGeometryShader(file.getSource())) {
             try {
                 geomID = loadShader(file, GEOMETRY);
                 glAttachShader(programID, geomID);
@@ -240,6 +239,13 @@ public abstract class ShaderProgram implements Disposable,
         glAttachShader(programID, fragID);
 
         checkLinkStatus();
+    }
+
+    //TODO betterify by resolving pragmas earlier
+    private boolean checkForGeometryShader(String source) {
+        return source.contains("#ifdef GEOMETRY_SHADER")
+                || source.contains("#pragma stage geometry")
+                || source.contains("#pragma stage geom");
     }
 
     private void checkLinkStatus() {
@@ -387,6 +393,7 @@ public abstract class ShaderProgram implements Disposable,
         glUseProgram(0);
     }
 
+    @Override
     public void setUniform(@NotNull String name, @NotNull Object value) {
         setUniform(name, value, uniforms, true, false);
     }
@@ -399,6 +406,7 @@ public abstract class ShaderProgram implements Disposable,
         setUniform(name, value, uniforms, strict, false);
     }
 
+    @Override
     public void setUniformArray(@NotNull String name, @NotNull Object @NotNull [] values) {
         if (values.length == 0) return;
         setUniform(name, values, arrayUniforms, true, true);
@@ -409,6 +417,7 @@ public abstract class ShaderProgram implements Disposable,
         setUniform(name, values, arrayUniforms, false, true);
     }
 
+    @Override
     public void setUniformArray(@NotNull String name, int index, @NotNull Object value) {
         setUniform(name + "[" + index + "]", value, false);
     }
@@ -707,6 +716,15 @@ public abstract class ShaderProgram implements Disposable,
                 return null;
             }
 
+            public static @Nullable Type getFromType(@Nullable Class<?> type) {
+                if (type == null) return null;
+                if (STRUCT.get().isAssignableFrom(type)) return STRUCT;
+                for (Type value : values) {
+                    if (value.get().equals(type)) return value;
+                }
+                return null;
+            }
+
             <T> Type(Class<T> type, Supplier<T> defaultValueGenerator) {
                 this.type = type;
                 this.defaultValueGenerator = defaultValueGenerator;
@@ -758,6 +776,16 @@ public abstract class ShaderProgram implements Disposable,
             return getName().replace("$", Integer.toString(index));
         }
 
+    }
+
+    @Override
+    public void addUniform(@NotNull String name, @NotNull Class<?> type) {
+        addUniform(name, Uniform.Type.getFromType(type));
+    }
+
+    @Override
+    public void addUniformArray(@NotNull String name, int size, @NotNull Class<?> type) {
+        addUniformArray(name, size, Uniform.Type.getFromType(type));
     }
 
     protected void addUniform(String name, Uniform.Type type) {
@@ -827,10 +855,6 @@ public abstract class ShaderProgram implements Disposable,
 
     protected void disableStrictUniformChecking() {
         this.STRICT_UNIFORM_DETECTION = false;
-    }
-
-    protected void hasGeometryShader() {
-        this.geometry = true;
     }
 
     public void checkStatusThrowing() {

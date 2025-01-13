@@ -19,12 +19,11 @@ uniform struct AnimatedBillBoard {
     bool punchThrough;
 } animatedBillBoard;
 
-#ifdef VERTEX_SHADER
+#pragma stage vertex
 void main()
 {}
-#endif
 
-#ifdef GEOMETRY_SHADER
+#pragma stage geometry
 layout (points) in;
 layout (triangle_strip, max_vertices = 4) out;
 
@@ -69,9 +68,8 @@ void main()
     }
     EndPrimitive();
 }
-#endif
 
-#ifdef FRAGMENT_SHADER
+#pragma stage fragment
 in vec2 texCoords;
 in vec4 dirLightSpaceFragPos;
 
@@ -145,4 +143,3 @@ float getInShadow(vec4 lightSpaceFragPos, vec3 lightDirection) {
 
     return shadow / 9.0;
 }
-#endif

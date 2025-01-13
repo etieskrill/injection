@@ -12,6 +12,7 @@ import org.etieskrill.engine.graphics.gl.GLUtils;
 import org.etieskrill.engine.graphics.gl.framebuffer.DirectionalShadowMap;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shader.impl.GridShader;
+import org.etieskrill.engine.graphics.gl.shader.impl.GridShaderKt;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.etieskrill.engine.graphics.texture.AbstractTexture.MagFilter;
 import org.etieskrill.engine.graphics.texture.AbstractTexture.MinFilter;
@@ -47,16 +48,16 @@ import static org.lwjgl.opengl.GL30C.glGenVertexArrays;
 public class Application extends GameApplication {
 
     Camera camera;
-    ShaderProgram gridShader;
+    GridShader gridShader;
     int dummyVao;
 
     Texture2D floorTexture;
-    ShaderProgram floorShader;
+    FloorShader floorShader;
 
     Player dude;
     KeyCharacterController<Vector3f> playerController;
 
-    ShaderProgram stoopidShader;
+    BlitShader stoopidShader;
     DirectionalLightComponent dirLight;
 
     float daylightCycleRotation = 0;
@@ -94,8 +95,7 @@ public class Application extends GameApplication {
 
         floorTexture = new Texture2D.FileBuilder("grass.png")
                 .setMipMapping(MinFilter.NEAREST, MagFilter.NEAREST).build();
-        floorShader = new ShaderProgram(List.of("Floor.glsl"), false) {
-        };
+        floorShader = new FloorShader();
 
         dude = entitySystem.createEntity(id -> new Player(id, pacer)); //FIXME why tf does the player's billboard not render if this is put before the service definitions
 
@@ -161,8 +161,7 @@ public class Application extends GameApplication {
                                 .setOrbitDistance(10)
                 ));
 
-        stoopidShader = new ShaderProgram(List.of("Blit.glsl")) {
-        };
+        stoopidShader = new BlitShader();
 
         window.addKeyInputs(Input.of(
                 Input.bind(Keys.Q).on(InputBinding.Trigger.TOGGLED).to(delta -> daylightCycleRotation += 20 * delta)
@@ -196,7 +195,7 @@ public class Application extends GameApplication {
     @Override
     protected void render() {
         stoopidShader.start();
-        stoopidShader.setTexture("tex", dirLight.getShadowMap().getTexture());
+        stoopidShader.setTexture("tex", dirLight.getShadowMap().getTexture(), false);
 
         glBindVertexArray(dummyVao);
 
@@ -212,18 +211,17 @@ public class Application extends GameApplication {
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         floorShader.start();
-        floorShader.setUniform("camera", camera);
-        floorShader.setTexture("diffuse", floorTexture);
-        floorShader.setUniformNonStrict("dirLight", dirLight.getDirectionalLight());
-        floorShader.setTexture("dirShadowMap", dirLight.getShadowMap().getTexture());
-        floorShader.setUniform("dirLightCombined", dirLight.getCamera().getCombined());
+        FloorShaderKt.setCamera(floorShader, camera);
+        floorShader.setTexture("diffuse", floorTexture, false);
+        floorShader.setTexture("dirShadowMap", dirLight.getShadowMap().getTexture(), false);
+        FloorShaderKt.setDirLightCombined(floorShader, dirLight.getCamera().getCombined());
 
         glDrawArrays(GL_POINTS, 0, 1);
     }
 
     private void renderGrid() {
         gridShader.start();
-        gridShader.setUniform("camera", camera);
+        GridShaderKt.setCamera(gridShader, camera);
 
         glBindVertexArray(dummyVao);
 
