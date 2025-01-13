@@ -51,8 +51,8 @@ abstract class ShaderReflectionTask : DefaultTask() {
     }
 
     @get:InputFiles
-    val inputSources: ConfigurableFileTree = project.fileTree("src/main").apply {
-        include("**/*.java", "**/*.kt", "**/*.kts")
+    val inputSources: ConfigurableFileTree = project.fileTree("build/generated/ksp/main/resources").apply {
+        include("**/$META_FILE_PREFIX*.csv")
     }
 
     @get:OutputDirectory

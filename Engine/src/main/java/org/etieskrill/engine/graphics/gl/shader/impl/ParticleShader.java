@@ -7,7 +7,7 @@ import java.util.List;
 
 import static org.etieskrill.engine.graphics.gl.shader.ShaderProgram.Uniform.Type.*;
 
-@ReflectShader
+@ReflectShader(files = "ParticlePointVertex.glsl")
 public class ParticleShader extends ShaderProgram {
     public ParticleShader() {
         super(List.of("ParticlePointVertex.glsl"));
