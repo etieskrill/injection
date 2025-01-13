@@ -11,6 +11,7 @@ import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.gl.framebuffer.FrameBuffer;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shader.Shaders;
+import org.etieskrill.engine.graphics.gl.shader.Shaders_OutlineShaderKt;
 import org.etieskrill.engine.graphics.gl.shader.impl.MissingShader;
 import org.etieskrill.engine.graphics.model.*;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
@@ -110,7 +111,7 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
 
     //TODO update spec: all factory methods use loaders by default, constructors/builders do not
     @Getter(lazy = true)
-    private static final ShaderProgram outlineShader = Loaders.ShaderLoader.get().load("outline", Shaders::getOutlineShader);
+    private static final Shaders.OutlineShader outlineShader = (Shaders.OutlineShader) Loaders.ShaderLoader.get().load("outline", Shaders::getOutlineShader);
 
     //TODO add outline & wireframe as flag in render
     public void renderOutline(Model model, ShaderProgram shader, Camera camera) {
@@ -119,8 +120,9 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
 
     @Override
     public void renderOutline(Model model, ShaderProgram shader, Camera camera, float thickness, Vector4fc colour, boolean writeToFront) {
-        getOutlineShader().setUniform("thicknessFactor", thickness);
-        getOutlineShader().setUniform("colour", colour);
+        //FIXME import outer classes in accessors and discard this shit
+        Shaders_OutlineShaderKt.setThicknessFactor(getOutlineShader(), thickness);
+        Shaders_OutlineShaderKt.setColour(getOutlineShader(), colour);
 
         glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 

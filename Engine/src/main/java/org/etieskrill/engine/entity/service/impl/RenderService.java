@@ -18,6 +18,7 @@ import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shader.impl.LightSourceShader;
 import org.etieskrill.engine.graphics.gl.shader.impl.LightSourceShaderKt;
 import org.etieskrill.engine.graphics.gl.shader.impl.StaticShader;
+import org.etieskrill.engine.graphics.gl.shader.impl.StaticShaderKt;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.texture.Textures;
@@ -224,11 +225,11 @@ public class RenderService implements Service, Disposable {
         } else if (pointLightComponent != null) {
             LightSourceShaderKt.setLight(lightSourceShader, pointLightComponent.getLight());
             if (pointLightComponent.getFarPlane() != null)
-                shader.setPointShadowFarPlane(pointLightComponent.getFarPlane()); //TODO make per-light?
+                StaticShaderKt.setPointShadowFarPlane(shader, pointLightComponent.getFarPlane()); //TODO make per-light?
             return lightSourceShader;
         } else {
             configureShader(shader, shaderParams);
-            shader.setTextureScale(drawable.getTextureScale());
+            StaticShaderKt.setTextureScale(shader, drawable.getTextureScale());
             return shader;
         }
     }
