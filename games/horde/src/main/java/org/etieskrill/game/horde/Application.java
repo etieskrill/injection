@@ -10,7 +10,6 @@ import org.etieskrill.engine.graphics.camera.PerspectiveCamera;
 import org.etieskrill.engine.graphics.data.DirectionalLight;
 import org.etieskrill.engine.graphics.gl.GLUtils;
 import org.etieskrill.engine.graphics.gl.framebuffer.DirectionalShadowMap;
-import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shader.impl.GridShader;
 import org.etieskrill.engine.graphics.gl.shader.impl.GridShaderKt;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
@@ -37,7 +36,6 @@ import org.joml.Vector2f;
 import org.joml.Vector2i;
 import org.joml.Vector3f;
 
-import java.util.List;
 import java.util.Random;
 
 import static org.joml.Math.toRadians;
@@ -195,7 +193,7 @@ public class Application extends GameApplication {
     @Override
     protected void render() {
         stoopidShader.start();
-        stoopidShader.setTexture("tex", dirLight.getShadowMap().getTexture(), false);
+        stoopidShader.setTexture("tex", dirLight.getShadowMap().getTexture());
 
         glBindVertexArray(dummyVao);
 
@@ -212,8 +210,8 @@ public class Application extends GameApplication {
 
         floorShader.start();
         FloorShaderKt.setCamera(floorShader, camera);
-        floorShader.setTexture("diffuse", floorTexture, false);
-        floorShader.setTexture("dirShadowMap", dirLight.getShadowMap().getTexture(), false);
+        floorShader.setTexture("diffuse", floorTexture);
+        floorShader.setTexture("dirShadowMap", dirLight.getShadowMap().getTexture());
         FloorShaderKt.setDirLightCombined(floorShader, dirLight.getCamera().getCombined());
 
         glDrawArrays(GL_POINTS, 0, 1);
