@@ -76,6 +76,18 @@ class ShaderReflector(private val logger: Logger) {
             }
     }
 
+    private fun String.simplifyGlslSource() {
+    }
+
+    private fun String.resolvePreprocessorDirectives() {
+        val directiveRegex = """^#(?<directive>\w+) (?<statement>[\s\S]+?)${'$'}""".toRegex()
+
+        val directives = directiveRegex.findAll(this)
+            .map { it. }
+            .map { it.destructured }
+            .associate { (directive, statement) -> directive to statement }
+    }
+
     private fun getStructUniforms(annotatedShaders: List<Shader>): Map<Shader, List<Struct>> {
         //TODO instance name lists
         //FIXME this overflows the struct content to the next match if the struct body does not contain any whitespace, and i, for the life of me, could not fix it. man, perhaps a proper lexer/parser setup would be simpler than this
