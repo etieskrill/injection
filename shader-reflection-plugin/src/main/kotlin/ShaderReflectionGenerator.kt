@@ -5,21 +5,27 @@ import org.gradle.api.logging.Logger
 import java.io.File
 
 class ShaderReflector(private val logger: Logger) {
-    fun reflectShaders(inputSources: ConfigurableFileTree, inputResources: ConfigurableFileTree, outputDir: File) {
+    fun reflectShaders(
+        inputSources: ConfigurableFileTree,
+        inputResources: ConfigurableFileTree,
+        sourceOutputDir: File,
+        resourceOutputDir: File
+    ) {
         val annotatedShaders = getAnnotatedShaders(inputSources, inputResources)
 
-        outputDir.mkdirs()
+        sourceOutputDir.mkdirs()
 
         val structs = getStructUniforms(annotatedShaders) //TODO generate struct types
+        logger.debug("Detected structs: {}", structs)
         val uniforms = getUniforms(annotatedShaders, structs)
-        logger.info("Detected primitive uniforms: $uniforms")
-        val arrayUniforms = annotatedShaders
-            .associateWith { getArrayUniforms(it, structs[it]) }
+        logger.debug("Detected primitive uniforms: {}", uniforms)
+        val arrayUniforms = annotatedShaders.associateWith { getArrayUniforms(it, structs[it]) }
+        logger.debug("Detected primitive array uniforms: {}", arrayUniforms)
 
-        uniforms.forEach { (shader, uniforms) ->
-            val outputBuilder = StringBuilder()
+        annotatedShaders.forEach { shader ->
+            val sourceOutputBuilder = StringBuilder()
 
-            outputBuilder.append(
+            sourceOutputBuilder.append(
                 """
                 package ${shader.`package`}
 
@@ -27,17 +33,26 @@ class ShaderReflector(private val logger: Logger) {
                 """.trimIndent() + "\n\n"
             )
 
-            appendPrimitiveUniforms(shader, uniforms, outputBuilder)
-            appendArrayUniforms(shader, arrayUniforms[shader], outputBuilder)
-            appendDirectStructUniforms(shader, structs[shader], outputBuilder)
+            appendPrimitiveUniforms(shader, uniforms[shader], sourceOutputBuilder)
+            appendArrayUniforms(shader, arrayUniforms[shader], sourceOutputBuilder)
+            appendDirectStructUniforms(shader, structs[shader], sourceOutputBuilder)
 
-            val outputFile = outputDir.resolve("${shader.`class`}.kt")
-            outputFile.writeText(outputBuilder.toString())
+            val sourceOutputFile = sourceOutputDir.resolve("${shader.`class`}.kt")
+            sourceOutputFile.writeText(sourceOutputBuilder.toString())
+
+            val resourceOutputBuilder = StringBuilder()
+            generateUniformResourceFile(uniforms[shader], arrayUniforms[shader], resourceOutputBuilder)
+
+            val resourceOutputFile = resourceOutputDir.resolve("$UNIFORM_RESOURCE_PREFIX${shader.`class`}.csv")
+            resourceOutputFile.writeText(resourceOutputBuilder.toString())
         }
     }
 
-    private fun getAnnotatedShaders(inputSources: ConfigurableFileTree, inputResources: ConfigurableFileTree) =
-        inputSources
+    private fun getAnnotatedShaders(
+        inputSources: ConfigurableFileTree,
+        inputResources: ConfigurableFileTree
+    ): List<Shader> {
+        return inputSources
             .map {
                 it.readText()
                     .split(',')
@@ -55,16 +70,18 @@ class ShaderReflector(private val logger: Logger) {
                         .mapNotNull { source -> inputResources.find { it.name == source } }
                 } else {
                     inputResources.filter { it.nameWithoutExtension == name }
-                }.map { it.readText() }
+                }.map { it.readText() } //TODO preprocess to make regexes simpler: resolve preprocessor directives, remove comments, trim indents, remove newlines, remove all spaces unless between keywords/variable identifiers, in that order i think
 
                 Shader(name, `package`, fullClass, sources)
             }
+    }
 
     private fun getStructUniforms(annotatedShaders: List<Shader>): Map<Shader, List<Struct>> {
         //TODO instance name lists
         //FIXME this overflows the struct content to the next match if the struct body does not contain any whitespace, and i, for the life of me, could not fix it. man, perhaps a proper lexer/parser setup would be simpler than this
         val structRegex =
             """(?<uniform>uniform)? *struct(?: +|[\n ]+)(?<type>\w+) *\n*\{\n*(?<content>[\s\S]*?(?!}))[ \n]*} *(?<instanceName>\w+\[?\]?)?;""".toRegex()
+        //TODO simplified and corrected struct regex: (?<uniform>uniform )?struct (?<type>\w+)\{(?<content>[ \S]*?)}(?<instanceName>\w+(?:\[\])?)?; multiple comma separated instances are still missing tho
 
         return annotatedShaders.associateWith { shader ->
             shader.sources.flatMap { shaderContent ->
@@ -92,7 +109,7 @@ class ShaderReflector(private val logger: Logger) {
         annotatedShaders: List<Shader>,
         structs: Map<Shader, List<Struct>>
     ): Map<Shader, Map<String, String>> {
-        val uniformRegex = """uniform (\w+) (\w+);""".toRegex()
+        val uniformRegex = """(?<!// *)uniform (\w+) (\w+);""".toRegex()
 
         return annotatedShaders.associateWith { shader ->
             shader.sources.flatMap { shaderContent ->
@@ -145,8 +162,8 @@ class ShaderReflector(private val logger: Logger) {
         }
     }
 
-    private fun appendPrimitiveUniforms(shader: Shader, uniforms: Map<String, String>, outputBuilder: StringBuilder) =
-        uniforms.forEach { (uniformName, uniformType) ->
+    private fun appendPrimitiveUniforms(shader: Shader, uniforms: Map<String, String>?, outputBuilder: StringBuilder) =
+        uniforms?.forEach { (uniformName, uniformType) ->
             outputBuilder.append("val ${shader.`class`}.${uniformName}Name by uniformName()\n")
             outputBuilder.append("var ${shader.`class`}.$uniformName: $uniformType by uniform()\n\n")
         }
@@ -157,13 +174,25 @@ class ShaderReflector(private val logger: Logger) {
             outputBuilder.append("var ${shader.`class`}.$name: Array<$type> by arrayUniform($size)\n\n")
         }
 
-    private fun appendDirectStructUniforms(shader: Shader, structs: List<Struct>?, outputBuilder: StringBuilder) {
+    private fun appendDirectStructUniforms(shader: Shader, structs: List<Struct>?, outputBuilder: StringBuilder) =
         structs
             ?.filter { it.instance != null }
             ?.forEach { (_, _, instance) ->
                 outputBuilder.append("val ${shader.`class`}.${instance}Name by uniformName()\n")
                 outputBuilder.append("var ${shader.`class`}.$instance: struct by uniform()\n\n")
             }
+
+    private fun generateUniformResourceFile(
+        uniforms: Map<String, String>?,
+        arrayUniforms: List<ArrayUniform>?,
+        outputBuilder: StringBuilder
+    ) {
+        uniforms?.map { (name, type) -> "uniform,$type,$name" }
+            ?.joinToString("\n")
+            ?.let { outputBuilder.append(it) }
+        outputBuilder.append("\n")
+        arrayUniforms?.joinToString("\n") { (name, type, size) -> "arrayUniform,$type,$size,$name" }
+            ?.let { outputBuilder.append(it) }
     }
 }
 

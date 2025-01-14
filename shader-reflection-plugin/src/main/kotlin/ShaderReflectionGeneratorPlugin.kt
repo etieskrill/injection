@@ -10,6 +10,10 @@ import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 import java.io.File
 
+const val GENERATED_MODULE_DIR = "build/generated/shader-reflection/main"
+const val GENERATED_SOURCE_DIR = "$GENERATED_MODULE_DIR/kotlin"
+const val GENERATED_RESOURCE_DIR = "$GENERATED_MODULE_DIR/resources"
+
 class ShaderReflectionGeneratorPlugin : Plugin<Project> {
     override fun apply(project: Project): Unit = project.run {
         tasks.register("generateShaderReflection", ShaderReflectionTask::class.java).configure {
@@ -17,13 +21,10 @@ class ShaderReflectionGeneratorPlugin : Plugin<Project> {
             description = "Generates attribute accessors for shaders annotated with @ReflectShader"
         }
 
-        val generatedSourceDir = "build/generated/kotlin"
-
         extensions.configure<JavaPluginExtension>("java") { javaExtension ->
-            javaExtension.sourceSets.apply { //FIXME currently detected as source, not generated source ¯\_(ツ)_/¯
-                getByName("main").java {
-                    it.srcDir(generatedSourceDir)
-                }
+            javaExtension.sourceSets.getByName("main").apply {
+                java.srcDir(GENERATED_SOURCE_DIR) //FIXME currently detected as source, not generated source ¯\_(ツ)_/¯
+                resources.srcDir(GENERATED_RESOURCE_DIR)
             }
         }
 
@@ -32,6 +33,7 @@ class ShaderReflectionGeneratorPlugin : Plugin<Project> {
         tasks.apply {
             getByName("compileJava").apply { dependsOn("generateShaderReflection") }
             getByName("compileKotlin").apply { dependsOn("generateShaderReflection") }
+            getByName("processResources").apply { dependsOn("generateShaderReflection") }
         }
 
         //TODO add as api if target has `java-library`?
@@ -43,8 +45,6 @@ class ShaderReflectionGeneratorPlugin : Plugin<Project> {
 }
 
 abstract class ShaderReflectionTask : DefaultTask() {
-    private val generatedSourceDir = "build/generated/kotlin"
-
     @get:InputFiles
     val inputResources: ConfigurableFileTree = project.fileTree("src/main/resources").apply {
         include("**/*.glsl", "**/*.vert", "**/*.geom", "**/*.frag")
@@ -56,11 +56,14 @@ abstract class ShaderReflectionTask : DefaultTask() {
     }
 
     @get:OutputDirectory
-    val outputDir: File = project.file(generatedSourceDir)
+    val sourceOutputDir: File = project.file(GENERATED_SOURCE_DIR)
+
+    @get:OutputDirectory
+    val resourceOutputDir: File = project.file(GENERATED_RESOURCE_DIR)
 
     @TaskAction
     fun generateShaderReflections() {
         logger.info("Generating shader reflections")
-        ShaderReflector(logger).reflectShaders(inputSources, inputResources, outputDir)
+        ShaderReflector(logger).reflectShaders(inputSources, inputResources, sourceOutputDir, resourceOutputDir)
     }
 }

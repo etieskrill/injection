@@ -1,7 +1,7 @@
 package org.etieskrill.engine.graphics.gl.shader;
 
 import io.github.etieskrill.injection.extension.shaderreflection.AbstractShader;
-import kotlin.reflect.KClass;
+import io.github.etieskrill.injection.extension.shaderreflection.ConstantsKt;
 import kotlin.text.MatchResult;
 import kotlin.text.Regex;
 import kotlin.text.RegexOption;
@@ -11,9 +11,9 @@ import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.config.GLContextConfig;
 import org.etieskrill.engine.graphics.gl.shader.impl.MissingShader;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
+import org.etieskrill.engine.util.ClassUtils;
 import org.etieskrill.engine.util.FileUtils;
 import org.etieskrill.engine.util.Loaders;
-import org.etieskrill.engine.util.ResourceReader;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.*;
@@ -33,6 +33,8 @@ import static org.etieskrill.engine.graphics.gl.GLUtils.*;
 import static org.etieskrill.engine.graphics.gl.shader.ShaderProgram.ShaderType.*;
 import static org.etieskrill.engine.graphics.gl.shader.ShaderProgram.Uniform.INVALID_UNIFORM_LOCATION;
 import static org.etieskrill.engine.graphics.gl.shader.ShaderProgram.Uniform.NESTED_UNIFORM_LOCATION;
+import static org.etieskrill.engine.util.ResourceReader.classpathResourceExists;
+import static org.etieskrill.engine.util.ResourceReader.getClasspathResource;
 import static org.lwjgl.opengl.ARBShadingLanguageInclude.GL_SHADER_INCLUDE_ARB;
 import static org.lwjgl.opengl.ARBShadingLanguageInclude.glNamedStringARB;
 import static org.lwjgl.opengl.GL46C.*;
@@ -150,7 +152,7 @@ public abstract class ShaderProgram implements Disposable,
                 default ->
                         throw new ShaderCreationException("Cannot load shader with unknown file extension: " + fileName);
             };
-            return new ShaderFile(fileName, type, ResourceReader.getClasspathResource(SHADER_PATH + fileName));
+            return new ShaderFile(fileName, type, getClasspathResource(SHADER_PATH + fileName));
         }).collect(Collectors.toSet());
 
         if (files.size() == 1 && !files.stream().allMatch(file -> file.getType() == COMPOSITE)) {
@@ -195,6 +197,24 @@ public abstract class ShaderProgram implements Disposable,
         setUniformDefaults();
         //TODO find and add uniforms from files
         //TODO filter and warn on duplicates, prefer config, then UniformEntries, then autodetected
+        var uniformFileName = ConstantsKt.UNIFORM_RESOURCE_PREFIX + ClassUtils.getFullName(this) + ".csv";
+        if (classpathResourceExists(uniformFileName)) {
+            getClasspathResource(uniformFileName)
+                    .lines()
+                    .map(line -> line.split(","))
+                    .forEach(uniformTypeName -> {
+                        switch (uniformTypeName[0]) {
+                            case "uniform" -> addUniform(
+                                    uniformTypeName[2],
+                                    Uniform.Type.getFromName(uniformTypeName[1].toUpperCase())); //TODO parse structs in separate branch when generated types are introduced
+                            case "arrayUniform" -> addUniformArray(
+                                    uniformTypeName[3],
+                                    Integer.parseInt(uniformTypeName[2]),
+                                    Uniform.Type.getFromName(uniformTypeName[1].toUpperCase()));
+                        }
+                    });
+        }
+
         for (UniformEntry uniform : uniforms) {
             if (!uniform.isArray()) {
                 addUniform(uniform.getName(), uniform.getType());
@@ -291,9 +311,7 @@ public abstract class ShaderProgram implements Disposable,
             default -> throw new IllegalStateException("Unexpected value: " + type);
         });
 
-        //TODO
-        // - auto geometry stage detection
-        // - use #line <nr> to improve debugging experience
+        //TODO use #line <nr> to improve debugging experience
 
         String shaderSource = file.getSource();
         if (file.getType() == COMPOSITE) {
@@ -371,7 +389,7 @@ public abstract class ShaderProgram implements Disposable,
 
     //TODO use named string arbs to modularise shaders
     private void loadLibrary(String file) {
-        glNamedStringARB(GL_SHADER_INCLUDE_ARB, file.split("\\.")[0], ResourceReader.getClasspathResource(file));
+        glNamedStringARB(GL_SHADER_INCLUDE_ARB, file.split("\\.")[0], getClasspathResource(file));
     }
 
     private void disposeShaders() {
@@ -554,7 +572,8 @@ public abstract class ShaderProgram implements Disposable,
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
             switch (type) {
-                case INT, SAMPLER2D, SAMPLER_CUBE_MAP, SAMPLER_CUBE_MAP_ARRAY -> glUniform1i(location, (Integer) value);
+                case INT, SAMPLER_2D, SAMPLER_2D_SHADOW, SAMPLER_CUBE_MAP, SAMPLER_CUBE_MAP_ARRAY ->
+                        glUniform1i(location, (Integer) value);
                 case FLOAT -> glUniform1f(location, (Float) value);
                 case BOOLEAN -> glUniform1f(location, (boolean) value ? 1 : 0);
                 case VEC2 -> glUniform2fv(location, ((Vector2f) value).get(stack.mallocFloat(2)));
@@ -575,7 +594,7 @@ public abstract class ShaderProgram implements Disposable,
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
             switch (type) {
-                case INT, SAMPLER2D, SAMPLER_CUBE_MAP -> {
+                case INT, SAMPLER_2D, SAMPLER_2D_SHADOW, SAMPLER_CUBE_MAP, SAMPLER_CUBE_MAP_ARRAY -> {
                     IntBuffer ints = stack.mallocInt(value.length);
                     for (Object o : value) ints.put((Integer) o);
                     glUniform1iv(location, ints.rewind());
@@ -696,7 +715,8 @@ public abstract class ShaderProgram implements Disposable,
             MAT3(Matrix3f.class, Matrix3f::new),
             MAT4(Matrix4f.class, Matrix4f::new),
 
-            SAMPLER2D(Integer.class, () -> 0),
+            SAMPLER_2D(Integer.class, () -> 0),
+            SAMPLER_2D_SHADOW(Integer.class, () -> 0),
             SAMPLER_CUBE_MAP(Integer.class, () -> 0),
             SAMPLER_CUBE_MAP_ARRAY(Integer.class, () -> 0),
 
@@ -725,9 +745,20 @@ public abstract class ShaderProgram implements Disposable,
                 return null;
             }
 
+            public static @Nullable Type getFromName(String name) {
+                for (Type type : values) {
+                    if (type.name().replace("_", "").equals(name)) return type;
+                }
+                return null;
+            }
+
             <T> Type(Class<T> type, Supplier<T> defaultValueGenerator) {
                 this.type = type;
                 this.defaultValueGenerator = defaultValueGenerator;
+            }
+
+            <T> Type(Type type) {
+                this((Class<T>) type.type, (Supplier<T>) type.defaultValueGenerator);
             }
 
             public Class<?> get() {
