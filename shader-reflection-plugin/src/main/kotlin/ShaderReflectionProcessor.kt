@@ -17,7 +17,10 @@ class ShaderReflectorProcessor(
     override fun process(resolver: Resolver): List<KSAnnotated> {
         resolver.getSymbolsWithAnnotation(ReflectShader::class.qualifiedName!!)
             .filterIsInstance<KSClassDeclaration>()
-            .filter { it.hasSupertype<AbstractShader>() }
+            .filter {
+                if (it.hasSupertype<AbstractShader>()) true
+                else throw IllegalStateException("Class ${it.simpleName.asString()} has @ReflectShader annotation, but does not implement ${AbstractShader::class.simpleName}")
+            }
             .associateWith { it.generateFile() }
             .forEach { (classDeclaration, output) ->
                 val fields = listOf(
