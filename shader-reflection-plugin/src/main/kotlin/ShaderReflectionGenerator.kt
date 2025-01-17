@@ -2,9 +2,10 @@ package io.github.etieskrill.injection.extension.shaderreflection
 
 import org.gradle.api.file.ConfigurableFileTree
 import org.gradle.api.logging.Logger
+import org.jetbrains.annotations.VisibleForTesting
 import java.io.File
 
-class ShaderReflector(private val logger: Logger) {
+class ShaderReflectionGenerator(private val logger: Logger) {
     fun reflectShaders(
         inputSources: ConfigurableFileTree,
         inputResources: ConfigurableFileTree,
@@ -76,16 +77,50 @@ class ShaderReflector(private val logger: Logger) {
             }
     }
 
-    private fun String.simplifyGlslSource() {
+    @VisibleForTesting
+    internal fun simplifyGlslSource(source: String): String = source
+        .run { resolvePreprocessorDirectives(this) }
+        .run { removeComments(this) }
+        .run { this.lines().joinToString(separator = "") { it.trim() } }
+
+    internal fun removeComments(source: String): String =
+        source.run {
+            val singleLineCommentRegex = """\/\/[\S\s]*?$""".toRegex(RegexOption.MULTILINE)
+            replace(singleLineCommentRegex) { "" }
+        }.run {
+            val multiLineCommentRegex = """\/\*[\S\s]*?\*\/""".toRegex(RegexOption.MULTILINE)
+            replace(multiLineCommentRegex) { "" }
+        }
+
+    @VisibleForTesting
+    internal fun resolvePreprocessorDirectives(source: String): String {
+        var source = resolveDefineDirectives(source)
+
+        val directiveRegex = """^#(?<directive>\w+) (?<statement>[\s\S]+?)$""".toRegex(RegexOption.MULTILINE)
+        source = source.replace(directiveRegex) { "" }
+
+        return source
     }
 
-    private fun String.resolvePreprocessorDirectives() {
-        val directiveRegex = """^#(?<directive>\w+) (?<statement>[\s\S]+?)${'$'}""".toRegex()
+    @VisibleForTesting
+    internal fun resolveDefineDirectives(source: String): String {
+        val defineRegex = """^#define (?<identifier>\w+)(?: (?<statement>[\s\S]+?))?$""".toRegex(RegexOption.MULTILINE)
 
-        val directives = directiveRegex.findAll(this)
-            .map { it. }
-            .map { it.destructured }
-            .associate { (directive, statement) -> directive to statement }
+        var source = source
+
+        var match = defineRegex.find(source)
+        while (match != null) {
+            println("removing ${match.groups[0]}")
+            source = source.removeRange(match.range)
+
+            val (identifier, statement) = match.destructured
+            //TODO exclude keywords, types... fuck
+            source = source.replace(identifier, statement)
+
+            match = defineRegex.find(source)
+        }
+
+        return source
     }
 
     private fun getStructUniforms(annotatedShaders: List<Shader>): Map<Shader, List<Struct>> {
@@ -155,7 +190,8 @@ class ShaderReflector(private val logger: Logger) {
                 val size = match.groups["size"]!!.value
                     .toIntOrNull()
                     ?: run {
-                        val defineDirectiveRegex = """^#define (?<name>\w+) (?<value>\d+)\n""".toRegex(RegexOption.MULTILINE)
+                        val defineDirectiveRegex =
+                            """^#define (?<name>\w+) (?<value>\d+)\n""".toRegex(RegexOption.MULTILINE)
                         val matches = defineDirectiveRegex.findAll(
                             source.trimIndent() //FIXME find out why this works
                         ).toList()
