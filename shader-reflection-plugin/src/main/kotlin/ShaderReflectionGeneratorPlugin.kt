@@ -64,6 +64,11 @@ abstract class ShaderReflectionTask : DefaultTask() {
     @TaskAction
     fun generateShaderReflections() {
         logger.info("Generating shader reflections")
-        ShaderReflector(logger).reflectShaders(inputSources, inputResources, sourceOutputDir, resourceOutputDir)
+        ShaderReflectionGenerator(logger).reflectShaders(
+            inputSources,
+            inputResources,
+            sourceOutputDir,
+            resourceOutputDir
+        )
     }
 }

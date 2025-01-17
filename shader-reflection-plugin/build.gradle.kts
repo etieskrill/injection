@@ -32,4 +32,10 @@ dependencies {
 
     implementation("com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin:$kspVersion")
     implementation("com.google.devtools.ksp:symbol-processing-api:$kspVersion")
+
+    testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
+    testImplementation("org.jetbrains.kotlin:kotlin-test:2.1.0")
+    testImplementation("io.mockk:mockk:1.13.16")
 }
+
+tasks.test { useJUnitPlatform() }
