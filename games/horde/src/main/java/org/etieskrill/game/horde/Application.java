@@ -193,7 +193,7 @@ public class Application extends GameApplication {
     @Override
     protected void render() {
         stoopidShader.start();
-        stoopidShader.setTexture("tex", dirLight.getShadowMap().getTexture());
+        BlitShaderKt.setTex(stoopidShader, dirLight.getShadowMap().getTexture()); //improper handling for testing purposes
 
         glBindVertexArray(dummyVao);
 
@@ -210,8 +210,8 @@ public class Application extends GameApplication {
 
         floorShader.start();
         FloorShaderKt.setCamera(floorShader, camera);
-        floorShader.setTexture("diffuse", floorTexture);
-        floorShader.setTexture("dirShadowMap", dirLight.getShadowMap().getTexture());
+        FloorShaderKt.setDiffuse(floorShader, floorTexture);
+        FloorShaderKt.setDirShadowMap(floorShader, dirLight.getShadowMap());
         FloorShaderKt.setDirLightCombined(floorShader, dirLight.getCamera().getCombined());
 
         glDrawArrays(GL_POINTS, 0, 1);

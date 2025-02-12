@@ -1,5 +1,6 @@
 package org.etieskrill.engine.graphics.texture;
 
+import io.github.etieskrill.injection.extension.shaderreflection.TextureCubeMapArray;
 import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector2ic;
@@ -14,7 +15,7 @@ import static org.lwjgl.opengl.GL12C.glTexImage3D;
 import static org.lwjgl.opengl.GL32C.GL_FRAMEBUFFER;
 import static org.lwjgl.opengl.GL32C.glFramebufferTexture;
 
-public class CubeMapArrayTexture extends AbstractTexture implements FrameBufferAttachment {
+public class CubeMapArrayTexture extends AbstractTexture implements FrameBufferAttachment, TextureCubeMapArray {
 
     private static final Logger logger = LoggerFactory.getLogger(CubeMapArrayTexture.class);
 

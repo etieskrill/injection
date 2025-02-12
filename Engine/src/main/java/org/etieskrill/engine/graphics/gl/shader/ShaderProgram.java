@@ -2,6 +2,7 @@ package org.etieskrill.engine.graphics.gl.shader;
 
 import io.github.etieskrill.injection.extension.shaderreflection.AbstractShader;
 import io.github.etieskrill.injection.extension.shaderreflection.ConstantsKt;
+import io.github.etieskrill.injection.extension.shaderreflection.Texture;
 import kotlin.text.MatchResult;
 import kotlin.text.Regex;
 import kotlin.text.RegexOption;
@@ -447,7 +448,8 @@ public abstract class ShaderProgram implements Disposable,
      * @param name    the sampler name in the shader
      * @param texture the texture to be bound
      */
-    public void setTexture(@NotNull String name, @NotNull AbstractTexture texture) {
+    @Override
+    public void setTexture(@NotNull String name, @NotNull Texture texture) {
         setTexture(name, texture, true);
     }
 
@@ -458,7 +460,7 @@ public abstract class ShaderProgram implements Disposable,
      * @param name    the sampler name in the shader
      * @param texture the texture to be bound
      */
-    public void setTexture(@NotNull String name, @NotNull AbstractTexture texture, boolean strict) {
+    public void setTexture(@NotNull String name, @NotNull Texture texture, boolean strict) {
         int unit;
         var boundUnit = boundTextures.get(name);
         if (boundUnit != null) {

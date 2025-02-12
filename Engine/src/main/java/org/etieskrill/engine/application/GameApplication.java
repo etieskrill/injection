@@ -69,7 +69,7 @@ public abstract class GameApplication {
             logger.info("Initialised application");
             _loop();
         } catch (Exception e) {
-            logger.warn("Caught application exception", e);
+            logger.warn("Caught application exception", e); //TODO better handling and scopes
         } finally {
             terminate();
             logger.info("Terminated application");

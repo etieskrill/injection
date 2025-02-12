@@ -19,7 +19,7 @@ import static org.lwjgl.opengl.GL33C.GL_UNSIGNED_BYTE;
 import static org.lwjgl.opengl.GL33C.glTexImage2D;
 import static org.lwjgl.stb.STBImage.stbi_image_free;
 
-public class Texture2D extends AbstractTexture implements FrameBufferAttachment {
+public class Texture2D extends AbstractTexture implements FrameBufferAttachment, io.github.etieskrill.injection.extension.shaderreflection.Texture2D {
 
     private static final Logger logger = LoggerFactory.getLogger(Texture2D.class);
 

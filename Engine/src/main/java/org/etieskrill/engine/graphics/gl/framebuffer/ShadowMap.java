@@ -11,12 +11,15 @@ import static org.lwjgl.opengl.GL14C.GL_TEXTURE_COMPARE_MODE;
 import static org.lwjgl.opengl.GL30C.GL_COMPARE_REF_TO_TEXTURE;
 
 /**
- * TODO this is not true, using depth comparison without shadow samplers causes undefined behaviour
- * It is possible to use both a regular sampler (sampler{*D,Cube}) or a shadow sampler (sampler{*D,Cube}Shadow) in glsl
- * code, as the {@link ShadowMap#texture} has the relevant comparator mode set up. The shadow sampler is slightly easier
- * to use, and creates better results out of the box.
+ * It is possible to use a regular {@link AbstractTexture texture} (with a {@code sampler{*D,Cube}}) as a shadow map,
+ * but this introduces unnecessary wrangling with colour vectors, among other inconveniences. Instead, leverage a
+ * shadow sampler ({@code sampler{*D,Cube}Shadow}) by using this class.
+ * <p>
+ * Note that; while it is possible on various hardware to read from a shadow/depth texture using a non-shadow sampler
+ * and vice versa, and this class effectively only acts as a proxy for the {@link ShadowMap#texture}, this action causes
+ * undefined behaviour according to the specification.
  */
-public abstract class ShadowMap<T extends AbstractTexture & FrameBufferAttachment> extends FrameBuffer {
+public abstract class ShadowMap<T extends AbstractTexture & FrameBufferAttachment> extends FrameBuffer implements io.github.etieskrill.injection.extension.shaderreflection.ShadowMap<T> {
 
     protected final T texture;
 
@@ -64,6 +67,16 @@ public abstract class ShadowMap<T extends AbstractTexture & FrameBufferAttachmen
     public void bind(Binding binding) {
         super.bind(binding);
         glViewport(0, 0, getSize().x(), getSize().y()); //TODO do in framebuffer?
+    }
+
+    @Override
+    public void bind(int unit) {
+        texture.bind(unit);
+    }
+
+    @Override
+    public void unbind(int unit) {
+        texture.unbind(unit);
     }
 
     public T getTexture() {

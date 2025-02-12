@@ -1,5 +1,6 @@
 package org.etieskrill.engine.graphics.texture;
 
+import io.github.etieskrill.injection.extension.shaderreflection.TextureCubeMap;
 import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment;
 import org.joml.Vector2ic;
 import org.joml.Vector3f;
@@ -21,7 +22,7 @@ import static org.lwjgl.opengl.GL33C.*;
 import static org.lwjgl.stb.STBImage.stbi_image_free;
 
 //TODO move these and Texture's builders and factory methods into a TextureFactory
-public class CubeMapTexture extends AbstractTexture implements FrameBufferAttachment {
+public class CubeMapTexture extends AbstractTexture implements FrameBufferAttachment, TextureCubeMap {
 
     public static final int NUM_SIDES = 6;
 

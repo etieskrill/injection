@@ -1,5 +1,6 @@
 package org.etieskrill.engine.graphics.texture;
 
+import io.github.etieskrill.injection.extension.shaderreflection.Texture;
 import lombok.Getter;
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.graphics.gl.GLUtils;
@@ -7,8 +8,6 @@ import org.jetbrains.annotations.NotNull;
 import org.joml.Vector2i;
 import org.joml.Vector2ic;
 import org.joml.Vector4fc;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.Objects;
@@ -21,14 +20,12 @@ import static org.lwjgl.opengl.GL40C.*;
  * As this class makes use of the stb_image library, it can decode from all the image formats specified in the
  * official documentation: <a href="https://github.com/nothings/stb/blob/5736b15f7ea0ffb08dd38af21067c314d6a3aae9/stb_image.h#L23-L33">stb_image</a>
  */
-public abstract class AbstractTexture implements Disposable {
+public abstract class AbstractTexture implements Texture, Disposable {
 
     protected final int texture;
     protected final Format format;
     protected final Type type;
     protected final Target target;
-
-    private static final Logger logger = LoggerFactory.getLogger(AbstractTexture.class);
 
     public enum Target { //TODO more types
         TWO_D(Texture2D.class, GL_TEXTURE_2D),
@@ -329,12 +326,20 @@ public abstract class AbstractTexture implements Disposable {
         }
     }
 
+    @Override
+    public void bind() {
+        bind(0); //FIXME tf - is this not being implemented just intellisense whining?
+    }
+
     //TODO rework binding system; perhaps standard bind to 0, and only use units in specific cases like rendering
+    @Override
     public void bind(int unit) {
+        //if (unit > GLContextConfig.getMaxTextureUnits()) throw new something; //TODO create wrapper for these validation calls (dev/prod switch-ish)
         glActiveTexture(GL_TEXTURE0 + unit);
         glBindTexture(target.gl(), texture);
     }
 
+    @Override
     public void unbind(int unit) {
         glActiveTexture(GL_TEXTURE0 + unit);
         glBindTexture(target.gl(), 0);
@@ -345,7 +350,7 @@ public abstract class AbstractTexture implements Disposable {
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 
-    public int getID() {
+    protected int getID() {
         return texture;
     }
 

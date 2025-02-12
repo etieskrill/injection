@@ -16,23 +16,17 @@ class UniformDelegate<T : Any> : ReadWriteProperty<AbstractShader, T> {
             thisRef.addUniform(property.name, value::class.java)
             initialised = true
         }
-        thisRef.setUniform(property.name, value)
+        when (value) {
+            is Texture -> thisRef.setTexture(property.name, value)
+            else -> thisRef.setUniform(property.name, value)
+        }
     }
 }
 
-//TODO register uniforms here
 fun <T : Any> uniform() = UniformDelegate<T>()
-
-class UniformName : ReadOnlyProperty<Any?, String> {
-    override fun getValue(thisRef: Any?, property: KProperty<*>): String =
-        property.name.removeSuffix("Name")
-}
-
-fun uniformName() = UniformName()
 
 class ArrayUniformDelegate<T : Any>(private val size: Int) : ReadWriteProperty<AbstractShader, Array<T>> {
     private var initialised = false
-
     override fun getValue(thisRef: AbstractShader, property: KProperty<*>): Array<T> =
         TODO()
 
@@ -47,3 +41,10 @@ class ArrayUniformDelegate<T : Any>(private val size: Int) : ReadWriteProperty<A
 }
 
 fun <T : Any> arrayUniform(size: Int) = ArrayUniformDelegate<T>(size)
+
+class UniformName : ReadOnlyProperty<Any?, String> {
+    override fun getValue(thisRef: Any?, property: KProperty<*>): String =
+        property.name.removeSuffix("Name")
+}
+
+fun uniformName() = UniformName()

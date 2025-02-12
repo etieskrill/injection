@@ -9,8 +9,6 @@ public interface FrameBufferAttachment extends Disposable {
 
     Vector2ic getSize();
 
-    int getID();
-
     //TODO add bind() and unbind() methods with default impls
 
     /**

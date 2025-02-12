@@ -31,12 +31,6 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter'
 }
 
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
-    }
-}
-
 application {
     mainClass = 'org.etieskrill.game.horde3d.EntityApplication'
 }

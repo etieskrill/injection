@@ -178,6 +178,9 @@ class ShaderReflectionGenerator(private val logger: Logger) {
         val arrayUniformRegex =
             """uniform[ \n]+(?<type>\w+)[ \n]+(?<name>\w+)[ \n]*\[(?<size>\d+|\w+)\][ \n]*;""".toRegex()
 
+        //FIXME arrays of samplers do not work, and seem like a fishy concept, and do not even work up to GL4.0
+        // according to https://www.reddit.com/r/opengl/comments/10dlhnb/alternative_to_indexing_into_sampler2d_array/
+
         return shader.sources.flatMap { source ->
             arrayUniformRegex.findAll(source).map { match ->
                 var type = match.groupValues[1]
