@@ -5,7 +5,7 @@ import org.etieskrill.engine.entity.service.impl.*;
 import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera;
 import org.etieskrill.engine.graphics.gl.GLUtils;
-import org.etieskrill.engine.graphics.gl.shader.impl.DepthCubeMapArrayAnimatedShader;
+import org.etieskrill.engine.graphics.gl.shader.impl.DepthCubeMapArrayShader;
 import org.etieskrill.engine.input.Input;
 import org.etieskrill.engine.input.Keys;
 import org.etieskrill.engine.input.controller.CursorCameraController;
@@ -75,7 +75,10 @@ public class EntityApplication extends GameApplication {
 
         //TODO fix static-animated root transform
         entitySystem.addService(new DirectionalShadowMappingService(renderer));
-        entitySystem.addService(new PointShadowMappingService(renderer, new DepthCubeMapArrayAnimatedShader()));
+        entitySystem.addService(new PointShadowMappingService(renderer,
+//                new DepthCubeMapArrayAnimatedShader()
+                new DepthCubeMapArrayShader()
+        ));
         entitySystem.addService(new AnimationService());
         RenderService renderService = new RenderService(renderer, camera, window.getSize().getVec());
         entitySystem.addService(renderService);

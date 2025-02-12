@@ -202,16 +202,19 @@ public abstract class ShaderProgram implements Disposable,
         if (classpathResourceExists(uniformFileName)) {
             getClasspathResource(uniformFileName)
                     .lines()
+                    .filter(line -> !line.isBlank())
                     .map(line -> line.split(","))
                     .forEach(uniformTypeName -> {
+                        var type = Uniform.Type.getFromName(uniformTypeName[1].toUpperCase());
+                        System.out.println(Arrays.toString(uniformTypeName));
+                        if (type == null) {
+                            throw new ShaderCreationException("Unsupported uniform type: " + uniformTypeName[1]);
+                        }
                         switch (uniformTypeName[0]) {
-                            case "uniform" -> addUniform(
-                                    uniformTypeName[2],
-                                    Uniform.Type.getFromName(uniformTypeName[1].toUpperCase())); //TODO parse structs in separate branch when generated types are introduced
-                            case "arrayUniform" -> addUniformArray(
-                                    uniformTypeName[3],
-                                    Integer.parseInt(uniformTypeName[2]),
-                                    Uniform.Type.getFromName(uniformTypeName[1].toUpperCase()));
+                            case "uniform" ->
+                                    addUniform(uniformTypeName[2], type); //TODO parse structs in separate branch when generated types are introduced
+                            case "arrayUniform" ->
+                                    addUniformArray(uniformTypeName[3], Integer.parseInt(uniformTypeName[2]), type);
                         }
                     });
         }
@@ -574,7 +577,8 @@ public abstract class ShaderProgram implements Disposable,
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
             switch (type) {
-                case INT, SAMPLER_2D, SAMPLER_2D_SHADOW, SAMPLER_CUBE_MAP, SAMPLER_CUBE_MAP_ARRAY ->
+                case INT, SAMPLER_2D, SAMPLER_2D_ARRAY, SAMPLER_2D_SHADOW, SAMPLER_CUBE_MAP, SAMPLER_CUBE_MAP_ARRAY,
+                     SAMPLER_CUBE_MAP_ARRAY_SHADOW ->
                         glUniform1i(location, (Integer) value);
                 case FLOAT -> glUniform1f(location, (Float) value);
                 case BOOLEAN -> glUniform1f(location, (boolean) value ? 1 : 0);
@@ -596,7 +600,8 @@ public abstract class ShaderProgram implements Disposable,
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
             switch (type) {
-                case INT, SAMPLER_2D, SAMPLER_2D_SHADOW, SAMPLER_CUBE_MAP, SAMPLER_CUBE_MAP_ARRAY -> {
+                case INT, SAMPLER_2D, SAMPLER_2D_ARRAY, SAMPLER_2D_SHADOW, SAMPLER_CUBE_MAP, SAMPLER_CUBE_MAP_ARRAY,
+                     SAMPLER_CUBE_MAP_ARRAY_SHADOW -> {
                     IntBuffer ints = stack.mallocInt(value.length);
                     for (Object o : value) ints.put((Integer) o);
                     glUniform1iv(location, ints.rewind());
@@ -708,7 +713,7 @@ public abstract class ShaderProgram implements Disposable,
         public enum Type {
             INT(Integer.class, () -> 0),
             FLOAT(Float.class, () -> 0f),
-            BOOLEAN(Boolean.class, () -> false),
+            BOOLEAN(Boolean.class, () -> false, "bool"),
             VEC2(Vector2f.class, Vector2f::new),
             VEC2I(Vector2i.class, Vector2i::new),
             VEC3(Vector3f.class, Vector3f::new),
@@ -718,14 +723,18 @@ public abstract class ShaderProgram implements Disposable,
             MAT4(Matrix4f.class, Matrix4f::new),
 
             SAMPLER_2D(Integer.class, () -> 0),
+            SAMPLER_2D_ARRAY(Integer.class, () -> 0),
             SAMPLER_2D_SHADOW(Integer.class, () -> 0),
-            SAMPLER_CUBE_MAP(Integer.class, () -> 0),
-            SAMPLER_CUBE_MAP_ARRAY(Integer.class, () -> 0),
+            SAMPLER_CUBE_MAP(Integer.class, () -> 0, "samplerCube"),
+            SAMPLER_CUBE_MAP_ARRAY(Integer.class, () -> 0, "samplerCubeArray"),
+            SAMPLER_CUBE_MAP_ARRAY_SHADOW(Integer.class, () -> 0, "samplerCubeArrayShadow"),
 
             STRUCT(UniformMappable.class, null);
 
             private final Class<?> type;
             private final Supplier<?> defaultValueGenerator;
+
+            private final String glslName;
 
             private static final Type[] values = values();
 
@@ -750,17 +759,20 @@ public abstract class ShaderProgram implements Disposable,
             public static @Nullable Type getFromName(String name) {
                 for (Type type : values) {
                     if (type.name().replace("_", "").equals(name)) return type;
+                    else if (type.glslName != null
+                            && type.glslName.toUpperCase().replace("_", "").equals(name)) return type;
                 }
                 return null;
             }
 
             <T> Type(Class<T> type, Supplier<T> defaultValueGenerator) {
-                this.type = type;
-                this.defaultValueGenerator = defaultValueGenerator;
+                this(type, defaultValueGenerator, null);
             }
 
-            <T> Type(Type type) {
-                this((Class<T>) type.type, (Supplier<T>) type.defaultValueGenerator);
+            <T> Type(Class<T> type, Supplier<T> defaultValueGenerator, String glslName) {
+                this.type = type;
+                this.defaultValueGenerator = defaultValueGenerator;
+                this.glslName = glslName;
             }
 
             public Class<?> get() {

@@ -42,7 +42,7 @@ class ShaderReflectionGenerator(private val logger: Logger) {
             sourceOutputFile.writeText(sourceOutputBuilder.toString())
 
             val resourceOutputBuilder = StringBuilder()
-            generateUniformResourceFile(uniforms[shader], arrayUniforms[shader], resourceOutputBuilder)
+            generateUniformResourceFile(uniforms[shader], arrayUniforms[shader], structs[shader], resourceOutputBuilder)
 
             val resourceOutputFile = resourceOutputDir.resolve("$UNIFORM_RESOURCE_PREFIX${shader.`class`}.csv")
             resourceOutputFile.writeText(resourceOutputBuilder.toString())
@@ -110,7 +110,6 @@ class ShaderReflectionGenerator(private val logger: Logger) {
 
         var match = defineRegex.find(source)
         while (match != null) {
-            println("removing ${match.groups[0]}")
             source = source.removeRange(match.range)
 
             val (identifier, statement) = match.destructured
@@ -236,13 +235,15 @@ class ShaderReflectionGenerator(private val logger: Logger) {
     private fun generateUniformResourceFile(
         uniforms: Map<String, String>?,
         arrayUniforms: List<ArrayUniform>?,
+        structs: List<Struct>?,
         outputBuilder: StringBuilder
     ) {
         uniforms?.map { (name, type) -> "uniform,$type,$name" }
             ?.joinToString("\n")
-            ?.let { outputBuilder.append(it) }
-        outputBuilder.append("\n")
+            ?.let { outputBuilder.append(it).append("\n") }
         arrayUniforms?.joinToString("\n") { (name, type, size) -> "arrayUniform,$type,$size,$name" }
+            ?.let { outputBuilder.append(it).append("\n") }
+        structs?.joinToString("\n") { (_, _, name) -> "uniform,struct,$name" }
             ?.let { outputBuilder.append(it) }
     }
 }
