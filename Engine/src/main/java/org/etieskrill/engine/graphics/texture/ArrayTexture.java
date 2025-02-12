@@ -1,5 +1,6 @@
 package org.etieskrill.engine.graphics.texture;
 
+import io.github.etieskrill.injection.extension.shaderreflection.Texture2DArray;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -16,7 +17,7 @@ import static org.lwjgl.opengl.GL11C.GL_UNSIGNED_BYTE;
 import static org.lwjgl.opengl.GL12C.glTexImage3D;
 
 @Getter
-public class ArrayTexture extends AbstractTexture {
+public class ArrayTexture extends AbstractTexture implements Texture2DArray {
 
     private static final Logger logger = LoggerFactory.getLogger(ArrayTexture.class);
 

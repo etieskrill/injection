@@ -30,11 +30,11 @@ interface Effect {
 }
 
 data class SlowEffect(private val magnitude: Float, private var stacks: Int, override val sourceId: String?) : Effect {
-    private lateinit var movementSpeed: MovementSpeed
+    private var movementSpeed: MovementSpeed? = null
 
     override fun onAdd(entity: Entity) {
-        movementSpeed = entity.getComponent<MovementSpeed>()!!
-        movementSpeed.apply { factor /= magnitude }
+        movementSpeed = entity.getComponent<MovementSpeed>()
+        movementSpeed?.apply { factor /= magnitude }
     }
 
     override fun update(delta: Double): Boolean {
@@ -43,6 +43,6 @@ data class SlowEffect(private val magnitude: Float, private var stacks: Int, ove
     }
 
     override fun onRemove() {
-        movementSpeed.apply { factor *= magnitude }
+        movementSpeed?.apply { factor *= magnitude }
     }
 }
