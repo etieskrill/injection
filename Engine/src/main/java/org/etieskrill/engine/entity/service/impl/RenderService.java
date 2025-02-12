@@ -306,7 +306,7 @@ class GaussBlurPostBuffers implements Disposable {
         this.hdrShader = new ShaderProgram(List.of("HDR.glsl"), false) {
             @Override
             protected void setUniformDefaults() {
-                //cannot generated accessors for anonymous classes
+                //cannot generate accessors for anonymous classes
                 addUniform("position", Uniform.Type.VEC4, new Vector4f(-1, -1, 1, 1));
 
                 addUniform("exposure", Uniform.Type.FLOAT, 1f);
@@ -323,7 +323,7 @@ class GaussBlurPostBuffers implements Disposable {
                 .attach(blurTextureBuffer2, COLOUR0)
                 .build();
 
-        this.gaussBlurShader = new ShaderProgram(List.of("GaussBlur.glsl")) {
+        this.gaussBlurShader = new ShaderProgram(List.of("GaussBlur.glsl"), false) {
             @Override
             protected void setUniformDefaults() {
                 //see above

@@ -12,7 +12,7 @@ import org.etieskrill.engine.graphics.gl.GLUtils;
 import org.etieskrill.engine.graphics.gl.framebuffer.DirectionalShadowMap;
 import org.etieskrill.engine.graphics.gl.framebuffer.PointShadowMapArray;
 import org.etieskrill.engine.graphics.gl.shader.Shaders;
-import org.etieskrill.engine.graphics.gl.shader.impl.StaticShader;
+import org.etieskrill.engine.graphics.gl.shader.impl.*;
 import org.etieskrill.engine.graphics.model.Material;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.model.ModelFactory;
@@ -30,9 +30,11 @@ import org.etieskrill.engine.scene.component.Label;
 import org.etieskrill.engine.scene.component.Node;
 import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.window.Window;
+import org.joml.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.Math;
 import java.util.Random;
 
 import static org.etieskrill.engine.graphics.texture.AbstractTexture.Type.*;
@@ -64,7 +66,7 @@ public class Application extends GameApplication {
     private PointLight light2;
     private Model lightModel2;
     private Transform lightTransform2;
-    private Shaders.LightSourceShader lightShader;
+    private LightSourceShader lightShader;
     private boolean light = true;
     private static final Vector3fc lightOn = new Vector3f(1);
     private static final Vector3fc lightOff = new Vector3f(0);
@@ -75,7 +77,7 @@ public class Application extends GameApplication {
     private Matrix4fc[] pointLightCombined1;
     private Matrix4fc[] pointLightCombined2;
     private PointShadowMapArray pointShadowMaps;
-    private Shaders.DepthCubeMapArrayShader depthCubeMapArrayShader;
+    private DepthCubeMapArrayShader depthCubeMapArrayShader;
     private final float pointShadowNearPlane = .1f;
     private final float pointShadowFarPlane = 40;
 
@@ -144,7 +146,7 @@ public class Application extends GameApplication {
                     .setScale(3);
         }
 
-        lightShader = Shaders.getLightSourceShader();
+        lightShader = new LightSourceShader();
         shader = new StaticShader();
 
         camera = new PerspectiveCamera(window.getSize().getVec());
@@ -179,7 +181,7 @@ public class Application extends GameApplication {
         pointLightCombined2 = pointShadowMaps.getCombinedMatrices(pointShadowNearPlane, pointShadowFarPlane, light2);
 
         depthShader = new Shaders.DepthShader();
-        depthCubeMapArrayShader = new Shaders.DepthCubeMapArrayShader();
+        depthCubeMapArrayShader = new DepthCubeMapArrayShader();
 
         glEnable(GL_FRAMEBUFFER_SRGB);
 
@@ -236,11 +238,11 @@ public class Application extends GameApplication {
         }
     }
 
-    private void renderScene(int index, PointLight light, Shaders.DepthCubeMapArrayShader shader, Matrix4fc[] combined) {
-        shader.setLight(light);
-        shader.setFarPlane(pointShadowFarPlane);
-        shader.setShadowCombined(combined);
-        shader.setIndex(index);
+    private void renderScene(int index, PointLight light, DepthCubeMapArrayShader shader, Matrix4fc[] combined) {
+        DepthCubeMapArrayShaderKt.setLight(shader, light);
+        DepthCubeMapArrayShaderKt.setFarPlane(shader, pointShadowFarPlane);
+        DepthCubeMapArrayShaderKt.setShadowCombined(shader, combined);
+        DepthCubeMapArrayShaderKt.setIndex(shader, index);
         renderer.render(floorTransform, floorModel, shader, new Matrix4f());
         for (int i = 0; i < brickCubes.length; i++) {
             renderer.render(brickCubeTransforms[i], brickCubes[i], shader, new Matrix4f());
@@ -251,25 +253,25 @@ public class Application extends GameApplication {
         renderer.bindNextFreeTexture(shader, "shadowMap", directionalShadowMap.getTexture());
         shader.setUniform("lightCombined", sunLightCombined, false);
         renderer.bindNextFreeTexture(shader, "pointShadowMaps0", pointShadowMaps.getTexture());
-        shader.setGlobalLights(sunLight);
-        shader.setLights(new PointLight[]{light1, light2});
-        shader.setViewPosition(camera.getPosition());
-        shader.setTextureScale(new Vector2f(15));
-        shader.setPointShadowFarPlane(pointShadowFarPlane);
+        StaticShaderKt.setGlobalLights(shader, new Object[]{sunLight});
+        StaticShaderKt.setLights(shader, new Object[]{light1, light2});
+        StaticShaderKt.setViewPosition(shader, camera.getPosition());
+        StaticShaderKt.setTextureScale(shader, new Vector2f(15));
+        StaticShaderKt.setPointShadowFarPlane(shader, pointShadowFarPlane);
         renderer.render(floorTransform, floorModel, shader, combined);
 
-        shader.setTextureScale(new Vector2f(1));
+        StaticShaderKt.setTextureScale(shader, new Vector2f(1));
         for (int i = 0; i < brickCubes.length; i++) {
             renderer.render(brickCubeTransforms[i], brickCubes[i], shader, combined);
         }
     }
 
     private void renderLights() {
-        lightShader.setLight(sunLight);
+        LightSourceShaderKt.setLight(lightShader, sunLight);
         renderer.render(sunTransform, sunModel, lightShader, camera.getCombined());
-        lightShader.setLight(light1);
+        LightSourceShaderKt.setLight(lightShader, light1);
         renderer.render(lightTransform1, lightModel1, lightShader, camera.getCombined());
-        lightShader.setLight(light2);
+        LightSourceShaderKt.setLight(lightShader, light2);
         renderer.render(lightTransform2, lightModel2, lightShader, camera.getCombined());
     }
 
