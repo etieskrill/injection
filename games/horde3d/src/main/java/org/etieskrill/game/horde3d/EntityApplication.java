@@ -76,7 +76,7 @@ public class EntityApplication extends GameApplication {
         //TODO fix static-animated root transform
         entitySystem.addService(new DirectionalShadowMappingService(renderer));
         entitySystem.addService(new PointShadowMappingService(renderer,
-//                new DepthCubeMapArrayAnimatedShader()
+//                new DepthCubeMapArrayAnimatedShader() //TODO revert
                 new DepthCubeMapArrayShader()
         ));
         entitySystem.addService(new AnimationService());

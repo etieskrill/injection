@@ -195,7 +195,6 @@ public abstract class ShaderProgram implements Disposable,
         else createSingleFileProgram(files.stream().findAny().get());
 
         start();
-        setUniformDefaults();
         //TODO find and add uniforms from files
         //TODO filter and warn on duplicates, prefer config, then UniformEntries, then autodetected
         var uniformFileName = ConstantsKt.UNIFORM_RESOURCE_PREFIX + ClassUtils.getFullName(this) + ".csv";
@@ -206,7 +205,6 @@ public abstract class ShaderProgram implements Disposable,
                     .map(line -> line.split(","))
                     .forEach(uniformTypeName -> {
                         var type = Uniform.Type.getFromName(uniformTypeName[1].toUpperCase());
-                        System.out.println(Arrays.toString(uniformTypeName));
                         if (type == null) {
                             throw new ShaderCreationException("Unsupported uniform type: " + uniformTypeName[1]);
                         }
@@ -226,6 +224,8 @@ public abstract class ShaderProgram implements Disposable,
                 addUniformArray(uniform.getName(), uniform.getSize(), uniform.getType());
             }
         }
+
+        setUniformDefaults();
         stop();
     }
 
@@ -303,6 +303,36 @@ public abstract class ShaderProgram implements Disposable,
                         .orElseThrow(() -> new ShaderCreationException("No " + type.name().toLowerCase() + " shader file was found")),
                 type);
     }
+
+    //TODO shader binary caching
+//    var supposedLength = BufferUtils.createIntBuffer(1);
+//    GLUtils.clearError();
+//    GL41C.glGetProgramiv(programID, GL_PROGRAM_BINARY_LENGTH, supposedLength);
+//    GLUtils.checkErrorThrowing();
+//    System.out.println("Supposed length: " + supposedLength.get());
+//
+//    IntBuffer length = BufferUtils.createIntBuffer(1), format = BufferUtils.createIntBuffer(1);
+//    var data = BufferUtils.createByteBuffer(supposedLength.get(0));
+//    GLUtils.clearError();
+//    GL41C.glGetProgramBinary(programID, length, format, data);
+//    GLUtils.checkErrorThrowing("Failed to retrieve shader binary");
+//    System.out.println("Length: " + length.get() + ", format: " + format.get());
+//    try {
+//        //TODO finger Path#register
+//        char[] charData = new char[length.get(0)];
+//        for (int i = 0; i < charData.length; i++) {
+//            charData[i] = data.getChar();
+//        }
+//        var file = Path.of("./succ.bin").toFile();
+//        if (!file.exists()) file.createNewFile();
+//        var writer = new FileWriter(file);
+//        writer.write(charData);
+//        writer.close();
+//    } catch (IOException e) {
+//        throw new RuntimeException(e);
+//    }
+//
+//    GL41C.glShaderBinary(new int[]{programID}, format.get(0), data.rewind());
 
     //TODO add loader for shader objects and wrap calls to this method in said loader
     private int loadShader(ShaderFile file, ShaderType type) {
@@ -578,8 +608,7 @@ public abstract class ShaderProgram implements Disposable,
         try (MemoryStack stack = MemoryStack.stackPush()) {
             switch (type) {
                 case INT, SAMPLER_2D, SAMPLER_2D_ARRAY, SAMPLER_2D_SHADOW, SAMPLER_CUBE_MAP, SAMPLER_CUBE_MAP_ARRAY,
-                     SAMPLER_CUBE_MAP_ARRAY_SHADOW ->
-                        glUniform1i(location, (Integer) value);
+                     SAMPLER_CUBE_MAP_ARRAY_SHADOW -> glUniform1i(location, (Integer) value);
                 case FLOAT -> glUniform1f(location, (Float) value);
                 case BOOLEAN -> glUniform1f(location, (boolean) value ? 1 : 0);
                 case VEC2 -> glUniform2fv(location, ((Vector2f) value).get(stack.mallocFloat(2)));

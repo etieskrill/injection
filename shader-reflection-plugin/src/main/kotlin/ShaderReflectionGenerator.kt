@@ -71,7 +71,9 @@ class ShaderReflectionGenerator(private val logger: Logger) {
                         .mapNotNull { source -> inputResources.find { it.name == source } }
                 } else {
                     inputResources.filter { it.nameWithoutExtension == name }
-                }.map { it.readText() } //TODO preprocess to make regexes simpler: resolve preprocessor directives, remove comments, trim indents, remove newlines, remove all spaces unless between keywords/variable identifiers, in that order i think
+                }
+                    .map { it.readText() }
+                    .map { simplifyGlslSource(it) }
 
                 Shader(name, `package`, fullClass, sources)
             }
@@ -81,7 +83,22 @@ class ShaderReflectionGenerator(private val logger: Logger) {
     internal fun simplifyGlslSource(source: String): String = source
         .run { resolvePreprocessorDirectives(this) }
         .run { removeComments(this) }
-        .run { this.lines().joinToString(separator = "") { it.trim() } }
+        .run { this.lines().joinToString(separator = " ") { it.trim() } }
+        .run { removeSuperfluousWhitespace() }
+
+    private fun String.removeSuperfluousWhitespace(): String {
+        //FIXME quite ugly, inefficient, and only works because matches are reevaluated every iteration
+        val whitespaceRegex = """(?<!\w) +(?=\w)|(?<=\w) +(?!\w)|(?<!\w) +(?!\w)""".toRegex(RegexOption.MULTILINE)
+
+        var source = this
+        var match = whitespaceRegex.find(source)
+        while (match != null) {
+            source = source.replaceRange(match.range, "")
+            match = whitespaceRegex.find(source)
+        }
+
+        return source
+    }
 
     internal fun removeComments(source: String): String =
         source.run {
@@ -96,7 +113,7 @@ class ShaderReflectionGenerator(private val logger: Logger) {
     internal fun resolvePreprocessorDirectives(source: String): String {
         var source = resolveDefineDirectives(source)
 
-        val directiveRegex = """^#(?<directive>\w+) (?<statement>[\s\S]+?)$""".toRegex(RegexOption.MULTILINE)
+        val directiveRegex = """#(?<directive>\w+)(?: (?<statement>.*))?""".toRegex(RegexOption.MULTILINE)
         source = source.replace(directiveRegex) { "" }
 
         return source
@@ -123,11 +140,9 @@ class ShaderReflectionGenerator(private val logger: Logger) {
     }
 
     private fun getStructUniforms(annotatedShaders: List<Shader>): Map<Shader, List<Struct>> {
-        //TODO instance name lists
-        //FIXME this overflows the struct content to the next match if the struct body does not contain any whitespace, and i, for the life of me, could not fix it. man, perhaps a proper lexer/parser setup would be simpler than this
+        //FIXME man, perhaps a proper lexer/parser setup would be simpler than this
         val structRegex =
-            """(?<uniform>uniform)? *struct(?: +|[\n ]+)(?<type>\w+) *\n*\{\n*(?<content>[\s\S]*?(?!}))[ \n]*} *(?<instanceName>\w+\[?\]?)?;""".toRegex()
-        //TODO simplified and corrected struct regex: (?<uniform>uniform )?struct (?<type>\w+)\{(?<content>[ \S]*?)}(?<instanceName>\w+(?:\[\])?)?; multiple comma separated instances are still missing tho
+            """(?<uniform>uniform )?struct (?<type>\w+)\{(?<content>[ \S]*?)\}(?<instanceNames>\w+(?:\[(?:\d+|\w+)\])?(?:,\w+(?:\[(?:\d+|\w+)\])?)*)?;""".toRegex()
 
         return annotatedShaders.associateWith { shader ->
             shader.sources.flatMap { shaderContent ->
@@ -141,10 +156,29 @@ class ShaderReflectionGenerator(private val logger: Logger) {
                             .map { it.split(' ') }
                             .associate { it[1] to it[0] }
 
+                        val instanceGroup = match.groups["instanceNames"]?.value
+                        val (instances, arrayInstances) = if (!instanceGroup.isNullOrBlank())
+                            instanceGroup
+                                .split(',')
+                                .partition { !it.endsWith("[]") }
+                                .let { (instances, arrayInstances) ->
+                                    instances to arrayInstances.map {
+                                        val arrayStart = it.indexOf('[')
+                                        val arrayEnd = it.indexOf(']')
+                                        ArrayUniform(
+                                            it.substring(0, arrayStart),
+                                            "struct",
+                                            it.substring(arrayStart + 1, arrayEnd).toInt()
+                                        )
+                                    }
+                                }
+                        else null to null
+
                         return@map Struct(
                             match.groups["type"]!!.value,
                             members,
-                            match.groups["instanceName"]?.value
+                            instances,
+                            arrayInstances
                         )
                     }
             }
@@ -155,7 +189,8 @@ class ShaderReflectionGenerator(private val logger: Logger) {
         annotatedShaders: List<Shader>,
         structs: Map<Shader, List<Struct>>
     ): Map<Shader, Map<String, String>> {
-        val uniformRegex = """(?<!// *)uniform (\w+) (\w+);""".toRegex()
+        //TODO list declarations - for arrays and simple/array mixed lists too...
+        val uniformRegex = """(?<!// *)uniform *(\w+) *(\w+);""".toRegex()
 
         return annotatedShaders.associateWith { shader ->
             shader.sources.flatMap { shaderContent ->
@@ -192,19 +227,8 @@ class ShaderReflectionGenerator(private val logger: Logger) {
                 val size = match.groups["size"]!!.value
                     .toIntOrNull()
                     ?: run {
-                        val defineDirectiveRegex =
-                            """^#define (?<name>\w+) (?<value>\d+)\n""".toRegex(RegexOption.MULTILINE)
-                        val matches = defineDirectiveRegex.findAll(
-                            source.trimIndent() //FIXME find out why this works
-                        ).toList()
-                        matches
-                            .find { it.groups["name"]!!.value == match.groups["size"]!!.value }
-                            ?.let {
-                                it.groups["value"]!!.value.toIntOrNull() ?: run {
-                                    logger.warn("Could not determine array size for uniform ${it.groups["name"]} in shader $shader")
-                                    0
-                                }
-                            } ?: 0
+                        logger.warn("Could not determine array size for uniform ${match.groups["name"]} in shader $shader")
+                        0
                     }
 
                 ArrayUniform(match.groups["name"]!!.value, type, size)
@@ -226,25 +250,37 @@ class ShaderReflectionGenerator(private val logger: Logger) {
 
     private fun appendDirectStructUniforms(shader: Shader, structs: List<Struct>?, outputBuilder: StringBuilder) =
         structs
-            ?.filter { it.instance != null }
-            ?.forEach { (_, _, instance) ->
-                outputBuilder.append("val ${shader.`class`}.${instance}Name by uniformName()\n")
-                outputBuilder.append("var ${shader.`class`}.$instance: struct by uniform()\n\n")
+            ?.onEach { (_, _, instances) ->
+                instances?.forEach { instance ->
+                    outputBuilder.append("val ${shader.`class`}.${instance}Name by uniformName()\n")
+                    outputBuilder.append("var ${shader.`class`}.$instance: struct by uniform()\n\n")
+                }
+            }?.forEach { (_, _, _, arrayInstances) ->
+                arrayInstances?.forEach { (name, type, size) ->
+                    outputBuilder.append("val ${shader.`class`}.${name}Name by uniformName()\n")
+                    outputBuilder.append("var ${shader.`class`}.$name: Array<$type> by arrayUniform($size)\n\n")
+                }
             }
 
+    //TODO tests
     private fun generateUniformResourceFile(
         uniforms: Map<String, String>?,
         arrayUniforms: List<ArrayUniform>?,
         structs: List<Struct>?,
         outputBuilder: StringBuilder
     ) {
-        uniforms?.map { (name, type) -> "uniform,$type,$name" }
+        uniforms
+            ?.map { (name, type) -> "uniform,$type,$name" }
             ?.joinToString("\n")
             ?.let { outputBuilder.append(it).append("\n") }
-        arrayUniforms?.joinToString("\n") { (name, type, size) -> "arrayUniform,$type,$size,$name" }
+        arrayUniforms
+            ?.joinToString("\n") { (name, type, size) -> "arrayUniform,$type,$size,$name" }
             ?.let { outputBuilder.append(it).append("\n") }
-        structs?.joinToString("\n") { (_, _, name) -> "uniform,struct,$name" }
-            ?.let { outputBuilder.append(it) }
+        structs
+            ?.forEach { (_, _, names, arrayNames) ->
+                names?.forEach { outputBuilder.append("uniform,struct,${it}") }
+                arrayNames?.forEach { outputBuilder.append("arrayUniform,struct,${it.size},${it.name}") }
+            }
     }
 }
 
@@ -257,7 +293,8 @@ data class ArrayUniform(
 data class Struct(
     val type: String,
     val members: Map<String, String>,
-    val instance: String?
+    val instances: List<String>?,
+    val arrayInstances: List<ArrayUniform>?
 )
 
 data class Shader(
