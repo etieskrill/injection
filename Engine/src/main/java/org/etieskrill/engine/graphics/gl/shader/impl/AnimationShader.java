@@ -1,46 +1,19 @@
 package org.etieskrill.engine.graphics.gl.shader.impl;
 
-import org.etieskrill.engine.graphics.data.DirectionalLight;
+import io.github.etieskrill.injection.extension.shaderreflection.ReflectShader;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
-import org.joml.Matrix4fc;
 
 import java.util.List;
 
-import static org.etieskrill.engine.graphics.gl.shader.ShaderProgram.Uniform.Type.*;
-
+@ReflectShader
 public class AnimationShader extends ShaderProgram {
-
-    private static final int MAX_BONES = 100;
-
     public AnimationShader() {
-        super(List.of("Animation.vert", "Animation.frag"), false);
-
-        //Defaults
-//        addUniformArray("boneMatrices", MAX_BONES, MAT4);
-//
-//        addUniformArray("globalLights", 1, STRUCT);
-//        addUniformArray("lights", 2, STRUCT);
-//
-//        addUniform("uShowBoneSelector", INT, 4);
-//        addUniform("uShowBoneWeights", BOOLEAN, false);
+        super(List.of("Animation.vert", "Animation.frag"));
     }
 
-    public void setBoneMatrices(List<Matrix4fc> boneMatrices) {
-        setUniformArray("boneMatrices", boneMatrices.toArray());
+    @Override
+    protected void setUniformDefaults() {
+        AnimationShaderKt.setShowBoneSelector(this, 4);
+        AnimationShaderKt.setShowBoneWeights(this, false);
     }
-
-    public void setShowBoneSelector(int boneGroup) {
-        if (boneGroup < 0 || boneGroup > 4)
-            throw new IllegalArgumentException("Selected bone group must be between 0 and 4");
-        setUniform("uShowBoneSelector", boneGroup);
-    }
-
-    public void setShowBoneWeights(boolean showBoneWeights) {
-        setUniform("uShowBoneWeights", showBoneWeights);
-    }
-
-    public void setGlobalLight(DirectionalLight light) {
-        setUniformArray("globalLights", 0, light);
-    }
-
 }

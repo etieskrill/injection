@@ -11,9 +11,10 @@ import org.etieskrill.engine.graphics.camera.PerspectiveCamera;
 import org.etieskrill.engine.graphics.data.DirectionalLight;
 import org.etieskrill.engine.graphics.gl.GLUtils;
 import org.etieskrill.engine.graphics.gl.renderer.GLRenderer;
-import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shader.impl.AnimationShader;
+import org.etieskrill.engine.graphics.gl.shader.impl.AnimationShaderKt;
 import org.etieskrill.engine.graphics.gl.shader.impl.StaticShader;
+import org.etieskrill.engine.graphics.gl.shader.impl.StaticShaderKt;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.model.Node;
 import org.etieskrill.engine.graphics.texture.font.TrueTypeFont;
@@ -69,7 +70,7 @@ public class Game {
 
     private Model cube;
     private Transform cubeTransform;
-    private ShaderProgram shader;
+    private StaticShader shader;
 
     private DirectionalLight globalLight;
 
@@ -111,11 +112,11 @@ public class Game {
             }),
             Input.bind(Keys.R).on(ON_PRESS).to(() -> {
                 boneSelector = ++boneSelector % 5;
-                vampyShader.setShowBoneSelector(boneSelector);
+                AnimationShaderKt.setShowBoneSelector(vampyShader, boneSelector);
             }),
             Input.bind(Keys.F).on(ON_PRESS).to(() -> {
                 showBoneWeights = !showBoneWeights;
-                vampyShader.setShowBoneWeights(showBoneWeights);
+                AnimationShaderKt.setShowBoneWeights(vampyShader, showBoneWeights);
             })
     );
 
@@ -172,8 +173,8 @@ public class Game {
         ;
 
         vampyShader = (AnimationShader) Loaders.ShaderLoader.get().load("vampyShader", AnimationShader::new);
-        vampyShader.setShowBoneSelector(boneSelector);
-        vampyShader.setShowBoneWeights(showBoneWeights);
+        AnimationShaderKt.setShowBoneSelector(vampyShader, boneSelector);
+        AnimationShaderKt.setShowBoneWeights(vampyShader, showBoneWeights);
 
         cube = Loaders.ModelLoader.get().load("cube", () -> new Model.Builder("cube.obj").setCulling(false).build());
         cubeTransform = new Transform().setScale(10).setPosition(new Vector3f(2, -6, 0));
@@ -295,10 +296,10 @@ public class Game {
             vampyAnimator.getAnimationMixer().setWeight(VAMPY_ANIMATION_WAVING, wavingTransition);
             vampyAnimator.update(delta);
 
-            vampyShader.setBoneMatrices(vampyAnimator.getTransformMatrices());
-            vampyShader.setGlobalLight(globalLight);
+            AnimationShaderKt.setBoneMatrices(vampyShader, vampyAnimator.getTransformMatricesArray());
+            AnimationShaderKt.setGlobalLights(vampyShader, new Object[]{globalLight});
 
-            shader.setUniformArray("globalLights", 0, globalLight);
+            StaticShaderKt.setGlobalLights(shader, new Object[]{globalLight});
 
             diff = thirdPerson ? 1 - perspectiveTransition : -perspectiveTransition;
             perspectiveTransition += (float) (diff * delta * 10);
@@ -333,7 +334,7 @@ public class Game {
             //TODO tone map + gamma correct
             renderer.prepare();
 
-            vampyShader.setViewPosition(camera.getPosition());
+            AnimationShaderKt.setViewPosition(vampyShader, camera.getPosition());
             renderer.render(vampyTransform, vampy, vampyShader, camera);
 //            vampyBB.getTransform().set(vampy.getTransform());
 //            renderer.renderWireframe(vampyBB, vampyShader, camera.getCombined());

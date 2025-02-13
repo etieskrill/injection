@@ -57,8 +57,8 @@ uniform vec3 viewPosition;
 uniform DirectionalLight globalLights[NR_DIRECTIONAL_LIGHTS];
 uniform PointLight lights[NR_POINT_LIGHTS];
 
-uniform /*@Range(from = 0, to = 4)*/ int uShowBoneSelector;
-uniform bool uShowBoneWeights;
+uniform /*@Range(from = 0, to = 4)*/ int showBoneSelector;
+uniform bool showBoneWeights;
 
 vec3 getDirLight(DirectionalLight light, vec3 normal, float inShadow);
 vec3 getPointLight(PointLight light, vec3 normal, float inShadow);
@@ -101,12 +101,12 @@ void main()
     if (brightness > 1.0) bloomColour = vec4(combinedLight, texel.a);
     else bloomColour = vec4(0.0, 0.0, 0.0, texel.a);
 
-    if (uShowBoneSelector != 4) {
-        if (vertex.boneIds[uShowBoneSelector] % 3 == 0) fragColour.x = (float(vertex.boneIds[uShowBoneSelector]) / 100.0);
-        if (vertex.boneIds[uShowBoneSelector] % 3 == 1) fragColour.y = (float(vertex.boneIds[uShowBoneSelector]) / 100.0);
-        if (vertex.boneIds[uShowBoneSelector] % 3 == 2) fragColour.z = (float(vertex.boneIds[uShowBoneSelector]) / 100.0);
+    if (showBoneSelector != 4) {
+        if (vertex.boneIds[showBoneSelector] % 3 == 0) fragColour.x = (float(vertex.boneIds[showBoneSelector]) / 100.0);
+        if (vertex.boneIds[showBoneSelector] % 3 == 1) fragColour.y = (float(vertex.boneIds[showBoneSelector]) / 100.0);
+        if (vertex.boneIds[showBoneSelector] % 3 == 2) fragColour.z = (float(vertex.boneIds[showBoneSelector]) / 100.0);
     }
-    if (uShowBoneWeights) fragColour = vertex.boneWeights;
+    if (showBoneWeights) fragColour = vertex.boneWeights;
 }
 
 vec3 getDirLight(DirectionalLight light, vec3 normal, float inShadow)
