@@ -142,7 +142,7 @@ class ShaderReflectionGenerator(private val logger: Logger) {
     private fun getStructUniforms(annotatedShaders: List<Shader>): Map<Shader, List<Struct>> {
         //FIXME man, perhaps a proper lexer/parser setup would be simpler than this
         val structRegex =
-            """(?<uniform>uniform )?struct (?<type>\w+)\{(?<content>[ \S]*?)\}(?<instanceNames>\w+(?:\[(?:\d+|\w+)\])?(?:,\w+(?:\[(?:\d+|\w+)\])?)*)?;""".toRegex()
+            """(?<uniform>uniform )?struct (?<type>\w+)\{(?<content>[ \S]*?)\}(?<instanceNames>\w+(?:\[\w+\])?(?:,\w+(?:\[\w+\])?)*)?;""".toRegex()
 
         return annotatedShaders.associateWith { shader ->
             shader.sources.flatMap { shaderContent ->
@@ -190,19 +190,19 @@ class ShaderReflectionGenerator(private val logger: Logger) {
         structs: Map<Shader, List<Struct>>
     ): Map<Shader, Map<String, String>> {
         //TODO list declarations - for arrays and simple/array mixed lists too...
-        val uniformRegex = """(?<!// *)uniform *(\w+) *(\w+);""".toRegex()
+        val uniformRegex = """uniform (?<type>\w+) (?<instance>\w+);""".toRegex()
 
         return annotatedShaders.associateWith { shader ->
             shader.sources.flatMap { shaderContent ->
                 uniformRegex.findAll(shaderContent).map { match ->
-                    var type = match.groupValues[1]
+                    var type = match.groups["type"]!!.value
                     if (type in structs[shader]
                             .orEmpty()
                             .map { it.type }
                     )
                         type = "struct"
 
-                    match.groupValues[2] to type
+                    match.groups["instance"]!!.value to type
                 }
             }.toMap()
         }
@@ -210,7 +210,7 @@ class ShaderReflectionGenerator(private val logger: Logger) {
 
     private fun getArrayUniforms(shader: Shader, structs: List<Struct>?): List<ArrayUniform> {
         val arrayUniformRegex =
-            """uniform[ \n]+(?<type>\w+)[ \n]+(?<name>\w+)[ \n]*\[(?<size>\d+|\w+)\][ \n]*;""".toRegex()
+            """uniform (?<type>\w+) (?<name>\w+)\[(?<size>\w+)\];""".toRegex()
 
         //FIXME arrays of samplers do not work, and seem like a fishy concept, and do not even work up to GL4.0
         // according to https://www.reddit.com/r/opengl/comments/10dlhnb/alternative_to_indexing_into_sampler2d_array/
