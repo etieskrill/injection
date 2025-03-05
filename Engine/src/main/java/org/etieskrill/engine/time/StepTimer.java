@@ -22,16 +22,31 @@ public class StepTimer {
         time = System.nanoTime();
     }
 
-    public void log(String subject) {
-        long now = System.nanoTime();
-        targetLogger.debug("{}: {}s", subject, (now - time) / 1_000_000_000d);
-        time = now;
+    public void log(String message) {
+        debug(message);
     }
 
-    public void logDetail(String subject) {
+    public void debug(String message) {
+        targetLogger.debug("{} [{}s]", message, getTimeFormatted());
+    }
+
+    public void info(String subject) {
+        targetLogger.info("{} [{}s]", subject, getTimeFormatted());
+    }
+
+    public void trace(String subject) {
+        targetLogger.trace("{} [{}s]", subject, getTimeFormatted());
+    }
+
+    private double getTime() {
         long now = System.nanoTime();
-        targetLogger.trace("{}: {}s", subject, (now - time) / 1_000_000_000d);
+        double delta = (now - time) / 1_000_000_000d;
         time = now;
+        return delta;
+    }
+
+    private String getTimeFormatted() {
+        return String.format("%.3f", getTime());
     }
 
 }
