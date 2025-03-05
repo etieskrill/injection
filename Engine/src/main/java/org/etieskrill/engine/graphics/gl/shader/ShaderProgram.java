@@ -61,6 +61,9 @@ public abstract class ShaderProgram implements Disposable,
     private final Set<String> unregisteredUniforms = new HashSet<>();
     private final Set<String> missingUniforms = new HashSet<>();
 
+    private final Map<Integer, Integer> cachedUniforms = new HashMap<>();
+    private final Map<Integer, Integer> cachedArrayUniforms = new HashMap<>();
+
     private final int MAX_TEXTURE_UNITS;
     private int currentTextureUnit;
     private final Map<String, Integer> boundTextures; //TODO this is actually per context, so it could use a ThreadLocal - it also causes incoherent state if #start() is not called properly
@@ -353,6 +356,7 @@ public abstract class ShaderProgram implements Disposable,
             //TODO filter for missing required directives - and add default?
             shaderSource = injectShaderCompileDirective(shaderSource, type);
         }
+        //TODO cache compiled shaders - and even reuse program objects, and only change uniforms via uniform buffers?
         glShaderSource(shaderID, shaderSource);
         glCompileShader(shaderID);
 
@@ -603,6 +607,10 @@ public abstract class ShaderProgram implements Disposable,
         if (type == null)
             throw new ShaderUniformException("Could not determine uniform type for " + value.getClass().getSimpleName());
 
+        Integer hashCode = cachedUniforms.get(location); // hashCode because joml tries to be smart and first checks for object reference equality
+        if (hashCode != null && value.hashCode() == hashCode) return;
+        else cachedUniforms.put(location, value.hashCode());
+
         if (AUTO_START_ON_VARIABLE_SET) bind(); //TODO replace with dsa if viable
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
@@ -625,6 +633,10 @@ public abstract class ShaderProgram implements Disposable,
     }
 
     void setUniformArrayValue(Uniform.Type type, int location, Object[] value) {
+        Integer hashCode = cachedUniforms.get(location); // hashCode because joml tries to be smart and first checks for object reference equality
+        if (hashCode != null && Arrays.hashCode(value) == hashCode) return;
+        else cachedUniforms.put(location, Arrays.hashCode(value));
+
         if (AUTO_START_ON_VARIABLE_SET) bind();
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
@@ -944,7 +956,9 @@ public abstract class ShaderProgram implements Disposable,
     public void dispose() {
         stop();
         glDetachShader(programID, vertID);
+        glDeleteShader(vertID);
         glDetachShader(programID, fragID);
+        glDeleteShader(fragID);
         glDeleteProgram(programID);
     }
 

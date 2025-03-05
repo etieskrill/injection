@@ -8,6 +8,7 @@ import org.etieskrill.engine.graphics.texture.font.TrueTypeFont;
 import org.etieskrill.engine.input.Key;
 import org.etieskrill.engine.input.Keys;
 import org.etieskrill.engine.time.LoopPacer;
+import org.etieskrill.engine.time.StepTimer;
 import org.etieskrill.engine.time.SystemNanoTimePacer;
 import org.etieskrill.engine.util.FixedArrayDeque;
 import org.etieskrill.engine.util.Loaders;
@@ -47,6 +48,9 @@ public abstract class GameApplication {
     }
 
     public GameApplication(Window window) {
+        StepTimer timer = new StepTimer(logger);
+        timer.start();
+
         this.window = window;
         this.window.addKeyInputs((type, key, action, modifiers) -> {
             if (type == Key.Type.KEYBOARD
@@ -62,17 +66,17 @@ public abstract class GameApplication {
         this.entitySystem = new EntitySystem();
         this.cpuTimes = new FixedArrayDeque<>((int) window.getRefreshRate());
 
-        logger.info("Initialised window configuration");
+        timer.info("Initialised window configuration");
 
         try {
             init();
-            logger.info("Initialised application");
+            timer.info("Initialised application");
             _loop();
         } catch (Exception e) {
             logger.warn("Caught application exception", e); //TODO better handling and scopes
         } finally {
             terminate();
-            logger.info("Terminated application");
+            timer.info("Terminated application");
         }
     }
 
