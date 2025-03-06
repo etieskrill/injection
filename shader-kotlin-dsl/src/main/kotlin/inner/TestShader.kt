@@ -1,5 +1,8 @@
-package io.github.etieskrill.extension.shader.dsl
+package io.github.etieskrill.extension.shader.dsl.inner
 
+import io.github.etieskrill.extension.shader.dsl.RenderTarget
+import io.github.etieskrill.extension.shader.dsl.ShaderBuilder
+import io.github.etieskrill.extension.shader.dsl.rt
 import io.github.etieskrill.injection.extension.shader.mat4
 import io.github.etieskrill.injection.extension.shader.vec2
 import io.github.etieskrill.injection.extension.shader.vec3
@@ -17,6 +20,10 @@ class TestShader :
 
     init {
         program()
+        check(callDepth == -1) { "Not all proxied function calls returned. This... should not happen." }
+        programStatements
+            .filter { it.callDepth <= 0 }
+            .forEach { println(it) }
     }
 
     override fun program() {
