@@ -1,6 +1,6 @@
 package org.etieskrill.engine.graphics.texture;
 
-import io.github.etieskrill.injection.extension.shaderreflection.Texture;
+import io.github.etieskrill.injection.extension.shader.Texture;
 import lombok.Getter;
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.graphics.gl.GLUtils;

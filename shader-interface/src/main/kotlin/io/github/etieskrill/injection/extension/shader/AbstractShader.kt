@@ -1,4 +1,4 @@
-package io.github.etieskrill.injection.extension.shaderreflection
+package io.github.etieskrill.injection.extension.shader
 
 interface AbstractShader {
 

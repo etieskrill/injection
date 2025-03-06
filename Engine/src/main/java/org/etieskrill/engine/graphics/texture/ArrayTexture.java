@@ -1,6 +1,6 @@
 package org.etieskrill.engine.graphics.texture;
 
-import io.github.etieskrill.injection.extension.shaderreflection.Texture2DArray;
+import io.github.etieskrill.injection.extension.shader.Texture2DArray;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

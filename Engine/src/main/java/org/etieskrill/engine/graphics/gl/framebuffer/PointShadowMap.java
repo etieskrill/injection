@@ -13,7 +13,7 @@ import static org.etieskrill.engine.graphics.texture.AbstractTexture.Format.DEPT
 import static org.etieskrill.engine.graphics.texture.AbstractTexture.Type.SHADOW;
 import static org.etieskrill.engine.graphics.texture.AbstractTexture.Wrapping.CLAMP_TO_EDGE;
 
-public class PointShadowMap extends ShadowMap<CubeMapTexture> implements io.github.etieskrill.injection.extension.shaderreflection.ShadowMap<CubeMapTexture> {
+public class PointShadowMap extends ShadowMap<CubeMapTexture> implements io.github.etieskrill.injection.extension.shader.ShadowMap<CubeMapTexture> {
 
     protected PointShadowMap(Vector2ic size, CubeMapTexture texture) {
         super(size, texture);
