@@ -1,4 +1,4 @@
-package io.github.etieskrill.injection.extension.shaderreflection
+package io.github.etieskrill.injection.extension.shader.reflection
 
 import org.gradle.api.DefaultTask
 import org.gradle.api.Plugin
@@ -38,8 +38,8 @@ class ShaderReflectionGeneratorPlugin : Plugin<Project> {
 
         //TODO add as api if target has `java-library`?
         dependencies.apply {
-            add("implementation", "io.github.etieskrill.injection.extension.shaderreflection:shader-interface")
-            add("implementation", "io.github.etieskrill.injection.extension.shaderreflection:shader-reflection-plugin")
+            add("implementation", "io.github.etieskrill.injection.extension.shader:shader-interface")
+            add("implementation", "io.github.etieskrill.injection.extension.shader.reflection:shader-reflection-plugin")
         }
     }
 }

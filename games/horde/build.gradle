@@ -1,6 +1,6 @@
 plugins {
     id 'application'
-    id 'io.github.etieskrill.injection.shaderreflection'
+    id 'io.github.etieskrill.injection.shader.reflection'
 }
 
 group = 'org.etieskrill.games.horde'

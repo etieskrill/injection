@@ -1,6 +1,6 @@
 plugins {
     id 'java-library'
-    id 'io.github.etieskrill.injection.shaderreflection'
+    id 'io.github.etieskrill.injection.shader.reflection'
 }
 
 group = 'org.etieskrill.engine'
@@ -36,7 +36,7 @@ dependencies {
     api "org.joml:joml:$jomlVersion"
     api "org.joml:joml-primitives:$jomlPrimitivesVersion"
 
-    api "io.github.etieskrill.injection.extension.shaderreflection:shader-interface"
+    api "io.github.etieskrill.injection.extension.shader:shader-interface"
 
     implementation "org.yaml:snakeyaml:$snakeYamlVersion"
 

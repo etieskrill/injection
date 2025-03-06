@@ -1,6 +1,6 @@
 package org.etieskrill.engine.graphics.texture;
 
-import io.github.etieskrill.injection.extension.shaderreflection.TextureCubeMap;
+import io.github.etieskrill.injection.extension.shader.TextureCubeMap;
 import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment;
 import org.joml.Vector2ic;
 import org.joml.Vector3f;

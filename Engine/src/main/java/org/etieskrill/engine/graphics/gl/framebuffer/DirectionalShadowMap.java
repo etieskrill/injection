@@ -9,7 +9,7 @@ import static org.etieskrill.engine.graphics.texture.AbstractTexture.Format.DEPT
 import static org.etieskrill.engine.graphics.texture.AbstractTexture.Type.SHADOW;
 import static org.etieskrill.engine.graphics.texture.AbstractTexture.Wrapping.CLAMP_TO_BORDER;
 
-public class DirectionalShadowMap extends ShadowMap<Texture2D> implements io.github.etieskrill.injection.extension.shaderreflection.ShadowMap<Texture2D> {
+public class DirectionalShadowMap extends ShadowMap<Texture2D> implements io.github.etieskrill.injection.extension.shader.ShadowMap<Texture2D> {
 
     protected DirectionalShadowMap(Vector2ic size, Texture2D texture) {
         super(size, texture);

@@ -1,4 +1,4 @@
-package io.github.etieskrill.injection.extension.shaderreflection
+package io.github.etieskrill.injection.extension.shader.reflection
 
 import org.gradle.api.file.ConfigurableFileTree
 import org.gradle.api.logging.Logger
@@ -30,7 +30,8 @@ class ShaderReflectionGenerator(private val logger: Logger) {
                 """
                 package ${shader.`package`}
 
-                import io.github.etieskrill.injection.extension.shaderreflection.*
+                import io.github.etieskrill.injection.extension.shader.*
+                import io.github.etieskrill.injection.extension.shader.reflection.*
                 """.trimIndent() + "\n\n"
             )
 

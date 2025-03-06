@@ -1,5 +1,7 @@
-package io.github.etieskrill.injection.extension.shaderreflection
+package io.github.etieskrill.injection.extension.shader.reflection
 
+import io.github.etieskrill.injection.extension.shader.AbstractShader
+import io.github.etieskrill.injection.extension.shader.Texture
 import kotlin.properties.ReadOnlyProperty
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty

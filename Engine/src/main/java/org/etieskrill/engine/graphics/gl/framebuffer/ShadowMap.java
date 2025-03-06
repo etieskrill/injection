@@ -19,7 +19,7 @@ import static org.lwjgl.opengl.GL30C.GL_COMPARE_REF_TO_TEXTURE;
  * and vice versa, and this class effectively only acts as a proxy for the {@link ShadowMap#texture}, this action causes
  * undefined behaviour according to the specification.
  */
-public abstract class ShadowMap<T extends AbstractTexture & FrameBufferAttachment> extends FrameBuffer implements io.github.etieskrill.injection.extension.shaderreflection.ShadowMap<T> {
+public abstract class ShadowMap<T extends AbstractTexture & FrameBufferAttachment> extends FrameBuffer implements io.github.etieskrill.injection.extension.shader.ShadowMap<T> {
 
     protected final T texture;
 

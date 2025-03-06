@@ -4,7 +4,7 @@ plugins {
     kotlin("jvm") version "2.1.0"
 }
 
-group = "io.github.etieskrill.injection.extension.shaderreflection"
+group = "io.github.etieskrill.injection.extension.shader.reflection"
 version = "1.0.0-SNAPSHOT"
 
 repositories {
@@ -14,8 +14,8 @@ repositories {
 gradlePlugin {
     plugins {
         create("ShaderReflectionPlugin") {
-            id = "io.github.etieskrill.injection.shaderreflection"
-            implementationClass = "io.github.etieskrill.injection.extension.shaderreflection.ShaderReflectionPlugin"
+            id = "io.github.etieskrill.injection.shader.reflection"
+            implementationClass = "io.github.etieskrill.injection.extension.shader.reflection.ShaderReflectionPlugin"
         }
     }
 }
@@ -25,7 +25,7 @@ val jomlVersion: String by project
 val jomlPrimitivesVersion: String by project
 
 dependencies {
-    implementation("io.github.etieskrill.injection.extension.shaderreflection:shader-interface:1.0.0-SNAPSHOT")
+    implementation("io.github.etieskrill.injection.extension.shader:shader-interface:1.0.0-SNAPSHOT")
 
     implementation("org.joml:joml:$jomlVersion")
     implementation("org.joml:joml-primitives:$jomlPrimitivesVersion")

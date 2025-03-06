@@ -1,8 +1,9 @@
-package io.github.etieskrill.injection.extension.shaderreflection
+package io.github.etieskrill.injection.extension.shader.reflection
 
 import com.google.devtools.ksp.processing.*
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
+import io.github.etieskrill.injection.extension.shader.AbstractShader
 import java.io.OutputStream
 
 class ShaderReflectorProcessorProvider : SymbolProcessorProvider {
