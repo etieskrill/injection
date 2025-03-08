@@ -122,7 +122,7 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
     public void renderOutline(Model model, ShaderProgram shader, Camera camera, float thickness, Vector4fc colour, boolean writeToFront) {
         //FIXME import outer classes in accessors and discard this shit
         Shaders_OutlineShaderKt.setThicknessFactor(getOutlineShader(), thickness);
-        Shaders_OutlineShaderKt.setColour(getOutlineShader(), colour);
+        Shaders_OutlineShaderKt.setColour(getOutlineShader(), (Vector4f) colour);
 
         glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 

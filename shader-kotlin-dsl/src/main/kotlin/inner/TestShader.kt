@@ -21,13 +21,13 @@ class TestShader :
     init {
         program()
         check(callDepth == -1) { "Not all proxied function calls returned. This... should not happen." }
-        programStatements
-            .filter { it.callDepth <= 0 }
-            .forEach { println(it) }
+        generateGlsl()
     }
 
     override fun program() {
         vertex {
+//            code("uniform vec3 sugondeez;")
+//            code("${this@TestShader.combined} * ${this@TestShader.model} * sugondeez;")
             VertexData(
                 this@TestShader.combined * this@TestShader.model * vec4(it.position, 1.0f),
                 it.texCoord
@@ -72,42 +72,36 @@ class TestShader :
         /* may be compiled into:
         #version 330 core
 
-        struct VertexAttributes {
-            vec3 position;
-            vec2 texCoord;
-        }
-
         struct VertexData {
             vec4 position;
             vec2 texCoord;
-        }
-
-        struct RenderTargets {
-            vec4 colour;
-            vec4 bloom;
-        }
+        };
 
         uniform mat4 model;
         uniform mat4 combined;
 
-        #pragma stage vertex;
+        #pragma stage vertex
 
-        in VertexAttributes attributes;
+        layout (location = 0) in vec3 position;
+        layout (location = 1) in vec2 texCoord;
+
         out VertexData vertex;
 
-        main() {
-            vertex.position = combined * model * vec4(attributes.position, 1.0);
-            vertex.texCoord = attributes.texCoord;
+        void main() {
+            vertex.position = combined * model * vec4(position, 1.0);
+            vertex.texCoord = texCoord;
         }
 
-        #pragma stage fragment;
+        #pragma stage fragment
 
         in VertexData vertex;
-        out RenderTargets renderTargets;
 
-        main() {
-            renderTargets.colour = vertex.position;
-            renderTargets.bloom = vec4(0.0, 0.0, 0.0, 1.0);
+        out vec4 colour;
+        out vec4 bloom;
+
+        void main() {
+            colour = vertex.position;
+            bloom = vec4(0.0, 0.0, 0.0, 1.0);
         }
          */
     }

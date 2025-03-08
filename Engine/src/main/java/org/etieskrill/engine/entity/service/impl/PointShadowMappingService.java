@@ -8,7 +8,8 @@ import org.etieskrill.engine.entity.service.Service;
 import org.etieskrill.engine.graphics.Renderer;
 import org.etieskrill.engine.graphics.animation.Animator;
 import org.etieskrill.engine.graphics.gl.framebuffer.FrameBuffer;
-import org.etieskrill.engine.graphics.gl.shader.impl.*;
+import org.etieskrill.engine.graphics.gl.shader.impl.DepthCubeMapArrayShader;
+import org.etieskrill.engine.graphics.gl.shader.impl.DepthCubeMapArrayShaderKt;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
 
@@ -59,7 +60,7 @@ public class PointShadowMappingService implements Service {
 
         DepthCubeMapArrayShaderKt.setLight(shader, component.getLight());
         DepthCubeMapArrayShaderKt.setIndex(shader, component.getShadowMapIndex() != null ? component.getShadowMapIndex() : 0);
-        DepthCubeMapArrayShaderKt.setShadowCombined(shader, component.getCombinedMatrices());
+        DepthCubeMapArrayShaderKt.setShadowCombined(shader, (Matrix4f[]) component.getCombinedMatrices());
         DepthCubeMapArrayShaderKt.setFarPlane(shader, component.getFarPlane() != null ? component.getFarPlane() : 0);
 
         component.getShadowMap().bind();

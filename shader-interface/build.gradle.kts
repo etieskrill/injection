@@ -12,4 +12,5 @@ version = "1.0.0-SNAPSHOT"
 
 dependencies {
     implementation("org.joml:joml:1.10.8")
+    implementation(kotlin("reflect"))
 }

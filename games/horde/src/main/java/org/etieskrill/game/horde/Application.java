@@ -32,6 +32,7 @@ import org.etieskrill.game.horde.service.BillBoardRenderService;
 import org.etieskrill.game.horde.service.DirectionalBillBoardShadowMappingService;
 import org.etieskrill.game.horde.service.EffectService;
 import org.etieskrill.game.horde.service.SimpleCollisionService;
+import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 import org.joml.Vector3f;
@@ -212,7 +213,7 @@ public class Application extends GameApplication {
         FloorShaderKt.setCamera(floorShader, camera);
         FloorShaderKt.setDiffuse(floorShader, floorTexture);
         FloorShaderKt.setDirShadowMap(floorShader, dirLight.getShadowMap());
-        FloorShaderKt.setDirLightCombined(floorShader, dirLight.getCamera().getCombined());
+        FloorShaderKt.setDirLightCombined(floorShader, (Matrix4f) dirLight.getCamera().getCombined());
 
         glDrawArrays(GL_POINTS, 0, 1);
     }
