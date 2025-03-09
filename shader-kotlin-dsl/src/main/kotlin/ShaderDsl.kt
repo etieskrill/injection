@@ -32,8 +32,9 @@ internal annotation class ShaderDslMarker
 abstract class ShaderBuilder<VA : Any, V : Any, RT : Any>(
     private val vertexAttributesClass: KClass<VA>,
     private val vertexClass: KClass<V>,
-    private val renderTargetsClass: KClass<RT>
-) {
+    private val renderTargetsClass: KClass<RT>,
+    shader: AbstractShader
+) : AbstractShader by shader {
 
     var vertexData: VA? = null
 
@@ -47,6 +48,7 @@ abstract class ShaderBuilder<VA : Any, V : Any, RT : Any>(
     private val renderTargetStatements = mutableMapOf<String, KClass<*>>()
 
     internal var interceptProxyCalls = false
+    private var generationDone = false
 
     internal var stage = ShaderStage.NONE
     internal var callDepth = -1
@@ -132,8 +134,11 @@ abstract class ShaderBuilder<VA : Any, V : Any, RT : Any>(
             ) //using the system object id, because hashCode logically returns identical values for identical matrices
         }
 
-        override fun getValue(thisRef: ShaderBuilder<VA, V, RT>, property: KProperty<*>): T {
-            //TODO use flag to *actually* switch behaviour to get the value from shader (or cached) when outside of program definition
+        override fun getValue(thisRef: ShaderBuilder<VA, V, RT>, property: KProperty<*>): T =
+            if (!generationDone) programGetter(property)
+            else getter()
+
+        private fun programGetter(property: KProperty<*>): T {
             val uniformStatement = this@ShaderBuilder.uniformStatements[value.id]!!
             if (!uniformStatement.used) uniformStatement.name = property.name
             this@ShaderBuilder.programStatements.add(
@@ -146,10 +151,13 @@ abstract class ShaderBuilder<VA : Any, V : Any, RT : Any>(
             return value
         }
 
+        private fun getter(): T = TODO("AbstractShader is gonna have to grow some getters")
+
         override fun setValue(thisRef: ShaderBuilder<VA, V, RT>, property: KProperty<*>, value: T) {
-            //TODO use flag to throw on setting uniform property in program definition
-            //property is only writeable to allow uniform to actually be set from outside
-            this.value = value
+            check(generationDone) { "Uniforms must not be set in program block" }
+            this.value =
+                value //property is only writeable to allow uniform to actually be set from outside without requiring another field
+            setUniform(property.name, value)
         }
     }
 
@@ -211,9 +219,9 @@ abstract class ShaderBuilder<VA : Any, V : Any, RT : Any>(
         }
 
         File("Test.glsl").writeText(source)
-    }
 
-    //TODO map identityHashCode to instance/proxy to follow execution
+        generationDone = true
+    }
 
 }
 
@@ -349,7 +357,7 @@ class FragmentReceiver(builder: ShaderBuilder<*, *, *>) : GlslContext(builder, S
 internal val Any.id
     get() = "${this::class.qualifiedName}@${
         System.identityHashCode(this).toHexString()
-    }" //TODO find out if the id hash code is even reliable / for how long
+    }"
 
 private fun <T : Any> ShaderBuilder<*, *, *>.proxyObject(
     clazz: KClass<T>,
@@ -431,5 +439,5 @@ fun main() {
     val shader = TestShader()
 
     shader.vertexData = Vertex(vec3(1f, 2f, 3f), vec2(0f, 1f))
-    shader.model = mat4()
+//    shader.model = mat4()
 }

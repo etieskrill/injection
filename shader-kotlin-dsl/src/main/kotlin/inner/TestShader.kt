@@ -3,18 +3,42 @@ package io.github.etieskrill.extension.shader.dsl.inner
 import io.github.etieskrill.extension.shader.dsl.RenderTarget
 import io.github.etieskrill.extension.shader.dsl.ShaderBuilder
 import io.github.etieskrill.extension.shader.dsl.rt
-import io.github.etieskrill.injection.extension.shader.mat4
-import io.github.etieskrill.injection.extension.shader.vec2
-import io.github.etieskrill.injection.extension.shader.vec3
-import io.github.etieskrill.injection.extension.shader.vec4
+import io.github.etieskrill.injection.extension.shader.*
 import org.joml.times
 
 open class Vertex(open val position: vec3 = vec3(), open val texCoord: vec2 = vec2())
 open class VertexData(open val position: vec4 = vec4(), open val texCoord: vec2 = vec2())
 open class RenderTargets(open val colour: RenderTarget, open val bloom: RenderTarget)
 
+class Shader : AbstractShader {
+    override fun setUniform(name: String, value: Any) {
+        TODO("Not yet implemented")
+    }
+
+    override fun setUniformArray(name: String, value: Array<Any>) {
+        TODO("Not yet implemented")
+    }
+
+    override fun setUniformArray(name: String, index: Int, value: Any) {
+        TODO("Not yet implemented")
+    }
+
+    override fun setTexture(name: String, texture: Texture) {
+        TODO("Not yet implemented")
+    }
+
+    override fun addUniform(name: String, type: Class<*>) {
+        TODO("Not yet implemented")
+    }
+
+    override fun addUniformArray(name: String, size: Int, type: Class<*>) {
+        TODO("Not yet implemented")
+    }
+
+}
+
 class TestShader :
-    ShaderBuilder<Vertex, VertexData, RenderTargets>(Vertex::class, VertexData::class, RenderTargets::class) {
+    ShaderBuilder<Vertex, VertexData, RenderTargets>(Vertex::class, VertexData::class, RenderTargets::class, Shader()) {
     var model by uniform<mat4>() //TODO throw if set in builder phase
     var combined by uniform<mat4>()
 
