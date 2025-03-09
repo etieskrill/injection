@@ -273,75 +273,8 @@ private fun StringBuilder.glslMain(stage: ShaderStage, shader: ShaderBuilder<*, 
         .take(4)
         .map { statement ->
             when (statement) {
-                is MethodProgramStatement -> {
-                    val helperVariableType = when (statement.returnType) {
-                        shader.vertexAttributesClass, shader.vertexClass, shader.renderTargetsClass -> statement.returnType.simpleName
-                        else -> statement.returnType.glslName
-                    }!!
-
-                    val helperVariableName =
-                        helperVariableType + "_" + context.variableCounters
-                            .compute(statement.returnType) { _, counter ->
-                                if (counter == null) 0 else counter + 1
-                            }
-
-                    context.variables[statement.returnValue.id] = helperVariableName to statement.returnType
-
-                    val methodName = statement.method?.name ?: statement.name
-
-                    val operator = methodName.glslOperator
-                    if (operator != null) {
-                        check(statement.`this` != null) { "Operators must have a left-hand value" }
-                        check(statement.args.size == 2) { "Operators must have exactly one argument" } //FIXME a bit risky to assume all methods would have other + receiver parameters
-
-                        val thisProxy = shader.proxyLookup[statement.`this`.id] ?: statement.`this`
-                        val thisName = thisProxy.resolveNameOrValue(context)
-                            ?: error("Could not resolve reference for method $methodName: ${thisProxy.id}")
-
-                        val argName = statement.args[0]!!.resolveNameOrValue(context)!!
-                        return@map "${"\t".repeat(context.callDepth)}${statement.returnType.glslName} $helperVariableName = $thisName $operator $argName;"
-                    }
-
-                    //FIXME especially matrix multiplications should be inlined in hope that a vector is at the front... i really need a better parse tree api. well, not that i have an "api" at all really. we love brute-force parsing here.
-                    if (statement.`this` == null) { //no receiver means a regular (non-operator) function call, which is probably always inlined
-                        context.variableCounters.remove(statement.returnType) //much pretty pattern, i know. halp
-                        context.variables.remove(statement.returnValue.id)
-
-                        val args = statement.args
-                            .map inline@{
-                                it?.resolveNameOrValue(context)
-                                    ?: error("Could not resolve argument for method $methodName: ${it?.id}")
-                            }
-
-                        context.inlineMethodCalls[statement.returnValue.id] = "$methodName(${args.joinToString()})"
-                        return@map null
-                    }
-
-                    error("Never should have come here: $statement")
-                }
-
-                is ShaderBuilder.ReturnValueProgramStatement -> {
-
-                    val args = statement.value::class.members
-                        .filterIsInstance<KProperty<*>>()
-                        .filterNot { it.name in listOf("equals", "hashCode", "toString") }
-                        .map { it.getter.call(statement.value)!! }
-                        .map { it.resolveNameOrValue(context) }
-
-                    buildString {
-                        newline()
-                        appendIndentedLine(context.callDepth, "${statement.value::class.simpleName} vertexData = {")
-                        args.forEachIndexed { i, arg ->
-                            appendIndented(context.callDepth + 1, arg)
-                            if (i < args.size - 1) appendLine(",")
-                            else appendLine()
-                        }
-                        appendIndentedLine(context.callDepth, "};")
-                        newline()
-
-                        appendIndented(context.callDepth, "vertex = vertexData;")
-                    }
-                }
+                is MethodProgramStatement -> generateMethodStatement(statement, context)
+                is ShaderBuilder.ReturnValueProgramStatement -> generateReturnValueStatement(statement, context)
                 else -> error("Unknown program statement type: ${statement::class.simpleName}")
             }
         }
@@ -349,6 +282,83 @@ private fun StringBuilder.glslMain(stage: ShaderStage, shader: ShaderBuilder<*, 
 
     append("}")
 })
+
+private fun generateMethodStatement(
+    statement: MethodProgramStatement,
+    context: ProgramContext
+): String? {
+    val helperVariableType = when (statement.returnType) {
+        context.shader.vertexAttributesClass, context.shader.vertexClass, context.shader.renderTargetsClass
+            -> statement.returnType.simpleName
+
+        else -> statement.returnType.glslName
+    }!!
+
+    val helperVariableName =
+        helperVariableType + "_" + context.variableCounters
+            .compute(statement.returnType) { _, counter ->
+                if (counter == null) 0 else counter + 1
+            }
+
+    context.variables[statement.returnValue.id] = helperVariableName to statement.returnType
+
+    val methodName = statement.method?.name ?: statement.name
+
+    val operator = methodName.glslOperator
+    if (operator != null) {
+        check(statement.`this` != null) { "Operators must have a left-hand value" }
+        check(statement.args.size == 2) { "Operators must have exactly one argument" } //FIXME a bit risky to assume all methods would have other + receiver parameters
+
+        val thisProxy = context.shader.proxyLookup[statement.`this`.id] ?: statement.`this`
+        val thisName = thisProxy.resolveNameOrValue(context)
+            ?: error("Could not resolve reference for method $methodName: ${thisProxy.id}")
+
+        val argName = statement.args[0]!!.resolveNameOrValue(context)!!
+        return "${"\t".repeat(context.callDepth)}${statement.returnType.glslName} $helperVariableName = $thisName $operator $argName;"
+    }
+
+    //FIXME especially matrix multiplications should be inlined in hope that a vector is at the front... i really need a better parse tree api. well, not that i have an "api" at all really. we love brute-force parsing here.
+    if (statement.`this` == null) { //no receiver means a regular (non-operator) function call, which is probably always inlined
+        context.variableCounters.remove(statement.returnType) //much pretty pattern, i know. halp
+        context.variables.remove(statement.returnValue.id)
+
+        val args = statement.args
+            .map inline@{
+                it?.resolveNameOrValue(context)
+                    ?: error("Could not resolve argument for method $methodName: ${it?.id}")
+            }
+
+        context.inlineMethodCalls[statement.returnValue.id] = "$methodName(${args.joinToString()})"
+        return null
+    }
+
+    error("Never should have come here: $statement")
+}
+
+private fun generateReturnValueStatement(
+    statement: ShaderBuilder.ReturnValueProgramStatement,
+    context: ProgramContext
+): String {
+    val args = statement.value::class.members
+        .filterIsInstance<KProperty<*>>()
+        .filterNot { it.name in listOf("equals", "hashCode", "toString") }
+        .map { it.getter.call(statement.value)!! }
+        .map { it.resolveNameOrValue(context) }
+
+    return buildString {
+        newline()
+        appendIndentedLine(context.callDepth, "${statement.value::class.simpleName} vertexData = {")
+        args.forEachIndexed { i, arg ->
+            appendIndented(context.callDepth + 1, arg)
+            if (i < args.size - 1) appendLine(",")
+            else appendLine()
+        }
+        appendIndentedLine(context.callDepth, "};")
+        newline()
+
+        appendIndented(context.callDepth, "vertex = vertexData;")
+    }
+}
 
 fun StringBuilder.appendIndented(indent: Int, value: String?) =
     append("${"\t".repeat(indent)}${value ?: "<null>"}")
