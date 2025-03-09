@@ -304,6 +304,9 @@ private fun StringBuilder.glslMain(stage: ShaderStage, shader: ShaderBuilder<*, 
 
                     //FIXME especially matrix multiplications should be inlined in hope that a vector is at the front... i really need a better parse tree api. well, not that i have an "api" at all really. we love brute-force parsing here.
                     if (statement.`this` == null) { //no receiver means a regular (non-operator) function call, which is probably always inlined
+                        context.variableCounters.remove(statement.returnType) //much pretty pattern, i know. halp
+                        context.variables.remove(statement.returnValue.id)
+
                         val args = statement.args
                             .map inline@{
                                 it?.resolveNameOrValue(context)
