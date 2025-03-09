@@ -46,6 +46,8 @@ abstract class ShaderBuilder<VA : Any, V : Any, RT : Any>(
     private val vertexDataStatements = mutableMapOf<String, KClass<*>>()
     private val renderTargetStatements = mutableMapOf<String, KClass<*>>()
 
+    internal var interceptProxyCalls = false
+
     internal var stage = ShaderStage.NONE
     internal var callDepth = -1
 
@@ -155,14 +157,18 @@ abstract class ShaderBuilder<VA : Any, V : Any, RT : Any>(
 
     protected fun vertex(block: VertexReceiver.(VA) -> V) {
         stage = ShaderStage.VERTEX
+        interceptProxyCalls = true
         val vertex = block(VertexReceiver(this), vertexAttributes)
         programStatements.add(ReturnValueProgramStatement(vertex, callDepth, ShaderStage.VERTEX))
+        interceptProxyCalls = false
     }
 
     protected fun fragment(block: FragmentReceiver.(V) -> RT) {
         stage = ShaderStage.FRAGMENT
+        interceptProxyCalls = true
         val renderTargets = block(FragmentReceiver(this), vertex)
         programStatements.add(ReturnValueProgramStatement(renderTargets, callDepth, ShaderStage.FRAGMENT))
+        interceptProxyCalls = false
     }
 
 //    init {
@@ -215,7 +221,7 @@ private fun StringBuilder.newline() = appendLine()
 
 private fun StringBuilder.glslVersion(): StringBuilder = appendLine("#version 330 core") //TODO
 
-private fun StringBuilder.glslUniforms(uniforms: List<ShaderBuilder.UniformStatement>) = appendLine(
+private fun StringBuilder.glslUniforms(uniforms: List<UniformStatement>) = appendLine(
     uniforms
         .filter { it.used }
         .joinToString("\n") { "uniform ${it.type.glslName} ${it.name};" })
@@ -349,18 +355,14 @@ private fun <T : Any> ShaderBuilder<*, *, *>.proxyObject(
     clazz: KClass<T>,
     subject: String,
     proxyLookup: ProxyLookup
-): T =
-    proxy(clazz.java.newInstance(), subject, proxyLookup)
+): T = proxy(clazz.java.newInstance(), subject, proxyLookup)
 
 private fun <T : Any> ShaderBuilder<*, *, *>.proxy(obj: T, subject: String, proxyLookup: ProxyLookup): T {
-    //ALRIGHT, so do not use reified types to get the classes for this
     val proxy = ByteBuddy()
-        .subclass(obj::class.java)
+        .subclass(obj::class.java) //ALRIGHT, so do *NOT* use reified types to get the classes for this
         .method(ElementMatchers.any())
         .intercept(InvocationHandlerAdapter.of { _, method, args ->
-            //TODO add toggle to exclude calls outside of program block?
-
-            if (method.name in listOf("hashCode", "toString")) {
+            if (!interceptProxyCalls) {
                 return@of method.invoke(obj, *(args ?: emptyArray()))
             }
 
