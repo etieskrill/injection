@@ -25,6 +25,15 @@ typealias samplerCubeArrayShadow = ShadowMap<TextureCubeMapArray>
 
 typealias struct = Any
 
+val KClass<*>.isGlslPrimitive: Boolean
+    get() = when (this) {
+        Int::class, Float::class, Boolean::class,
+        Vector2f::class, Vector3f::class, Vector4f::class,
+        Matrix3f::class, Matrix4f::class.java -> true
+
+        else -> false
+    }
+
 val KClass<*>.glslName: String?
     get() = when (this) {
         Int::class -> "int"

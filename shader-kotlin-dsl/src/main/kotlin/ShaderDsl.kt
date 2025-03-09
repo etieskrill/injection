@@ -17,7 +17,10 @@ import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.KProperty
 
-private typealias ProxyLookup = MutableMap<String, Any>
+private typealias ProxyLookup = MutableMap<ObjectRef, Any>
+
+@JvmInline
+internal value class ObjectRef(val reference: String)
 
 @DslMarker
 @Target(AnnotationTarget.CLASS)
@@ -30,9 +33,9 @@ internal annotation class ShaderDslMarker
  */
 @ShaderDslMarker
 abstract class ShaderBuilder<VA : Any, V : Any, RT : Any>(
-    private val vertexAttributesClass: KClass<VA>,
-    private val vertexClass: KClass<V>,
-    private val renderTargetsClass: KClass<RT>,
+    internal val vertexAttributesClass: KClass<VA>,
+    internal val vertexClass: KClass<V>,
+    internal val renderTargetsClass: KClass<RT>,
     shader: AbstractShader
 ) : AbstractShader by shader {
 
@@ -53,7 +56,7 @@ abstract class ShaderBuilder<VA : Any, V : Any, RT : Any>(
     internal var stage = ShaderStage.NONE
     internal var callDepth = -1
 
-    private val uniformStatements = mutableMapOf<String, UniformStatement>()
+    internal val uniformStatements = mutableMapOf<ObjectRef, UniformStatement>()
 
     internal val programStatements = mutableListOf<ProgramStatement>()
 
@@ -83,7 +86,7 @@ abstract class ShaderBuilder<VA : Any, V : Any, RT : Any>(
         override val callDepth: Int,
         override val stage: ShaderStage,
         val method: Method?,
-        val name: String?,
+        val name: String,
         val `this`: Any?,
         val args: List<*>
     ) : ProgramStatement(callDepth, stage)
@@ -201,21 +204,16 @@ abstract class ShaderBuilder<VA : Any, V : Any, RT : Any>(
             newline()
             glslStatement(GlslStorageQualifier.OUT, vertexClass, "vertex")
             newline()
-            glslMain(
-                programStatements
-                    .filter { it.stage == ShaderStage.VERTEX }
-                    .filter { it.callDepth <= 0 },
-                uniformStatements, proxyLookup
-            )
+            glslMain(ShaderStage.VERTEX, this@ShaderBuilder)
             newline()
 
-            glslStage(ShaderStage.FRAGMENT)
-            newline()
-            glslStatement(GlslStorageQualifier.IN, vertexClass, "vertex")
-            newline()
-            glslRenderTargets(renderTargetStatements)
-            newline()
-            glslMain(listOf(), uniformStatements, proxyLookup)
+//            glslStage(ShaderStage.FRAGMENT)
+//            newline()
+//            glslStatement(GlslStorageQualifier.IN, vertexClass, "vertex")
+//            newline()
+//            glslRenderTargets(renderTargetStatements)
+//            newline()
+//            glslMain(ShaderStage.FRAGMENT, this@ShaderBuilder)
         }
 
         File("Test.glsl").writeText(source)
@@ -252,54 +250,107 @@ private fun StringBuilder.glslStruct(type: KClass<*>, members: Map<String, KClas
         append("};")
     })
 
-private fun StringBuilder.glslMain(
-    statements: List<ShaderBuilder.ProgramStatement>,
-    uniformStatements: Map<String, UniformStatement>,
-    proxyLookup: ProxyLookup
-) = appendLine(buildString {
+private fun StringBuilder.glslMain(stage: ShaderStage, shader: ShaderBuilder<*, *, *>) = appendLine(buildString {
     appendLine("void main() {")
 
-    val variableCounters = mutableMapOf<KClass<*>, Int>()
-    val variables = mutableMapOf<Any, Pair<String, KClass<*>>>()
-    var callDepth = 1 //we start in main
-    val statement = statements
-        .take(1)
+    val programStatements = shader.programStatements
+        .filter { it.stage == stage }
+        .filter { it.callDepth <= 0 }
+
+    val vertexAttributes = programStatements
+        .filterIsInstance<MethodProgramStatement>()
+        .filter { it.`this` != null && it.`this`::class == shader.vertexAttributesClass }
+        .associate { it.returnValue.id to it.name.removePrefix("get").lowercase() }
+
+    val context = ProgramContext(shader, vertexAttributes)
+
+    programStatements.forEach { println(it) }
+    val statements = programStatements
+        .filterNot { it is MethodProgramStatement && (it.method?.name ?: it.name).startsWith("get") }
+        .take(3)
         .map { statement ->
             when (statement) {
                 is MethodProgramStatement -> {
+                    val helperVariableType = when (statement.returnType) {
+                        shader.vertexAttributesClass, shader.vertexClass, shader.renderTargetsClass -> statement.returnType.simpleName
+                        else -> statement.returnType.glslName
+                    }!!
+
                     val helperVariableName =
-                        statement.returnType.glslName + "_" + variableCounters
+                        helperVariableType + "_" + context.variableCounters
                             .compute(statement.returnType) { _, counter ->
-                                return@compute if (counter == null) 0 else counter + 1
+                                if (counter == null) 0 else counter + 1
                             }
 
-                    variables[statement.returnValue] = helperVariableName to statement.returnType
+                    context.variables[statement.returnValue.id] = helperVariableName to statement.returnType
 
-                    check(statement.method != null || statement.name != null) { "Either method or method name must be set" }
-                    val operator = (statement.method?.name ?: statement.name)!!.glslOperator
-                        ?: TODO("Function calls are not yet implemented")
-                    check(statement.`this` != null) { "Operators must have a left-hand value" }
-                    check(statement.args.size == 2) { "Operators must have exactly one argument" } //FIXME a bit risky to assume all methods would have other + receiver parameters
+                    val methodName = statement.method?.name ?: statement.name
 
-                    val thisUniformName = uniformStatements[proxyLookup[statement.`this`.id]!!.id]!!.name
-                    val argUniformName = uniformStatements[statement.args[0]!!.id]!!.name
-                    "${"\t".repeat(callDepth)}${statement.returnType.glslName} $helperVariableName = $thisUniformName $operator $argUniformName;"
+                    val operator = methodName.glslOperator
+                    if (operator != null) {
+                        check(statement.`this` != null) { "Operators must have a left-hand value" }
+                        check(statement.args.size == 2) { "Operators must have exactly one argument" } //FIXME a bit risky to assume all methods would have other + receiver parameters
+
+                        val thisProxy = shader.proxyLookup[statement.`this`.id] ?: statement.`this`
+                        val thisName = thisProxy.resolveNameOrValue(context)
+                            ?: error("Could not resolve reference for method $methodName: ${thisProxy.id}")
+
+                        val argName = statement.args[0]!!.resolveNameOrValue(context)!!
+                        return@map "${"\t".repeat(context.callDepth)}${statement.returnType.glslName} $helperVariableName = $thisName $operator $argName;"
+                    }
+
+                    //FIXME especially matrix multiplications should be inlined in hope that a vector is at the front... i really need a better parse tree api. well, not that i have an "api" at all really. we love brute-force parsing here.
+                    if (statement.`this` == null) { //no receiver means a regular (non-operator) function call, which is probably always inlined
+                        val args = statement.args
+                            .map inline@{
+                                it?.resolveNameOrValue(context)
+                                    ?: error("Could not resolve argument for method $methodName: ${it?.id}")
+                            }
+
+                        context.inlineMethodCalls[statement.returnValue.id] = "$methodName(${args.joinToString()})"
+                        return@map null
+                    }
+
+                    error("Never should have come here: $statement")
                 }
 
-                is ShaderBuilder.ReturnValueProgramStatement -> error("")
+                is ShaderBuilder.ReturnValueProgramStatement -> TODO()
                 else -> error("Unknown program statement type: ${statement::class.simpleName}")
             }
         }
-    appendLine(statement.joinToString("\n"))
+    appendLine(statements.filterNotNull().joinToString("\n"))
 
     append("}")
 })
 
 private val String.glslOperator
     get() = when (this) {
-        "mul" -> "*"
+        "mul", "transform" -> "*"
         else -> null
     }
+
+private data class ProgramContext(
+    val shader: ShaderBuilder<*, *, *>,
+    val vertexAttributes: Map<ObjectRef, String>,
+    val variableCounters: MutableMap<KClass<*>, Int> = mutableMapOf(),
+    val variables: MutableMap<ObjectRef, Pair<String, KClass<*>>> = mutableMapOf(),
+    val inlineMethodCalls: MutableMap<ObjectRef, String> = mutableMapOf(),
+    var callDepth: Int = 1 //we start in main
+)
+
+private fun Any.resolveNameOrValue(context: ProgramContext): String? =
+    if (this::class.isGlslPrimitive) {
+        toString() //FIXME joml types ain't gonna like this
+    } else if (id in context.shader.uniformStatements) {
+        context.shader.uniformStatements[id]!!.name!!
+    } else if (id in context.vertexAttributes) {
+        context.vertexAttributes[id]!!
+    } else if (id in context.inlineMethodCalls) {
+        context.inlineMethodCalls[id]!!
+    } else if (id in context.variables) {
+        check(id !in context.inlineMethodCalls) { "Method call that was inlined is being accessed as a variable" }
+        context.variables[id]!!.first
+    } else null
 
 //private infix fun Any?.refEquals(other: Any?) =
 //    this != null && other != null &&
@@ -313,7 +364,7 @@ private fun StringBuilder.glslStatement(qualifier: GlslStorageQualifier, type: K
     "${qualifier.name.lowercase()} ${type.simpleName} $name;"
 )
 
-private fun StringBuilder.glslRenderTargets(renderTargets: Map<String, KClass<*>>) = appendLine(
+private fun StringBuilder.glslRenderTargets(renderTargets: Map<ObjectRef, KClass<*>>) = appendLine(
     renderTargets
         .map { (name, _) -> "out vec4 $name;" }
         .joinToString("\n"))
@@ -354,10 +405,12 @@ class VertexReceiver(builder: ShaderBuilder<*, *, *>) : GlslContext(builder, Sha
 class FragmentReceiver(builder: ShaderBuilder<*, *, *>) : GlslContext(builder, ShaderStage.FRAGMENT)
 
 @OptIn(ExperimentalStdlibApi::class)
-internal val Any.id
-    get() = "${this::class.qualifiedName}@${
-        System.identityHashCode(this).toHexString()
-    }"
+internal val Any.id: ObjectRef
+    get() = ObjectRef(
+        "${this::class.qualifiedName}@${
+            System.identityHashCode(this).toHexString()
+        }"
+    )
 
 private fun <T : Any> ShaderBuilder<*, *, *>.proxyObject(
     clazz: KClass<T>,
@@ -366,6 +419,8 @@ private fun <T : Any> ShaderBuilder<*, *, *>.proxyObject(
 ): T = proxy(clazz.java.newInstance(), subject, proxyLookup)
 
 private fun <T : Any> ShaderBuilder<*, *, *>.proxy(obj: T, subject: String, proxyLookup: ProxyLookup): T {
+    if (obj::class.qualifiedName!!.contains("ByteBuddy")) return obj //object is already a proxy
+
     val proxy = ByteBuddy()
         .subclass(obj::class.java) //ALRIGHT, so do *NOT* use reified types to get the classes for this
         .method(ElementMatchers.any())
@@ -392,12 +447,12 @@ private fun <T : Any> ShaderBuilder<*, *, *>.proxy(obj: T, subject: String, prox
 
                 programStatements.add(
                     MethodProgramStatement(
-                        obj::class,
+                        method.returnType.kotlin,
                         returnValue,
                         callDepth,
                         stage,
                         method,
-                        null,
+                        method.name,
                         obj,
                         (args ?: emptyArray()).toList()
                     )

@@ -18,8 +18,6 @@ out VertexData vertex;
 void main() {
     vertex.position = combined * model * vec4(position, 1.0);
     vertex.texCoord = texCoord;
-
-    mat4 mat_0 = combined * model;
 }
 
 #pragma stage fragment
