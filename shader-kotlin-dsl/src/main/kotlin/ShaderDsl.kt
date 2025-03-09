@@ -1,6 +1,7 @@
 package io.github.etieskrill.extension.shader.dsl
 
 import io.github.etieskrill.extension.shader.dsl.ShaderBuilder.MethodProgramStatement
+import io.github.etieskrill.extension.shader.dsl.ShaderBuilder.UniformStatement
 import io.github.etieskrill.extension.shader.dsl.inner.TestShader
 import io.github.etieskrill.extension.shader.dsl.inner.Vertex
 import io.github.etieskrill.injection.extension.shader.*
@@ -10,10 +11,13 @@ import net.bytebuddy.matcher.ElementMatchers
 import org.intellij.lang.annotations.Language
 import org.joml.Vector4f
 import java.io.File
+import java.lang.reflect.Method
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.KProperty
+
+private typealias ProxyLookup = MutableMap<String, Any>
 
 @DslMarker
 @Target(AnnotationTarget.CLASS)
@@ -28,21 +32,24 @@ internal annotation class ShaderDslMarker
 abstract class ShaderBuilder<VA : Any, V : Any, RT : Any>(
     private val vertexAttributesClass: KClass<VA>,
     private val vertexClass: KClass<V>,
-    private val renderTargetsClass: KClass<RT>,
+    private val renderTargetsClass: KClass<RT>
 ) {
 
     var vertexData: VA? = null
 
-    private val vertexAttributes: VA = proxyObject(vertexAttributesClass, "data")
-    private val vertex: V = proxyObject(vertexClass, "data")
+    internal val proxyLookup: ProxyLookup = mutableMapOf()
+
+    private val vertexAttributes: VA = proxyObject(vertexAttributesClass, "data", proxyLookup)
+    private val vertex: V = proxyObject(vertexClass, "data", proxyLookup)
 
     private val vertexAttributeStatements = mutableMapOf<String, KClass<*>>()
     private val vertexDataStatements = mutableMapOf<String, KClass<*>>()
     private val renderTargetStatements = mutableMapOf<String, KClass<*>>()
 
+    internal var stage = ShaderStage.NONE
     internal var callDepth = -1
 
-    private val uniformStatements = mutableMapOf<Any, UniformStatement>()
+    private val uniformStatements = mutableMapOf<String, UniformStatement>()
 
     internal val programStatements = mutableListOf<ProgramStatement>()
 
@@ -55,24 +62,33 @@ abstract class ShaderBuilder<VA : Any, V : Any, RT : Any>(
             get() = name != null
     }
 
-    internal open class ProgramStatement(open val callDepth: Int)
+    internal open class ProgramStatement(
+        open val callDepth: Int,
+        open val stage: ShaderStage
+    )
 
     private data class UniformProgramStatement(
         val uniform: UniformStatement,
         override val callDepth: Int,
-    ) : ProgramStatement(callDepth)
+        override val stage: ShaderStage
+    ) : ProgramStatement(callDepth, stage)
 
     internal data class MethodProgramStatement(
         val returnType: KClass<*>,
+        val returnValue: Any,
         override val callDepth: Int,
-        val name: String,
+        override val stage: ShaderStage,
+        val method: Method?,
+        val name: String?,
+        val `this`: Any?,
         val args: List<*>
-    ) : ProgramStatement(callDepth)
+    ) : ProgramStatement(callDepth, stage)
 
-    private data class ReturnValueProgramStatement(
+    internal data class ReturnValueProgramStatement(
         val value: Any,
-        override val callDepth: Int
-    ) : ProgramStatement(callDepth)
+        override val callDepth: Int,
+        override val stage: ShaderStage
+    ) : ProgramStatement(callDepth, stage)
 
     init {
         vertexAttributesClass.check()
@@ -105,7 +121,7 @@ abstract class ShaderBuilder<VA : Any, V : Any, RT : Any>(
         .associate { it.name to it.returnType.classifier as KClass<*> }
 
     protected inner class UniformDelegate<T : Any>(clazz: KClass<T>) : ReadWriteProperty<ShaderBuilder<VA, V, RT>, T> {
-        private var value: T = proxyObject(clazz, "uniform")
+        private var value: T = proxyObject(clazz, "uniform", proxyLookup)
 
         init {
             this@ShaderBuilder.uniformStatements[value.id] = UniformStatement(
@@ -118,7 +134,13 @@ abstract class ShaderBuilder<VA : Any, V : Any, RT : Any>(
             //TODO use flag to *actually* switch behaviour to get the value from shader (or cached) when outside of program definition
             val uniformStatement = this@ShaderBuilder.uniformStatements[value.id]!!
             if (!uniformStatement.used) uniformStatement.name = property.name
-            this@ShaderBuilder.programStatements.add(UniformProgramStatement(uniformStatement, callDepth))
+            this@ShaderBuilder.programStatements.add(
+                UniformProgramStatement(
+                    uniformStatement,
+                    callDepth,
+                    ShaderStage.NONE
+                )
+            )
             return value
         }
 
@@ -132,13 +154,15 @@ abstract class ShaderBuilder<VA : Any, V : Any, RT : Any>(
     protected inline fun <reified T : Any> uniform() = UniformDelegate(T::class)
 
     protected fun vertex(block: VertexReceiver.(VA) -> V) {
+        stage = ShaderStage.VERTEX
         val vertex = block(VertexReceiver(this), vertexAttributes)
-        programStatements.add(ReturnValueProgramStatement(vertex, callDepth))
+        programStatements.add(ReturnValueProgramStatement(vertex, callDepth, ShaderStage.VERTEX))
     }
 
     protected fun fragment(block: FragmentReceiver.(V) -> RT) {
+        stage = ShaderStage.FRAGMENT
         val renderTargets = block(FragmentReceiver(this), vertex)
-        programStatements.add(ReturnValueProgramStatement(renderTargets, callDepth))
+        programStatements.add(ReturnValueProgramStatement(renderTargets, callDepth, ShaderStage.FRAGMENT))
     }
 
 //    init {
@@ -149,8 +173,6 @@ abstract class ShaderBuilder<VA : Any, V : Any, RT : Any>(
     protected abstract fun program()
 
     internal fun generateGlsl() {
-        println(programStatements.joinToString("\n"))
-
         val source = buildString {
             glslVersion()
             newline()
@@ -165,7 +187,12 @@ abstract class ShaderBuilder<VA : Any, V : Any, RT : Any>(
             newline()
             glslStatement(GlslStorageQualifier.OUT, vertexClass, "vertex")
             newline()
-            glslMain()
+            glslMain(
+                programStatements
+                    .filter { it.stage == ShaderStage.VERTEX }
+                    .filter { it.callDepth <= 0 },
+                uniformStatements, proxyLookup
+            )
             newline()
 
             glslStage(ShaderStage.FRAGMENT)
@@ -174,7 +201,7 @@ abstract class ShaderBuilder<VA : Any, V : Any, RT : Any>(
             newline()
             glslRenderTargets(renderTargetStatements)
             newline()
-            glslMain()
+            glslMain(listOf(), uniformStatements, proxyLookup)
         }
 
         File("Test.glsl").writeText(source)
@@ -211,7 +238,60 @@ private fun StringBuilder.glslStruct(type: KClass<*>, members: Map<String, KClas
         append("};")
     })
 
-private fun StringBuilder.glslMain() = appendLine("void main() {\n}")
+private fun StringBuilder.glslMain(
+    statements: List<ShaderBuilder.ProgramStatement>,
+    uniformStatements: Map<String, UniformStatement>,
+    proxyLookup: ProxyLookup
+) = appendLine(buildString {
+    appendLine("void main() {")
+
+    val variableCounters = mutableMapOf<KClass<*>, Int>()
+    val variables = mutableMapOf<Any, Pair<String, KClass<*>>>()
+    var callDepth = 1 //we start in main
+    val statement = statements
+        .take(1)
+        .map { statement ->
+            when (statement) {
+                is MethodProgramStatement -> {
+                    val helperVariableName =
+                        statement.returnType.glslName + "_" + variableCounters
+                            .compute(statement.returnType) { _, counter ->
+                                return@compute if (counter == null) 0 else counter + 1
+                            }
+
+                    variables[statement.returnValue] = helperVariableName to statement.returnType
+
+                    check(statement.method != null || statement.name != null) { "Either method or method name must be set" }
+                    val operator = (statement.method?.name ?: statement.name)!!.glslOperator
+                        ?: TODO("Function calls are not yet implemented")
+                    check(statement.`this` != null) { "Operators must have a left-hand value" }
+                    check(statement.args.size == 2) { "Operators must have exactly one argument" } //FIXME a bit risky to assume all methods would have other + receiver parameters
+
+                    val thisUniformName = uniformStatements[proxyLookup[statement.`this`.id]!!.id]!!.name
+                    val argUniformName = uniformStatements[statement.args[0]!!.id]!!.name
+                    "${"\t".repeat(callDepth)}${statement.returnType.glslName} $helperVariableName = $thisUniformName $operator $argUniformName;"
+                }
+
+                is ShaderBuilder.ReturnValueProgramStatement -> error("")
+                else -> error("Unknown program statement type: ${statement::class.simpleName}")
+            }
+        }
+    appendLine(statement.joinToString("\n"))
+
+    append("}")
+})
+
+private val String.glslOperator
+    get() = when (this) {
+        "mul" -> "*"
+        else -> null
+    }
+
+//private infix fun Any?.refEquals(other: Any?) =
+//    this != null && other != null &&
+//    System.identityHashCode(this) == System.identityHashCode(other)
+
+//private data class MethodSignature
 
 private enum class GlslStorageQualifier { IN, OUT }
 
@@ -225,23 +305,39 @@ private fun StringBuilder.glslRenderTargets(renderTargets: Map<String, KClass<*>
         .joinToString("\n"))
 
 @ShaderDslMarker
-open class GlslContext(val shader: ShaderBuilder<*, *, *>) {
+open class GlslContext(
+    private val shader: ShaderBuilder<*, *, *>,
+    private val stage: ShaderStage
+) {
     fun vec4(x: float, y: float, z: float, w: float): vec4 = register({ Vector4f(x, y, z, w) }, "vec4", x, y, z, w)
     fun vec4(vec: vec3, w: float): vec4 = register({ Vector4f(vec, w) }, "vec4", vec, w)
 
     private inline fun <reified T : Any> register(value: () -> T, name: String, vararg args: Any): T = shader.frame {
-        shader.programStatements.add(MethodProgramStatement(T::class, shader.callDepth, name, args.toList()))
-        shader.proxy(value(), "instance")
+        val proxy = shader.proxy(value(), "instance", shader.proxyLookup)
+//        val method = GlslContext::class.java.getMethod(name, *args.map { it::class.java }.toTypedArray()) //this seems like a pretty shit idea
+        shader.programStatements.add(
+            MethodProgramStatement(
+                T::class,
+                proxy,
+                shader.callDepth,
+                stage,
+                null,
+                name,
+                null,
+                args.toList()
+            )
+        )
+        proxy
     }
 
-    fun code(@Language("GLSL") code: String): Unit = TODO("log call and return string wrapper proxy")
+    fun <T> code(@Language("GLSL") code: String): T = TODO("log call and return wrapper proxy")
 }
 
 @ShaderDslMarker
-class VertexReceiver(builder: ShaderBuilder<*, *, *>) : GlslContext(builder)
+class VertexReceiver(builder: ShaderBuilder<*, *, *>) : GlslContext(builder, ShaderStage.VERTEX)
 
 @ShaderDslMarker
-class FragmentReceiver(builder: ShaderBuilder<*, *, *>) : GlslContext(builder)
+class FragmentReceiver(builder: ShaderBuilder<*, *, *>) : GlslContext(builder, ShaderStage.FRAGMENT)
 
 @OptIn(ExperimentalStdlibApi::class)
 internal val Any.id
@@ -249,12 +345,16 @@ internal val Any.id
         System.identityHashCode(this).toHexString()
     }" //TODO find out if the id hash code is even reliable / for how long
 
-private fun <T : Any> ShaderBuilder<*, *, *>.proxyObject(clazz: KClass<T>, subject: String): T =
-    proxy(clazz.java.newInstance(), subject)
+private fun <T : Any> ShaderBuilder<*, *, *>.proxyObject(
+    clazz: KClass<T>,
+    subject: String,
+    proxyLookup: ProxyLookup
+): T =
+    proxy(clazz.java.newInstance(), subject, proxyLookup)
 
-private fun <T : Any> ShaderBuilder<*, *, *>.proxy(obj: T, subject: String): T {
+private fun <T : Any> ShaderBuilder<*, *, *>.proxy(obj: T, subject: String, proxyLookup: ProxyLookup): T {
     //ALRIGHT, so do not use reified types to get the classes for this
-    return ByteBuddy()
+    val proxy = ByteBuddy()
         .subclass(obj::class.java)
         .method(ElementMatchers.any())
         .intercept(InvocationHandlerAdapter.of { _, method, args ->
@@ -264,35 +364,45 @@ private fun <T : Any> ShaderBuilder<*, *, *>.proxy(obj: T, subject: String): T {
                 return@of method.invoke(obj, *(args ?: emptyArray()))
             }
 
-            val returnValue = frame {
+            frame {
+                var returnValue = method.invoke(obj, *(args ?: emptyArray()))
+
+                returnValue = when (returnValue) {
+//                returnValue::class.isFinal -> returnValue
+                    is Int -> returnValue
+//                is Long -> returnValue
+                    is Float -> returnValue
+//                is Double -> returnValue
+                    is Boolean -> returnValue
+//                is Byte -> returnValue
+//                is Char -> returnValue
+                    is String -> returnValue
+                    else -> proxy(returnValue, subject, proxyLookup)
+                }
+
                 programStatements.add(
                     MethodProgramStatement(
-                        method.returnType.kotlin,
+                        obj::class,
+                        returnValue,
                         callDepth,
-                        method.name,
+                        stage,
+                        method,
+                        null,
+                        obj,
                         (args ?: emptyArray()).toList()
                     )
                 )
-                method.invoke(obj, *(args ?: emptyArray()))
-            }
 
-            when (returnValue) {
-//                returnValue::class.isFinal -> returnValue
-                is Int -> returnValue
-//                is Long -> returnValue
-                is Float -> returnValue
-//                is Double -> returnValue
-                is Boolean -> returnValue
-//                is Byte -> returnValue
-//                is Char -> returnValue
-                is String -> returnValue
-                else -> proxy(returnValue, subject)
+                returnValue
             }
         })
         .make()
         .load(obj::class.java.classLoader)
         .loaded
         .newInstance() //TODO primitive arg detection & instantiation
+
+    proxyLookup[obj.id] = proxy
+    return proxy as T
 }
 
 interface FrameBuffer
