@@ -20,7 +20,9 @@ import kotlin.reflect.KProperty
 private typealias ProxyLookup = MutableMap<ObjectRef, Any>
 
 @JvmInline
-internal value class ObjectRef(val reference: String)
+internal value class ObjectRef(private val reference: String) {
+    override fun toString(): String = reference
+}
 
 @DslMarker
 @Target(AnnotationTarget.CLASS)
@@ -260,14 +262,15 @@ private fun StringBuilder.glslMain(stage: ShaderStage, shader: ShaderBuilder<*, 
     val vertexAttributes = programStatements
         .filterIsInstance<MethodProgramStatement>()
         .filter { it.`this` != null && it.`this`::class == shader.vertexAttributesClass }
-        .associate { it.returnValue.id to it.name.removePrefix("get").lowercase() }
+        .associate {
+            it.returnValue.id to it.name.removePrefix("get").replaceFirstChar { it.lowercase() }
+        } //TODO crosscheck name with context
 
     val context = ProgramContext(shader, vertexAttributes)
 
-    programStatements.forEach { println(it) }
     val statements = programStatements
         .filterNot { it is MethodProgramStatement && (it.method?.name ?: it.name).startsWith("get") }
-        .take(3)
+        .take(4)
         .map { statement ->
             when (statement) {
                 is MethodProgramStatement -> {
@@ -314,7 +317,28 @@ private fun StringBuilder.glslMain(stage: ShaderStage, shader: ShaderBuilder<*, 
                     error("Never should have come here: $statement")
                 }
 
-                is ShaderBuilder.ReturnValueProgramStatement -> TODO()
+                is ShaderBuilder.ReturnValueProgramStatement -> {
+
+                    val args = statement.value::class.members
+                        .filterIsInstance<KProperty<*>>()
+                        .filterNot { it.name in listOf("equals", "hashCode", "toString") }
+                        .map { it.getter.call(statement.value)!! }
+                        .map { it.resolveNameOrValue(context) }
+
+                    buildString {
+                        newline()
+                        appendIndentedLine(context.callDepth, "${statement.value::class.simpleName} vertexData = {")
+                        args.forEachIndexed { i, arg ->
+                            appendIndented(context.callDepth + 1, arg)
+                            if (i < args.size - 1) appendLine(",")
+                            else appendLine()
+                        }
+                        appendIndentedLine(context.callDepth, "};")
+                        newline()
+
+                        appendIndented(context.callDepth, "vertex = vertexData;")
+                    }
+                }
                 else -> error("Unknown program statement type: ${statement::class.simpleName}")
             }
         }
@@ -322,6 +346,22 @@ private fun StringBuilder.glslMain(stage: ShaderStage, shader: ShaderBuilder<*, 
 
     append("}")
 })
+
+fun StringBuilder.appendIndented(indent: Int, value: String?) =
+    append("${"\t".repeat(indent)}${value ?: "<null>"}")
+
+fun StringBuilder.appendIndentedLine(indent: Int, value: String?) =
+    appendIndented(indent, value).newline()
+
+//private fun buildIndentedString(indent: Int, block: IndentedStringBuilder.() -> Unit) = block(IndentedStringBuilder(StringBuilder(), indent))
+//
+//private class IndentedStringBuilder(val builder: StringBuilder, val indent: Int) : Appendable by builder { //why in the goddamn fucking fuck would StringBuilder not be open????????? like, what's the harm?
+//    fun StringBuilder.appendIndented(value: String?, additionalIndent: Int = 0) =
+//        append("${"\t".repeat(indent + additionalIndent)}${value ?: "<null>"}")
+//
+//    fun StringBuilder.appendIndentedLine(value: String?, additionalIndent: Int = 0) =
+//        appendIndented(value, additionalIndent).newline()
+//}
 
 private val String.glslOperator
     get() = when (this) {
