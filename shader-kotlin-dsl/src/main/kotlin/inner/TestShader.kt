@@ -30,6 +30,7 @@ class TestShader :
 //            code("${this@TestShader.combined} * ${this@TestShader.model} * sugondeez;")
             VertexData(
                 this@TestShader.combined * this@TestShader.model * vec4(it.position, 1.0f),
+//                code("combined * model * vec4(position, 1.0)"),
                 it.texCoord
             )
         }
