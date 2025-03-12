@@ -16,8 +16,10 @@ import org.jetbrains.kotlin.gradle.plugin.SubpluginArtifact
 import org.jetbrains.kotlin.gradle.plugin.SubpluginOption
 import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
 import org.jetbrains.kotlin.ir.declarations.IrClass
+import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+import org.jetbrains.kotlin.ir.util.*
 
 @Suppress("unused")
 class ShaderDslPlugin : KotlinCompilerPluginSupportPlugin {
@@ -64,11 +66,22 @@ class IrShaderGenerationExtension(
 ) : IrGenerationExtension {
     @OptIn(ObsoleteDescriptorBasedAPI::class, UnsafeDuringIrConstructionAPI::class)
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
-        messageCollector.report(CompilerMessageSeverity.ERROR, moduleFragment.files.first().declarations.map {
-            when (it) {
-                is IrClass -> it.name
-                else -> it.descriptor.name.asString()
-            }
-        }.joinToString())
+        val shaderClasses = moduleFragment
+            .files
+            .map { it.declarations }
+            .flatten()
+            .filterIsInstance<IrClass>()
+            .filter { it.superClass != null && "${it.superClass?.packageFqName?.asString()}.${it.superClass?.name?.asString()}" == ShaderBuilder::class.qualifiedName }
+
+        val programBodies = shaderClasses
+            .first()
+            .findDeclaration<IrFunction> { it.name.asString() == "program" }!!
+            .body!!
+            .statements
+
+        programBodies
+            .map { it.dump().log() } //TODO hell ye brother, now we're cooking with fire
     }
+
+    fun Any?.log() = messageCollector.report(CompilerMessageSeverity.ERROR, "$this")
 }
