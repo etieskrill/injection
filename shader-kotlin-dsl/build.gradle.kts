@@ -2,8 +2,10 @@ plugins {
     `java-library`
     `java-gradle-plugin`
     kotlin("jvm") version "2.1.0" //TODO find out why tf this does not work without a version and why the fucking logs do not tell you shit about this
-//    `kotlin-dsl`
-    id("com.google.devtools.ksp") version "2.1.0-1.0.29"
+
+//    id("com.google.devtools.ksp") version "2.1.0-1.0.29"
+
+    `maven-publish`
 }
 
 group = "io.github.etieskrill.injection.extension.shader.dsl"
@@ -34,22 +36,37 @@ dependencies {
 
     runtimeOnly("org.jetbrains.kotlin:kotlin-reflect:2.1.10")
 
-//    compileOnly("com.google.auto.service:auto-service:1.1.1")
-//    ksp("com.google.auto.service:auto-service:1.1.1")
-
     compileOnly("org.jetbrains.kotlin:kotlin-compiler-embeddable:2.1.10")
     implementation("org.jetbrains.kotlin:kotlin-gradle-plugin-api:2.1.10")
+
+//    compileOnly("com.google.auto.service:auto-service:1.1.1")
+//    ksp("com.google.auto.service:auto-service:1.1.1")
 
     testImplementation(kotlin("test"))
 }
 
-//FIXME i don't think a dependency will do
-//tasks.withType<KotlinCompilationTask<*>> {
-//    compilerOptions.freeCompilerArgs.add(
-//        "-Xplugin=${project.buildDir}/libs/shader-kotlin-dsl-1.0.0-SNAPSHOT.jar"
-//    )
-//}
+tasks.build {
+    dependsOn("publishToMavenLocal") //FIXME perhaps not the best of ideas when compiler extension and plugin are in same module
+}
 
 tasks.test {
     useJUnitPlatform()
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("default") {
+            from(components["java"])
+
+            pom {
+                name.set("io.github.etieskrill.injection.autism.maven-publication")
+            }
+        }
+    }
+
+    repositories {
+        maven {
+//            setUrl(property("sonatypeReleaseUrl")!!)
+        }
+    }
 }
