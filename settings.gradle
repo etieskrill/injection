@@ -5,9 +5,8 @@ include 'shader-reflection'
 
 includeBuild 'shader-interface'
 includeBuild 'shader-reflection-plugin'
+includeBuild 'shader-kotlin-dsl'
 
 file('games').eachDir {
     include "games:$it.name"
 }
-include 'shader-kotlin-dsl'
-
