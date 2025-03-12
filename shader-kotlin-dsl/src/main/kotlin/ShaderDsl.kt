@@ -1,10 +1,8 @@
-package io.github.etieskrill.extension.shader.dsl
+package io.github.etieskrill.injection.extension.shader.dsl
 
-import io.github.etieskrill.extension.shader.dsl.ShaderBuilder.MethodProgramStatement
-import io.github.etieskrill.extension.shader.dsl.ShaderBuilder.UniformStatement
-import io.github.etieskrill.extension.shader.dsl.inner.TestShader
-import io.github.etieskrill.extension.shader.dsl.inner.Vertex
 import io.github.etieskrill.injection.extension.shader.*
+import io.github.etieskrill.injection.extension.shader.dsl.ShaderBuilder.MethodProgramStatement
+import io.github.etieskrill.injection.extension.shader.dsl.ShaderBuilder.UniformStatement
 import net.bytebuddy.ByteBuddy
 import net.bytebuddy.implementation.InvocationHandlerAdapter
 import net.bytebuddy.matcher.ElementMatchers
@@ -541,11 +539,4 @@ internal inline fun <T> ShaderBuilder<*, *, *>.frame(block: () -> T): T {
     val value = block()
     callDepth--
     return value
-}
-
-fun main() {
-    val shader = TestShader()
-
-    shader.vertexData = Vertex(vec3(1f, 2f, 3f), vec2(0f, 1f))
-//    shader.model = mat4()
 }
