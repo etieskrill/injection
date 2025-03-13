@@ -16,6 +16,12 @@ internal class IndentedStringBuilder(
     override fun append(csq: CharSequence?): java.lang.Appendable =
         builder.append("${"\t".repeat(indent)}${csq ?: "<null>"}")
 
+    fun appendMultiLine(value: String) = value
+        .lines()
+        .joinTo(builder, separator = "\n", postfix = "\n") {
+            "\t".repeat(indent) + it
+        }
+
     fun indent(block: IndentedStringBuilder.() -> Unit) {
         indent++
         block(this)

@@ -1,6 +1,8 @@
 package io.github.etieskrill.injection.extension.shader.dsl
 
 import io.github.etieskrill.injection.extension.shader.*
+import io.github.etieskrill.injection.extension.shader.ShaderStage.FRAGMENT
+import io.github.etieskrill.injection.extension.shader.ShaderStage.VERTEX
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
@@ -18,12 +20,16 @@ import org.jetbrains.kotlin.gradle.plugin.SubpluginOption
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
 import org.jetbrains.kotlin.ir.declarations.IrClass
+import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
 import org.jetbrains.kotlin.ir.declarations.IrProperty
+import org.jetbrains.kotlin.ir.expressions.IrBlockBody
+import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.*
+import org.jetbrains.kotlin.ir.util.findDeclaration
 import org.jetbrains.kotlin.ir.util.properties
 import org.jetbrains.kotlin.ir.util.render
 import org.jetbrains.kotlin.ir.visitors.IrVisitor
@@ -126,16 +132,21 @@ class IrShaderGenerationExtension(
                     }
             )
 
-//            val programBodies = shader
-//                .findDeclaration<IrFunction> { it.name.asString() == "program" }!!
-//
-//            val vertexProgram = programBodies
-//                .findElement<IrCall> { it.symbol.owner.name.asString() == "vertex" }!!
-//                .findElement<IrBlockBody>()!!
-//
-//            val fragmentProgram = programBodies
-//                .findElement<IrCall> { it.symbol.owner.name.asString() == "fragment" }!!
-//                .findElement<IrBlockBody>()!!
+            val programBodies = shader
+                .findDeclaration<IrFunction> { it.name.asString() == "program" }!!
+
+            val vertexProgram = programBodies
+                .findElement<IrCall> { it.symbol.owner.name.asString() == "vertex" }!!
+                .findElement<IrBlockBody>()!!
+//                .statements.first().dump().log()
+
+            data.stages[VERTEX] = vertexProgram
+
+            val fragmentProgram = programBodies
+                .findElement<IrCall> { it.symbol.owner.name.asString() == "fragment" }!!
+                .findElement<IrBlockBody>()!!
+
+            data.stages[FRAGMENT] = fragmentProgram
 //
 //            val vertexAttributes: Map<String, GlslType> = shader.find
 //
@@ -172,24 +183,25 @@ data class VisitorData(
     var depth: Int = 0,
     var stage: ShaderStage = ShaderStage.NONE,
 
-    var version: GlslVersion = GlslVersion.`330`,
-    var profile: GlslProfile = GlslProfile.CORE,
+    val version: GlslVersion = GlslVersion.`330`,
+    val profile: GlslProfile = GlslProfile.CORE,
 
-    var vertexAttributes: Map<String, GlslType>,
+    val vertexAttributes: Map<String, GlslType>,
 
-    var vertexDataStructType: String,
-    var vertexDataStruct: Map<String, GlslType>,
+    val vertexDataStructType: String,
+    val vertexDataStruct: Map<String, GlslType>,
 
-    var renderTargets: List<String>,
+    val renderTargets: List<String>,
 
-    var uniforms: Map<String, GlslType>,
+    val uniforms: Map<String, GlslType>,
 
-    var stages: MutableMap<ShaderStage, MutableList<String>> = mutableMapOf(),
+//    var stages: MutableMap<ShaderStage, MutableList<String>> = mutableMapOf(),
+    val stages: MutableMap<ShaderStage, IrElement> = mutableMapOf(),
 ) {
-    val program: MutableList<String>
-        get() =
-            if (stage != ShaderStage.NONE) stages.getOrPut(stage) { mutableListOf() }
-            else error("No shader stage set")
+//    val program: MutableList<String>
+//        get() =
+//            if (stage != ShaderStage.NONE) stages.getOrPut(stage) { mutableListOf() }
+//            else error("No shader stage set")
 }
 
 inline fun <reified T : IrElement> IrElement.findElement(
