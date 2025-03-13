@@ -29,7 +29,7 @@ val KClass<*>.isGlslPrimitive: Boolean
     get() = when (this) {
         Int::class, Float::class, Boolean::class,
         Vector2f::class, Vector3f::class, Vector4f::class,
-        Matrix3f::class, Matrix4f::class.java -> true
+        Matrix3f::class, Matrix4f::class -> true
 
         else -> false
     }

@@ -1,5 +1,6 @@
 package io.github.etieskrill.injection.extension.shader.dsl
 
+import io.github.etieskrill.injection.extension.shader.*
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
@@ -14,12 +15,21 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilerPluginSupportPlugin
 import org.jetbrains.kotlin.gradle.plugin.SubpluginArtifact
 import org.jetbrains.kotlin.gradle.plugin.SubpluginOption
+import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
 import org.jetbrains.kotlin.ir.declarations.IrClass
-import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
+import org.jetbrains.kotlin.ir.declarations.IrProperty
+import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
+import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
-import org.jetbrains.kotlin.ir.util.*
+import org.jetbrains.kotlin.ir.types.*
+import org.jetbrains.kotlin.ir.util.properties
+import org.jetbrains.kotlin.ir.util.render
+import org.jetbrains.kotlin.ir.visitors.IrVisitor
+import org.joml.*
+import kotlin.reflect.KClass
+import kotlin.reflect.cast
 
 @Suppress("unused")
 class ShaderDslPlugin : KotlinCompilerPluginSupportPlugin {
@@ -61,6 +71,12 @@ class IrShaderGenerationRegistrar : CompilerPluginRegistrar() {
     }
 }
 
+data class ShaderDataTypes(
+    val vertexAttributesType: IrClass,
+    val vertexDataType: IrClass,
+    val renderTargetsType: IrClass
+)
+
 class IrShaderGenerationExtension(
     private val messageCollector: MessageCollector
 ) : IrGenerationExtension {
@@ -68,20 +84,196 @@ class IrShaderGenerationExtension(
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
         val shaderClasses = moduleFragment
             .files
-            .map { it.declarations }
+            .map { it.declarations } //TODO find non top-level decls as well
             .flatten()
             .filterIsInstance<IrClass>()
-            .filter { it.superClass != null && "${it.superClass?.packageFqName?.asString()}.${it.superClass?.name?.asString()}" == ShaderBuilder::class.qualifiedName }
+            .associateWith { clazz -> clazz.superTypes.find { it.classFqName!!.asString() == ShaderBuilder::class.qualifiedName } }
+            .filterValues { it != null }
+            .mapValues { (_, shaderType) ->
+                when (shaderType) {
+                    is IrSimpleType -> shaderType
+                        .arguments
+                        .map { it.typeOrFail.classifierOrFail }
+                        .map {
+                            when (it) {
+                                is IrClassSymbol -> it.owner
+                                else -> error("Unexpected class: $it")
+                            }
+                        }
+                        .run { ShaderDataTypes(get(0), get(1), get(2)) }
 
-        val programBodies = shaderClasses
-            .first()
-            .findDeclaration<IrFunction> { it.name.asString() == "program" }!!
-            .body!!
-            .statements
+                    else -> error("Unsupported shader data type $shaderType")
+                }
+            }
 
-        programBodies
-            .map { it.dump().log() } //TODO hell ye brother, now we're cooking with fire
+        for ((shader, types) in shaderClasses) {
+            val data = VisitorData(
+                vertexAttributes = types.vertexAttributesType.getGlslFields(),
+                vertexDataStructType = types.vertexDataType.name.asString(),
+                vertexDataStruct = types.vertexDataType.getGlslFields(),
+                renderTargets = types.renderTargetsType.getGlslFields().keys.toList(),
+                uniforms = shader.properties
+                    .filter { it.isDelegated }
+                    .filter { it.backingField?.type?.fullName == UniformDelegate::class.qualifiedName!! }
+                    .associate {
+                        it.name.asString() to it.backingField?.type?.let {
+                            when (it) {
+                                is IrSimpleType -> it.arguments[0].typeOrFail.glslType
+                                    ?: error("Shader uniforms may only be of GLSL primitive type") //TODO i just assume the delegate's type is always first
+                                else -> error("Unexpected type: $this")
+                            }
+                        }!!
+                    }
+            )
+
+//            val programBodies = shader
+//                .findDeclaration<IrFunction> { it.name.asString() == "program" }!!
+//
+//            val vertexProgram = programBodies
+//                .findElement<IrCall> { it.symbol.owner.name.asString() == "vertex" }!!
+//                .findElement<IrBlockBody>()!!
+//
+//            val fragmentProgram = programBodies
+//                .findElement<IrCall> { it.symbol.owner.name.asString() == "fragment" }!!
+//                .findElement<IrBlockBody>()!!
+//
+//            val vertexAttributes: Map<String, GlslType> = shader.find
+//
+//            vertexProgram.accept(RecursiveVisitor(messageCollector), data)
+
+            data.log()
+
+            generateGlsl(data).log()
+
+            break
+        }
     }
 
     fun Any?.log() = messageCollector.report(CompilerMessageSeverity.ERROR, "$this")
 }
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+private fun IrClass.getGlslFields(condition: (IrProperty) -> Boolean = { true }) = properties
+    .filter(condition)
+    .associate {
+        it.name.asString() to (it.backingField!!.type.glslType
+            ?: error("Shader data type may only have fields of GLSL primitive type"))
+    }
+
+enum class GlslVersion { `330` }
+enum class GlslProfile { CORE, COMPATIBILITY }
+
+@JvmInline
+value class GlslType internal constructor(val type: String) {
+    override fun toString(): String = type
+}
+
+data class VisitorData(
+    var depth: Int = 0,
+    var stage: ShaderStage = ShaderStage.NONE,
+
+    var version: GlslVersion = GlslVersion.`330`,
+    var profile: GlslProfile = GlslProfile.CORE,
+
+    var vertexAttributes: Map<String, GlslType>,
+
+    var vertexDataStructType: String,
+    var vertexDataStruct: Map<String, GlslType>,
+
+    var renderTargets: List<String>,
+
+    var uniforms: Map<String, GlslType>,
+
+    var stages: MutableMap<ShaderStage, MutableList<String>> = mutableMapOf(),
+) {
+    val program: MutableList<String>
+        get() =
+            if (stage != ShaderStage.NONE) stages.getOrPut(stage) { mutableListOf() }
+            else error("No shader stage set")
+}
+
+inline fun <reified T : IrElement> IrElement.findElement(
+    data: RecursiveFinderVisitorData<T> = RecursiveFinderVisitorData<T>(),
+    noinline condition: (T) -> Boolean = { true }
+): T? = accept(RecursiveFinderVisitor<T>(T::class, condition), data)
+
+data class RecursiveFinderVisitorData<T : IrElement>(var element: T? = null)
+class RecursiveFinderVisitor<T : IrElement>(val elementType: KClass<T>, val condition: (T) -> Boolean) :
+    IrVisitor<T?, RecursiveFinderVisitorData<T>>() {
+    override fun visitElement(element: IrElement, data: RecursiveFinderVisitorData<T>): T? {
+        element.accept(object : IrVisitor<Unit, RecursiveFinderVisitorData<T>>() {
+            override fun visitElement(element: IrElement, data: RecursiveFinderVisitorData<T>) = when {
+                data.element != null -> {}
+                elementType.isInstance(element) && condition(elementType.cast(element)) ->
+                    data.element = elementType.cast(element)
+
+                else -> element.acceptChildren(this, data)
+            }
+        }, data)
+
+        return data.element
+    }
+}
+
+class RecursiveVisitor(val messageCollector: MessageCollector) : IrVisitor<Unit, VisitorData>() {
+    override fun visitElement(element: IrElement, data: VisitorData) {
+        data.depth++
+        "${"\t".repeat(data.depth)}${element.render()}".log()
+        element.accept(ShaderDslVisitor(messageCollector), data)
+        element.acceptChildren(this, data)
+        data.depth--
+    }
+
+    fun Any?.log() = messageCollector.report(CompilerMessageSeverity.ERROR, "$this")
+}
+
+class ShaderDslVisitor(val messageCollector: MessageCollector) : IrVisitor<Unit, VisitorData>() {
+    override fun visitElement(
+        element: IrElement,
+        data: VisitorData
+    ) {
+    }
+
+    override fun visitConstructorCall(expression: IrConstructorCall, data: VisitorData) {
+        "constructor call: ${expression.render()}".log()
+    }
+
+    fun Any?.log() = messageCollector.report(CompilerMessageSeverity.ERROR, "$this")
+}
+
+val IrType.isGlslPrimitive: Boolean
+    get() = when {
+        classFqName!!.asString() in listOf(
+            Int::class, Float::class, Boolean::class,
+            Vector2f::class, Vector3f::class, Vector4f::class,
+            Matrix3f::class, Matrix4f::class
+        ).map { it.qualifiedName!! } -> true
+
+        else -> false
+    }
+
+val glslTypes = mapOf(
+    Int::class to GlslType("int"),
+    Float::class to GlslType("float"),
+    Boolean::class to GlslType("bool"),
+    Vector2f::class to GlslType("vec2"),
+    Vector3f::class to GlslType("vec3"),
+    Vector4f::class to GlslType("vec4"),
+    Matrix3f::class to GlslType("mat3"),
+    Matrix4f::class to GlslType("mat4"),
+    Texture2D::class to GlslType("sampler2D"),
+    Texture2DArray::class to GlslType("sampler2DArray"),
+    TextureCubeMap::class to GlslType("samplerCube"),
+    TextureCubeMapArray::class to GlslType("samplerCubeArray"),
+).mapKeys { (clazz, _) -> clazz.qualifiedName!! }
+
+val IrType.glslType: GlslType?
+    get() = when (fullName) {
+        RenderTarget::class.qualifiedName!! -> GlslType("vec4")
+        in glslTypes -> glslTypes[fullName]
+        //TODO ShadowMap types
+        else -> null
+    }
+
+val IrType.fullName: String
+    get() = classFqName!!.asString()
