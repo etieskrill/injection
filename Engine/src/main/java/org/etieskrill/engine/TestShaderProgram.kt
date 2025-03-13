@@ -10,32 +10,19 @@ import io.github.etieskrill.injection.extension.shader.vec4
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
 import org.joml.times
 
-open class Vertex(open val position: vec3 = vec3(), open val texCoord: vec2 = vec2())
-open class VertexData(open val position: vec4 = vec4(), open val texCoord: vec2 = vec2())
-open class RenderTargets(open val colour: RenderTarget, open val bloom: RenderTarget)
+class Vertex(val position: vec3 = vec3(), val texCoord: vec2 = vec2())
+class VertexData(val position: vec4 = vec4(), val texCoord: vec2 = vec2())
+class RenderTargets(val colour: RenderTarget, val bloom: RenderTarget)
 
-class TestShader : ShaderBuilder<Vertex, VertexData, RenderTargets>(
-    Vertex::class,
-    VertexData::class,
-    RenderTargets::class,
-    TestShaderProgram()
-) {
+class TestShader : ShaderBuilder<Vertex, VertexData, RenderTargets>(TestShaderProgram()) {
     var model by uniform<mat4>()
     var combined by uniform<mat4>()
 
-//    init {
-//        program()
-//        check(callDepth == -1) { "Not all proxied function calls returned. This... should not happen." }
-//        generateGlsl()
-//    }
-
     override fun program() {
         vertex {
-//            code("uniform vec3 sugondeez;")
-//            code("${this@TestShader.combined} * ${this@TestShader.model} * sugondeez;")
+            val position = this@TestShader.combined * this@TestShader.model * vec4(it.position, 1.0f)
             VertexData(
-                this@TestShader.combined * this@TestShader.model * vec4(it.position, 1.0f),
-//                code("combined * model * vec4(position, 1.0)"),
+                position,
                 it.texCoord
             )
         }
@@ -45,35 +32,6 @@ class TestShader : ShaderBuilder<Vertex, VertexData, RenderTargets>(
                 vec4(0f, 0f, 0f, 1f).rt
             )
         }
-
-        /* is interpreted as:
-        - attribute vec3 position
-        - attribute vec2 texCoord
-
-        - vertex field vec4 position
-        - vertex field vec2 texCoord
-
-        - render target vec4 bloom
-        - render target vec4 colour
-
-        - uniform mat4 matA //combine with first getter to get name, and also validate usage
-        - uniform mat4 matB
-
-        - combined // see above ^
-        - model
-        - matC = combined * model //btw these operations are supposedly right associative, so wtf is this
-        - position
-        - vecA = vec4(position, 1.0)
-        - vecB = matC * vecA
-        - texCoord
-        - VertexData(vecB, texCoord)
-
-        - position
-        - renderTarget0 = *probably* position
-        - vecC = vec4(0.0, 0.0, 0.0, 1.0)
-        - renderTarget1 = *probably* vecC
-        - RenderTargets(renderTarget0, renderTarget1)
-         */
 
         /* may be compiled into:
         #version 330 core
@@ -113,6 +71,6 @@ class TestShader : ShaderBuilder<Vertex, VertexData, RenderTargets>(
     }
 }
 
-class TestShaderProgram : ShaderProgram(
+open class TestShaderProgram : ShaderProgram(
     listOf("Test.glsl")
 )
