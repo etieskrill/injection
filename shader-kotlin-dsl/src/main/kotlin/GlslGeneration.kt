@@ -1,8 +1,20 @@
 package io.github.etieskrill.injection.extension.shader.dsl
 
 import io.github.etieskrill.injection.extension.shader.ShaderStage
+import org.jetbrains.kotlin.ir.IrElement
+import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
+import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
+import org.jetbrains.kotlin.ir.declarations.IrVariable
+import org.jetbrains.kotlin.ir.expressions.*
+import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+import org.jetbrains.kotlin.ir.util.dump
+import org.jetbrains.kotlin.ir.util.getArguments
+import org.jetbrains.kotlin.ir.visitors.IrVisitor
+import kotlin.reflect.full.declaredMembers
 
 internal fun generateGlsl(data: VisitorData): String = buildString {
+    data.stage = ShaderStage.NONE
+    
     appendLine("#version ${data.version} ${data.profile.takeIf { it == GlslProfile.CORE }?.name?.lowercase()}")
     newline()
 
@@ -14,6 +26,8 @@ internal fun generateGlsl(data: VisitorData): String = buildString {
     }
     newline()
 
+    data.stage = ShaderStage.VERTEX
+    
     appendLine(generateStage(ShaderStage.VERTEX))
     newline()
 
@@ -25,8 +39,10 @@ internal fun generateGlsl(data: VisitorData): String = buildString {
     appendLine(generateStatement(GlslStorageQualifier.OUT, data.vertexDataStructType, "vertex"))
     newline()
 
-    appendLine(generateMain(data.stages[ShaderStage.VERTEX] ?: emptyList()))
+    appendLine(generateMain(data.stages[ShaderStage.VERTEX]!!, data))
     newline()
+
+    data.stage = ShaderStage.FRAGMENT
 
     appendLine(generateStage(ShaderStage.FRAGMENT))
     newline()
@@ -39,7 +55,7 @@ internal fun generateGlsl(data: VisitorData): String = buildString {
     }
     newline()
 
-    appendLine(generateMain(data.stages[ShaderStage.FRAGMENT] ?: emptyList()))
+    appendLine(generateMain(data.stages[ShaderStage.FRAGMENT]!!, data))
     newline()
 
     append("------------")
@@ -68,12 +84,104 @@ private fun generateStatement(qualifier: GlslStorageQualifier, type: GlslType, n
 private fun generateStatement(qualifier: GlslStorageQualifier, type: String, name: String) =
     "${qualifier.name.lowercase()} $type $name;"
 
-private fun generateMain(statements: List<String>) = buildIndentedString {
+private fun generateMain(statements: IrElement, data: VisitorData) = buildIndentedString {
     appendLine("void main() {")
     indent {
-        statements.forEach {
-            appendLine(it)
-        }
+        appendMultiLine(statements.accept(GlslTranspiler(), data))
     }
     append("}")
+}
+
+private fun Any?.dumpMembers(): String {
+    if (this == null) return "<null>"
+    val name = this::class.simpleName
+    val members = this::class.declaredMembers.map { "${it.name}: ${it.returnType.classifier}" }
+    return "$name{${members.joinToString()}}"
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+private class GlslTranspiler : IrVisitor<String, VisitorData>() {
+    override fun visitElement(element: IrElement, data: VisitorData): String {
+        TODO("Element of type ${element::class.simpleName} cannot be processed yet:\n${element.dump()}")
+    }
+
+    override fun visitBlockBody(body: IrBlockBody, data: VisitorData): String {
+        return body.statements.joinToString(";\n") { it.accept(this, data) }
+    }
+
+    override fun visitVariable(declaration: IrVariable, data: VisitorData): String {
+        return "${declaration.type.glslType} ${declaration.name} = ${declaration.initializer!!.accept(this, data)}"
+    }
+
+    override fun visitCall(expression: IrCall, data: VisitorData): String {
+        if (data.stage == ShaderStage.FRAGMENT && expression.type.fullName == RenderTarget::class.qualifiedName!!) {
+            var renderTargetName: String? = null
+            expression.acceptChildren(object : IrVisitor<Unit, VisitorData>() {
+                override fun visitElement(element: IrElement, data: VisitorData) = error("no")
+                override fun visitCall(expression: IrCall, data: VisitorData) {
+                    renderTargetName = this@GlslTranspiler.visitCall(expression, data)
+                }
+            }, data)
+            return renderTargetName!!
+        }
+
+        val functionName = expression.symbol.owner.name.asString()
+
+        return when {
+            expression.origin == IrStatementOrigin.GET_PROPERTY ->
+                functionName.removePrefix("<get-").removeSuffix(">")
+
+            functionName == "times" -> handleMul(expression, data)
+            functionName == "vec4" -> handleVec4(expression, data)
+            else -> error("Unexpected function $functionName")
+        }
+    }
+
+    override fun visitReturn(expression: IrReturn, data: VisitorData): String {
+        return expression.value.accept(GlslReturnTranspiler(this), data)
+    }
+
+    override fun visitConst(expression: IrConst, data: VisitorData): String {
+        return expression.value.toString()
+    }
+
+    override fun visitGetValue(expression: IrGetValue, data: VisitorData): String {
+        return expression.symbol.owner.name.asString()
+    }
+
+    private fun handleMul(expression: IrCall, data: VisitorData): String {
+        return "${expression.extensionReceiver!!.accept(this, data)} * ${
+            expression.getValueArgument(0)!!.accept(this, data)
+        }"
+    }
+
+    private fun handleVec4(expression: IrCall, data: VisitorData): String {
+        return expression
+            .valueArguments
+            .joinToString(", ", prefix = "vec4(", postfix = ")") {
+                it!!.accept(this, data)
+            }
+    }
+}
+
+private class GlslReturnTranspiler(val root: GlslTranspiler) : IrVisitor<String, VisitorData>() {
+    override fun visitElement(element: IrElement, data: VisitorData): String {
+        TODO("Element of type ${element::class.simpleName} cannot be processed yet:\n${element.dump()}")
+    }
+
+    @OptIn(ObsoleteDescriptorBasedAPI::class)
+    override fun visitConstructorCall(expression: IrConstructorCall, data: VisitorData): String {
+        return expression
+            .getArguments()
+            .associate { (param, expression) ->
+                param.name.asString() to expression.accept(root, data)
+            }
+            .map { (param, expression) ->
+                when (data.stage) {
+                    ShaderStage.FRAGMENT -> "$param = $expression;" //FIXME no receiver/target for expressions
+                    else -> "vertex.$param = $expression;"
+                }
+            }
+            .joinToString("\n")
+    }
 }
