@@ -10,11 +10,10 @@ import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.util.dump
 import org.jetbrains.kotlin.ir.util.getArguments
 import org.jetbrains.kotlin.ir.visitors.IrVisitor
-import kotlin.reflect.full.declaredMembers
 
 internal fun generateGlsl(data: VisitorData): String = buildString {
     data.stage = ShaderStage.NONE
-    
+
     appendLine("#version ${data.version} ${data.profile.takeIf { it == GlslProfile.CORE }?.name?.lowercase()}")
     newline()
 
@@ -27,7 +26,7 @@ internal fun generateGlsl(data: VisitorData): String = buildString {
     newline()
 
     data.stage = ShaderStage.VERTEX
-    
+
     appendLine(generateStage(ShaderStage.VERTEX))
     newline()
 
@@ -57,8 +56,6 @@ internal fun generateGlsl(data: VisitorData): String = buildString {
 
     appendLine(generateMain(data.stages[ShaderStage.FRAGMENT]!!, data))
     newline()
-
-    append("------------")
 }
 
 private fun generateStruct(
@@ -71,7 +68,7 @@ private fun generateStruct(
             appendLine("$type $name;")
         }
     }
-    append("}")
+    append("};")
 }
 
 private fun generateStage(stage: ShaderStage) = "#pragma stage ${stage.name.lowercase()}"
@@ -90,13 +87,6 @@ private fun generateMain(statements: IrElement, data: VisitorData) = buildIndent
         appendMultiLine(statements.accept(GlslTranspiler(), data))
     }
     append("}")
-}
-
-private fun Any?.dumpMembers(): String {
-    if (this == null) return "<null>"
-    val name = this::class.simpleName
-    val members = this::class.declaredMembers.map { "${it.name}: ${it.returnType.classifier}" }
-    return "$name{${members.joinToString()}}"
 }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
@@ -128,8 +118,28 @@ private class GlslTranspiler : IrVisitor<String, VisitorData>() {
         val functionName = expression.symbol.owner.name.asString()
 
         return when {
-            expression.origin == IrStatementOrigin.GET_PROPERTY ->
-                functionName.removePrefix("<get-").removeSuffix(">")
+            expression.origin == IrStatementOrigin.GET_PROPERTY -> {
+                var propertyOwner: String? = null
+                expression.acceptChildren(object : IrVisitor<Unit, VisitorData>() {
+                    override fun visitElement(element: IrElement, data: VisitorData) = error("uh oh")
+                    override fun visitGetValue(expression: IrGetValue, data: VisitorData) {
+                        propertyOwner = expression.symbol.owner.name.asString()
+                    }
+                }, data)
+
+                val propertyName = functionName.removePrefix("<get-").removeSuffix(">")
+
+                when (propertyOwner) {
+                    "<this>" -> propertyName //direct shader class members, e.g. uniforms
+                    "it" -> when (data.stage) { //implicit lambda parameter
+                        ShaderStage.VERTEX -> propertyName
+                        ShaderStage.FRAGMENT -> "${data.vertexDataStructName}.$propertyName"
+                        else -> TODO("Getter for implicit lambda parameter call not implemented for stage ${data.stage}")
+                    }
+
+                    else -> "$propertyOwner.$propertyName"
+                }
+            }
 
             functionName == "times" -> handleMul(expression, data)
             functionName == "vec4" -> handleVec4(expression, data)
@@ -173,13 +183,12 @@ private class GlslReturnTranspiler(val root: GlslTranspiler) : IrVisitor<String,
     override fun visitConstructorCall(expression: IrConstructorCall, data: VisitorData): String {
         return expression
             .getArguments()
-            .associate { (param, expression) ->
-                param.name.asString() to expression.accept(root, data)
-            }
+            .associate { (param, expression) -> param.name.asString() to expression.accept(root, data) }
             .map { (param, expression) ->
                 when (data.stage) {
-                    ShaderStage.FRAGMENT -> "$param = $expression;" //FIXME no receiver/target for expressions
-                    else -> "vertex.$param = $expression;"
+                    ShaderStage.VERTEX -> "${data.vertexDataStructName}.$param = $expression;"
+                    ShaderStage.FRAGMENT -> "$param = $expression;"
+                    else -> TODO("Constructor return call not implemented for stage ${data.stage}")
                 }
             }
             .joinToString("\n")
