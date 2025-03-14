@@ -10,13 +10,14 @@ uniform mat4 combined;
 
 #pragma stage vertex
 
-layout (location = 0) in vec3 position;
-layout (location = 1) in vec2 texCoord;
+in vec3 position;
+in vec2 texCoord;
 
 out VertexData vertex;
 
 void main() {
-    vertex.position = combined * model * vec4(position, 1.0);
+    vec4 position = combined * model * vec4(position, 1.0);
+    vertex.position = position;
     vertex.texCoord = texCoord;
 }
 

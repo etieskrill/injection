@@ -18,20 +18,17 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinCompilerPluginSupportPlugin
 import org.jetbrains.kotlin.gradle.plugin.SubpluginArtifact
 import org.jetbrains.kotlin.gradle.plugin.SubpluginOption
 import org.jetbrains.kotlin.ir.IrElement
-import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
 import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.expressions.IrCall
-import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.util.findDeclaration
 import org.jetbrains.kotlin.ir.util.properties
-import org.jetbrains.kotlin.ir.util.render
 import org.jetbrains.kotlin.ir.visitors.IrVisitor
 import org.joml.*
 import kotlin.reflect.KClass
@@ -86,7 +83,7 @@ data class ShaderDataTypes(
 class IrShaderGenerationExtension(
     private val messageCollector: MessageCollector
 ) : IrGenerationExtension {
-    @OptIn(ObsoleteDescriptorBasedAPI::class, UnsafeDuringIrConstructionAPI::class)
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
         val shaderClasses = moduleFragment
             .files
@@ -116,6 +113,7 @@ class IrShaderGenerationExtension(
             val data = VisitorData(
                 vertexAttributes = types.vertexAttributesType.getGlslFields(),
                 vertexDataStructType = types.vertexDataType.name.asString(),
+                vertexDataStructName = "vertex",
                 vertexDataStruct = types.vertexDataType.getGlslFields(),
                 renderTargets = types.renderTargetsType.getGlslFields().keys.toList(),
                 uniforms = shader.properties
@@ -138,7 +136,6 @@ class IrShaderGenerationExtension(
             val vertexProgram = programBodies
                 .findElement<IrCall> { it.symbol.owner.name.asString() == "vertex" }!!
                 .findElement<IrBlockBody>()!!
-//                .statements.first().dump().log()
 
             data.stages[VERTEX] = vertexProgram
 
@@ -147,16 +144,8 @@ class IrShaderGenerationExtension(
                 .findElement<IrBlockBody>()!!
 
             data.stages[FRAGMENT] = fragmentProgram
-//
-//            val vertexAttributes: Map<String, GlslType> = shader.find
-//
-//            vertexProgram.accept(RecursiveVisitor(messageCollector), data)
 
-            data.log()
-
-            generateGlsl(data).log()
-
-            break
+//            generateGlsl(data).log() //TODO maybe a little validation??? creating a context without a window would be a pain, so some lib mayhaps?
         }
     }
 
@@ -189,25 +178,20 @@ data class VisitorData(
     val vertexAttributes: Map<String, GlslType>,
 
     val vertexDataStructType: String,
+    val vertexDataStructName: String,
     val vertexDataStruct: Map<String, GlslType>,
 
     val renderTargets: List<String>,
 
     val uniforms: Map<String, GlslType>,
 
-//    var stages: MutableMap<ShaderStage, MutableList<String>> = mutableMapOf(),
     val stages: MutableMap<ShaderStage, IrElement> = mutableMapOf(),
-) {
-//    val program: MutableList<String>
-//        get() =
-//            if (stage != ShaderStage.NONE) stages.getOrPut(stage) { mutableListOf() }
-//            else error("No shader stage set")
-}
+)
 
 inline fun <reified T : IrElement> IrElement.findElement(
     data: RecursiveFinderVisitorData<T> = RecursiveFinderVisitorData<T>(),
     noinline condition: (T) -> Boolean = { true }
-): T? = accept(RecursiveFinderVisitor<T>(T::class, condition), data)
+): T? = accept(RecursiveFinderVisitor(T::class, condition), data)
 
 data class RecursiveFinderVisitorData<T : IrElement>(var element: T? = null)
 class RecursiveFinderVisitor<T : IrElement>(val elementType: KClass<T>, val condition: (T) -> Boolean) :
@@ -225,32 +209,6 @@ class RecursiveFinderVisitor<T : IrElement>(val elementType: KClass<T>, val cond
 
         return data.element
     }
-}
-
-class RecursiveVisitor(val messageCollector: MessageCollector) : IrVisitor<Unit, VisitorData>() {
-    override fun visitElement(element: IrElement, data: VisitorData) {
-        data.depth++
-        "${"\t".repeat(data.depth)}${element.render()}".log()
-        element.accept(ShaderDslVisitor(messageCollector), data)
-        element.acceptChildren(this, data)
-        data.depth--
-    }
-
-    fun Any?.log() = messageCollector.report(CompilerMessageSeverity.ERROR, "$this")
-}
-
-class ShaderDslVisitor(val messageCollector: MessageCollector) : IrVisitor<Unit, VisitorData>() {
-    override fun visitElement(
-        element: IrElement,
-        data: VisitorData
-    ) {
-    }
-
-    override fun visitConstructorCall(expression: IrConstructorCall, data: VisitorData) {
-        "constructor call: ${expression.render()}".log()
-    }
-
-    fun Any?.log() = messageCollector.report(CompilerMessageSeverity.ERROR, "$this")
 }
 
 val IrType.isGlslPrimitive: Boolean
