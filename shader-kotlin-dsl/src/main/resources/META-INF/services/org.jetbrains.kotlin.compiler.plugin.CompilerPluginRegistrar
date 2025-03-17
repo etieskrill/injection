@@ -1,1 +1,1 @@
-io.github.etieskrill.injection.extension.shader.dsl.IrShaderGenerationRegistrar
+io.github.etieskrill.injection.extension.shader.dsl.ShaderDslCompilerPlugin

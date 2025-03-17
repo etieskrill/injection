@@ -20,9 +20,9 @@ repositories {
 
 gradlePlugin {
     plugins {
-        create("ShaderDslPlugin") {
+        create("ShaderDslGradlePlugin") {
             id = "io.github.etieskrill.injection.shader.dsl"
-            implementationClass = "io.github.etieskrill.injection.extension.shader.dsl.ShaderDslPlugin"
+            implementationClass = "io.github.etieskrill.injection.extension.shader.dsl.ShaderDslGradlePlugin"
         }
     }
 }

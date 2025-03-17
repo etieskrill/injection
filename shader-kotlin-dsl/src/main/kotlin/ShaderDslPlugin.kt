@@ -3,20 +3,8 @@ package io.github.etieskrill.injection.extension.shader.dsl
 import io.github.etieskrill.injection.extension.shader.*
 import io.github.etieskrill.injection.extension.shader.ShaderStage.FRAGMENT
 import io.github.etieskrill.injection.extension.shader.ShaderStage.VERTEX
-import org.gradle.api.Project
-import org.gradle.api.provider.Provider
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
-import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
-import org.jetbrains.kotlin.cli.common.messages.MessageCollector
-import org.jetbrains.kotlin.compiler.plugin.CompilerPluginRegistrar
-import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
-import org.jetbrains.kotlin.config.CompilerConfiguration
-import org.jetbrains.kotlin.config.messageCollector
-import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
-import org.jetbrains.kotlin.gradle.plugin.KotlinCompilerPluginSupportPlugin
-import org.jetbrains.kotlin.gradle.plugin.SubpluginArtifact
-import org.jetbrains.kotlin.gradle.plugin.SubpluginOption
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFunction
@@ -31,57 +19,18 @@ import org.jetbrains.kotlin.ir.util.findDeclaration
 import org.jetbrains.kotlin.ir.util.properties
 import org.jetbrains.kotlin.ir.visitors.IrVisitor
 import org.joml.*
+import java.io.File
 import kotlin.reflect.KClass
 import kotlin.reflect.cast
 
-@Suppress("unused")
-class ShaderDslPlugin : KotlinCompilerPluginSupportPlugin {
-
-    companion object {
-        const val SERIALIZATION_GROUP_NAME = "io.github.etieskrill.injection.extension.shader.dsl"
-        const val ARTIFACT_ID = "shader-kotlin-dsl"
-        const val VERSION = "1.0.0-SNAPSHOT"
-    }
-
-    override fun applyToCompilation(kotlinCompilation: KotlinCompilation<*>): Provider<List<SubpluginOption>> {
-        return kotlinCompilation.target.project.provider {
-            listOf() //TODO look into the SubPlugin thingamajig
-        }
-    }
-
-    override fun apply(target: Project): Unit = target.run {
-        dependencies.apply {
-            add("implementation", "io.github.etieskrill.injection.extension.shader.dsl:shader-kotlin-dsl")
-        }
-    }
-
-    override fun getCompilerPluginId(): String = "shaderKotlinDslPlugin"
-
-    override fun getPluginArtifact(): SubpluginArtifact =
-        SubpluginArtifact(SERIALIZATION_GROUP_NAME, ARTIFACT_ID, VERSION)
-
-    override fun isApplicable(kotlinCompilation: KotlinCompilation<*>): Boolean = true
-}
-
-@OptIn(ExperimentalCompilerApi::class, ExperimentalCompilerApi::class)
-class IrShaderGenerationRegistrar : CompilerPluginRegistrar() {
-    override val supportsK2: Boolean = true
-
-    override fun ExtensionStorage.registerExtensions(configuration: CompilerConfiguration) {
-        IrGenerationExtension.registerExtension(
-            IrShaderGenerationExtension(configuration.messageCollector)
-        )
-    }
-}
-
-data class ShaderDataTypes(
+internal data class ShaderDataTypes(
     val vertexAttributesType: IrClass,
     val vertexDataType: IrClass,
     val renderTargetsType: IrClass
 )
 
-class IrShaderGenerationExtension(
-    private val messageCollector: MessageCollector
+internal class IrShaderGenerationExtension(
+    private val options: ShaderDslCompilerOptions
 ) : IrGenerationExtension {
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
@@ -90,7 +39,7 @@ class IrShaderGenerationExtension(
             .map { it.declarations } //TODO find non top-level decls as well
             .flatten()
             .filterIsInstance<IrClass>()
-            .associateWith { clazz -> clazz.superTypes.find { it.classFqName!!.asString() == ShaderBuilder::class.qualifiedName } }
+            .associateWith { clazz -> clazz.superTypes.find { it.classFqName!!.asString() == ShaderBuilder::class.qualifiedName } } //TODO include indirect superclasses
             .filterValues { it != null }
             .mapValues { (_, shaderType) ->
                 when (shaderType) {
@@ -145,11 +94,17 @@ class IrShaderGenerationExtension(
 
             data.stages[FRAGMENT] = fragmentProgram
 
-//            generateGlsl(data).log() //TODO maybe a little validation??? creating a context without a window would be a pain, so some lib mayhaps?
+            val shaderDir = File(options.generatedResourceDir, "shaders")
+            if (!shaderDir.exists()) shaderDir.mkdirs()
+            val shaderFile = File(shaderDir, "${shader.name.asString().removeSuffix("Shader")}.glsl")
+            if (!shaderFile.exists()) shaderFile.createNewFile()
+
+            val shaderSource =
+                generateGlsl(data) //TODO maybe a little validation??? creating a context without a window would be a pain, so some lib mayhaps?
+
+            shaderFile.writeText(shaderSource)
         }
     }
-
-    fun Any?.log() = messageCollector.report(CompilerMessageSeverity.ERROR, "$this")
 }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
