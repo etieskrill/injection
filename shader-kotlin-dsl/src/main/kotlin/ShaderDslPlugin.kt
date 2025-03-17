@@ -144,7 +144,7 @@ data class VisitorData(
 )
 
 inline fun <reified T : IrElement> IrElement.findElement(
-    data: RecursiveFinderVisitorData<T> = RecursiveFinderVisitorData<T>(),
+    data: RecursiveFinderVisitorData<T> = RecursiveFinderVisitorData(),
     noinline condition: (T) -> Boolean = { true }
 ): T? = accept(RecursiveFinderVisitor(T::class, condition), data)
 

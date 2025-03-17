@@ -43,6 +43,8 @@ dependencies {
 //    ksp("com.google.auto.service:auto-service:1.1.1")
 
     testImplementation(kotlin("test"))
+    testImplementation("org.assertj:assertj-core:3.27.3")
+    testImplementation("dev.zacsweers.kctfork:core:0.7.0")
 }
 
 tasks.build {
