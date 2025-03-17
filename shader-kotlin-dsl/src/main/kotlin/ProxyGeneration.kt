@@ -435,7 +435,7 @@ class ProxyFragmentReceiver(builder: ProxyShaderBuilder<*, *, *>) : ProxyGlslCon
 
 
 @OptIn(ExperimentalStdlibApi::class)
-internal val Any.id: ObjectRef
+private val Any.id: ObjectRef
     get() = ObjectRef(
         "${this::class.qualifiedName}@${
             System.identityHashCode(this).toHexString()

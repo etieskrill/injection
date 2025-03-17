@@ -46,10 +46,10 @@ open class GlslReceiver {
 }
 
 @ShaderDslMarker
-class VertexReceiver() : GlslReceiver()
+class VertexReceiver : GlslReceiver()
 
 @ShaderDslMarker
-class FragmentReceiver() : GlslReceiver()
+class FragmentReceiver : GlslReceiver()
 
 interface FrameBuffer
 class RenderTarget(

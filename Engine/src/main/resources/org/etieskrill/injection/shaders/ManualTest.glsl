@@ -1,5 +1,7 @@
 #version 330 core
 
+# dis some manual shit yo
+
 struct VertexData {
     vec4 position;
     vec2 texCoord;

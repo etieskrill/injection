@@ -91,17 +91,14 @@ private fun generateMain(statements: IrElement, data: VisitorData) = buildIndent
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 private class GlslTranspiler : IrVisitor<String, VisitorData>() {
-    override fun visitElement(element: IrElement, data: VisitorData): String {
+    override fun visitElement(element: IrElement, data: VisitorData): String =
         TODO("Element of type ${element::class.simpleName} cannot be processed yet:\n${element.dump()}")
-    }
 
-    override fun visitBlockBody(body: IrBlockBody, data: VisitorData): String {
-        return body.statements.joinToString(";\n") { it.accept(this, data) }
-    }
+    override fun visitBlockBody(body: IrBlockBody, data: VisitorData): String =
+        body.statements.joinToString(";\n") { it.accept(this, data) }
 
-    override fun visitVariable(declaration: IrVariable, data: VisitorData): String {
-        return "${declaration.type.glslType} ${declaration.name} = ${declaration.initializer!!.accept(this, data)}"
-    }
+    override fun visitVariable(declaration: IrVariable, data: VisitorData): String =
+        "${declaration.type.glslType} ${declaration.name} = ${declaration.initializer!!.accept(this, data)}"
 
     override fun visitCall(expression: IrCall, data: VisitorData): String {
         if (data.stage == ShaderStage.FRAGMENT && expression.type.fullName == RenderTarget::class.qualifiedName!!) {
@@ -147,31 +144,25 @@ private class GlslTranspiler : IrVisitor<String, VisitorData>() {
         }
     }
 
-    override fun visitReturn(expression: IrReturn, data: VisitorData): String {
-        return expression.value.accept(GlslReturnTranspiler(this), data)
-    }
+    override fun visitReturn(expression: IrReturn, data: VisitorData): String =
+        expression.value.accept(GlslReturnTranspiler(this), data)
 
-    override fun visitConst(expression: IrConst, data: VisitorData): String {
-        return expression.value.toString()
-    }
+    override fun visitConst(expression: IrConst, data: VisitorData): String =
+        expression.value.toString()
 
-    override fun visitGetValue(expression: IrGetValue, data: VisitorData): String {
-        return expression.symbol.owner.name.asString()
-    }
+    override fun visitGetValue(expression: IrGetValue, data: VisitorData): String =
+        expression.symbol.owner.name.asString()
 
-    private fun handleMul(expression: IrCall, data: VisitorData): String {
-        return "${expression.extensionReceiver!!.accept(this, data)} * ${
+    private fun handleMul(expression: IrCall, data: VisitorData): String =
+        "${expression.extensionReceiver!!.accept(this, data)} * ${
             expression.getValueArgument(0)!!.accept(this, data)
         }"
-    }
 
-    private fun handleVec4(expression: IrCall, data: VisitorData): String {
-        return expression
-            .valueArguments
-            .joinToString(", ", prefix = "vec4(", postfix = ")") {
-                it!!.accept(this, data)
-            }
-    }
+    private fun handleVec4(expression: IrCall, data: VisitorData): String = expression
+        .valueArguments
+        .joinToString(", ", prefix = "vec4(", postfix = ")") {
+            it!!.accept(this, data)
+        }
 }
 
 private class GlslReturnTranspiler(val root: GlslTranspiler) : IrVisitor<String, VisitorData>() {
