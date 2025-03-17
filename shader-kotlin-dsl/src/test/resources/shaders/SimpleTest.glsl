@@ -1,7 +1,5 @@
 #version 330 core
 
-# dis some manual shit yo
-
 struct VertexData {
     vec4 position;
     vec2 texCoord;
@@ -34,3 +32,4 @@ void main() {
     colour = vertex.position;
     bloom = vec4(0.0, 0.0, 0.0, 1.0);
 }
+

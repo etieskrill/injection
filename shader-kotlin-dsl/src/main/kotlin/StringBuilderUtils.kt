@@ -1,5 +1,7 @@
 package io.github.etieskrill.injection.extension.shader.dsl
 
+private const val SPACE_INDENT = 4
+
 internal fun StringBuilder.newline() = appendLine()
 
 internal fun buildIndentedString(indent: Int = 0, block: IndentedStringBuilder.() -> Unit): String {
@@ -14,12 +16,12 @@ internal class IndentedStringBuilder(
 ) : Appendable by builder {
 
     override fun append(csq: CharSequence?): java.lang.Appendable =
-        builder.append("${"\t".repeat(indent)}${csq ?: "<null>"}")
+        builder.append("${getIndent(indent)}${csq ?: "<null>"}")
 
     fun appendMultiLine(value: String) = value
         .lines()
         .joinTo(builder, separator = "\n", postfix = "\n") {
-            "\t".repeat(indent) + it
+            getIndent(indent) + it
         }
 
     fun indent(block: IndentedStringBuilder.() -> Unit) {
@@ -29,3 +31,5 @@ internal class IndentedStringBuilder(
     }
 
 }
+
+private fun getIndent(indent: Int) = " ".repeat(indent * SPACE_INDENT)
