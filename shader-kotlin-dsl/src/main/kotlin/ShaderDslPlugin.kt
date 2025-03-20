@@ -65,7 +65,7 @@ internal class IrShaderGenerationExtension(
                 vertexAttributes = types.vertexAttributesType.getGlslFields(),
                 vertexDataStructType = types.vertexDataType.name.asString(),
                 vertexDataStructName = "vertex",
-                vertexDataStruct = types.vertexDataType.getGlslFields(),
+                vertexDataStruct = types.vertexDataType.getGlslFields { it.name.asString() != POSITION_FIELD_NAME },
                 renderTargets = types.renderTargetsType.getGlslFields().keys.toList(),
                 uniforms = shader.properties
                     .filter { it.isDelegated }

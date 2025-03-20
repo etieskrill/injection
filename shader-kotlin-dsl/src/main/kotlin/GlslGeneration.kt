@@ -11,6 +11,9 @@ import org.jetbrains.kotlin.ir.util.dump
 import org.jetbrains.kotlin.ir.util.getArguments
 import org.jetbrains.kotlin.ir.visitors.IrVisitor
 
+internal const val GL_POSITION_NAME = "gl_Position"
+internal val POSITION_FIELD_NAME = ShaderVertexData::position.name
+
 internal fun generateGlsl(data: VisitorData): String = buildString {
     data.stage = ShaderStage.NONE
 
@@ -130,7 +133,10 @@ private class GlslTranspiler : IrVisitor<String, VisitorData>() {
                     "<this>" -> propertyName //direct shader class members, e.g. uniforms
                     "it" -> when (data.stage) { //implicit lambda parameter //FIXME find and use declared name if not implicit
                         ShaderStage.VERTEX -> propertyName
-                        ShaderStage.FRAGMENT -> "${data.vertexDataStructName}.$propertyName"
+                        ShaderStage.FRAGMENT -> when (propertyName) {
+                            POSITION_FIELD_NAME -> GL_POSITION_NAME
+                            else -> "${data.vertexDataStructName}.$propertyName"
+                        }
                         else -> TODO("Getter for implicit lambda parameter call not implemented for stage ${data.stage}")
                     }
 
@@ -177,7 +183,13 @@ private class GlslReturnTranspiler(val root: GlslTranspiler) : IrVisitor<String,
             .associate { (param, expression) -> param.name.asString() to expression.accept(root, data) }
             .map { (param, expression) ->
                 when (data.stage) {
-                    ShaderStage.VERTEX -> "${data.vertexDataStructName}.$param = $expression;"
+                    ShaderStage.VERTEX -> {
+                        when (param) {
+                            POSITION_FIELD_NAME -> "$GL_POSITION_NAME = $expression;"
+                            else -> "${data.vertexDataStructName}.$param = $expression;"
+                        }
+                    }
+
                     ShaderStage.FRAGMENT -> "$param = $expression;"
                     else -> TODO("Constructor return call not implemented for stage ${data.stage}")
                 }
