@@ -9,6 +9,8 @@ import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.util.dump
 import org.jetbrains.kotlin.ir.util.getArguments
+import org.jetbrains.kotlin.ir.util.getArgumentsWithIr
+import org.jetbrains.kotlin.ir.util.render
 import org.jetbrains.kotlin.ir.visitors.IrVisitor
 
 internal const val GL_POSITION_NAME = "gl_Position"
@@ -129,6 +131,10 @@ private class GlslTranspiler : IrVisitor<String, VisitorData>() {
 
                 val propertyName = functionName.removePrefix("<get-").removeSuffix(">")
 
+                if (propertyOwner!!.startsWith("\$this$")) { //accessing a stage receiver property
+                    return properties[data.stage]!![propertyName]!!
+                }
+
                 when (propertyOwner) {
                     "<this>" -> propertyName //direct shader class members, e.g. uniforms
                     "it" -> when (data.stage) { //implicit lambda parameter //FIXME find and use declared name if not implicit
@@ -144,9 +150,18 @@ private class GlslTranspiler : IrVisitor<String, VisitorData>() {
                 }
             }
 
+            expression.origin == IrStatementOrigin.GET_ARRAY_ELEMENT -> {
+                val arguments = expression.getArgumentsWithIr().toMap().mapKeys { it.key.name.asString() }
+
+                var arrayName: String = arguments["<this>"]!!.accept(this, data)
+                var arrayIndex: String = arguments["index"]!!.accept(this, data)
+
+                return "$arrayName[$arrayIndex]"
+            }
+
             functionName == "times" -> handleMul(expression, data)
-            functionName == "vec4" -> handleVec4(expression, data)
-            else -> error("Unexpected function $functionName")
+            functionName in functionNames -> handleFunction(functionName, expression, data)
+            else -> error("Unexpected function ${expression.render()}")
         }
     }
 
@@ -159,16 +174,17 @@ private class GlslTranspiler : IrVisitor<String, VisitorData>() {
     override fun visitGetValue(expression: IrGetValue, data: VisitorData): String =
         expression.symbol.owner.name.asString()
 
+    private fun handleFunction(functionName: String, expression: IrCall, data: VisitorData): String = expression
+        .valueArguments
+        .joinToString(", ", prefix = "$functionName(", postfix = ")") {
+            it!!.accept(this, data)
+        }
+
     private fun handleMul(expression: IrCall, data: VisitorData): String =
         "${expression.extensionReceiver!!.accept(this, data)} * ${
             expression.getValueArgument(0)!!.accept(this, data)
         }"
 
-    private fun handleVec4(expression: IrCall, data: VisitorData): String = expression
-        .valueArguments
-        .joinToString(", ", prefix = "vec4(", postfix = ")") {
-            it!!.accept(this, data)
-        }
 }
 
 private class GlslReturnTranspiler(val root: GlslTranspiler) : IrVisitor<String, VisitorData>() {

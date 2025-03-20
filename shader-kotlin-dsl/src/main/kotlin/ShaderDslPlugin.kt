@@ -85,13 +85,15 @@ internal class IrShaderGenerationExtension(
                 .findDeclaration<IrFunction> { it.name.asString() == "program" }!!
 
             val vertexProgram = programBodies
-                .findElement<IrCall> { it.symbol.owner.name.asString() == "vertex" }!!
+                .findElement<IrCall> { it.symbol.owner.name.asString() == "vertex" }
+                .let { it ?: error("Shader program must have a vertex stage") }
                 .findElement<IrBlockBody>()!!
 
             data.stages[VERTEX] = vertexProgram
 
             val fragmentProgram = programBodies
-                .findElement<IrCall> { it.symbol.owner.name.asString() == "fragment" }!!
+                .findElement<IrCall> { it.symbol.owner.name.asString() == "fragment" }
+                .let { it ?: error("Shader program must have a fragment stage") }
                 .findElement<IrBlockBody>()!!
 
             data.stages[FRAGMENT] = fragmentProgram

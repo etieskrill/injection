@@ -1,10 +1,8 @@
 package io.github.etieskrill.injection.extension.shader.dsl
 
-import io.github.etieskrill.injection.extension.shader.AbstractShader
-import io.github.etieskrill.injection.extension.shader.float
-import io.github.etieskrill.injection.extension.shader.vec3
-import io.github.etieskrill.injection.extension.shader.vec4
+import io.github.etieskrill.injection.extension.shader.*
 import org.joml.Vector4f
+import kotlin.properties.ReadOnlyProperty
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
@@ -27,13 +25,26 @@ abstract class ShaderBuilder<VA : Any, V : ShaderVertexData, RT : Any>(shader: A
 
     protected fun <T : Any> uniform() = UniformDelegate<T>()
 
+    protected fun <T : Any> const(value: T) = ConstDelegate<T>()
+
     protected fun vertex(block: VertexReceiver.(VA) -> V) {}
 
     protected fun fragment(block: FragmentReceiver.(V) -> RT) {}
 
     protected abstract fun program()
 
+    protected fun vec2(x: Number, y: Number): vec2 = empty()
+
 }
+
+private fun empty(): Nothing = error("don't actually call these dingus")
+
+//TODO maybe anonymous builders
+//fun <VA: Any, V : ShaderVertexData, RT : Any> shaderBuilder(
+//    shader: AbstractShader,
+//    block: ShaderBuilder<VA, V, RT>.() -> Unit?
+//): AbstractShader {
+//} //since uniforms won't be accessible via property, is this even that useful?
 
 class UniformDelegate<T : Any> :
     ReadWriteProperty<ShaderBuilder<*, *, *>, T> { //FIXME would have to be protected and internal... has this really never been a usecase?
@@ -44,17 +55,39 @@ class UniformDelegate<T : Any> :
         thisRef.setUniform(property.name, value)
 }
 
-@ShaderDslMarker
-open class GlslReceiver {
-    fun vec4(x: float, y: float, z: float, w: float): vec4 = Vector4f(x, y, z, w)
-    fun vec4(vec: vec3, w: float): vec4 = Vector4f(vec, w)
+class ConstDelegate<T : Any> : ReadOnlyProperty<ShaderBuilder<*, *, *>, T> {
+    override fun getValue(thisRef: ShaderBuilder<*, *, *>, property: KProperty<*>): T {
+        TODO()
+    }
 }
 
 @ShaderDslMarker
-class VertexReceiver : GlslReceiver()
+open class GlslReceiver {
+    fun vec2(x: Number, y: Number): vec2 = empty()
+
+    fun vec4(x: Number): vec4 = empty()
+    fun vec4(x: Number, y: Number, z: Number, w: Number): vec4 = empty()
+    fun vec4(vec: vec3, w: Number): vec4 = empty()
+    fun vec4(vec: vec2, z: Number, w: Number): vec4 = empty()
+
+    fun max(v1: vec2, v2: vec2): vec2 = empty()
+}
+
+@ShaderDslMarker
+class VertexReceiver : GlslReceiver() {
+    val vertexID: int = empty()
+}
 
 @ShaderDslMarker
 class FragmentReceiver : GlslReceiver()
+
+internal val properties = mapOf(
+    ShaderStage.VERTEX to mapOf(
+        VertexReceiver::vertexID.name to "gl_VertexID"
+    )
+)
+
+internal val functionNames = listOf("vec2", "vec4", "max")
 
 interface FrameBuffer
 class RenderTarget(
