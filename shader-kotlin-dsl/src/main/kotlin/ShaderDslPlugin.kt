@@ -17,8 +17,10 @@ import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.*
+import org.jetbrains.kotlin.ir.util.dump
 import org.jetbrains.kotlin.ir.util.findDeclaration
 import org.jetbrains.kotlin.ir.util.properties
+import org.jetbrains.kotlin.ir.util.render
 import org.jetbrains.kotlin.ir.visitors.IrVisitor
 import org.jetbrains.kotlin.utils.getOrPutNullable
 import java.io.File
@@ -61,25 +63,35 @@ internal class IrShaderGenerationExtension(
             }
 
         for ((shader, types) in shaderClasses) {
+            var constCounter = 0
             val data = VisitorData(
                 vertexAttributes = types.vertexAttributesType.getGlslFields(),
                 vertexDataStructType = types.vertexDataType.name.asString(),
                 vertexDataStructName = "vertex",
                 vertexDataStruct = types.vertexDataType.getGlslFields { it.name.asString() != POSITION_FIELD_NAME },
                 renderTargets = types.renderTargetsType.getGlslFields().keys.toList(),
-                uniforms = shader.properties
-                    .filter { it.isDelegated }
-                    .filter { it.backingField?.type?.fullName == UniformDelegate::class.qualifiedName!! }
-                    .associate {
-                        it.name.asString() to it.backingField?.type?.let {
-                            when (it) {
-                                is IrSimpleType -> it.arguments[0].typeOrFail.glslType
-                                    ?: error("Shader uniforms may only be of GLSL primitive type") //TODO i just assume the delegate's type is always first
-                                else -> error("Unexpected type: $this")
-                            }
-                        }!!
+                constants = shader.getDelegatedProperties<ConstDelegate<*>, Pair<GlslType, String>> {
+                    if (constCounter++ == 1) {
+                        it.accept(ValueResolverVisitor(), null)
+                        error(it.dump())
                     }
+                    it.name.asString() to (GlslType("a") to "asdf")
+                },
+                constantArrays = shader.getDelegatedProperties<ConstDelegate<*>, Triple<GlslType, Int, String>> {
+                    it.name.asString() to Triple(GlslType("a"), 0, "asdf")
+                },
+                uniforms = shader.getDelegatedProperties<UniformDelegate<*>, GlslType> {
+                    it.name.asString() to it.backingField?.type?.let {
+                        when (it) {
+                            is IrSimpleType -> it.arguments[0].typeOrFail.glslType
+                                ?: error("Shader uniforms may only be of GLSL primitive type") //TODO i just assume the delegate's type is always first
+                            else -> error("Unexpected type: $this")
+                        }
+                    }!!
+                },
             )
+
+            error(data.toString())
 
             val programBodies = shader
                 .findDeclaration<IrFunction> { it.name.asString() == "program" }!!
@@ -119,6 +131,25 @@ private fun IrClass.getGlslFields(condition: (IrProperty) -> Boolean = { true })
             ?: error("Shader data type may only have fields of GLSL primitive type"))
     }
 
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+private inline fun <reified T, R> IrClass.getDelegatedProperties(
+    noinline mapper: (IrProperty) -> Pair<String, R>
+): Map<String, R> = properties
+    .filter { it.isDelegated }
+    .filter { it.backingField?.type?.fullName == T::class.qualifiedName!! }
+    .associate(mapper)
+
+private data class ValueResolverVisitorData(
+)
+
+private class ValueResolverVisitor : IrVisitor<String, ValueResolverVisitorData>() {
+    override fun visitElement(element: IrElement, data: ValueResolverVisitorData): String = error(element.render())
+
+    override fun visitProperty(declaration: IrProperty, data: ValueResolverVisitorData): String {
+        declaration.acceptChildren()
+    }
+}
+
 internal enum class GlslVersion { `330` }
 internal enum class GlslProfile { CORE, COMPATIBILITY }
 
@@ -141,6 +172,9 @@ internal data class VisitorData(
     val vertexDataStruct: Map<String, GlslType>,
 
     val renderTargets: List<String>,
+
+    val constants: Map<String, Pair<GlslType, String>>,
+    val constantArrays: Map<String, Triple<GlslType, Int, String>>,
 
     val uniforms: Map<String, GlslType>,
 
