@@ -16,7 +16,7 @@ import kotlin.test.Test
 class ShaderTest {
 
     @Test
-    fun `Should find top-level direct superclass shader`() {
+    fun `Should build simple top-level direct superclass shader builder`() {
         val result = compile(getSource("SimpleTestShader.kt"))
 
         assertThat(result.exitCode).isEqualTo(ExitCode.OK)
@@ -24,10 +24,25 @@ class ShaderTest {
             .isEqualToIgnoringWhitespace(getResource("SimpleTest.glsl"))
     }
 
+    @Test
+    fun `Should build 'regular' shader builder`() {
+        val result = compile(getSource("HDRShader.kt"))
+
+        assertThat(result.exitCode).isEqualTo(ExitCode.OK)
+        assertThat(getGeneratedResource("HDR.glsl"))
+            .isEqualToIgnoringWhitespace(getResource("HDR.glsl"))
+    }
+
+    //TODO
+    // - ensure required stages
+    // - ensure num stages
+    // - ensure writeability (uniforms writeable or smth)
+    // - ensure only program stages in program function
+
     @AfterTest
     fun cleanup() {
-        val generatedFolder = File(TEST_RESOURCE_TARGET)
-        if (generatedFolder.exists()) generatedFolder.deleteRecursively()
+//        val generatedFolder = File(TEST_RESOURCE_TARGET)
+//        if (generatedFolder.exists()) generatedFolder.deleteRecursively()
     }
 
 }
