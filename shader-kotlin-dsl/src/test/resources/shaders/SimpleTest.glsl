@@ -1,7 +1,6 @@
 #version 330 core
 
 struct VertexData {
-    vec4 position;
     vec2 texCoord;
 };
 
