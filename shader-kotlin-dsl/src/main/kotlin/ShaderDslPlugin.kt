@@ -1,8 +1,10 @@
 package io.github.etieskrill.injection.extension.shader.dsl
 
-import io.github.etieskrill.injection.extension.shader.*
+import io.github.etieskrill.injection.extension.shader.ShaderStage
 import io.github.etieskrill.injection.extension.shader.ShaderStage.FRAGMENT
 import io.github.etieskrill.injection.extension.shader.ShaderStage.VERTEX
+import io.github.etieskrill.injection.extension.shader.ShadowMap
+import io.github.etieskrill.injection.extension.shader.glslType
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.IrElement
@@ -18,12 +20,12 @@ import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.util.findDeclaration
 import org.jetbrains.kotlin.ir.util.properties
 import org.jetbrains.kotlin.ir.visitors.IrVisitor
-import org.joml.*
+import org.jetbrains.kotlin.utils.getOrPutNullable
 import java.io.File
 import kotlin.reflect.KClass
 import kotlin.reflect.cast
 
-internal data class ShaderDataTypes(
+private data class ShaderDataTypes(
     val vertexAttributesType: IrClass,
     val vertexDataType: IrClass,
     val renderTargetsType: IrClass
@@ -115,15 +117,15 @@ private fun IrClass.getGlslFields(condition: (IrProperty) -> Boolean = { true })
             ?: error("Shader data type may only have fields of GLSL primitive type"))
     }
 
-enum class GlslVersion { `330` }
-enum class GlslProfile { CORE, COMPATIBILITY }
+internal enum class GlslVersion { `330` }
+internal enum class GlslProfile { CORE, COMPATIBILITY }
 
 @JvmInline
-value class GlslType internal constructor(val type: String) {
+internal value class GlslType internal constructor(val type: String) {
     override fun toString(): String = type
 }
 
-data class VisitorData(
+internal data class VisitorData(
     var depth: Int = 0,
     var stage: ShaderStage = ShaderStage.NONE,
 
@@ -143,13 +145,13 @@ data class VisitorData(
     val stages: MutableMap<ShaderStage, IrElement> = mutableMapOf(),
 )
 
-inline fun <reified T : IrElement> IrElement.findElement(
+private inline fun <reified T : IrElement> IrElement.findElement(
     data: RecursiveFinderVisitorData<T> = RecursiveFinderVisitorData(),
     noinline condition: (T) -> Boolean = { true }
 ): T? = accept(RecursiveFinderVisitor(T::class, condition), data)
 
-data class RecursiveFinderVisitorData<T : IrElement>(var element: T? = null)
-class RecursiveFinderVisitor<T : IrElement>(val elementType: KClass<T>, val condition: (T) -> Boolean) :
+private data class RecursiveFinderVisitorData<T : IrElement>(var element: T? = null)
+private class RecursiveFinderVisitor<T : IrElement>(val elementType: KClass<T>, val condition: (T) -> Boolean) :
     IrVisitor<T?, RecursiveFinderVisitorData<T>>() {
     override fun visitElement(element: IrElement, data: RecursiveFinderVisitorData<T>): T? {
         element.accept(object : IrVisitor<Unit, RecursiveFinderVisitorData<T>>() {
@@ -166,39 +168,15 @@ class RecursiveFinderVisitor<T : IrElement>(val elementType: KClass<T>, val cond
     }
 }
 
-val IrType.isGlslPrimitive: Boolean
-    get() = when {
-        classFqName!!.asString() in listOf(
-            Int::class, Float::class, Boolean::class,
-            Vector2f::class, Vector3f::class, Vector4f::class,
-            Matrix3f::class, Matrix4f::class
-        ).map { it.qualifiedName!! } -> true
+private val glslTypes = mutableMapOf<String, GlslType>()
 
-        else -> false
+internal val IrType.glslType: GlslType?
+    get() = glslTypes.getOrPutNullable(fullName) {
+        if (fullName == RenderTarget::class.qualifiedName) return GlslType("vec4")
+        if (fullName == ShadowMap::class.qualifiedName) TODO("shadow types")
+        val name = this.fullName.glslType ?: return null
+        GlslType(name)
     }
 
-val glslTypes = mapOf(
-    Int::class to GlslType("int"),
-    Float::class to GlslType("float"),
-    Boolean::class to GlslType("bool"),
-    Vector2f::class to GlslType("vec2"),
-    Vector3f::class to GlslType("vec3"),
-    Vector4f::class to GlslType("vec4"),
-    Matrix3f::class to GlslType("mat3"),
-    Matrix4f::class to GlslType("mat4"),
-    Texture2D::class to GlslType("sampler2D"),
-    Texture2DArray::class to GlslType("sampler2DArray"),
-    TextureCubeMap::class to GlslType("samplerCube"),
-    TextureCubeMapArray::class to GlslType("samplerCubeArray"),
-).mapKeys { (clazz, _) -> clazz.qualifiedName!! }
-
-val IrType.glslType: GlslType?
-    get() = when (fullName) {
-        RenderTarget::class.qualifiedName!! -> GlslType("vec4")
-        in glslTypes -> glslTypes[fullName]
-        //TODO ShadowMap types
-        else -> null
-    }
-
-val IrType.fullName: String
+internal val IrType.fullName: String
     get() = classFqName!!.asString()

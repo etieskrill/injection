@@ -147,6 +147,8 @@ public abstract class ShaderProgram implements Disposable,
      * and - if the rudimentary detection catches it - a geometry shader in the corresponding definition guards.
      */
     protected ShaderProgram(List<String> shaderFiles, List<UniformEntry> uniforms, boolean strictUniformDetection) {
+        System.out.println(shaderFiles.toString());
+
         Set<ShaderFile> files = shaderFiles.stream().map(fileName -> {
             var typedFile = FileUtils.splitTypeFromPath(fileName);
             ShaderType type = switch (typedFile.getExtension()) {

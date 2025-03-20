@@ -12,7 +12,6 @@ import org.etieskrill.engine.graphics.gl.shader.Shaders;
 import org.etieskrill.engine.graphics.gl.shader.impl.DepthAnimatedShader;
 import org.etieskrill.engine.graphics.gl.shader.impl.DepthAnimatedShaderKt;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Matrix4f;
 
 import java.util.List;
 
@@ -88,7 +87,7 @@ public class DirectionalShadowMappingService implements Service {
                 if (animator != null) {
                     //TOTO figure some compile-time thing to ensure property exists on shader, probably kotlin interface property?
                     //actually you can just invert the control structure (first set uniforms then upcast), which should work for most cases
-                    DepthAnimatedShaderKt.setBoneMatrices(depthAnimatedShader, (Matrix4f[]) animator.getTransformMatricesArray());
+                    DepthAnimatedShaderKt.setBoneMatrices(depthAnimatedShader, animator.getTransformMatricesArray());
                     shader = depthAnimatedShader;
                 }
             }

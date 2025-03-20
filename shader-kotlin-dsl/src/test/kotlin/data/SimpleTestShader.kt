@@ -1,9 +1,6 @@
 package io.github.etieskrill.injection.extension.shader.dsl.data
 
-import io.github.etieskrill.injection.extension.shader.dsl.RenderTarget
-import io.github.etieskrill.injection.extension.shader.dsl.Shader
-import io.github.etieskrill.injection.extension.shader.dsl.ShaderBuilder
-import io.github.etieskrill.injection.extension.shader.dsl.rt
+import io.github.etieskrill.injection.extension.shader.dsl.*
 import io.github.etieskrill.injection.extension.shader.mat4
 import io.github.etieskrill.injection.extension.shader.vec2
 import io.github.etieskrill.injection.extension.shader.vec3
@@ -11,7 +8,7 @@ import io.github.etieskrill.injection.extension.shader.vec4
 import org.joml.times
 
 class Vertex(val position: vec3, val texCoord: vec2)
-class VertexData(val position: vec4, val texCoord: vec2)
+class VertexData(override val position: vec4, val texCoord: vec2) : ShaderVertexData
 class RenderTargets(val colour: RenderTarget, val bloom: RenderTarget)
 
 class SimpleTestShader : ShaderBuilder<Vertex, VertexData, RenderTargets>(Shader()) {
