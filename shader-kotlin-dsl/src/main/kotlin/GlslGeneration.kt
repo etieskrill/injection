@@ -128,7 +128,7 @@ private class GlslTranspiler : IrVisitor<String, VisitorData>() {
 
                 when (propertyOwner) {
                     "<this>" -> propertyName //direct shader class members, e.g. uniforms
-                    "it" -> when (data.stage) { //implicit lambda parameter
+                    "it" -> when (data.stage) { //implicit lambda parameter //FIXME find and use declared name if not implicit
                         ShaderStage.VERTEX -> propertyName
                         ShaderStage.FRAGMENT -> "${data.vertexDataStructName}.$propertyName"
                         else -> TODO("Getter for implicit lambda parameter call not implemented for stage ${data.stage}")

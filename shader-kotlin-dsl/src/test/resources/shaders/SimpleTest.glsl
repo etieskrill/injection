@@ -17,7 +17,7 @@ out VertexData vertex;
 
 void main() {
     vec4 position = combined * model * vec4(position, 1.0);
-    vertex.position = position;
+    gl_Position = position;
     vertex.texCoord = texCoord;
 }
 
@@ -29,7 +29,7 @@ out vec4 colour;
 out vec4 bloom;
 
 void main() {
-    colour = vertex.position;
+    colour = gl_Position;
     bloom = vec4(0.0, 0.0, 0.0, 1.0);
 }
 

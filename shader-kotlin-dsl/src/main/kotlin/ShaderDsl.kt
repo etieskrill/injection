@@ -12,13 +12,18 @@ import kotlin.reflect.KProperty
 @Target(AnnotationTarget.CLASS)
 internal annotation class ShaderDslMarker
 
+interface ShaderVertexData { //TODO omfg i forgot about the goddamn gl_Position... yes me, this is why e2e tests are also important
+    val position: vec4
+}
+
 /**
  * @param VA the vertex attributes
  * @param V the internal vertex type
  * @param RT the render targets
  */
 @ShaderDslMarker
-abstract class ShaderBuilder<VA : Any, V : Any, RT : Any>(shader: AbstractShader) : AbstractShader by shader {
+abstract class ShaderBuilder<VA : Any, V : ShaderVertexData, RT : Any>(shader: AbstractShader) :
+    AbstractShader by shader {
 
     protected fun <T : Any> uniform() = UniformDelegate<T>()
 
@@ -55,7 +60,7 @@ interface FrameBuffer
 class RenderTarget(
     vector: vec4,
     var frameBuffer: FrameBuffer? = null,
-) : vec4(vector) {
+) : Vector4f(vector) {
     infix fun set(frameBuffer: FrameBuffer) {
         this.frameBuffer = frameBuffer
     }

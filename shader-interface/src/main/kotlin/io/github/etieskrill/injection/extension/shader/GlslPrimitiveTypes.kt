@@ -10,47 +10,89 @@ typealias int = Int
 typealias float = Float
 typealias bool = Boolean
 
-//FIXME used to be final versions (e.g. Vector2fc), changed for dsl module, warn to not directly modify, or add observable or something
-typealias vec2 = Vector2f
-typealias vec3 = Vector3f
-typealias vec4 = Vector4f
+typealias vec2 = Vector2fc
+typealias vec3 = Vector3fc
+typealias vec4 = Vector4fc
 
-typealias mat3 = Matrix3f
-typealias mat4 = Matrix4f
+typealias mat3 = Matrix3fc
+typealias mat4 = Matrix4fc
 
 typealias sampler2D = Texture2D
 typealias sampler2DArray = Texture2DArray
-typealias sampler2DShadow = ShadowMap<Texture2D>
-typealias samplerCubeArrayShadow = ShadowMap<TextureCubeMapArray>
+typealias samplerCube = TextureCubeMap
+typealias samplerCubeArray = TextureCubeMapArray
+
+typealias sampler2DShadow = ShadowMap<sampler2D>
+typealias sampler2DArrayShadow = ShadowMap<sampler2DArray>
+typealias samplerCubeShadow = ShadowMap<samplerCube>
+typealias samplerCubeArrayShadow = ShadowMap<samplerCubeArray>
 
 typealias struct = Any
 
-val KClass<*>.isGlslPrimitive: Boolean
-    get() = when (this) {
-        Int::class, Float::class, Boolean::class,
-        Vector2f::class, Vector3f::class, Vector4f::class,
-        Matrix3f::class, Matrix4f::class -> true
+private val primitiveSamplerTypes = mapOf(
+    sampler2D::class to "sampler2D",
+    sampler2DArray::class to "sampler2DArray",
+    samplerCube::class to "samplerCube",
+    samplerCubeArray::class to "samplerCubeArray"
+)
 
+private val primitiveTypes = mutableMapOf(
+    int::class to "int",
+    float::class to "float",
+    bool::class to "bool",
+    vec2::class to "vec2",
+    vec3::class to "vec3",
+    vec4::class to "vec4",
+    mat3::class to "mat3",
+    mat4::class to "mat4"
+).apply { putAll(primitiveSamplerTypes) }.toMap()
+
+private val jomlConstantTypes = mapOf(
+    Vector2f::class to Vector2fc::class,
+    Vector3f::class to Vector3fc::class,
+    Vector4f::class to Vector4fc::class,
+    Matrix3f::class to Matrix3fc::class,
+    Matrix4f::class to Matrix4fc::class
+)
+
+private fun KClass<*>.toJomlConstantType() = when (this) {
+    in jomlConstantTypes.keys -> jomlConstantTypes[this]!!
+    else -> this
+}
+
+private val jomlConstantNames = jomlConstantTypes.map { it.key.qualifiedName to it.value.qualifiedName }.toMap()
+
+private fun String.toJomlConstantType() = when (this) {
+    in jomlConstantNames -> jomlConstantNames[this]!!
+    else -> this
+}
+
+val KClass<*>.isGlslPrimitive: Boolean
+    get() = when (this.toJomlConstantType()) {
+        in primitiveTypes.keys -> true
+        ShadowMap::class -> TODO("shadow types")
         else -> false
     }
 
 val KClass<*>.glslName: String?
-    get() = when (this) {
-        Int::class -> "int"
-        Float::class -> "float"
-        Boolean::class -> "bool"
-        Vector2f::class -> "vec2"
-        Vector3f::class -> "vec3"
-        Vector4f::class -> "vec4"
-        Matrix3f::class -> "mat3"
-        Matrix4f::class -> "mat4"
-        Texture2D::class -> "sampler2D"
-        Texture2DArray::class -> "sampler2DArray"
-        else -> {
-            if (findShadowMapType<Texture2D>()) "sampler2D"
-            else if (findShadowMapType<TextureCubeMapArray>()) "samplerCubeMapArrayShadow"
-            else null
+    get() = when (this.toJomlConstantType()) {
+        in primitiveTypes.keys -> primitiveTypes[this]
+        ShadowMap::class -> {
+            val typeParams = findSuperclassTypeParameters<ShadowMap<*>>()
+            check(typeParams.size == 1)
+
+            val samplerType = primitiveSamplerTypes.firstNotNullOf {
+                if (it.key.qualifiedName == typeParams[0].typeName) it.value
+            }
+            "${samplerType}Shadow"
         }
+
+        else -> null
+    }
+
+val String.glslType: String?
+    get() = primitiveTypes.firstNotNullOfOrNull {
+        if (it.key.qualifiedName!! == this.toJomlConstantType()) it.value else null
     }
 
 private inline fun <reified T : Any> KClass<*>.findShadowMapType() =
