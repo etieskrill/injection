@@ -156,7 +156,7 @@ public class EntityApplication extends GameApplication {
 
         //FIXME loading the scene (the label font specifically) before the above stuff causes a segfault from freetype??
         debugInterface = new DebugInterface(window.getSize().getVec(), renderer, pacer);
-        window.setScene(debugInterface); //FIXME WAAAAAH MOM THE TEXT RENDERERING IS BRICKED AGAIN
+        window.setScene(debugInterface);
 
         GLUtils.removeDebugLogging();
     }

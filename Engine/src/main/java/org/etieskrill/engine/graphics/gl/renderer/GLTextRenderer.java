@@ -36,6 +36,10 @@ public class GLTextRenderer extends GLDebuggableRenderer implements TextRenderer
     public void render(String chars, Font font, Vector2fc position, ShaderProgram shader, Matrix4fc combined) {
         GLUtils.clearError();
 
+        //can also be started just before rendering... but without it, a previously used shader is bound sometimes,
+        //even though the uniform setters already bind the shader, so this shouldn't be necessary - literal heresy
+        shader.start();
+
         shader.setUniform("combined", combined, false);
         shader.setUniform("glyphTextureSize", new Vector2f(font.getPixelSize()), false);
 
@@ -73,8 +77,7 @@ public class GLTextRenderer extends GLDebuggableRenderer implements TextRenderer
 
     private void renderBitmapGlyphs(int numChars, ByteBuffer buffer, BitmapFont font, ShaderProgram shader) {
         bufferBitmapGlyphs(buffer);
-        font.getTextures().bind(0);
-        shader.setUniform("glyphs", 0, false);
+        shader.setTexture("glyphs", font.getTextures(), false);
 
         glDisable(GL_CULL_FACE);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); //TODO transparency really belongs to a texture, not a model
