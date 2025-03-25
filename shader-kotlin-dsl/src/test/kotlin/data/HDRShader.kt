@@ -9,7 +9,8 @@ class HDRShader : ShaderBuilder<Any, HDRShader.Vertex, HDRShader.RenderTargets>(
     data class RenderTargets(val fragColour: RenderTarget)
 
     val someConst by const(5)
-    val vertices by const(arrayOf<vec2>(vec2(-1, -1), vec2(1, -1), vec2(-1, 1), vec2(1, 1)))
+    val anotherConst by const(vec2(-1, 1))
+    val vertices by const(arrayOf(vec2(-1, -1), vec2(1, -1), vec2(-1, 1), vec2(1, 1)))
 
     var hdrBuffer by uniform<sampler2D>()
     var exposure by uniform<float>()

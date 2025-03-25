@@ -1,14 +1,13 @@
 package io.github.etieskrill.injection.extension.shader.dsl
 
 import io.github.etieskrill.injection.extension.shader.ShaderStage
+import io.github.etieskrill.injection.extension.shader.dsl.GlslStorageQualifier.CONST
 import org.jetbrains.kotlin.ir.IrElement
-import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
 import org.jetbrains.kotlin.ir.declarations.IrVariable
 import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.util.dump
-import org.jetbrains.kotlin.ir.util.getArguments
 import org.jetbrains.kotlin.ir.util.getArgumentsWithIr
 import org.jetbrains.kotlin.ir.util.render
 import org.jetbrains.kotlin.ir.visitors.IrVisitor
@@ -23,6 +22,20 @@ internal fun generateGlsl(data: VisitorData): String = buildString {
     newline()
 
     appendLine(generateStruct(data.vertexDataStructType, data.vertexDataStruct))
+    newline()
+
+    data.constants.forEach { (name, constExpression) ->
+        val resolver = GlslValueTranspiler()
+        val value = constExpression.initialiser.accept(resolver, data)
+        check(resolver.array == constExpression.array || resolver.array == null && !constExpression.array)
+
+        val statement = when (constExpression.array) {
+            false -> generateStatement(CONST, constExpression.type, name, value)
+            true -> generateArrayStatement(CONST, constExpression.type, resolver.arraySize!!, name, value)
+        }
+
+        appendLine(statement)
+    }
     newline()
 
     data.uniforms.forEach { (name, type) ->
@@ -78,13 +91,46 @@ private fun generateStruct(
 
 private fun generateStage(stage: ShaderStage) = "#pragma stage ${stage.name.lowercase()}"
 
-internal enum class GlslStorageQualifier { IN, OUT, UNIFORM }
+internal enum class GlslStorageQualifier {
+    NONE, IN, OUT, UNIFORM, CONST;
 
-private fun generateStatement(qualifier: GlslStorageQualifier, type: GlslType, name: String) =
-    generateStatement(qualifier, type.type, name)
+    override fun toString(): String = when (this) {
+        NONE -> ""
+        else -> name.lowercase()
+    }
+}
 
-private fun generateStatement(qualifier: GlslStorageQualifier, type: String, name: String) =
-    "${qualifier.name.lowercase()} $type $name;"
+private fun generateStatement(
+    qualifier: GlslStorageQualifier,
+    type: GlslType,
+    name: String,
+    initialiser: String? = null
+) = generateStatement(qualifier, type.type, name, initialiser)
+
+private fun generateStatement(
+    qualifier: GlslStorageQualifier,
+    type: String,
+    name: String,
+    initialiser: String? = null
+): String {
+    require(initialiser == null || qualifier == CONST) {
+        "Only const statements may have an initialiser"
+    }
+    return "$qualifier $type $name${initialiser?.let { " = $initialiser" } ?: ""};"
+}
+
+private fun generateArrayStatement(
+    qualifier: GlslStorageQualifier,
+    type: GlslType,
+    size: Int,
+    name: String,
+    initialiser: String? = null
+): String {
+    require(initialiser == null || qualifier == CONST) {
+        "Only const statements may have an initialiser"
+    }
+    return "$qualifier $type $name[$size]${initialiser?.let { " = $initialiser" } ?: ""};"
+}
 
 private fun generateMain(statements: IrElement, data: VisitorData) = buildIndentedString {
     appendLine("void main() {")
@@ -192,10 +238,9 @@ private class GlslReturnTranspiler(val root: GlslTranspiler) : IrVisitor<String,
         TODO("Element of type ${element::class.simpleName} cannot be processed yet:\n${element.dump()}")
     }
 
-    @OptIn(ObsoleteDescriptorBasedAPI::class)
     override fun visitConstructorCall(expression: IrConstructorCall, data: VisitorData): String {
         return expression
-            .getArguments()
+            .getArgumentsWithIr()
             .associate { (param, expression) -> param.name.asString() to expression.accept(root, data) }
             .map { (param, expression) ->
                 when (data.stage) {
@@ -212,4 +257,89 @@ private class GlslReturnTranspiler(val root: GlslTranspiler) : IrVisitor<String,
             }
             .joinToString("\n")
     }
+}
+
+//FIXME this is just a kinda copy of the above transpiler - not very pretty
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+private class GlslValueTranspiler(
+    var array: Boolean? = null,
+    var arraySize: Int? = null,
+) : IrVisitor<String, VisitorData>() {
+    override fun visitElement(element: IrElement, data: VisitorData): String =
+        TODO("Element of type ${element::class.simpleName} cannot be processed yet:\n${element.dump()}")
+
+    override fun visitVariable(declaration: IrVariable, data: VisitorData): String =
+        "${declaration.type.glslType} ${declaration.name} = ${declaration.initializer!!.accept(this, data)}"
+
+    override fun visitCall(expression: IrCall, data: VisitorData): String {
+        val functionName = expression.symbol.owner.name.asString()
+
+        return when {
+            expression.origin == IrStatementOrigin.GET_PROPERTY -> {
+                var propertyOwner: String? = null
+                expression.acceptChildren(object : IrVisitor<Unit, VisitorData>() {
+                    override fun visitElement(element: IrElement, data: VisitorData) = error("uh oh")
+                    override fun visitGetValue(expression: IrGetValue, data: VisitorData) {
+                        propertyOwner = expression.symbol.owner.name.asString()
+                    }
+                }, data)
+
+                val propertyName = functionName.removePrefix("<get-").removeSuffix(">")
+
+                if (propertyOwner!!.startsWith("\$this$")) { //accessing a stage receiver property
+                    return properties[data.stage]!![propertyName]!!
+                }
+
+                when (propertyOwner) {
+                    "<this>" -> propertyName //direct shader class members, e.g. uniforms
+                    else -> "$propertyOwner.$propertyName"
+                }
+            }
+
+            expression.origin == IrStatementOrigin.GET_ARRAY_ELEMENT -> {
+                val arguments = expression.getArgumentsWithIr().toMap().mapKeys { it.key.name.asString() }
+
+                val arrayName: String = arguments["<this>"]!!.accept(this, data)
+                val arrayIndex: String = arguments["index"]!!.accept(this, data)
+
+                return "$arrayName[$arrayIndex]"
+            }
+
+            functionName == "times" -> handleMul(expression, data)
+            functionName in functionNames -> handleFunction(functionName, expression, data)
+            functionName == "arrayOf" -> {
+                val elements = expression.getArgumentsWithIr()
+                    .first()
+                    .second as IrVararg
+
+                array = true
+                arraySize = elements.elements.size
+                val type = requireNotNull(elements.varargElementType.glslType)
+                { "Const array elements must be of GLSL primitive type" }
+
+                val values = elements.elements.joinToString { it.accept(this, data) }
+
+                "$type[]($values)"
+            }
+
+            else -> error("Unexpected function ${expression.render()}")
+        }
+    }
+
+    override fun visitConst(expression: IrConst, data: VisitorData): String =
+        expression.value.toString()
+
+    override fun visitGetValue(expression: IrGetValue, data: VisitorData): String =
+        expression.symbol.owner.name.asString()
+
+    private fun handleFunction(functionName: String, expression: IrCall, data: VisitorData): String = expression
+        .valueArguments
+        .joinToString(", ", prefix = "$functionName(", postfix = ")") {
+            it!!.accept(this, data)
+        }
+
+    private fun handleMul(expression: IrCall, data: VisitorData): String =
+        "${expression.extensionReceiver!!.accept(this, data)} * ${
+            expression.getValueArgument(0)!!.accept(this, data)
+        }"
 }
