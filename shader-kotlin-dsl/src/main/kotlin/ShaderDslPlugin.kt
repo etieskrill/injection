@@ -14,16 +14,36 @@ import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
 import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.expressions.IrCall
+import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.*
-import org.jetbrains.kotlin.ir.util.dump
 import org.jetbrains.kotlin.ir.util.findDeclaration
+import org.jetbrains.kotlin.ir.util.getArgumentsWithIr
 import org.jetbrains.kotlin.ir.util.properties
-import org.jetbrains.kotlin.ir.util.render
 import org.jetbrains.kotlin.ir.visitors.IrVisitor
 import org.jetbrains.kotlin.utils.getOrPutNullable
 import java.io.File
+import kotlin.collections.List
+import kotlin.collections.Map
+import kotlin.collections.MutableMap
+import kotlin.collections.associateWith
+import kotlin.collections.component1
+import kotlin.collections.component2
+import kotlin.collections.filterIsInstance
+import kotlin.collections.filterValues
+import kotlin.collections.find
+import kotlin.collections.first
+import kotlin.collections.firstNotNullOf
+import kotlin.collections.flatten
+import kotlin.collections.iterator
+import kotlin.collections.map
+import kotlin.collections.mapKeys
+import kotlin.collections.mapValues
+import kotlin.collections.mutableMapOf
+import kotlin.collections.set
+import kotlin.collections.toList
+import kotlin.collections.toMap
 import kotlin.reflect.KClass
 import kotlin.reflect.cast
 
@@ -63,35 +83,40 @@ internal class IrShaderGenerationExtension(
             }
 
         for ((shader, types) in shaderClasses) {
-            var constCounter = 0
+            val constDeclarations = shader.getDelegatedProperties<ConstDelegate<*>, GlslTypeInitialiser> { property ->
+                val initialiser = property.backingField!!.initializer!!.expression
+                property.name.asString() to (initialiser as IrCall)
+                    .getArgumentsWithIr()
+                    .toMap()
+                    .mapKeys { it.key.name.asString() }
+                    .firstNotNullOf { param -> if (param.key == "value"/*!= "<this>"*/) param else null }
+                    .run {
+                        val type = when {
+                            value.type.isArray() -> (value.type as IrSimpleType).arguments.first().typeOrFail.glslType!!
+                            else -> value.type.glslType!!
+                        }
+
+                        GlslTypeInitialiser(type, value.type.isArray(), value)
+                    }
+            }
+
             val data = VisitorData(
                 vertexAttributes = types.vertexAttributesType.getGlslFields(),
                 vertexDataStructType = types.vertexDataType.name.asString(),
                 vertexDataStructName = "vertex",
                 vertexDataStruct = types.vertexDataType.getGlslFields { it.name.asString() != POSITION_FIELD_NAME },
                 renderTargets = types.renderTargetsType.getGlslFields().keys.toList(),
-                constants = shader.getDelegatedProperties<ConstDelegate<*>, Pair<GlslType, String>> {
-                    if (constCounter++ == 1) {
-                        it.accept(ValueResolverVisitor(), null)
-                        error(it.dump())
-                    }
-                    it.name.asString() to (GlslType("a") to "asdf")
-                },
-                constantArrays = shader.getDelegatedProperties<ConstDelegate<*>, Triple<GlslType, Int, String>> {
-                    it.name.asString() to Triple(GlslType("a"), 0, "asdf")
-                },
-                uniforms = shader.getDelegatedProperties<UniformDelegate<*>, GlslType> {
-                    it.name.asString() to it.backingField?.type?.let {
-                        when (it) {
-                            is IrSimpleType -> it.arguments[0].typeOrFail.glslType
+                constants = constDeclarations,
+                uniforms = shader.getDelegatedProperties<UniformDelegate<*>, GlslType> { property ->
+                    property.name.asString() to property.backingField?.type?.let { type ->
+                        when (type) {
+                            is IrSimpleType -> type.arguments[0].typeOrFail.glslType
                                 ?: error("Shader uniforms may only be of GLSL primitive type") //TODO i just assume the delegate's type is always first
                             else -> error("Unexpected type: $this")
                         }
                     }!!
                 },
             )
-
-            error(data.toString())
 
             val programBodies = shader
                 .findDeclaration<IrFunction> { it.name.asString() == "program" }!!
@@ -139,23 +164,20 @@ private inline fun <reified T, R> IrClass.getDelegatedProperties(
     .filter { it.backingField?.type?.fullName == T::class.qualifiedName!! }
     .associate(mapper)
 
-private data class ValueResolverVisitorData(
-)
-
-private class ValueResolverVisitor : IrVisitor<String, ValueResolverVisitorData>() {
-    override fun visitElement(element: IrElement, data: ValueResolverVisitorData): String = error(element.render())
-
-    override fun visitProperty(declaration: IrProperty, data: ValueResolverVisitorData): String {
-        declaration.acceptChildren()
-    }
-}
-
 internal enum class GlslVersion { `330` }
 internal enum class GlslProfile { CORE, COMPATIBILITY }
 
 @JvmInline
 internal value class GlslType internal constructor(val type: String) {
     override fun toString(): String = type
+}
+
+internal data class GlslTypeInitialiser internal constructor(
+    val type: GlslType,
+    val array: Boolean,
+    val initialiser: IrExpression
+) {
+    override fun toString(): String = type.type
 }
 
 internal data class VisitorData(
@@ -173,8 +195,7 @@ internal data class VisitorData(
 
     val renderTargets: List<String>,
 
-    val constants: Map<String, Pair<GlslType, String>>,
-    val constantArrays: Map<String, Triple<GlslType, Int, String>>,
+    val constants: Map<String, GlslTypeInitialiser>,
 
     val uniforms: Map<String, GlslType>,
 

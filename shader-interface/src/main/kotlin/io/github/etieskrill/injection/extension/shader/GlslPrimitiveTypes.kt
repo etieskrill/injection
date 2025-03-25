@@ -82,7 +82,7 @@ val KClass<*>.glslName: String?
             check(typeParams.size == 1)
 
             val samplerType = primitiveSamplerTypes.firstNotNullOf {
-                if (it.key.qualifiedName == typeParams[0].typeName) it.value
+                if (it.key.qualifiedName == typeParams[0].typeName) it.value else null
             }
             "${samplerType}Shadow"
         }
