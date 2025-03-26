@@ -10,6 +10,11 @@ interface AbstractShader {
     fun addUniform(name: String, type: Class<*>)
     fun addUniformArray(name: String, size: Int, type: Class<*>)
 
+    fun start()
+    fun stop()
+
+    fun dispose()
+
 }
 
 enum class ShaderStage { NONE, VERTEX, GEOMETRY, FRAGMENT }

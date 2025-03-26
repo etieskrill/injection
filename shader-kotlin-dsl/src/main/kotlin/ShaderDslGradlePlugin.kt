@@ -1,6 +1,7 @@
 package io.github.etieskrill.injection.extension.shader.dsl
 
 import org.gradle.api.Project
+import org.gradle.api.plugins.JavaLibraryPlugin
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.provider.Provider
 import org.jetbrains.kotlin.gradle.plugin.*
@@ -30,8 +31,10 @@ internal class ShaderDslGradlePlugin : KotlinCompilerPluginSupportPlugin {
     }
 
     override fun apply(target: Project): Unit = target.run {
+        val hasLibraryPlugin = target.plugins.findPlugin(JavaLibraryPlugin::class.java) != null
+
         dependencies.apply {
-            add("implementation", "$GROUP_ID:$ARTIFACT_ID")
+            add(if (hasLibraryPlugin) "api" else "implementation", "$GROUP_ID:$ARTIFACT_ID")
         }
 
         extensions.configure<JavaPluginExtension>("java") { javaExtension ->
