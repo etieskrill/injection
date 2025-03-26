@@ -39,12 +39,12 @@ class HDRShader : ShaderBuilder<Any, HDRShader.Vertex, HDRShader.RenderTargets>(
                 mapped = vec3(1) - exp(-hdr * this@HDRShader.exposure)
             }
 
-//            val mapped2 = if (this@HDRShader.reinhard) {
-//                hdr / (hdr + vec3(1))
-//            } else {
-//                vec3(1) - exp(-hdr * this@HDRShader.exposure)
-//            }
-//
+            val mapped2 = if (this@HDRShader.reinhard) {
+                hdr / (hdr + vec3(1))
+            } else {
+                vec3(1) - exp(-hdr * this@HDRShader.exposure)
+            }
+
 //            val mapped3 = when (this@HDRShader.reinhard) {
 //                true -> hdr / (hdr + vec3(1))
 //                false -> vec3(1) - exp(-hdr * this@HDRShader.exposure)
