@@ -62,15 +62,34 @@ class ConstDelegate<T : Any> : ReadOnlyProperty<ShaderBuilder<*, *, *>, T> {
 }
 
 @ShaderDslMarker
+@Suppress("UnusedReceiverParameter", "UNUSED_PARAMETER")
 open class GlslReceiver {
     fun vec2(x: Number, y: Number): vec2 = empty()
 
+    fun vec3(v: Number): vec3 = empty()
+
     fun vec4(x: Number): vec4 = empty()
     fun vec4(x: Number, y: Number, z: Number, w: Number): vec4 = empty()
-    fun vec4(vec: vec3, w: Number): vec4 = empty()
-    fun vec4(vec: vec2, z: Number, w: Number): vec4 = empty()
+    fun vec4(v: vec3, w: Number): vec4 = empty()
+    fun vec4(v: vec2, z: Number, w: Number): vec4 = empty()
+
+    val vec4.rgb: vec3 get() = empty()
+
+    operator fun vec3.plus(v: vec3): vec3 =
+        empty() //do NOT use the assignment operators (e.g. plusAssign) - great, so += MAY be automatically converted to + and =
+
+    operator fun vec3.minus(v: vec3): vec3 = empty()
+    operator fun vec3.unaryMinus(): vec3 = empty()
+    operator fun vec3.times(v: vec3): vec3 = empty()
+    operator fun vec3.times(s: float): vec3 = empty()
+    operator fun vec3.div(v: vec3): vec3 = empty()
 
     fun max(v1: vec2, v2: vec2): vec2 = empty()
+
+    fun pow(v1: vec3, v2: vec3): vec3 = empty()
+    fun exp(v: vec3): vec3 = empty()
+
+    fun texture(sampler: sampler2D, coordinates: vec2): vec4 = empty()
 }
 
 @ShaderDslMarker
@@ -87,7 +106,14 @@ internal val properties = mapOf(
     )
 )
 
-internal val functionNames = listOf("vec2", "vec4", "max")
+internal val operatorNames = mapOf(
+    "plus" to "+",
+    "minus" to "-",
+    "times" to "*",
+    "div" to "/",
+    "rem" to "%"
+)
+internal val functionNames = GlslReceiver::class.members.map { it.name }
 
 interface FrameBuffer
 class RenderTarget(

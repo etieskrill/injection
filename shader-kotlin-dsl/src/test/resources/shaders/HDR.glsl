@@ -19,8 +19,7 @@ in vec2 texCoords;
 
 out Vertex vertex;
 
-void main()
-{
+void main() {
     gl_Position = vec4(vertices[gl_VertexID], 0, 1);
     vertex.texCoords = max(vertices[gl_VertexID], vec2(0, 0));
 }
@@ -31,8 +30,7 @@ in Vertex vertex;
 
 out vec4 fragColour;
 
-void main()
-{
+void main() {
     vec3 hdr = texture(hdrBuffer, vertex.texCoords).rgb;
     vec3 bloom = texture(bloomBuffer, vertex.texCoords).rgb;
     hdr += bloom;
