@@ -33,6 +33,8 @@ out vec4 fragColour;
 void main() {
     vec3 hdr = texture(hdrBuffer, vertex.texCoords).rgb;
     vec3 bloom = texture(bloomBuffer, vertex.texCoords).rgb;
+    hdr = bloom;
+    hdr = hdr + bloom;
     hdr += bloom;
 
     vec3 mapped;
@@ -40,6 +42,20 @@ void main() {
         mapped = hdr / (hdr + vec3(1.0));
     } else {
         mapped = vec3(1.0) - exp(-hdr * exposure);
+    }
+
+    vec3 mapped2;
+    if (reinhard) {
+        mapped2 = hdr / (hdr + vec3(1.0));
+    } else {
+        mapped2 = vec3(1.0) - exp(-hdr * exposure);
+    }
+
+    vec3 mapped3;
+    if (reinhard) {
+        mapped3 = hdr / (hdr + vec3(1.0));
+    } else {
+        mapped3 = vec3(1.0) - exp(-hdr * exposure);
     }
 
     fragColour = vec4(pow(mapped, vec3(1.0 / 2.2)), 1.0);

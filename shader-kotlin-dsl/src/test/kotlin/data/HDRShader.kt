@@ -28,6 +28,8 @@ class HDRShader : ShaderBuilder<Any, HDRShader.Vertex, HDRShader.RenderTargets>(
         fragment {
             var hdr = texture(this@HDRShader.hdrBuffer, it.texCoords).rgb
             val bloom = texture(this@HDRShader.bloomBuffer, it.texCoords).rgb
+            hdr = bloom
+            hdr = hdr + bloom
             hdr += bloom
 
             val mapped: vec3
@@ -36,6 +38,17 @@ class HDRShader : ShaderBuilder<Any, HDRShader.Vertex, HDRShader.RenderTargets>(
             } else {
                 mapped = vec3(1) - exp(-hdr * this@HDRShader.exposure)
             }
+
+//            val mapped2 = if (this@HDRShader.reinhard) {
+//                hdr / (hdr + vec3(1))
+//            } else {
+//                vec3(1) - exp(-hdr * this@HDRShader.exposure)
+//            }
+//
+//            val mapped3 = when (this@HDRShader.reinhard) {
+//                true -> hdr / (hdr + vec3(1))
+//                false -> vec3(1) - exp(-hdr * this@HDRShader.exposure)
+//            }
 
             RenderTargets(
                 fragColour = vec4(pow(mapped, vec3(1 / 2.2)), 1).rt

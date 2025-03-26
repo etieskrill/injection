@@ -147,9 +147,12 @@ private fun generateMain(statements: IrElement, data: VisitorData) = buildIndent
 }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-private open class GlslTranspiler : IrVisitor<String, VisitorData>() {
+private open class GlslTranspiler(var debug: Boolean = false) : IrVisitor<String, VisitorData>() {
     override fun visitElement(element: IrElement, data: VisitorData): String =
         TODO("Element of type ${element::class.simpleName} cannot be processed yet:\n${element.dump()}")
+
+    override fun visitBlock(block: IrBlock, data: VisitorData): String =
+        block.statements.joinToString(";\n") { it.accept(this, data) }
 
     override fun visitBlockBody(body: IrBlockBody, data: VisitorData): String =
         body.statements.joinToString(";\n") { it.accept(this, data) }
@@ -226,11 +229,28 @@ private open class GlslTranspiler : IrVisitor<String, VisitorData>() {
         }
     }
 
-//    override fun visitWhen(expression: IrWhen, data: VisitorData): String {
-//        if (expression.origin!! != IrStatementOrigin.IF) TODO()
-//        error(expression.dump())
-//        expression.branch
-//    }
+    override fun visitWhen(expression: IrWhen, data: VisitorData): String {
+        if (expression.origin!! != IrStatementOrigin.IF) TODO()
+
+        val numBranches = expression.branches.size
+        val statement = expression.branches.mapIndexed { i, it ->
+            val condition = it.condition.accept(this, data)
+            val conditionStatement = when {
+                i == numBranches - 1 && condition == "true" -> "else"
+                i != 0 -> "else if ($condition)"
+                else -> "if ($condition)"
+            }
+
+            val result = it.result.accept(this, data)
+
+            """
+                $conditionStatement {
+                    $result
+                } """.trimIndent()
+        }.joinToString("")
+
+        return statement
+    }
 
     override fun visitReturn(expression: IrReturn, data: VisitorData): String =
         expression.value.accept(GlslReturnTranspiler(this), data)
@@ -241,8 +261,7 @@ private open class GlslTranspiler : IrVisitor<String, VisitorData>() {
     override fun visitGetValue(expression: IrGetValue, data: VisitorData): String =
         expression.symbol.owner.name.asString()
 
-    private val assignments = mapOf(
-        EQ to "=",
+    private val assignmentOperators = mapOf(
         PLUSEQ to "+=",
         MINUSEQ to "-=",
         MULTEQ to "*=",
@@ -252,23 +271,38 @@ private open class GlslTranspiler : IrVisitor<String, VisitorData>() {
 
     override fun visitSetValue(expression: IrSetValue, data: VisitorData): String {
         return when (expression.origin) {
-            in assignments -> {
+            EQ -> {
                 val leftSide = expression.symbol.owner.name.asString()
-                val rightSide = (expression.value as IrCall) //TODO wrapper funcs, especially for getting params
+                val rightSide = expression.value.accept(this, data)
+
+                "$leftSide = $rightSide"
+            }
+
+            in assignmentOperators -> {
+                val leftSide = expression.symbol.owner.name.asString()
+                val rightSide =
+                    (expression.value as IrCall) //TODO wrapper funcs, especially for getting params //FIXME if assignment op is passed, this will be IrGetValue instead of IrCall
                     .getArgumentsWithIr()
                     .first { it.first.name.asString() != "<this>" } //TODO receiver helper funcs
                     .second.accept(this, data)
-                "$leftSide ${assignments[expression.origin]} $rightSide"
+                "$leftSide ${assignmentOperators[expression.origin]!!} $rightSide"
             }
 
             else -> TODO()
         }
     }
 
-    private fun handleOperator(functionName: String, expression: IrCall, data: VisitorData): String =
-        "${(expression.dispatchReceiver ?: expression.extensionReceiver)!!.accept(this, data)} ${
+    private fun handleOperator(functionName: String, expression: IrCall, data: VisitorData): String {
+        check(
+            expression.origin!!.debugName.lowercase() !in operatorNames
+                    || expression.extensionReceiver != null
+                    || expression.dispatchReceiver != null
+        )
+        { "Operator function did not have a receiver: ${functionName}:\n${expression.render()}" }
+        return "(${(expression.extensionReceiver ?: expression.dispatchReceiver)!!.accept(this, data)} ${
             operatorNames[functionName]!!
-        } ${expression.getValueArgument(0)!!.accept(this, data)}"
+        } ${expression.getValueArgument(0)!!.accept(this, data)})"
+    }
 
     private fun handleFunction(functionName: String, expression: IrCall, data: VisitorData): String = expression
         .valueArguments
