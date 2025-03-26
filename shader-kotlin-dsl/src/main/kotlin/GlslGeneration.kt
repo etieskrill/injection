@@ -6,6 +6,12 @@ import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
 import org.jetbrains.kotlin.ir.declarations.IrVariable
 import org.jetbrains.kotlin.ir.expressions.*
+import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin.Companion.DIVEQ
+import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin.Companion.EQ
+import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin.Companion.MINUSEQ
+import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin.Companion.MULTEQ
+import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin.Companion.PERCEQ
+import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin.Companion.PLUSEQ
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.util.dump
 import org.jetbrains.kotlin.ir.util.getArgumentsWithIr
@@ -27,7 +33,7 @@ internal fun generateGlsl(data: VisitorData): String = buildString {
     data.constants.forEach { (name, constExpression) ->
         val resolver = GlslValueTranspiler()
         val value = constExpression.initialiser.accept(resolver, data)
-        check(resolver.array == constExpression.array || resolver.array == null && !constExpression.array)
+        check(resolver.array == constExpression.array)
 
         val statement = when (constExpression.array) {
             false -> generateStatement(CONST, constExpression.type, name, value)
@@ -141,15 +147,19 @@ private fun generateMain(statements: IrElement, data: VisitorData) = buildIndent
 }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-private class GlslTranspiler : IrVisitor<String, VisitorData>() {
+private open class GlslTranspiler : IrVisitor<String, VisitorData>() {
     override fun visitElement(element: IrElement, data: VisitorData): String =
         TODO("Element of type ${element::class.simpleName} cannot be processed yet:\n${element.dump()}")
 
     override fun visitBlockBody(body: IrBlockBody, data: VisitorData): String =
         body.statements.joinToString(";\n") { it.accept(this, data) }
 
-    override fun visitVariable(declaration: IrVariable, data: VisitorData): String =
-        "${declaration.type.glslType} ${declaration.name} = ${declaration.initializer!!.accept(this, data)}"
+    override fun visitVariable(declaration: IrVariable, data: VisitorData): String {
+        val initialiser = declaration.initializer
+            ?.let { " = ${it.accept(this, data)}" }
+            .orEmpty()
+        return "${declaration.type.glslType} ${declaration.name}${initialiser}"
+    }
 
     override fun visitCall(expression: IrCall, data: VisitorData): String {
         if (data.stage == ShaderStage.FRAGMENT && expression.type.fullName == RenderTarget::class.qualifiedName!!) {
@@ -166,12 +176,11 @@ private class GlslTranspiler : IrVisitor<String, VisitorData>() {
         val functionName = expression.symbol.owner.name.asString()
 
         return when {
-            expression.origin == IrStatementOrigin.GET_PROPERTY -> {
+            expression.origin == IrStatementOrigin.GET_PROPERTY -> { //FIXME && owner is direct value (not call etc.)
                 var propertyOwner: String? = null
                 expression.acceptChildren(object : IrVisitor<Unit, VisitorData>() {
-                    override fun visitElement(element: IrElement, data: VisitorData) = error("uh oh")
-                    override fun visitGetValue(expression: IrGetValue, data: VisitorData) {
-                        propertyOwner = expression.symbol.owner.name.asString()
+                    override fun visitElement(element: IrElement, data: VisitorData) {
+                        propertyOwner = element.accept(this@GlslTranspiler, data)
                     }
                 }, data)
 
@@ -189,6 +198,7 @@ private class GlslTranspiler : IrVisitor<String, VisitorData>() {
                             POSITION_FIELD_NAME -> GL_POSITION_NAME
                             else -> "${data.vertexDataStructName}.$propertyName"
                         }
+
                         else -> TODO("Getter for implicit lambda parameter call not implemented for stage ${data.stage}")
                     }
 
@@ -199,17 +209,28 @@ private class GlslTranspiler : IrVisitor<String, VisitorData>() {
             expression.origin == IrStatementOrigin.GET_ARRAY_ELEMENT -> {
                 val arguments = expression.getArgumentsWithIr().toMap().mapKeys { it.key.name.asString() }
 
-                var arrayName: String = arguments["<this>"]!!.accept(this, data)
-                var arrayIndex: String = arguments["index"]!!.accept(this, data)
+                val arrayName: String = arguments["<this>"]!!.accept(this, data)
+                val arrayIndex: String = arguments["index"]!!.accept(this, data)
 
                 return "$arrayName[$arrayIndex]"
             }
 
-            functionName == "times" -> handleMul(expression, data)
+            functionName in listOf("unaryPlus", "unaryMinus") -> {
+                val p = eval(expression, data)!!
+                "${if (functionName == "unaryPlus") "+" else "-"}$p"
+            }
+
+            functionName in operatorNames -> handleOperator(functionName, expression, data)
             functionName in functionNames -> handleFunction(functionName, expression, data)
             else -> error("Unexpected function ${expression.render()}")
         }
     }
+
+//    override fun visitWhen(expression: IrWhen, data: VisitorData): String {
+//        if (expression.origin!! != IrStatementOrigin.IF) TODO()
+//        error(expression.dump())
+//        expression.branch
+//    }
 
     override fun visitReturn(expression: IrReturn, data: VisitorData): String =
         expression.value.accept(GlslReturnTranspiler(this), data)
@@ -220,16 +241,40 @@ private class GlslTranspiler : IrVisitor<String, VisitorData>() {
     override fun visitGetValue(expression: IrGetValue, data: VisitorData): String =
         expression.symbol.owner.name.asString()
 
+    private val assignments = mapOf(
+        EQ to "=",
+        PLUSEQ to "+=",
+        MINUSEQ to "-=",
+        MULTEQ to "*=",
+        DIVEQ to "/=",
+        PERCEQ to "%="
+    )
+
+    override fun visitSetValue(expression: IrSetValue, data: VisitorData): String {
+        return when (expression.origin) {
+            in assignments -> {
+                val leftSide = expression.symbol.owner.name.asString()
+                val rightSide = (expression.value as IrCall) //TODO wrapper funcs, especially for getting params
+                    .getArgumentsWithIr()
+                    .first { it.first.name.asString() != "<this>" } //TODO receiver helper funcs
+                    .second.accept(this, data)
+                "$leftSide ${assignments[expression.origin]} $rightSide"
+            }
+
+            else -> TODO()
+        }
+    }
+
+    private fun handleOperator(functionName: String, expression: IrCall, data: VisitorData): String =
+        "${(expression.dispatchReceiver ?: expression.extensionReceiver)!!.accept(this, data)} ${
+            operatorNames[functionName]!!
+        } ${expression.getValueArgument(0)!!.accept(this, data)}"
+
     private fun handleFunction(functionName: String, expression: IrCall, data: VisitorData): String = expression
         .valueArguments
         .joinToString(", ", prefix = "$functionName(", postfix = ")") {
             it!!.accept(this, data)
         }
-
-    private fun handleMul(expression: IrCall, data: VisitorData): String =
-        "${expression.extensionReceiver!!.accept(this, data)} * ${
-            expression.getValueArgument(0)!!.accept(this, data)
-        }"
 
 }
 
@@ -259,54 +304,14 @@ private class GlslReturnTranspiler(val root: GlslTranspiler) : IrVisitor<String,
     }
 }
 
-//FIXME this is just a kinda copy of the above transpiler - not very pretty
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 private class GlslValueTranspiler(
-    var array: Boolean? = null,
+    var array: Boolean = false,
     var arraySize: Int? = null,
-) : IrVisitor<String, VisitorData>() {
-    override fun visitElement(element: IrElement, data: VisitorData): String =
-        TODO("Element of type ${element::class.simpleName} cannot be processed yet:\n${element.dump()}")
-
-    override fun visitVariable(declaration: IrVariable, data: VisitorData): String =
-        "${declaration.type.glslType} ${declaration.name} = ${declaration.initializer!!.accept(this, data)}"
-
+) : GlslTranspiler() {
     override fun visitCall(expression: IrCall, data: VisitorData): String {
         val functionName = expression.symbol.owner.name.asString()
-
         return when {
-            expression.origin == IrStatementOrigin.GET_PROPERTY -> {
-                var propertyOwner: String? = null
-                expression.acceptChildren(object : IrVisitor<Unit, VisitorData>() {
-                    override fun visitElement(element: IrElement, data: VisitorData) = error("uh oh")
-                    override fun visitGetValue(expression: IrGetValue, data: VisitorData) {
-                        propertyOwner = expression.symbol.owner.name.asString()
-                    }
-                }, data)
-
-                val propertyName = functionName.removePrefix("<get-").removeSuffix(">")
-
-                if (propertyOwner!!.startsWith("\$this$")) { //accessing a stage receiver property
-                    return properties[data.stage]!![propertyName]!!
-                }
-
-                when (propertyOwner) {
-                    "<this>" -> propertyName //direct shader class members, e.g. uniforms
-                    else -> "$propertyOwner.$propertyName"
-                }
-            }
-
-            expression.origin == IrStatementOrigin.GET_ARRAY_ELEMENT -> {
-                val arguments = expression.getArgumentsWithIr().toMap().mapKeys { it.key.name.asString() }
-
-                val arrayName: String = arguments["<this>"]!!.accept(this, data)
-                val arrayIndex: String = arguments["index"]!!.accept(this, data)
-
-                return "$arrayName[$arrayIndex]"
-            }
-
-            functionName == "times" -> handleMul(expression, data)
-            functionName in functionNames -> handleFunction(functionName, expression, data)
             functionName == "arrayOf" -> {
                 val elements = expression.getArgumentsWithIr()
                     .first()
@@ -322,24 +327,17 @@ private class GlslValueTranspiler(
                 "$type[]($values)"
             }
 
-            else -> error("Unexpected function ${expression.render()}")
+            else -> super.visitCall(expression, data)
         }
     }
+}
 
-    override fun visitConst(expression: IrConst, data: VisitorData): String =
-        expression.value.toString()
-
-    override fun visitGetValue(expression: IrGetValue, data: VisitorData): String =
-        expression.symbol.owner.name.asString()
-
-    private fun handleFunction(functionName: String, expression: IrCall, data: VisitorData): String = expression
-        .valueArguments
-        .joinToString(", ", prefix = "$functionName(", postfix = ")") {
-            it!!.accept(this, data)
+private fun GlslTranspiler.eval(expression: IrExpression, data: VisitorData): String? {
+    var value: String? = null
+    expression.acceptChildren(object : IrVisitor<Unit, VisitorData>() {
+        override fun visitElement(element: IrElement, data: VisitorData) {
+            value = element.accept(this@eval, data)
         }
-
-    private fun handleMul(expression: IrCall, data: VisitorData): String =
-        "${expression.extensionReceiver!!.accept(this, data)} * ${
-            expression.getValueArgument(0)!!.accept(this, data)
-        }"
+    }, data)
+    return value
 }
