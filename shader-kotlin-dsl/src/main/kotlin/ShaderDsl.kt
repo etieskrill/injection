@@ -1,9 +1,11 @@
 package io.github.etieskrill.injection.extension.shader.dsl
 
 import io.github.etieskrill.injection.extension.shader.*
+import org.joml.Vector2f
 import org.joml.Vector4f
 import kotlin.properties.ReadOnlyProperty
 import kotlin.properties.ReadWriteProperty
+import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
 
 interface ShaderVertexData {
@@ -16,7 +18,7 @@ interface ShaderVertexData {
  * @param RT the render targets
  */
 @ShaderDslMarker
-@Suppress("UNUSED_PARAMETER")
+@Suppress("unused")
 abstract class ShaderBuilder<VA : Any, V : ShaderVertexData, RT : Any>(shader: AbstractShader) :
     AbstractShader by shader {
 
@@ -30,44 +32,44 @@ abstract class ShaderBuilder<VA : Any, V : ShaderVertexData, RT : Any>(shader: A
 
     protected abstract fun program()
 
-    protected fun vec2(x: Number, y: Number): vec2 = empty()
+    protected fun vec2(x: Number, y: Number): vec2 = Vector2f()
 
 }
 
 @ShaderDslMarker
-@Suppress("UnusedReceiverParameter", "UNUSED_PARAMETER")
+@Suppress("UnusedReceiverParameter", "unused")
 open class GlslReceiver {
-    fun vec2(x: Number, y: Number): vec2 = empty()
+    fun vec2(x: Number, y: Number): vec2 = error()
 
-    fun vec3(v: Number): vec3 = empty()
+    fun vec3(v: Number): vec3 = error()
 
-    fun vec4(x: Number): vec4 = empty()
-    fun vec4(x: Number, y: Number, z: Number, w: Number): vec4 = empty()
-    fun vec4(v: vec3, w: Number): vec4 = empty()
-    fun vec4(v: vec2, z: Number, w: Number): vec4 = empty()
+    fun vec4(x: Number): vec4 = error()
+    fun vec4(x: Number, y: Number, z: Number, w: Number): vec4 = error()
+    fun vec4(v: vec3, w: Number): vec4 = error()
+    fun vec4(v: vec2, z: Number, w: Number): vec4 = error()
 
-    val vec4.rgb: vec3 get() = empty()
+    val vec4.rgb: vec3 get() = error()
 
     operator fun vec3.plus(v: vec3): vec3 =
-        empty() //do NOT use the assignment operators (e.g. plusAssign) - great, so += MAY be automatically converted to + and =
+        error() //do NOT use the assignment operators (e.g. plusAssign) - great, so += MAY be automatically converted to + and =
 
-    operator fun vec3.minus(v: vec3): vec3 = empty()
-    operator fun vec3.unaryMinus(): vec3 = empty()
-    operator fun vec3.times(v: vec3): vec3 = empty()
-    operator fun vec3.times(s: float): vec3 = empty()
-    operator fun vec3.div(v: vec3): vec3 = empty()
+    operator fun vec3.minus(v: vec3): vec3 = error()
+    operator fun vec3.unaryMinus(): vec3 = error()
+    operator fun vec3.times(v: vec3): vec3 = error()
+    operator fun vec3.times(s: float): vec3 = error()
+    operator fun vec3.div(v: vec3): vec3 = error()
 
-    fun max(v1: vec2, v2: vec2): vec2 = empty()
+    fun max(v1: vec2, v2: vec2): vec2 = error()
 
-    fun pow(v1: vec3, v2: vec3): vec3 = empty()
-    fun exp(v: vec3): vec3 = empty()
+    fun pow(v1: vec3, v2: vec3): vec3 = error()
+    fun exp(v: vec3): vec3 = error()
 
-    fun texture(sampler: sampler2D, coordinates: vec2): vec4 = empty()
+    fun texture(sampler: sampler2D, coordinates: vec2): vec4 = error()
 }
 
 @ShaderDslMarker
 class VertexReceiver : GlslReceiver() {
-    val vertexID: int = empty()
+    val vertexID: int = error()
 }
 
 @ShaderDslMarker
@@ -76,7 +78,7 @@ class FragmentReceiver : GlslReceiver()
 val vec4.rt: RenderTarget //FIXME kinda ugly, maybe just turn em into delegates like with uniforms
     get() = RenderTarget(this)
 
-private fun empty(): Nothing = error("don't actually call these dingus")
+private fun error(): Nothing = error("don't actually call these dingus")
 
 //TODO maybe anonymous builders
 //fun <VA: Any, V : ShaderVertexData, RT : Any> shaderBuilder(
@@ -87,11 +89,22 @@ private fun empty(): Nothing = error("don't actually call these dingus")
 
 class UniformDelegate<T : Any> :
     ReadWriteProperty<ShaderBuilder<*, *, *>, T> { //FIXME would have to be protected and internal... has this really never been a usecase?
+    var initialised = false
+
     override fun getValue(thisRef: ShaderBuilder<*, *, *>, property: KProperty<*>): T =
         TODO("AbstractShader is gonna have to grow some getters")
 
-    override fun setValue(thisRef: ShaderBuilder<*, *, *>, property: KProperty<*>, value: T) =
-        thisRef.setUniform(property.name, value)
+    override fun setValue(thisRef: ShaderBuilder<*, *, *>, property: KProperty<*>, value: T) {
+        if (!initialised) { //TODO for getter also i guess?
+            thisRef.addUniform(property.name, (property.returnType.classifier as KClass<*>).javaObjectType)
+            initialised = true
+        }
+        when (value) { //TODO move to specific array delegate class and overload builder function
+            is Array<*> -> thisRef.setUniformArray(property.name, value as Array<Any>)
+            is Texture -> thisRef.setTexture(property.name, value)
+            else -> thisRef.setUniform(property.name, value)
+        }
+    }
 }
 
 class ConstDelegate<T : Any> : ReadOnlyProperty<ShaderBuilder<*, *, *>, T> {

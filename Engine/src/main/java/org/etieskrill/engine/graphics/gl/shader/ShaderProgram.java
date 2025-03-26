@@ -1,8 +1,6 @@
 package org.etieskrill.engine.graphics.gl.shader;
 
-import io.github.etieskrill.injection.extension.shader.AbstractShader;
-import io.github.etieskrill.injection.extension.shader.ShaderStage;
-import io.github.etieskrill.injection.extension.shader.Texture;
+import io.github.etieskrill.injection.extension.shader.*;
 import io.github.etieskrill.injection.extension.shader.reflection.ConstantsKt;
 import kotlin.text.MatchResult;
 import kotlin.text.Regex;
@@ -191,7 +189,8 @@ public abstract class ShaderProgram implements Disposable,
     /**
      * This method exists only to provide an overridable config entrypoint to anonymous classes.
      */
-    protected void setUniformDefaults() {}
+    protected void setUniformDefaults() {
+    }
 
     private void createShader(Set<ShaderFile> files, List<UniformEntry> uniforms) {
         if (CLEAR_ERROR_BEFORE_SHADER_CREATION) clearError();
@@ -272,8 +271,8 @@ public abstract class ShaderProgram implements Disposable,
     //TODO betterify by resolving pragmas earlier
     private boolean checkForGeometryShader(String source) {
         return source.contains("#ifdef GEOMETRY_SHADER")
-                || source.contains("#pragma stage geometry")
-                || source.contains("#pragma stage geom");
+               || source.contains("#pragma stage geometry")
+               || source.contains("#pragma stage geom");
     }
 
     private void checkLinkStatus() {
@@ -434,6 +433,7 @@ public abstract class ShaderProgram implements Disposable,
         glDeleteShader(fragID);
     }
 
+    @Override
     public void start() {
         currentTextureUnit = 0;
         boundTextures.clear();
@@ -444,6 +444,7 @@ public abstract class ShaderProgram implements Disposable,
         glUseProgram(programID);
     }
 
+    @Override
     public void stop() {
         glUseProgram(0);
     }
@@ -541,7 +542,7 @@ public abstract class ShaderProgram implements Disposable,
             if (uniform instanceof ArrayUniform arrayUniform) {
                 if (((Object[]) value).length > arrayUniform.getSize()) {
                     throw new ShaderUniformException("Uniform array value is larger (" + ((Object[]) value).length
-                            + ") than uniform array size (" + arrayUniform.getSize() + ")");
+                                                     + ") than uniform array size (" + arrayUniform.getSize() + ")");
                 }
             } else {
                 throw new ShaderUniformException("Attempted to set non-array value for array uniform: " + value.getClass());
@@ -555,7 +556,7 @@ public abstract class ShaderProgram implements Disposable,
                         mappable.map(UniformMapper.get(this, uniform.getName() + "[" + i + "]"));
                     } else if (values[i] instanceof Object[]) {
                         throw new IllegalArgumentException("Struct uniform array element was itself an array;" +
-                                " likely because of invalid varargs cast");
+                                                           " likely because of invalid varargs cast");
                     } else {
                         throw new IllegalArgumentException("Struct uniform must implement UniformMappable");
                     }
@@ -569,9 +570,9 @@ public abstract class ShaderProgram implements Disposable,
         }
 
         if (array && !uniform.getType().get().equals(((Object[]) value)[0].getClass())
-                || !array && !uniform.getType().get().equals(value.getClass())) {
+            || !array && !uniform.getType().get().equals(value.getClass())) {
             throw new ShaderUniformException("Uniform " + uniform.getName() + " is present but expected type " +
-                    uniform.getType().get().getSimpleName() + " does not match value type " + value.getClass().getSimpleName());
+                                             uniform.getType().get().getSimpleName() + " does not match value type " + value.getClass().getSimpleName());
         }
 
         if (!array) setUniformValue(uniform.getType(), uniform.getLocation(), value);
@@ -787,12 +788,24 @@ public abstract class ShaderProgram implements Disposable,
                 return null;
             }
 
+            private static final Map<Class<?>, Type> samplerTypes = Map.of(
+                    Texture2D.class, SAMPLER_2D,
+                    Texture2DArray.class, SAMPLER_2D_ARRAY,
+                    TextureCubeMap.class, SAMPLER_CUBE_MAP,
+                    TextureCubeMapArray.class, SAMPLER_CUBE_MAP_ARRAY
+                    //TODO shadow textures - oh god
+            );
+
             public static @Nullable Type getFromType(@Nullable Class<?> type) {
                 if (type == null) return null;
                 if (STRUCT.get().isAssignableFrom(type)) return STRUCT;
                 for (Type value : values) {
                     if (value.get().equals(type)) return value;
                 }
+
+                var samplerType = samplerTypes.get(type); //FIXME remove this disgusto shit
+                if (samplerType != null) return samplerType;
+
                 return null;
             }
 
@@ -800,7 +813,7 @@ public abstract class ShaderProgram implements Disposable,
                 for (Type type : values) {
                     if (type.name().replace("_", "").equals(name)) return type;
                     else if (type.glslName != null
-                            && type.glslName.toUpperCase().replace("_", "").equals(name)) return type;
+                             && type.glslName.toUpperCase().replace("_", "").equals(name)) return type;
                 }
                 return null;
             }
@@ -865,7 +878,8 @@ public abstract class ShaderProgram implements Disposable,
 
     @Override
     public void addUniform(@NotNull String name, @NotNull Class<?> type) {
-        addUniform(name, Uniform.Type.getFromType(type));
+        addUniform(name, Objects.requireNonNull(Uniform.Type.getFromType(type),
+                "Could not recognise as GLSL type: " + type.getName()));
     }
 
     @Override

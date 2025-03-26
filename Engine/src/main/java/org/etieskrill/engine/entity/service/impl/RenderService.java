@@ -242,7 +242,7 @@ public class RenderService implements Service, Disposable {
         params.textureBindings.forEach((name, texture) -> renderer.bindNextFreeTexture(shader, name, texture));
     }
 
-    public ShaderProgram getHdrShader() {
+    public HDRShader getHdrShader() {
         return gaussBlurPostBuffers.getHdrShader();
     }
 
@@ -283,7 +283,7 @@ class GaussBlurPostBuffers implements Disposable {
     private final @Getter FrameBuffer frameBuffer;
     private final Texture2D hdrBuffer;
     private final Texture2D bloomBuffer;
-    private final @Getter ShaderProgram hdrShader;
+    private final @Getter HDRShader hdrShader;
 
     private final FrameBuffer blurFrameBuffer1;
     private final Texture2D blurTextureBuffer1;
@@ -303,16 +303,7 @@ class GaussBlurPostBuffers implements Disposable {
                 .attach(depthStencilBuffer, BufferAttachmentType.DEPTH_STENCIL)
                 .build();
 
-        this.hdrShader = new ShaderProgram(List.of("HDR.glsl"), false) {
-            @Override
-            protected void setUniformDefaults() {
-                //cannot generate accessors for anonymous classes
-                addUniform("position", Uniform.Type.VEC4, new Vector4f(-1, -1, 1, 1));
-
-                addUniform("exposure", Uniform.Type.FLOAT, 1f);
-                addUniform("reinhard", Uniform.Type.BOOLEAN, true);
-            }
-        };
+        this.hdrShader = new HDRShader();
 
         this.blurTextureBuffer1 = Textures.genBlank(windowSize, RGBA_F16);
         this.blurFrameBuffer1 = new FrameBuffer.Builder(windowSize)
@@ -359,10 +350,9 @@ class GaussBlurPostBuffers implements Disposable {
 
         FrameBuffer.bindScreenBuffer();
 
-        setTexture(hdrShader, "hdrBuffer", 1, hdrBuffer);
-        if (blur)
-            setTexture(hdrShader, "bloomBuffer", 2, blurBuffer1IsTarget ? blurTextureBuffer1 : blurTextureBuffer2);
-        else setTexture(hdrShader, "bloomBuffer", 2, bloomBuffer);
+        hdrShader.setHdrBuffer(hdrBuffer);
+        if (blur) hdrShader.setBloomBuffer(blurBuffer1IsTarget ? blurTextureBuffer1 : blurTextureBuffer2);
+        else hdrShader.setBloomBuffer(bloomBuffer);
         hdrShader.start();
         glDepthMask(false);
         glDisable(GL_DEPTH_TEST);

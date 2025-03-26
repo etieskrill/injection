@@ -49,12 +49,5 @@ void main() {
         mapped2 = vec3(1.0) - exp(-hdr * exposure);
     }
 
-    vec3 mapped3;
-    if (reinhard) {
-        mapped3 = hdr / (hdr + vec3(1.0));
-    } else {
-        mapped3 = vec3(1.0) - exp(-hdr * exposure);
-    }
-
     fragColour = vec4(pow(mapped, vec3(1.0 / 2.2)), 1.0);
 }

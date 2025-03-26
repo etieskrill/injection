@@ -139,15 +139,15 @@ public class EntityApplication extends GameApplication {
                 }),
                 bind(Keys.E).to(() -> {
                     hdrReinhardMapping = !hdrReinhardMapping;
-                    renderService.getHdrShader().setUniform("reinhard", hdrReinhardMapping);
+                    renderService.getHdrShader().setReinhard(hdrReinhardMapping);
                 }),
                 bind(Keys.T).to(() -> {
                     hdrExposure += .25f;
-                    renderService.getHdrShader().setUniform("exposure", hdrExposure);
+                    renderService.getHdrShader().setExposure(hdrExposure);
                 }),
                 bind(Keys.G).to(() -> {
                     hdrExposure -= .25f;
-                    renderService.getHdrShader().setUniform("exposure", hdrExposure);
+                    renderService.getHdrShader().setExposure(hdrExposure);
                 }),
                 bind(Keys.F1).to(() -> {
                     renderService.getBoundingBoxRenderService().toggleRenderBoundingBoxes();
