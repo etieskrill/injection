@@ -24,26 +24,6 @@ import org.jetbrains.kotlin.ir.util.properties
 import org.jetbrains.kotlin.ir.visitors.IrVisitor
 import org.jetbrains.kotlin.utils.getOrPutNullable
 import java.io.File
-import kotlin.collections.List
-import kotlin.collections.Map
-import kotlin.collections.MutableMap
-import kotlin.collections.associateWith
-import kotlin.collections.component1
-import kotlin.collections.component2
-import kotlin.collections.filterIsInstance
-import kotlin.collections.filterValues
-import kotlin.collections.find
-import kotlin.collections.first
-import kotlin.collections.firstNotNullOf
-import kotlin.collections.flatten
-import kotlin.collections.iterator
-import kotlin.collections.map
-import kotlin.collections.mapKeys
-import kotlin.collections.mapValues
-import kotlin.collections.mutableMapOf
-import kotlin.collections.set
-import kotlin.collections.toList
-import kotlin.collections.toMap
 import kotlin.reflect.KClass
 import kotlin.reflect.cast
 
@@ -126,14 +106,14 @@ internal class IrShaderGenerationExtension(
                 .let { it ?: error("Shader program must have a vertex stage") }
                 .findElement<IrBlockBody>()!!
 
-            data.stages[VERTEX] = vertexProgram
+            data.stageBodies[VERTEX] = vertexProgram
 
             val fragmentProgram = programBodies
                 .findElement<IrCall> { it.symbol.owner.name.asString() == "fragment" }
                 .let { it ?: error("Shader program must have a fragment stage") }
                 .findElement<IrBlockBody>()!!
 
-            data.stages[FRAGMENT] = fragmentProgram
+            data.stageBodies[FRAGMENT] = fragmentProgram
 
             val shaderDir = File(options.generatedResourceDir, "shaders")
             if (!shaderDir.exists()) shaderDir.mkdirs()
@@ -161,7 +141,7 @@ private inline fun <reified T, R> IrClass.getDelegatedProperties(
     noinline mapper: (IrProperty) -> Pair<String, R>
 ): Map<String, R> = properties
     .filter { it.isDelegated }
-    .filter { it.backingField?.type?.fullName == T::class.qualifiedName!! }
+    .filter { it.backingField?.type.equals<T>() }
     .associate(mapper)
 
 internal enum class GlslVersion { `330` }
@@ -181,9 +161,6 @@ internal data class GlslTypeInitialiser internal constructor(
 }
 
 internal data class VisitorData(
-    var depth: Int = 0,
-    var stage: ShaderStage = ShaderStage.NONE,
-
     val version: GlslVersion = GlslVersion.`330`,
     val profile: GlslProfile = GlslProfile.CORE,
 
@@ -199,7 +176,7 @@ internal data class VisitorData(
 
     val uniforms: Map<String, GlslType>,
 
-    val stages: MutableMap<ShaderStage, IrElement> = mutableMapOf(),
+    val stageBodies: MutableMap<ShaderStage, IrBlockBody> = mutableMapOf(),
 )
 
 private inline fun <reified T : IrElement> IrElement.findElement(

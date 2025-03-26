@@ -15,8 +15,6 @@ uniform sampler2D bloomBuffer;
 
 #pragma stage vertex
 
-in vec2 texCoords;
-
 out Vertex vertex;
 
 void main() {

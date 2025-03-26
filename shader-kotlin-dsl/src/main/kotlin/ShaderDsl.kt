@@ -6,11 +6,7 @@ import kotlin.properties.ReadOnlyProperty
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
-@DslMarker
-@Target(AnnotationTarget.CLASS)
-internal annotation class ShaderDslMarker
-
-interface ShaderVertexData { //TODO omfg i forgot about the goddamn gl_Position... yes me, this is why e2e tests are also important
+interface ShaderVertexData {
     val position: vec4
 }
 
@@ -20,6 +16,7 @@ interface ShaderVertexData { //TODO omfg i forgot about the goddamn gl_Position.
  * @param RT the render targets
  */
 @ShaderDslMarker
+@Suppress("UNUSED_PARAMETER")
 abstract class ShaderBuilder<VA : Any, V : ShaderVertexData, RT : Any>(shader: AbstractShader) :
     AbstractShader by shader {
 
@@ -35,30 +32,6 @@ abstract class ShaderBuilder<VA : Any, V : ShaderVertexData, RT : Any>(shader: A
 
     protected fun vec2(x: Number, y: Number): vec2 = empty()
 
-}
-
-private fun empty(): Nothing = error("don't actually call these dingus")
-
-//TODO maybe anonymous builders
-//fun <VA: Any, V : ShaderVertexData, RT : Any> shaderBuilder(
-//    shader: AbstractShader,
-//    block: ShaderBuilder<VA, V, RT>.() -> Unit?
-//): AbstractShader {
-//} //since uniforms won't be accessible via property, is this even that useful?
-
-class UniformDelegate<T : Any> :
-    ReadWriteProperty<ShaderBuilder<*, *, *>, T> { //FIXME would have to be protected and internal... has this really never been a usecase?
-    override fun getValue(thisRef: ShaderBuilder<*, *, *>, property: KProperty<*>): T =
-        TODO("AbstractShader is gonna have to grow some getters")
-
-    override fun setValue(thisRef: ShaderBuilder<*, *, *>, property: KProperty<*>, value: T) =
-        thisRef.setUniform(property.name, value)
-}
-
-class ConstDelegate<T : Any> : ReadOnlyProperty<ShaderBuilder<*, *, *>, T> {
-    override fun getValue(thisRef: ShaderBuilder<*, *, *>, property: KProperty<*>): T {
-        TODO()
-    }
 }
 
 @ShaderDslMarker
@@ -100,20 +73,32 @@ class VertexReceiver : GlslReceiver() {
 @ShaderDslMarker
 class FragmentReceiver : GlslReceiver()
 
-internal val properties = mapOf(
-    ShaderStage.VERTEX to mapOf(
-        VertexReceiver::vertexID.name to "gl_VertexID"
-    )
-)
+val vec4.rt: RenderTarget //FIXME kinda ugly, maybe just turn em into delegates like with uniforms
+    get() = RenderTarget(this)
 
-internal val operatorNames = mapOf(
-    "plus" to "+",
-    "minus" to "-",
-    "times" to "*",
-    "div" to "/",
-    "rem" to "%"
-)
-internal val functionNames = GlslReceiver::class.members.map { it.name }
+private fun empty(): Nothing = error("don't actually call these dingus")
+
+//TODO maybe anonymous builders
+//fun <VA: Any, V : ShaderVertexData, RT : Any> shaderBuilder(
+//    shader: AbstractShader,
+//    block: ShaderBuilder<VA, V, RT>.() -> Unit?
+//): AbstractShader {
+//} //since uniforms won't be accessible via property, is this even that useful?
+
+class UniformDelegate<T : Any> :
+    ReadWriteProperty<ShaderBuilder<*, *, *>, T> { //FIXME would have to be protected and internal... has this really never been a usecase?
+    override fun getValue(thisRef: ShaderBuilder<*, *, *>, property: KProperty<*>): T =
+        TODO("AbstractShader is gonna have to grow some getters")
+
+    override fun setValue(thisRef: ShaderBuilder<*, *, *>, property: KProperty<*>, value: T) =
+        thisRef.setUniform(property.name, value)
+}
+
+class ConstDelegate<T : Any> : ReadOnlyProperty<ShaderBuilder<*, *, *>, T> {
+    override fun getValue(thisRef: ShaderBuilder<*, *, *>, property: KProperty<*>): T {
+        error("Should not interact with shader const values")
+    }
+}
 
 interface FrameBuffer
 class RenderTarget(
@@ -125,5 +110,6 @@ class RenderTarget(
     }
 }
 
-val vec4.rt: RenderTarget //FIXME kinda ugly, maybe just turn em into delegates like with uniforms
-    get() = RenderTarget(this)
+@DslMarker
+@Target(AnnotationTarget.CLASS)
+internal annotation class ShaderDslMarker

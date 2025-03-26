@@ -33,3 +33,10 @@ internal class IndentedStringBuilder(
 }
 
 private fun getIndent(indent: Int) = " ".repeat(indent * SPACE_INDENT)
+
+internal fun String.appendIf(string: String, condition: String.() -> Boolean): String =
+    if (condition(this)) "${this}$string"
+    else this
+
+internal fun String.appendIfNotEndsIn(string: String) =
+    appendIf(string) { !endsWith(string) }
