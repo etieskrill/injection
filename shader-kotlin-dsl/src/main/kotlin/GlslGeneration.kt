@@ -3,8 +3,10 @@ package io.github.etieskrill.injection.extension.shader.dsl
 import io.github.etieskrill.injection.extension.shader.ShaderStage
 import io.github.etieskrill.injection.extension.shader.dsl.GlslStorageQualifier.CONST
 import io.github.etieskrill.injection.extension.shader.dsl.OperatorType.entries
+import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
+import org.jetbrains.kotlin.ir.declarations.IrDeclarationParent
 import org.jetbrains.kotlin.ir.declarations.IrVariable
 import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin.Companion.DIVEQ
@@ -17,6 +19,7 @@ import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.util.dump
 import org.jetbrains.kotlin.ir.util.getArgumentsWithIr
+import org.jetbrains.kotlin.ir.util.patchDeclarationParents
 import org.jetbrains.kotlin.ir.util.render
 import org.jetbrains.kotlin.ir.visitors.IrVisitor
 
@@ -39,14 +42,16 @@ private val String.isGlslOperator get() = glslOperator != null
 private val functionNames = GlslReceiver::class.members.map { it.name }
 
 private data class TranspilerData(
+    val pluginContext: IrPluginContext,
+    val programParent: IrDeclarationParent,
     val vertexDataStructName: String,
     var stage: ShaderStage = ShaderStage.NONE,
-    var operatorStack: ArrayDeque<String> = ArrayDeque(),
+    var operatorStack: MutableList<OperatorType> = mutableListOf(), //TODO remove brackets where neighboring operators are same or less binding
     var ifWhenVariableName: String? = null
 )
 
-internal fun generateGlsl(programData: VisitorData): String = buildString {
-    val transpilerData = TranspilerData(programData.vertexDataStructName)
+internal fun generateGlsl(programData: VisitorData, pluginContext: IrPluginContext): String = buildString {
+    val transpilerData = TranspilerData(pluginContext, programData.programParent, programData.vertexDataStructName)
 
     appendLine(
         "#version ${programData.version} ${
@@ -170,6 +175,16 @@ private fun generateArrayStatement(
 private fun generateMain(body: IrBlockBody, data: TranspilerData) = buildIndentedString {
     appendLine("void main() {")
     indent {
+        val transformer = InlineConditionalTransformer(data.pluginContext)
+        var transformerData: InlineConditionalTransformerData
+        var transformerIteration = 0
+        do {
+            check(transformerIteration++ < 1000) { "Inline condition transformer ran for more than a thousand iterations: something is probably bricked" }
+            transformerData = InlineConditionalTransformerData()
+            body.transform(transformer, transformerData)
+        } while (transformerData.inlineCondition != null)
+        data.programParent.patchDeclarationParents()
+
         val statements = body.statements.associateWith { it.accept(GlslTranspiler(), data) }
 
         val formattedStatements = mutableListOf<String>()
@@ -202,17 +217,6 @@ private open class GlslTranspiler : IrVisitor<String, TranspilerData>() {
         body.statements.joinToString(";\n") { it.accept(this, data) }
 
     override fun visitVariable(declaration: IrVariable, data: TranspilerData): String {
-        if (declaration.initializer is IrWhen) { //inline if/when //TODO could use pre-transformer to resolve inline conditionals
-            data.ifWhenVariableName = declaration.name.asString()
-            val ifBlock = (declaration.initializer as IrWhen).accept(this, data)
-            val block = "${
-                declaration.type.glslType!! //TODO what aboot non-primitives???
-            } ${data.ifWhenVariableName};\n$ifBlock"
-
-            data.ifWhenVariableName = null
-            return block
-        }
-
         val initialiser = declaration.initializer
             ?.let { " = ${it.accept(this, data)}" }
             .orEmpty()
@@ -272,11 +276,7 @@ private open class GlslTranspiler : IrVisitor<String, TranspilerData>() {
 
     override fun visitWhen(expression: IrWhen, data: TranspilerData): String {
         if (expression.origin!! != IrStatementOrigin.IF) TODO(expression.dump())
-
-        val helperVariable: String = when (data.ifWhenVariableName) {
-            null -> ""
-            else -> "${data.ifWhenVariableName} = "
-        }
+        //TODO filter/check inline ifs/whens
 
         val numBranches = expression.branches.size
         val statement = expression.branches.mapIndexed { i, it ->
@@ -291,7 +291,7 @@ private open class GlslTranspiler : IrVisitor<String, TranspilerData>() {
 
             """
                 $conditionStatement {
-                    $helperVariable$result;
+                    $result;
                 } """.trimIndent()
         }.joinToString("")
 

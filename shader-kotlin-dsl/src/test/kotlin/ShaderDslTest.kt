@@ -25,11 +25,29 @@ class ShaderTest {
     }
 
     @Test
-    fun `Should build 'regular' shader builder`() {
+    fun `Should build shader builder with constants and if conditionals`() {
         val result = compile(getSource("HDRShader.kt"))
 
         assertThat(result.exitCode).isEqualTo(ExitCode.OK)
         assertThat(getGeneratedResource("HDR.glsl"))
+            .isEqualToIgnoringWhitespace(getResource("HDR.glsl"))
+    }
+
+    @Test
+    fun `Should build shader builder with inline if conditionals`() {
+        val result = compile(getSource("HDRShader2.kt"))
+
+        assertThat(result.exitCode).isEqualTo(ExitCode.OK)
+        assertThat(getGeneratedResource("HDRShader2.glsl"))
+            .isEqualToIgnoringWhitespace(getResource("HDRShader2.glsl"))
+    }
+
+    @Test
+    fun `Should build shader builder with inline when conditionals`() {
+        val result = compile(getSource("HDRShader3.kt"))
+
+        assertThat(result.exitCode).isEqualTo(ExitCode.OK)
+        assertThat(getGeneratedResource("HDRShader3.glsl"))
             .isEqualToIgnoringWhitespace(getResource("HDR.glsl"))
     }
 

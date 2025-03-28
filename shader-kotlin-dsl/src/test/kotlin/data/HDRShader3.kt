@@ -3,7 +3,7 @@ package io.github.etieskrill.injection.extension.shader.dsl.data
 import io.github.etieskrill.injection.extension.shader.*
 import io.github.etieskrill.injection.extension.shader.dsl.*
 
-class HDRShader : ShaderBuilder<Any, HDRShader.Vertex, HDRShader.RenderTargets>(Shader()) {
+class HDRShader3 : ShaderBuilder<Any, HDRShader3.Vertex, HDRShader3.RenderTargets>(Shader()) {
 
     data class Vertex(override val position: vec4, val texCoords: vec2) : ShaderVertexData
     data class RenderTargets(val fragColour: RenderTarget)
@@ -21,22 +21,20 @@ class HDRShader : ShaderBuilder<Any, HDRShader.Vertex, HDRShader.RenderTargets>(
     override fun program() {
         vertex {
             Vertex(
-                position = vec4(this@HDRShader.vertices[vertexID], 0, 1),
-                texCoords = max(this@HDRShader.vertices[vertexID], vec2(0, 0))
+                position = vec4(this@HDRShader3.vertices[vertexID], 0, 1),
+                texCoords = max(this@HDRShader3.vertices[vertexID], vec2(0, 0))
             )
         }
         fragment {
-            var hdr = texture(this@HDRShader.hdrBuffer, it.texCoords).rgb
-            val bloom = texture(this@HDRShader.bloomBuffer, it.texCoords).rgb
+            var hdr = texture(this@HDRShader3.hdrBuffer, it.texCoords).rgb
+            val bloom = texture(this@HDRShader3.bloomBuffer, it.texCoords).rgb
             hdr = bloom
             hdr = hdr + bloom
             hdr += bloom
 
-            val mapped: vec3
-            if (this@HDRShader.reinhard) {
-                mapped = hdr / (hdr + vec3(1))
-            } else {
-                mapped = vec3(1) - exp(-hdr * this@HDRShader.exposure)
+            val mapped = when (this@HDRShader3.reinhard) {
+                true -> hdr / (hdr + vec3(1))
+                false -> vec3(1) - exp(-hdr * this@HDRShader3.exposure)
             }
 
             RenderTargets(
