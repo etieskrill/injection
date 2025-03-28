@@ -1,4 +1,4 @@
-import io.github.etieskrill.injection.extension.shaderreflection.ShaderReflectionGenerator
+import io.github.etieskrill.injection.extension.shader.reflection.ShaderReflectionGenerator
 import io.mockk.mockk
 import kotlin.test.Test
 import kotlin.test.assertEquals

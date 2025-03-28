@@ -62,6 +62,7 @@ open class GlslReceiver {
     fun max(v1: vec2, v2: vec2): vec2 = error()
 
     fun pow(v1: vec3, v2: vec3): vec3 = error()
+    fun exp(s: float): float = error()
     fun exp(v: vec3): vec3 = error()
 
     fun texture(sampler: sampler2D, coordinates: vec2): vec4 = error()

@@ -8,10 +8,7 @@ import io.github.etieskrill.injection.extension.shader.glslType
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.IrElement
-import org.jetbrains.kotlin.ir.declarations.IrClass
-import org.jetbrains.kotlin.ir.declarations.IrFunction
-import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
-import org.jetbrains.kotlin.ir.declarations.IrProperty
+import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
@@ -81,6 +78,7 @@ internal class IrShaderGenerationExtension(
             }
 
             val data = VisitorData(
+                programParent = shader,
                 vertexAttributes = types.vertexAttributesType.getGlslFields(),
                 vertexDataStructType = types.vertexDataType.name.asString(),
                 vertexDataStructName = "vertex",
@@ -120,8 +118,10 @@ internal class IrShaderGenerationExtension(
             val shaderFile = File(shaderDir, "${shader.name.asString().removeSuffix("Shader")}.glsl")
             if (!shaderFile.exists()) shaderFile.createNewFile()
 
-            val shaderSource =
-                generateGlsl(data) //TODO maybe a little validation??? creating a context without a window would be a pain, so some lib mayhaps?
+            val shaderSource = generateGlsl(
+                data,
+                pluginContext
+            ) //TODO maybe a little validation??? creating a context without a window would be a pain, so some lib mayhaps?
 
             shaderFile.writeText(shaderSource)
         }
@@ -161,6 +161,8 @@ internal data class GlslTypeInitialiser internal constructor(
 }
 
 internal data class VisitorData(
+    val programParent: IrDeclarationParent,
+
     val version: GlslVersion = GlslVersion.`330`,
     val profile: GlslProfile = GlslProfile.CORE,
 
