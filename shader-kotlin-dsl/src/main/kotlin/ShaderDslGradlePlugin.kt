@@ -11,6 +11,7 @@ internal const val GEN_RESOURCE_DIR_ARG_NAME = "resourceOutputDir"
 internal const val GEN_RESOURCE_DIR = "build/generated/shader-dsl/main/resources"
 
 //the gradle plugin, which specifies the gradle-sided config and passes some project-related info to the compiler plugin
+@Suppress("unused")
 internal class ShaderDslGradlePlugin : KotlinCompilerPluginSupportPlugin {
 
     companion object {
@@ -42,6 +43,19 @@ internal class ShaderDslGradlePlugin : KotlinCompilerPluginSupportPlugin {
                 resources.srcDir(GEN_RESOURCE_DIR)
             }
         }
+
+        tasks.named("compileKotlin") {
+            it.outputs.dir(GEN_RESOURCE_DIR)
+                .withPropertyName("shaderDslResources")
+        }
+
+//        tasks.named("processResources") {
+//            it.inputs.dir(GEN_RESOURCE_DIR)
+//                .withPropertyName("shaderDslResources")
+//        }
+
+        //FIXME this isn't great for caching, but the above does not work???
+        tasks.named("processResources") { it.dependsOn("compileKotlin") }
     }
 
     override fun getCompilerPluginId(): String = PLUGIN_ID
