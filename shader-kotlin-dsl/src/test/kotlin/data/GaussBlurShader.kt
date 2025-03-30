@@ -3,7 +3,11 @@ package io.github.etieskrill.injection.extension.shader.dsl.data
 import io.github.etieskrill.injection.extension.shader.*
 import io.github.etieskrill.injection.extension.shader.dsl.*
 
-class GaussBlurShader : ShaderBuilder<Any, GaussBlurShader.Vertex, GaussBlurShader.RenderTargets>(
+class GaussBlurShader : ShaderBuilder<
+        Any,
+        GaussBlurShader.Vertex,
+        GaussBlurShader.RenderTargets
+        >(
     Shader()
 ) {
     data class Vertex(override val position: vec4, val texCoords: vec2) : ShaderVertexData
@@ -17,13 +21,13 @@ class GaussBlurShader : ShaderBuilder<Any, GaussBlurShader.Vertex, GaussBlurShad
 
     val weights by const(arrayOf(0.227027, 0.1945946, 0.1216216, 0.054054, 0.016216))
 
-    private fun sampleWithOffset(offset: vec2): vec3 = func {
+    private fun sampleWithOffset(offset: vec2): vec3 = fragFunc {
         var result = vec3(0)
         for (i in 0..weights.size) { //TODO omg i want to commit toaster bath
 //        for (i in weights.indices) {
 //        for ((i, weight) in weights.withIndex()) {
-            result += texture(source, vertexData.texCoords + offset * sampleDistance * i).rgb * weights[i]
-            result += texture(source, vertexData.texCoords - offset * sampleDistance * i).rgb * weights[i]
+            result += texture(source, it.texCoords + offset * sampleDistance * i).rgb * weights[i]
+            result += texture(source, it.texCoords - offset * sampleDistance * i).rgb * weights[i]
         }
         result
     }
@@ -51,4 +55,31 @@ class GaussBlurShader : ShaderBuilder<Any, GaussBlurShader.Vertex, GaussBlurShad
             )
         }
     }
+
+//    protected interface FragmentShaderStage<VA, RT> {
+//        val vertex: VA
+//            get() = error()
+//
+//        context(FragmentReceiver)
+//        fun fragmentShader(vertex : VA): RT //main, fragment, fragmentShader... none of em *really* sound right
+//
+////        fun frag(block: context(VertexReceiver) (VA) -> RT): RT = error() //a potential workaround to context receiver on function signature
+//    }
+//
+//    TODO little poc for a potentially cleaner api (esp for stage-local vars and functions) - stages by class
+//     would make controlling single mains easier, and their stage requirements more visible - kinda like in HLSL
+//     above the shader dsl block for this
+//    private class Fragment : FragmentShaderStage<Vertex, RenderTargets> { //<- having to pass type params sucks tho, and inner classes throw a tantrum about receiver constructors
+//        fun sampleWithOffset() {
+//            vertex.texCoords
+//        }
+//
+//        context(FragmentReceiver) //<- this is also a little disgosteng
+//        override fun fragmentShader(vertex: Vertex): RenderTargets {
+//            this@Fragment.vertex
+//            vertex.texCoords
+//            sampleWithOffset()
+//            RenderTargets(vec4(0).rt)
+//        }
+//    }
 }
