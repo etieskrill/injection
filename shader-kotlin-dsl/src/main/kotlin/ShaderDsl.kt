@@ -12,6 +12,19 @@ interface ShaderVertexData {
     val position: vec4
 }
 
+interface FrameBuffer
+class RenderTarget(
+    vector: vec4,
+    var frameBuffer: FrameBuffer? = null,
+) : Vector4f(vector) {
+    infix fun set(frameBuffer: FrameBuffer) {
+        this.frameBuffer = frameBuffer
+    }
+}
+
+val vec4.rt: RenderTarget //FIXME kinda ugly, maybe just turn em into delegates like with uniforms
+    get() = RenderTarget(this)
+
 /**
  * @param VA the vertex attributes
  * @param V the internal vertex type
@@ -22,13 +35,17 @@ interface ShaderVertexData {
 abstract class ShaderBuilder<VA : Any, V : ShaderVertexData, RT : Any>(shader: AbstractShader) :
     AbstractShader by shader {
 
-    protected fun <T : Any> uniform() = UniformDelegate<T>()
+    protected val vertexData: V = error()
 
-    protected fun <T : Any> const(value: T) = ConstDelegate<T>()
+    protected fun <T : Any> uniform() = UniformDelegate<T>() //TODO add default param
 
-    protected fun vertex(block: VertexReceiver.(VA) -> V) {}
+    protected fun <T : Any> const(value: T) = ConstDelegate<T>() //TODO pass GlslReceiver block for dsl instead
 
-    protected fun fragment(block: FragmentReceiver.(V) -> RT) {}
+    protected fun <T : Any> func(block: context(GlslReceiver) () -> T): T = error()
+
+    protected fun vertex(block: context(VertexReceiver) (VA) -> V) {}
+
+    protected fun fragment(block: context(FragmentReceiver) (V) -> RT) {}
 
     protected abstract fun program()
 
@@ -39,6 +56,8 @@ abstract class ShaderBuilder<VA : Any, V : ShaderVertexData, RT : Any>(shader: A
 @ShaderDslMarker
 @Suppress("UnusedReceiverParameter", "unused")
 open class GlslReceiver {
+    operator fun Number.div(v: vec2): vec2 = error()
+
     fun vec2(x: Number, y: Number): vec2 = error()
 
     fun vec3(v: Number): vec3 = error()
@@ -48,7 +67,15 @@ open class GlslReceiver {
     fun vec4(v: vec3, w: Number): vec4 = error()
     fun vec4(v: vec2, z: Number, w: Number): vec4 = error()
 
-    val vec4.rgb: vec3 get() = error()
+    var vec2.x: float by swizzle()
+    var vec2.y: float by swizzle()
+
+    val vec4.rgb: vec3 by swizzle()
+
+    operator fun vec2.plus(v: vec2): vec2 = error()
+    operator fun vec2.minus(v: vec2): vec2 = error()
+    operator fun vec2.times(s: Number): vec2 = error()
+    operator fun vec2.times(v: vec2): vec2 = error()
 
     operator fun vec3.plus(v: vec3): vec3 =
         error() //do NOT use the assignment operators (e.g. plusAssign) - great, so += MAY be automatically converted to + and =
@@ -56,16 +83,18 @@ open class GlslReceiver {
     operator fun vec3.minus(v: vec3): vec3 = error()
     operator fun vec3.unaryMinus(): vec3 = error()
     operator fun vec3.times(v: vec3): vec3 = error()
-    operator fun vec3.times(s: float): vec3 = error()
+    operator fun vec3.times(s: Number): vec3 = error()
     operator fun vec3.div(v: vec3): vec3 = error()
 
     fun max(v1: vec2, v2: vec2): vec2 = error()
 
     fun pow(v1: vec3, v2: vec3): vec3 = error()
-    fun exp(s: float): float = error()
+    fun exp(s: Number): float = error()
     fun exp(v: vec3): vec3 = error()
 
     fun texture(sampler: sampler2D, coordinates: vec2): vec4 = error()
+    fun textureSize(sampler: sampler2D, lod: int/* = 0*/): vec2 =
+        error() //FIXME default values never present in IrValueParameter for some reason
 }
 
 @ShaderDslMarker
@@ -75,9 +104,6 @@ class VertexReceiver : GlslReceiver() {
 
 @ShaderDslMarker
 class FragmentReceiver : GlslReceiver()
-
-val vec4.rt: RenderTarget //FIXME kinda ugly, maybe just turn em into delegates like with uniforms
-    get() = RenderTarget(this)
 
 private fun error(): Nothing = error("don't actually call these dingus")
 
@@ -114,14 +140,14 @@ class ConstDelegate<T : Any> : ReadOnlyProperty<ShaderBuilder<*, *, *>, T> {
     }
 }
 
-interface FrameBuffer
-class RenderTarget(
-    vector: vec4,
-    var frameBuffer: FrameBuffer? = null,
-) : Vector4f(vector) {
-    infix fun set(frameBuffer: FrameBuffer) {
-        this.frameBuffer = frameBuffer
-    }
+private fun <T, R> swizzle() = SwizzleDelegate<T, R>()
+
+private class SwizzleDelegate<T, R> : ReadWriteProperty<T, R> {
+    override fun getValue(thisRef: T, property: KProperty<*>): R =
+        TODO("Not yet implemented")
+
+    override fun setValue(thisRef: T, property: KProperty<*>, value: R): Unit =
+        TODO("Not yet implemented")
 }
 
 @DslMarker

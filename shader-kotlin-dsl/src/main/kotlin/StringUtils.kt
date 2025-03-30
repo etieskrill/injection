@@ -2,8 +2,6 @@ package io.github.etieskrill.injection.extension.shader.dsl
 
 private const val SPACE_INDENT = 4
 
-internal fun StringBuilder.newline() = appendLine()
-
 internal fun buildIndentedString(indent: Int = 0, block: IndentedStringBuilder.() -> Unit): String {
     val builder = StringBuilder()
     block(IndentedStringBuilder(builder, indent))
@@ -12,22 +10,33 @@ internal fun buildIndentedString(indent: Int = 0, block: IndentedStringBuilder.(
 
 internal class IndentedStringBuilder(
     private val builder: StringBuilder,
-    private var indent: Int
+    private var indent: Int,
+    private var lastWasNewline: Boolean = false
 ) : Appendable by builder {
 
-    override fun append(csq: CharSequence?): java.lang.Appendable =
-        builder.append("${getIndent(indent)}${csq ?: "<null>"}")
+    override fun append(csq: CharSequence?): java.lang.Appendable {
+        lastWasNewline = false
+        return builder.append("${getIndent(indent)}${csq ?: "<null>"}")
+    }
 
-    fun appendMultiLine(value: String) = value
-        .lines()
-        .joinTo(builder, separator = "\n", postfix = "\n") {
-            getIndent(indent) + it
-        }
+    fun appendMultiLine(value: String): StringBuilder {
+        lastWasNewline = false
+        return value
+            .lines()
+            .joinTo(builder, separator = "\n", postfix = "\n") {
+                getIndent(indent) + it
+            }
+    }
 
     fun indent(block: IndentedStringBuilder.() -> Unit) {
         indent++
         block(this)
         indent--
+    }
+
+    fun newline() {
+        if (!lastWasNewline) appendLine()
+        lastWasNewline = true
     }
 
 }
