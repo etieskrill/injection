@@ -49,6 +49,12 @@ tasks.build {
     dependsOn("publishToMavenLocal") //FIXME perhaps not the best of ideas when compiler extension and plugin are in same module
 }
 
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.add("-Xcontext-receivers")
+    }
+}
+
 tasks.test {
     useJUnitPlatform()
 }

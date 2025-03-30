@@ -8,6 +8,7 @@ import kotlin.reflect.full.isSubclassOf
 
 typealias int = Int
 typealias float = Float
+typealias double = Double
 typealias bool = Boolean
 
 typealias vec2 = Vector2fc
@@ -39,6 +40,7 @@ private val primitiveSamplerTypes = mapOf(
 private val primitiveTypes = mutableMapOf(
     int::class to "int",
     float::class to "float",
+    double::class to "double",
     bool::class to "bool",
     vec2::class to "vec2",
     vec3::class to "vec3",

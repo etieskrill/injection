@@ -51,6 +51,15 @@ class ShaderTest {
             .isEqualToIgnoringWhitespace(getResource("HDR.glsl"))
     }
 
+    @Test
+    fun `Should build shader builder with function calls`() {
+        val result = compile(getSource("GaussBlurShader.kt"))
+
+        assertThat(result.exitCode).isEqualTo(ExitCode.OK)
+        assertThat(getGeneratedResource("GaussBlur.glsl"))
+            .isEqualToIgnoringWhitespace(getResource("GaussBlur.glsl"))
+    }
+
     //TODO
     // - ensure required stages
     // - ensure num stages
@@ -78,7 +87,7 @@ fun getSource(fileName: String): SourceFile {
 
 fun compile(file: SourceFile) =
     KotlinCompilation().apply {
-        sources = listOf(file)
+        sources = listOf(file/*, SourceFile.kotlin("ShaderDsl.kt", File("src/main/kotlin/ShaderDsl.kt").readText())*/)
 
         compilerPluginRegistrars = listOf(ShaderDslCompilerPlugin())
 
@@ -92,6 +101,7 @@ fun compile(file: SourceFile) =
         )
 
         inheritClassPath = true
+//        kotlincArguments = listOf("-Xcontext-receivers")
 
         verbose = false
     }.compile()

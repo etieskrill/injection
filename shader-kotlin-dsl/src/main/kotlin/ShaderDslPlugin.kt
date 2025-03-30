@@ -9,16 +9,16 @@ import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.declarations.*
+import org.jetbrains.kotlin.ir.declarations.impl.IrFunctionImpl
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.*
-import org.jetbrains.kotlin.ir.util.findDeclaration
-import org.jetbrains.kotlin.ir.util.getArgumentsWithIr
-import org.jetbrains.kotlin.ir.util.properties
+import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.ir.visitors.IrVisitor
+import org.jetbrains.kotlin.utils.filterIsInstanceAnd
 import org.jetbrains.kotlin.utils.getOrPutNullable
 import java.io.File
 import kotlin.reflect.KClass
@@ -94,7 +94,13 @@ internal class IrShaderGenerationExtension(
                         }
                     }!!
                 },
+                definedFunctions = shader.declarations
+                    .filterIsInstanceAnd<IrFunctionImpl> { it.name.asString() != "program" } //impl because exact type is needed
+                    .onEach { check(it.typeParameters.isEmpty()) { "Shader functions may not have type parameters, but this one does:\n${it.render()}" } }
+                    .associate { it.name.asString() to it }
             )
+
+            data.structTypes += types.vertexDataType.defaultType
 
             val programBodies = shader
                 .findDeclaration<IrFunction> { it.name.asString() == "program" }!!
@@ -178,16 +184,20 @@ internal data class VisitorData(
 
     val uniforms: Map<String, GlslType>,
 
+    val definedFunctions: Map<String, IrFunction>,
+
+    val structTypes: MutableList<IrType> = mutableListOf(),
+
     val stageBodies: MutableMap<ShaderStage, IrBlockBody> = mutableMapOf(),
 )
 
-private inline fun <reified T : IrElement> IrElement.findElement(
+internal inline fun <reified T : IrElement> IrElement.findElement(
     data: RecursiveFinderVisitorData<T> = RecursiveFinderVisitorData(),
     noinline condition: (T) -> Boolean = { true }
 ): T? = accept(RecursiveFinderVisitor(T::class, condition), data)
 
-private data class RecursiveFinderVisitorData<T : IrElement>(var element: T? = null)
-private class RecursiveFinderVisitor<T : IrElement>(val elementType: KClass<T>, val condition: (T) -> Boolean) :
+internal data class RecursiveFinderVisitorData<T : IrElement>(var element: T? = null)
+internal class RecursiveFinderVisitor<T : IrElement>(val elementType: KClass<T>, val condition: (T) -> Boolean) :
     IrVisitor<T?, RecursiveFinderVisitorData<T>>() {
     override fun visitElement(element: IrElement, data: RecursiveFinderVisitorData<T>): T? {
         element.accept(object : IrVisitor<Unit, RecursiveFinderVisitorData<T>>() {
@@ -216,3 +226,6 @@ internal val IrType.glslType: GlslType?
 
 internal val IrType.fullName: String
     get() = classFqName!!.asString()
+
+internal val IrType.simpleName: String
+    get() = fullName.split(".").last()
