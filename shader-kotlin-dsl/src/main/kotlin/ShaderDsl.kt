@@ -35,13 +35,13 @@ val vec4.rt: RenderTarget //FIXME kinda ugly, maybe just turn em into delegates 
 abstract class ShaderBuilder<VA : Any, V : ShaderVertexData, RT : Any>(shader: AbstractShader) :
     AbstractShader by shader {
 
-    protected val vertexData: V = error()
-
     protected fun <T : Any> uniform() = UniformDelegate<T>() //TODO add default param
 
     protected fun <T : Any> const(value: T) = ConstDelegate<T>() //TODO pass GlslReceiver block for dsl instead
 
-    protected fun <T : Any> func(block: context(GlslReceiver) () -> T): T = error()
+    protected fun <T> func(block: context(GlslReceiver) () -> T): T = error()
+    protected fun <T> vertFunc(block: context(VertexReceiver) (VA) -> T): T = error()
+    protected fun <T> fragFunc(block: context(FragmentReceiver) (V) -> T): T = error()
 
     protected fun vertex(block: context(VertexReceiver) (VA) -> V) {}
 

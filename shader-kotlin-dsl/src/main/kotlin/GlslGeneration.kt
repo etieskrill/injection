@@ -1,15 +1,13 @@
 package io.github.etieskrill.injection.extension.shader.dsl
 
 import io.github.etieskrill.injection.extension.shader.ShaderStage
+import io.github.etieskrill.injection.extension.shader.ShaderStage.*
 import io.github.etieskrill.injection.extension.shader.dsl.GlslStorageQualifier.CONST
 import io.github.etieskrill.injection.extension.shader.dsl.OperatorType.entries
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
-import org.jetbrains.kotlin.ir.declarations.IrDeclarationParent
-import org.jetbrains.kotlin.ir.declarations.IrFunction
-import org.jetbrains.kotlin.ir.declarations.IrValueParameter
-import org.jetbrains.kotlin.ir.declarations.IrVariable
+import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin.Companion.DIVEQ
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin.Companion.EQ
@@ -19,6 +17,7 @@ import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin.Companion.PERCEQ
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin.Companion.PLUSEQ
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.IrType
+import org.jetbrains.kotlin.ir.types.isArray
 import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.ir.visitors.IrVisitor
 
@@ -26,7 +25,7 @@ private const val GL_POSITION_NAME = "gl_Position"
 internal val POSITION_FIELD_NAME = ShaderVertexData::position.name
 
 private val properties = mapOf(
-    ShaderStage.VERTEX to mapOf(
+    VERTEX to mapOf(
         VertexReceiver::vertexID.name to "gl_VertexID"
     )
 )
@@ -44,12 +43,15 @@ private data class TranspilerData(
     val pluginContext: IrPluginContext,
     val programParent: IrDeclarationParent,
     val structTypes: List<IrType>,
-    val definedFunctions: Map<String, IrFunction>,
+    val definedFunctions: Map<String, Pair<ShaderStage, IrFunction>>,
     val vertexDataStructName: String,
-    var stage: ShaderStage = ShaderStage.NONE,
+    var stage: ShaderStage = NONE,
     var operatorStack: MutableList<OperatorType> = mutableListOf(), //TODO remove brackets where neighboring operators are same or less binding
 )
 
+//TODO:
+// - detect usages for uniforms, consts and functions and if only used in one stage, move there
+// - evidently functions with dependencies on stage-specific vars/ins/outs should be in said stage - also the vertexData variable (better name?) must be treated properly as property getter
 internal fun generateGlsl(programData: VisitorData, pluginContext: IrPluginContext): String = buildIndentedString {
     val transpilerData = TranspilerData(
         pluginContext,
@@ -89,14 +91,14 @@ internal fun generateGlsl(programData: VisitorData, pluginContext: IrPluginConte
     }
     newline()
 
-    programData.definedFunctions.forEach { (_, function) ->
-        appendLine(generateFunction(function, transpilerData))
+    programData.definedFunctions.filter { it.value.first == NONE }.forEach { (_, function) ->
+        appendLine(generateFunction(function.second, transpilerData))
     }
     newline()
 
-    transpilerData.stage = ShaderStage.VERTEX
+    transpilerData.stage = VERTEX
 
-    appendLine(generateStage(ShaderStage.VERTEX))
+    appendLine(generateStage(VERTEX))
     newline()
 
     programData.vertexAttributes.forEach { (name, type) ->
@@ -107,12 +109,17 @@ internal fun generateGlsl(programData: VisitorData, pluginContext: IrPluginConte
     appendLine(generateStatement(GlslStorageQualifier.OUT, programData.vertexDataStructType, "vertex"))
     newline()
 
-    appendLine(generateMain(programData.stageBodies[ShaderStage.VERTEX]!!, transpilerData))
+    programData.definedFunctions.filter { it.value.first == VERTEX }.forEach { (_, function) ->
+        appendLine(generateFunction(function.second, transpilerData))
+    }
     newline()
 
-    transpilerData.stage = ShaderStage.FRAGMENT
+    appendLine(generateMain(programData.stageBodies[VERTEX]!!, transpilerData))
+    newline()
 
-    appendLine(generateStage(ShaderStage.FRAGMENT))
+    transpilerData.stage = FRAGMENT
+
+    appendLine(generateStage(FRAGMENT))
     newline()
 
     appendLine(generateStatement(GlslStorageQualifier.IN, programData.vertexDataStructType, "vertex"))
@@ -123,7 +130,12 @@ internal fun generateGlsl(programData: VisitorData, pluginContext: IrPluginConte
     }
     newline()
 
-    appendLine(generateMain(programData.stageBodies[ShaderStage.FRAGMENT]!!, transpilerData))
+    programData.definedFunctions.filter { it.value.first == FRAGMENT }.forEach { (_, function) ->
+        appendLine(generateFunction(function.second, transpilerData))
+    }
+    newline()
+
+    appendLine(generateMain(programData.stageBodies[FRAGMENT]!!, transpilerData))
     newline()
 }
 
@@ -191,7 +203,7 @@ private fun generateFunction(function: IrFunction, data: TranspilerData) = build
 
     appendLine("$returnType ${function.name}($parameters) {")
     indent {
-        val body = function.body!!.statements[0].findElement<IrBlockBody>()!!
+        val body = function.body!!.findElement<IrBlockBody>()!!
         appendMultiLine(body.accept(GlslTranspiler(), data))
     }
     appendLine("}")
@@ -210,7 +222,7 @@ private fun generateMain(body: IrBlockBody, data: TranspilerData) = buildIndente
         } while (transformerData.inlineCondition != null)
         data.programParent.patchDeclarationParents()
 
-        val statements = body.statements.associateWith { it.accept(GlslTranspiler(), data) }
+        val statements = body.statements.associateWith { it.accept(GlslTranspiler(unwrapReturn = true), data) }
 
         val formattedStatements = mutableListOf<String>()
         statements.forEach { (element, statement) ->
@@ -231,12 +243,16 @@ private fun generateMain(body: IrBlockBody, data: TranspilerData) = buildIndente
 }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-private open class GlslTranspiler : IrVisitor<String, TranspilerData>() {
+private open class GlslTranspiler(
+    val unwrapReturn: Boolean = false
+) : IrVisitor<String, TranspilerData>() {
     override fun visitElement(element: IrElement, data: TranspilerData): String =
         TODO("Element of type ${element::class.simpleName} cannot be processed yet:\n${element.dump()}")
 
-    override fun visitBlock(expression: IrBlock, data: TranspilerData): String =
-        expression.statements.joinToString(";\n") { it.accept(this, data) }
+    override fun visitBlock(expression: IrBlock, data: TranspilerData): String = when {
+        expression.origin == IrStatementOrigin.FOR_LOOP -> expression.accept(GlslForLoopTranspiler(this), data)
+        else -> expression.statements.joinToString(";\n", postfix = ";") { it.accept(this, data) }
+    }
 
     override fun visitBlockBody(body: IrBlockBody, data: TranspilerData): String =
         body.statements.joinToString(";\n") { it.accept(this, data) }
@@ -249,7 +265,7 @@ private open class GlslTranspiler : IrVisitor<String, TranspilerData>() {
     }
 
     override fun visitCall(expression: IrCall, data: TranspilerData): String {
-        if (data.stage == ShaderStage.FRAGMENT && expression.returns<RenderTarget>()
+        if (data.stage == FRAGMENT && expression.returns<RenderTarget>()
         ) return evalChildren(expression, data)!!
 
         val functionName = expression.symbol.owner.name.asString()
@@ -263,15 +279,22 @@ private open class GlslTranspiler : IrVisitor<String, TranspilerData>() {
                     return properties[data.stage]!![propertyName]!!
                 }
 
+                if (expression.receiver?.type?.isArray() == true) {
+                    when (propertyName) {
+                        "size" -> return "$propertyOwner.length()"
+                    }
+                }
+
                 when (propertyOwner) {
                     "<this>" -> propertyName //direct shader class members, e.g. uniforms
                     "it" -> when (data.stage) { //implicit lambda parameter //FIXME find and use declared name if not implicit
-                        ShaderStage.VERTEX -> propertyName
-                        ShaderStage.FRAGMENT -> when (propertyName) {
+                        VERTEX -> propertyName
+                        FRAGMENT -> when (propertyName) {
                             POSITION_FIELD_NAME -> GL_POSITION_NAME
                             else -> "${data.vertexDataStructName}.$propertyName"
                         }
 
+                        NONE -> error("Implicit receiver called outside of any stage; presumably stage function trying to generate while not in respective stage")
                         else -> TODO("Getter for implicit lambda parameter call not implemented for stage ${data.stage}")
                     }
 
@@ -324,11 +347,10 @@ private open class GlslTranspiler : IrVisitor<String, TranspilerData>() {
         return statement
     }
 
-    override fun visitReturn(expression: IrReturn, data: TranspilerData): String =
-        when (data.stage) {
-            ShaderStage.VERTEX, ShaderStage.FRAGMENT -> expression.value.accept(GlslReturnTranspiler(this), data)
-            else -> "return ${expression.value.accept(this, data)};"
-        }
+    override fun visitReturn(expression: IrReturn, data: TranspilerData): String = when {
+        unwrapReturn -> expression.value.accept(GlslReturnTranspiler(this), data)
+        else -> "return ${expression.value.accept(this, data)};"
+    }
 
     override fun visitConst(expression: IrConst, data: TranspilerData): String =
         expression.value.toString()
@@ -412,14 +434,14 @@ private class GlslReturnTranspiler(val root: GlslTranspiler) : IrVisitor<String,
             .associate { (param, expression) -> param.name.asString() to expression.accept(root, data) }
             .map { (param, expression) ->
                 when (data.stage) {
-                    ShaderStage.VERTEX -> {
+                    VERTEX -> {
                         when (param) {
                             POSITION_FIELD_NAME -> "$GL_POSITION_NAME = $expression;"
                             else -> "${data.vertexDataStructName}.$param = $expression;"
                         }
                     }
 
-                    ShaderStage.FRAGMENT -> "$param = $expression;"
+                    FRAGMENT -> "$param = $expression;"
                     else -> TODO("Constructor return call not implemented for stage ${data.stage}")
                 }
             }
@@ -455,6 +477,55 @@ private class GlslValueTranspiler(
     }
 }
 
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+private class GlslForLoopTranspiler(
+    val generalTranspiler: GlslTranspiler
+) : IrVisitor<String, TranspilerData>() {
+    override fun visitElement(element: IrElement, data: TranspilerData): String = TODO("Not yet implemented")
+
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    override fun visitBlock(expression: IrBlock, data: TranspilerData): String {
+        val iterable = expression.findElement<IrCall> {
+            it.origin == IrStatementOrigin.FOR_LOOP_ITERATOR && it.symbol.owner.name.asString() == "iterator"
+        }!!.accept(this, data)
+
+        val loop = expression.findElement<IrWhileLoop> { it.origin == IrStatementOrigin.FOR_LOOP_INNER_WHILE }!!
+
+        val loopVariable = loop.body!!
+            .findElement<IrVariable> { it.origin == IrDeclarationOrigin.FOR_LOOP_VARIABLE }!!
+        val loopVariableType = data.resolveGlslType(loopVariable.type)
+        val loopVariableName = loopVariable.name.asString()
+
+        val loopBody = loop.body!!
+            .findElement<IrBlock> { it.origin != IrStatementOrigin.FOR_LOOP_INNER_WHILE }!!
+            .accept(generalTranspiler, data)
+
+        return buildIndentedString {
+            val (start, end) = iterable.split("|")
+
+            appendLine("for ($loopVariableType $loopVariableName = $start; $loopVariableName < $end; $loopVariableName++) {")
+            indent { appendMultiLine(loopBody) }
+            appendLine("}")
+        }
+    }
+
+    override fun visitCall(expression: IrCall, data: TranspilerData): String {
+        val receiver = expression.receiver as? IrCall
+            ?: return super.visitCall(expression, data)
+
+        return when (receiver.symbol.owner.name.asString()) {
+            "rangeTo" -> {
+                val start = receiver.receiver!!.accept(generalTranspiler, data)
+                val end = receiver.getValueArgument(0)!!.accept(generalTranspiler, data)
+
+                "$start|$end" //FIXME beautiful, i know
+            }
+
+            else -> TODO()
+        }
+    }
+}
+
 private fun GlslTranspiler.evalChildren(expression: IrExpression, data: TranspilerData): String? {
     var value: String? = null
     expression.acceptChildren(object : IrVisitor<Unit, TranspilerData>() {
@@ -476,3 +547,6 @@ private fun TranspilerData.resolveGlslType(type: IrType): String = when {
     type.glslType != null -> type.glslType!!.type
     else -> error("Could not resolve type in shader: ${type.render()}")
 }
+
+private val IrMemberAccessExpression<*>.receiver: IrExpression?
+    get() = extensionReceiver ?: dispatchReceiver
