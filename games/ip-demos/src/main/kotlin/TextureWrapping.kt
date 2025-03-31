@@ -1,0 +1,115 @@
+import io.github.etieskrill.injection.extension.shader.*
+import io.github.etieskrill.injection.extension.shader.dsl.RenderTarget
+import io.github.etieskrill.injection.extension.shader.dsl.ShaderBuilder
+import io.github.etieskrill.injection.extension.shader.dsl.ShaderVertexData
+import io.github.etieskrill.injection.extension.shader.dsl.rt
+import org.etieskrill.engine.application.GameApplication
+import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
+import org.etieskrill.engine.graphics.texture.AbstractTexture
+import org.etieskrill.engine.graphics.texture.Texture2D
+import org.etieskrill.engine.input.Keys
+import org.etieskrill.engine.window.window
+import org.lwjgl.opengl.GL11C.*
+import org.lwjgl.opengl.GL12C.GL_CLAMP_TO_EDGE
+import org.lwjgl.opengl.GL12C.GL_TEXTURE_WRAP_R
+import org.lwjgl.opengl.GL13.GL_CLAMP_TO_BORDER
+import org.lwjgl.opengl.GL30C.glBindVertexArray
+import org.lwjgl.opengl.GL30C.glGenVertexArrays
+
+class App : GameApplication(window { resizeable = true }) {
+    lateinit var texture: Texture2D
+    lateinit var shader: TextureWrappingShader
+    var dummyVAO: Int = -1
+
+    override fun init() {
+        texture = Texture2D.FileBuilder("lena_rgb.png").build()
+
+        shader = TextureWrappingShader()
+        dummyVAO = glGenVertexArrays()
+
+        var wrapping = TextureWrapping.NONE
+        window.addKeyInputs { type, key, action, modifiers ->
+            if (key == Keys.E.input.value && action == 1) {
+                wrapping = TextureWrapping.entries[(wrapping.ordinal + 1) % TextureWrapping.entries.size]
+                setTextureWrapping(wrapping)
+                println(wrapping)
+            }
+
+            false
+        }
+
+        setTextureWrapping(wrapping)
+    }
+
+    private fun setTextureWrapping(wrapping: TextureWrapping) {
+        val glWrapping = when (wrapping) {
+            TextureWrapping.NONE -> GL_CLAMP_TO_BORDER
+            TextureWrapping.CLAMP_TO_EDGE -> GL_CLAMP_TO_EDGE
+            TextureWrapping.REPEAT -> GL_REPEAT
+            TextureWrapping.MIRROR -> {
+                setTextureWrapping(TextureWrapping.REPEAT)
+                shader.mirrorTexCords = true
+                return
+            }
+        }
+
+        shader.mirrorTexCords = false
+
+        texture.bind()
+        glTexParameteri(AbstractTexture.Target.TWO_D.gl(), GL_TEXTURE_WRAP_S, glWrapping)
+        glTexParameteri(AbstractTexture.Target.TWO_D.gl(), GL_TEXTURE_WRAP_T, glWrapping)
+        glTexParameteri(AbstractTexture.Target.TWO_D.gl(), GL_TEXTURE_WRAP_R, glWrapping)
+    }
+
+    override fun loop(delta: Double) {
+        check(dummyVAO != -1)
+        glBindVertexArray(dummyVAO)
+        shader.start()
+        shader.texture = texture
+        shader.windowSize = window.currentSize
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    }
+}
+
+enum class TextureWrapping { NONE, CLAMP_TO_EDGE, REPEAT, MIRROR } //none is CLAMP_TO_BORDER - so long as border is black
+
+class TextureWrappingShader : ShaderBuilder<Any, TextureWrappingShader.Vertex, TextureWrappingShader.RenderTargets>(
+    object : ShaderProgram(listOf("TextureWrapping.glsl")) {}
+) {
+    data class Vertex(override val position: vec4, val texCoords: vec2) : ShaderVertexData
+    data class RenderTargets(val colour: RenderTarget)
+
+    val vertices by const(arrayOf(vec2(-1, -1), vec2(1, -1), vec2(-1, 1), vec2(1, 1)))
+    val textureSize by const(vec2(200))
+
+    var texture by uniform<sampler2D>()
+    var windowSize by uniform<ivec2>()
+    var mirrorTexCords by uniform<bool>()
+
+    override fun program() {
+        vertex {
+            val texCoords = max(vertices[vertexID], 0)
+            texCoords.y = 1 - texCoords.y
+
+            Vertex(
+                position = vec4(vertices[vertexID], 0, 1),
+                texCoords = texCoords
+            )
+        }
+        fragment {
+            val scaledCoords = it.texCoords * (vec2(windowSize) / textureSize)
+
+            if (mirrorTexCords) {
+                val reduced = scaledCoords % 2
+                if (reduced.x > 1) scaledCoords.x = 1 - scaledCoords.x
+                if (reduced.y > 1) scaledCoords.y = 1 - scaledCoords.y
+            }
+
+            RenderTargets(vec4(texture(texture, scaledCoords).rgb, 1).rt)
+        }
+    }
+}
+
+fun main() {
+    App()
+}

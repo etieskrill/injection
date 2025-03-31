@@ -10,6 +10,7 @@ import org.etieskrill.engine.scene.Scene;
 import org.etieskrill.engine.util.ResourceReader;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2f;
+import org.joml.Vector2fc;
 import org.joml.Vector2i;
 import org.joml.Vector2ic;
 import org.lwjgl.BufferUtils;
@@ -53,10 +54,11 @@ public class Window implements Disposable {
     //TODO provide methods to change primary monitor
     private long monitor;
     private @Getter WindowSize size;
-    private Vector2f position;
+    private Vector2i currentSize; //FIXME replace above
     private float targetFrameRate;
     private boolean vSyncEnabled;
     private int samples;
+    private boolean resizeable;
     private @Getter String title;
 
     private @Getter Cursor cursor;
@@ -92,7 +94,8 @@ public class Window implements Disposable {
         UHD_4K(2160, 3840),
         THICC(100, 4000),
 
-        LARGEST_FIT(0, 0);
+        LARGEST_FIT(0, 0),
+        DEFAULT(500, 600);
 
         WindowSize(final int height, final int width) {
             if (width < height)
@@ -150,7 +153,7 @@ public class Window implements Disposable {
             return this;
         }
 
-        public WindowBuilder setPosition(Vector2f position) {
+        public WindowBuilder setPosition(Vector2fc position) {
             this.position = position;
             return this;
         }
@@ -167,6 +170,11 @@ public class Window implements Disposable {
 
         public WindowBuilder setSamples(int samples) {
             this.samples = samples;
+            return this;
+        }
+
+        public WindowBuilder setResizeable(boolean resizeable) {
+            this.resizeable = resizeable;
             return this;
         }
 
@@ -214,12 +222,13 @@ public class Window implements Disposable {
 
         public Window build() {
             return new Window(
-                    mode != null ? mode : Window.WindowMode.WINDOWED,
-                    size != null ? size : Window.WindowSize.LARGEST_FIT,
-                    position != null ? position : new Vector2f(),
+                    mode != null ? mode : WindowMode.WINDOWED,
+                    size != null ? size : WindowSize.DEFAULT,
+                    position,
                     refreshRate > 0 ? refreshRate : GLFW_DONT_CARE,
                     vSyncEnabled,
                     Math.max(samples, 0),
+                    resizeable,
                     title != null ? title : "Window",
                     cursor != null ? cursor : Cursor.getDefault(),
                     keyInputs != null ? keyInputs : new ArrayList<>(),
@@ -231,8 +240,8 @@ public class Window implements Disposable {
     @Builder(setterPrefix = "set")
     private Window(
             WindowMode mode,
-            WindowSize size, Vector2f position,
-            float refreshRate, boolean vSyncEnabled, int samples,
+            WindowSize size, Vector2fc position,
+            float refreshRate, boolean vSyncEnabled, int samples, boolean resizeable,
             String title,
             Cursor cursor,
             List<KeyInputHandler> keyInputs,
@@ -240,10 +249,10 @@ public class Window implements Disposable {
     ) {
         this.mode = mode;
         this.size = size;
-        this.position = position;
         this.targetFrameRate = refreshRate;
         this.vSyncEnabled = vSyncEnabled;
         this.samples = samples;
+        this.resizeable = resizeable;
 
         this.title = title;
 
@@ -254,7 +263,7 @@ public class Window implements Disposable {
         this.keyInputs = keyInputs;
         this.cursorInputs = cursorInputs;
 
-        init();
+        init(position);
 
         this.setCursor(cursor.setWindow(this));
 
@@ -264,7 +273,7 @@ public class Window implements Disposable {
     }
 
     @SuppressWarnings("resource")
-    private void init() {
+    private void init(Vector2fc position) {
         if (!glfwInit()) throw new IllegalStateException("Unable to initialize glfw library");
 
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, MIN_GL_CONTEXT_MAJOR_VERSION);
@@ -278,7 +287,7 @@ public class Window implements Disposable {
         monitor = glfwGetPrimaryMonitor();
         if (monitor == NULL) throw new IllegalStateException("Could not find primary monitor");
 
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+        glfwWindowHint(GLFW_RESIZABLE, resizeable ? GLFW_RESIZABLE : GLFW_FALSE);
 
         GLFWVidMode videoMode = glfwGetVideoMode(monitor);
         if (videoMode == null) {
@@ -292,7 +301,17 @@ public class Window implements Disposable {
                 throw new IllegalStateException("Cannot auto-size window as video mode for monitor could not be retrieved");
             }
 
-            size = WindowSize.getLargestFit(videoMode.width(), videoMode.height());
+            currentSize = new Vector2i(WindowSize.getLargestFit(videoMode.width(), videoMode.height()).getVec());
+        } else if (size == WindowSize.DEFAULT) {
+            if (videoMode != null
+                && (WindowSize.DEFAULT.getWidth() > videoMode.width()
+                    || WindowSize.DEFAULT.getHeight() > videoMode.height())) {
+                currentSize = new Vector2i(videoMode.width() / 3, videoMode.height() / 2);
+            } else {
+                currentSize = new Vector2i(WindowSize.DEFAULT.getVec());
+            }
+        } else {
+            currentSize = new Vector2i(size.getVec());
         }
 
         if (targetFrameRate == GLFW_DONT_CARE) targetFrameRate = videoMode.refreshRate();
@@ -302,7 +321,7 @@ public class Window implements Disposable {
 
         glfwWindowHint(GLFW_SAMPLES, samples);
 
-        this.window = glfwCreateWindow(size.getWidth(), size.getHeight(), title,
+        this.window = glfwCreateWindow(currentSize.x(), currentSize.y(), title,
                 switch (mode) {
                     case FULLSCREEN -> monitor;
                     case WINDOWED, BORDERLESS -> NULL;
@@ -311,6 +330,8 @@ public class Window implements Disposable {
         checkErrorThrowing();
         if (this.window == NULL) throw new IllegalStateException("Could not create glfw window");
 
+        hide();
+
         glfwMakeContextCurrent(window);
         initGl();
 
@@ -318,16 +339,25 @@ public class Window implements Disposable {
 
         configInput();
 
-        setPos(position);
+        if (size == WindowSize.DEFAULT) setPos(new Vector2f(100));
+        else if (position != null) setPos(position);
         this.built = true;
 
         setTitle(title);
 
         glfwSetErrorCallback(null);
+
+        show();
     }
 
     @SuppressWarnings("resource")
     private void configInput() {
+        glfwSetFramebufferSizeCallback(window, (_, width, height) -> {
+            glViewport(0, 0, width, height);
+            currentSize.set(width, height);
+        });
+        //glfwSetWindowRefreshCallback() //TODO can be used to update during moving, resizing etc.
+
         if (USE_RAW_MOUSE_MOTION_IF_AVAILABLE && glfwRawMouseMotionSupported()) {
             glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
         }
@@ -451,7 +481,6 @@ public class Window implements Disposable {
         }
     }
 
-    //TODO make package-private
     long getID() {
         return window;
     }
@@ -488,8 +517,12 @@ public class Window implements Disposable {
     }
 
     //on Windows, will only succeed if entire window is still within screen space after translation
-    public void setPos(Vector2f pos) {
+    public void setPos(Vector2fc pos) {
         glfwSetWindowPos(this.window, (int) pos.x(), (int) pos.y());
+    }
+
+    public Vector2ic getCurrentSize() {
+        return currentSize;
     }
 
     public void setCursor(Cursor cursor) {

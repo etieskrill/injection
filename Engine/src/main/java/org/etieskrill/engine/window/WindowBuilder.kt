@@ -4,12 +4,22 @@ import org.etieskrill.engine.input.*
 import org.etieskrill.engine.input.InputBinding.Trigger
 import org.etieskrill.engine.window.Window.WindowMode
 import org.etieskrill.engine.window.Window.WindowSize
-import org.joml.Vector2f
 import org.joml.Vector2fc
 import org.lwjgl.glfw.GLFW.GLFW_DONT_CARE
 
-class WindowBuilder {
+class WindowBuilder(
+    var mode: WindowMode = WindowMode.WINDOWED,
+    var size: WindowSize = WindowSize.DEFAULT,
+    var position: Vector2fc? = null,
+    var refreshRate: Int = GLFW_DONT_CARE,
+    var vSync: Boolean = false,
+    var samples: Int = 0,
+    var resizeable: Boolean = false,
+    var title: String = "Injection Window",
+    var cursor: Cursor? = Cursor.getDefault(),
+) {
     lateinit var window: Window
+
     internal val inputs = mutableListOf<InputBuilder>()
 
     fun inputs(init: InputBuilder.() -> Unit) {
@@ -64,34 +74,25 @@ class InputBuilderBlock {
 }
 
 fun window(
-    mode: WindowMode = WindowMode.WINDOWED,
-    size: WindowSize = WindowSize.LARGEST_FIT,
-    position: Vector2fc = Vector2f(),
-    refreshRate: Int = GLFW_DONT_CARE,
-    vSync: Boolean = false,
-    samples: Int = 0,
-    title: String = "Injection Window",
-    cursor: Cursor? = Cursor.getDefault(),
-    init: WindowBuilder.() -> Unit
+    init: WindowBuilder.() -> Unit = {}
 ): Window {
-    val javaBuilder = Window.builder()
-        .setMode(mode)
-        .setSize(size)
-        .setPosition(position as Vector2f)
-        .setRefreshRate(refreshRate.toFloat())
-        .setVSyncEnabled(vSync)
-        .setSamples(samples)
-        .setTitle(title)
-        .setCursor(cursor)
-
     val builder = WindowBuilder()
     init(builder)
 
-    javaBuilder
+    val window = Window.builder()
+        .setMode(builder.mode)
+        .setSize(builder.size)
+        .setPosition(builder.position)
+        .setRefreshRate(builder.refreshRate.toFloat())
+        .setVSyncEnabled(builder.vSync)
+        .setSamples(builder.samples)
+        .setResizeable(builder.resizeable)
+        .setTitle(builder.title)
+        .setCursor(builder.cursor)
         .setKeyInputs(builder.inputs.flatMap { keyInputBuilders -> keyInputBuilders.keyInputs })
         .setCursorInputs(builder.inputs.flatMap { cursorInputBuilders -> cursorInputBuilders.cursorInputs })
+        .build()
 
-    val window = javaBuilder.build()
     builder.window = window
     return window
 }

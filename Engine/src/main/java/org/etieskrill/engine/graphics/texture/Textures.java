@@ -79,6 +79,10 @@ public class Textures {
         return new AbstractTexture.TextureData(textureData, new Vector2i(pixelWidth, pixelHeight), format);
     }
 
+    public static Texture2D ofFile(String file) {
+        return new Texture2D.FileBuilder(file).build();
+    }
+
     public static Texture2D ofFile(String file, AbstractTexture.Type type) {
         return new Texture2D.FileBuilder(file, type).build();
     }

@@ -47,6 +47,10 @@ public abstract class GameApplication {
         logger.info("Loaded static application configuration");
     }
 
+    public GameApplication() {
+        this(Window.builder().build());
+    }
+
     public GameApplication(Window window) {
         StepTimer timer = new StepTimer(logger);
         timer.start();

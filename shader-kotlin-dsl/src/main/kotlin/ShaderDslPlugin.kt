@@ -86,7 +86,16 @@ internal class IrShaderGenerationExtension(
                     require(!it.isVar) { "Vertex data struct may only have val members: ${it.name.asString()} is var" }
                     it.name.asString() != POSITION_FIELD_NAME
                 },
-                renderTargets = types.renderTargetsType.getGlslFields().keys.toList(),
+                renderTargets = types.renderTargetsType.getGlslFields {
+                    require(!it.isVar) { "Render target struct may only have val members: ${it.name.asString()} is var" }
+                    require(it.backingField!!.type.equals<RenderTarget>())
+                    {
+                        "Render target struct may only have members of type RenderTarget: ${
+                            it.name.asString()
+                        } is ${it.backingField!!.type.simpleName}"
+                    }
+                    true
+                }.keys.toList(),
                 constants = constDeclarations,
                 uniforms = shader.getDelegatedProperties<UniformDelegate<*>, GlslType> { property ->
                     property.name.asString() to property.backingField?.type?.let { type ->

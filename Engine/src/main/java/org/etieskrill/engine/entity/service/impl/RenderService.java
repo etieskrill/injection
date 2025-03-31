@@ -1,6 +1,5 @@
 package org.etieskrill.engine.entity.service.impl;
 
-import io.github.etieskrill.injection.extension.shader.AbstractShader;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -354,11 +353,6 @@ class GaussBlurPostBuffers implements Disposable {
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
         glDepthMask(true);
         glEnable(GL_DEPTH_TEST);
-    }
-
-    private static void setTexture(AbstractShader shader, String name, int unit, AbstractTexture texture) {
-        shader.setUniform(name, unit);
-        texture.bind(unit);
     }
 
     @Override

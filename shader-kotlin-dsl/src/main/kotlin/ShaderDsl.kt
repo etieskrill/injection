@@ -2,6 +2,7 @@ package io.github.etieskrill.injection.extension.shader.dsl
 
 import io.github.etieskrill.injection.extension.shader.*
 import org.joml.Vector2f
+import org.joml.Vector2i
 import org.joml.Vector4f
 import kotlin.properties.ReadOnlyProperty
 import kotlin.properties.ReadWriteProperty
@@ -49,7 +50,9 @@ abstract class ShaderBuilder<VA : Any, V : ShaderVertexData, RT : Any>(shader: A
 
     protected abstract fun program()
 
+    protected fun vec2(s: Number): vec2 = Vector2f()
     protected fun vec2(x: Number, y: Number): vec2 = Vector2f()
+    protected fun ivec2(s: Number): ivec2 = Vector2i()
 
 }
 
@@ -59,8 +62,11 @@ open class GlslReceiver {
     operator fun Number.div(v: vec2): vec2 = error()
     operator fun Number.div(v: ivec2): vec2 = error()
 
+    fun vec2(s: Number): vec2 = Vector2f()
     fun vec2(x: Number, y: Number): vec2 = error()
     fun vec2(v: ivec2): vec2 = error()
+
+    fun ivec2(s: Int): ivec2 = Vector2i()
 
     fun vec3(s: Number): vec3 = error()
     fun vec3(x: Number, y: Number, z: Number): vec3 = error()
@@ -76,10 +82,15 @@ open class GlslReceiver {
     val vec4.rgb: vec3 by swizzle()
 
     operator fun vec2.plus(v: vec2): vec2 = error()
+    operator fun vec2.minus(s: Number): vec2 = error()
     operator fun vec2.minus(v: vec2): vec2 = error()
     operator fun vec2.times(s: Number): vec2 = error()
     operator fun vec2.times(v: vec2): vec2 = error()
+    operator fun vec2.times(v: ivec2): vec2 = error()
     operator fun vec2.div(v: vec2): vec2 = error()
+    operator fun vec2.rem(s: Number): vec2 = error()
+
+    operator fun ivec2.div(v: ivec2): ivec2 = error()
 
     operator fun vec3.plus(v: vec3): vec3 =
         error() //do NOT use the assignment operators (e.g. plusAssign) - great, so += MAY be automatically converted to + and =
@@ -90,6 +101,7 @@ open class GlslReceiver {
     operator fun vec3.times(s: Number): vec3 = error()
     operator fun vec3.div(v: vec3): vec3 = error()
 
+    fun max(v: vec2, s: Number): vec2 = error()
     fun max(v1: vec2, v2: vec2): vec2 = error()
 
     fun pow(v1: vec3, v2: vec3): vec3 = error()

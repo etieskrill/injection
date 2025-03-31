@@ -3,7 +3,6 @@ package io.github.etieskrill.injection.extension.shader.dsl
 import io.github.etieskrill.injection.extension.shader.ShaderStage
 import io.github.etieskrill.injection.extension.shader.ShaderStage.*
 import io.github.etieskrill.injection.extension.shader.dsl.GlslStorageQualifier.CONST
-import io.github.etieskrill.injection.extension.shader.dsl.OperatorType.entries
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.IrStatement
@@ -35,10 +34,25 @@ private enum class OperatorType(
     val operator: String
 ) { PLUS("+"), MINUS("-"), TIMES("*"), DIV("/"), REM("%"), FUN("<fun>") }
 
-private val String.glslOperator get() = entries.firstOrNull { it.name.equals(this, true) }
+private val String.glslOperator get() = OperatorType.entries.firstOrNull { it.name.equals(this, true) }
 private val String.isGlslOperator get() = glslOperator != null
 
-private val builtinFunctionNames = GlslReceiver::class.members.map { it.name }
+private enum class WeirdIrResolvedOperatorType(
+    val operator: String
+) { GREATER(">"), LESS("<"), GREATEROREQUAL(">="), LESSOREQUAL("<=") }
+
+private val String.resolvedGlslOperator
+    get() = WeirdIrResolvedOperatorType.entries.firstOrNull {
+        it.name.equals(
+            this,
+            true
+        )
+    }
+private val String.isResolvedGlslOperator get() = resolvedGlslOperator != null
+
+private val builtinFunctionNames = GlslReceiver::class.members
+    .filterNot { it.name in listOf("equals", "hashCode", "toString") }
+    .map { it.name }
 
 private data class TranspilerData(
     val pluginContext: IrPluginContext,
@@ -73,8 +87,20 @@ internal fun generateGlsl(programData: VisitorData, pluginContext: IrPluginConte
     )
     newline()
 
-    appendLine(generateStruct(programData.vertexDataStructType, programData.vertexDataStruct))
+    appendLine(
+        """
+        // This is automatically generated code. 
+        // It should not be manually edited, and any changes will be lost upon recompilation.
+    """.trimIndent()
+    )
     newline()
+
+    val generateVertexStruct = programData.vertexDataStruct.isNotEmpty()
+
+    if (generateVertexStruct) {
+        appendLine(generateStruct(programData.vertexDataStructType, programData.vertexDataStruct))
+        newline()
+    }
 
     programData.constants.forEach { (name, constExpression) ->
         val resolver = GlslValueTranspiler()
@@ -110,8 +136,10 @@ internal fun generateGlsl(programData: VisitorData, pluginContext: IrPluginConte
     }
     newline()
 
-    appendLine(generateStatement(GlslStorageQualifier.OUT, programData.vertexDataStructType, "vertex"))
-    newline()
+    if (generateVertexStruct) {
+        appendLine(generateStatement(GlslStorageQualifier.OUT, programData.vertexDataStructType, "vertex"))
+        newline()
+    }
 
     programData.definedFunctions.filter { it.value.first == VERTEX }.forEach { (_, function) ->
         appendLine(generateFunction(function.second, transpilerData))
@@ -126,8 +154,10 @@ internal fun generateGlsl(programData: VisitorData, pluginContext: IrPluginConte
     appendLine(generateStage(FRAGMENT))
     newline()
 
-    appendLine(generateStatement(GlslStorageQualifier.IN, programData.vertexDataStructType, "vertex"))
-    newline()
+    if (generateVertexStruct) {
+        appendLine(generateStatement(GlslStorageQualifier.IN, programData.vertexDataStructType, "vertex"))
+        newline()
+    }
 
     programData.renderTargets.forEach {
         appendLine(generateStatement(GlslStorageQualifier.OUT, "vec4", it))
@@ -336,7 +366,23 @@ private open class GlslTranspiler(
 
             functionName in data.definedFunctions -> handleFunction(functionName, expression, data)
             functionName.isGlslOperator -> handleOperator(functionName.glslOperator!!, expression, data)
+            functionName.isResolvedGlslOperator -> handleResolvedOperator(
+                functionName.resolvedGlslOperator!!,
+                expression,
+                data
+            )
+
+            functionName == "toFloat" -> {
+                "${expression.receiver!!.accept(this, data)}.0"
+            }
             functionName in builtinFunctionNames -> handleFunction(functionName, expression, data)
+            functionName.removePrefix("<set-")
+                .removeSuffix(">") in builtinFunctionNames -> { //could split using KClass::memberFunctions and KClass::memberProperties if needed
+                "${expression.receiver!!.accept(this, data)}.${
+                    functionName.removePrefix("<set-").removeSuffix(">")
+                } = ${expression.getValueArgument(0)!!.accept(this, data)}"
+            }
+
             else -> error("Unexpected function $functionName:\n${expression.dump()}")
         }
     }
@@ -423,10 +469,19 @@ private open class GlslTranspiler(
                     || expression.dispatchReceiver != null
         )
         { "Operator function did not have a receiver: $operator:\n${expression.render()}" }
-        return "(${(expression.extensionReceiver ?: expression.dispatchReceiver)!!.accept(this, data)} ${
+        return "(${expression.receiver!!.accept(this, data)} ${
             operator.operator
         } ${expression.getValueArgument(0)!!.accept(this, data)})"
     }
+
+    private fun handleResolvedOperator(
+        operator: WeirdIrResolvedOperatorType,
+        expression: IrCall,
+        data: TranspilerData
+    ): String =
+        "(${expression.getValueArgument(0)!!.accept(this, data)} ${
+            operator.operator
+        } ${expression.getValueArgument(1)!!.accept(this, data)})"
 
     @OptIn(ObsoleteDescriptorBasedAPI::class)
     private fun handleFunction(

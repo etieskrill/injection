@@ -45,6 +45,7 @@ private val primitiveTypes = mutableMapOf(
     double::class to "double",
     bool::class to "bool",
     vec2::class to "vec2",
+    ivec2::class to "ivec2",
     vec3::class to "vec3",
     vec4::class to "vec4",
     mat3::class to "mat3",
@@ -53,6 +54,7 @@ private val primitiveTypes = mutableMapOf(
 
 private val jomlConstantTypes = mapOf(
     Vector2f::class to Vector2fc::class,
+    Vector2i::class to Vector2ic::class,
     Vector3f::class to Vector3fc::class,
     Vector4f::class to Vector4fc::class,
     Matrix3f::class to Matrix3fc::class,
