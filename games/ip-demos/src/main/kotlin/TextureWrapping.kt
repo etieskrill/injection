@@ -7,8 +7,13 @@ import org.etieskrill.engine.application.GameApplication
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
 import org.etieskrill.engine.graphics.texture.AbstractTexture
 import org.etieskrill.engine.graphics.texture.Texture2D
+import org.etieskrill.engine.input.CursorInputAdapter
+import org.etieskrill.engine.input.Key
 import org.etieskrill.engine.input.Keys
+import org.etieskrill.engine.window.Cursor
 import org.etieskrill.engine.window.window
+import org.joml.Vector2d
+import org.joml.Vector2f
 import org.lwjgl.opengl.GL11C.*
 import org.lwjgl.opengl.GL12C.GL_CLAMP_TO_EDGE
 import org.lwjgl.opengl.GL12C.GL_TEXTURE_WRAP_R
@@ -16,10 +21,15 @@ import org.lwjgl.opengl.GL13.GL_CLAMP_TO_BORDER
 import org.lwjgl.opengl.GL30C.glBindVertexArray
 import org.lwjgl.opengl.GL30C.glGenVertexArrays
 
-class App : GameApplication(window { resizeable = true }) {
+class App : GameApplication(window {
+    resizeable = true
+    cursor = Cursor.getDefault(Cursor.CursorShape.RESIZE_ALL)
+}) {
     lateinit var texture: Texture2D
     lateinit var shader: TextureWrappingShader
     var dummyVAO: Int = -1
+
+    lateinit var textureOffset: Vector2d
 
     override fun init() {
         texture = Texture2D.FileBuilder("lena_rgb.png").build()
@@ -39,6 +49,41 @@ class App : GameApplication(window { resizeable = true }) {
         }
 
         setTextureWrapping(wrapping)
+
+        textureOffset = Vector2d()
+
+        window.addCursorInputs(object : CursorInputAdapter {
+            var clicked = false
+            override fun invokeClick(button: Key?, action: Int, posX: Double, posY: Double): Boolean {
+                if (button == Keys.LEFT_MOUSE.input) {
+                    clicked = action == 1
+                    prevX = posX
+                    prevY = posY
+                }
+
+                return false
+            }
+
+            var prevX: Double? = null
+            var prevY: Double? = null
+            override fun invokeMove(posX: Double, posY: Double): Boolean {
+                if (!clicked) return false
+
+                if (prevX == null || prevY == null) {
+                    prevX = posX
+                    prevY = posY
+                    return false
+                }
+
+                textureOffset.x += prevX!! - posX
+                textureOffset.y += prevY!! - posY
+
+                prevX = posX
+                prevY = posY
+
+                return false
+            }
+        })
     }
 
     private fun setTextureWrapping(wrapping: TextureWrapping) {
@@ -67,6 +112,7 @@ class App : GameApplication(window { resizeable = true }) {
         shader.start()
         shader.texture = texture
         shader.windowSize = window.currentSize
+        shader.offset = Vector2f(textureOffset)
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }
 }
@@ -86,6 +132,8 @@ class TextureWrappingShader : ShaderBuilder<Any, TextureWrappingShader.Vertex, T
     var windowSize by uniform<ivec2>()
     var mirrorTexCords by uniform<bool>()
 
+    var offset by uniform<vec2>()
+
     override fun program() {
         vertex {
             val texCoords = max(vertices[vertexID], 0)
@@ -97,7 +145,8 @@ class TextureWrappingShader : ShaderBuilder<Any, TextureWrappingShader.Vertex, T
             )
         }
         fragment {
-            val scaledCoords = it.texCoords * (vec2(windowSize) / textureSize)
+            var scaledCoords = it.texCoords * (vec2(windowSize) / textureSize)
+            scaledCoords += offset / textureSize
 
             if (mirrorTexCords) {
                 val reduced = scaledCoords % 2

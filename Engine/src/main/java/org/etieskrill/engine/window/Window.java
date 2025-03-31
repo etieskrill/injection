@@ -321,6 +321,7 @@ public class Window implements Disposable {
 
         glfwWindowHint(GLFW_SAMPLES, samples);
 
+        //TODO find way to create hidden to avoid initial flash before hiding
         this.window = glfwCreateWindow(currentSize.x(), currentSize.y(), title,
                 switch (mode) {
                     case FULLSCREEN -> monitor;
@@ -329,8 +330,6 @@ public class Window implements Disposable {
                 NULL);
         checkErrorThrowing();
         if (this.window == NULL) throw new IllegalStateException("Could not create glfw window");
-
-        hide();
 
         glfwMakeContextCurrent(window);
         initGl();
@@ -346,8 +345,6 @@ public class Window implements Disposable {
         setTitle(title);
 
         glfwSetErrorCallback(null);
-
-        show();
     }
 
     @SuppressWarnings("resource")
