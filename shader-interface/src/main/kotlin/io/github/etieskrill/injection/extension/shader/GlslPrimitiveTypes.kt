@@ -15,6 +15,8 @@ typealias vec2 = Vector2fc
 typealias vec3 = Vector3fc
 typealias vec4 = Vector4fc
 
+typealias ivec2 = Vector2ic
+
 typealias mat3 = Matrix3fc
 typealias mat4 = Matrix4fc
 

@@ -21,15 +21,23 @@ class GaussBlurShader : ShaderBuilder<
 
     val weights by const(arrayOf(0.227027, 0.1945946, 0.1216216, 0.054054, 0.016216))
 
-    private fun sampleWithOffset(offset: vec2): vec3 = fragFunc {
-        var result = vec3(0)
-        for (i in 0..weights.size) { //TODO omg i want to commit toaster bath
+//    private fun sampleWithOffsetGlslConvention(@inout result: vec3, offset: vec2) = fragFunc {
+//        var result: vec3 = empty() //TODO would require primitives as vars - but that wouldn't work for kotlin primitives either, so probs a no go - why the fuck are params no longer vars kotlin? that is absolutely something that should be up to users. meh, one of the growing number of instances of an actually limiting amount of "convention", handholding, really
+//        for (i in 1..5) {
+//            result += texture(source, it.texCoords + offset * sampleDistance * i).rgb * weights[i]
+//            result += texture(source, it.texCoords - offset * sampleDistance * i).rgb * weights[i]
+//        }
+//    }
+
+    private fun sampleWithOffsetPure(offset: vec2): vec3 = fragFunc {
+        var offsetSample = vec3(0)
+        for (i in 1..weights.size) {
 //        for (i in weights.indices) {
 //        for ((i, weight) in weights.withIndex()) {
-            result += texture(source, it.texCoords + offset * sampleDistance * i).rgb * weights[i]
-            result += texture(source, it.texCoords - offset * sampleDistance * i).rgb * weights[i]
+            offsetSample += texture(source, it.texCoords + offset * sampleDistance * i).rgb * weights[i]
+            offsetSample += texture(source, it.texCoords - offset * sampleDistance * i).rgb * weights[i]
         }
-        result
+        offsetSample
     }
 
     override fun program() {
@@ -48,7 +56,7 @@ class GaussBlurShader : ShaderBuilder<
                 if (horizontal) vec2(texOffset.x, 0)
                 else vec2(0, texOffset.y)
 
-            result += sampleWithOffset(offset)
+            result += sampleWithOffsetPure(offset)
 
             RenderTargets(
                 colour = vec4(result, 1.0).rt

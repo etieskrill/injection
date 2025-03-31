@@ -36,7 +36,7 @@ internal class IrShaderGenerationExtension(
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
         val shaderClasses = moduleFragment
-            .files
+            .files //TODO just passing a copy of the ir would avoid the compilation issues that often arise after my "transforms" - what would be even better is to just stop the compiler from trying to emit code for ShaderBuilder classes
             .map { it.declarations } //TODO find non top-level decls as well
             .flatten()
             .filterIsInstance<IrClass>()
@@ -247,6 +247,11 @@ internal val IrType.glslType: GlslType?
         if (fullName == RenderTarget::class.qualifiedName) return GlslType("vec4")
         if (fullName == ShadowMap::class.qualifiedName) TODO("shadow types")
         val name = this.fullName.glslType ?: return null
+
+        if (name == "double") { //TODO either check extensions or downcast - well, that's this here
+            return@getOrPutNullable GlslType("float")
+        }
+
         GlslType(name)
     }
 

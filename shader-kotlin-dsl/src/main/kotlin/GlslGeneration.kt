@@ -6,6 +6,7 @@ import io.github.etieskrill.injection.extension.shader.dsl.GlslStorageQualifier.
 import io.github.etieskrill.injection.extension.shader.dsl.OperatorType.entries
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.IrElement
+import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.*
@@ -47,7 +48,10 @@ private data class TranspilerData(
     val vertexDataStructName: String,
     var stage: ShaderStage = NONE,
     var operatorStack: MutableList<OperatorType> = mutableListOf(), //TODO remove brackets where neighboring operators are same or less binding
-)
+) {
+    val irFunctions: List<IrFunction>
+        get() = definedFunctions.map { it.value.second }
+}
 
 //TODO:
 // - detect usages for uniforms, consts and functions and if only used in one stage, move there
@@ -195,18 +199,26 @@ private fun generateArrayStatement(
     return "$qualifier $type $name[$size]${initialiser?.let { " = $initialiser" } ?: ""};"
 }
 
+@OptIn(UnsafeDuringIrConstructionAPI::class)
 private fun generateFunction(function: IrFunction, data: TranspilerData) = buildIndentedString {
     val returnType = data.resolveGlslType(function.returnType)
     val parameters = function.valueParameters
         .onEach { check(it.defaultValue == null) { TODO("Default value splitting... mangling i think it's called?") } }
         .joinToString(",") { "${data.resolveGlslType(it.type)} ${it.name.asString()}" }
 
-    appendLine("$returnType ${function.name}($parameters) {")
+    val body = function.body!!.findElement<IrBlockBody>()!!
+
+    val returnStatement = body.findElement<IrReturn>()!!
+    val variableName = returnStatement.value.accept(GlslTranspiler(), data)
+    val variable =
+        body.findElement<IrVariable> { it.name == (returnStatement.value as? IrGetValue)?.symbol?.owner?.name }
+    val ignore = if (variable == null) listOf(returnStatement) else listOf(variable, returnStatement)
+
+    appendLine("void ${function.name}(inout $returnType $variableName, $parameters) {")
     indent {
-        val body = function.body!!.findElement<IrBlockBody>()!!
-        appendMultiLine(body.accept(GlslTranspiler(), data))
+        appendMultiLine(body.accept(GlslTranspiler(ignore), data))
     }
-    appendLine("}")
+    append("}")
 }
 
 private fun generateMain(body: IrBlockBody, data: TranspilerData) = buildIndentedString {
@@ -244,6 +256,7 @@ private fun generateMain(body: IrBlockBody, data: TranspilerData) = buildIndente
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 private open class GlslTranspiler(
+    val ignoredBlockStatements: List<IrStatement> = listOf(), //FIXME quite ugly, but effective as i do not know how to property transform the ir tree, and i'm walking a little on the edge with the ones i am doing (and actually, in the case of the godawful "value-return" call convention of glsl; i don't think a valid transform is possible)
     val unwrapReturn: Boolean = false
 ) : IrVisitor<String, TranspilerData>() {
     override fun visitElement(element: IrElement, data: TranspilerData): String =
@@ -251,11 +264,16 @@ private open class GlslTranspiler(
 
     override fun visitBlock(expression: IrBlock, data: TranspilerData): String = when {
         expression.origin == IrStatementOrigin.FOR_LOOP -> expression.accept(GlslForLoopTranspiler(this), data)
-        else -> expression.statements.joinToString(";\n", postfix = ";") { it.accept(this, data) }
+        else -> expression
+            .statements
+            .filterNot { ignoredBlockStatements.contains(it) }
+            .joinToString(";\n", postfix = ";") { it.accept(this, data) }
     }
 
     override fun visitBlockBody(body: IrBlockBody, data: TranspilerData): String =
-        body.statements.joinToString(";\n") { it.accept(this, data) }
+        body.statements
+            .filterNot { ignoredBlockStatements.contains(it) }
+            .joinToString(";\n") { it.accept(this, data) }
 
     override fun visitVariable(declaration: IrVariable, data: TranspilerData): String {
         val initialiser = declaration.initializer
@@ -367,26 +385,35 @@ private open class GlslTranspiler(
     )
 
     override fun visitSetValue(expression: IrSetValue, data: TranspilerData): String {
-        return when (expression.origin) {
-            EQ -> {
-                val leftSide = expression.symbol.owner.name.asString()
-                val rightSide = expression.value.accept(this, data)
+        var leftSide: String
+        var operator: String
+        var rightSideExpression: IrExpression
 
-                "$leftSide = $rightSide"
+        when (expression.origin) {
+            EQ -> {
+                leftSide = expression.symbol.owner.name.asString()
+                operator = "="
+                rightSideExpression = expression.value
             }
 
             in assignmentOperators -> {
-                val leftSide = expression.symbol.owner.name.asString()
-                val rightSide =
+                leftSide = expression.symbol.owner.name.asString()
+                operator = assignmentOperators[expression.origin]!!
+                rightSideExpression =
                     (expression.value as IrCall) //TODO wrapper funcs, especially for getting params //FIXME if assignment op is passed, this will be IrGetValue instead of IrCall
                         .getArgumentsWithIr()
                         .first { it.first.name.asString() != "<this>" } //TODO receiver helper funcs
-                        .second.accept(this, data)
-                "$leftSide ${assignmentOperators[expression.origin]!!} $rightSide"
+                        .second
             }
 
             else -> TODO()
         }
+
+        if (rightSideExpression is IrCall && rightSideExpression.symbol.owner in data.irFunctions) {
+            return handleFunction(rightSideExpression.symbol.owner.name.asString(), rightSideExpression, data, leftSide)
+        }
+
+        return "$leftSide $operator ${rightSideExpression.accept(this, data)}"
     }
 
     private fun handleOperator(operator: OperatorType, expression: IrCall, data: TranspilerData): String {
@@ -402,18 +429,27 @@ private open class GlslTranspiler(
     }
 
     @OptIn(ObsoleteDescriptorBasedAPI::class)
-    private fun handleFunction(functionName: String, expression: IrCall, data: TranspilerData): String = expression
-        .getAllArgumentsWithIr()
-        .filterNot { it.first.name.isSpecial }
-        .joinToString(", ", prefix = "$functionName(", postfix = ")") { (param, value) ->
-            value?.accept(this, data)
-                ?: param.defaultValue?.toString() //FIXME
-                ?: error(
-                    "Argument ${param.index} '${
-                        param.name.asString()
-                    }' of method $functionName was null, but no default value is present:\n${expression.dump()}"
-                )
-        }
+    private fun handleFunction(
+        functionName: String,
+        expression: IrCall,
+        data: TranspilerData,
+        prefixArgument: String? = null
+    ): String {
+        val parameters = expression
+            .getAllArgumentsWithIr()
+            .filterNot { it.first.name.isSpecial }
+            .joinToString(", ") { (param, value) ->
+                value?.accept(this, data)
+                    ?: param.defaultValue?.toString() //FIXME
+                    ?: error(
+                        "Argument ${param.index} '${
+                            param.name.asString()
+                        }' of method $functionName was null, but no default value is present:\n${expression.dump()}"
+                    )
+            }
+
+        return "$functionName(${prefixArgument?.let { "$it, " }.orEmpty()}$parameters)"
+    }
 
     override fun visitValueParameter(declaration: IrValueParameter, data: TranspilerData): String {
         if (declaration.name.asString() == "lod") error(declaration.dump())
@@ -505,7 +541,7 @@ private class GlslForLoopTranspiler(
 
             appendLine("for ($loopVariableType $loopVariableName = $start; $loopVariableName < $end; $loopVariableName++) {")
             indent { appendMultiLine(loopBody) }
-            appendLine("}")
+            append("}")
         }
     }
 
