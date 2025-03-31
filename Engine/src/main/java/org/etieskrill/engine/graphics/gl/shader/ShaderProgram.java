@@ -491,13 +491,22 @@ public abstract class ShaderProgram implements Disposable,
     }
 
     /**
-     * Binds a {@link AbstractTexture Texture} to a shader's uniform sampler called {@code name}. This requires {@link #start()} to be
-     * called before beginning a render pass and before calling this method to work properly.
+     * Binds a {@link AbstractTexture Texture} to a shader's uniform sampler called {@code name} if there are still
+     * texture slots available. This requires {@link #start()} to be called before beginning a render pass and before
+     * calling this method to work properly.
+     * <p>
+     * This function tries to map every name it is called with to a texture unit, i.e. if a name that is currently
+     * bound to a texture unit is set, the texture unit is replaced instead of the next slot being used in order to
+     * minimise slot usage spread within a render pass.
      *
      * @param name    the sampler name in the shader
      * @param texture the texture to be bound
      */
     public void setTexture(@NotNull String name, @NotNull Texture texture, boolean strict) {
+        //TODO other opt case: same textures un-/rebound several times -> should just set uniform, but not bind texture
+        // generally this should be bound to the render thread and not a shader
+        // could introduce render block function to automatically scope the cache
+
         int unit;
         var boundUnit = boundTextures.get(name);
         if (boundUnit != null) {
@@ -607,9 +616,14 @@ public abstract class ShaderProgram implements Disposable,
         if (type == null)
             throw new ShaderUniformException("Could not determine uniform type for " + value.getClass().getSimpleName());
 
-        Integer hashCode = cachedUniforms.get(location); // hashCode because joml tries to be smart and first checks for object reference equality
-        if (hashCode != null && value.hashCode() == hashCode) return;
-        else cachedUniforms.put(location, value.hashCode());
+//        if (new Vector2f(0).hashCode() == new Vector2f(2).hashCode()) { //who'd've thought my demons would come to haunt me this quickly
+//            throw new RuntimeException("Thats crazy thats crazy thats messed up");
+//        }
+
+        //FIXME due to usage of hashCode, collisions are quite high, especially at "usual" values - so just compare actual values - and then improvement is probs, like, insignificant
+//        Integer hashCode = cachedUniforms.get(location); // hashCode because joml tries to be smart and first checks for object reference equality
+//        if (hashCode != null && value.hashCode() == hashCode) return;
+//        else cachedUniforms.put(location, value.hashCode());
 
         if (AUTO_START_ON_VARIABLE_SET) bind(); //TODO replace with dsa if viable
 
@@ -755,13 +769,13 @@ public abstract class ShaderProgram implements Disposable,
             INT(Integer.class, () -> 0),
             FLOAT(Float.class, () -> 0f),
             BOOLEAN(Boolean.class, () -> false, "bool"),
-            VEC2(Vector2f.class, Vector2f::new),
-            VEC2I(Vector2i.class, Vector2i::new),
-            VEC3(Vector3f.class, Vector3f::new),
-            VEC4(Vector4f.class, Vector4f::new),
-            MAT2(Matrix2f.class, Matrix2f::new),
-            MAT3(Matrix3f.class, Matrix3f::new),
-            MAT4(Matrix4f.class, Matrix4f::new),
+            VEC2(Vector2f.class, Vector2fc.class, Vector2f::new),
+            VEC2I(Vector2i.class, Vector2ic.class, Vector2i::new),
+            VEC3(Vector3f.class, Vector3fc.class, Vector3f::new),
+            VEC4(Vector4f.class, Vector4fc.class, Vector4f::new),
+            MAT2(Matrix2f.class, Matrix2fc.class, Matrix2f::new),
+            MAT3(Matrix3f.class, Matrix3fc.class, Matrix3f::new),
+            MAT4(Matrix4f.class, Matrix4fc.class, Matrix4f::new),
 
             SAMPLER_2D(Integer.class, () -> 0),
             SAMPLER_2D_ARRAY(Integer.class, () -> 0),
@@ -773,6 +787,7 @@ public abstract class ShaderProgram implements Disposable,
             STRUCT(UniformMappable.class, null);
 
             private final Class<?> type;
+            private final @Nullable Class<?> constType;
             private final Supplier<?> defaultValueGenerator;
 
             private final String glslName;
@@ -800,7 +815,7 @@ public abstract class ShaderProgram implements Disposable,
                 if (type == null) return null;
                 if (STRUCT.get().isAssignableFrom(type)) return STRUCT;
                 for (Type value : values) {
-                    if (value.get().equals(type)) return value;
+                    if (type.equals(value.type) || type.equals(value.constType)) return value;
                 }
 
                 var samplerType = samplerTypes.get(type); //FIXME remove this disgusto shit
@@ -822,8 +837,20 @@ public abstract class ShaderProgram implements Disposable,
                 this(type, defaultValueGenerator, null);
             }
 
+            <T> Type(Class<T> type, Class<? super T> constType, Supplier<T> defaultValueGenerator) {
+                this(type, constType, defaultValueGenerator, null);
+            }
+
             <T> Type(Class<T> type, Supplier<T> defaultValueGenerator, String glslName) {
+                this(type, null, defaultValueGenerator, glslName);
+            }
+
+            <T> Type(Class<T> type,
+                     @Nullable Class<? super T> constType,
+                     Supplier<T> defaultValueGenerator,
+                     String glslName) {
                 this.type = type;
+                this.constType = constType;
                 this.defaultValueGenerator = defaultValueGenerator;
                 this.glslName = glslName;
             }

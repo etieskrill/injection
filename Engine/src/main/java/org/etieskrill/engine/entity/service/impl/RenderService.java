@@ -1,5 +1,6 @@
 package org.etieskrill.engine.entity.service.impl;
 
+import io.github.etieskrill.injection.extension.shader.AbstractShader;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -289,7 +290,7 @@ class GaussBlurPostBuffers implements Disposable {
     private final Texture2D blurTextureBuffer1;
     private final FrameBuffer blurFrameBuffer2;
     private final Texture2D blurTextureBuffer2;
-    private final ShaderProgram gaussBlurShader;
+    private final GaussBlurShader gaussBlurShader;
 
     private final @Getter int dummyVAO;
 
@@ -314,13 +315,7 @@ class GaussBlurPostBuffers implements Disposable {
                 .attach(blurTextureBuffer2, COLOUR0)
                 .build();
 
-        this.gaussBlurShader = new ShaderProgram(List.of("GaussBlur.glsl"), false) {
-            @Override
-            protected void setUniformDefaults() {
-                //see above
-                addUniform("sampleDistance", Uniform.Type.VEC2, new Vector2f(1));
-            }
-        };
+        this.gaussBlurShader = new GaussBlurShader();
 
         dummyVAO = glGenVertexArrays();
     }
@@ -332,16 +327,16 @@ class GaussBlurPostBuffers implements Disposable {
 
         if (blur) {
             blurFrameBuffer1.bind();
-            setTexture(gaussBlurShader, "source", 1, bloomBuffer);
-            gaussBlurShader.setUniform("horizontal", true);
-            gaussBlurShader.setUniform("sampleDistance", new Vector2f(2));
             gaussBlurShader.start();
+            gaussBlurShader.setSource(bloomBuffer);
+            gaussBlurShader.setHorizontal(true);
+            gaussBlurShader.setSampleDistance(new Vector2f(2));
             glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
             for (int i = 0; i < GAUSS_BLUR_ITERATIONS * 2 - 1; i++) {
                 (blurBuffer1IsTarget ? blurFrameBuffer1 : blurFrameBuffer2).bind();
-                setTexture(gaussBlurShader, "source", 1, blurBuffer1IsTarget ? blurTextureBuffer2 : blurTextureBuffer1);
-                gaussBlurShader.setUniform("horizontal", blurBuffer1IsTarget);
+                gaussBlurShader.setSource(blurBuffer1IsTarget ? blurTextureBuffer2 : blurTextureBuffer1);
+                gaussBlurShader.setHorizontal(blurBuffer1IsTarget);
                 glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
                 blurBuffer1IsTarget = !blurBuffer1IsTarget;
@@ -350,10 +345,10 @@ class GaussBlurPostBuffers implements Disposable {
 
         FrameBuffer.bindScreenBuffer();
 
+        hdrShader.start();
         hdrShader.setHdrBuffer(hdrBuffer);
         if (blur) hdrShader.setBloomBuffer(blurBuffer1IsTarget ? blurTextureBuffer1 : blurTextureBuffer2);
         else hdrShader.setBloomBuffer(bloomBuffer);
-        hdrShader.start();
         glDepthMask(false);
         glDisable(GL_DEPTH_TEST);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
@@ -361,7 +356,7 @@ class GaussBlurPostBuffers implements Disposable {
         glEnable(GL_DEPTH_TEST);
     }
 
-    private static void setTexture(ShaderProgram shader, String name, int unit, AbstractTexture texture) {
+    private static void setTexture(AbstractShader shader, String name, int unit, AbstractTexture texture) {
         shader.setUniform(name, unit);
         texture.bind(unit);
     }

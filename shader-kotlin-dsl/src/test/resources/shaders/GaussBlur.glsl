@@ -24,13 +24,11 @@ uniform vec2 sampleDistance;
 
 const float weights[5] = float[](0.227027, 0.1945946, 0.1216216, 0.054054, 0.016216);
 
-vec3 sampleWithOffset(vec2 offset) {
-    vec3 result = vec3(0);
-    for (int i = 1; i < 5; i++) {
-        result += texture(source, texCoords + offset * sampleDistance * i).rgb * weights[i];
-        result += texture(source, texCoords - offset * sampleDistance * i).rgb * weights[i];
+void sampleWithOffsetPure(inout vec3 offsetSample, vec2 offset) {
+    for (int i = 1; i < weights.length(); i++) {
+        offsetSample += texture(source, texCoords + offset * sampleDistance * i).rgb * weights[i];
+        offsetSample += texture(source, texCoords - offset * sampleDistance * i).rgb * weights[i];
     }
-    return result;
 }
 
 void main()
@@ -45,7 +43,7 @@ void main()
         offset = vec2(0, texOffset.y);
     }
 
-    result += sampleWithOffset(offset);
+    sampleWithOffsetPure(result, offset);
 
     fragColour = vec4(result, 1.0);
 }

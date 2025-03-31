@@ -52,7 +52,7 @@ class ShaderTest {
     }
 
     @Test
-    fun `Should build shader builder with function calls`() {
+    fun `Should build shader builder with function calls and basic for loops`() {
         val result = compile(getSource("GaussBlurShader.kt"))
 
         assertThat(result.exitCode).isEqualTo(ExitCode.OK)
