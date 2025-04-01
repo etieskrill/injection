@@ -24,22 +24,26 @@ import org.jetbrains.kotlin.ir.visitors.IrVisitor
 private const val GL_POSITION_NAME = "gl_Position"
 internal val POSITION_FIELD_NAME = ShaderVertexData::position.name
 
-private val properties = mapOf(
+private val builtinProperties = mapOf(
     VERTEX to mapOf(
         VertexReceiver::vertexID.name to "gl_VertexID"
     )
 )
 
-private enum class OperatorType(
-    val operator: String
-) { PLUS("+"), MINUS("-"), TIMES("*"), DIV("/"), REM("%"), FUN("<fun>") }
+private enum class OperatorType(val operator: String) {
+    PLUS("+"), MINUS("-"), TIMES("*"), DIV("/"), REM("%");
+
+    override fun toString(): String = operator
+}
 
 private val String.glslOperator get() = OperatorType.entries.firstOrNull { it.name.equals(this, true) }
 private val String.isGlslOperator get() = glslOperator != null
 
-private enum class WeirdIrResolvedOperatorType(
-    val operator: String
-) { GREATER(">"), LESS("<"), GREATEROREQUAL(">="), LESSOREQUAL("<=") }
+private enum class WeirdIrResolvedOperatorType(val operator: String) {
+    GREATER(">"), LESS("<"), GREATEROREQUAL(">="), LESSOREQUAL("<=");
+
+    override fun toString(): String = operator
+}
 
 private val String.resolvedGlslOperator
     get() = WeirdIrResolvedOperatorType.entries.firstOrNull {
@@ -53,6 +57,11 @@ private val String.isResolvedGlslOperator get() = resolvedGlslOperator != null
 private val builtinFunctionNames = GlslReceiver::class.members
     .filterNot { it.name in listOf("equals", "hashCode", "toString") }
     .map { it.name }
+
+internal fun String.isGlslBuiltin() =
+    this == GL_POSITION_NAME ||
+            this in builtinFunctionNames ||
+            this in builtinProperties.flatMap { it.value.values }
 
 private data class TranspilerData(
     val pluginContext: IrPluginContext,
@@ -82,7 +91,7 @@ internal fun generateGlsl(programData: VisitorData, pluginContext: IrPluginConte
     appendLine(
         "#version ${programData.version} ${
             programData.profile
-                .takeIf { it == GlslProfile.CORE }?.name?.lowercase()
+                .takeIf { it == GlslProfile.CORE }?.name?.lowercase().orEmpty()
         }"
     )
     newline()
@@ -324,7 +333,7 @@ private open class GlslTranspiler(
                 val propertyName = functionName.removePrefix("<get-").removeSuffix(">")
 
                 if (propertyOwner!!.startsWith("\$context_receiver_")) { //accessing a stage receiver property
-                    return properties[data.stage]!![propertyName]!!
+                    return builtinProperties[data.stage]!![propertyName]!!
                 }
 
                 if (expression.receiver?.type?.isArray() == true) {
@@ -372,9 +381,7 @@ private open class GlslTranspiler(
                 data
             )
 
-            functionName == "toFloat" -> {
-                "${expression.receiver!!.accept(this, data)}.0"
-            }
+            functionName == "toFloat" -> "${expression.receiver!!.accept(this, data)}.0"
             functionName in builtinFunctionNames -> handleFunction(functionName, expression, data)
             functionName.removePrefix("<set-")
                 .removeSuffix(">") in builtinFunctionNames -> { //could split using KClass::memberFunctions and KClass::memberProperties if needed
@@ -463,15 +470,18 @@ private open class GlslTranspiler(
     }
 
     private fun handleOperator(operator: OperatorType, expression: IrCall, data: TranspilerData): String {
-        check(
-            expression.origin!!.debugName.lowercase() !in OperatorType.entries.map { it.name.lowercase() }
-                    || expression.extensionReceiver != null
-                    || expression.dispatchReceiver != null
-        )
+        check(expression.origin!!.debugName.lowercase() !in OperatorType.entries.map { it.name.lowercase() }
+                || expression.receiver != null)
         { "Operator function did not have a receiver: $operator:\n${expression.render()}" }
-        return "(${expression.receiver!!.accept(this, data)} ${
-            operator.operator
-        } ${expression.getValueArgument(0)!!.accept(this, data)})"
+
+        val leftSide = expression.receiver!!.accept(this, data)
+        val rightSide = expression.getValueArgument(0)!!.accept(this, data)
+
+        return when (operator) {
+            //TODO cosmetics: do proper operator for ints
+            OperatorType.REM -> "mod($leftSide, $rightSide)" // on intel iris this just... worked. todd would be proud
+            else -> "($leftSide $operator $rightSide)"
+        }
     }
 
     private fun handleResolvedOperator(
@@ -479,9 +489,9 @@ private open class GlslTranspiler(
         expression: IrCall,
         data: TranspilerData
     ): String =
-        "(${expression.getValueArgument(0)!!.accept(this, data)} ${
-            operator.operator
-        } ${expression.getValueArgument(1)!!.accept(this, data)})"
+        "(${expression.getValueArgument(0)!!.accept(this, data)} $operator ${
+            expression.getValueArgument(1)!!.accept(this, data)
+        })"
 
     @OptIn(ObsoleteDescriptorBasedAPI::class)
     private fun handleFunction(

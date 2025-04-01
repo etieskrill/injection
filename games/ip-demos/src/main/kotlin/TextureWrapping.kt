@@ -21,6 +21,10 @@ import org.lwjgl.opengl.GL13.GL_CLAMP_TO_BORDER
 import org.lwjgl.opengl.GL30C.glBindVertexArray
 import org.lwjgl.opengl.GL30C.glGenVertexArrays
 
+fun main() {
+    App()
+}
+
 class App : GameApplication(window {
     resizeable = true
     cursor = Cursor.getDefault(Cursor.CursorShape.RESIZE_ALL)
@@ -110,7 +114,7 @@ class App : GameApplication(window {
         check(dummyVAO != -1)
         glBindVertexArray(dummyVAO)
         shader.start()
-        shader.texture = texture
+        shader.targetTexture = texture
         shader.windowSize = window.currentSize
         shader.offset = Vector2f(textureOffset)
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
@@ -119,6 +123,7 @@ class App : GameApplication(window {
 
 enum class TextureWrapping { NONE, CLAMP_TO_EDGE, REPEAT, MIRROR } //none is CLAMP_TO_BORDER - so long as border is black
 
+//TODO no vertex input shader wrapper
 class TextureWrappingShader : ShaderBuilder<Any, TextureWrappingShader.Vertex, TextureWrappingShader.RenderTargets>(
     object : ShaderProgram(listOf("TextureWrapping.glsl")) {}
 ) {
@@ -126,9 +131,9 @@ class TextureWrappingShader : ShaderBuilder<Any, TextureWrappingShader.Vertex, T
     data class RenderTargets(val colour: RenderTarget)
 
     val vertices by const(arrayOf(vec2(-1, -1), vec2(1, -1), vec2(-1, 1), vec2(1, 1)))
-    val textureSize by const(vec2(200))
+    val targetTextureSize by const(vec2(200))
 
-    var texture by uniform<sampler2D>()
+    var targetTexture by uniform<sampler2D>()
     var windowSize by uniform<ivec2>()
     var mirrorTexCords by uniform<bool>()
 
@@ -145,20 +150,17 @@ class TextureWrappingShader : ShaderBuilder<Any, TextureWrappingShader.Vertex, T
             )
         }
         fragment {
-            var scaledCoords = it.texCoords * (vec2(windowSize) / textureSize)
-            scaledCoords += offset / textureSize
+            var scaledCoords = it.texCoords * (vec2(windowSize) / targetTextureSize)
+            scaledCoords += offset / targetTextureSize
 
             if (mirrorTexCords) {
-                val reduced = scaledCoords % 2
+                val reduced =
+                    scaledCoords % 2 //there's this weird border when mirrored and at odd pixel positions - probs a floating point error somewhere here
                 if (reduced.x > 1) scaledCoords.x = 1 - scaledCoords.x
                 if (reduced.y > 1) scaledCoords.y = 1 - scaledCoords.y
             }
 
-            RenderTargets(vec4(texture(texture, scaledCoords).rgb, 1).rt)
+            RenderTargets(vec4(texture(targetTexture, scaledCoords).rgb, 1).rt)
         }
     }
-}
-
-fun main() {
-    App()
 }

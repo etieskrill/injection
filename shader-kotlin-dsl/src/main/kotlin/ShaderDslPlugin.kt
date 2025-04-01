@@ -17,6 +17,7 @@ import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.ir.visitors.IrVisitor
+import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.utils.addToStdlib.ifFalse
 import org.jetbrains.kotlin.utils.filterIsInstanceAnd
 import org.jetbrains.kotlin.utils.getOrPutNullable
@@ -168,9 +169,14 @@ internal class IrShaderGenerationExtension(
 private fun IrClass.getGlslFields(condition: (IrProperty) -> Boolean = { true }) = properties
     .filter(condition)
     .associate {
+        it.name.checkNotGlslBuiltin()
         it.name.asString() to (it.backingField!!.type.glslType
             ?: error("Shader data type may only have fields of GLSL primitive type"))
     }
+
+private fun Name.checkNotGlslBuiltin() =
+    check(!asString().isGlslBuiltin() && !asString().startsWith("gl_"))
+    { "Field/variable name may not equal a builtin symbol or start with gl_: ${asString()}" }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 private inline fun <reified T, R> IrClass.getDelegatedProperties(
@@ -178,6 +184,7 @@ private inline fun <reified T, R> IrClass.getDelegatedProperties(
 ): Map<String, R> = properties
     .filter { it.isDelegated }
     .filter { it.backingField?.type.equals<T>() }
+    .onEach { it.name.checkNotGlslBuiltin() }
     .associate(mapper)
 
 internal enum class GlslVersion { `330` }
