@@ -12,8 +12,7 @@ import org.etieskrill.engine.input.Key
 import org.etieskrill.engine.input.Keys
 import org.etieskrill.engine.window.Cursor
 import org.etieskrill.engine.window.window
-import org.joml.Vector2d
-import org.joml.Vector2f
+import org.joml.*
 import org.lwjgl.opengl.GL11C.*
 import org.lwjgl.opengl.GL12C.GL_CLAMP_TO_EDGE
 import org.lwjgl.opengl.GL12C.GL_TEXTURE_WRAP_R
@@ -54,7 +53,7 @@ class App : GameApplication(window {
 
         setTextureWrapping(wrapping)
 
-        textureOffset = Vector2d()
+        textureOffset = Vector2d(-Vector2i(window.currentSize) / 2 + Vector2i(100))
 
         window.addCursorInputs(object : CursorInputAdapter {
             var clicked = false
@@ -117,7 +116,7 @@ class App : GameApplication(window {
         shader.targetTexture = texture
         shader.windowSize = window.currentSize
         shader.offset = Vector2f(textureOffset)
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)
     }
 }
 
@@ -150,14 +149,16 @@ class TextureWrappingShader : ShaderBuilder<Any, TextureWrappingShader.Vertex, T
             )
         }
         fragment {
-            var scaledCoords = it.texCoords * (vec2(windowSize) / targetTextureSize)
-            scaledCoords += offset / targetTextureSize
+            var scaledCoords = it.texCoords * (windowSize / targetTextureSize)
+            scaledCoords =
+                scaledCoords.plus(offset / targetTextureSize) //the +=/+ conflict is just joml's operators being funky - and no, i'm not gonna fix plusAssign
 
             if (mirrorTexCords) {
                 val reduced =
                     scaledCoords % 2 //there's this weird border when mirrored and at odd pixel positions - probs a floating point error somewhere here
                 if (reduced.x > 1) scaledCoords.x = 1 - scaledCoords.x
                 if (reduced.y > 1) scaledCoords.y = 1 - scaledCoords.y
+                //if (reduced.y > 1) scaledCoords.y += 1 - scaledCoords.y //TODO put on test spanking bench
             }
 
             RenderTargets(vec4(texture(targetTexture, scaledCoords).rgb, 1).rt)

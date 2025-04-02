@@ -4,6 +4,7 @@ import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.compiler.plugin.CompilerPluginRegistrar
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import org.jetbrains.kotlin.config.CompilerConfiguration
+import org.jetbrains.kotlin.config.messageCollector
 import java.io.File
 
 //this is the entrypoint to register all compiler extensions and pass whatever config and needed env components to them
@@ -21,7 +22,7 @@ internal class ShaderDslCompilerPlugin : CompilerPluginRegistrar() {
         val compilerOptions = ShaderDslCompilerOptions(genResourceDir)
 
         IrGenerationExtension.registerExtension(
-            IrShaderGenerationExtension(compilerOptions)
+            IrShaderGenerationExtension(compilerOptions, configuration.messageCollector)
         )
     }
 }

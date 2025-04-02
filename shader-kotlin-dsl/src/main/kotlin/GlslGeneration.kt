@@ -1,9 +1,12 @@
+@file:OptIn(UnsafeDuringIrConstructionAPI::class)
+
 package io.github.etieskrill.injection.extension.shader.dsl
 
 import io.github.etieskrill.injection.extension.shader.ShaderStage
 import io.github.etieskrill.injection.extension.shader.ShaderStage.*
 import io.github.etieskrill.injection.extension.shader.dsl.GlslStorageQualifier.CONST
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+import org.jetbrains.kotlin.cli.common.messages.MessageCollector
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
@@ -30,14 +33,28 @@ private val builtinProperties = mapOf(
     )
 )
 
-private enum class OperatorType(val operator: String) {
-    PLUS("+"), MINUS("-"), TIMES("*"), DIV("/"), REM("%");
+private enum class OperatorType(val operator: String, val assignmentOperator: IrStatementOrigin) {
+    PLUS("+", PLUSEQ),
+    MINUS("-", MINUSEQ),
+    TIMES("*", MULTEQ),
+    DIV("/", DIVEQ),
+    REM("%", PERCEQ);
 
     override fun toString(): String = operator
 }
 
+private val assignmentOperators = mapOf(
+    PLUSEQ to "+=",
+    MINUSEQ to "-=",
+    MULTEQ to "*=",
+    DIVEQ to "/=",
+    PERCEQ to "%="
+)
+
 private val String.glslOperator get() = OperatorType.entries.firstOrNull { it.name.equals(this, true) }
 private val String.isGlslOperator get() = glslOperator != null
+private val IrCall.glslOperator get() = symbol.owner.name.asString().glslOperator
+private val IrCall.isGlslOperator get() = symbol.owner.name.asString().isGlslOperator
 
 private enum class WeirdIrResolvedOperatorType(val operator: String) {
     GREATER(">"), LESS("<"), GREATEROREQUAL(">="), LESSOREQUAL("<=");
@@ -65,10 +82,13 @@ internal fun String.isGlslBuiltin() =
 
 private data class TranspilerData(
     val pluginContext: IrPluginContext,
+    val messageCollector: MessageCollector,
     val programParent: IrDeclarationParent,
+    val file: IrFile,
     val structTypes: List<IrType>,
     val definedFunctions: Map<String, Pair<ShaderStage, IrFunction>>,
     val vertexDataStructName: String,
+    val uniforms: Set<String>,
     var stage: ShaderStage = NONE,
     var operatorStack: MutableList<OperatorType> = mutableListOf(), //TODO remove brackets where neighboring operators are same or less binding
 ) {
@@ -79,13 +99,20 @@ private data class TranspilerData(
 //TODO:
 // - detect usages for uniforms, consts and functions and if only used in one stage, move there
 // - evidently functions with dependencies on stage-specific vars/ins/outs should be in said stage - also the vertexData variable (better name?) must be treated properly as property getter
-internal fun generateGlsl(programData: VisitorData, pluginContext: IrPluginContext): String = buildIndentedString {
+internal fun generateGlsl(
+    programData: VisitorData,
+    pluginContext: IrPluginContext,
+    messageCollector: MessageCollector
+): String = buildIndentedString {
     val transpilerData = TranspilerData(
         pluginContext,
+        messageCollector,
         programData.programParent,
+        programData.file,
         programData.structTypes,
         programData.definedFunctions,
-        programData.vertexDataStructName
+        programData.vertexDataStructName,
+        programData.uniforms.keys
     )
 
     appendLine(
@@ -238,7 +265,6 @@ private fun generateArrayStatement(
     return "$qualifier $type $name[$size]${initialiser?.let { " = $initialiser" } ?: ""};"
 }
 
-@OptIn(UnsafeDuringIrConstructionAPI::class)
 private fun generateFunction(function: IrFunction, data: TranspilerData) = buildIndentedString {
     val returnType = data.resolveGlslType(function.returnType)
     val parameters = function.valueParameters
@@ -293,7 +319,6 @@ private fun generateMain(body: IrBlockBody, data: TranspilerData) = buildIndente
     append("}")
 }
 
-@OptIn(UnsafeDuringIrConstructionAPI::class)
 private open class GlslTranspiler(
     val ignoredBlockStatements: List<IrStatement> = listOf(), //FIXME quite ugly, but effective as i do not know how to property transform the ir tree, and i'm walking a little on the edge with the ones i am doing (and actually, in the case of the godawful "value-return" call convention of glsl; i don't think a valid transform is possible)
     val unwrapReturn: Boolean = false
@@ -301,8 +326,9 @@ private open class GlslTranspiler(
     override fun visitElement(element: IrElement, data: TranspilerData): String =
         TODO("Element of type ${element::class.simpleName} cannot be processed yet:\n${element.dump()}")
 
-    override fun visitBlock(expression: IrBlock, data: TranspilerData): String = when {
-        expression.origin == IrStatementOrigin.FOR_LOOP -> expression.accept(GlslForLoopTranspiler(this), data)
+    override fun visitBlock(expression: IrBlock, data: TranspilerData): String = when (expression.origin) {
+        IrStatementOrigin.FOR_LOOP -> expression.accept(GlslForLoopTranspiler(this), data)
+        in assignmentOperators -> expression.accept(GlslTemporaryVariableTranspiler(this, expression.origin!!), data)
         else -> expression
             .statements
             .filterNot { ignoredBlockStatements.contains(it) }
@@ -323,14 +349,17 @@ private open class GlslTranspiler(
 
     override fun visitCall(expression: IrCall, data: TranspilerData): String {
         if (data.stage == FRAGMENT && expression.returns<RenderTarget>()
-        ) return evalChildren(expression, data)!!
+        ) return expression.evalChildren(this, data)!!
 
         val functionName = expression.symbol.owner.name.asString()
+        val functionPropertyName = functionName
+            .removePrefix("<get-").removeSuffix(">")
+            .removePrefix("<set-").removeSuffix(">")
 
         return when {
             expression.origin == IrStatementOrigin.GET_PROPERTY -> {
-                var propertyOwner = evalChildren(expression, data)
-                val propertyName = functionName.removePrefix("<get-").removeSuffix(">")
+                var propertyOwner = expression.evalChildren(this, data)
+                val propertyName = functionPropertyName
 
                 if (propertyOwner!!.startsWith("\$context_receiver_")) { //accessing a stage receiver property
                     return builtinProperties[data.stage]!![propertyName]!!
@@ -369,7 +398,7 @@ private open class GlslTranspiler(
             }
 
             functionName in listOf("unaryPlus", "unaryMinus") -> {
-                val p = evalChildren(expression, data)!!
+                val p = expression.evalChildren(this, data)!!
                 "${if (functionName == "unaryPlus") "+" else "-"}$p"
             }
 
@@ -383,11 +412,26 @@ private open class GlslTranspiler(
 
             functionName == "toFloat" -> "${expression.receiver!!.accept(this, data)}.0"
             functionName in builtinFunctionNames -> handleFunction(functionName, expression, data)
-            functionName.removePrefix("<set-")
-                .removeSuffix(">") in builtinFunctionNames -> { //could split using KClass::memberFunctions and KClass::memberProperties if needed
-                "${expression.receiver!!.accept(this, data)}.${
-                    functionName.removePrefix("<set-").removeSuffix(">")
-                } = ${expression.getValueArgument(0)!!.accept(this, data)}"
+            functionPropertyName in builtinFunctionNames -> { //could split using KClass::memberFunctions and KClass::memberProperties if needed
+                when {
+                    functionName.contains("set") -> "${expression.receiver!!.accept(this, data)}.${
+                        functionPropertyName
+                    } = ${expression.getValueArgument(0)!!.accept(this, data)}"
+
+                    functionName.contains("get") -> "${
+                        expression.receiver!!.accept(this, data)
+                    }.${functionPropertyName}"
+
+                    else -> error("nuh")
+                }
+            }
+
+            functionPropertyName in data.uniforms -> {
+                data.messageCollector.compilerError(
+                    "Uniforms may not be set in program blocks: $functionPropertyName",
+                    expression,
+                    data.file
+                )
             }
 
             else -> error("Unexpected function $functionName:\n${expression.dump()}")
@@ -429,14 +473,6 @@ private open class GlslTranspiler(
     override fun visitGetValue(expression: IrGetValue, data: TranspilerData): String =
         expression.symbol.owner.name.asString()
 
-    private val assignmentOperators = mapOf(
-        PLUSEQ to "+=",
-        MINUSEQ to "-=",
-        MULTEQ to "*=",
-        DIVEQ to "/=",
-        PERCEQ to "%="
-    )
-
     override fun visitSetValue(expression: IrSetValue, data: TranspilerData): String {
         var leftSide: String
         var operator: String
@@ -469,8 +505,60 @@ private open class GlslTranspiler(
         return "$leftSide $operator ${rightSideExpression.accept(this, data)}"
     }
 
+    override fun visitGetField(expression: IrGetField, data: TranspilerData): String =
+        expression.receiver?.let { "${it.accept(this, data)}." } + expression.symbol.owner.name.asString()
+
+    override fun visitSetField(expression: IrSetField, data: TranspilerData): String {
+        val receiver = expression.receiver!!
+        val receiverRepr = when (receiver) {
+            is IrGetValue -> receiver.symbol.owner.name.asString()
+            is IrTypeOperatorCall -> receiver.argument.accept(this, data)
+            else -> TODO()
+        }
+        var leftSide = "$receiverRepr.${expression.symbol.owner.name.asString()}"
+        var operator: String
+        var rightSideExpression: IrExpression
+
+        when (expression.origin) {
+            EQ -> {
+                operator = "="
+                rightSideExpression = expression.value
+            }
+
+            in assignmentOperators -> {
+                error("${expression.dump()}\n$leftSide\n${expression.value.accept(this, data)}")
+
+                operator = assignmentOperators[expression.origin]!!
+                rightSideExpression =
+                    (expression.value as IrCall) //TODO wrapper funcs, especially for getting params //FIXME if assignment op is passed, this will be IrGetValue instead of IrCall
+                        .getArgumentsWithIr()
+                        .first { it.first.name.asString() != "<this>" } //TODO receiver helper funcs
+                        .second
+            }
+
+            else -> TODO()
+        }
+
+        if (rightSideExpression is IrCall && rightSideExpression.symbol.owner in data.irFunctions) {
+            return handleFunction(rightSideExpression.symbol.owner.name.asString(), rightSideExpression, data, leftSide)
+        }
+
+        return "$leftSide $operator ${rightSideExpression.accept(this, data)}"
+    }
+
+    override fun visitTypeOperator(expression: IrTypeOperatorCall, data: TranspilerData): String =
+        expression.argument.accept(this, data)
+
     private fun handleOperator(operator: OperatorType, expression: IrCall, data: TranspilerData): String {
-        check(expression.origin!!.debugName.lowercase() !in OperatorType.entries.map { it.name.lowercase() }
+        if (expression.origin == null) { //TODO oo, look at the CompilerMessageSeverity#OUTPUT description
+            data.messageCollector.reportWarning(
+                "Consider using an operator instead of a function call",
+                expression,
+                data.file
+            )
+        }
+
+        check(expression.origin?.debugName?.lowercase() !in OperatorType.entries.map { it.name.lowercase() }
                 || expression.receiver != null)
         { "Operator function did not have a receiver: $operator:\n${expression.render()}" }
 
@@ -550,7 +638,6 @@ private class GlslReturnTranspiler(val root: GlslTranspiler) : IrVisitor<String,
     }
 }
 
-@OptIn(UnsafeDuringIrConstructionAPI::class)
 private class GlslValueTranspiler(
     var array: Boolean = false,
     var arraySize: Int? = null,
@@ -578,13 +665,11 @@ private class GlslValueTranspiler(
     }
 }
 
-@OptIn(UnsafeDuringIrConstructionAPI::class)
 private class GlslForLoopTranspiler(
     val generalTranspiler: GlslTranspiler
 ) : IrVisitor<String, TranspilerData>() {
     override fun visitElement(element: IrElement, data: TranspilerData): String = TODO("Not yet implemented")
 
-    @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun visitBlock(expression: IrBlock, data: TranspilerData): String {
         val iterable = expression.findElement<IrCall> {
             it.origin == IrStatementOrigin.FOR_LOOP_ITERATOR && it.symbol.owner.name.asString() == "iterator"
@@ -627,11 +712,32 @@ private class GlslForLoopTranspiler(
     }
 }
 
-private fun GlslTranspiler.evalChildren(expression: IrExpression, data: TranspilerData): String? {
+private class GlslTemporaryVariableTranspiler(
+    val generalTranspiler: GlslTranspiler,
+    val operator: IrStatementOrigin
+) : IrVisitor<String, TranspilerData>() {
+    override fun visitElement(element: IrElement, data: TranspilerData): String = TODO("Not yet implemented")
+
+    override fun visitBlock(expression: IrBlock, data: TranspilerData): String {
+        val temporaryVariable = expression.findElement<IrVariable> { it.name.asString() == "<receiver>" }
+            ?: error(expression.dump())
+        val temporaryVariableName = temporaryVariable.evalChildren(generalTranspiler, data)!!
+
+        val rightSide = expression.statements.single { it != temporaryVariable }
+            .findElement<IrCall>(atDepth = 3) { it.glslOperator?.assignmentOperator == operator }!!
+            .getValueArgument(0)!!
+            .accept(generalTranspiler, data)
+            .replace("<receiver>", temporaryVariableName)
+
+        return "$temporaryVariableName ${assignmentOperators[operator]!!} $rightSide"
+    }
+}
+
+private fun IrStatement.evalChildren(visitor: IrVisitor<String, TranspilerData>, data: TranspilerData): String? {
     var value: String? = null
-    expression.acceptChildren(object : IrVisitor<Unit, TranspilerData>() {
+    acceptChildren(object : IrVisitor<Unit, TranspilerData>() {
         override fun visitElement(element: IrElement, data: TranspilerData) {
-            value = element.accept(this@evalChildren, data)
+            value = element.accept(visitor, data)
         }
     }, data)
     return value

@@ -64,6 +64,7 @@ open class GlslReceiver {
 
     fun vec2(s: Number): vec2 = Vector2f()
     fun vec2(x: Number, y: Number): vec2 = error()
+    fun vec2(v: vec2): vec2 = error()
     fun vec2(v: ivec2): vec2 = error()
 
     fun ivec2(s: Int): ivec2 = Vector2i()
@@ -89,10 +90,12 @@ open class GlslReceiver {
     operator fun vec2.times(v: vec2): vec2 = error()
     operator fun vec2.times(v: ivec2): vec2 = error()
     operator fun vec2.div(v: vec2): vec2 = error()
+    operator fun vec2.div(v: ivec2): vec2 = error()
     operator fun vec2.rem(s: Number): vec2 = error()
 
     operator fun ivec2.rem(s: int): ivec2 = error()
 
+    operator fun ivec2.div(v: vec2): vec2 = error()
     operator fun ivec2.div(v: ivec2): ivec2 = error()
 
     operator fun vec3.plus(v: vec3): vec3 =

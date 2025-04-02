@@ -6,6 +6,9 @@ import io.github.etieskrill.injection.extension.shader.ShadowMap
 import io.github.etieskrill.injection.extension.shader.glslType
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+import org.jetbrains.kotlin.backend.common.getCompilerMessageLocation
+import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
+import org.jetbrains.kotlin.cli.common.messages.MessageCollector
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.declarations.impl.IrFunctionImpl
@@ -32,14 +35,40 @@ private data class ShaderDataTypes(
 )
 
 internal class IrShaderGenerationExtension(
-    private val options: ShaderDslCompilerOptions
+    private val options: ShaderDslCompilerOptions,
+    private val messageCollector: MessageCollector
 ) : IrGenerationExtension {
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
+        try {
+            val (shaderClasses, files) = getShaderClasses(moduleFragment)
+
+            for ((shader, types) in shaderClasses) {
+                val data = analyseShaderClasses(shader, types, files)
+
+                val shaderSource = generateGlsl(
+                    data,
+                    pluginContext,
+                    messageCollector
+                ) //TODO maybe a little validation??? creating a context without a window would be a pain, so some lib mayhaps?
+
+                val shaderDir = File(options.generatedResourceDir, "shaders")
+                if (!shaderDir.exists()) shaderDir.mkdirs()
+                val shaderFile = File(shaderDir, "${shader.name.asString().removeSuffix("Shader")}.glsl")
+                if (!shaderFile.exists()) shaderFile.createNewFile()
+
+                shaderFile.writeText(shaderSource)
+            }
+        } catch (_: CompilerAbortException) {
+        }
+    }
+
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    private fun getShaderClasses(moduleFragment: IrModuleFragment): Pair<Map<IrClass, ShaderDataTypes>, Map<IrDeclaration, IrFile>> {
+        val files = mutableMapOf<IrDeclaration, IrFile>()
         val shaderClasses = moduleFragment
             .files //TODO just passing a copy of the ir would avoid the compilation issues that often arise after my "transforms" - what would be even better is to just stop the compiler from trying to emit code for ShaderBuilder classes
-            .map { it.declarations } //TODO find non top-level decls as well
-            .flatten()
+            .flatMap { file -> file.declarations.onEach { files[it] = file } } //TODO find non top-level decls as well
             .filterIsInstance<IrClass>()
             .associateWith { clazz -> clazz.superTypes.find { it.classFqName!!.asString() == ShaderBuilder::class.qualifiedName } } //TODO include indirect superclasses
             .filterValues { it != null }
@@ -60,109 +89,144 @@ internal class IrShaderGenerationExtension(
                 }
             }
 
-        for ((shader, types) in shaderClasses) {
-            val constDeclarations = shader.getDelegatedProperties<ConstDelegate<*>, GlslTypeInitialiser> { property ->
-                val initialiser = property.backingField!!.initializer!!.expression
-                property.name.asString() to (initialiser as IrCall)
-                    .getArgumentsWithIr()
-                    .toMap()
-                    .mapKeys { it.key.name.asString() }
-                    .firstNotNullOf { param -> if (param.key == "value"/*!= "<this>"*/) param else null }
-                    .run {
-                        val type = when {
-                            value.type.isArray() -> (value.type as IrSimpleType).arguments.first().typeOrFail.glslType!!
-                            else -> value.type.glslType!!
-                        }
-
-                        GlslTypeInitialiser(type, value.type.isArray(), value)
-                    }
-            }
-
-            val data = VisitorData(
-                programParent = shader,
-                vertexAttributes = types.vertexAttributesType.getGlslFields(),
-                vertexDataStructType = types.vertexDataType.name.asString(),
-                vertexDataStructName = "vertex",
-                vertexDataStruct = types.vertexDataType.getGlslFields {
-                    require(!it.isVar) { "Vertex data struct may only have val members: ${it.name.asString()} is var" }
-                    it.name.asString() != POSITION_FIELD_NAME
-                },
-                renderTargets = types.renderTargetsType.getGlslFields {
-                    require(!it.isVar) { "Render target struct may only have val members: ${it.name.asString()} is var" }
-                    require(it.backingField!!.type.equals<RenderTarget>())
-                    {
-                        "Render target struct may only have members of type RenderTarget: ${
-                            it.name.asString()
-                        } is ${it.backingField!!.type.simpleName}"
-                    }
-                    true
-                }.keys.toList(),
-                constants = constDeclarations,
-                uniforms = shader.getDelegatedProperties<UniformDelegate<*>, GlslType> { property ->
-                    property.name.asString() to property.backingField?.type?.let { type ->
-                        when (type) {
-                            is IrSimpleType -> requireNotNull(type.arguments[0].typeOrFail.glslType)
-                            { "Shader uniforms may only be of GLSL primitive type: ${type.arguments[0].typeOrFail.simpleName} is not" } //TODO i just assume the delegate's type is always first
-                            else -> error("Unexpected type: $this")
-                        }
-                    }!!
-                },
-                definedFunctions = shader.declarations
-                    .filterIsInstanceAnd<IrFunctionImpl> { it.name.asString() != "program" } //impl because exact type is needed
-                    .onEach { check(it.typeParameters.isEmpty()) { "Shader functions may not have type parameters, but this one does:\n${it.render()}" } }
-                    .associate { function ->
-                        val funcWrapper = function.body!!.findElement<IrCall>() ?: error(
-                            "Could not find function wrapper for ${
-                                function.name.asString()
-                            }. Add one like 'fun someFunction() = func[Vert,Frag] { ... }'"
-                        )
-                        val funcType = when (funcWrapper.symbol.owner.name.asString()) {
-                            "func" -> NONE
-                            "vertFunc" -> VERTEX
-                            "fragFunc" -> FRAGMENT
-                            else -> error(
-                                "Could not infer wrapper function type for '${
-                                    funcWrapper.symbol.owner.name
-                                }', must be one of [func, funcVert, funcFrag]"
-                            )
-                        }
-
-                        function.name.asString() to (funcType to function)
-                    }
-            )
-
-            data.structTypes += types.vertexDataType.defaultType
-
-            val programBodies = shader
-                .findDeclaration<IrFunction> { it.name.asString() == "program" }!!
-
-            val vertexProgram = programBodies
-                .findElement<IrCall> { it.symbol.owner.name.asString() == "vertex" }
-                .let { it ?: error("Shader program must have a vertex stage") }
-                .findElement<IrBlockBody>()!!
-
-            data.stageBodies[VERTEX] = vertexProgram
-
-            val fragmentProgram = programBodies
-                .findElement<IrCall> { it.symbol.owner.name.asString() == "fragment" }
-                .let { it ?: error("Shader program must have a fragment stage") }
-                .findElement<IrBlockBody>()!!
-
-            data.stageBodies[FRAGMENT] = fragmentProgram
-
-            val shaderDir = File(options.generatedResourceDir, "shaders")
-            if (!shaderDir.exists()) shaderDir.mkdirs()
-            val shaderFile = File(shaderDir, "${shader.name.asString().removeSuffix("Shader")}.glsl")
-            if (!shaderFile.exists()) shaderFile.createNewFile()
-
-            val shaderSource = generateGlsl(
-                data,
-                pluginContext
-            ) //TODO maybe a little validation??? creating a context without a window would be a pain, so some lib mayhaps?
-
-            shaderFile.writeText(shaderSource)
-        }
+        return shaderClasses to files
     }
+
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    private fun analyseShaderClasses(
+        shader: IrClass,
+        types: ShaderDataTypes,
+        files: Map<IrDeclaration, IrFile>,
+    ): VisitorData {
+        val constDeclarations = shader.getDelegatedProperties<ConstDelegate<*>, GlslTypeInitialiser> { property ->
+            val initialiser = property.backingField!!.initializer!!.expression
+            property.name.asString() to (initialiser as IrCall)
+                .getArgumentsWithIr()
+                .toMap()
+                .mapKeys { it.key.name.asString() }
+                .firstNotNullOf { param -> if (param.key == "value"/*!= "<this>"*/) param else null }
+                .run {
+                    val type = when {
+                        value.type.isArray() -> (value.type as IrSimpleType).arguments.first().typeOrFail.glslType!!
+                        else -> value.type.glslType!!
+                    }
+
+                    GlslTypeInitialiser(type, value.type.isArray(), value)
+                }
+        }
+
+        val data = VisitorData(
+            programParent = shader,
+            file = files[shader]!!,
+            vertexAttributes = types.vertexAttributesType.getGlslFields(),
+            vertexDataStructType = types.vertexDataType.name.asString(),
+            vertexDataStructName = "vertex",
+            vertexDataStruct = types.vertexDataType.getGlslFields {
+                requireToCompile(
+                    it,
+                    { !isVar },
+                    "Vertex data struct may only have val members: ${it.name.asString()} is var",
+                    files[shader]!!
+                )
+                it.name.asString() != POSITION_FIELD_NAME
+            },
+            renderTargets = types.renderTargetsType.getGlslFields {
+                requireToCompile(
+                    it,
+                    { !isVar },
+                    "Render target struct may only have val members: ${it.name.asString()} is var",
+                    files[shader]!!
+                )
+                requireToCompile(
+                    it,
+                    { backingField!!.type.equals<RenderTarget>() },
+                    "Render target struct may only have members of type RenderTarget: ${it.name.asString()} is ${it.backingField!!.type.simpleName}",
+                    files[shader]!!
+                )
+                true
+            }.keys.toList(),
+            constants = constDeclarations,
+            uniforms = shader.getDelegatedProperties<UniformDelegate<*>, GlslType> { property ->
+                property.name.asString() to property.backingField?.type?.let { type ->
+                    when (type) {
+                        is IrSimpleType -> requireNotNull(type.arguments[0].typeOrFail.glslType)
+                        { "Shader uniforms may only be of GLSL primitive type: ${type.arguments[0].typeOrFail.simpleName} is not" } //TODO i just assume the delegate's type is always first
+                        else -> error("Unexpected type: $this")
+                    }
+                }!!
+            },
+            definedFunctions = shader.declarations
+                .filterIsInstanceAnd<IrFunctionImpl> { it.name.asString() != "program" } //impl because exact type is needed
+                .onEach { check(it.typeParameters.isEmpty()) { "Shader functions may not have type parameters, but this one does:\n${it.render()}" } }
+                .associate { function ->
+                    val funcWrapper = function.body!!.findElement<IrCall>() ?: error(
+                        "Could not find function wrapper for ${
+                            function.name.asString()
+                        }. Add one like 'fun someFunction() = func[Vert,Frag] { ... }'"
+                    )
+                    val funcType = when (funcWrapper.symbol.owner.name.asString()) {
+                        "func" -> NONE
+                        "vertFunc" -> VERTEX
+                        "fragFunc" -> FRAGMENT
+                        else -> error(
+                            "Could not infer wrapper function type for '${
+                                funcWrapper.symbol.owner.name
+                            }', must be one of [func, funcVert, funcFrag]"
+                        )
+                    }
+
+                    function.name.asString() to (funcType to function)
+                }
+        )
+
+        data.structTypes += types.vertexDataType.defaultType
+
+        val programBodies = shader
+            .findDeclaration<IrFunction> { it.name.asString() == "program" }!!
+
+        val vertexProgram = programBodies
+            .findElement<IrCall> { it.symbol.owner.name.asString() == "vertex" }
+            .let { it ?: error("Shader program must have a vertex stage") }
+            .findElement<IrBlockBody>()!!
+
+        data.stageBodies[VERTEX] = vertexProgram
+
+        val fragmentProgram = programBodies
+            .findElement<IrCall> { it.symbol.owner.name.asString() == "fragment" }
+            .let { it ?: error("Shader program must have a fragment stage") }
+            .findElement<IrBlockBody>()!!
+
+        data.stageBodies[FRAGMENT] = fragmentProgram
+
+        return data
+    }
+
+    private fun <T : IrElement> requireToCompile(
+        element: T,
+        condition: T.() -> Boolean,
+        message: String,
+        file: IrFile
+    ) {
+        if (!condition(element)) messageCollector.compilerError(message, element, file)
+    }
+}
+
+private class CompilerAbortException : RuntimeException()
+
+//i realised that with CompilerMessageSeverity#EXCEPTION, this behaviour is exactly mirrored - but if a return value is
+//expected, e.g. in case of a when expression branch which should always lead to an error, this is still useful
+//PS. nvmd it does not log the location for some reason, and thus intellij does not automatically jump there, which is
+//quite the nono for such a yesyes feature
+internal fun MessageCollector.compilerError(message: String, element: IrElement, file: IrFile): Nothing {
+//    error("$message\n${element.dump()}") //uncomment to debug these
+    val location = element.getCompilerMessageLocation(file)!!
+    report(CompilerMessageSeverity.ERROR, message, location)
+    throw CompilerAbortException()
+}
+
+internal fun MessageCollector.reportWarning(message: String, element: IrElement, file: IrFile) {
+    val location = element.getCompilerMessageLocation(file)!!
+    report(CompilerMessageSeverity.WARNING, message, location)
 }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
@@ -205,6 +269,7 @@ internal data class GlslTypeInitialiser internal constructor(
 
 internal data class VisitorData(
     val programParent: IrDeclarationParent,
+    val file: IrFile,
 
     val version: GlslVersion = GlslVersion.`330`,
     val profile: GlslProfile = GlslProfile.CORE,
@@ -230,25 +295,33 @@ internal data class VisitorData(
 
 internal inline fun <reified T : IrElement> IrElement.findElement(
     includeSelf: Boolean = false,
+    atDepth: Int? = null,
     data: RecursiveFinderVisitorData<T> = RecursiveFinderVisitorData(),
     noinline condition: (T) -> Boolean = { true }
-): T? = accept(RecursiveFinderVisitor(T::class, includeSelf.ifFalse { this }, condition), data)
+): T? = accept(RecursiveFinderVisitor(T::class, includeSelf.ifFalse { this }, atDepth, condition), data)
 
-internal data class RecursiveFinderVisitorData<T : IrElement>(var element: T? = null)
+internal data class RecursiveFinderVisitorData<T : IrElement>(var element: T? = null, var depth: Int = -1)
 internal class RecursiveFinderVisitor<T : IrElement>(
     val elementType: KClass<T>,
     val self: IrElement?,
+    val atDepth: Int?,
     val condition: (T) -> Boolean
-) :
-    IrVisitor<T?, RecursiveFinderVisitorData<T>>() {
+) : IrVisitor<T?, RecursiveFinderVisitorData<T>>() {
     override fun visitElement(element: IrElement, data: RecursiveFinderVisitorData<T>): T? {
         element.accept(object : IrVisitor<Unit, RecursiveFinderVisitorData<T>>() {
-            override fun visitElement(element: IrElement, data: RecursiveFinderVisitorData<T>) = when {
-                data.element != null -> {}
-                elementType.isInstance(element) && element != self && condition(elementType.cast(element)) ->
-                    data.element = elementType.cast(element)
+            override fun visitElement(element: IrElement, data: RecursiveFinderVisitorData<T>) {
+                ++data.depth
 
-                else -> element.acceptChildren(this, data)
+                when {
+                    data.element != null -> {}
+                    elementType.isInstance(element)
+                            && element != self && condition(elementType.cast(element))
+                            && atDepth?.let { it == data.depth } ?: true -> {
+                        data.element = elementType.cast(element)
+                    }
+
+                    else -> element.acceptChildren(this, data)
+                }
             }
         }, data)
 
