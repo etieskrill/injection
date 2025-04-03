@@ -1,5 +1,4 @@
 plugins {
-    `java-library`
     `java-gradle-plugin`
     kotlin("jvm") version "2.1.20" //TODO VERSION CATALÖÖÖÖÖÖÖG
 
@@ -27,6 +26,7 @@ gradlePlugin {
 
 dependencies {
     implementation("io.github.etieskrill.injection.extension.shader:shader-interface:1.0.0-SNAPSHOT")
+    implementation("io.github.etieskrill.injection.extension.shader.dsl:shader-dsl-lib:1.0.0-SNAPSHOT")
 
     implementation("org.joml:joml:1.10.8")
 
@@ -46,12 +46,6 @@ dependencies {
 
 tasks.build {
     dependsOn("publishToMavenLocal") //FIXME perhaps not the best of ideas when compiler extension and plugin are in same module
-}
-
-kotlin {
-    compilerOptions {
-        freeCompilerArgs.add("-Xcontext-receivers")
-    }
 }
 
 tasks.test {

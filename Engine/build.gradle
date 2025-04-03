@@ -50,8 +50,6 @@ dependencies {
     api "org.joml:joml:$jomlVersion"
     api "org.joml:joml-primitives:$jomlPrimitivesVersion"
 
-    api "io.github.etieskrill.injection.extension.shader:shader-interface"
-
     implementation "org.yaml:snakeyaml:$snakeYamlVersion"
 
     //Logging

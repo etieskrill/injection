@@ -16,7 +16,7 @@ internal class ShaderDslGradlePlugin : KotlinCompilerPluginSupportPlugin {
 
     companion object {
         const val GROUP_ID = "io.github.etieskrill.injection.extension.shader.dsl"
-        const val ARTIFACT_ID = "shader-kotlin-dsl"
+        const val ARTIFACT_ID = "shader-dsl-plugin"
         const val VERSION = "1.0.0-SNAPSHOT"
     }
 
@@ -34,10 +34,9 @@ internal class ShaderDslGradlePlugin : KotlinCompilerPluginSupportPlugin {
     }
 
     override fun apply(target: Project): Unit = target.run {
-        val hasLibraryPlugin = target.plugins.findPlugin(JavaLibraryPlugin::class.java) != null
-
+        val dependencyConfig = if (plugins.hasPlugin(JavaLibraryPlugin::class.java)) "api" else "implementation"
         dependencies.apply {
-            add(if (hasLibraryPlugin) "api" else "implementation", "$GROUP_ID:$ARTIFACT_ID")
+            add(dependencyConfig, "$GROUP_ID:shader-dsl-lib")
         }
 
         extensions.configure<JavaPluginExtension>("java") { javaExtension ->

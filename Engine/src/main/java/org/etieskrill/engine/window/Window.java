@@ -51,7 +51,8 @@ public class Window implements Disposable {
     private @Getter WindowMode mode;
     //TODO provide methods to change primary monitor
     private long monitor;
-    private @Getter WindowSize size;
+    private @Deprecated
+    @Getter WindowSize size;
     private Vector2i currentSize; //FIXME replace above
     private float targetFrameRate;
     private boolean vSyncEnabled;
@@ -116,7 +117,7 @@ public class Window implements Disposable {
          * @return the largest viable format, or null if no format is small enough
          */
         public static WindowSize getLargestFit(int width, int height) {
-            WindowSize largestFit = WindowSize.values()[0];
+            WindowSize largestFit = WindowSize.DEFAULT;
             for (WindowSize windowSize : WindowSize.values()) {
                 if (windowSize.getWidth() > width || windowSize.getHeight() > height) continue;
                 if (largestFit.getWidth() < windowSize.getWidth() || largestFit.getHeight() < windowSize.getHeight())
@@ -299,7 +300,9 @@ public class Window implements Disposable {
                 throw new IllegalStateException("Cannot auto-size window as video mode for monitor could not be retrieved");
             }
 
-            currentSize = new Vector2i(WindowSize.getLargestFit(videoMode.width(), videoMode.height()).getVec());
+            var largestFit = WindowSize.getLargestFit(videoMode.width(), videoMode.height());
+            size = largestFit;
+            currentSize = new Vector2i(largestFit.getVec());
         } else if (size == WindowSize.DEFAULT) {
             if (videoMode != null
                 && (WindowSize.DEFAULT.getWidth() > videoMode.width()

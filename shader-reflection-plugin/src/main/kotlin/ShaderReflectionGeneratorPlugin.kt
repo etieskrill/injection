@@ -4,6 +4,7 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.file.ConfigurableFileTree
+import org.gradle.api.plugins.JavaLibraryPlugin
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputDirectory
@@ -36,10 +37,10 @@ class ShaderReflectionGeneratorPlugin : Plugin<Project> {
             getByName("processResources").apply { dependsOn("generateShaderReflection") }
         }
 
-        //TODO add as api if target has `java-library`?
+        val dependencyConfig = if (plugins.hasPlugin(JavaLibraryPlugin::class.java)) "api" else "implementation"
         dependencies.apply {
-            add("implementation", "io.github.etieskrill.injection.extension.shader:shader-interface")
-            add("implementation", "io.github.etieskrill.injection.extension.shader.reflection:shader-reflection-plugin")
+            add(dependencyConfig, "io.github.etieskrill.injection.extension.shader:shader-interface")
+            add(dependencyConfig, "io.github.etieskrill.injection.extension.shader.reflection:shader-reflection-lib")
         }
     }
 }

@@ -10,7 +10,7 @@ public abstract class DisposableLoader<T extends Disposable> extends Loader<T> i
 
     @Override
     public void dispose() {
-        logger.debug("Disposing loader'{}'", getLoaderName());
+        logger.debug("Disposing loader '{}'", getLoaderName());
         map.values().forEach(T::dispose);
     }
 

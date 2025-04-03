@@ -55,6 +55,7 @@ public class EntityApplication extends GameApplication {
     public EntityApplication() {
         super(Window.builder()
                 .setTitle("Horde3d")
+                .setSize(Window.WindowSize.LARGEST_FIT)
                 .setMode(Window.WindowMode.BORDERLESS)
                 .setRefreshRate(FRAME_RATE)
                 .setSamples(4)
