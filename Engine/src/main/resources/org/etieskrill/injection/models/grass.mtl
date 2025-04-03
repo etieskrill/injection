@@ -1,9 +1,0 @@
-newmtl grass
-    Ka 1.0 1.0 1.0
-    Kd 1.0 1.0 1.0
-    Ks 1.0 1.0 1.0
-    Ns 256.000000
-    Ni 1.000000
-    d 1.000000
-    map_Kd window.png
-    illum 1
