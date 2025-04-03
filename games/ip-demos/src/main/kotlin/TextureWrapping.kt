@@ -4,12 +4,17 @@ import io.github.etieskrill.injection.extension.shader.dsl.ShaderBuilder
 import io.github.etieskrill.injection.extension.shader.dsl.ShaderVertexData
 import io.github.etieskrill.injection.extension.shader.dsl.rt
 import org.etieskrill.engine.application.GameApplication
+import org.etieskrill.engine.graphics.Batch
+import org.etieskrill.engine.graphics.camera.OrthographicCamera
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
 import org.etieskrill.engine.graphics.texture.AbstractTexture
 import org.etieskrill.engine.graphics.texture.Texture2D
 import org.etieskrill.engine.input.CursorInputAdapter
 import org.etieskrill.engine.input.Key
 import org.etieskrill.engine.input.Keys
+import org.etieskrill.engine.scene.Scene
+import org.etieskrill.engine.scene.component.Label
+import org.etieskrill.engine.scene.component.VBox
 import org.etieskrill.engine.window.Cursor
 import org.etieskrill.engine.window.window
 import org.joml.*
@@ -27,12 +32,22 @@ fun main() {
 class App : GameApplication(window {
     resizeable = true
     cursor = Cursor.getDefault(Cursor.CursorShape.RESIZE_ALL)
+    refreshRate = 10000
 }) {
+    var wrapping: TextureWrapping = TextureWrapping.NONE
+        set(value) {
+            field = value
+            setTextureWrapping(value)
+        }
+
     lateinit var texture: Texture2D
     lateinit var shader: TextureWrappingShader
     var dummyVAO: Int = -1
 
     lateinit var textureOffset: Vector2d
+
+    lateinit var fpsLabel: Label
+    lateinit var modeLabel: Label
 
     override fun init() {
         texture = Texture2D.FileBuilder("lena_rgb.png").build()
@@ -40,18 +55,14 @@ class App : GameApplication(window {
         shader = TextureWrappingShader()
         dummyVAO = glGenVertexArrays()
 
-        var wrapping = TextureWrapping.NONE
+        wrapping = TextureWrapping.NONE
         window.addKeyInputs { type, key, action, modifiers ->
             if (key == Keys.E.input.value && action == 1) {
                 wrapping = TextureWrapping.entries[(wrapping.ordinal + 1) % TextureWrapping.entries.size]
-                setTextureWrapping(wrapping)
-                println(wrapping)
             }
 
             false
         }
-
-        setTextureWrapping(wrapping)
 
         textureOffset = Vector2d(-Vector2i(window.currentSize) / 2 + Vector2i(100))
 
@@ -87,6 +98,14 @@ class App : GameApplication(window {
                 return false
             }
         })
+
+        fpsLabel = Label()
+        modeLabel = Label()
+        window.scene = Scene(
+            Batch(renderer),
+            VBox(fpsLabel, modeLabel, Label("Press '${Keys.E}' to cycle mode"), Label("Mouse drag to move")),
+            OrthographicCamera(window.size.vec)
+        )
     }
 
     private fun setTextureWrapping(wrapping: TextureWrapping) {
@@ -117,6 +136,9 @@ class App : GameApplication(window {
         shader.windowSize = window.currentSize
         shader.offset = Vector2f(textureOffset)
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)
+
+        fpsLabel.text = "FPS: %.0f".format(pacer.averageFPS)
+        modeLabel.text = "Current mode: $wrapping"
     }
 }
 

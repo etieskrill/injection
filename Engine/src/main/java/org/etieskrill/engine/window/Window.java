@@ -9,10 +9,7 @@ import org.etieskrill.engine.input.*;
 import org.etieskrill.engine.scene.Scene;
 import org.etieskrill.engine.util.ResourceReader;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Vector2f;
-import org.joml.Vector2fc;
-import org.joml.Vector2i;
-import org.joml.Vector2ic;
+import org.joml.*;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFWVidMode;
@@ -22,6 +19,7 @@ import org.lwjgl.system.Platform;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.Math;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -463,11 +461,14 @@ public class Window implements Disposable {
         return glfwWindowShouldClose(window);
     }
 
-    //TODO should probably be named more appropriately
     public void update(double delta) {
         if (scene != null) {
+            scene.setSize(currentSize);
             scene.update(delta);
-            glViewport(0, 0, size.getWidth(), size.getHeight()); //TODO viewport wrapper/system
+            scene.getCamera()
+                    .setPosition(new Vector3f(currentSize, 0).div(2))
+                    .setViewportSize(currentSize);
+            glViewport(0, 0, currentSize.x, currentSize.y); //TODO viewport wrapper/system
             scene.render();
         }
 

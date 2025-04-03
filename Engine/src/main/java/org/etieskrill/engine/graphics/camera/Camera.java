@@ -130,8 +130,11 @@ public abstract class Camera implements UniformMappable {
 
     public void setViewportSize(Vector2ic viewportSize) {
         this.viewportSize.set(viewportSize);
+        updateViewportSize();
         dirty();
     }
+
+    protected abstract void updateViewportSize();
 
     public Camera setZoom(float zoom) {
         this.zoom = Math.clamp(zoom, .01f, 10f);
@@ -254,17 +257,17 @@ public abstract class Camera implements UniformMappable {
     @Override
     public String toString() {
         return "Camera{" +
-                ", position=" + position +
-                ", rotation=" + rotation +
-                ", rotationEulerAngles=" + eulerAngles +
-                ", zoom=" + zoom +
-                ", near=" + near +
-                ", far=" + far +
-                ", worldUp=" + worldUp +
-                ", viewportSize=" + viewportSize +
-                ", orbiting=" + orbit +
-                ", orbitDistance=" + orbitDistance +
-                '}';
+               ", position=" + position +
+               ", rotation=" + rotation +
+               ", rotationEulerAngles=" + eulerAngles +
+               ", zoom=" + zoom +
+               ", near=" + near +
+               ", far=" + far +
+               ", worldUp=" + worldUp +
+               ", viewportSize=" + viewportSize +
+               ", orbiting=" + orbit +
+               ", orbitDistance=" + orbitDistance +
+               '}';
     }
 
     @Override

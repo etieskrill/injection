@@ -26,6 +26,14 @@ public class OrthographicCamera extends Camera {
     }
 
     @Override
+    protected void updateViewportSize() {
+        top = -.5f * viewportSize.y();
+        bottom = .5f * viewportSize.y();
+        left = -.5f * viewportSize.x();
+        right = .5f * viewportSize.x();
+    }
+
+    @Override
     protected void updatePerspective() {
         //TODO proper zoom
         float zoom = 1f / this.zoom;

@@ -7,6 +7,7 @@ import org.etieskrill.engine.graphics.texture.font.Font;
 import org.jetbrains.annotations.NotNull;
 import org.joml.*;
 
+//TODO since everything apart from like, chars in Strings is immediate-mode, this should be renamed
 public class Batch {
 
     private final Renderer renderer;
@@ -32,13 +33,23 @@ public class Batch {
 
     private static final Vector4f resetColour = new Vector4f(1);
 
-    public void render(Vector3f position, Vector3f size, Vector4f colour) {
+    /**
+     * @param position <b>CENTER</b> point of the box
+     */
+    public void renderCenteredBox(Vector3fc position, Vector3fc size, Vector4fc colour) {
         shader.setUniform("colour", colour, false);
         renderer.renderBox(position, size, shader, combined);
         shader.setUniform("colour", resetColour, false);
     }
 
-    public void render(String text, Font font, Vector2f position) {
+    public void renderBox(Vector3fc position, Vector3fc size, Vector4fc colour) {
+        shader.setUniform("colour", colour, false);
+        var topLeftPosition = new Vector3f(size).div(2).add(position);
+        renderer.renderBox(topLeftPosition, size, shader, combined);
+        shader.setUniform("colour", resetColour, false);
+    }
+
+    public void renderText(String text, Font font, Vector2fc position) {
         textRenderer.render(text, font, position, textShader, combined);
     }
 

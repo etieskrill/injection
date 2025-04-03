@@ -10,9 +10,9 @@ public class SystemNanoTimePacer implements LoopPacer {
 
     private static final long NANO_FACTOR = 1_000_000_000, MILLI_FACTOR = 1_000_000;
     private static final int SPINLOCK_WINDOW_NANOS = 100_000;
-    private static final int AVERAGE_FRAMERATE_SPAN = 20;
+    private static final float AVERAGE_FRAMERATE_SPAN_SECONDS = 2;
 
-    private final FixedArrayDeque<Long> deltaBuffer = new FixedArrayDeque<>(AVERAGE_FRAMERATE_SPAN);
+    private final FixedArrayDeque<Long> deltaBuffer;
 
     private long targetDelta;
     private volatile long timeLast, frameTime, delta;
@@ -28,6 +28,7 @@ public class SystemNanoTimePacer implements LoopPacer {
 
     public SystemNanoTimePacer(double targetDeltaSeconds) {
         this.targetDelta = (long) (targetDeltaSeconds * NANO_FACTOR);
+        deltaBuffer = new FixedArrayDeque<>((int) (AVERAGE_FRAMERATE_SPAN_SECONDS / targetDeltaSeconds));
     }
 
     @Override

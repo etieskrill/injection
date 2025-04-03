@@ -26,6 +26,10 @@ public class PerspectiveCamera extends Camera {
     }
 
     @Override
+    protected void updateViewportSize() {
+    }
+
+    @Override
     protected void updatePerspective() {
         //TODO make fov and the whole zoom mechanic actually usable, cuz what in tarnation is this shit
         this.fov = (((110f - 30f) / (10f - 0.1f)) * (zoom - 0.1f) + 30f);

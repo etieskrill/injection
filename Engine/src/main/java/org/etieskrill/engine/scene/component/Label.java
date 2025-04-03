@@ -19,7 +19,11 @@ public class Label extends Node {
     public Label() {
         this("", Fonts.getDefault());
     }
-    
+
+    public Label(String text) {
+        this(text, Fonts.getDefault());
+    }
+
     public Label(String text, Font font) {
         this.text = text;
         this.font = Objects.requireNonNull(font);
@@ -42,7 +46,7 @@ public class Label extends Node {
     
     @Override
     public void render(Batch batch) {
-        if (text != null) batch.render(text, font, getAbsolutePosition());
+        if (text != null) batch.renderText(text, font, getAbsolutePosition());
     }
     
     public String getText() {
