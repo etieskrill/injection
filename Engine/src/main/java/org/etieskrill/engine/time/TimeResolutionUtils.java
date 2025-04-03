@@ -23,6 +23,12 @@ public class TimeResolutionUtils {
                     }
                 }
             }
+            case LINUX -> {
+                //could try to check res with clock_getres from time.h ... however one may load libs for linux
+                //the standard resolution appears to be 1000 hz according to the internet,
+                //and 1 ns according to me (a c program i wrote using the aforementioned function)
+                //the fact that even in wsl i get several hundreds of FPS seems to support the former theory however
+            }
             default -> throw new UnsupportedOperationException("Unsupported platform: " + Platform.get());
         }
     }
@@ -39,6 +45,8 @@ public class TimeResolutionUtils {
                         logger.debug("Successfully reset system time resolution");
                     }
                 }
+            }
+            case LINUX -> {
             }
             default -> throw new UnsupportedOperationException("Unsupported platform: " + Platform.get());
         }

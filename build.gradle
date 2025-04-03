@@ -1,23 +1,5 @@
 plugins {
-    id 'java'
-    id 'org.jetbrains.kotlin.jvm' version "$kotlinVersion"
-}
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(javaLanguageVersion)
-    }
-}
-
-kotlin {
-    jvmToolchain Integer.parseInt(javaLanguageVersion)
-}
-
-allprojects {
-    repositories {
-        mavenLocal()
-        mavenCentral()
-    }
+    id 'org.jetbrains.kotlin.jvm' version "$kotlinVersion" apply false
 }
 
 subprojects {
@@ -25,4 +7,8 @@ subprojects {
         plugin 'java'
         plugin 'org.jetbrains.kotlin.jvm'
     }
+
+    //FIXME are these even applied really?
+    java.toolchain.languageVersion = JavaLanguageVersion.of(javaLanguageVersion)
+    kotlin.jvmToolchain(Integer.parseInt(javaLanguageVersion))
 }

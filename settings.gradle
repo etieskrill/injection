@@ -10,6 +10,10 @@ includeBuild 'shader-kotlin-dsl'
 file('games').eachDir {
     include "games:$it.name"
 }
-include 'games:ip-demos'
-findProject(':games:ip-demos')?.name = 'ip-demos'
 
+dependencyResolutionManagement {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+    }
+}

@@ -1,4 +1,4 @@
-@file:OptIn(UnsafeDuringIrConstructionAPI::class)
+@file:OptIn(UnsafeDuringIrConstructionAPI::class, ExperimentalStdlibApi::class)
 
 package io.github.etieskrill.injection.extension.shader.dsl
 

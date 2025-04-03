@@ -1,4 +1,5 @@
 plugins {
+    application
     kotlin("jvm")
     id("io.github.etieskrill.injection.shader.dsl")
 }
@@ -10,4 +11,8 @@ dependencies {
     implementation(project(":engine"))
 
     implementation("org.lwjgl:lwjgl-opengl:3.3.3")
+}
+
+application {
+    mainClass = "TextureWrappingKt"
 }

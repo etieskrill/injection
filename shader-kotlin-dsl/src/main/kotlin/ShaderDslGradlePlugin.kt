@@ -20,6 +20,8 @@ internal class ShaderDslGradlePlugin : KotlinCompilerPluginSupportPlugin {
         const val VERSION = "1.0.0-SNAPSHOT"
     }
 
+    //TODO try defining in/outputs here
+
     override fun applyToCompilation(kotlinCompilation: KotlinCompilation<*>): Provider<List<SubpluginOption>> {
         val project = kotlinCompilation.target.project
         val resourceDir = project.fileTree(GEN_RESOURCE_DIR).dir
@@ -55,7 +57,7 @@ internal class ShaderDslGradlePlugin : KotlinCompilerPluginSupportPlugin {
 //        }
 
         //FIXME this isn't great for caching, but the above does not work???
-        tasks.named("processResources") { it.dependsOn("compileKotlin") }
+        tasks.named("processResources") { it.mustRunAfter("compileKotlin") }
     }
 
     override fun getCompilerPluginId(): String = PLUGIN_ID

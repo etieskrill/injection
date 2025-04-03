@@ -1,9 +1,9 @@
 plugins {
     `java-library`
     `java-gradle-plugin`
-    kotlin("jvm") version "2.1.0" //TODO find out why tf this does not work without a version and why the fucking logs do not tell you shit about this
+    kotlin("jvm") version "2.1.20" //TODO VERSION CATALÖÖÖÖÖÖÖG
 
-//    id("com.google.devtools.ksp") version "2.1.0-1.0.29"
+//    id("com.google.devtools.ksp") version "2.1.20-1.0.32"
 
     `maven-publish`
 }
@@ -30,12 +30,11 @@ dependencies {
 
     implementation("org.joml:joml:1.10.8")
 
-    implementation("net.bytebuddy:byte-buddy:1.17.2")
+    compileOnly("org.jetbrains.kotlin:kotlin-compiler-embeddable:2.1.20")
+    compileOnly("org.jetbrains.kotlin:kotlin-gradle-plugin-api:2.1.20")
 
-    runtimeOnly("org.jetbrains.kotlin:kotlin-reflect:2.1.10")
-
-    compileOnly("org.jetbrains.kotlin:kotlin-compiler-embeddable:2.1.10")
-    implementation("org.jetbrains.kotlin:kotlin-gradle-plugin-api:2.1.10")
+    compileOnly(gradleApi())
+    compileOnly(gradleKotlinDsl())
 
 //    compileOnly("com.google.auto.service:auto-service:1.1.1")
 //    ksp("com.google.auto.service:auto-service:1.1.1")
@@ -59,7 +58,7 @@ tasks.test {
     useJUnitPlatform()
 }
 
-publishing {
+publishing { //FIXME probs not even needed as this is an included build
     publications {
         create<MavenPublication>("default") {
             from(components["java"])

@@ -1,13 +1,14 @@
 plugins {
     `java-library`
     `java-gradle-plugin`
-    kotlin("jvm") version "2.1.0"
+    kotlin("jvm") version "2.1.20"
 }
 
 group = "io.github.etieskrill.injection.extension.shader.reflection"
 version = "1.0.0-SNAPSHOT"
 
 repositories {
+    mavenLocal()
     mavenCentral()
 }
 
@@ -31,10 +32,10 @@ dependencies {
     implementation("org.joml:joml-primitives:$jomlPrimitivesVersion")
 
     implementation("com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin:$kspVersion")
-    implementation("com.google.devtools.ksp:symbol-processing-api:$kspVersion")
+    compileOnly("com.google.devtools.ksp:symbol-processing-api:$kspVersion")
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
-    testImplementation("org.jetbrains.kotlin:kotlin-test:2.1.0")
+    testImplementation("org.jetbrains.kotlin:kotlin-test:2.1.20")
     testImplementation("io.mockk:mockk:1.13.16")
 }
 

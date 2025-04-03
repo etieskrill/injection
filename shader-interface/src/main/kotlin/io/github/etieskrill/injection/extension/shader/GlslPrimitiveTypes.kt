@@ -4,7 +4,6 @@ import org.joml.*
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 import kotlin.reflect.KClass
-import kotlin.reflect.full.isSubclassOf
 
 typealias int = Int
 typealias float = Float
@@ -101,18 +100,8 @@ val String.glslType: String?
         if (it.key.qualifiedName!! == this.toJomlConstantType()) it.value else null
     }
 
-private inline fun <reified T : Any> KClass<*>.findShadowMapType() =
-    T::class.java in findSuperclassTypeParameters<ShadowMap<*>>()
-
 private inline fun <reified T : Any> KClass<*>.findSuperclassTypeParameters(): Array<Type> =
     this.java.genericInterfaces //kotlin seems to be a little behind java in terms of generic reflection
         .flatMap { listOf(it as? ParameterizedType ?: return@flatMap emptyList()) }
         .find { it.rawType == T::class.java }?.actualTypeArguments
         ?: emptyArray()
-
-private fun <T : Any> KClass<*>.findSupertype(clazz: KClass<T>): KClass<T>? {
-    if (this == clazz) return this as KClass<T>
-    if (this == Any::class || !isSubclassOf(clazz)) return null
-    supertypes.forEach { return@findSupertype (it.classifier as? KClass<*> ?: return@forEach).findSupertype(clazz) }
-    return null
-}
