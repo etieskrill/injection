@@ -1,5 +1,7 @@
 TODO:
 
+- texture wrapping demo: drop down selector component
+- ui builder dsl
 - application segfaults on linux **AFTER** termination, so probably memory which was unduly freed, or not freed when it
   should have been?
 - gradle version catalog

@@ -40,8 +40,8 @@ public class Button extends Node {
 
     @Override
     public void render(Batch batch) {
-        batch.renderCenteredBox(
-                new Vector3f(getPosition(), 0).add(new Vector3f(getSize(), 0).mul(0.5f)),
+        batch.renderBox(
+                new Vector3f(getPosition(), 0),
                 new Vector3f(getSize(), 0),
                 new Vector4f(0, 0, 0, 1)
         );

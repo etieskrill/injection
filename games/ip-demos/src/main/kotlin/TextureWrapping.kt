@@ -13,7 +13,9 @@ import org.etieskrill.engine.input.CursorInputAdapter
 import org.etieskrill.engine.input.Key
 import org.etieskrill.engine.input.Keys
 import org.etieskrill.engine.scene.Scene
+import org.etieskrill.engine.scene.component.Button
 import org.etieskrill.engine.scene.component.Label
+import org.etieskrill.engine.scene.component.Node.Alignment
 import org.etieskrill.engine.scene.component.VBox
 import org.etieskrill.engine.window.Cursor
 import org.etieskrill.engine.window.window
@@ -103,8 +105,33 @@ class App : GameApplication(window {
         modeLabel = Label()
         window.scene = Scene(
             Batch(renderer),
-            VBox(fpsLabel, modeLabel, Label("Press '${Keys.E}' to cycle mode"), Label("Mouse drag to move")),
-            OrthographicCamera(window.size.vec)
+            VBox(
+                fpsLabel, modeLabel, Label("Press '${Keys.E}' to cycle mode"), Label("Mouse drag to move"),
+                Button(Label("Previous mode").apply { alignment = Alignment.CENTER }).apply {
+                    setAction {
+                        wrapping = TextureWrapping.entries[(wrapping.ordinal - 1)
+                            .let { if (it < 0) it + TextureWrapping.entries.size else it } % TextureWrapping.entries.size]
+                    }
+                }.apply { alignment = Alignment.BOTTOM_LEFT; size = Vector2f(150f, 50f) },
+                Button(Label("Next mode").apply { alignment = Alignment.CENTER }).apply {
+                    setAction {
+                        wrapping = TextureWrapping.entries[(wrapping.ordinal + 1) % TextureWrapping.entries.size]
+                    }
+                }.apply { alignment = Alignment.BOTTOM_RIGHT; size = Vector2f(150f, 50f) },
+//                HBox( //FIXME conclusively, the HBox is fucked
+//                    Button(Label("Previous mode")).apply {
+//                        setAction {
+//                            wrapping = TextureWrapping.entries[(wrapping.ordinal - 1) % TextureWrapping.entries.size]
+//                        }
+//                    }.apply { alignment = Alignment.BOTTOM_LEFT },
+//                    Button(Label("Next mode")).apply {
+//                        setAction {
+//                            wrapping = TextureWrapping.entries[(wrapping.ordinal + 1) % TextureWrapping.entries.size]
+//                        }
+//                    }.apply { alignment = Alignment.BOTTOM_RIGHT }
+//                ).apply { alignment = Node.Alignment.BOTTOM }
+            ),
+            OrthographicCamera(window.size.vec),
         )
     }
 
