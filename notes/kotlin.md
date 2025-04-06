@@ -7,6 +7,8 @@ and the language as a base, and change the following:
 
 - Function parameters are `var`
 - Add compact bloody ternary expressions using `?`, like any respectable language has
+- Expression ifs returning Unit, Nothing, or a nullable type, are not required to have an 
+  else branch, implicitly returning null, or nothing in case of Unit/Nothing
 
 And some things i would personally like, but have not put enough thought into to know
 whether it would actually be possible:
