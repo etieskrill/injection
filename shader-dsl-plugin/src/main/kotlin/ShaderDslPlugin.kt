@@ -16,9 +16,25 @@ import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
+import org.jetbrains.kotlin.ir.symbols.IrClassifierSymbol
+import org.jetbrains.kotlin.ir.symbols.IrTypeParameterSymbol
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
-import org.jetbrains.kotlin.ir.types.*
-import org.jetbrains.kotlin.ir.util.*
+import org.jetbrains.kotlin.ir.types.IrSimpleType
+import org.jetbrains.kotlin.ir.types.IrType
+import org.jetbrains.kotlin.ir.types.IrTypeProjection
+import org.jetbrains.kotlin.ir.types.classFqName
+import org.jetbrains.kotlin.ir.types.classOrFail
+import org.jetbrains.kotlin.ir.types.classifierOrFail
+import org.jetbrains.kotlin.ir.types.isArray
+import org.jetbrains.kotlin.ir.types.typeOrFail
+import org.jetbrains.kotlin.ir.util.defaultType
+import org.jetbrains.kotlin.ir.util.findDeclaration
+import org.jetbrains.kotlin.ir.util.getArgumentsWithIr
+import org.jetbrains.kotlin.ir.util.isStrictSubtypeOfClass
+import org.jetbrains.kotlin.ir.util.isSubtypeOfClass
+import org.jetbrains.kotlin.ir.util.properties
+import org.jetbrains.kotlin.ir.util.render
+import org.jetbrains.kotlin.ir.util.superTypes
 import org.jetbrains.kotlin.ir.visitors.IrVisitor
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.utils.addToStdlib.ifFalse
@@ -34,6 +50,7 @@ private data class ShaderDataTypes(
     val renderTargetsType: IrClass
 )
 
+@OptIn(UnsafeDuringIrConstructionAPI::class)
 internal class IrShaderGenerationExtension(
     private val options: ShaderDslCompilerOptions,
     private val messageCollector: MessageCollector
@@ -70,19 +87,14 @@ internal class IrShaderGenerationExtension(
             .files //TODO just passing a copy of the ir would avoid the compilation issues that often arise after my "transforms" - what would be even better is to just stop the compiler from trying to emit code for ShaderBuilder classes
             .flatMap { file -> file.declarations.onEach { files[it] = file } } //TODO find non top-level decls as well
             .filterIsInstance<IrClass>()
-            .associateWith { clazz -> clazz.superTypes.find { it.classFqName!!.asString() == ShaderBuilder::class.qualifiedName } } //TODO include indirect superclasses
+            .associateWith { clazz -> clazz.findSuperType<ShaderBuilder<*, *, *>>() }
             .filterValues { it != null }
-            .mapValues { (_, shaderType) ->
+            .filterKeys { it.typeParameters.isEmpty() } //just disallow type params altogether for now FIXME
+            .mapValues { (clazz, shaderType) ->
                 when (shaderType) {
                     is IrSimpleType -> shaderType
                         .arguments
-                        .map { it.typeOrFail.classifierOrFail }
-                        .map {
-                            when (it) {
-                                is IrClassSymbol -> it.owner
-                                else -> error("Unexpected class: $it")
-                            }
-                        }
+                        .map { it.typeOrFail.classifierOrFail.resolveTypeParameter(clazz.symbol, shaderType) }
                         .run { ShaderDataTypes(get(0), get(1), get(2)) }
 
                     else -> error("Unsupported shader data type $shaderType")
@@ -90,6 +102,51 @@ internal class IrShaderGenerationExtension(
             }
 
         return shaderClasses to files
+    }
+
+    private inline fun <reified T : Any> IrClass.findSuperType(): IrType? {
+        val alreadyVisited = mutableSetOf<IrType>()
+        return superTypes.firstNotNullOfOrNull { it.findSuperType(T::class, alreadyVisited) }
+    }
+
+    private fun IrClassifierSymbol.resolveTypeParameter(clazz: IrClassSymbol, baseType: IrType): IrClass = when (this) {
+        is IrClassSymbol -> owner
+        is IrTypeParameterSymbol -> {
+            if (baseType.isStrictSubtypeOfClass(clazz))
+                error("Could not resolve type parameter ${this.owner.index}: got to base class and type parameter is still not direct class")
+
+            val superType = clazz.owner.superTypes.single { clazz.isSubtypeOfClass(it.classOrFail) }
+            val extractedType = when (superType) {
+                is IrSimpleType -> {
+                    if (owner.index > superType.arguments.size - 1) error("TODO proper message")
+                    val type = superType.arguments[owner.index] as IrTypeProjection
+                    if (type is IrSimpleType && type.classifier is IrClassSymbol) {
+                        return (type.classifier as IrClassSymbol).owner
+                    }
+                    type
+                }
+
+                else -> error("Unexpected")
+            }
+
+            extractedType.type.classifierOrFail.resolveTypeParameter(
+                superType.classifierOrFail as IrClassSymbol,
+                baseType
+            )
+        }
+
+        else -> error("More unexpected")
+    }
+
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    private fun IrType.findSuperType(ancestor: KClass<*>, alreadyVisited: MutableSet<IrType>): IrType? = when {
+        fullName == ancestor.qualifiedName -> this
+        this in alreadyVisited -> null
+        else -> {
+            alreadyVisited.add(this)
+            superTypes().mapNotNull { it as? IrSimpleType }
+                .firstNotNullOfOrNull { it.findSuperType(ancestor, alreadyVisited) }
+        }
     }
 
     @OptIn(UnsafeDuringIrConstructionAPI::class)

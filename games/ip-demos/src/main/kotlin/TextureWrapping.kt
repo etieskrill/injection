@@ -1,6 +1,6 @@
 import io.github.etieskrill.injection.extension.shader.*
+import io.github.etieskrill.injection.extension.shader.dsl.PureShaderBuilder
 import io.github.etieskrill.injection.extension.shader.dsl.RenderTarget
-import io.github.etieskrill.injection.extension.shader.dsl.ShaderBuilder
 import io.github.etieskrill.injection.extension.shader.dsl.ShaderVertexData
 import io.github.etieskrill.injection.extension.shader.dsl.rt
 import org.etieskrill.engine.application.GameApplication
@@ -171,8 +171,9 @@ class App : GameApplication(window {
 
 enum class TextureWrapping { NONE, CLAMP_TO_EDGE, REPEAT, MIRROR } //none is CLAMP_TO_BORDER - so long as border is black
 
-//TODO no vertex input shader wrapper
-class TextureWrappingShader : ShaderBuilder<Any, TextureWrappingShader.Vertex, TextureWrappingShader.RenderTargets>(
+abstract class WrapperShader<T1 : ShaderVertexData, T2 : Any>(shader: ShaderProgram) : PureShaderBuilder<T1, T2>(shader)
+
+class TextureWrappingShader : WrapperShader<TextureWrappingShader.Vertex, TextureWrappingShader.RenderTargets>(
     object : ShaderProgram(listOf("TextureWrapping.glsl")) {}
 ) {
     data class Vertex(override val position: vec4, val texCoords: vec2) : ShaderVertexData

@@ -1,5 +1,7 @@
 TODO:
 
+- urgent: no imports on demand (editorconfig)
+
 - move engine extensions to folder
 - texture wrapping demo: drop down selector component
 - ui builder dsl

@@ -38,7 +38,18 @@ abstract class ShaderBuilder<VA : Any, V : ShaderVertexData, RT : Any>(shader: A
 
     protected fun <T : Any> uniform() = UniformDelegate<T>() //TODO add default param
 
-    protected fun <T : Any> const(value: T) = ConstDelegate<T>() //TODO pass GlslReceiver block for dsl instead
+    protected fun <T : Number> const(value: T) = ConstDelegate<T>() //TODO pass GlslReceiver block for dsl instead
+    protected fun const(value: Boolean) = ConstDelegate<Boolean>()
+    protected fun <T : Number> const(value: Array<T>) = ConstDelegate<Array<T>>()
+    protected fun const(value: Array<Boolean>) = ConstDelegate<Array<Boolean>>()
+    protected fun const(value: vec2) = ConstDelegate<vec2>()
+    protected fun const(value: Array<vec2>) = ConstDelegate<Array<vec2>>()
+    protected fun const(value: ivec2) = ConstDelegate<ivec2>()
+    protected fun const(value: Array<ivec2>) = ConstDelegate<Array<ivec2>>()
+    protected fun const(value: vec3) = ConstDelegate<vec3>()
+    protected fun const(value: Array<vec3>) = ConstDelegate<Array<vec3>>()
+    protected fun const(value: vec4) = ConstDelegate<vec4>()
+    protected fun const(value: Array<vec4>) = ConstDelegate<Array<vec4>>()
 
     protected fun <T> func(block: context(GlslReceiver) () -> T): T = error()
     protected fun <T> vertFunc(block: context(VertexReceiver) (VA) -> T): T = error()
@@ -55,6 +66,12 @@ abstract class ShaderBuilder<VA : Any, V : ShaderVertexData, RT : Any>(shader: A
     protected fun ivec2(s: Number): ivec2 = Vector2i()
 
 }
+
+/**
+ * "**Pure**" as in; takes no vertex inputs.
+ */
+abstract class PureShaderBuilder<V : ShaderVertexData, RT : Any>(shader: AbstractShader) :
+    ShaderBuilder<Any, V, RT>(shader)
 
 @ShaderDslMarker
 @Suppress("UnusedReceiverParameter", "unused")
