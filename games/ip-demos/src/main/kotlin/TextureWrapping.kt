@@ -1,8 +1,12 @@
-import io.github.etieskrill.injection.extension.shader.*
+import io.github.etieskrill.injection.extension.shader.bool
 import io.github.etieskrill.injection.extension.shader.dsl.PureShaderBuilder
 import io.github.etieskrill.injection.extension.shader.dsl.RenderTarget
 import io.github.etieskrill.injection.extension.shader.dsl.ShaderVertexData
 import io.github.etieskrill.injection.extension.shader.dsl.rt
+import io.github.etieskrill.injection.extension.shader.ivec2
+import io.github.etieskrill.injection.extension.shader.sampler2D
+import io.github.etieskrill.injection.extension.shader.vec2
+import io.github.etieskrill.injection.extension.shader.vec4
 import org.etieskrill.engine.application.GameApplication
 import org.etieskrill.engine.graphics.Batch
 import org.etieskrill.engine.graphics.camera.OrthographicCamera
@@ -19,7 +23,13 @@ import org.etieskrill.engine.scene.component.Node.Alignment
 import org.etieskrill.engine.scene.component.VBox
 import org.etieskrill.engine.window.Cursor
 import org.etieskrill.engine.window.window
-import org.joml.*
+import org.joml.Vector2d
+import org.joml.Vector2f
+import org.joml.Vector2i
+import org.joml.div
+import org.joml.plus
+import org.joml.times
+import org.joml.unaryMinus
 import org.lwjgl.opengl.GL11C.*
 import org.lwjgl.opengl.GL12C.GL_CLAMP_TO_EDGE
 import org.lwjgl.opengl.GL12C.GL_TEXTURE_WRAP_R
@@ -68,7 +78,7 @@ class App : GameApplication(window {
 
         textureOffset = Vector2d(-Vector2i(window.currentSize) / 2 + Vector2i(100))
 
-        window.addCursorInputs(object : CursorInputAdapter {
+        window.addCursorInputs(object : CursorInputAdapter { //TODO mouse gestures adapter (drag, double click...)
             var clicked = false
             override fun invokeClick(button: Key?, action: Int, posX: Double, posY: Double): Boolean {
                 if (button == Keys.LEFT_MOUSE.input) {
@@ -171,9 +181,7 @@ class App : GameApplication(window {
 
 enum class TextureWrapping { NONE, CLAMP_TO_EDGE, REPEAT, MIRROR } //none is CLAMP_TO_BORDER - so long as border is black
 
-abstract class WrapperShader<T1 : ShaderVertexData, T2 : Any>(shader: ShaderProgram) : PureShaderBuilder<T1, T2>(shader)
-
-class TextureWrappingShader : WrapperShader<TextureWrappingShader.Vertex, TextureWrappingShader.RenderTargets>(
+class TextureWrappingShader : PureShaderBuilder<TextureWrappingShader.Vertex, TextureWrappingShader.RenderTargets>(
     object : ShaderProgram(listOf("TextureWrapping.glsl")) {}
 ) {
     data class Vertex(override val position: vec4, val texCoords: vec2) : ShaderVertexData

@@ -61,6 +61,7 @@ class ShaderTest {
     }
 
     //TODO
+    // - supertype type param resolving
     // - ensure required stages
     // - ensure num stages
     // - ensure writeability (uniforms writeable or smth)

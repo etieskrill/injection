@@ -1,4 +1,4 @@
-package io.github.etieskrill.injection.extension.shader.dsl
+package io.github.etieskrill.injection.extension.shader.dsl.gradle
 
 import org.jetbrains.kotlin.compiler.plugin.AbstractCliOption
 import org.jetbrains.kotlin.compiler.plugin.CliOption

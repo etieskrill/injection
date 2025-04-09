@@ -1,4 +1,4 @@
-package io.github.etieskrill.injection.extension.shader.dsl
+package io.github.etieskrill.injection.extension.shader.dsl.generation
 
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.IrStatement

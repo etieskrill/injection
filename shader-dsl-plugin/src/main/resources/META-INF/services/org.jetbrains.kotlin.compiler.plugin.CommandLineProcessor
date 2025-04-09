@@ -1,1 +1,1 @@
-io.github.etieskrill.injection.extension.shader.dsl.ShaderDslCommandLineProcessor
+io.github.etieskrill.injection.extension.shader.dsl.gradle.ShaderDslCommandLineProcessor

@@ -1,8 +1,13 @@
-package io.github.etieskrill.injection.extension.shader.dsl
+package io.github.etieskrill.injection.extension.shader.dsl.generation
 
 import io.github.etieskrill.injection.extension.shader.ShaderStage
 import io.github.etieskrill.injection.extension.shader.ShaderStage.*
 import io.github.etieskrill.injection.extension.shader.ShadowMap
+import io.github.etieskrill.injection.extension.shader.dsl.ConstDelegate
+import io.github.etieskrill.injection.extension.shader.dsl.RenderTarget
+import io.github.etieskrill.injection.extension.shader.dsl.ShaderBuilder
+import io.github.etieskrill.injection.extension.shader.dsl.UniformDelegate
+import io.github.etieskrill.injection.extension.shader.dsl.gradle.ShaderDslCompilerOptions
 import io.github.etieskrill.injection.extension.shader.glslType
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
@@ -10,7 +15,13 @@ import org.jetbrains.kotlin.backend.common.getCompilerMessageLocation
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
 import org.jetbrains.kotlin.cli.common.messages.MessageCollector
 import org.jetbrains.kotlin.ir.IrElement
-import org.jetbrains.kotlin.ir.declarations.*
+import org.jetbrains.kotlin.ir.declarations.IrClass
+import org.jetbrains.kotlin.ir.declarations.IrDeclaration
+import org.jetbrains.kotlin.ir.declarations.IrDeclarationParent
+import org.jetbrains.kotlin.ir.declarations.IrFile
+import org.jetbrains.kotlin.ir.declarations.IrFunction
+import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
+import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.declarations.impl.IrFunctionImpl
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.expressions.IrCall
@@ -50,6 +61,7 @@ private data class ShaderDataTypes(
     val renderTargetsType: IrClass
 )
 
+//TODO could be an AnalysisHandlerExtension, perchance
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 internal class IrShaderGenerationExtension(
     private val options: ShaderDslCompilerOptions,
@@ -316,6 +328,7 @@ internal value class GlslType internal constructor(val type: String) {
     override fun toString(): String = type
 }
 
+@ConsistentCopyVisibility
 internal data class GlslTypeInitialiser internal constructor(
     val type: GlslType,
     val array: Boolean,

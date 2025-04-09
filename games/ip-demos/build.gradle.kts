@@ -1,6 +1,6 @@
 plugins {
     application
-    kotlin("jvm")
+    alias(libs.plugins.kotlin.jvm)
     id("io.github.etieskrill.injection.shader.dsl")
 }
 
@@ -10,7 +10,7 @@ version = "unspecified"
 dependencies {
     implementation(project(":engine"))
 
-    implementation("org.lwjgl:lwjgl-opengl:3.3.3")
+    implementation("org.lwjgl:lwjgl-opengl:${libs.versions.lwjgl.get()}")
 }
 
 application {

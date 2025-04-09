@@ -1,4 +1,4 @@
-package io.github.etieskrill.injection.extension.shader.dsl
+package io.github.etieskrill.injection.extension.shader.dsl.generation
 
 private const val SPACE_INDENT = 4
 

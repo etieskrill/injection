@@ -1,10 +1,14 @@
-package io.github.etieskrill.injection.extension.shader.dsl
+package io.github.etieskrill.injection.extension.shader.dsl.gradle
 
 import org.gradle.api.Project
 import org.gradle.api.plugins.JavaLibraryPlugin
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.provider.Provider
-import org.jetbrains.kotlin.gradle.plugin.*
+import org.jetbrains.kotlin.gradle.plugin.FilesSubpluginOption
+import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
+import org.jetbrains.kotlin.gradle.plugin.KotlinCompilerPluginSupportPlugin
+import org.jetbrains.kotlin.gradle.plugin.SubpluginArtifact
+import org.jetbrains.kotlin.gradle.plugin.SubpluginOption
 
 internal const val PLUGIN_ID = "injShaderDslPlugin"
 internal const val GEN_RESOURCE_DIR_ARG_NAME = "resourceOutputDir"

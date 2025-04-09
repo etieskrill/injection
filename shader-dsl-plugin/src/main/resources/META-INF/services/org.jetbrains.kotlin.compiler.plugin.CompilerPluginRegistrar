@@ -1,1 +1,1 @@
-io.github.etieskrill.injection.extension.shader.dsl.ShaderDslCompilerPlugin
+io.github.etieskrill.injection.extension.shader.dsl.gradle.ShaderDslCompilerPlugin
