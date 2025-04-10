@@ -1,6 +1,6 @@
 #version 330 core
 
-layout (location = 0) attribute vec3 a_Position;
+in vec3 a_Position;
 
 uniform mat4 model;
 uniform mat4 combined;

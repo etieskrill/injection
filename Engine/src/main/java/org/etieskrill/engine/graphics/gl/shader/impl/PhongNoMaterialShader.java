@@ -8,6 +8,6 @@ import java.util.List;
 @ReflectShader
 public class PhongNoMaterialShader extends ShaderProgram {
     public PhongNoMaterialShader() {
-        super(List.of("PhongNoMaterial.glsl"));
+        super(List.of("PhongNoMaterial.glsl"), false);
     }
 }
