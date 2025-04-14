@@ -70,11 +70,9 @@ class App : GameApplication(window {
         wrapping = TextureWrapping.NONE
 
         window.addKeyInputs { type, key, action, modifiers ->
-            if (key == Keys.E.input.value && action == 1)
-                wrapping = TextureWrapping.entries[(wrapping.ordinal + 1) % TextureWrapping.entries.size]
-            else if (key == Keys.Q.input.value && action == 1)
-                wrapping = TextureWrapping.entries[(wrapping.ordinal - 1)
-                    .let { if (it < 0) it + TextureWrapping.entries.size else it } % TextureWrapping.entries.size]
+            if (key == Keys.E.input.value && action == 1) nextMode()
+            else if (key == Keys.Q.input.value && action == 1) previousMode()
+            else return@addKeyInputs true
             false
         }
 
@@ -84,7 +82,6 @@ class App : GameApplication(window {
                 textureOffset.y += deltaY
                 return true
             }
-
             override fun invokeScroll(deltaX: Double, deltaY: Double): Boolean {
                 textureSize.add((deltaY.toFloat() / 20) * textureSize.x, (deltaY.toFloat() / 20) * textureSize.y)
                 return true
@@ -94,18 +91,19 @@ class App : GameApplication(window {
         window.scene = Scene(
             Batch(renderer),
             VBox(
-                fpsLabel, modeLabel, Label("Press '${Keys.E}' to cycle mode\nMouse drag to move"),
+                fpsLabel,
+                modeLabel,
+                Label("Press '${Keys.Q}' and '${Keys.E}' to cycle modes\nMouse drag to move\nScroll to zoom"),
                 Button(Label("Previous mode").apply { alignment = Alignment.CENTER }).apply {
-                    setAction {
-                        wrapping = TextureWrapping.entries[(wrapping.ordinal - 1)
-                            .let { if (it < 0) it + TextureWrapping.entries.size else it } % TextureWrapping.entries.size]
-                    }
-                }.apply { alignment = Alignment.BOTTOM_LEFT; size = Vector2f(150f, 50f) },
+                    setAction { previousMode() }
+                    alignment = Alignment.BOTTOM_LEFT
+                    size = Vector2f(150f, 50f)
+                },
                 Button(Label("Next mode").apply { alignment = Alignment.CENTER }).apply {
-                    setAction {
-                        wrapping = TextureWrapping.entries[(wrapping.ordinal + 1) % TextureWrapping.entries.size]
-                    }
-                }.apply { alignment = Alignment.BOTTOM_RIGHT; size = Vector2f(150f, 50f) },
+                    setAction { nextMode() }
+                    alignment = Alignment.BOTTOM_RIGHT
+                    size = Vector2f(150f, 50f)
+                },
 //                HBox( //FIXME conclusively, the HBox is fucked
 //                    Button(Label("Previous mode")).apply {
 //                        setAction {
@@ -121,6 +119,15 @@ class App : GameApplication(window {
             ),
             OrthographicCamera(window.size.vec),
         )
+    }
+
+    private fun nextMode() {
+        wrapping = TextureWrapping.entries[(wrapping.ordinal + 1) % TextureWrapping.entries.size]
+    }
+
+    private fun previousMode() {
+        wrapping = TextureWrapping.entries[(wrapping.ordinal - 1)
+            .let { if (it < 0) it + TextureWrapping.entries.size else it } % TextureWrapping.entries.size]
     }
 
     override fun loop(delta: Double) {
