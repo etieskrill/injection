@@ -1,4 +1,3 @@
-import io.github.etieskrill.injection.extension.shader.bool
 import io.github.etieskrill.injection.extension.shader.dsl.PureShaderBuilder
 import io.github.etieskrill.injection.extension.shader.dsl.RenderTarget
 import io.github.etieskrill.injection.extension.shader.dsl.ShaderVertexData
@@ -11,11 +10,10 @@ import org.etieskrill.engine.application.GameApplication
 import org.etieskrill.engine.graphics.Batch
 import org.etieskrill.engine.graphics.camera.OrthographicCamera
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
-import org.etieskrill.engine.graphics.texture.AbstractTexture
+import org.etieskrill.engine.graphics.texture.AbstractTexture.Wrapping
 import org.etieskrill.engine.graphics.texture.Texture2D
-import org.etieskrill.engine.input.CursorInputAdapter
-import org.etieskrill.engine.input.Key
 import org.etieskrill.engine.input.Keys
+import org.etieskrill.engine.input.MouseGestureHandler
 import org.etieskrill.engine.scene.Scene
 import org.etieskrill.engine.scene.component.Button
 import org.etieskrill.engine.scene.component.Label
@@ -30,93 +28,73 @@ import org.joml.div
 import org.joml.plus
 import org.joml.times
 import org.joml.unaryMinus
-import org.lwjgl.opengl.GL11C.*
-import org.lwjgl.opengl.GL12C.GL_CLAMP_TO_EDGE
-import org.lwjgl.opengl.GL12C.GL_TEXTURE_WRAP_R
-import org.lwjgl.opengl.GL13.GL_CLAMP_TO_BORDER
+import org.lwjgl.opengl.GL11C.GL_TRIANGLE_STRIP
+import org.lwjgl.opengl.GL11C.glDrawArrays
 import org.lwjgl.opengl.GL30C.glBindVertexArray
 import org.lwjgl.opengl.GL30C.glGenVertexArrays
 
 fun main() {
-    App()
+    App().run()
 }
 
 class App : GameApplication(window {
     resizeable = true
     cursor = Cursor.getDefault(Cursor.CursorShape.RESIZE_ALL)
     refreshRate = 10000
+    transparency = true
 }) {
     var wrapping: TextureWrapping = TextureWrapping.NONE
         set(value) {
             field = value
-            setTextureWrapping(value)
+            texture.setWrapping(
+                when (value) {
+                    TextureWrapping.NONE -> Wrapping.CLAMP_TO_BORDER
+                    TextureWrapping.CLAMP_TO_EDGE -> Wrapping.CLAMP_TO_EDGE
+                    TextureWrapping.REPEAT -> Wrapping.REPEAT
+                    TextureWrapping.MIRROR -> Wrapping.MIRRORED_REPEAT
+                }
+            )
         }
 
-    lateinit var texture: Texture2D
-    lateinit var shader: TextureWrappingShader
-    var dummyVAO: Int = -1
+    val texture: Texture2D = Texture2D.FileBuilder("lena_rgb.png").build()
+    val shader: TextureWrappingShader = TextureWrappingShader()
+    val dummyVAO: Int = glGenVertexArrays()
 
-    lateinit var textureOffset: Vector2d
+    val textureOffset: Vector2d = Vector2d(-Vector2i(window.currentSize) / 2 + Vector2i(100))
+    val textureSize = Vector2f(200f)
 
-    lateinit var fpsLabel: Label
-    lateinit var modeLabel: Label
+    val fpsLabel = Label()
+    val modeLabel = Label()
 
-    override fun init() {
-        texture = Texture2D.FileBuilder("lena_rgb.png").build()
-
-        shader = TextureWrappingShader()
-        dummyVAO = glGenVertexArrays()
-
+    init {
         wrapping = TextureWrapping.NONE
-        window.addKeyInputs { type, key, action, modifiers ->
-            if (key == Keys.E.input.value && action == 1) {
-                wrapping = TextureWrapping.entries[(wrapping.ordinal + 1) % TextureWrapping.entries.size]
-            }
 
+        window.addKeyInputs { type, key, action, modifiers ->
+            if (key == Keys.E.input.value && action == 1)
+                wrapping = TextureWrapping.entries[(wrapping.ordinal + 1) % TextureWrapping.entries.size]
+            else if (key == Keys.Q.input.value && action == 1)
+                wrapping = TextureWrapping.entries[(wrapping.ordinal - 1)
+                    .let { if (it < 0) it + TextureWrapping.entries.size else it } % TextureWrapping.entries.size]
             false
         }
 
-        textureOffset = Vector2d(-Vector2i(window.currentSize) / 2 + Vector2i(100))
-
-        window.addCursorInputs(object : CursorInputAdapter { //TODO mouse gestures adapter (drag, double click...)
-            var clicked = false
-            override fun invokeClick(button: Key?, action: Int, posX: Double, posY: Double): Boolean {
-                if (button == Keys.LEFT_MOUSE.input) {
-                    clicked = action == 1
-                    prevX = posX
-                    prevY = posY
-                }
-
-                return false
+        window.addCursorInputs(object : MouseGestureHandler() {
+            override fun invokeDrag(deltaX: Double, deltaY: Double): Boolean {
+                textureOffset.x += deltaX
+                textureOffset.y += deltaY
+                return true
             }
 
-            var prevX: Double? = null
-            var prevY: Double? = null
-            override fun invokeMove(posX: Double, posY: Double): Boolean {
-                if (!clicked) return false
-
-                if (prevX == null || prevY == null) {
-                    prevX = posX
-                    prevY = posY
-                    return false
-                }
-
-                textureOffset.x += prevX!! - posX
-                textureOffset.y += prevY!! - posY
-
-                prevX = posX
-                prevY = posY
-
-                return false
+            override fun invokeScroll(deltaX: Double, deltaY: Double): Boolean {
+                textureSize.add((deltaY.toFloat() / 20) * textureSize.x, (deltaY.toFloat() / 20) * textureSize.y)
+                return true
             }
         })
 
-        fpsLabel = Label()
-        modeLabel = Label()
         window.scene = Scene(
             Batch(renderer),
             VBox(
-                fpsLabel, modeLabel, Label("Press '${Keys.E}' to cycle mode"), Label("Mouse drag to move"),
+                fpsLabel, modeLabel, Label("Press '${Keys.E}' to cycle mode\nMouse drag to move"),
                 Button(Label("Previous mode").apply { alignment = Alignment.CENTER }).apply {
                     setAction {
                         wrapping = TextureWrapping.entries[(wrapping.ordinal - 1)
@@ -145,26 +123,6 @@ class App : GameApplication(window {
         )
     }
 
-    private fun setTextureWrapping(wrapping: TextureWrapping) {
-        val glWrapping = when (wrapping) {
-            TextureWrapping.NONE -> GL_CLAMP_TO_BORDER
-            TextureWrapping.CLAMP_TO_EDGE -> GL_CLAMP_TO_EDGE
-            TextureWrapping.REPEAT -> GL_REPEAT
-            TextureWrapping.MIRROR -> {
-                setTextureWrapping(TextureWrapping.REPEAT)
-                shader.mirrorTexCords = true
-                return
-            }
-        }
-
-        shader.mirrorTexCords = false
-
-        texture.bind()
-        glTexParameteri(AbstractTexture.Target.TWO_D.gl(), GL_TEXTURE_WRAP_S, glWrapping)
-        glTexParameteri(AbstractTexture.Target.TWO_D.gl(), GL_TEXTURE_WRAP_T, glWrapping)
-        glTexParameteri(AbstractTexture.Target.TWO_D.gl(), GL_TEXTURE_WRAP_R, glWrapping)
-    }
-
     override fun loop(delta: Double) {
         check(dummyVAO != -1)
         glBindVertexArray(dummyVAO)
@@ -172,6 +130,7 @@ class App : GameApplication(window {
         shader.targetTexture = texture
         shader.windowSize = window.currentSize
         shader.offset = Vector2f(textureOffset)
+        shader.targetTextureSize = textureSize
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)
 
         fpsLabel.text = "FPS: %.0f".format(pacer.averageFPS)
@@ -188,11 +147,10 @@ class TextureWrappingShader : PureShaderBuilder<TextureWrappingShader.Vertex, Te
     data class RenderTargets(val colour: RenderTarget)
 
     val vertices by const(arrayOf(vec2(-1, -1), vec2(1, -1), vec2(-1, 1), vec2(1, 1)))
-    val targetTextureSize by const(vec2(200))
 
-    var targetTexture by uniform<sampler2D>()
+    var targetTexture by uniform<sampler2D>() //TODO actually buffer these and only set when rendering
+    var targetTextureSize by uniform<vec2>(/*vec2(200)*/)
     var windowSize by uniform<ivec2>()
-    var mirrorTexCords by uniform<bool>()
 
     var offset by uniform<vec2>()
 
@@ -211,15 +169,10 @@ class TextureWrappingShader : PureShaderBuilder<TextureWrappingShader.Vertex, Te
             scaledCoords =
                 scaledCoords.plus(offset / targetTextureSize) //the +=/+ conflict is just joml's operators being funky - and no, i'm not gonna fix plusAssign
 
-            if (mirrorTexCords) {
-                val reduced =
-                    scaledCoords % 2 //there's this weird border when mirrored and at odd pixel positions - probs a floating point error somewhere here
-                if (reduced.x > 1) scaledCoords.x = 1 - scaledCoords.x
-                if (reduced.y > 1) scaledCoords.y = 1 - scaledCoords.y
-                //if (reduced.y > 1) scaledCoords.y += 1 - scaledCoords.y //TODO put on test spanking bench
-            }
+            val texel = texture(targetTexture, scaledCoords).rgb
+            val alpha = if (texel == vec3(0)) 0.75 else 1.0
 
-            RenderTargets(vec4(texture(targetTexture, scaledCoords).rgb, 1).rt)
+            RenderTargets(vec4(texel, alpha).rt)
         }
     }
 }

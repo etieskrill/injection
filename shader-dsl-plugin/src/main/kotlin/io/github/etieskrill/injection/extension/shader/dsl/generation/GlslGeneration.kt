@@ -62,12 +62,18 @@ private val builtinProperties = mapOf(
     )
 )
 
-private enum class OperatorType(val operator: String, val assignmentOperator: IrStatementOrigin) {
+private enum class OperatorType(
+    val operator: String,
+    val assignmentOperator: IrStatementOrigin,
+    val booleanOperator: Boolean = false
+) {
     PLUS("+", PLUSEQ),
     MINUS("-", MINUSEQ),
     TIMES("*", MULTEQ),
     DIV("/", DIVEQ),
-    REM("%", PERCEQ);
+    REM("%", PERCEQ),
+
+    EQEQ("==", IrStatementOrigin.EQEQ, true);
 
     override fun toString(): String = operator
 }
@@ -373,7 +379,11 @@ private open class GlslTranspiler(
         val initialiser = declaration.initializer
             ?.let { " = ${it.accept(this, data)}" }
             .orEmpty()
-        return "${declaration.type.glslType} ${declaration.name}${initialiser}"
+        if (declaration.type.glslType == null) data.messageCollector.compilerError(
+            "Variable may not have an erased upper bound; change e.g. conditional branches with different return types",
+            declaration, data.file
+        )
+        return "${declaration.type.glslType!!} ${declaration.name}${initialiser}"
     }
 
     override fun visitCall(expression: IrCall, data: TranspilerData): String {
@@ -462,6 +472,10 @@ private open class GlslTranspiler(
                     data.file
                 )
             }
+
+            functionName == "equals" -> data.messageCollector.compilerError(
+                "Use '==' operator instead of 'equals' function call", expression, data.file
+            )
 
             else -> error("Unexpected function $functionName:\n${expression.dump()}")
         }
@@ -587,12 +601,20 @@ private open class GlslTranspiler(
             )
         }
 
-        check(expression.origin?.debugName?.lowercase() !in OperatorType.entries.map { it.name.lowercase() }
-                || expression.receiver != null)
-        { "Operator function did not have a receiver: $operator:\n${expression.render()}" }
+        var leftSide: String
+        var rightSide: String
 
-        val leftSide = expression.receiver!!.accept(this, data)
-        val rightSide = expression.getValueArgument(0)!!.accept(this, data)
+        if (!operator.booleanOperator) {
+            check(expression.origin?.debugName?.lowercase() !in OperatorType.entries.map { it.name.lowercase() }
+                    || expression.receiver != null)
+            { "Operator function did not have a receiver: $operator:\n${expression.render()}" }
+
+            leftSide = expression.receiver!!.accept(this, data)
+            rightSide = expression.getValueArgument(0)!!.accept(this, data)
+        } else {
+            leftSide = expression.getValueArgument(0)!!.accept(this, data)
+            rightSide = expression.getValueArgument(1)!!.accept(this, data)
+        }
 
         return when (operator) {
             //TODO cosmetics: do proper operator for ints

@@ -39,6 +39,8 @@ public abstract class GameApplication {
     private @Getter(PROTECTED) double avgCpuTime;
     private final ArrayDeque<Double> cpuTimes;
 
+    private final StepTimer timer;
+
     private static final Logger logger;
 
     static {
@@ -52,7 +54,7 @@ public abstract class GameApplication {
     }
 
     public GameApplication(Window window) {
-        StepTimer timer = new StepTimer(logger);
+        timer = new StepTimer(logger);
         timer.start();
 
         this.window = window;
@@ -71,7 +73,9 @@ public abstract class GameApplication {
         this.cpuTimes = new FixedArrayDeque<>((int) window.getRefreshRate());
 
         timer.info("Initialised window configuration");
+    }
 
+    public void run() { //TODO change other apps to use this
         try {
             init();
             timer.info("Initialised application");
@@ -84,7 +88,8 @@ public abstract class GameApplication {
         }
     }
 
-    protected abstract void init();
+    protected void init() {
+    }
 
     protected void _loop() {
         setSystemTimeResolution(SYSTEM_TIME_RESOLUTION_MILLIS);

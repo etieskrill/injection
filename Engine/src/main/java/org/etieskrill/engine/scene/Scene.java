@@ -4,6 +4,7 @@ import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.input.CursorInputAdapter;
 import org.etieskrill.engine.input.Key;
+import org.etieskrill.engine.input.Keys;
 import org.etieskrill.engine.scene.component.Node;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector2f;
@@ -108,7 +109,7 @@ public class Scene implements CursorInputAdapter {
     }
 
     @Override
-    public boolean invokeClick(Key button, int action, double posX, double posY) {
+    public boolean invokeClick(Key button, Keys.Action action, double posX, double posY) {
         return root.hit(button, action, posX, posY);
     }
 

@@ -2,6 +2,7 @@ package org.etieskrill.engine.scene.component;
 
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.input.Key;
+import org.etieskrill.engine.input.Keys;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2f;
@@ -122,7 +123,7 @@ public abstract class Node {
     }
 
     //TODO consider turning scene into entity system to alleviate this responsibility from nodes
-    public abstract boolean hit(Key button, int action, double posX, double posY);
+    public abstract boolean hit(Key button, Keys.Action action, double posX, double posY);
 
     final boolean doesHit(double posX, double posY) {
         Vector2f absPos = getAbsolutePosition();

@@ -1,7 +1,12 @@
 package org.etieskrill.engine.window
 
-import org.etieskrill.engine.input.*
+import org.etieskrill.engine.input.CursorInputHandler
+import org.etieskrill.engine.input.Input
+import org.etieskrill.engine.input.InputBinding
 import org.etieskrill.engine.input.InputBinding.Trigger
+import org.etieskrill.engine.input.KeyInputHandler
+import org.etieskrill.engine.input.Keys
+import org.etieskrill.engine.input.OverruleGroup
 import org.etieskrill.engine.window.Window.WindowMode
 import org.etieskrill.engine.window.Window.WindowSize
 import org.joml.Vector2fc
@@ -17,6 +22,8 @@ class WindowBuilder(
     var resizeable: Boolean = false,
     var title: String = "Injection Window",
     var cursor: Cursor? = Cursor.getDefault(),
+    var createHidden: Boolean = false,
+    var transparency: Boolean = false
 ) {
     lateinit var window: Window
 
@@ -91,6 +98,8 @@ fun window(
         .setCursor(builder.cursor)
         .setKeyInputs(builder.inputs.flatMap { keyInputBuilders -> keyInputBuilders.keyInputs })
         .setCursorInputs(builder.inputs.flatMap { cursorInputBuilders -> cursorInputBuilders.cursorInputs })
+        .setCreateHidden(builder.createHidden)
+        .setTransparency(builder.transparency)
         .build()
 
     builder.window = window

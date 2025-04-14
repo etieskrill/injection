@@ -3,7 +3,7 @@ package org.etieskrill.engine.input;
 public interface CursorInputAdapter extends CursorInputHandler {
 
     @Override
-    default boolean invokeClick(Key button, int action, double posX, double posY) {
+    default boolean invokeClick(Key button, Keys.Action action, double posX, double posY) {
         return false;
     }
 

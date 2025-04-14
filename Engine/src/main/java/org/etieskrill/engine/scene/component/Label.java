@@ -5,6 +5,7 @@ import org.etieskrill.engine.graphics.texture.font.Font;
 import org.etieskrill.engine.graphics.texture.font.Fonts;
 import org.etieskrill.engine.graphics.texture.font.Glyph;
 import org.etieskrill.engine.input.Key;
+import org.etieskrill.engine.input.Keys;
 import org.joml.Vector2f;
 
 import java.util.Objects;
@@ -60,7 +61,7 @@ public class Label extends Node {
     }
 
     @Override
-    public boolean hit(Key button, int action, double posX, double posY) {
+    public boolean hit(Key button, Keys.Action action, double posX, double posY) {
         return false;
     }
 

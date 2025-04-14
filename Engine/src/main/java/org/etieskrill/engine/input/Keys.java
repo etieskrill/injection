@@ -1,5 +1,6 @@
 package org.etieskrill.engine.input;
 
+import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
@@ -38,6 +39,25 @@ public enum Keys {
     SUPER(GLFW_KEY_LEFT_SUPER, Mod.SUPER),
     CAPSLOCK(GLFW_MOD_CAPS_LOCK), CAPSLK(CAPSLOCK),
     NUMLOCK(GLFW_KEY_NUM_LOCK);
+
+    public enum Action {
+        PRESS(GLFW_PRESS), RELEASE(GLFW_RELEASE), REPEAT(GLFW_REPEAT);
+
+        private final @Getter int glfwAction;
+
+        Action(int glfwAction) {
+            this.glfwAction = glfwAction;
+        }
+
+        public static Action fromGLFW(int glfwAction) {
+            return switch (glfwAction) {
+                case GLFW_PRESS -> PRESS;
+                case GLFW_RELEASE -> RELEASE;
+                case GLFW_REPEAT -> REPEAT;
+                default -> null;
+            };
+        }
+    }
 
     private final Mod modifierKey;
 

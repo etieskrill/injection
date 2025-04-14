@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Objects;
 
 import static java.util.Arrays.asList;
+import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElse;
 import static org.etieskrill.engine.config.ResourcePaths.SHADER_INCLUDE_PATH;
 import static org.etieskrill.engine.config.ResourcePaths.SHADER_PATH;
@@ -138,6 +139,8 @@ public class Window implements Disposable {
 
     public static class WindowBuilder {
         private WindowBuilder() {
+            this.createHidden = false;
+            this.transparency = false;
             this.keyInputs = new ArrayList<>();
             this.cursorInputs = new ArrayList<>();
         }
@@ -219,6 +222,16 @@ public class Window implements Disposable {
             return this;
         }
 
+        public WindowBuilder setCreateHidden(boolean createHidden) {
+            this.createHidden = createHidden;
+            return this;
+        }
+
+        public WindowBuilder setTransparency(boolean transparency) {
+            this.transparency = transparency;
+            return this;
+        }
+
         public Window build() {
             return new Window(
                     mode != null ? mode : WindowMode.WINDOWED,
@@ -231,20 +244,22 @@ public class Window implements Disposable {
                     title != null ? title : "Window",
                     cursor != null ? cursor : Cursor.getDefault(),
                     keyInputs != null ? keyInputs : new ArrayList<>(),
-                    cursorInputs != null ? cursorInputs : new ArrayList<>()
+                    cursorInputs != null ? cursorInputs : new ArrayList<>(),
+                    createHidden, transparency
             );
         }
     }
 
     @Builder(setterPrefix = "set")
-    private Window(
+    private Window( //TODO container classes for init/static/dynamic settings
             WindowMode mode,
             WindowSize size, Vector2fc position,
             float refreshRate, boolean vSyncEnabled, int samples, boolean resizeable,
             String title,
             Cursor cursor,
             List<KeyInputHandler> keyInputs,
-            List<CursorInputHandler> cursorInputs
+                    List<CursorInputHandler> cursorInputs,
+                    boolean createHidden, boolean transparency
     ) {
         this.mode = mode;
         this.size = size;
@@ -262,7 +277,7 @@ public class Window implements Disposable {
         this.keyInputs = keyInputs;
         this.cursorInputs = cursorInputs;
 
-        init(position);
+        init(position, createHidden, transparency);
 
         this.setCursor(cursor.setWindow(this));
 
@@ -272,7 +287,7 @@ public class Window implements Disposable {
     }
 
     @SuppressWarnings("resource")
-    private void init(Vector2fc position) {
+    private void init(Vector2fc position, boolean createHidden, boolean transparency) {
         if (!glfwInit()) throw new IllegalStateException("Unable to initialize glfw library");
 
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, MIN_GL_CONTEXT_MAJOR_VERSION);
@@ -322,7 +337,10 @@ public class Window implements Disposable {
 
         glfwWindowHint(GLFW_SAMPLES, samples);
 
-        //TODO find way to create hidden to avoid initial flash before hiding
+        if (transparency) glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);
+
+        if (createHidden) glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+
         this.window = glfwCreateWindow(currentSize.x(), currentSize.y(), title,
                 switch (mode) {
                     case FULLSCREEN -> monitor;
@@ -366,7 +384,7 @@ public class Window implements Disposable {
                         keyInputHandlers.invoke(Key.Type.KEYBOARD, key, action, mods));
             }
         });
-        final double[] posX = new double[1], posY = new double[1]; //does this cause this method's stack to persist?
+        final double[] posX = new double[1], posY = new double[1];
         glfwSetMouseButtonCallback(window, (window, button, action, glfwMods) -> {
             if (window == this.window) keyInputs.forEach(keyInputHandler ->
                     keyInputHandler.invoke(Key.Type.MOUSE, button, action, glfwMods));
@@ -375,10 +393,11 @@ public class Window implements Disposable {
                 if (key == null) return;
                 Key keyWithMods = key.withMods(Keys.Mod.fromGlfw(glfwMods));
 
+                Keys.Action keysAction = requireNonNull(Keys.Action.fromGLFW(action));
                 glfwGetCursorPos(window, posX, posY);
                 if (cursorInputs != null) cursorInputs.forEach(cursorInputHandler ->
-                        cursorInputHandler.invokeClick(keyWithMods, action, posX[0], posY[0]));
-                if (scene != null) scene.invokeClick(keyWithMods, action, posX[0], posY[0]);
+                        cursorInputHandler.invokeClick(keyWithMods, keysAction, posX[0], posY[0]));
+                if (scene != null) scene.invokeClick(keyWithMods, keysAction, posX[0], posY[0]);
             }
         });
         glfwSetCursorPosCallback(window, (window, xpos, ypos) -> {

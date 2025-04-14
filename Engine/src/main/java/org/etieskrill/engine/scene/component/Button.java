@@ -10,7 +10,6 @@ import org.joml.Vector4f;
 
 import static java.util.Objects.requireNonNull;
 import static org.etieskrill.engine.scene.component.LayoutUtils.getPreferredNodePosition;
-import static org.lwjgl.glfw.GLFW.GLFW_RELEASE;
 
 public class Button extends Node {
 
@@ -59,9 +58,9 @@ public class Button extends Node {
     }
 
     @Override
-    public boolean hit(Key button, int action, double posX, double posY) {
+    public boolean hit(Key button, Keys.Action action, double posX, double posY) {
         if (!doesHit(posX, posY)) return false;
-        if (this.action != null && action == GLFW_RELEASE && button.equals(Keys.LEFT_MOUSE)) {
+        if (this.action != null && action == Keys.Action.RELEASE && button.equals(Keys.LEFT_MOUSE)) {
             this.action.run();
             return true;
         }

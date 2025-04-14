@@ -174,6 +174,7 @@ public abstract class AbstractTexture implements Texture, Disposable {
 
     public enum Wrapping {
         REPEAT(GL_REPEAT),
+        MIRRORED_REPEAT(GL_MIRRORED_REPEAT),
         CLAMP_TO_EDGE(GL_CLAMP_TO_EDGE),
         CLAMP_TO_BORDER(GL_CLAMP_TO_BORDER);
 
@@ -305,9 +306,7 @@ public abstract class AbstractTexture implements Texture, Disposable {
         glTexParameteri(target.gl(), GL_TEXTURE_MIN_FILTER, builder.minFilter.gl());
         glTexParameteri(target.gl(), GL_TEXTURE_MAG_FILTER, builder.magFilter.gl());
 
-        glTexParameteri(target.gl(), GL_TEXTURE_WRAP_S, builder.wrapping.gl());
-        glTexParameteri(target.gl(), GL_TEXTURE_WRAP_T, builder.wrapping.gl());
-        glTexParameteri(target.gl(), GL_TEXTURE_WRAP_R, builder.wrapping.gl());
+        setWrapping(builder.wrapping);
 
         if (builder.borderColour != null)
             glTexParameterfv(target.gl(), GL_TEXTURE_BORDER_COLOR, builder.borderColour.get(createFloatBuffer(4)));
@@ -324,6 +323,13 @@ public abstract class AbstractTexture implements Texture, Disposable {
 
             glTexParameteriv(target.gl(), GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
         }
+    }
+
+    public void setWrapping(Wrapping wrapping) {
+        bind();
+        glTexParameteri(target.gl(), GL_TEXTURE_WRAP_S, wrapping.gl());
+        glTexParameteri(target.gl(), GL_TEXTURE_WRAP_T, wrapping.gl());
+        glTexParameteri(target.gl(), GL_TEXTURE_WRAP_R, wrapping.gl());
     }
 
     @Override

@@ -2,6 +2,7 @@ package org.etieskrill.engine.scene.component;
 
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.input.Key;
+import org.etieskrill.engine.input.Keys;
 import org.jetbrains.annotations.NotNull;
 
 import static java.util.Objects.requireNonNull;
@@ -48,7 +49,7 @@ public class Container extends Node {
     }
 
     @Override
-    public boolean hit(Key button, int action, double posX, double posY) {
+    public boolean hit(Key button, Keys.Action action, double posX, double posY) {
         if (!doesHit(posX, posY)) return false;
         return child.hit(button, action, posX, posY); //container itself is not hittable
     }
