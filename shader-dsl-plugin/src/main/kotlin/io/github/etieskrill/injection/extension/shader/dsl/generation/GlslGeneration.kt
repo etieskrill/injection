@@ -73,7 +73,8 @@ private enum class OperatorType(
     DIV("/", DIVEQ),
     REM("%", PERCEQ),
 
-    EQEQ("==", IrStatementOrigin.EQEQ, true);
+    EQEQ("==", IrStatementOrigin.EQEQ, true),
+    OROR("||", IrStatementOrigin.OROR, true);
 
     override fun toString(): String = operator
 }
@@ -449,7 +450,7 @@ private open class GlslTranspiler(
                 data
             )
 
-            functionName == "toFloat" -> "${expression.receiver!!.accept(this, data)}.0"
+            functionName in listOf("toFloat", "toDouble") -> expression.receiver!!.accept(this, data)
             functionName in builtinFunctionNames -> handleFunction(functionName, expression, data)
             functionPropertyName in builtinFunctionNames -> { //could split using KClass::memberFunctions and KClass::memberProperties if needed
                 when {
@@ -482,6 +483,18 @@ private open class GlslTranspiler(
     }
 
     override fun visitWhen(expression: IrWhen, data: TranspilerData): String {
+        if (expression.origin!! == IrStatementOrigin.OROR) {
+            check(expression.branches.size == 2)
+
+            check(expression.branches[0].result.accept(this, data) == "true")
+            val leftSide = expression.branches[0].condition.accept(this, data)
+
+            check(expression.branches[1].condition.accept(this, data) == "true")
+            val rightSide = expression.branches[1].result.accept(this, data)
+
+            return "($leftSide || $rightSide)"
+        }
+
         if (expression.origin!! != IrStatementOrigin.IF) TODO(expression.dump())
         //TODO filter/check inline ifs/whens
 
@@ -513,8 +526,9 @@ private open class GlslTranspiler(
     override fun visitConst(expression: IrConst, data: TranspilerData): String =
         expression.value.toString()
 
-    override fun visitGetValue(expression: IrGetValue, data: TranspilerData): String =
-        expression.symbol.owner.name.asString()
+    override fun visitGetValue(expression: IrGetValue, data: TranspilerData): String {
+        return expression.symbol.owner.name.asString()
+    }
 
     override fun visitSetValue(expression: IrSetValue, data: TranspilerData): String {
         var leftSide: String
@@ -774,13 +788,17 @@ private class GlslTemporaryVariableTranspiler(
             ?: error(expression.dump())
         val temporaryVariableName = temporaryVariable.evalChildren(generalTranspiler, data)!!
 
+        val accessedProperty = expression.findElement<IrCall>()!!.symbol.owner.name.asString()
+            .removePrefix("<set-").removeSuffix(">")
+
         val rightSide = expression.statements.single { it != temporaryVariable }
             .findElement<IrCall>(atDepth = 3) { it.glslOperator?.assignmentOperator == operator }!!
             .getValueArgument(0)!!
             .accept(generalTranspiler, data)
             .replace("<receiver>", temporaryVariableName)
 
-        return "$temporaryVariableName ${assignmentOperators[operator]!!} $rightSide"
+        data.messageCollector.reportWarning(expression.dump(), expression, data.file)
+        return "$temporaryVariableName.$accessedProperty ${assignmentOperators[operator]!!} $rightSide"
     }
 }
 

@@ -59,6 +59,10 @@ public class Mesh implements Disposable {
         this.drawMode = drawMode;
     }
 
+    public AABBf getBoundingBox() {
+        return boundingBox;
+    }
+
     @Override
     public void dispose() {
         material.dispose();

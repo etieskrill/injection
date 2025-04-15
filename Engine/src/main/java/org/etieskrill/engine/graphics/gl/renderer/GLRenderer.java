@@ -1,6 +1,7 @@
 package org.etieskrill.engine.graphics.gl.renderer;
 
 import lombok.Getter;
+import lombok.Setter;
 import org.etieskrill.engine.ApplicationDisposed;
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.entity.component.Transform;
@@ -31,6 +32,7 @@ import static org.lwjgl.opengl.GL33C.*;
 public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer, Disposable {
 
     private static final float CLEAR_COLOUR = 0.25f;//0.025f;
+    private @Setter Vector3f clearColour = new Vector3f(CLEAR_COLOUR);
     private static final int MAX_USABLE_TEXTURE_UNIT = 8; //TODO make more configurable
 
     private final Map<ShaderProgram, ShaderTextureContext> textureContexts = new HashMap<>();
@@ -42,7 +44,7 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
 
     @Override
     public void prepare() {
-        glClearColor(CLEAR_COLOUR, CLEAR_COLOUR, CLEAR_COLOUR, 1f);
+        glClearColor(clearColour.x, clearColour.y, clearColour.z, 1f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
         textureContexts.forEach((shader, textureContext) -> {

@@ -239,7 +239,7 @@ public class Window implements Disposable {
                     position,
                     refreshRate > 0 ? refreshRate : GLFW_DONT_CARE,
                     vSyncEnabled,
-                    Math.max(samples, 0),
+                    samples != null ? Math.max(samples, 0) : 4,
                     resizeable,
                     title != null ? title : "Window",
                     cursor != null ? cursor : Cursor.getDefault(),
@@ -254,7 +254,7 @@ public class Window implements Disposable {
     private Window( //TODO container classes for init/static/dynamic settings
             WindowMode mode,
             WindowSize size, Vector2fc position,
-            float refreshRate, boolean vSyncEnabled, int samples, boolean resizeable,
+                    float refreshRate, boolean vSyncEnabled, Integer samples, boolean resizeable,
             String title,
             Cursor cursor,
             List<KeyInputHandler> keyInputs,

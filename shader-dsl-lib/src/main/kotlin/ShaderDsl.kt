@@ -1,6 +1,14 @@
 package io.github.etieskrill.injection.extension.shader.dsl
 
-import io.github.etieskrill.injection.extension.shader.*
+import io.github.etieskrill.injection.extension.shader.AbstractShader
+import io.github.etieskrill.injection.extension.shader.Texture
+import io.github.etieskrill.injection.extension.shader.float
+import io.github.etieskrill.injection.extension.shader.int
+import io.github.etieskrill.injection.extension.shader.ivec2
+import io.github.etieskrill.injection.extension.shader.sampler2D
+import io.github.etieskrill.injection.extension.shader.vec2
+import io.github.etieskrill.injection.extension.shader.vec3
+import io.github.etieskrill.injection.extension.shader.vec4
 import org.joml.Vector2f
 import org.joml.Vector2i
 import org.joml.Vector4f
@@ -33,7 +41,7 @@ val vec4.rt: RenderTarget //FIXME kinda ugly, maybe just turn em into delegates 
  */
 @ShaderDslMarker
 @Suppress("unused")
-abstract class ShaderBuilder<VA : Any, V : ShaderVertexData, RT : Any>(shader: AbstractShader) :
+abstract class ShaderBuilder<VA : Any, V : ShaderVertexData, RT : Any>(val shader: AbstractShader) :
     AbstractShader by shader {
 
     protected fun <T : Any> uniform() = UniformDelegate<T>() //TODO add default param
@@ -76,6 +84,10 @@ abstract class PureShaderBuilder<V : ShaderVertexData, RT : Any>(shader: Abstrac
 @ShaderDslMarker
 @Suppress("UnusedReceiverParameter", "unused")
 open class GlslReceiver {
+    operator fun Number.plus(s: Number): Number = error()
+    operator fun Number.minus(s: Number): Number = error()
+    operator fun Number.compareTo(s: Number): Int = error()
+
     operator fun Number.div(v: vec2): vec2 = error()
     operator fun Number.div(v: ivec2): vec2 = error()
 
@@ -89,15 +101,24 @@ open class GlslReceiver {
 
     fun vec3(s: Number): vec3 = error()
     fun vec3(x: Number, y: Number, z: Number): vec3 = error()
+    fun vec3(v: vec4): vec3 = error()
 
     fun vec4(x: Number): vec4 = error()
     fun vec4(x: Number, y: Number, z: Number, w: Number): vec4 = error()
     fun vec4(v: vec3, w: Number): vec4 = error()
     fun vec4(v: vec2, z: Number, w: Number): vec4 = error()
 
-    var vec2.x: float by swizzle()
-    var vec2.y: float by swizzle()
+    var vec2.x: Number by swizzle()
+    var vec2.y: Number by swizzle()
 
+    var vec3.x: Number by swizzle()
+    var vec3.y: Number by swizzle()
+    var vec3.z: Number by swizzle()
+
+    var vec4.x: float by swizzle()
+    var vec4.y: float by swizzle()
+    var vec4.z: float by swizzle()
+    var vec4.w: float by swizzle()
     val vec4.rgb: vec3 by swizzle()
 
     operator fun vec2.plus(v: vec2): vec2 = error()
@@ -123,6 +144,14 @@ open class GlslReceiver {
     operator fun vec3.times(v: vec3): vec3 = error()
     operator fun vec3.times(s: Number): vec3 = error()
     operator fun vec3.div(v: vec3): vec3 = error()
+
+    operator fun vec4.plus(v: vec4): vec4 = error()
+
+    fun length(v: vec3): float = error()
+
+    fun dot(v1: vec3, v2: vec3): float = error() //TODO do with receivers
+
+    fun sqrt(s: Number): float = error()
 
     fun max(v: vec2, s: Number): vec2 = error()
     fun max(v1: vec2, v2: vec2): vec2 = error()
