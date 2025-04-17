@@ -10,7 +10,11 @@ version = "unspecified"
 dependencies {
     implementation(project(":engine"))
 
-    implementation("org.lwjgl:lwjgl-opengl:${libs.versions.lwjgl.get()}")
+    implementation(platform("org.lwjgl:lwjgl-bom:${libs.versions.lwjgl.get()}")) //TODO figure out platforms & catalogs
+    implementation(libs.lwjgl.openal)
+    implementation(libs.lwjgl.opengl)
+
+    //natives not specified as they are brought in by the engine
 }
 
 application {

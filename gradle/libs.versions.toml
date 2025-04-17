@@ -1,6 +1,6 @@
 [versions]
 kotlin = "2.1.20"
-lwjgl = "3.3.3"
+lwjgl = "3.3.6"
 
 slf4j = "2.0.7"
 
@@ -12,6 +12,7 @@ lwjgl-assimp = { module = "org.lwjgl:lwjgl-assimp" }
 lwjgl-freetype = { module = "org.lwjgl:lwjgl-freetype" }
 lwjgl-glfw = { module = "org.lwjgl:lwjgl-glfw" }
 lwjgl-meshoptimizer = { module = "org.lwjgl:lwjgl-meshoptimizer" }
+lwjgl-openal = { module = "org.lwjgl:lwjgl-openal" }
 lwjgl-opengl = { module = "org.lwjgl:lwjgl-opengl" }
 lwjgl-stb = { module = "org.lwjgl:lwjgl-stb" }
 
@@ -33,7 +34,8 @@ mockito-junit-jupiter = { module = "org.mockito:mockito-junit-jupiter", version 
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 
 [bundles]
-lwjgl = ["lwjgl", "lwjgl-assimp", "lwjgl-freetype", "lwjgl-glfw", "lwjgl-meshoptimizer", "lwjgl-opengl", "lwjgl-stb"]
+lwjgl = ["lwjgl", "lwjgl-assimp", "lwjgl-freetype", "lwjgl-glfw", "lwjgl-meshoptimizer", "lwjgl-openal", "lwjgl-opengl",
+    "lwjgl-stb"]
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
