@@ -52,7 +52,7 @@ public class RenderService implements Service, Disposable {
 
     protected final GLRenderer renderer;
     private final GaussBlurPostBuffers gaussBlurPostBuffers;
-    protected final FrameBuffer frameBuffer;
+    protected final @Getter FrameBuffer frameBuffer;
     private final Camera camera;
     private @Getter
     @Accessors(fluent = true)

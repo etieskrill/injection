@@ -20,7 +20,7 @@ import org.etieskrill.engine.window.window
 import org.joml.Vector3f
 
 fun main() {
-    App()
+    App().run()
 }
 
 class App : GameApplication(window {

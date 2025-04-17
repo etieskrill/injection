@@ -4,6 +4,7 @@ package io.github.etieskrill.injection.extension.shader.dsl.generation
 
 import io.github.etieskrill.injection.extension.shader.ShaderStage
 import io.github.etieskrill.injection.extension.shader.ShaderStage.*
+import io.github.etieskrill.injection.extension.shader.dsl.FragmentReceiver
 import io.github.etieskrill.injection.extension.shader.dsl.GlslReceiver
 import io.github.etieskrill.injection.extension.shader.dsl.RenderTarget
 import io.github.etieskrill.injection.extension.shader.dsl.ShaderVertexData
@@ -13,7 +14,6 @@ import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.cli.common.messages.MessageCollector
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.IrStatement
-import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
 import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin
 import org.jetbrains.kotlin.ir.declarations.IrDeclarationParent
 import org.jetbrains.kotlin.ir.declarations.IrFile
@@ -52,6 +52,7 @@ import org.jetbrains.kotlin.ir.util.getArgumentsWithIr
 import org.jetbrains.kotlin.ir.util.patchDeclarationParents
 import org.jetbrains.kotlin.ir.util.render
 import org.jetbrains.kotlin.ir.visitors.IrVisitor
+import kotlin.reflect.KClass
 
 private const val GL_POSITION_NAME = "gl_Position"
 internal val POSITION_FIELD_NAME = ShaderVertexData::position.name
@@ -74,7 +75,10 @@ private enum class OperatorType(
     REM("%", PERCEQ),
 
     EQEQ("==", IrStatementOrigin.EQEQ, true),
-    OROR("||", IrStatementOrigin.OROR, true);
+    OROR("||", IrStatementOrigin.OROR, true),
+    ANDAND("&&", IrStatementOrigin.ANDAND, true),
+
+    ieee754equals("==", IrStatementOrigin.EQEQ, true); //just don't question it
 
     override fun toString(): String = operator
 }
@@ -99,17 +103,18 @@ private enum class WeirdIrResolvedOperatorType(val operator: String) {
 }
 
 private val String.resolvedGlslOperator
-    get() = WeirdIrResolvedOperatorType.entries.firstOrNull {
-        it.name.equals(
-            this,
-            true
-        )
-    }
+    get() = WeirdIrResolvedOperatorType.entries.firstOrNull { it.name.equals(this, true) }
 private val String.isResolvedGlslOperator get() = resolvedGlslOperator != null
 
-private val builtinFunctionNames = GlslReceiver::class.members
-    .filterNot { it.name in listOf("equals", "hashCode", "toString") }
-    .map { it.name }
+private val unaryOperators = mapOf("not" to "!", "unaryPlus" to "+", "unaryMinus" to "-")
+
+private val builtinFunctionNames = //actually includes all members, i.e. properties too
+    GlslReceiver::class.memberNames + VertexReceiver::class.memberNames + FragmentReceiver::class.memberNames
+
+private val KClass<*>.memberNames
+    get() = members
+        .filterNot { it.name in listOf("equals", "hashCode", "toString") }
+        .map { it.name }
 
 internal fun String.isGlslBuiltin() =
     this == GL_POSITION_NAME ||
@@ -195,8 +200,8 @@ internal fun generateGlsl(
 
     programData.definedFunctions.filter { it.value.first == NONE }.forEach { (_, function) ->
         appendLine(generateFunction(function.second, transpilerData))
+        newline()
     }
-    newline()
 
     transpilerData.stage = VERTEX
 
@@ -215,8 +220,8 @@ internal fun generateGlsl(
 
     programData.definedFunctions.filter { it.value.first == VERTEX }.forEach { (_, function) ->
         appendLine(generateFunction(function.second, transpilerData))
+        newline()
     }
-    newline()
 
     appendLine(generateMain(programData.stageBodies[VERTEX]!!, transpilerData))
     newline()
@@ -238,8 +243,8 @@ internal fun generateGlsl(
 
     programData.definedFunctions.filter { it.value.first == FRAGMENT }.forEach { (_, function) ->
         appendLine(generateFunction(function.second, transpilerData))
+        newline()
     }
-    newline()
 
     appendLine(generateMain(programData.stageBodies[FRAGMENT]!!, transpilerData))
     newline()
@@ -295,9 +300,7 @@ private fun generateArrayStatement(
     name: String,
     initialiser: String? = null
 ): String {
-    require(initialiser == null || qualifier == CONST) {
-        "Only const statements may have an initialiser"
-    }
+    require(initialiser == null || qualifier == CONST) { "Only const statements may have an initialiser" }
     return "$qualifier $type $name[$size]${initialiser?.let { " = $initialiser" } ?: ""};"
 }
 
@@ -309,15 +312,9 @@ private fun generateFunction(function: IrFunction, data: TranspilerData) = build
 
     val body = function.body!!.findElement<IrBlockBody>()!!
 
-    val returnStatement = body.findElement<IrReturn>()!!
-    val variableName = returnStatement.value.accept(GlslTranspiler(), data)
-    val variable =
-        body.findElement<IrVariable> { it.name == (returnStatement.value as? IrGetValue)?.symbol?.owner?.name }
-    val ignore = if (variable == null) listOf(returnStatement) else listOf(variable, returnStatement)
-
-    appendLine("void ${function.name}(inout $returnType $variableName, $parameters) {")
+    appendLine("$returnType ${function.name}($parameters) {")
     indent {
-        appendMultiLine(body.accept(GlslTranspiler(ignore), data))
+        appendMultiLine(body.accept(GlslTranspiler(), data).appendIfNotEndsIn(";"))
     }
     append("}")
 }
@@ -380,7 +377,7 @@ private open class GlslTranspiler(
         val initialiser = declaration.initializer
             ?.let { " = ${it.accept(this, data)}" }
             .orEmpty()
-        if (declaration.type.glslType == null) data.messageCollector.compilerError(
+        if (declaration.type.glslType == null) data.messageCollector.compilerError( //TODO maybe Number would be fine too
             "Variable may not have an erased upper bound; change e.g. conditional branches with different return types",
             declaration, data.file
         )
@@ -437,18 +434,12 @@ private open class GlslTranspiler(
                 return "$arrayName[$arrayIndex]"
             }
 
-            functionName in listOf("unaryPlus", "unaryMinus") -> {
-                val p = expression.evalChildren(this, data)!!
-                "${if (functionName == "unaryPlus") "+" else "-"}$p"
-            }
-
+            functionName in unaryOperators -> unaryOperators[functionName]!! + expression.evalChildren(this, data)!!
             functionName in data.definedFunctions -> handleFunction(functionName, expression, data)
             functionName.isGlslOperator -> handleOperator(functionName.glslOperator!!, expression, data)
-            functionName.isResolvedGlslOperator -> handleResolvedOperator(
-                functionName.resolvedGlslOperator!!,
-                expression,
-                data
-            )
+            functionName.isResolvedGlslOperator -> {
+                handleResolvedOperator(functionName.resolvedGlslOperator!!, expression, data)
+            }
 
             functionName in listOf("toFloat", "toDouble") -> expression.receiver!!.accept(this, data)
             functionName in builtinFunctionNames -> handleFunction(functionName, expression, data)
@@ -483,16 +474,35 @@ private open class GlslTranspiler(
     }
 
     override fun visitWhen(expression: IrWhen, data: TranspilerData): String {
-        if (expression.origin!! == IrStatementOrigin.OROR) {
+        val booleanOperator = OperatorType.entries
+            .filter { it.booleanOperator }
+            .find { it.assignmentOperator == expression.origin!! }
+        if (booleanOperator != null) {
             check(expression.branches.size == 2)
 
-            check(expression.branches[0].result.accept(this, data) == "true")
-            val leftSide = expression.branches[0].condition.accept(this, data)
+            var leftSide: String
+            var rightSide: String
 
-            check(expression.branches[1].condition.accept(this, data) == "true")
-            val rightSide = expression.branches[1].result.accept(this, data)
+            when (booleanOperator) {
+                OperatorType.OROR -> {
+                    check(expression.branches[0].result.accept(this, data) == "true")
+                    leftSide = expression.branches[0].condition.accept(this, data)
 
-            return "($leftSide || $rightSide)"
+                    check(expression.branches[1].condition.accept(this, data) == "true")
+                    rightSide = expression.branches[1].result.accept(this, data)
+                }
+
+                OperatorType.ANDAND -> {
+                    leftSide = expression.branches[0].condition.accept(this, data)
+                    rightSide = expression.branches[0].result.accept(this, data)
+
+                    check(expression.branches[1].condition.accept(this, data) == "true") //artificial else branch
+                }
+
+                else -> TODO(expression.dump())
+            }
+
+            return "($leftSide ${booleanOperator.operator} $rightSide)"
         }
 
         if (expression.origin!! != IrStatementOrigin.IF) TODO(expression.dump())
@@ -555,10 +565,6 @@ private open class GlslTranspiler(
             else -> TODO()
         }
 
-        if (rightSideExpression is IrCall && rightSideExpression.symbol.owner in data.irFunctions) {
-            return handleFunction(rightSideExpression.symbol.owner.name.asString(), rightSideExpression, data, leftSide)
-        }
-
         return "$leftSide $operator ${rightSideExpression.accept(this, data)}"
     }
 
@@ -597,7 +603,7 @@ private open class GlslTranspiler(
         }
 
         if (rightSideExpression is IrCall && rightSideExpression.symbol.owner in data.irFunctions) {
-            return handleFunction(rightSideExpression.symbol.owner.name.asString(), rightSideExpression, data, leftSide)
+            return handleFunction(rightSideExpression.symbol.owner.name.asString(), rightSideExpression, data)
         }
 
         return "$leftSide $operator ${rightSideExpression.accept(this, data)}"
@@ -641,17 +647,27 @@ private open class GlslTranspiler(
         operator: WeirdIrResolvedOperatorType,
         expression: IrCall,
         data: TranspilerData
-    ): String =
-        "(${expression.getValueArgument(0)!!.accept(this, data)} $operator ${
-            expression.getValueArgument(1)!!.accept(this, data)
-        })"
+    ): String {
+        var leftSide: String
+        var rightSide: String
 
-    @OptIn(ObsoleteDescriptorBasedAPI::class)
+        val firstArg = expression.getValueArgument(0)!!
+        if (firstArg is IrCall && firstArg.symbol.owner.name.asString() == "compareTo") {
+            //happens during lowering to only use compareTo depending on the operator
+            leftSide = firstArg.receiver!!.accept(this, data)
+            rightSide = firstArg.getValueArgument(0)!!.accept(this, data)
+        } else {
+            leftSide = firstArg.accept(this, data)
+            rightSide = expression.getValueArgument(1)!!.accept(this, data)
+        }
+
+        return "($leftSide $operator $rightSide)"
+    }
+
     private fun handleFunction(
         functionName: String,
         expression: IrCall,
         data: TranspilerData,
-        prefixArgument: String? = null
     ): String {
         val parameters = expression
             .getAllArgumentsWithIr()
@@ -666,7 +682,7 @@ private open class GlslTranspiler(
                     )
             }
 
-        return "$functionName(${prefixArgument?.let { "$it, " }.orEmpty()}$parameters)"
+        return "$functionName($parameters)"
     }
 
     override fun visitValueParameter(declaration: IrValueParameter, data: TranspilerData): String {
@@ -797,7 +813,6 @@ private class GlslTemporaryVariableTranspiler(
             .accept(generalTranspiler, data)
             .replace("<receiver>", temporaryVariableName)
 
-        data.messageCollector.reportWarning(expression.dump(), expression, data.file)
         return "$temporaryVariableName.$accessedProperty ${assignmentOperators[operator]!!} $rightSide"
     }
 }

@@ -227,25 +227,33 @@ internal class IrShaderGenerationExtension(
             definedFunctions = shader.declarations
                 .filterIsInstanceAnd<IrFunctionImpl> { it.name.asString() != "program" } //impl because exact type is needed
                 .onEach { check(it.typeParameters.isEmpty()) { "Shader functions may not have type parameters, but this one does:\n${it.render()}" } }
-                .associate { function ->
-                    val funcWrapper = function.body!!.findElement<IrCall>() ?: error(
-                        "Could not find function wrapper for ${
-                            function.name.asString()
-                        }. Add one like 'fun someFunction() = func[Vert,Frag] { ... }'"
-                    )
-                    val funcType = when (funcWrapper.symbol.owner.name.asString()) {
-                        "func" -> NONE
-                        "vertFunc" -> VERTEX
-                        "fragFunc" -> FRAGMENT
-                        else -> error(
-                            "Could not infer wrapper function type for '${
-                                funcWrapper.symbol.owner.name
-                            }', must be one of [func, funcVert, funcFrag]"
+                .groupBy { it.name.asString() }
+                .flatMap { (functionName, overloads) ->
+                    overloads.mapIndexed { i, function ->
+                        val funcWrapper = function.body!!.findElement<IrCall>() ?: error(
+                            "Could not find function wrapper for ${
+                                function.name.asString()
+                            }(${
+                                function.valueParameters.joinToString { it.type.simpleName }
+                            }). Add one like 'fun someFunction() = func[Vert,Frag] { ... }'"
                         )
-                    }
+                        val funcType = when (funcWrapper.symbol.owner.name.asString()) {
+                            "func" -> NONE
+                            "vertFunc" -> VERTEX
+                            "fragFunc" -> FRAGMENT
+                            else -> error(
+                                "Could not infer wrapper function type for '${
+                                    funcWrapper.symbol.owner.name
+                                }', must be one of [func, funcVert, funcFrag]"
+                            )
+                        }
 
-                    function.name.asString() to (funcType to function)
-                }
+                        val name = if (i == 0) functionName
+                        else "$functionName<overload${i - 1}>"
+
+                        name to (funcType to function)
+                    }
+                }.toMap()
         )
 
         data.structTypes += types.vertexDataType.defaultType

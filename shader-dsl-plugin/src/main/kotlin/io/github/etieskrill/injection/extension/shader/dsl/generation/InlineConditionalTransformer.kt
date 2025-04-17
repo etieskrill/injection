@@ -68,7 +68,9 @@ internal class InlineConditionalTransformer(
     }
 
     override fun visitVariable(declaration: IrVariable, data: InlineConditionalTransformerData): IrStatement {
-        if (data.inlineCondition == null && declaration.initializer is IrWhen) {
+        if (data.inlineCondition == null && declaration.initializer is IrWhen
+            && (declaration.initializer as IrWhen).origin in listOf(IrStatementOrigin.IF, IrStatementOrigin.WHEN)
+        ) {
             data.type = InlineStatementType.VARIABLE
             data.inlineCondition = declaration.initializer as IrWhen
             data.helperVariable = declaration

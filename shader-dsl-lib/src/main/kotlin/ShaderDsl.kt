@@ -11,6 +11,7 @@ import io.github.etieskrill.injection.extension.shader.vec3
 import io.github.etieskrill.injection.extension.shader.vec4
 import org.joml.Vector2f
 import org.joml.Vector2i
+import org.joml.Vector3f
 import org.joml.Vector4f
 import kotlin.properties.ReadOnlyProperty
 import kotlin.properties.ReadWriteProperty
@@ -69,9 +70,12 @@ abstract class ShaderBuilder<VA : Any, V : ShaderVertexData, RT : Any>(val shade
 
     protected abstract fun program()
 
+    //TODO use block with GlslReceiver context in const and remove these
     protected fun vec2(s: Number): vec2 = Vector2f()
     protected fun vec2(x: Number, y: Number): vec2 = Vector2f()
     protected fun ivec2(s: Number): ivec2 = Vector2i()
+
+    protected fun vec3(x: Number, y: Number, z: Number): vec3 = Vector3f()
 
 }
 
@@ -85,7 +89,13 @@ abstract class PureShaderBuilder<V : ShaderVertexData, RT : Any>(shader: Abstrac
 @Suppress("UnusedReceiverParameter", "unused")
 open class GlslReceiver {
     operator fun Number.plus(s: Number): Number = error()
+    operator fun Number.plus(v: vec2): vec2 = error()
     operator fun Number.minus(s: Number): Number = error()
+    operator fun Number.minus(v: vec2): vec2 = error()
+    operator fun Number.times(s: Number): Number = error()
+    operator fun Number.times(v: vec2): vec2 = error()
+    operator fun Number.times(v: vec3): vec3 = error()
+    operator fun Number.unaryMinus(): Number = error()
     operator fun Number.compareTo(s: Number): Int = error()
 
     operator fun Number.div(v: vec2): vec2 = error()
@@ -101,6 +111,8 @@ open class GlslReceiver {
 
     fun vec3(s: Number): vec3 = error()
     fun vec3(x: Number, y: Number, z: Number): vec3 = error()
+    fun vec3(v: vec2, z: Number): vec3 = error()
+    fun vec3(v: vec3): vec3 = error()
     fun vec3(v: vec4): vec3 = error()
 
     fun vec4(x: Number): vec4 = error()
@@ -110,15 +122,22 @@ open class GlslReceiver {
 
     var vec2.x: Number by swizzle()
     var vec2.y: Number by swizzle()
+    var vec2.xy: vec2 by swizzle()
+    var vec2.yx: vec2 by swizzle()
+    var vec2.yy: vec2 by swizzle()
 
     var vec3.x: Number by swizzle()
     var vec3.y: Number by swizzle()
     var vec3.z: Number by swizzle()
+    var vec3.xy: vec2 by swizzle()
+    var vec3.xz: vec2 by swizzle()
 
     var vec4.x: float by swizzle()
     var vec4.y: float by swizzle()
     var vec4.z: float by swizzle()
     var vec4.w: float by swizzle()
+    var vec4.xz: vec2 by swizzle()
+    var vec4.xyz: vec3 by swizzle()
     val vec4.rgb: vec3 by swizzle()
 
     operator fun vec2.plus(v: vec2): vec2 = error()
@@ -127,6 +146,7 @@ open class GlslReceiver {
     operator fun vec2.times(s: Number): vec2 = error()
     operator fun vec2.times(v: vec2): vec2 = error()
     operator fun vec2.times(v: ivec2): vec2 = error()
+    operator fun vec2.div(s: Number): vec2 = error()
     operator fun vec2.div(v: vec2): vec2 = error()
     operator fun vec2.div(v: ivec2): vec2 = error()
     operator fun vec2.rem(s: Number): vec2 = error()
@@ -139,26 +159,66 @@ open class GlslReceiver {
     operator fun vec3.plus(v: vec3): vec3 =
         error() //do NOT use the assignment operators (e.g. plusAssign) - great, so += MAY be automatically converted to + and =
 
+    operator fun vec3.plus(v: Number): vec3 = error()
+    operator fun vec3.minus(v: Number): vec3 = error()
     operator fun vec3.minus(v: vec3): vec3 = error()
     operator fun vec3.unaryMinus(): vec3 = error()
     operator fun vec3.times(v: vec3): vec3 = error()
     operator fun vec3.times(s: Number): vec3 = error()
     operator fun vec3.div(v: vec3): vec3 = error()
+    operator fun vec3.rem(s: Number): vec3 = error()
 
+    operator fun vec4.plus(s: Number): vec4 = error()
     operator fun vec4.plus(v: vec4): vec4 = error()
+    operator fun vec4.minus(v: vec4): vec4 = error()
+    operator fun vec4.times(v: Number): vec4 = error()
 
+    fun normalize(v: vec3): vec3 = error()
+
+    fun cross(v1: vec3, v2: vec3): vec3 = error()
+
+    fun length(v: vec2): float = error()
     fun length(v: vec3): float = error()
 
+    fun dot(v1: vec2, v2: vec2): float = error()
     fun dot(v1: vec3, v2: vec3): float = error() //TODO do with receivers
 
     fun sqrt(s: Number): float = error()
 
+    fun max(a: Number, b: Number): Number = error()
+
+    fun min(a: Number, b: Number): Number = error()
     fun max(v: vec2, s: Number): vec2 = error()
     fun max(v1: vec2, v2: vec2): vec2 = error()
 
     fun pow(v1: vec3, v2: vec3): vec3 = error()
     fun exp(s: Number): float = error()
     fun exp(v: vec3): vec3 = error()
+
+    fun sin(s: Number): float = error()
+
+    fun smoothstep(a: Number, b: Number, t: Number): float = error()
+    fun smoothstep(a: Number, b: Number, t: vec2): vec2 = error()
+    fun smoothstep(a: vec2, b: vec2, t: Number): vec2 = error()
+    fun smoothstep(a: vec2, b: vec2, t: vec2): vec2 = error()
+
+    fun abs(s: Number): float = error()
+    fun abs(v: vec2): vec2 = error()
+    fun abs(v: vec3): vec3 = error()
+
+    fun floor(n: Number): float = error()
+    fun floor(n: vec2): vec2 = error()
+    fun floor(n: vec3): vec3 = error()
+    fun floor(n: vec4): vec4 = error()
+
+    fun clamp(x: Number, min: Number, max: Number): float = error()
+
+    fun fract(s: Number): float = error()
+    fun fract(s: vec2): vec2 = error()
+    fun fract(s: vec3): vec3 = error()
+
+    fun mix(a: Number, b: Number, t: Number): float = error()
+    fun mix(a: vec4, b: vec4, t: Number): vec4 = error()
 
     fun texture(sampler: sampler2D, coordinates: vec2): vec4 = error()
     fun textureSize(sampler: sampler2D, lod: int/* = 0*/): ivec2 =
@@ -171,7 +231,11 @@ class VertexReceiver : GlslReceiver() {
 }
 
 @ShaderDslMarker
-class FragmentReceiver : GlslReceiver()
+class FragmentReceiver : GlslReceiver() {
+    fun dFdx(s: Number): float = error()
+    fun dFdy(s: Number): float = error()
+    fun fwidth(v: vec2): vec2 = error()
+}
 
 private fun error(): Nothing = error("don't actually call these dingus")
 
