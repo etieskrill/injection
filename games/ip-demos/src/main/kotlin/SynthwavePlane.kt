@@ -12,6 +12,9 @@ import io.github.etieskrill.injection.extension.shader.vec2
 import io.github.etieskrill.injection.extension.shader.vec3
 import io.github.etieskrill.injection.extension.shader.vec4
 import org.etieskrill.engine.application.GameApplication
+import org.etieskrill.engine.audio.Audio
+import org.etieskrill.engine.audio.AudioListener
+import org.etieskrill.engine.audio.MonoAudioSource
 import org.etieskrill.engine.entity.component.Drawable
 import org.etieskrill.engine.entity.component.Transform
 import org.etieskrill.engine.entity.service.impl.RenderService
@@ -26,9 +29,14 @@ import org.etieskrill.engine.window.window
 import org.joml.Matrix4f
 import org.joml.Vector2f
 import org.joml.Vector3f
+import org.joml.plus
 import org.joml.times
+import org.lwjgl.openal.AL10.*
+import org.lwjgl.openal.ALC11.*
 import org.lwjgl.opengl.GL11C.*
 import org.lwjgl.opengl.GL45C.glCreateVertexArrays
+import org.lwjgl.stb.STBVorbis.*
+import kotlin.math.sin
 
 fun main() {
     SynthwavePlane().run()
@@ -52,6 +60,9 @@ class SynthwavePlane : GameApplication(window {
     val frameTexture: Texture2D
     val sunShader = SunPostPass()
 
+    val audioSource: MonoAudioSource
+    val audioListener: AudioListener
+
     init {
         window.addCursorInputs(CursorCameraController(camera))
         window.cursor.disable()
@@ -73,6 +84,11 @@ class SynthwavePlane : GameApplication(window {
 //        window.addKeyInputs { type, key, action, modifiers ->
 //              //TODO ah wannah moove
 //        }
+
+        audioSource = Audio.readMono("nightstop-she-dances-in-the-dark.ogg")
+        audioSource.play()
+
+        audioListener = Audio.listener
     }
 
     override fun loop(delta: Double) {
@@ -86,14 +102,20 @@ class SynthwavePlane : GameApplication(window {
         shader.viewPosition = camera.position
         offset.y += delta.toFloat()
         shader.offset = offset
+
+        audioListener.position = camera.position
+        audioListener.direction = camera.direction.normalize()
+
+//        audioSource.position = Vector3f(cos(pacer.time).toFloat(), 0f, sin(pacer.time).toFloat())
+        audioSource.position = Vector3f(0f, 0f, 1f)
     }
 
     override fun render() {
         sunShader.start()
         sunShader.invCombined = camera.combined.invert(Matrix4f())
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)
-        glBlendFunc(GL_ONE, GL_ZERO);
+        glBlendFunc(GL_ONE, GL_ZERO)
     }
 }
 

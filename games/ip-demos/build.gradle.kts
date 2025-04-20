@@ -13,6 +13,7 @@ dependencies {
     implementation(platform("org.lwjgl:lwjgl-bom:${libs.versions.lwjgl.get()}")) //TODO figure out platforms & catalogs
     implementation(libs.lwjgl.openal)
     implementation(libs.lwjgl.opengl)
+    implementation(libs.lwjgl.stb)
 
     //natives not specified as they are brought in by the engine
 }

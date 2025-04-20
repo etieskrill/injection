@@ -1,6 +1,7 @@
 package org.etieskrill.engine.application;
 
 import lombok.Getter;
+import org.etieskrill.engine.audio.Audio;
 import org.etieskrill.engine.config.InjectionConfig;
 import org.etieskrill.engine.entity.system.EntitySystem;
 import org.etieskrill.engine.graphics.gl.renderer.GLRenderer;
@@ -124,7 +125,7 @@ public abstract class GameApplication {
     protected void render() {
     }
 
-    protected void terminate() {
+    protected void terminate() { //as this is the end of application, i now realize how pointless most of this is
         resetSystemTimeResolution(SYSTEM_TIME_RESOLUTION_MILLIS);
         window.close();
         window.dispose();
@@ -132,6 +133,7 @@ public abstract class GameApplication {
         TrueTypeFont.disposeLibrary();
         GL.destroy();
         glfwTerminate();
+        Audio.INSTANCE.dispose();
     }
 
 }

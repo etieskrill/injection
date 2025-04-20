@@ -25,10 +25,12 @@ dependencies {
         else -> error("Unsupported OS: ${OS.CURRENT}")
     }
 
+    //TODO surely these can be moved to the version catalog too
     runtimeOnly("org.lwjgl:lwjgl::$lwjglNatives")
     runtimeOnly("org.lwjgl:lwjgl-assimp::$lwjglNatives")
     runtimeOnly("org.lwjgl:lwjgl-freetype::$lwjglNatives")
     runtimeOnly("org.lwjgl:lwjgl-glfw::$lwjglNatives")
+    runtimeOnly("org.lwjgl:lwjgl-openal::$lwjglNatives")
     runtimeOnly("org.lwjgl:lwjgl-opengl::$lwjglNatives")
     runtimeOnly("org.lwjgl:lwjgl-stb::$lwjglNatives")
     runtimeOnly("org.lwjgl:lwjgl-meshoptimizer::$lwjglNatives")

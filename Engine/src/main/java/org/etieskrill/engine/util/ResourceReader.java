@@ -53,6 +53,7 @@ public class ResourceReader {
 
         try {
             byte[] bytes = inputStream.readAllBytes();
+            inputStream.close();
             ByteBuffer buffer = BufferUtils.createByteBuffer(bytes.length);
             return buffer.put(bytes).rewind();
         } catch (IOException e) {
