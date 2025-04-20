@@ -8,6 +8,7 @@ import org.joml.Vector3fc
 import org.lwjgl.BufferUtils.*
 import org.lwjgl.openal.AL
 import org.lwjgl.openal.AL10.*
+import org.lwjgl.openal.AL11.AL_SAMPLE_OFFSET
 import org.lwjgl.openal.ALC
 import org.lwjgl.openal.ALC10.*
 import org.lwjgl.openal.ALCCapabilities
@@ -62,13 +63,15 @@ private class AudioContext(val handle: Long, val caps: ALCapabilities, val liste
     }
 }
 
-abstract class AudioSource(protected val handle: Int) : Disposable {
+abstract class AudioSource(protected val handle: Int, val buffer: PCMAudio?) : Disposable {
     fun play() = alSourcePlay(handle)
+
+    fun getCurrentOffsetSamples(): Int = alGetSourcei(handle, AL_SAMPLE_OFFSET)
 
     override fun dispose() = alDeleteSources(handle)
 }
 
-class MonoAudioSource(handle: Int) : AudioSource(handle) {
+class MonoAudioSource(handle: Int, buffer: PCMAudio?) : AudioSource(handle, buffer) {
     var position: Vector3fc = Vector3f(0f)
         set(value) {
             field = value
@@ -76,7 +79,7 @@ class MonoAudioSource(handle: Int) : AudioSource(handle) {
         }
 }
 
-class StereoAudioSource(handle: Int) : AudioSource(handle)
+class StereoAudioSource(handle: Int, buffer: PCMAudio?) : AudioSource(handle, buffer)
 
 class AudioListener {
     var position: Vector3fc = Vector3f(0f)
@@ -138,7 +141,7 @@ object Audio : Disposable {
 
     fun readMono(path: String): MonoAudioSource = read(path, AudioMode.MONO) as MonoAudioSource
     fun readStereo(path: String): StereoAudioSource = read(path, AudioMode.STEREO) as StereoAudioSource
-    fun read(path: String, mode: AudioMode = AudioMode.DONT_CARE): AudioSource {
+    fun read(path: String, mode: AudioMode = AudioMode.DONT_CARE, retainBuffer: Boolean = false): AudioSource {
         checkInit()
 
         require(path.endsWith(".ogg")) { "Can only parse OGG sound files" }
@@ -158,8 +161,8 @@ object Audio : Disposable {
         checkError("Failed to bind buffer to source")
 
         return when (pcmAudio.mode) {
-            AudioMode.MONO -> MonoAudioSource(source)
-            AudioMode.STEREO -> StereoAudioSource(source)
+            AudioMode.MONO -> MonoAudioSource(source, pcmAudio.takeIf { retainBuffer })
+            AudioMode.STEREO -> StereoAudioSource(source, pcmAudio.takeIf { retainBuffer })
             else -> error("uh oh")
         }
     }
@@ -189,7 +192,7 @@ object Audio : Disposable {
 
 enum class AudioMode(internal val al: Int = 0) { DONT_CARE, MONO(AL_FORMAT_MONO16), STEREO(AL_FORMAT_STEREO16) }
 
-private data class PCMAudio(
+data class PCMAudio(
     val sampleRate: Int,
     val mode: AudioMode,
     val buffer: ShortBuffer

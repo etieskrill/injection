@@ -43,6 +43,7 @@ import org.jetbrains.kotlin.ir.util.findDeclaration
 import org.jetbrains.kotlin.ir.util.getArgumentsWithIr
 import org.jetbrains.kotlin.ir.util.isStrictSubtypeOfClass
 import org.jetbrains.kotlin.ir.util.isSubtypeOfClass
+import org.jetbrains.kotlin.ir.util.patchDeclarationParents
 import org.jetbrains.kotlin.ir.util.properties
 import org.jetbrains.kotlin.ir.util.render
 import org.jetbrains.kotlin.ir.util.superTypes
@@ -67,7 +68,6 @@ internal class IrShaderGenerationExtension(
     private val options: ShaderDslCompilerOptions,
     private val messageCollector: MessageCollector
 ) : IrGenerationExtension {
-    @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
         try {
             val (shaderClasses, files) = getShaderClasses(moduleFragment)
@@ -92,7 +92,6 @@ internal class IrShaderGenerationExtension(
         }
     }
 
-    @OptIn(UnsafeDuringIrConstructionAPI::class)
     private fun getShaderClasses(moduleFragment: IrModuleFragment): Pair<Map<IrClass, ShaderDataTypes>, Map<IrDeclaration, IrFile>> {
         val files = mutableMapOf<IrDeclaration, IrFile>()
         val shaderClasses = moduleFragment
@@ -275,6 +274,8 @@ internal class IrShaderGenerationExtension(
 
         data.stageBodies[FRAGMENT] = fragmentProgram
 
+        postProcess(data)
+
         return data
     }
 
@@ -286,6 +287,23 @@ internal class IrShaderGenerationExtension(
     ) {
         if (!condition(element)) messageCollector.compilerError(message, element, file)
     }
+}
+
+private fun postProcess(data: VisitorData) {
+    data.definedFunctions.values.forEach { (_, function) -> unwrapInlineConditions(function.body!!.findElement<IrBlockBody>()!!) }
+    data.stageBodies.values.forEach { unwrapInlineConditions(it) }
+    data.programParent.patchDeclarationParents()
+}
+
+private fun unwrapInlineConditions(body: IrBlockBody) {
+    val transformer = InlineConditionalTransformer()
+    var transformerData: InlineConditionalTransformerData
+    var transformerIteration = 0
+    do {
+        check(transformerIteration++ < 1000) { "Inline condition transformer ran for more than a thousand iterations: something is probably bricked" }
+        transformerData = InlineConditionalTransformerData()
+        body.transform(transformer, transformerData)
+    } while (transformerData.inlineCondition != null)
 }
 
 private class CompilerAbortException : RuntimeException()
@@ -411,8 +429,9 @@ private val glslTypes = mutableMapOf<String, GlslType>()
 
 internal val IrType.glslType: GlslType?
     get() = glslTypes.getOrPutNullable(fullName) {
-        if (fullName == RenderTarget::class.qualifiedName) return GlslType("vec4")
-        if (fullName == ShadowMap::class.qualifiedName) TODO("shadow types")
+        if (equals<RenderTarget>()) return GlslType("vec4")
+        if (equals<ShadowMap<*>>()) TODO("shadow types")
+        if (equals<Number>()) return GlslType("float")
         val name = this.fullName.glslType ?: return null
 
         if (name == "double") { //TODO either check extensions or downcast - well, that's this here

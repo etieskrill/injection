@@ -18,6 +18,12 @@ dependencies {
     //natives not specified as they are brought in by the engine
 }
 
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.add("-Xcontext-receivers")
+    }
+}
+
 application {
     mainClass = "TextureWrappingKt"
 }

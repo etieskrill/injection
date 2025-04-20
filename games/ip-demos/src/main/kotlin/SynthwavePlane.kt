@@ -14,6 +14,7 @@ import io.github.etieskrill.injection.extension.shader.vec4
 import org.etieskrill.engine.application.GameApplication
 import org.etieskrill.engine.audio.Audio
 import org.etieskrill.engine.audio.AudioListener
+import org.etieskrill.engine.audio.AudioMode
 import org.etieskrill.engine.audio.MonoAudioSource
 import org.etieskrill.engine.entity.component.Drawable
 import org.etieskrill.engine.entity.component.Transform
@@ -24,24 +25,22 @@ import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment.Buffe
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
 import org.etieskrill.engine.graphics.model.model
 import org.etieskrill.engine.input.controller.CursorCameraController
+import org.etieskrill.engine.util.FixedArrayDeque
 import org.etieskrill.engine.window.Window
 import org.etieskrill.engine.window.window
 import org.joml.Matrix4f
 import org.joml.Vector2f
 import org.joml.Vector3f
-import org.joml.plus
 import org.joml.times
-import org.lwjgl.openal.AL10.*
-import org.lwjgl.openal.ALC11.*
 import org.lwjgl.opengl.GL11C.*
-import org.lwjgl.opengl.GL45C.glCreateVertexArrays
-import org.lwjgl.stb.STBVorbis.*
-import kotlin.math.sin
+import kotlin.math.abs
+import kotlin.math.max
 
 fun main() {
     SynthwavePlane().run()
 }
 
+@Suppress("MemberVisibilityCanBePrivate")
 class SynthwavePlane : GameApplication(window {
     title = "Synthwave Plane"
     mode = Window.WindowMode.FULLSCREEN
@@ -51,9 +50,8 @@ class SynthwavePlane : GameApplication(window {
 
     val transform = Transform()
     val plane = model("plane") { plane(Vector2f(-100f, -100f), Vector2f(100f, 100f)) }
-    val shader = GridShader()// object : ShaderProgram(listOf("Dissect.glsl")) {}
+    val shader = GridShader()
     val camera = PerspectiveCamera(window.currentSize)
-    val dummyVAO = glCreateVertexArrays()
     val offset = Vector2f()
 
     val frameBuffer: FrameBuffer
@@ -79,24 +77,22 @@ class SynthwavePlane : GameApplication(window {
             .withComponent(Drawable(plane, shader.shader as ShaderProgram))
 
         renderer.setClearColour(Vector3f(0.01f, 0f, 0.02f))
-//        renderer.setClearColour(Vector3f(0f))
 
-//        window.addKeyInputs { type, key, action, modifiers ->
-//              //TODO ah wannah moove
-//        }
-
-        audioSource = Audio.readMono("nightstop-she-dances-in-the-dark.ogg")
+        audioSource = Audio.read(
+            "nightstop-she-dances-in-the-dark.ogg"
+//            "pumped-up-kicks-synthwave.ogg"
+            , AudioMode.MONO, true
+        ) as MonoAudioSource
         audioSource.play()
 
         audioListener = Audio.listener
     }
 
-    override fun loop(delta: Double) {
-//        glBindVertexArray(dummyVAO)
-//        shader.start()
-//        shader.setUniform("iResolution", window.currentSize, false)
-//        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)
+    var frameSample = 0
+    var samples = FixedArrayDeque<Int>((window.refreshRate / 8).toInt())
+    var averageSample = 0
 
+    override fun loop(delta: Double) {
         //TODO add auto-move mode and button - add disappearing "status" message log
 
         shader.viewPosition = camera.position
@@ -108,11 +104,27 @@ class SynthwavePlane : GameApplication(window {
 
 //        audioSource.position = Vector3f(cos(pacer.time).toFloat(), 0f, sin(pacer.time).toFloat())
         audioSource.position = Vector3f(0f, 0f, 1f)
+
+        //TODO fft when?
+        val sample = audioSource.getCurrentOffsetSamples()
+        val windowSize = (audioSource.buffer!!.sampleRate / pacer.averageFPS).toInt()
+        var sampleValue = 0
+        for (i in max(0, sample - windowSize)..sample) {
+            sampleValue += abs(audioSource.buffer!!.buffer[i].toInt())
+        }
+        sampleValue /= windowSize
+
+        frameSample = sampleValue
+        samples.push(frameSample)
+        averageSample = samples.average().toInt()
     }
 
     override fun render() {
+        //TODO render pass modularisation
         sunShader.start()
         sunShader.invCombined = camera.combined.invert(Matrix4f())
+        sunShader.time = pacer.time.toFloat()
+        sunShader.intensity = averageSample / 4000f + 0.5f
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)
         glBlendFunc(GL_ONE, GL_ZERO)
@@ -178,19 +190,21 @@ class GridShader : ShaderBuilder<GridShader.InputVertex, GridShader.Vertex, Grid
 }
 
 class SunPostPass : PureShaderBuilder<SunPostPass.Vertex, SunPostPass.RenderTargets>(
-    object : ShaderProgram(listOf("SunPostPass.glsl")) {}
+    object : ShaderProgram(listOf("SunPostPass.glsl"), false) {}
 ) {
     class Vertex(override val position: vec4, val fragPosition: vec2) : ShaderVertexData
     class RenderTargets(val colour: RenderTarget)
 
-    val vertices by const(arrayOf(vec2(-1, -1), vec2(1, -1), vec2(-1, 1), vec2(1, 1)))
-    val sunDirection by const(vec3(0, 0.33, 1))
+    private val vertices by const(arrayOf(vec2(-1, -1), vec2(1, -1), vec2(-1, 1), vec2(1, 1)))
+    private val sunDirection by const(vec3(0, 0.33, 1))
 
     var invCombined by uniform<mat4>()
+    var time by uniform<float>()
+    var intensity by uniform<float>()
 
     //most all of these are yoinked from https://gist.github.com/patriciogonzalezvivo/670c22f3966e662d2f83
-    fun rand(n: float): float = fragFunc { fract(sin(n) * 43758.5453123) }
-    fun rand(n: vec2): float = fragFunc { fract(sin(dot(n, vec2(12.9898, 4.1414))) * 43758.5453) }
+    private fun rand(n: float): float = fragFunc { fract(sin(n) * 43758.5453123) }
+    private fun rand(n: vec2): float = fragFunc { fract(sin(dot(n, vec2(12.9898, 4.1414))) * 43758.5453) }
 //    fun noise(n: vec2): float = fragFunc {
 //        val d = vec2(0.0, 1.0)
 //        val b = floor(n)
@@ -228,6 +242,20 @@ class SunPostPass : PureShaderBuilder<SunPostPass.Vertex, SunPostPass.RenderTarg
 //        return o4.y * d.y + o4.x * (1.0 - d.y);
 //    }
 
+    private fun stripSDF(yDir: float, time: float, offset: float): float = fragFunc {
+        val interp = (0.1 * time + offset) % 1
+        val width = if (interp < 0.5) 0.02
+        else 0.025 * (1 - ((interp - 0.5) * 2)) - 0.005
+        val y = yDir + interp * 0.6 - 0.4
+        abs(y.toFloat() - 0.2f) - width.toFloat()
+    }
+
+    //all praise the shader-ssiah https://iquilezles.org/articles/distfunctions/
+    private fun sdfSmoothSubtract(base: float, other: float, smoothingFactor: float) = fragFunc {
+        val h = clamp(0.5 - 0.5 * (base + other) / smoothingFactor, 0, 1)
+        mix(base, -other, h) + smoothingFactor * h * (1 - h)
+    }
+
     override fun program() {
         vertex { Vertex(vec4(vertices[vertexID], 0, 1), vec2(vertices[vertexID])) }
         fragment {
@@ -236,8 +264,8 @@ class SunPostPass : PureShaderBuilder<SunPostPass.Vertex, SunPostPass.RenderTarg
             var nearPoint = invCombined * vec4(ndc, -1, 1)
             var farPoint = invCombined * vec4(ndc, 1, 1)
 
-            nearPoint = nearPoint / nearPoint.w
-            farPoint = farPoint / farPoint.w
+            nearPoint /= nearPoint.w
+            farPoint /= farPoint.w
 
             val direction = normalize(farPoint.xyz - nearPoint.xyz)
 
@@ -253,13 +281,28 @@ class SunPostPass : PureShaderBuilder<SunPostPass.Vertex, SunPostPass.RenderTarg
             }
 
             //"sun" - interpolation variable still needs to be perspective adjusted
-            val strips = direction.y > 0.21 && direction.y < 0.23
-                    || direction.y > 0.235 && direction.y < 0.245
-                    || direction.y > 0.25 && direction.y < 0.26
-            if (dot(normalize(sunDirection), direction) > 0.975 && !strips) {
-                val t = (direction.y - 0.1).toFloat() * 8.0
-                fragColour = mix(vec4(0.545, 0.114, 0.502, 1), vec4(1, 0.216, 0, 1) /*FF7238*/, t)
-            }
+            var stripsDistance = stripSDF(direction.y.toFloat(), time, 0f)
+            stripsDistance = min(stripsDistance, stripSDF(direction.y.toFloat(), time, 0.2f)).toFloat()
+            stripsDistance = min(stripsDistance, stripSDF(direction.y.toFloat(), time, 0.4f)).toFloat()
+            stripsDistance = min(stripsDistance, stripSDF(direction.y.toFloat(), time, 0.6f)).toFloat()
+            stripsDistance = min(stripsDistance, stripSDF(direction.y.toFloat(), time, 0.8f)).toFloat()
+
+            val sunDistance = acos(dot(normalize(sunDirection), direction)) - 0.224f //~12.8°
+            val distance = sdfSmoothSubtract(sunDistance, stripsDistance, 0.005f)
+            //... sdfs are pretty sick
+
+            val sunColour = mix(
+                vec4(0.545, 0.114, 0.502, 1),
+                vec4(1, 0.216, 0, 1) /*FF7238*/,
+                (direction.y - 0.1).toFloat() * 8.0
+            )
+            sunColour.xyz *= intensity
+
+            val aa = distance / length(vec2(dFdx(direction.x), dFdy(direction.y)))
+            sunColour.a = smoothstep(1, 0, aa)
+
+            if (sunColour.a == 1f) fragColour = sunColour
+            else fragColour += sunColour
 
             RenderTargets(fragColour.rt)
         }

@@ -39,6 +39,7 @@ import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin.Companion.MINUSEQ
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin.Companion.MULTEQ
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin.Companion.PERCEQ
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin.Companion.PLUSEQ
+import org.jetbrains.kotlin.ir.expressions.IrTypeOperator
 import org.jetbrains.kotlin.ir.expressions.IrTypeOperatorCall
 import org.jetbrains.kotlin.ir.expressions.IrVararg
 import org.jetbrains.kotlin.ir.expressions.IrWhen
@@ -49,7 +50,6 @@ import org.jetbrains.kotlin.ir.types.isArray
 import org.jetbrains.kotlin.ir.util.dump
 import org.jetbrains.kotlin.ir.util.getAllArgumentsWithIr
 import org.jetbrains.kotlin.ir.util.getArgumentsWithIr
-import org.jetbrains.kotlin.ir.util.patchDeclarationParents
 import org.jetbrains.kotlin.ir.util.render
 import org.jetbrains.kotlin.ir.visitors.IrVisitor
 import kotlin.reflect.KClass
@@ -322,16 +322,6 @@ private fun generateFunction(function: IrFunction, data: TranspilerData) = build
 private fun generateMain(body: IrBlockBody, data: TranspilerData) = buildIndentedString {
     appendLine("void main() {")
     indent {
-        val transformer = InlineConditionalTransformer(data.pluginContext)
-        var transformerData: InlineConditionalTransformerData
-        var transformerIteration = 0
-        do {
-            check(transformerIteration++ < 1000) { "Inline condition transformer ran for more than a thousand iterations: something is probably bricked" }
-            transformerData = InlineConditionalTransformerData()
-            body.transform(transformer, transformerData)
-        } while (transformerData.inlineCondition != null)
-        data.programParent.patchDeclarationParents()
-
         val statements = body.statements.associateWith { it.accept(GlslTranspiler(unwrapReturn = true), data) }
 
         val formattedStatements = mutableListOf<String>()
@@ -377,7 +367,7 @@ private open class GlslTranspiler(
         val initialiser = declaration.initializer
             ?.let { " = ${it.accept(this, data)}" }
             .orEmpty()
-        if (declaration.type.glslType == null) data.messageCollector.compilerError( //TODO maybe Number would be fine too
+        if (declaration.type.glslType == null) data.messageCollector.compilerError(
             "Variable may not have an erased upper bound; change e.g. conditional branches with different return types",
             declaration, data.file
         )
@@ -519,10 +509,13 @@ private open class GlslTranspiler(
 
             val result = it.result.accept(this, data)
 
-            """
-                $conditionStatement {
-                    $result;
-                } """.trimIndent()
+            buildIndentedString {
+                appendLine("$conditionStatement {")
+                indent {
+                    appendMultiLine(result.appendIfNotEndsIn(";"))
+                }
+                append("} ")
+            }
         }.joinToString("")
 
         return statement
@@ -555,11 +548,19 @@ private open class GlslTranspiler(
             in assignmentOperators -> {
                 leftSide = expression.symbol.owner.name.asString()
                 operator = assignmentOperators[expression.origin]!!
-                rightSideExpression =
-                    (expression.value as IrCall) //TODO wrapper funcs, especially for getting params //FIXME if assignment op is passed, this will be IrGetValue instead of IrCall
-                        .getArgumentsWithIr()
-                        .first { it.first.name.asString() != "<this>" } //TODO receiver helper funcs
-                        .second
+                val expressionValue: IrCall = when (val expressionValue = expression.value) {
+                    is IrCall -> expressionValue //TODO wrapper funcs, especially for getting params //FIXME if assignment op is passed, this will be IrGetValue instead of IrCall
+                    is IrTypeOperatorCall -> {
+                        check(expressionValue.operator == IrTypeOperator.IMPLICIT_NOTNULL)
+                        expressionValue.argument as IrCall
+                    }
+
+                    else -> error("Unknown assignment operator right side:\n${expression.dump()}")
+                }
+                rightSideExpression = expressionValue
+                    .getArgumentsWithIr()
+                    .first { it.first.name.asString() != "<this>" } //TODO receiver helper funcs
+                    .second
             }
 
             else -> TODO()

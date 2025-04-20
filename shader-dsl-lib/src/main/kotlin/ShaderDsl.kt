@@ -1,3 +1,5 @@
+@file:Suppress("UNUSED_PARAMETER")
+
 package io.github.etieskrill.injection.extension.shader.dsl
 
 import io.github.etieskrill.injection.extension.shader.AbstractShader
@@ -41,7 +43,7 @@ val vec4.rt: RenderTarget //FIXME kinda ugly, maybe just turn em into delegates 
  * @param RT the render targets
  */
 @ShaderDslMarker
-@Suppress("unused")
+@Suppress("unused", "UNUSED_PARAMETER")
 abstract class ShaderBuilder<VA : Any, V : ShaderVertexData, RT : Any>(val shader: AbstractShader) :
     AbstractShader by shader {
 
@@ -86,7 +88,7 @@ abstract class PureShaderBuilder<V : ShaderVertexData, RT : Any>(shader: Abstrac
     ShaderBuilder<Any, V, RT>(shader)
 
 @ShaderDslMarker
-@Suppress("UnusedReceiverParameter", "unused")
+@Suppress("unused", "UNUSED_PARAMETER")
 open class GlslReceiver {
     operator fun Number.plus(s: Number): Number = error()
     operator fun Number.plus(v: vec2): vec2 = error()
@@ -95,6 +97,7 @@ open class GlslReceiver {
     operator fun Number.times(s: Number): Number = error()
     operator fun Number.times(v: vec2): vec2 = error()
     operator fun Number.times(v: vec3): vec3 = error()
+    operator fun Number.rem(n: Number): Number = error()
     operator fun Number.unaryMinus(): Number = error()
     operator fun Number.compareTo(s: Number): Int = error()
 
@@ -139,6 +142,7 @@ open class GlslReceiver {
     var vec4.xz: vec2 by swizzle()
     var vec4.xyz: vec3 by swizzle()
     val vec4.rgb: vec3 by swizzle()
+    var vec4.a: float by swizzle()
 
     operator fun vec2.plus(v: vec2): vec2 = error()
     operator fun vec2.minus(s: Number): vec2 = error()
@@ -197,6 +201,8 @@ open class GlslReceiver {
 
     fun sin(s: Number): float = error()
 
+    fun acos(n: Number): float = error()
+
     fun smoothstep(a: Number, b: Number, t: Number): float = error()
     fun smoothstep(a: Number, b: Number, t: vec2): vec2 = error()
     fun smoothstep(a: vec2, b: vec2, t: Number): vec2 = error()
@@ -231,9 +237,11 @@ class VertexReceiver : GlslReceiver() {
 }
 
 @ShaderDslMarker
+@Suppress("unused", "UNUSED_PARAMETER")
 class FragmentReceiver : GlslReceiver() {
     fun dFdx(s: Number): float = error()
     fun dFdy(s: Number): float = error()
+    fun fwidth(v: Number): float = error()
     fun fwidth(v: vec2): vec2 = error()
 }
 

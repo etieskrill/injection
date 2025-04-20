@@ -1,6 +1,5 @@
 package io.github.etieskrill.injection.extension.shader.dsl.generation
 
-import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
 import org.jetbrains.kotlin.ir.declarations.IrVariable
@@ -21,9 +20,7 @@ internal data class InlineConditionalTransformerData(
     var helperVariableName: String? = null
 )
 
-internal class InlineConditionalTransformer(
-    val pluginContext: IrPluginContext
-) : IrTransformer<InlineConditionalTransformerData>() {
+internal class InlineConditionalTransformer : IrTransformer<InlineConditionalTransformerData>() {
     override fun visitBlockBody(body: IrBlockBody, data: InlineConditionalTransformerData): IrBody {
         super.visitBlockBody(body, data)
 
@@ -49,7 +46,7 @@ internal class InlineConditionalTransformer(
                 }
 
                 val statementIndex = body.statements.indexOfFirst { it == helperVariable }
-                check(statementIndex != -1) { data.inlineCondition!!.dump() }
+                check(statementIndex != -1) { body.dump() }
                 body.statements.add(statementIndex + 1, condition)
             }
 
