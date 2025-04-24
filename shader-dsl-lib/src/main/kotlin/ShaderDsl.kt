@@ -1,5 +1,3 @@
-@file:Suppress("UNUSED_PARAMETER")
-
 package io.github.etieskrill.injection.extension.shader.dsl
 
 import io.github.etieskrill.injection.extension.shader.AbstractShader
@@ -85,7 +83,7 @@ abstract class ShaderBuilder<VA : Any, V : ShaderVertexData, RT : Any>(val shade
  * "**Pure**" as in; takes no vertex inputs.
  */
 abstract class PureShaderBuilder<V : ShaderVertexData, RT : Any>(shader: AbstractShader) :
-    ShaderBuilder<Any, V, RT>(shader)
+    ShaderBuilder<Nothing, V, RT>(shader)
 
 @ShaderDslMarker
 @Suppress("unused", "UNUSED_PARAMETER")

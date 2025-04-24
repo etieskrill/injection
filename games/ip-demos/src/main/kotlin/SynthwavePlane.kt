@@ -6,6 +6,7 @@ import io.github.etieskrill.injection.extension.shader.dsl.RenderTarget
 import io.github.etieskrill.injection.extension.shader.dsl.ShaderBuilder
 import io.github.etieskrill.injection.extension.shader.dsl.ShaderVertexData
 import io.github.etieskrill.injection.extension.shader.dsl.rt
+import io.github.etieskrill.injection.extension.shader.dsl.std.rgb2vec3
 import io.github.etieskrill.injection.extension.shader.float
 import io.github.etieskrill.injection.extension.shader.mat4
 import io.github.etieskrill.injection.extension.shader.vec2
@@ -19,12 +20,16 @@ import org.etieskrill.engine.audio.MonoAudioSource
 import org.etieskrill.engine.entity.component.Drawable
 import org.etieskrill.engine.entity.component.Transform
 import org.etieskrill.engine.entity.service.impl.RenderService
+import org.etieskrill.engine.graphics.Batch
+import org.etieskrill.engine.graphics.camera.OrthographicCamera
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera
 import org.etieskrill.engine.graphics.gl.framebuffer.FrameBuffer
 import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment.BufferAttachmentType
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
 import org.etieskrill.engine.graphics.model.model
 import org.etieskrill.engine.input.controller.CursorCameraController
+import org.etieskrill.engine.scene.Scene
+import org.etieskrill.engine.scene.component.Label
 import org.etieskrill.engine.util.FixedArrayDeque
 import org.etieskrill.engine.window.Window
 import org.etieskrill.engine.window.window
@@ -61,9 +66,14 @@ class SynthwavePlane : GameApplication(window {
     val audioSource: MonoAudioSource
     val audioListener: AudioListener
 
+    val fpsLabel: Label
+
     init {
         window.addCursorInputs(CursorCameraController(camera))
         window.cursor.disable()
+
+        fpsLabel = Label()
+        window.scene = Scene(Batch(renderer), fpsLabel, OrthographicCamera(window.currentSize))
 
         camera.setPosition(Vector3f(0f, 1f, 0f))
 
@@ -83,6 +93,7 @@ class SynthwavePlane : GameApplication(window {
 //            "pumped-up-kicks-synthwave.ogg"
             , AudioMode.MONO, true
         ) as MonoAudioSource
+        audioSource.gain = 0.1f
         audioSource.play()
 
         audioListener = Audio.listener
@@ -117,6 +128,8 @@ class SynthwavePlane : GameApplication(window {
         frameSample = sampleValue
         samples.push(frameSample)
         averageSample = samples.average().toInt()
+
+        fpsLabel.text = pacer.averageFPS.toInt().toString()
     }
 
     override fun render() {
@@ -175,6 +188,16 @@ class GridShader : ShaderBuilder<GridShader.InputVertex, GridShader.Vertex, Grid
                 0.502
             ) * 10//vec3(8B1D80) TODO add 255 and hex colour constructors/conversions
             else vec3(0) //blooming circular horizon
+
+            //TODO
+            // - register std functions
+            // - evaluate @ConstEval functions in place
+            //   - extract args
+            //   - call actual function
+            //   - pray return value is transpiled correctly
+            //   - insert
+            // - translate other functions (when they exist)
+            val horizonColour = rgb2vec3("8B1D80_A")
 
             grid += horizon
 

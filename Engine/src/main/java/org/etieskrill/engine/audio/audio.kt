@@ -68,6 +68,13 @@ abstract class AudioSource(protected val handle: Int, val buffer: PCMAudio?) : D
 
     fun getCurrentOffsetSamples(): Int = alGetSourcei(handle, AL_SAMPLE_OFFSET)
 
+    var gain: Float
+        get() = alGetSourcef(handle, AL_GAIN)
+        set(value) {
+            require(gain >= 0) { "Gain must be positive" }
+            alSourcef(handle, AL_GAIN, value)
+        }
+
     override fun dispose() = alDeleteSources(handle)
 }
 

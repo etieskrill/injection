@@ -229,12 +229,13 @@ internal class IrShaderGenerationExtension(
                 .groupBy { it.name.asString() }
                 .flatMap { (functionName, overloads) ->
                     overloads.mapIndexed { i, function ->
-                        val funcWrapper = function.body!!.findElement<IrCall>() ?: error(
+                        val funcWrapper = function.body!!.findElement<IrCall>() ?: messageCollector.compilerError(
                             "Could not find function wrapper for ${
                                 function.name.asString()
                             }(${
                                 function.valueParameters.joinToString { it.type.simpleName }
-                            }). Add one like 'fun someFunction() = func[Vert,Frag] { ... }'"
+                            }). Add one like 'fun someFunction() = func[Vert,Frag] { ... }'",
+                            function, files[shader]!!
                         )
                         val funcType = when (funcWrapper.symbol.owner.name.asString()) {
                             "func" -> NONE

@@ -41,6 +41,7 @@ internal class ShaderDslGradlePlugin : KotlinCompilerPluginSupportPlugin {
         val dependencyConfig = if (plugins.hasPlugin(JavaLibraryPlugin::class.java)) "api" else "implementation"
         dependencies.apply {
             add(dependencyConfig, "$GROUP_ID:shader-dsl-lib")
+            add(dependencyConfig, "$GROUP_ID.std:shader-dsl-std-lib")
         }
 
         extensions.configure<JavaPluginExtension>("java") { javaExtension ->

@@ -23,7 +23,3 @@ kotlin {
         freeCompilerArgs.add("-Xcontext-receivers")
     }
 }
-
-application {
-    mainClass = "TextureWrappingKt"
-}

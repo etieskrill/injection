@@ -9,6 +9,7 @@ includeBuild("shader-reflection-lib")
 
 includeBuild("shader-dsl-plugin")
 includeBuild("shader-dsl-lib")
+includeBuild("shader-dsl-std-lib")
 
 file("games").listFiles().forEach {
     include("games:${it.name}")
