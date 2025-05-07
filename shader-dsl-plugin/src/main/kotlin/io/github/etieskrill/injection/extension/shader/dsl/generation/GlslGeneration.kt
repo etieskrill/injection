@@ -10,15 +10,16 @@ import io.github.etieskrill.injection.extension.shader.dsl.RenderTarget
 import io.github.etieskrill.injection.extension.shader.dsl.ShaderVertexData
 import io.github.etieskrill.injection.extension.shader.dsl.VertexReceiver
 import io.github.etieskrill.injection.extension.shader.dsl.generation.GlslStorageQualifier.CONST
+import io.github.etieskrill.injection.extension.shader.vec3
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.cli.common.messages.MessageCollector
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.IrStatement
+import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
 import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin
 import org.jetbrains.kotlin.ir.declarations.IrDeclarationParent
 import org.jetbrains.kotlin.ir.declarations.IrFile
 import org.jetbrains.kotlin.ir.declarations.IrFunction
-import org.jetbrains.kotlin.ir.declarations.IrValueParameter
 import org.jetbrains.kotlin.ir.declarations.IrVariable
 import org.jetbrains.kotlin.ir.expressions.IrBlock
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
@@ -52,7 +53,10 @@ import org.jetbrains.kotlin.ir.util.getAllArgumentsWithIr
 import org.jetbrains.kotlin.ir.util.getArgumentsWithIr
 import org.jetbrains.kotlin.ir.util.render
 import org.jetbrains.kotlin.ir.visitors.IrVisitor
+import java.lang.reflect.InvocationTargetException
+import kotlin.reflect.KCallable
 import kotlin.reflect.KClass
+import kotlin.reflect.full.valueParameters
 
 private const val GL_POSITION_NAME = "gl_Position"
 internal val POSITION_FIELD_NAME = ShaderVertexData::position.name
@@ -128,6 +132,7 @@ private data class TranspilerData(
     val file: IrFile,
     val structTypes: List<IrType>,
     val definedFunctions: Map<String, Pair<ShaderStage, IrFunction>>,
+    val evaluatedFunctions: Map<String, List<KCallable<*>>>,
     val vertexDataStructName: String,
     val uniforms: Set<String>,
     var stage: ShaderStage = NONE,
@@ -152,6 +157,7 @@ internal fun generateGlsl(
         programData.file,
         programData.structTypes,
         programData.definedFunctions,
+        programData.evaluatedFunctions,
         programData.vertexDataStructName,
         programData.uniforms.keys
     )
@@ -426,6 +432,7 @@ private open class GlslTranspiler(
 
             functionName in unaryOperators -> unaryOperators[functionName]!! + expression.evalChildren(this, data)!!
             functionName in data.definedFunctions -> handleFunction(functionName, expression, data)
+            functionName in data.evaluatedFunctions -> evaluateFunction(functionName, expression, data)
             functionName.isGlslOperator -> handleOperator(functionName.glslOperator!!, expression, data)
             functionName.isResolvedGlslOperator -> {
                 handleResolvedOperator(functionName.resolvedGlslOperator!!, expression, data)
@@ -686,10 +693,35 @@ private open class GlslTranspiler(
         return "$functionName($parameters)"
     }
 
-    override fun visitValueParameter(declaration: IrValueParameter, data: TranspilerData): String {
-        if (declaration.name.asString() == "lod") error(declaration.dump())
-        if (declaration.defaultValue != null) error(declaration.dump())
-        return super.visitValueParameter(declaration, data)
+    private fun evaluateFunction(
+        functionName: String,
+        expression: IrCall,
+        data: TranspilerData
+    ): String {
+        val function = data.evaluatedFunctions[functionName]!!
+            .single {
+                it.valueParameters.map { (it.type.classifier!! as KClass<*>).qualifiedName!! }
+                    .containsAll(expression.valueArguments.filterNotNull().map { it.type.fullName })
+            }
+
+        val arguments: List<Any> = expression.valueArguments.filterNotNull().map {
+            if (!it.type.equals<String>()) TODO("Parse value type: ${it.type.simpleName}")
+            it.accept(this, data)
+        }
+
+        var result: Any
+        try {
+            result = function.call(*arguments.toTypedArray())!!
+        } catch (e: InvocationTargetException) {
+            data.messageCollector.compilerError(e.targetException.message ?: "<No message>", expression, data.file)
+        }
+
+        return stringify(result)
+    }
+
+    private fun stringify(obj: Any) = when (obj) {
+        is vec3 -> "vec3(%.3f, %.3f, %.3f)".format(obj.x(), obj.y(), obj.z())
+        else -> TODO("stringify type ${obj::class.simpleName}?")
     }
 
 }

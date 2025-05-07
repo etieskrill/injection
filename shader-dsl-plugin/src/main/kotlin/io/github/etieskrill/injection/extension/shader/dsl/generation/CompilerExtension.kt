@@ -8,6 +8,8 @@ import io.github.etieskrill.injection.extension.shader.dsl.RenderTarget
 import io.github.etieskrill.injection.extension.shader.dsl.ShaderBuilder
 import io.github.etieskrill.injection.extension.shader.dsl.UniformDelegate
 import io.github.etieskrill.injection.extension.shader.dsl.gradle.ShaderDslCompilerOptions
+import io.github.etieskrill.injection.extension.shader.dsl.std.ConstEval
+import io.github.etieskrill.injection.extension.shader.dsl.std.stdMethods
 import io.github.etieskrill.injection.extension.shader.glslType
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
@@ -53,8 +55,10 @@ import org.jetbrains.kotlin.utils.addToStdlib.ifFalse
 import org.jetbrains.kotlin.utils.filterIsInstanceAnd
 import org.jetbrains.kotlin.utils.getOrPutNullable
 import java.io.File
+import kotlin.reflect.KCallable
 import kotlin.reflect.KClass
 import kotlin.reflect.cast
+import kotlin.reflect.full.hasAnnotation
 
 private data class ShaderDataTypes(
     val vertexAttributesType: IrClass,
@@ -253,7 +257,10 @@ internal class IrShaderGenerationExtension(
 
                         name to (funcType to function)
                     }
-                }.toMap()
+                }.toMap(),
+            evaluatedFunctions = stdMethods //TODO configurable to allow exclusion of stdlib and for custom extensions
+                .filter { it.hasAnnotation<ConstEval>() }
+                .groupBy { it.name }
         )
 
         data.structTypes += types.vertexDataType.defaultType
@@ -384,6 +391,8 @@ internal data class VisitorData(
     val uniforms: Map<String, GlslType>,
 
     val definedFunctions: Map<String, Pair<ShaderStage, IrFunction>>,
+
+    val evaluatedFunctions: Map<String, List<KCallable<*>>>,
 
     val structTypes: MutableList<IrType> = mutableListOf(),
 

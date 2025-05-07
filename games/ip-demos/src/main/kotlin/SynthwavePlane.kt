@@ -182,11 +182,7 @@ class GridShader : ShaderBuilder<GridShader.InputVertex, GridShader.Vertex, Grid
             grid.xz += lines
 
             //FIXME grid += if (...) ... is not extrapolated
-            val horizon = if (distanceFromCamera > 75) vec3(
-                0.545,
-                0.114,
-                0.502
-            ) * 10//vec3(8B1D80) TODO add 255 and hex colour constructors/conversions
+            val horizon = if (distanceFromCamera > 75) rgb2vec3("8B1D80") * 10
             else vec3(0) //blooming circular horizon
 
             //TODO
@@ -197,7 +193,6 @@ class GridShader : ShaderBuilder<GridShader.InputVertex, GridShader.Vertex, Grid
             //   - pray return value is transpiled correctly
             //   - insert
             // - translate other functions (when they exist)
-            val horizonColour = rgb2vec3("8B1D80_A")
 
             grid += horizon
 
@@ -315,8 +310,8 @@ class SunPostPass : PureShaderBuilder<SunPostPass.Vertex, SunPostPass.RenderTarg
             //... sdfs are pretty sick
 
             val sunColour = mix(
-                vec4(0.545, 0.114, 0.502, 1),
-                vec4(1, 0.216, 0, 1) /*FF7238*/,
+                vec4(rgb2vec3("8B1D80"), 1),
+                vec4(rgb2vec3("FF3700"), 1),
                 (direction.y - 0.1).toFloat() * 8.0
             )
             sunColour.xyz *= intensity
