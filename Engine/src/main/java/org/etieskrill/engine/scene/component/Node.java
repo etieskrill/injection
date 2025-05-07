@@ -41,7 +41,9 @@ public abstract class Node {
     
     public void update(double delta) {}
     public void format() {}
-    public void render(Batch batch) {}
+
+    public void render(@NotNull Batch batch) {
+    }
     
     public Vector2f getPosition() {
         return position;

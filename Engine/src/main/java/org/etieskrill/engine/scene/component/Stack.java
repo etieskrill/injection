@@ -56,7 +56,7 @@ public class Stack extends Node {
     }
     
     public Stack removeChildren(@NotNull Node... children) {
-        List.of(children).forEach(child -> this.children.remove(child.setParent(null)));
+        List.of(children).forEach(child -> this.children.remove(child.setParent(null))); //FIXME yea surely removing items from a collection being ACTIVELY ITERATED OVER has no consequences whatsoever
         return this;
     }
     

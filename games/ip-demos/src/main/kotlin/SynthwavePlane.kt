@@ -30,6 +30,9 @@ import org.etieskrill.engine.graphics.model.model
 import org.etieskrill.engine.input.controller.CursorCameraController
 import org.etieskrill.engine.scene.Scene
 import org.etieskrill.engine.scene.component.Label
+import org.etieskrill.engine.scene.component.VBox
+import org.etieskrill.engine.scene.component.plot.Histogram
+import org.etieskrill.engine.scene.component.plot.HistogramScaleMode
 import org.etieskrill.engine.util.FixedArrayDeque
 import org.etieskrill.engine.window.Window
 import org.etieskrill.engine.window.window
@@ -67,13 +70,22 @@ class SynthwavePlane : GameApplication(window {
     val audioListener: AudioListener
 
     val fpsLabel: Label
+    val fpsGraph: Histogram
 
     init {
         window.addCursorInputs(CursorCameraController(camera))
-        window.cursor.disable()
+        window.cursor.capture()
 
         fpsLabel = Label()
-        window.scene = Scene(Batch(renderer), fpsLabel, OrthographicCamera(window.currentSize))
+        fpsGraph = Histogram(100, scaleMode = HistogramScaleMode.FIXED, maxValue = 160f)
+        window.scene = Scene(
+            Batch(renderer),
+            VBox(
+                fpsGraph.setSize(Vector2f(400f, 150f)),
+                fpsLabel
+            ).setSize(Vector2f(600f, 500f)),
+            OrthographicCamera(window.currentSize)
+        )
 
         camera.setPosition(Vector3f(0f, 1f, 0f))
 
@@ -130,6 +142,7 @@ class SynthwavePlane : GameApplication(window {
         averageSample = samples.average().toInt()
 
         fpsLabel.text = pacer.averageFPS.toInt().toString()
+        if (pacer.totalFramesElapsed % 5L == 0L) fpsGraph.values.push(1 / pacer.deltaTimeSeconds.toFloat())
     }
 
     override fun render() {
