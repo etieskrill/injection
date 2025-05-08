@@ -47,12 +47,5 @@ class Histogram(
         }
     }
 
-    override fun hit(
-        button: Key?,
-        action: Keys.Action?,
-        posX: Double,
-        posY: Double
-    ): Boolean {
-        TODO("Not yet implemented")
-    }
+    override fun hit(button: Key?, action: Keys.Action?, posX: Double, posY: Double): Boolean = false
 }

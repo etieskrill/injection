@@ -37,7 +37,6 @@ class AudioDevice private constructor(val name: String, internal val handle: Lon
 
     override fun dispose() {
         alcCloseDevice(handle)
-        caps.addressBuffer.free() //esoteric
     }
 }
 
@@ -59,7 +58,6 @@ private class AudioContext(val handle: Long, val caps: ALCapabilities, val liste
 
     override fun dispose() {
         alcDestroyContext(handle)
-        caps.addressBuffer.free() //OoOoOOhH look at me doing manual memory management
     }
 }
 
