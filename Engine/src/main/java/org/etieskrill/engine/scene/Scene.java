@@ -2,9 +2,9 @@ package org.etieskrill.engine.scene;
 
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.camera.Camera;
-import org.etieskrill.engine.input.CursorInputAdapter;
 import org.etieskrill.engine.input.Key;
 import org.etieskrill.engine.input.Keys;
+import org.etieskrill.engine.input.MouseGestureHandler;
 import org.etieskrill.engine.scene.component.Node;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector2f;
@@ -13,10 +13,10 @@ import org.joml.Vector3f;
 
 import static org.lwjgl.opengl.GL11C.*;
 
-public class Scene implements CursorInputAdapter {
+public class Scene extends MouseGestureHandler {
 
     private @NotNull Batch batch;
-    private @NotNull Node root; //TODO direct root (e.g. label) is not formatted -> add transparent parent container?
+    private @NotNull Node<?> root; //TODO direct root (e.g. label) is not formatted -> add transparent parent container?
     private @NotNull Camera camera;
 
     private final Vector2f size;
@@ -110,7 +110,13 @@ public class Scene implements CursorInputAdapter {
 
     @Override
     public boolean invokeClick(Key button, Keys.Action action, double posX, double posY) {
+        super.invokeClick(button, action, posX, posY);
         return root.hit(button, action, posX, posY);
+    }
+
+    @Override
+    public boolean invokeDrag(double deltaX, double deltaY, double posX, double posY) {
+        return root.drag(deltaX, deltaY, posX, posY);
     }
 
 }

@@ -1,6 +1,7 @@
 package org.etieskrill.engine.window;
 
 import org.etieskrill.engine.Disposable;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2d;
 
 import static org.lwjgl.glfw.GLFW.*;
@@ -62,6 +63,18 @@ public class Cursor implements Disposable {
                 case CAPTURED -> GLFW_CURSOR_CAPTURED;
             };
         }
+
+        public static @Nullable CursorMode fromGLFW(int glfwCursorMode) {
+            for (CursorMode mode : CursorMode.values()) {
+                if (mode.glfw() == glfwCursorMode) return mode;
+            }
+            return null;
+        }
+    }
+
+    public CursorMode getMode() {
+        checkWindow();
+        return CursorMode.fromGLFW(glfwGetInputMode(window.getID(), GLFW_CURSOR));
     }
 
     public void setMode(CursorMode mode) {

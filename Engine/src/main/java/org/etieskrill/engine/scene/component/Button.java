@@ -38,7 +38,7 @@ public class Button extends Node {
     }
 
     @Override
-    public void render(Batch batch) {
+    public void render(@NotNull Batch batch) {
         batch.renderBox(
                 new Vector3f(getPosition(), 0),
                 new Vector3f(getSize(), 0),

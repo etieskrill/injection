@@ -6,6 +6,7 @@ import org.etieskrill.engine.graphics.texture.font.Fonts;
 import org.etieskrill.engine.graphics.texture.font.Glyph;
 import org.etieskrill.engine.input.Key;
 import org.etieskrill.engine.input.Keys;
+import org.jetbrains.annotations.NotNull;
 import org.joml.Vector2f;
 
 import java.util.Objects;
@@ -46,7 +47,7 @@ public class Label extends Node {
     }
     
     @Override
-    public void render(Batch batch) {
+    public void render(@NotNull Batch batch) {
         if (text != null) batch.renderText(text, font, getAbsolutePosition());
     }
     

@@ -5,6 +5,7 @@ import io.github.etieskrill.injection.extension.shader.Texture
 import io.github.etieskrill.injection.extension.shader.float
 import io.github.etieskrill.injection.extension.shader.int
 import io.github.etieskrill.injection.extension.shader.ivec2
+import io.github.etieskrill.injection.extension.shader.mat2
 import io.github.etieskrill.injection.extension.shader.sampler2D
 import io.github.etieskrill.injection.extension.shader.vec2
 import io.github.etieskrill.injection.extension.shader.vec3
@@ -121,6 +122,8 @@ open class GlslReceiver {
     fun vec4(v: vec3, w: Number): vec4 = error()
     fun vec4(v: vec2, z: Number, w: Number): vec4 = error()
 
+    fun mat2(m00: Number, m01: Number, m10: Number, m11: Number): mat2 = error()
+
     var vec2.x: Number by swizzle()
     var vec2.y: Number by swizzle()
     var vec2.xy: vec2 by swizzle()
@@ -174,6 +177,9 @@ open class GlslReceiver {
     operator fun vec4.plus(v: vec4): vec4 = error()
     operator fun vec4.minus(v: vec4): vec4 = error()
     operator fun vec4.times(v: Number): vec4 = error()
+    operator fun vec4.times(v: vec4): vec4 = error()
+
+    operator fun mat2.times(v: vec2): vec2 = error()
 
     fun normalize(v: vec3): vec3 = error()
 
@@ -199,6 +205,7 @@ open class GlslReceiver {
 
     fun sin(s: Number): float = error()
 
+    fun cos(n: Number): float = error()
     fun acos(n: Number): float = error()
 
     fun smoothstep(a: Number, b: Number, t: Number): float = error()

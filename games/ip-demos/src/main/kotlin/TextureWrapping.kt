@@ -77,7 +77,7 @@ class App : GameApplication(window {
         }
 
         window.addCursorInputs(object : MouseGestureHandler() {
-            override fun invokeDrag(deltaX: Double, deltaY: Double): Boolean {
+            override fun invokeDrag(deltaX: Double, deltaY: Double, posX: Double, posY: Double): Boolean {
                 textureOffset.x += deltaX
                 textureOffset.y += deltaY
                 return true

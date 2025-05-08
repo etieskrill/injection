@@ -11,7 +11,7 @@ import static java.util.Objects.requireNonNull;
 import static org.etieskrill.engine.scene.component.LayoutUtils.getPreferredNodePosition;
 
 /**
- * A node with a single child, whose {@link Node.Layout layout} it respects.
+ * A node with a single child.
  */
 public class Container extends Node {
 

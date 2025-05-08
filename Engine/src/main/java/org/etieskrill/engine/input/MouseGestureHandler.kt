@@ -24,7 +24,7 @@ abstract class MouseGestureHandler(val primaryMouseKey: Keys = Keys.LEFT_MOUSE) 
     override fun invokeMove(posX: Double, posY: Double): Boolean {
         if (!primaryMouseKeyDown) return false
 
-        val handled = invokeDrag(prevX - posX, prevY - posY)
+        val handled = invokeDrag(prevX - posX, prevY - posY, prevX, prevY)
 
         prevX = posX
         prevY = posY
@@ -32,7 +32,7 @@ abstract class MouseGestureHandler(val primaryMouseKey: Keys = Keys.LEFT_MOUSE) 
         return handled
     }
 
-    abstract fun invokeDrag(deltaX: Double, deltaY: Double): Boolean
+    abstract fun invokeDrag(deltaX: Double, deltaY: Double, posX: Double, posY: Double): Boolean
 
     override fun invokeScroll(deltaX: Double, deltaY: Double): Boolean = false
 

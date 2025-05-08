@@ -1,5 +1,7 @@
 package io.github.etieskrill.injection.extension.shader
 
+import org.joml.Matrix2f
+import org.joml.Matrix2fc
 import org.joml.Matrix3f
 import org.joml.Matrix3fc
 import org.joml.Matrix4f
@@ -24,6 +26,7 @@ typealias vec4 = Vector4fc
 
 typealias ivec2 = Vector2ic
 
+typealias mat2 = Matrix2fc
 typealias mat3 = Matrix3fc
 typealias mat4 = Matrix4fc
 
@@ -61,6 +64,7 @@ private val primitiveTypes = mutableMapOf(
     ivec2::class to "ivec2",
     vec3::class to "vec3",
     vec4::class to "vec4",
+    mat2::class to "mat2",
     mat3::class to "mat3",
     mat4::class to "mat4"
 ).apply { putAll(primitiveSamplerTypes) }.map { it.key.qualifiedName!! to it.value }.toMap()
@@ -70,6 +74,7 @@ private val jomlConstants = mapOf(
     Vector2i::class to Vector2ic::class,
     Vector3f::class to Vector3fc::class,
     Vector4f::class to Vector4fc::class,
+    Matrix2f::class to Matrix2fc::class,
     Matrix3f::class to Matrix3fc::class,
     Matrix4f::class to Matrix4fc::class
 ).map { it.key.qualifiedName!! to it.value.qualifiedName!! }.toMap()

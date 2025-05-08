@@ -27,13 +27,18 @@ import org.etieskrill.engine.graphics.gl.framebuffer.FrameBuffer
 import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment.BufferAttachmentType
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
 import org.etieskrill.engine.graphics.model.model
+import org.etieskrill.engine.input.Input
+import org.etieskrill.engine.input.Keys
 import org.etieskrill.engine.input.controller.CursorCameraController
 import org.etieskrill.engine.scene.Scene
 import org.etieskrill.engine.scene.component.Label
+import org.etieskrill.engine.scene.component.Node
 import org.etieskrill.engine.scene.component.VBox
+import org.etieskrill.engine.scene.component.WidgetContainer
 import org.etieskrill.engine.scene.component.plot.Histogram
 import org.etieskrill.engine.scene.component.plot.HistogramScaleMode
 import org.etieskrill.engine.util.FixedArrayDeque
+import org.etieskrill.engine.window.Cursor
 import org.etieskrill.engine.window.Window
 import org.etieskrill.engine.window.window
 import org.joml.Matrix4f
@@ -74,14 +79,25 @@ class SynthwavePlane : GameApplication(window {
 
     init {
         window.addCursorInputs(CursorCameraController(camera))
-        window.cursor.capture()
+        window.addKeyInputs(Input.of(Input.bind(Keys.CTRL).to { ->
+            if (window.cursor.mode == Cursor.CursorMode.DISABLED)
+                window.cursor.mode = Cursor.CursorMode.CAPTURED
+            else
+                window.cursor.mode = Cursor.CursorMode.DISABLED
+        }))
+        window.cursor.disable()
 
         fpsLabel = Label()
-        fpsGraph = Histogram(100, scaleMode = HistogramScaleMode.FIXED, maxValue = 160f)
+        fpsGraph = Histogram(100, scaleMode = HistogramScaleMode.FIXED, maxValue = 160f).setSize(Vector2f(400f, 150f))
         window.scene = Scene(
-            Batch(renderer),
+            Batch(renderer, window.currentSize),
             VBox(
-                fpsGraph.setSize(Vector2f(400f, 150f)),
+                WidgetContainer(fpsGraph).apply {
+                    text = "GPU"
+                    alignment = Node.Alignment.FIXED_POSITION
+                    position = Vector2f(50f, 0f)
+                    isCollapsed = true
+                },
                 fpsLabel
             ).setSize(Vector2f(600f, 500f)),
             OrthographicCamera(window.currentSize)

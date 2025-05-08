@@ -8,14 +8,14 @@ import org.joml.Vector4f;
 public class LayoutUtils {
 
     @Contract("_ -> new")
-    static Vector2f getMinNodeSize(Node node) {
+    static Vector2f getMinNodeSize(Node<?> node) {
         Vector4f margin = node.getMargin();
         return new Vector2f(node.getSize())
                 .add(margin.z() + margin.w(), margin.x() + margin.y());
     }
 
     @Contract("_, _ -> new")
-    static Vector2f getPreferredNodePosition(@NotNull Vector2f size, @NotNull Node node) {
+    static Vector2f getPreferredNodePosition(@NotNull Vector2f size, @NotNull Node<?> node) {
         Vector2f nodeSize = new Vector2f(node.getSize()).add(
                 new Vector2f(node.getMargin().w(), node.getMargin().y())
                 .mul(2)
@@ -27,7 +27,12 @@ public class LayoutUtils {
         );
 
         Vector2f _size = new Vector2f(size);
+        if (node.getAlignment() == Node.Alignment.FIXED_POSITION) {
+            return node.getPosition();
+        }
         Vector2f pos = switch (node.getAlignment()) {
+            case FIXED_POSITION -> throw new IllegalStateException();
+
             case TOP_LEFT -> new Vector2f(0f, 0f);
             case TOP -> _size.sub(nodeSize).mul(0.5f, 0f);
             case TOP_RIGHT -> _size.sub(nodeSize).mul(1f, 0f);

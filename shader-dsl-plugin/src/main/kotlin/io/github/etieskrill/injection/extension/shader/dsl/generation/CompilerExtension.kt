@@ -41,6 +41,7 @@ import org.jetbrains.kotlin.ir.types.classifierOrFail
 import org.jetbrains.kotlin.ir.types.isArray
 import org.jetbrains.kotlin.ir.types.typeOrFail
 import org.jetbrains.kotlin.ir.util.defaultType
+import org.jetbrains.kotlin.ir.util.file
 import org.jetbrains.kotlin.ir.util.findDeclaration
 import org.jetbrains.kotlin.ir.util.getArgumentsWithIr
 import org.jetbrains.kotlin.ir.util.isStrictSubtypeOfClass
@@ -170,7 +171,10 @@ internal class IrShaderGenerationExtension(
         types: ShaderDataTypes,
         files: Map<IrDeclaration, IrFile>,
     ): VisitorData {
-        val constDeclarations = shader.getDelegatedProperties<ConstDelegate<*>, GlslTypeInitialiser> { property ->
+        val constDeclarations = shader.getDelegatedProperties<ConstDelegate<*>, GlslTypeInitialiser>(
+            messageCollector,
+            shader.file
+        ) { property ->
             val initialiser = property.backingField!!.initializer!!.expression
             property.name.asString() to (initialiser as IrCall)
                 .getArgumentsWithIr()
@@ -218,7 +222,10 @@ internal class IrShaderGenerationExtension(
                 true
             }.keys.toList(),
             constants = constDeclarations,
-            uniforms = shader.getDelegatedProperties<UniformDelegate<*>, GlslType> { property ->
+            uniforms = shader.getDelegatedProperties<UniformDelegate<*>, GlslType>(
+                messageCollector,
+                shader.file
+            ) { property ->
                 property.name.asString() to property.backingField?.type?.let { type ->
                     when (type) {
                         is IrSimpleType -> requireNotNull(type.arguments[0].typeOrFail.glslType)
@@ -347,11 +354,19 @@ private fun Name.checkNotGlslBuiltin() =
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 private inline fun <reified T, R> IrClass.getDelegatedProperties(
+    messageCollector: MessageCollector,
+    file: IrFile,
     noinline mapper: (IrProperty) -> Pair<String, R>
 ): Map<String, R> = properties
     .filter { it.isDelegated }
     .filter { it.backingField?.type.equals<T>() }
-    .onEach { it.name.checkNotGlslBuiltin() }
+    .onEach {
+        try {
+            it.name.checkNotGlslBuiltin()
+        } catch (e: IllegalStateException) {
+            messageCollector.compilerError(e.message ?: "<No message>", it, file)
+        }
+    }
     .associate(mapper)
 
 internal enum class GlslVersion { `330` }

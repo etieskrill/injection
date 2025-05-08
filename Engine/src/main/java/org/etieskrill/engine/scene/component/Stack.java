@@ -12,54 +12,55 @@ import static java.util.Objects.requireNonNull;
 import static org.etieskrill.engine.scene.component.LayoutUtils.getPreferredNodePosition;
 
 /**
- * A node with multiple children, whose {@link Node.Layout layouts} are respected independently of each other.
+ * A node with any number of children, whose layouts are respected independently of each other.
  */
-public class Stack extends Node {
-    
-    private final List<Node> children;
-    
+public class Stack extends Node<Stack> {
+
+    private final List<Node<?>> children;
+
     public Stack() {
         this(new ArrayList<>());
     }
-    
-    public Stack(@NotNull List<Node> children) {
+
+    public Stack(@NotNull List<Node<?>> children) {
         this.children = new ArrayList<>(requireNonNull(children));
     }
-    
+
     @Override
     public void update(double delta) {
         children.forEach(child -> child.update(delta));
     }
-    
+
     @Override
     public void format() {
         if (!shouldFormat()) return;
-        
-        for (Node child : children) {
+
+        for (Node<?> child : children) {
             child.format();
-            child.setPosition(getPreferredNodePosition(getSize(), child));
+            if (child.getAlignment() != Alignment.FIXED_POSITION)
+                child.setPosition(getPreferredNodePosition(getSize(), child));
         }
     }
-    
+
     @Override
-    public void render(Batch batch) {
+    public void render(@NotNull Batch batch) {
         children.forEach(child -> child.render(batch));
     }
 
-    protected List<Node> getChildren() {
+    protected List<Node<?>> getChildren() {
         return children;
     }
 
-    public Stack addChildren(@NotNull Node... children) {
+    public Stack addChildren(@NotNull Node<?>... children) {
         List.of(children).forEach(child -> this.children.add(child.setParent(child)));
         return this;
     }
-    
-    public Stack removeChildren(@NotNull Node... children) {
-        List.of(children).forEach(child -> this.children.remove(child.setParent(null))); //FIXME yea surely removing items from a collection being ACTIVELY ITERATED OVER has no consequences whatsoever
+
+    public Stack removeChildren(@NotNull Node<?>... children) {
+        List.of(children).forEach(child -> this.children.remove(child.setParent(null)));
         return this;
     }
-    
+
     public Stack clearChildren() {
         children.forEach(child -> child.setParent(null));
         children.clear();
@@ -69,8 +70,16 @@ public class Stack extends Node {
     @Override
     public boolean hit(Key button, Keys.Action action, double posX, double posY) {
         if (!doesHit(posX, posY)) return false;
-        for (Node child : children)
+        for (Node<?> child : children)
             if (child.hit(button, action, posX, posY)) return true;
+        return false;
+    }
+
+    @Override
+    public boolean drag(double deltaX, double deltaY, double posX, double posY) {
+        if (!doesHit(posX, posY)) return false;
+        for (Node<?> child : children)
+            if (child.drag(deltaX, deltaY, posX, posY)) return true;
         return false;
     }
 

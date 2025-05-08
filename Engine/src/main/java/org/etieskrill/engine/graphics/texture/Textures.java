@@ -47,8 +47,8 @@ public class Textures {
             data = Textures.loadFile(file, type);
         } catch (MissingResourceException | ResourceLoadException e) {
             String reason = stbi_failure_reason();
-            logger.info("Texture {} could not be loaded, using placeholder because:\n{}",
-                    file, reason != null ? reason : "Unspecified error");
+            logger.info("Texture {} could not be loaded, using placeholder because:\n\t{}",
+                    file, reason != null ? reason : e.getMessage());
             file = type == DIFFUSE || type == UNKNOWN ? DEFAULT_TEXTURE : TRANSPARENT_TEXTURE;
             try {
                 data = Textures.loadFile(file, type);
