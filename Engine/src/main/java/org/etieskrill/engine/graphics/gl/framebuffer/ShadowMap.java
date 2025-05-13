@@ -1,5 +1,6 @@
 package org.etieskrill.engine.graphics.gl.framebuffer;
 
+import io.github.etieskrill.injection.extension.shader.TextureShadow;
 import org.etieskrill.engine.graphics.gl.GLUtils;
 import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment.BufferAttachmentType;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
@@ -19,7 +20,7 @@ import static org.lwjgl.opengl.GL30C.GL_COMPARE_REF_TO_TEXTURE;
  * and vice versa, and this class effectively only acts as a proxy for the {@link ShadowMap#texture}, this action causes
  * undefined behaviour according to the specification.
  */
-public abstract class ShadowMap<T extends AbstractTexture & FrameBufferAttachment> extends FrameBuffer implements io.github.etieskrill.injection.extension.shader.ShadowMap<T> {
+public abstract class ShadowMap<T extends AbstractTexture & FrameBufferAttachment> extends FrameBuffer implements TextureShadow {
 
     protected final T texture;
 

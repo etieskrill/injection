@@ -1,5 +1,6 @@
 package org.etieskrill.engine.graphics.gl.framebuffer;
 
+import io.github.etieskrill.injection.extension.shader.Texture2DArrayShadow;
 import org.etieskrill.engine.graphics.data.PointLight;
 import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment.BufferAttachmentType;
 import org.etieskrill.engine.graphics.texture.AbstractTexture.MagFilter;
@@ -16,7 +17,7 @@ import static org.etieskrill.engine.graphics.texture.AbstractTexture.Format.DEPT
 import static org.etieskrill.engine.graphics.texture.AbstractTexture.Type.SHADOW;
 import static org.etieskrill.engine.graphics.texture.AbstractTexture.Wrapping.CLAMP_TO_EDGE;
 
-public class PointShadowMapArray extends ShadowMap<CubeMapArrayTexture> implements io.github.etieskrill.injection.extension.shader.ShadowMap<CubeMapArrayTexture> {
+public class PointShadowMapArray extends ShadowMap<CubeMapArrayTexture> implements Texture2DArrayShadow {
 
     protected PointShadowMapArray(Vector2ic size, CubeMapArrayTexture texture) {
         super(size, texture);

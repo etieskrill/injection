@@ -133,6 +133,7 @@ private data class TranspilerData(
     val structTypes: List<IrType>,
     val definedFunctions: Map<String, Pair<ShaderStage, IrFunction>>,
     val evaluatedFunctions: Map<String, List<KCallable<*>>>,
+    val templateFunctions: Map<String, Map<List<String>, String>>,
     val vertexDataStructName: String,
     val uniforms: Set<String>,
     var stage: ShaderStage = NONE,
@@ -158,6 +159,7 @@ internal fun generateGlsl(
         programData.structTypes,
         programData.definedFunctions,
         programData.evaluatedFunctions,
+        programData.templateFunctions,
         programData.vertexDataStructName,
         programData.uniforms.keys
     )
@@ -433,6 +435,7 @@ private open class GlslTranspiler(
             functionName in unaryOperators -> unaryOperators[functionName]!! + expression.evalChildren(this, data)!!
             functionName in data.definedFunctions -> handleFunction(functionName, expression, data)
             functionName in data.evaluatedFunctions -> evaluateFunction(functionName, expression, data)
+            functionName in data.templateFunctions -> applyFunctionTemplate(functionName, expression, data)
             functionName.isGlslOperator -> handleOperator(functionName.glslOperator!!, expression, data)
             functionName.isResolvedGlslOperator -> {
                 handleResolvedOperator(functionName.resolvedGlslOperator!!, expression, data)
@@ -717,6 +720,26 @@ private open class GlslTranspiler(
         }
 
         return stringify(result)
+    }
+
+    private fun applyFunctionTemplate(
+        functionName: String,
+        expression: IrCall,
+        data: TranspilerData
+    ): String {
+        val argumentTypeNames = expression.valueArguments.filterNotNull().map { it.type.fullName }
+        var template: String = data.templateFunctions[functionName]!!
+            .let { templates -> templates[argumentTypeNames] } //extrapolated for clarity
+            ?: error("Failed to find matching overload for template function '$functionName(${argumentTypeNames.joinToString()})'")
+
+        val arguments = expression.symbol.owner.valueParameters.associate { it.index to it.name }
+        arguments.forEach { (index, name) ->
+            template = template.replace("\$$name", expression.getValueArgument(index)!!.accept(this, data))
+        }
+
+        check(!template.contains('$')) { "Not all parameters for function template could be resolved: $template" }
+
+        return template
     }
 
     private fun stringify(obj: Any) = when (obj) {

@@ -1,5 +1,7 @@
 package io.github.etieskrill.injection.extension.shader.dsl.std
 
+import io.github.etieskrill.injection.extension.shader.float
+import io.github.etieskrill.injection.extension.shader.mat2
 import io.github.etieskrill.injection.extension.shader.vec3
 import org.intellij.lang.annotations.Pattern
 import org.joml.Vector3f
@@ -18,4 +20,17 @@ fun rgb2vec3(@Pattern("[a-zA-Z0-9]{6}") colour: String): vec3 {
     return Vector3f(r.toFloat(), g.toFloat(), b.toFloat()).div(255f)
 }
 
-val stdMethods = listOf<KFunction<*>>(::rgb2vec3) //TODO probs move to class instead
+annotation class Template(@Pattern("glsl") val template: String) //TODO @Pattern does not seem to work
+
+/**
+ * Expands to a standard two-dimensional rotation matrix, i.e. the rotation centre is at the coordinate origin, and the
+ * clockwise [rotation angle][angle] is specified in radians.
+ *
+ * @param angle the angle to rotate about in radians
+ */
+@Template("mat2(cos(\$angle), -sin(\$angle), sin(\$angle), cos(\$angle))")
+fun rotationMat2(angle: float): mat2 = ignore()
+
+val stdMethods = listOf<KFunction<*>>(::rgb2vec3, ::rotationMat2) //TODO probs move to class instead
+
+private fun ignore(): Nothing = error("don't actually call these dingus")

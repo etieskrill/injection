@@ -1,5 +1,6 @@
 package org.etieskrill.engine.graphics.gl.framebuffer;
 
+import io.github.etieskrill.injection.extension.shader.Texture2DShadow;
 import org.etieskrill.engine.graphics.data.PointLight;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.etieskrill.engine.graphics.texture.CubeMapTexture;
@@ -13,7 +14,7 @@ import static org.etieskrill.engine.graphics.texture.AbstractTexture.Format.DEPT
 import static org.etieskrill.engine.graphics.texture.AbstractTexture.Type.SHADOW;
 import static org.etieskrill.engine.graphics.texture.AbstractTexture.Wrapping.CLAMP_TO_EDGE;
 
-public class PointShadowMap extends ShadowMap<CubeMapTexture> implements io.github.etieskrill.injection.extension.shader.ShadowMap<CubeMapTexture> {
+public class PointShadowMap extends ShadowMap<CubeMapTexture> implements Texture2DShadow {
 
     protected PointShadowMap(Vector2ic size, CubeMapTexture texture) {
         super(size, texture);

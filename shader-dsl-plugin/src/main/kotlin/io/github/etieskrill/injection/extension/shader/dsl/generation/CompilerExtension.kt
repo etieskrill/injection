@@ -8,6 +8,7 @@ import io.github.etieskrill.injection.extension.shader.dsl.ShaderBuilder
 import io.github.etieskrill.injection.extension.shader.dsl.UniformDelegate
 import io.github.etieskrill.injection.extension.shader.dsl.gradle.ShaderDslCompilerOptions
 import io.github.etieskrill.injection.extension.shader.dsl.std.ConstEval
+import io.github.etieskrill.injection.extension.shader.dsl.std.Template
 import io.github.etieskrill.injection.extension.shader.dsl.std.stdMethods
 import io.github.etieskrill.injection.extension.shader.glslType
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
@@ -58,7 +59,9 @@ import java.io.File
 import kotlin.reflect.KCallable
 import kotlin.reflect.KClass
 import kotlin.reflect.cast
+import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.hasAnnotation
+import kotlin.reflect.full.valueParameters
 
 private data class ShaderDataTypes(
     val vertexAttributesType: IrClass,
@@ -266,7 +269,30 @@ internal class IrShaderGenerationExtension(
                 }.toMap(),
             evaluatedFunctions = stdMethods //TODO configurable to allow exclusion of stdlib and for custom extensions
                 .filter { it.hasAnnotation<ConstEval>() }
+                .groupBy { it.name },
+            templateFunctions = stdMethods
+                .filter { it.hasAnnotation<Template>() }
                 .groupBy { it.name }
+                .mapValues { (_, functions) ->
+                    functions.associate {
+                        val parameters = it.valueParameters.map { (it.type.classifier as KClass<*>).qualifiedName!! }
+
+                        val template = it.findAnnotation<Template>()!!.template
+
+                        val parameterNames = it.valueParameters.map { it.name!! }
+                        var checkTemplate = template
+                        for (name in parameterNames) {
+                            checkTemplate = checkTemplate.replace("\$$name", "<replaced>")
+                        }
+                        check(!checkTemplate.contains('$'))
+                        {
+                            "Shader function template must not contain any variables that are not value-parameters of " +
+                                    "the function:\n'$checkTemplate'"
+                        }
+
+                        parameters to template
+                    }
+                }
         )
 
         data.structTypes += types.vertexDataType.defaultType
@@ -407,6 +433,7 @@ internal data class VisitorData(
     val definedFunctions: Map<String, Pair<ShaderStage, IrFunction>>,
 
     val evaluatedFunctions: Map<String, List<KCallable<*>>>,
+    val templateFunctions: Map<String, Map<List<String>, String>>,
 
     val structTypes: MutableList<IrType> = mutableListOf(),
 

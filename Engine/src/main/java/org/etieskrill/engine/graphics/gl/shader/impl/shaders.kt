@@ -4,6 +4,7 @@ import io.github.etieskrill.injection.extension.shader.dsl.PureShaderBuilder
 import io.github.etieskrill.injection.extension.shader.dsl.RenderTarget
 import io.github.etieskrill.injection.extension.shader.dsl.ShaderVertexData
 import io.github.etieskrill.injection.extension.shader.dsl.rt
+import io.github.etieskrill.injection.extension.shader.dsl.std.rotationMat2
 import io.github.etieskrill.injection.extension.shader.float
 import io.github.etieskrill.injection.extension.shader.sampler2D
 import io.github.etieskrill.injection.extension.shader.vec2
@@ -35,7 +36,7 @@ class BlitShader : PureShaderBuilder<BlitShader.Vertex, BlitShader.RenderTargets
 
     override fun program() {
         vertex {
-            var point = mat2(cos(rotation), -sin(rotation), sin(rotation), cos(rotation)) * vertices[vertexID]
+            var point = rotationMat2(rotation) * vertices[vertexID]
             point *= size
             point += 2 * vec2(position.x, -position.y) - vec2(-size.x, size.y)
             point /= windowSize
