@@ -35,10 +35,10 @@ typealias sampler2DArray = Texture2DArray
 typealias samplerCube = TextureCubeMap
 typealias samplerCubeArray = TextureCubeMapArray
 
-typealias sampler2DShadow = ShadowMap<sampler2D>
-typealias sampler2DArrayShadow = ShadowMap<sampler2DArray>
-typealias samplerCubeShadow = ShadowMap<samplerCube>
-typealias samplerCubeArrayShadow = ShadowMap<samplerCubeArray>
+typealias sampler2DShadow = Texture2DShadow
+typealias sampler2DArrayShadow = Texture2DArrayShadow
+typealias samplerCubeShadow = TextureCubeMapShadow
+typealias samplerCubeArrayShadow = TextureCubeMapArrayShadow
 
 typealias struct = Any
 
@@ -52,7 +52,11 @@ private val primitiveSamplerTypes = mapOf(
     sampler2D::class to "sampler2D",
     sampler2DArray::class to "sampler2DArray",
     samplerCube::class to "samplerCube",
-    samplerCubeArray::class to "samplerCubeArray"
+    samplerCubeArray::class to "samplerCubeArray",
+    sampler2DShadow::class to "sampler2DShadow",
+    sampler2DArrayShadow::class to "sampler2DArrayShadow",
+    samplerCubeShadow::class to "samplerCubeShadow",
+    samplerCubeArrayShadow::class to "samplerCubeArrayShadow",
 )
 
 private val primitiveTypes = mutableMapOf(

@@ -188,10 +188,10 @@ object Audio : Disposable {
         alcMakeContextCurrent(0)
 
         defaultContexts.values.forEach { it.dispose() }
-        currentContext.dispose()
+        if (::currentContext.isInitialized) currentContext.dispose()
 
         devices.forEach { it.dispose() }
-        currentDevice.dispose()
+        if (::currentDevice.isInitialized) currentDevice.dispose()
     }
 }
 

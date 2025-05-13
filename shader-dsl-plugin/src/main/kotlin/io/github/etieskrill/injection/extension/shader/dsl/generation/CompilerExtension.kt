@@ -2,7 +2,6 @@ package io.github.etieskrill.injection.extension.shader.dsl.generation
 
 import io.github.etieskrill.injection.extension.shader.ShaderStage
 import io.github.etieskrill.injection.extension.shader.ShaderStage.*
-import io.github.etieskrill.injection.extension.shader.ShadowMap
 import io.github.etieskrill.injection.extension.shader.dsl.ConstDelegate
 import io.github.etieskrill.injection.extension.shader.dsl.RenderTarget
 import io.github.etieskrill.injection.extension.shader.dsl.ShaderBuilder
@@ -455,7 +454,6 @@ private val glslTypes = mutableMapOf<String, GlslType>()
 internal val IrType.glslType: GlslType?
     get() = glslTypes.getOrPutNullable(fullName) {
         if (equals<RenderTarget>()) return GlslType("vec4")
-        if (equals<ShadowMap<*>>()) TODO("shadow types")
         if (equals<Number>()) return GlslType("float")
         val name = this.fullName.glslType ?: return null
 

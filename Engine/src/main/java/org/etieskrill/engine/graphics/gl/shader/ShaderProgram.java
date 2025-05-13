@@ -578,8 +578,14 @@ public abstract class ShaderProgram implements Disposable,
             return;
         }
 
-        if (array && !uniform.getType().get().equals(((Object[]) value)[0].getClass())
-            || !array && !uniform.getType().get().equals(value.getClass())) {
+        //i dread the day i actually have to refactor this class... this frightens me. in kotlin, it would not be nearly as bad. i think.
+        boolean arrayTypeMatches = array && (uniform.getType().get().equals(((Object[]) value)[0].getClass())
+                                             || uniform.getType().opqaueValueType != null
+                                                && uniform.getType().opqaueValueType.equals(((Object[]) value)[0].getClass()));
+        boolean typeMatches = !array && (uniform.getType().get().equals(value.getClass())
+                                         || uniform.getType().opqaueValueType != null
+                                            && uniform.getType().opqaueValueType.equals(value.getClass()));
+        if (!arrayTypeMatches && !typeMatches) {
             throw new ShaderUniformException("Uniform " + uniform.getName() + " is present but expected type " +
                                              uniform.getType().get().getSimpleName() + " does not match value type " + value.getClass().getSimpleName());
         }
@@ -766,28 +772,29 @@ public abstract class ShaderProgram implements Disposable,
         private final int location;
 
         public enum Type {
-            INT(Integer.class, () -> 0),
-            FLOAT(Float.class, () -> 0f),
+            INT(Integer.class, () -> 0, "int"),
+            FLOAT(Float.class, () -> 0f, "float"),
             BOOLEAN(Boolean.class, () -> false, "bool"),
-            VEC2(Vector2f.class, Vector2fc.class, Vector2f::new),
-            VEC2I(Vector2i.class, Vector2ic.class, Vector2i::new),
-            VEC3(Vector3f.class, Vector3fc.class, Vector3f::new),
-            VEC4(Vector4f.class, Vector4fc.class, Vector4f::new),
-            MAT2(Matrix2f.class, Matrix2fc.class, Matrix2f::new),
-            MAT3(Matrix3f.class, Matrix3fc.class, Matrix3f::new),
-            MAT4(Matrix4f.class, Matrix4fc.class, Matrix4f::new),
+            VEC2(Vector2f.class, Vector2fc.class, Vector2f::new, "vec2"),
+            VEC2I(Vector2i.class, Vector2ic.class, Vector2i::new, "vec2i"),
+            VEC3(Vector3f.class, Vector3fc.class, Vector3f::new, "vec3"),
+            VEC4(Vector4f.class, Vector4fc.class, Vector4f::new, "vec4"),
+            MAT2(Matrix2f.class, Matrix2fc.class, Matrix2f::new, "mat2"),
+            MAT3(Matrix3f.class, Matrix3fc.class, Matrix3f::new, "mat3"),
+            MAT4(Matrix4f.class, Matrix4fc.class, Matrix4f::new, "mat4"),
 
-            SAMPLER_2D(Integer.class, () -> 0),
-            SAMPLER_2D_ARRAY(Integer.class, () -> 0),
-            SAMPLER_2D_SHADOW(Integer.class, () -> 0),
-            SAMPLER_CUBE_MAP(Integer.class, () -> 0, "samplerCube"),
-            SAMPLER_CUBE_MAP_ARRAY(Integer.class, () -> 0, "samplerCubeArray"),
-            SAMPLER_CUBE_MAP_ARRAY_SHADOW(Integer.class, () -> 0, "samplerCubeArrayShadow"),
+            SAMPLER_2D(Texture2D.class, () -> 0, Integer.class, "sampler2D"),
+            SAMPLER_2D_ARRAY(Texture2DArray.class, () -> 0, Integer.class, "sampler2DArray"),
+            SAMPLER_2D_SHADOW(Texture2DShadow.class, () -> 0, Integer.class, "sampler2DShadow"),
+            SAMPLER_CUBE_MAP(TextureCubeMap.class, () -> 0, Integer.class, "samplerCube"),
+            SAMPLER_CUBE_MAP_ARRAY(TextureCubeMapArray.class, () -> 0, Integer.class, "samplerCubeArray"),
+            SAMPLER_CUBE_MAP_ARRAY_SHADOW(TextureCubeMapArrayShadow.class, () -> 0, Integer.class, "samplerCubeArrayShadow"),
 
-            STRUCT(UniformMappable.class, null);
+            STRUCT(UniformMappable.class, null, null);
 
             private final Class<?> type;
             private final @Nullable Class<?> constType;
+            private final @Nullable Class<?> opqaueValueType;
             private final Supplier<?> defaultValueGenerator;
 
             private final String glslName;
@@ -803,23 +810,14 @@ public abstract class ShaderProgram implements Disposable,
                 return null;
             }
 
-            private static final Map<Class<?>, Type> samplerTypes = Map.of(
-                    Texture2D.class, SAMPLER_2D,
-                    Texture2DArray.class, SAMPLER_2D_ARRAY,
-                    TextureCubeMap.class, SAMPLER_CUBE_MAP,
-                    TextureCubeMapArray.class, SAMPLER_CUBE_MAP_ARRAY
-                    //TODO shadow textures - oh god
-            );
-
             public static @Nullable Type getFromType(@Nullable Class<?> type) {
                 if (type == null) return null;
                 if (STRUCT.get().isAssignableFrom(type)) return STRUCT;
                 for (Type value : values) {
-                    if (type.equals(value.type) || type.equals(value.constType)) return value;
+                    if (value.type.isAssignableFrom(type)
+                        || value.constType != null && value.constType.isAssignableFrom(type)
+                    ) return value;
                 }
-
-                var samplerType = samplerTypes.get(type); //FIXME remove this disgusto shit
-                if (samplerType != null) return samplerType;
 
                 return null;
             }
@@ -833,24 +831,32 @@ public abstract class ShaderProgram implements Disposable,
                 return null;
             }
 
-            <T> Type(Class<T> type, Supplier<T> defaultValueGenerator) {
-                this(type, defaultValueGenerator, null);
-            }
-
-            <T> Type(Class<T> type, Class<? super T> constType, Supplier<T> defaultValueGenerator) {
-                this(type, constType, defaultValueGenerator, null);
-            }
-
-            <T> Type(Class<T> type, Supplier<T> defaultValueGenerator, String glslName) {
+            <T> Type(Class<T> type, Supplier<?> defaultValueGenerator, String glslName) {
                 this(type, null, defaultValueGenerator, glslName);
             }
 
             <T> Type(Class<T> type,
                      @Nullable Class<? super T> constType,
-                     Supplier<T> defaultValueGenerator,
+                     Supplier<?> defaultValueGenerator,
+                     String glslName) {
+                this(type, constType, defaultValueGenerator, null, glslName);
+            }
+
+            <T> Type(Class<T> type,
+                     Supplier<?> defaultValueGenerator,
+                     @Nullable Class<?> opaqueValueType,
+                     String glslName) {
+                this(type, null, defaultValueGenerator, opaqueValueType, glslName);
+            }
+
+            <T> Type(Class<T> type,
+                     @Nullable Class<? super T> constType,
+                     Supplier<?> defaultValueGenerator,
+                     @Nullable Class<?> opaqueValueType,
                      String glslName) {
                 this.type = type;
                 this.constType = constType;
+                this.opqaueValueType = opaqueValueType;
                 this.defaultValueGenerator = defaultValueGenerator;
                 this.glslName = glslName;
             }
@@ -997,6 +1003,10 @@ public abstract class ShaderProgram implements Disposable,
         stop();
         glDetachShader(programID, vertID);
         glDeleteShader(vertID);
+        if (geomID != -1) {
+            glDetachShader(programID, geomID);
+            glDeleteShader(geomID);
+        }
         glDetachShader(programID, fragID);
         glDeleteShader(fragID);
         glDeleteProgram(programID);

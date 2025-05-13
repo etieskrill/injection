@@ -89,7 +89,7 @@ class App : GameApplication(window {
         })
 
         window.scene = Scene(
-            Batch(renderer),
+            Batch(renderer, window.currentSize),
             VBox(
                 fpsLabel,
                 modeLabel,

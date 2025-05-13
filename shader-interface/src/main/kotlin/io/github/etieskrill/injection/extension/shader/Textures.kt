@@ -14,4 +14,9 @@ interface Texture2DArray : Texture
 interface TextureCubeMap : Texture
 interface TextureCubeMapArray : Texture
 
-interface ShadowMap<out T : Texture> : Texture
+interface TextureShadow : Texture
+
+interface Texture2DShadow : TextureShadow
+interface Texture2DArrayShadow : TextureShadow
+interface TextureCubeMapShadow : TextureShadow
+interface TextureCubeMapArrayShadow : TextureShadow
