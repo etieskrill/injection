@@ -9,6 +9,7 @@ import org.lwjgl.BufferUtils.*
 import org.lwjgl.openal.AL
 import org.lwjgl.openal.AL10.*
 import org.lwjgl.openal.AL11.AL_SAMPLE_OFFSET
+import org.lwjgl.openal.AL11.AL_SEC_OFFSET
 import org.lwjgl.openal.ALC
 import org.lwjgl.openal.ALC10.*
 import org.lwjgl.openal.ALCCapabilities
@@ -18,6 +19,8 @@ import org.lwjgl.stb.STBVorbisInfo
 import org.slf4j.LoggerFactory
 import java.nio.ByteBuffer
 import java.nio.ShortBuffer
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 import kotlin.Char.Companion.MIN_VALUE as nullChar
 
 private val logger = LoggerFactory.getLogger(Audio::class.java)
@@ -61,10 +64,39 @@ private class AudioContext(val handle: Long, val caps: ALCapabilities, val liste
     }
 }
 
-abstract class AudioSource(protected val handle: Int, val buffer: PCMAudio?) : Disposable {
+abstract class AudioSource internal constructor(
+    protected val handle: Int,
+    val sampleRate: Int,
+    val numSamples: Int,
+    val buffer: ShortBuffer?,
+    val duration: Duration = (numSamples / sampleRate).seconds
+) : Disposable {
+
     fun play() = alSourcePlay(handle)
 
-    fun getCurrentOffsetSamples(): Int = alGetSourcei(handle, AL_SAMPLE_OFFSET)
+    /**
+     * The current offset into the bound buffer in samples.
+     */
+    var offsetSamples: Int
+        get() = alGetSourcei(handle, AL_SAMPLE_OFFSET)
+        set(value) {
+            require(value >= 0) { "Offset must not be negative" }
+            require(value < numSamples) { "Offset must be smaller than the number of samples" }
+
+            alSourcei(handle, AL_SAMPLE_OFFSET, value)
+        }
+
+    /**
+     * The current offset into the bound buffer in seconds.
+     */
+    var offsetSeconds: Float
+        get() = alGetSourcef(handle, AL_SEC_OFFSET)
+        set(value) {
+            require(value >= 0) { "Offset must not be negative" }
+            require(value < numSamples) { "Offset must be smaller than the duration" }
+
+            alSourcef(handle, AL_SEC_OFFSET, value)
+        }
 
     var gain: Float
         get() = alGetSourcef(handle, AL_GAIN)
@@ -74,17 +106,22 @@ abstract class AudioSource(protected val handle: Int, val buffer: PCMAudio?) : D
         }
 
     override fun dispose() = alDeleteSources(handle)
+
 }
 
-class MonoAudioSource(handle: Int, buffer: PCMAudio?) : AudioSource(handle, buffer) {
+class MonoAudioSource internal constructor(handle: Int, sampleRate: Int, numSamples: Int, buffer: ShortBuffer?) :
+    AudioSource(handle, sampleRate, numSamples, buffer) {
+
     var position: Vector3fc = Vector3f(0f)
         set(value) {
             field = value
             alSource3f(handle, AL_POSITION, value.x(), value.y(), value.z())
         }
+
 }
 
-class StereoAudioSource(handle: Int, buffer: PCMAudio?) : AudioSource(handle, buffer)
+class StereoAudioSource internal constructor(handle: Int, sampleRate: Int, numSamples: Int, buffer: ShortBuffer?) :
+    AudioSource(handle, sampleRate, numSamples, buffer)
 
 class AudioListener {
     var position: Vector3fc = Vector3f(0f)
@@ -166,8 +203,20 @@ object Audio : Disposable {
         checkError("Failed to bind buffer to source")
 
         return when (pcmAudio.mode) {
-            AudioMode.MONO -> MonoAudioSource(source, pcmAudio.takeIf { retainBuffer })
-            AudioMode.STEREO -> StereoAudioSource(source, pcmAudio.takeIf { retainBuffer })
+            AudioMode.MONO -> MonoAudioSource(
+                source,
+                pcmAudio.sampleRate,
+                pcmAudio.buffer.capacity(),
+                pcmAudio.buffer.takeIf { retainBuffer }
+            )
+
+            AudioMode.STEREO -> StereoAudioSource(
+                source,
+                pcmAudio.sampleRate,
+                pcmAudio.buffer.capacity(),
+                pcmAudio.buffer.takeIf { retainBuffer }
+            )
+
             else -> error("uh oh")
         }
     }
@@ -203,7 +252,10 @@ data class PCMAudio(
     val buffer: ShortBuffer
 )
 
-private fun vorbisDecodeToPCM(encodedAudio: ByteBuffer, audioMode: AudioMode = AudioMode.DONT_CARE): PCMAudio {
+private fun vorbisDecodeToPCM(
+    encodedAudio: ByteBuffer,
+    audioMode: AudioMode = AudioMode.DONT_CARE,
+): PCMAudio {
     val error = createIntBuffer(1)
     val decoder = stb_vorbis_open_memory(encodedAudio, error, null)
     if (decoder == 0L) error("Failed to open audio file. Vorbis error: ${error.get()}")

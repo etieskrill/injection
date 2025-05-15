@@ -16,6 +16,8 @@ dependencies {
     implementation(libs.lwjgl.stb)
 
     //natives not specified as they are brought in by the engine
+
+    implementation("com.github.wendykierp:JTransforms:3.1")
 }
 
 kotlin {

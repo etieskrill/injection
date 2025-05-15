@@ -16,6 +16,7 @@ import org.etieskrill.engine.application.GameApplication
 import org.etieskrill.engine.audio.Audio
 import org.etieskrill.engine.audio.AudioListener
 import org.etieskrill.engine.audio.AudioMode
+import org.etieskrill.engine.audio.AudioSource
 import org.etieskrill.engine.audio.MonoAudioSource
 import org.etieskrill.engine.entity.component.Drawable
 import org.etieskrill.engine.entity.component.Transform
@@ -45,9 +46,14 @@ import org.joml.Matrix4f
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.times
+import org.jtransforms.fft.FloatFFT_1D
 import org.lwjgl.opengl.GL11C.*
 import kotlin.math.abs
+import kotlin.math.cos
+import kotlin.math.floor
 import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.sqrt
 
 fun main() {
     SynthwavePlane().run()
@@ -77,6 +83,8 @@ class SynthwavePlane : GameApplication(window {
     val fpsLabel: Label
     val fpsGraph: Histogram
 
+    val fftGraph: Histogram
+
     init {
         window.addCursorInputs(CursorCameraController(camera))
         window.addKeyInputs(Input.of(Input.bind(Keys.CTRL).to { ->
@@ -89,6 +97,12 @@ class SynthwavePlane : GameApplication(window {
 
         fpsLabel = Label()
         fpsGraph = Histogram(100, scaleMode = HistogramScaleMode.FIXED, maxValue = 160f).setSize(Vector2f(400f, 150f))
+        fftGraph = Histogram(
+            FFT_BINS.toInt(),
+            scaleMode = HistogramScaleMode.FIXED,
+            maxValue = 600000f,
+            drawSeparators = false
+        ).setSize(Vector2f(600f, 200f))
         window.scene = Scene(
             Batch(renderer, window.currentSize),
             VBox(
@@ -98,7 +112,8 @@ class SynthwavePlane : GameApplication(window {
                     position = Vector2f(50f, 0f)
                     isCollapsed = true
                 },
-                fpsLabel
+                fpsLabel,
+                fftGraph,
             ).setSize(Vector2f(600f, 500f)),
             OrthographicCamera(window.currentSize)
         )
@@ -117,6 +132,7 @@ class SynthwavePlane : GameApplication(window {
         renderer.setClearColour(Vector3f(0.01f, 0f, 0.02f))
 
         audioSource = Audio.read(
+//            "1khz-sine.ogg"
             "nightstop-she-dances-in-the-dark.ogg"
 //            "pumped-up-kicks-synthwave.ogg"
             , AudioMode.MONO, true
@@ -131,30 +147,41 @@ class SynthwavePlane : GameApplication(window {
     var samples = FixedArrayDeque<Int>((window.refreshRate / 8).toInt())
     var averageSample = 0
 
+    val fftAverageMagnitudes = MutableList(FFT_BINS.toInt()) { 0f }
+
     override fun loop(delta: Double) {
         //TODO add auto-move mode and button - add disappearing "status" message log
 
         shader.viewPosition = camera.position
-        offset.y += delta.toFloat()
+        offset.y += delta.toFloat() //TODO bake some standard vars into all shaders
         shader.offset = offset
 
         audioListener.position = camera.position
         audioListener.direction = camera.direction.normalize()
 
-//        audioSource.position = Vector3f(cos(pacer.time).toFloat(), 0f, sin(pacer.time).toFloat())
-        audioSource.position = Vector3f(0f, 0f, 1f)
+        audioSource.position = Vector3f(0f, 0.25f, 1f)
 
-        //TODO fft when?
-        val sample = audioSource.getCurrentOffsetSamples()
-        val windowSize = (audioSource.buffer!!.sampleRate / pacer.averageFPS).toInt()
+        val fftMagnitudes = doFFT(audioSource)
+
+        fftMagnitudes.forEachIndexed { t, value ->
+            //TODO probably interpolate (spline-esque?) between missing values - the whole histogram rendering
+            // shenanigans should just be converted to a proper shader anyways
+            //TODO or this (sparse data points) should probably be it's own node... "Line{Chart,Plot,Graph}"?
+            val index = floor((-(0.1f / ((t.toFloat() / FFT_BINS) + 0.1f)) + 1f) * FFT_BINS).toInt()
+            fftAverageMagnitudes[index] = (fftAverageMagnitudes[index] + value) / 2
+        }
+        fftGraph.values.addAll(fftAverageMagnitudes)
+
+        val sample = audioSource.offsetSamples
+        val windowSize = (audioSource.sampleRate / pacer.averageFPS).toInt()
         var sampleValue = 0
         for (i in max(0, sample - windowSize)..sample) {
-            sampleValue += abs(audioSource.buffer!!.buffer[i].toInt())
+            sampleValue += abs(audioSource.buffer!![i].toInt())
         }
         sampleValue /= windowSize
 
         frameSample = sampleValue
-        samples.push(frameSample)
+        samples.push(((fftMagnitudes[2] + fftMagnitudes[3] + fftMagnitudes[4]) / 3).toInt())
         averageSample = samples.average().toInt()
 
         fpsLabel.text = pacer.averageFPS.toInt().toString()
@@ -166,11 +193,42 @@ class SynthwavePlane : GameApplication(window {
         sunShader.start()
         sunShader.invCombined = camera.combined.invert(Matrix4f())
         sunShader.time = pacer.time.toFloat()
-        sunShader.intensity = averageSample / 4000f + 0.5f
+        sunShader.intensity = averageSample / 200000f + 0.5f
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)
         glBlendFunc(GL_ONE, GL_ZERO)
     }
+}
+
+//TODO move to helper class
+const val FFT_BINS = 512L
+var fft = FloatFFT_1D(2 * FFT_BINS)
+val fftBuffer = MutableList(FFT_BINS.toInt()) { 0f }
+const val COS_WINDOW_a0 = 0.5f // <-- hann, hamming: 25/46f
+fun windowFunction(t: Float): Float = COS_WINDOW_a0 - (1f - COS_WINDOW_a0) * cos(2 * Math.PI * t).toFloat()
+
+fun doFFT(audioSource: AudioSource): List<Float> {
+    val fftWindow = audioSource.sampleRate / 10
+
+    val windowData = FloatArray(fftWindow + 1)
+    for (i in 0 until fftWindow) {
+        windowData[i] = audioSource.buffer!!.get(
+            (i + audioSource.offsetSamples - fftWindow / 2).coerceIn(0..<audioSource.numSamples)
+        ).toFloat() * windowFunction(i / fftWindow.toFloat())
+    }
+
+    check(fftWindow > 2 * FFT_BINS)
+
+    fft.realForward(windowData)
+
+    fftBuffer.clear()
+    val magnitudes = (0 until FFT_BINS.toInt()).mapTo(fftBuffer) {
+        val real = windowData[2 * it]
+        val imaginary = windowData[2 * it + 1]
+        sqrt(real * real + imaginary * imaginary)
+    }
+
+    return magnitudes
 }
 
 class GridShader : ShaderBuilder<GridShader.InputVertex, GridShader.Vertex, GridShader.RenderTargets>(
@@ -213,15 +271,6 @@ class GridShader : ShaderBuilder<GridShader.InputVertex, GridShader.Vertex, Grid
             //FIXME grid += if (...) ... is not extrapolated
             val horizon = if (distanceFromCamera > 75) rgb2vec3("8B1D80") * 10
             else vec3(0) //blooming circular horizon
-
-            //TODO
-            // - register std functions
-            // - evaluate @ConstEval functions in place
-            //   - extract args
-            //   - call actual function
-            //   - pray return value is transpiled correctly
-            //   - insert
-            // - translate other functions (when they exist)
 
             grid += horizon
 

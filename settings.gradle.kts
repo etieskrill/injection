@@ -1,7 +1,5 @@
 rootProject.name = "injection"
 
-include("engine")
-
 includeBuild("shader-interface")
 
 includeBuild("shader-reflection-plugin")
@@ -10,6 +8,8 @@ includeBuild("shader-reflection-lib")
 includeBuild("shader-dsl-plugin")
 includeBuild("shader-dsl-lib")
 includeBuild("shader-dsl-std-lib")
+
+include("engine")
 
 file("games").listFiles().forEach {
     include("games:${it.name}")

@@ -13,6 +13,7 @@ class Histogram(
     private val scaleMode: HistogramScaleMode = HistogramScaleMode.MAX_VALUE,
     private val maxValue: Float = 0f,
     private val backgroundColour: Vector4f = Vector4f(0f, 0f, 0f, 1f),
+    private val drawSeparators: Boolean = true,
     private val separatorColour: Vector4f = Vector4f(0.15f, 0.15f, 0.15f, 1f),
     private val barColour: Vector4f = Vector4f(0f, 1f, 0f, 1f)
 ) : Node<Histogram>() {
@@ -42,12 +43,14 @@ class Histogram(
                 barColour
             )
         }
-        for (column in 0..columns) {
-            batch.renderBox(
-                Vector3f(position.x + column * columnWidth, position.y, 0f),
-                Vector3f(1f, size.y, 0f),
-                separatorColour
-            )
+        if (drawSeparators) {
+            for (column in 0..columns) {
+                batch.renderBox(
+                    Vector3f(position.x + column * columnWidth, position.y, 0f),
+                    Vector3f(1f, size.y, 0f),
+                    separatorColour
+                )
+            }
         }
     }
 
