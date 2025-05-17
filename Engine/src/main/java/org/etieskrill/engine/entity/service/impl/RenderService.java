@@ -15,10 +15,8 @@ import org.etieskrill.engine.graphics.gl.framebuffer.RenderBuffer;
 import org.etieskrill.engine.graphics.gl.renderer.GLParticleRenderer;
 import org.etieskrill.engine.graphics.gl.renderer.GLRenderer;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
-import org.etieskrill.engine.graphics.gl.shader.impl.LightSourceShader;
-import org.etieskrill.engine.graphics.gl.shader.impl.LightSourceShaderKt;
-import org.etieskrill.engine.graphics.gl.shader.impl.StaticShader;
-import org.etieskrill.engine.graphics.gl.shader.impl.StaticShaderKt;
+import org.etieskrill.engine.graphics.gl.shader.impl.*;
+import org.etieskrill.engine.graphics.model.CubeMapModel;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.texture.Textures;
@@ -64,6 +62,11 @@ public class RenderService implements Service, Disposable {
     private final StaticShader shader;
     private final LightSourceShader lightSourceShader;
 
+    private @Getter
+    @Setter
+    @Nullable CubeMapModel skybox;
+    private final SkyboxShader skyboxShader;
+
     private @Accessors(fluent = true)
     @Setter boolean blur = true;
 
@@ -93,6 +96,8 @@ public class RenderService implements Service, Disposable {
 
         this.boundingBoxRenderService = new BoundingBoxRenderService(renderer, camera);
         this.particleRenderService = new ParticleRenderService(new GLParticleRenderer(), camera);
+
+        this.skyboxShader = new SkyboxShader();
     }
 
     private record ShaderParams(
@@ -138,6 +143,10 @@ public class RenderService implements Service, Disposable {
         glViewport(0, 0, windowSize.x(), windowSize.y()); //TODO move to framebuffer
 
         shaderParams.clear();
+
+        if (skybox != null) {
+            renderer.render(skybox, (ShaderProgram) skyboxShader.getShader(), camera.getCombined());
+        }
 
         for (Entity entity : entities) {
             DirectionalLightComponent directionalLightComponent = entity.getComponent(DirectionalLightComponent.class);
@@ -211,7 +220,7 @@ public class RenderService implements Service, Disposable {
         lastDelta = delta;
     }
 
-    private ShaderProgram getConfiguredShader(Entity entity, Drawable drawable) {
+    protected ShaderProgram getConfiguredShader(Entity entity, Drawable drawable) {
         if (drawable.getShader() != null) {
             configureShader(drawable.getShader(), shaderParams);
             return drawable.getShader();
@@ -350,7 +359,9 @@ class GaussBlurPostBuffers implements Disposable {
         else hdrShader.setBloomBuffer(bloomBuffer);
         glDepthMask(false);
         glDisable(GL_DEPTH_TEST);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        glBlendFunc(GL_ONE, GL_ZERO);
         glDepthMask(true);
         glEnable(GL_DEPTH_TEST);
     }
@@ -374,7 +385,8 @@ class BoundingSphereRenderer implements Disposable {
     private final int dummyVao;
 
     BoundingSphereRenderer(ShaderProgram boundingSphereShader) {
-        this.boundingSphereShader = new ShaderProgram(List.of("BoundingSphere.glsl"), false) {};
+        this.boundingSphereShader = new ShaderProgram(List.of("BoundingSphere.glsl"), false) {
+        };
 
         this.dummyVao = glGenVertexArrays();
     }

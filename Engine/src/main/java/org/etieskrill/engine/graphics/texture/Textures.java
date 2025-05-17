@@ -13,6 +13,7 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.MissingResourceException;
 
+import static org.etieskrill.engine.config.ResourcePaths.TEXTURE_CUBEMAP_PATH;
 import static org.etieskrill.engine.config.ResourcePaths.TEXTURE_PATH;
 import static org.etieskrill.engine.graphics.texture.AbstractTexture.Type.DIFFUSE;
 import static org.etieskrill.engine.graphics.texture.AbstractTexture.Type.UNKNOWN;
@@ -66,7 +67,7 @@ public class Textures {
 
         //stbi_set_flip_vertically_on_load(true); the uv coords are already flipped while loading the models
         ByteBuffer textureData = stbi_load_from_memory(
-                ResourceReader.getRawClasspathResource(TEXTURE_PATH + file),
+                ResourceReader.getRawClasspathResource(file.contains("/" + TEXTURE_CUBEMAP_PATH) ? file : TEXTURE_PATH + file),
                 bufferWidth, bufferHeight, bufferColourChannels, 0);
         if (textureData == null || !textureData.hasRemaining())
             throw new MissingResourceException("Texture %s could not be loaded:%n%s".formatted(file, stbi_failure_reason()),

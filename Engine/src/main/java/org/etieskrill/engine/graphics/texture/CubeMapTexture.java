@@ -2,21 +2,19 @@ package org.etieskrill.engine.graphics.texture;
 
 import io.github.etieskrill.injection.extension.shader.TextureCubeMap;
 import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment;
+import org.etieskrill.engine.util.ResourceReader;
 import org.joml.Vector2ic;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.file.*;
-import java.util.*;
-import java.util.stream.Stream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
 
 import static org.etieskrill.engine.config.ResourcePaths.CUBEMAP_PATH;
-import static org.etieskrill.engine.config.ResourcePaths.TEXTURE_CUBEMAP_PATH;
 import static org.etieskrill.engine.graphics.texture.Textures.NR_BITS_PER_COLOUR_CHANNEL;
 import static org.lwjgl.opengl.GL33C.*;
 import static org.lwjgl.stb.STBImage.stbi_image_free;
@@ -47,27 +45,10 @@ public class CubeMapTexture extends AbstractTexture implements FrameBufferAttach
             //TODO (for all external/classpath resources) first search in external facility (some folder/s, which is/are
             // specified via config), then fall back to classpath which should contain standard/error resource, then
             // throw exception
-            List<String> cubemapFiles;
-            URL cubemapUrl = CubeMapTexture.class.getClassLoader().getResource(CUBEMAP_PATH + file);
-            if (cubemapUrl == null)
-                throw new MissingResourceException("Cubemap could not be found",
-                        CubeMapTexture.class.getSimpleName(), file);
-            try (FileSystem fs = FileSystems.newFileSystem(cubemapUrl.toURI(), Map.of())) {
-                Path cubemapPath = fs.getPath(CUBEMAP_PATH + file);
-                PathMatcher matcher = fs.getPathMatcher("glob:**/*.{png,jpg}");
-                try (Stream<Path> files = Files.find(cubemapPath, 5, (path, attributes) ->
-                        !attributes.isDirectory() && attributes.isRegularFile() && matcher.matches(path)
-                )) {
-                    cubemapFiles = files
-                            .map(Path::getFileName)
-                            .map(Path::toString)
-                            .toList();
-                }
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to list files from classpath", e);
-            } catch (URISyntaxException e) {
-                throw new RuntimeException("Internal exception", e);
-            }
+            List<String> cubemapFiles = ResourceReader.getClasspathItems(CUBEMAP_PATH + file).stream()
+                    .filter(path -> path.endsWith(".png") || path.endsWith(".jpg"))
+                    .toList();
+
             return new CubemapTextureBuilder(cubemapFiles.toArray(String[]::new));
         }
 
@@ -115,7 +96,7 @@ public class CubeMapTexture extends AbstractTexture implements FrameBufferAttach
             }
 
             for (String fileName : sortedFiles) {
-                TextureData data = Textures.loadFileOrDefault(TEXTURE_CUBEMAP_PATH + fileName + "/" + fileName, Type.DIFFUSE);
+                TextureData data = Textures.loadFileOrDefault(fileName, Type.DIFFUSE);
                 if (format == null) format = data.format();
                 if (data.format() != format)
                     throw new IllegalArgumentException("All textures must have the same colour format");

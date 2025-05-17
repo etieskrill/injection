@@ -17,6 +17,7 @@ import org.etieskrill.engine.graphics.gl.shader.impl.MissingShader;
 import org.etieskrill.engine.graphics.model.*;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.etieskrill.engine.util.Loaders;
+import org.jetbrains.annotations.Nullable;
 import org.joml.*;
 import org.lwjgl.system.MemoryStack;
 
@@ -153,9 +154,9 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
 
     @Override
     public void render(CubeMapModel cubemap, ShaderProgram shader, Matrix4fc combined) {
-        //TODO perf increase use early depth test to discard instead of this
         glDepthMask(false);
-//        _render(cubemap, shader, combined);
+        glBlendFunc(GL_ONE, GL_ZERO);
+        _render(null, cubemap, shader, combined);
         glDepthMask(true);
     }
 
@@ -187,11 +188,13 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
         _render(transform, model, shader, instanced, numInstances);
     }
 
-    private void _render(TransformC transform, Model model, ShaderProgram shader, boolean instanced, int numInstances) {
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-            Matrix4f transformMatrix = new Matrix4f(transform.getMatrix());// = new Matrix4f(model.getFinalTransform().getMatrix().get(stack.callocFloat(16)));
-            shader.setUniform("model", transformMatrix, false);
-            shader.setUniform("normal", transformMatrix.invert().transpose().get3x3(new Matrix3f(stack.callocFloat(9))), false);
+    private void _render(@Nullable TransformC transform, Model model, ShaderProgram shader, boolean instanced, int numInstances) {
+        if (transform != null) {
+            try (MemoryStack stack = MemoryStack.stackPush()) {
+                Matrix4f transformMatrix = new Matrix4f(transform.getMatrix());// = new Matrix4f(model.getFinalTransform().getMatrix().get(stack.callocFloat(16)));
+                shader.setUniform("model", transformMatrix, false);
+                shader.setUniform("normal", transformMatrix.invert().transpose().get3x3(new Matrix3f(stack.callocFloat(9))), false);
+            }
         }
 
         //TODO move culling and transparency to and do per mesh, detect transparency in material loader via properties or based on if diffuse has alpha channel

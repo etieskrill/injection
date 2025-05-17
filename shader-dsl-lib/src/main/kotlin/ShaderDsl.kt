@@ -6,7 +6,9 @@ import io.github.etieskrill.injection.extension.shader.float
 import io.github.etieskrill.injection.extension.shader.int
 import io.github.etieskrill.injection.extension.shader.ivec2
 import io.github.etieskrill.injection.extension.shader.mat2
+import io.github.etieskrill.injection.extension.shader.mat4
 import io.github.etieskrill.injection.extension.shader.sampler2D
+import io.github.etieskrill.injection.extension.shader.samplerCube
 import io.github.etieskrill.injection.extension.shader.vec2
 import io.github.etieskrill.injection.extension.shader.vec3
 import io.github.etieskrill.injection.extension.shader.vec4
@@ -181,6 +183,8 @@ open class GlslReceiver {
 
     operator fun mat2.times(v: vec2): vec2 = error()
 
+    operator fun mat4.times(v: vec4): vec4 = error()
+
     fun normalize(v: vec3): vec3 = error()
 
     fun cross(v1: vec3, v2: vec3): vec3 = error()
@@ -232,8 +236,13 @@ open class GlslReceiver {
     fun mix(a: vec4, b: vec4, t: Number): vec4 = error()
 
     fun texture(sampler: sampler2D, coordinates: vec2): vec4 = error()
+    fun texture(sampler: samplerCube, coordinates: vec3): vec4 = error()
+
     fun textureSize(sampler: sampler2D, lod: int/* = 0*/): ivec2 =
         error() //FIXME default values never present in IrValueParameter for some reason
+
+    fun inverse(m: mat4): mat4 = error()
+
 }
 
 @ShaderDslMarker

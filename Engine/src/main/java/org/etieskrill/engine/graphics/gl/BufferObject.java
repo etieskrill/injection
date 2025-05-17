@@ -8,6 +8,7 @@ import org.lwjgl.BufferUtils;
 
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
 import static org.etieskrill.engine.graphics.gl.BufferObject.AccessType.DRAW;
@@ -80,6 +81,8 @@ public class BufferObject implements Disposable {
             switch (buffer) {
                 case ByteBuffer byteBuffer -> glBufferData(target.gl(), byteBuffer, toGLUsage(frequency, accessType));
                 case IntBuffer intBuffer -> glBufferData(target.gl(), intBuffer, toGLUsage(frequency, accessType));
+                case FloatBuffer floatBuffer ->
+                        glBufferData(target.gl(), floatBuffer, toGLUsage(frequency, accessType));
                 default -> throw new IllegalArgumentException("Unrecognised buffer type: " + getSimpleName(buffer));
             }
         } else if (byteSize != null) {
