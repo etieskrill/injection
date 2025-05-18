@@ -17,7 +17,7 @@ import org.etieskrill.engine.audio.Audio
 import org.etieskrill.engine.audio.AudioListener
 import org.etieskrill.engine.audio.AudioMode
 import org.etieskrill.engine.audio.AudioSource
-import org.etieskrill.engine.audio.MonoAudioSource
+import org.etieskrill.engine.audio.StereoAudioSource
 import org.etieskrill.engine.entity.component.Drawable
 import org.etieskrill.engine.entity.component.Transform
 import org.etieskrill.engine.entity.service.impl.RenderService
@@ -78,7 +78,7 @@ class SynthwavePlane : GameApplication(window {
     val frameTexture: Texture2D
     val sunShader = SunPostPass()
 
-    val audioSource: MonoAudioSource
+    val audioSource: StereoAudioSource
     val audioListener: AudioListener
 
     val fpsLabel: Label
@@ -97,11 +97,13 @@ class SynthwavePlane : GameApplication(window {
         window.cursor.disable()
 
         fpsLabel = Label()
-        fpsGraph = Histogram(100, scaleMode = HistogramScaleMode.FIXED, maxValue = 160f).setSize(Vector2f(400f, 150f))
+        fpsGraph = Histogram(100, scaleMode = HistogramScaleMode.FIXED, maxValue = 1.1f * window.refreshRate).apply {
+            size = Vector2f(400f, 150f)
+        }
         fftGraph = Histogram(
             FFT_BINS.toInt(),
             scaleMode = HistogramScaleMode.FIXED,
-            maxValue = 600000f,
+            maxValue = 3000000f,
             drawSeparators = false
         ).setSize(Vector2f(600f, 200f))
         window.scene = Scene(
@@ -134,11 +136,12 @@ class SynthwavePlane : GameApplication(window {
 
         audioSource = Audio.read(
 //            "1khz-sine.ogg"
-            "nightstop-she-dances-in-the-dark.ogg"
+            //TODO innerbloom might be cool to see dissected too
+            "avlönskt-bad-apple-multilanguage.ogg"
+//            "nightstop-she-dances-in-the-dark.ogg"
 //            "pumped-up-kicks-synthwave.ogg"
-            , AudioMode.MONO, true
-        ) as MonoAudioSource
-        audioSource.gain = 0.1f
+            , AudioMode.STEREO, true
+        ) as StereoAudioSource
         audioSource.play()
 
         audioListener = Audio.listener
@@ -160,7 +163,7 @@ class SynthwavePlane : GameApplication(window {
         audioListener.position = camera.position
         audioListener.direction = camera.direction.normalize()
 
-        audioSource.position = Vector3f(0f, 0.25f, 1f)
+//        audioSource.position = Vector3f(0f, 0.25f, 1f)
 
         val fftMagnitudes = doFFT(audioSource)
 
@@ -194,7 +197,7 @@ class SynthwavePlane : GameApplication(window {
         sunShader.start()
         sunShader.invCombined = camera.combined.invert(Matrix4f())
         sunShader.time = pacer.time.toFloat()
-        sunShader.intensity = averageSample / 200000f + 0.5f
+        sunShader.intensity = averageSample / 1000000f + 0.5f
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)
         glBlendFunc(GL_ONE, GL_ZERO)
@@ -202,7 +205,7 @@ class SynthwavePlane : GameApplication(window {
 }
 
 //TODO move to helper class
-const val FFT_BINS = 512L
+const val FFT_BINS = 1024L
 var fft = FloatFFT_1D(2 * FFT_BINS)
 val fftBuffer = MutableList(FFT_BINS.toInt()) { 0f }
 const val COS_WINDOW_a0 = 0.5f // <-- hann, hamming: 25/46f
@@ -212,10 +215,10 @@ fun doFFT(audioSource: AudioSource): List<Float> {
     val fftWindow = audioSource.sampleRate / 10
 
     val windowData = FloatArray(fftWindow + 1)
-    for (i in 0 until fftWindow) {
-        windowData[i] = audioSource.buffer!!.get(
-            (i + audioSource.offsetSamples - fftWindow / 2).coerceIn(0..<audioSource.numSamples)
-        ).toFloat() * windowFunction(i / fftWindow.toFloat())
+    for (i in 0..<fftWindow) {
+        val weaveFactor = if (audioSource is StereoAudioSource) 2 else 1
+        val index = ((i + audioSource.offsetSamples - fftWindow / 2) * weaveFactor).coerceIn(0..<audioSource.numSamples)
+        windowData[i] = audioSource.buffer!!.get(index).toFloat() * windowFunction(i / fftWindow.toFloat())
     }
 
     check(fftWindow > 2 * FFT_BINS)
