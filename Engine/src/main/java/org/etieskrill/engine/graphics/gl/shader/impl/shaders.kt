@@ -6,10 +6,12 @@ import io.github.etieskrill.injection.extension.shader.dsl.ShaderVertexData
 import io.github.etieskrill.injection.extension.shader.dsl.rt
 import io.github.etieskrill.injection.extension.shader.dsl.std.rotationMat2
 import io.github.etieskrill.injection.extension.shader.float
+import io.github.etieskrill.injection.extension.shader.mat2
 import io.github.etieskrill.injection.extension.shader.sampler2D
 import io.github.etieskrill.injection.extension.shader.vec2
 import io.github.etieskrill.injection.extension.shader.vec4
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
+import org.joml.Vector2f
 import org.joml.Vector4f
 
 class BlitShader : PureShaderBuilder<BlitShader.Vertex, BlitShader.RenderTargets>(
@@ -31,6 +33,9 @@ class BlitShader : PureShaderBuilder<BlitShader.Vertex, BlitShader.RenderTargets
     var windowSize by uniform<vec2>() //TODO check if used without being set
 
     init {
+        position = Vector2f(0f)
+        size = Vector2f(100f)
+        rotation = 0f
         colour = Vector4f(1f)
     }
 

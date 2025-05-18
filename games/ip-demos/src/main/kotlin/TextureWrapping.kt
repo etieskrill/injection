@@ -24,9 +24,7 @@ import org.etieskrill.engine.window.window
 import org.joml.Vector2d
 import org.joml.Vector2f
 import org.joml.Vector2i
-import org.joml.div
 import org.joml.plus
-import org.joml.times
 import org.joml.unaryMinus
 import org.lwjgl.opengl.GL11C.GL_TRIANGLE_STRIP
 import org.lwjgl.opengl.GL11C.glDrawArrays

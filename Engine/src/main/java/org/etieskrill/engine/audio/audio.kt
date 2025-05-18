@@ -39,7 +39,8 @@ class AudioDevice private constructor(val name: String, internal val handle: Lon
     }
 
     override fun dispose() {
-        alcCloseDevice(handle)
+        check(alcCloseDevice(handle))
+        { "Failed to dispose OpenAL device $name: there may still be contexts and/or buffers present" }
     }
 }
 
@@ -59,9 +60,7 @@ private class AudioContext(val handle: Long, val caps: ALCapabilities, val liste
         }
     }
 
-    override fun dispose() {
-        alcDestroyContext(handle)
-    }
+    override fun dispose() = alcDestroyContext(handle)
 }
 
 abstract class AudioSource internal constructor(

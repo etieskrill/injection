@@ -145,6 +145,8 @@ open class GlslReceiver {
     var vec4.xz: vec2 by swizzle()
     var vec4.xyz: vec3 by swizzle()
     val vec4.rgb: vec3 by swizzle()
+    var vec4.r: Number by swizzle()
+    var vec4.gb: vec2 by swizzle()
     var vec4.a: float by swizzle()
 
     operator fun vec2.plus(v: vec2): vec2 = error()

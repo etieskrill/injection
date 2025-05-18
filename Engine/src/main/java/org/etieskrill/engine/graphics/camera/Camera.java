@@ -36,6 +36,12 @@ public abstract class Camera implements UniformMappable {
     protected @Accessors(chain = true)
     @Setter float orbitDistance;
 
+    /**
+     * Returns the final view position which the camera renders from. In non-orbit mode, this is identical to the
+     * logical {@link Camera#position}.
+     */
+    private final @Getter Vector3f viewPosition = new Vector3f();
+
     protected boolean dirty;
 
     protected Camera(Vector2ic viewportSize) {
@@ -64,6 +70,14 @@ public abstract class Camera implements UniformMappable {
         update();
     }
 
+    /**
+     * Returns the logical position of this {@code camera}, which is the view position in regular mode, and the orbit
+     * centre in orbit mode.
+     * <p>
+     * Use the {@link #viewPosition} for rendering instead.
+     *
+     * @return the logical camera position
+     */
     public Vector3fc getPosition() {
         return position;
     }
@@ -158,15 +172,14 @@ public abstract class Camera implements UniformMappable {
     }
 
     protected void updateView() {
-        Vector3f front = rotation.transform(new Vector3f(0, 0, 1)).normalize();
-//        Vector3f up = rotation.transform(new Vector3f(0, 1, 0)).normalize();
+        Vector3f front = rotation.transform(viewPosition.set(0, 0, 1)).normalize();
 
         if (!orbit) {
-            Vector3f target = new Vector3f(position).add(front);
+            Vector3f target = front.add(position);
             this.view.setLookAt(position, target, worldUp);
         } else {
-            Vector3f orbitPosition = new Vector3f(position).sub(front.mul(orbitDistance));
-            this.view.setLookAt(orbitPosition, position, worldUp);
+            front.mul(orbitDistance).negate().add(position);
+            this.view.setLookAt(front, position, worldUp);
         }
     }
 
@@ -277,7 +290,7 @@ public abstract class Camera implements UniformMappable {
                 .map("view", getView())
                 .map("perspective", getPerspective())
                 .map("combined", getCombined())
-                .map("position", position)
+                .map("position", viewPosition)
                 .map("near", near)
                 .map("far", far)
                 .map("viewport", viewportSize)

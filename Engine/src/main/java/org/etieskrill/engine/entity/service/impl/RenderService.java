@@ -186,7 +186,7 @@ public class RenderService implements Service, Disposable {
                 });
         shaderParams.addUniform("hasPointShadowMaps", hasPointShadowMap.get());
 
-        shaderParams.addUniform("viewPosition", camera.getPosition());
+        shaderParams.addUniform("viewPosition", camera.getViewPosition());
 
         for (Entity entity : entities) {
             if (boundingBoxRenderService.canProcess(entity)) {
