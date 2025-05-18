@@ -74,6 +74,10 @@ abstract class AudioSource internal constructor(
 
     fun play() = alSourcePlay(handle)
 
+    fun pause() = alSourcePause(handle)
+
+    fun stop() = alSourceStop(handle)
+
     /**
      * The current offset into the bound buffer in samples.
      */
@@ -93,7 +97,7 @@ abstract class AudioSource internal constructor(
         get() = alGetSourcef(handle, AL_SEC_OFFSET)
         set(value) {
             require(value >= 0) { "Offset must not be negative" }
-            require(value < numSamples) { "Offset must be smaller than the duration" }
+            require(value * sampleRate < numSamples) { "Offset must be smaller than the duration" }
 
             alSourcef(handle, AL_SEC_OFFSET, value)
         }
@@ -206,14 +210,14 @@ object Audio : Disposable {
             AudioMode.MONO -> MonoAudioSource(
                 source,
                 pcmAudio.sampleRate,
-                pcmAudio.buffer.capacity(),
+                pcmAudio.numSamples,
                 pcmAudio.buffer.takeIf { retainBuffer }
             )
 
             AudioMode.STEREO -> StereoAudioSource(
                 source,
                 pcmAudio.sampleRate,
-                pcmAudio.buffer.capacity(),
+                pcmAudio.numSamples,
                 pcmAudio.buffer.takeIf { retainBuffer }
             )
 
@@ -248,6 +252,7 @@ enum class AudioMode(internal val al: Int = 0) { DONT_CARE, MONO(AL_FORMAT_MONO1
 
 data class PCMAudio(
     val sampleRate: Int,
+    val numSamples: Int,
     val mode: AudioMode,
     val buffer: ShortBuffer
 )
@@ -289,7 +294,7 @@ private fun vorbisDecodeToPCM(
 
     stb_vorbis_close(decoder)
 
-    return PCMAudio(sampleRate, mode, buffer)
+    return PCMAudio(sampleRate, numSamples, mode, buffer)
 }
 
 private fun vorbisLoad(decoder: Long, channels: Int, numSamples: Int, mode: AudioMode) = when (mode) {

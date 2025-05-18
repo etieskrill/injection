@@ -1,56 +1,27 @@
 package org.etieskrill.engine.scene.component;
 
-import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.input.Key;
 import org.etieskrill.engine.input.Keys;
 import org.etieskrill.engine.input.action.SimpleAction;
 import org.jetbrains.annotations.NotNull;
-import org.joml.Vector3f;
-import org.joml.Vector4f;
 
-import static java.util.Objects.requireNonNull;
-import static org.etieskrill.engine.scene.component.LayoutUtils.getPreferredNodePosition;
+/**
+ * A node with a single child, which runs an action when hit.
+ * <p>
+ * This intercepts the event, i.e. the hit is not propagated to the child.
+ */
+public class Button extends Container {
 
-public class Button extends Node {
-
-    private Label label;
     private SimpleAction action;
 
+    private boolean enabled = true;
+
     public Button() {
-        this(new Label());
+        this(new Label("<no content>"));
     }
 
-    public Button(Label label) {
-        setLabel(label);
-    }
-
-    @Override
-    public void update(double delta) {
-        label.update(delta);
-    }
-
-    @Override
-    public void format() {
-        if (!shouldFormat()) return;
-
-        label.format();
-        label.setPosition(getPreferredNodePosition(getSize(), label));
-    }
-
-    @Override
-    public void render(@NotNull Batch batch) {
-        batch.renderBox(
-                new Vector3f(getPosition(), 0),
-                new Vector3f(getSize(), 0),
-                new Vector4f(0, 0, 0, 1)
-        );
-
-        label.render(batch);
-    }
-
-    public void setLabel(@NotNull Label label) {
-        invalidate();
-        this.label = (Label) requireNonNull(label).setParent(this);
+    public Button(Node<?> child) {
+        super(child);
     }
 
     public void setAction(@NotNull SimpleAction action) {
@@ -59,12 +30,24 @@ public class Button extends Node {
 
     @Override
     public boolean hit(Key button, Keys.Action action, double posX, double posY) {
-        if (!doesHit(posX, posY)) return false;
-        if (this.action != null && action == Keys.Action.RELEASE && button.equals(Keys.LEFT_MOUSE)) {
+        if (!enabled || !doesHit(posX, posY)) return false;
+        if (this.action != null && action == Keys.Action.RELEASE && button.equals(Keys.LEFT_MOUSE.getInput())) {
             this.action.run();
             return true;
         }
         return false;
+    }
+
+    public void enable() {
+        enabled = true;
+        renderedColour.set(colour);
+        if (child != null) child.renderedColour.set(child.colour);
+    }
+
+    public void disable() {
+        enabled = false;
+        renderedColour.set(colour).mul(0.75f);
+        if (child != null) child.renderedColour.set(child.colour).mul(0.75f);
     }
 
 }

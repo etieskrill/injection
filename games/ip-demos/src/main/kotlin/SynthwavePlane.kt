@@ -35,6 +35,7 @@ import org.etieskrill.engine.input.controller.CursorCameraController
 import org.etieskrill.engine.scene.Scene
 import org.etieskrill.engine.scene.component.Label
 import org.etieskrill.engine.scene.component.Node
+import org.etieskrill.engine.scene.component.PlaybackBar
 import org.etieskrill.engine.scene.component.VBox
 import org.etieskrill.engine.scene.component.WidgetContainer
 import org.etieskrill.engine.scene.component.plot.Histogram
@@ -46,6 +47,7 @@ import org.etieskrill.engine.window.window
 import org.joml.Matrix4f
 import org.joml.Vector2f
 import org.joml.Vector3f
+import org.joml.Vector4f
 import org.joml.times
 import org.jtransforms.fft.FloatFFT_1D
 import org.lwjgl.opengl.GL11C.*
@@ -55,6 +57,7 @@ import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sqrt
+import kotlin.time.Duration.Companion.seconds
 
 fun main() {
     SynthwavePlane().run()
@@ -86,6 +89,8 @@ class SynthwavePlane : GameApplication(window {
 
     val fftGraph: Histogram
 
+    val playbackBar: PlaybackBar
+
     init {
         window.addCursorInputs(CursorCameraController(camera))
         window.addKeyInputs(Input.of(Input.bind(Keys.CTRL).to { ->
@@ -95,31 +100,6 @@ class SynthwavePlane : GameApplication(window {
                 window.cursor.mode = Cursor.CursorMode.DISABLED
         }))
         window.cursor.disable()
-
-        fpsLabel = Label()
-        fpsGraph = Histogram(100, scaleMode = HistogramScaleMode.FIXED, maxValue = 1.1f * window.refreshRate).apply {
-            size = Vector2f(400f, 150f)
-        }
-        fftGraph = Histogram(
-            FFT_BINS.toInt(),
-            scaleMode = HistogramScaleMode.FIXED,
-            maxValue = 3000000f,
-            drawSeparators = false
-        ).setSize(Vector2f(600f, 200f))
-        window.scene = Scene(
-            Batch(renderer, window.currentSize),
-            VBox(
-                WidgetContainer(fpsGraph).apply {
-                    text = "GPU"
-                    alignment = Node.Alignment.FIXED_POSITION
-                    position = Vector2f(50f, 0f)
-                    isCollapsed = true
-                },
-                fpsLabel,
-                fftGraph,
-            ).setSize(Vector2f(600f, 500f)),
-            OrthographicCamera(window.currentSize)
-        )
 
         camera.setPosition(Vector3f(0f, 1f, 0f))
 
@@ -142,9 +122,45 @@ class SynthwavePlane : GameApplication(window {
 //            "pumped-up-kicks-synthwave.ogg"
             , AudioMode.STEREO, true
         ) as StereoAudioSource
-        audioSource.play()
 
         audioListener = Audio.listener
+
+        fpsLabel = Label()
+        fpsGraph = Histogram(100, scaleMode = HistogramScaleMode.FIXED, maxValue = 1.1f * window.refreshRate).apply {
+            size = Vector2f(400f, 150f)
+        }
+        fftGraph = Histogram(
+            FFT_BINS.toInt(),
+            scaleMode = HistogramScaleMode.FIXED,
+            maxValue = 3000000f,
+            drawSeparators = false
+        ).setSize(Vector2f(600f, 200f))
+        playbackBar = PlaybackBar(audioSource.duration).apply {
+            alignment = Node.Alignment.BOTTOM
+            size = Vector2f(700f, 40f)
+            margin = Vector4f(10f)
+
+            playAction = { audioSource.play() }
+            pauseAction = { audioSource.pause() }
+            stopAction = { audioSource.stop() }
+
+            action = { audioSource.offsetSeconds = it.inWholeSeconds.toFloat() }
+        }
+        window.scene = Scene(
+            Batch(renderer, window.currentSize),
+            VBox(
+                WidgetContainer(fpsGraph).apply {
+                    text = "GPU"
+                    alignment = Node.Alignment.FIXED_POSITION
+                    position = Vector2f(50f, 0f)
+                    isCollapsed = true
+                },
+                fpsLabel,
+                fftGraph,
+                playbackBar
+            ).setSize(Vector2f(600f, 500f)),
+            OrthographicCamera(window.currentSize)
+        )
     }
 
     var frameSample = 0
@@ -188,6 +204,8 @@ class SynthwavePlane : GameApplication(window {
         samples.push(((fftMagnitudes[2] + fftMagnitudes[3] + fftMagnitudes[4]) / 3).toInt())
         averageSample = samples.average().toInt()
 
+        playbackBar.time = audioSource.offsetSeconds.toDouble().seconds
+
         fpsLabel.text = pacer.averageFPS.toInt().toString()
         if (pacer.totalFramesElapsed % 5L == 0L) fpsGraph.values.push(1 / pacer.deltaTimeSeconds.toFloat())
     }
@@ -217,7 +235,7 @@ fun doFFT(audioSource: AudioSource): List<Float> {
     val windowData = FloatArray(fftWindow + 1)
     for (i in 0..<fftWindow) {
         val weaveFactor = if (audioSource is StereoAudioSource) 2 else 1
-        val index = ((i + audioSource.offsetSamples - fftWindow / 2) * weaveFactor).coerceIn(0..<audioSource.numSamples)
+        val index = (i + audioSource.offsetSamples - fftWindow / 2).coerceIn(0..<audioSource.numSamples) * weaveFactor
         windowData[i] = audioSource.buffer!!.get(index).toFloat() * windowFunction(i / fftWindow.toFloat())
     }
 

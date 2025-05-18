@@ -1,5 +1,6 @@
 package org.etieskrill.engine.scene.component;
 
+import lombok.Getter;
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.input.Key;
 import org.etieskrill.engine.input.Keys;
@@ -12,16 +13,19 @@ import static java.util.Objects.requireNonNull;
 
 public abstract class Node<T extends Node<T>> {
 
-    private final Vector2f position; //property that is set internally by the format
-    protected final Vector2f size; //set by the user
+    private final Vector2f position = new Vector2f(0); //property that is set internally by the format
+    protected final Vector2f size = new Vector2f(100); //set by the user
 
-    private Alignment alignment;
-    private final Vector4f margin; //Swizzle: top, bottom, left, right
-    private boolean visible;
+    private Alignment alignment = Alignment.TOP_LEFT;
+    private final Vector4f margin = new Vector4f(0); //Swizzle: top, bottom, left, right
+    private boolean visible = true;
 
-    private Node<?> parent;
+    protected @Getter Vector4f colour = new Vector4f(0f);
+    protected final Vector4f renderedColour = new Vector4f(0f);
 
-    protected boolean shouldFormat;
+    private @Nullable Node<?> parent;
+
+    protected boolean shouldFormat = true;
 
     public enum Alignment {
         FIXED_POSITION,
@@ -29,16 +33,6 @@ public abstract class Node<T extends Node<T>> {
         TOP_LEFT, TOP, TOP_RIGHT,
         CENTER_LEFT, CENTER, CENTER_RIGHT,
         BOTTOM_LEFT, BOTTOM, BOTTOM_RIGHT
-    }
-
-    public Node() {
-        this.position = new Vector2f(0);
-        this.size = new Vector2f(100);
-        this.alignment = Alignment.TOP_LEFT;
-        this.margin = new Vector4f(0);
-        this.visible = true;
-        this.parent = null;
-        this.shouldFormat = true;
     }
 
     public void update(double delta) {
@@ -138,6 +132,11 @@ public abstract class Node<T extends Node<T>> {
 
     public void setVisible(boolean visible) {
         this.visible = visible;
+    }
+
+    public void setColour(@NotNull Vector4f colour) {
+        this.colour = requireNonNull(colour);
+        this.renderedColour.set(colour);
     }
 
     public Node<?> getParent() {

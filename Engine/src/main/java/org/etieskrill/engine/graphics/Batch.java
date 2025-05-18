@@ -8,6 +8,7 @@ import org.etieskrill.engine.graphics.gl.shader.impl.BlitShader;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.texture.font.Font;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.joml.*;
 
 import static org.lwjgl.opengl.GL11C.*;
@@ -73,11 +74,16 @@ public class Batch {
     }
 
     public void blit(Texture2D texture, Vector2fc position, Vector2fc size, float rotation) {
+        blit(texture, position, size, rotation, null);
+    }
+
+    public void blit(Texture2D texture, Vector2fc position, Vector2fc size, float rotation, @Nullable Vector4fc colour) {
         blitShader.setSprite(texture);
         blitShader.setPosition(position);
         blitShader.setSize(size);
         blitShader.setRotation(rotation);
         blitShader.setWindowSize(new Vector2f(viewportSize));
+        if (colour != null) blitShader.setColour(colour);
         blitShader.start();
 
         glBindVertexArray(getDummyVAO());

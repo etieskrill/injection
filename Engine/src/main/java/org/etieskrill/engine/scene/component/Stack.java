@@ -52,7 +52,12 @@ public class Stack extends Node<Stack> {
     }
 
     public Stack addChildren(@NotNull Node<?>... children) {
-        List.of(children).forEach(child -> this.children.add(child.setParent(child)));
+        List.of(children).forEach(child -> this.children.add(child.setParent(this)));
+        return this;
+    }
+
+    public Stack setChild(int index, @NotNull Node<?> child) {
+        this.children.set(index, child.setParent(this));
         return this;
     }
 

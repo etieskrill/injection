@@ -25,10 +25,10 @@ public class WidgetContainer extends Node<WidgetContainer> {
 
     private static final Vector4fc WIDGET_BAR_COLOUR = new Vector4f(128 / 255f, 0, 0, 1); //#800000
     private static final float WIDGET_BAR_HEIGHT = 20;
+    private static final Vector4fc WIDGET_CHEVRON_COLOUR = new Vector4f(1);
     private static final float WIDGET_CHEVRON_MARGIN = 2;
 
     private Node<?> child;
-    private final Vector4f colour = new Vector4f(0);
 
     private @Getter boolean collapsed = false;
 
@@ -78,7 +78,8 @@ public class WidgetContainer extends Node<WidgetContainer> {
         batch.blit(chevronIcon,
                 new Vector2f(position).add(WIDGET_CHEVRON_MARGIN, WIDGET_CHEVRON_MARGIN),
                 new Vector2f(WIDGET_BAR_HEIGHT - 2 * WIDGET_CHEVRON_MARGIN),
-                collapsed ? (float) Math.toRadians(90) : (float) Math.toRadians(-180)
+                collapsed ? (float) Math.toRadians(90) : (float) Math.toRadians(-180),
+                WIDGET_CHEVRON_COLOUR
         );
         if (text != null && !text.isBlank()) {
             //TODO use label with autoscaling font instead of hardcoding - scale bar height too actually
@@ -86,7 +87,11 @@ public class WidgetContainer extends Node<WidgetContainer> {
         }
 
         if (!collapsed) {
-            if (colour.w != 0) batch.renderBox(new Vector3f(position, 0), new Vector3f(getSize(), 0), colour);
+            if (renderedColour.w != 0) batch.renderBox(
+                    new Vector3f(position, 0),
+                    new Vector3f(getSize(), 0),
+                    renderedColour
+            );
             if (child != null) child.render(batch);
         }
     }
@@ -94,11 +99,6 @@ public class WidgetContainer extends Node<WidgetContainer> {
     public void setChild(@NotNull Node<?> child) {
         invalidate();
         this.child = requireNonNull(child).setParent(this);
-    }
-
-    public WidgetContainer setColour(@NotNull Vector4f colour) {
-        this.colour.set(requireNonNull(colour));
-        return this;
     }
 
     public WidgetContainer setSize(@NotNull Vector2f size) {
