@@ -29,6 +29,7 @@ import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment.Buffe
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
 import org.etieskrill.engine.graphics.model.model
 import org.etieskrill.engine.graphics.model.plane
+import org.etieskrill.engine.graphics.pipeline.PostPassPipeline
 import org.etieskrill.engine.input.Input
 import org.etieskrill.engine.input.Keys
 import org.etieskrill.engine.input.controller.CursorCameraController
@@ -50,12 +51,10 @@ import org.joml.Vector3f
 import org.joml.Vector4f
 import org.joml.times
 import org.jtransforms.fft.FloatFFT_1D
-import org.lwjgl.opengl.GL11C.*
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.floor
 import kotlin.math.max
-import kotlin.math.min
 import kotlin.math.sqrt
 import kotlin.time.Duration.Companion.seconds
 
@@ -79,7 +78,7 @@ class SynthwavePlane : GameApplication(window {
 
     val frameBuffer: FrameBuffer
     val frameTexture: Texture2D
-    val sunShader = SunPostPass()
+    val sunPipeline = PostPassPipeline(SunPostPass(), null, false)
 
     val audioSource: StereoAudioSource
     val audioListener: AudioListener
@@ -179,8 +178,6 @@ class SynthwavePlane : GameApplication(window {
         audioListener.position = camera.position
         audioListener.direction = camera.direction.normalize()
 
-//        audioSource.position = Vector3f(0f, 0.25f, 1f)
-
         val fftMagnitudes = doFFT(audioSource)
 
         fftMagnitudes.forEachIndexed { t, value ->
@@ -211,14 +208,11 @@ class SynthwavePlane : GameApplication(window {
     }
 
     override fun render() {
-        //TODO render pass modularisation
-        sunShader.start()
-        sunShader.invCombined = camera.combined.invert(Matrix4f())
-        sunShader.time = pacer.time.toFloat()
-        sunShader.intensity = averageSample / 1000000f + 0.5f
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)
-        glBlendFunc(GL_ONE, GL_ZERO)
+        sunPipeline.shader.invCombined = camera.combined.invert(Matrix4f())
+        sunPipeline.shader.time = pacer.time.toFloat()
+        sunPipeline.shader.intensity = averageSample / 1000000f + 0.5f
+
+        renderer.render(sunPipeline)
     }
 }
 

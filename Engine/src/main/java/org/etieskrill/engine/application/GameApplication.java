@@ -5,7 +5,7 @@ import org.etieskrill.engine.audio.Audio;
 import org.etieskrill.engine.config.InjectionConfig;
 import org.etieskrill.engine.entity.system.EntitySystem;
 import org.etieskrill.engine.graphics.gl.renderer.GLRenderer;
-import org.etieskrill.engine.graphics.texture.font.TrueTypeFont;
+import org.etieskrill.engine.graphics.text.TrueTypeFont;
 import org.etieskrill.engine.input.Key;
 import org.etieskrill.engine.input.Keys;
 import org.etieskrill.engine.time.LoopPacer;

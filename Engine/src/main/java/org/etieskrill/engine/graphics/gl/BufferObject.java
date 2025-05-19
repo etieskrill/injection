@@ -11,6 +11,7 @@ import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
+import static java.util.Objects.requireNonNullElse;
 import static org.etieskrill.engine.graphics.gl.BufferObject.AccessType.DRAW;
 import static org.etieskrill.engine.graphics.gl.BufferObject.Frequency.STATIC;
 import static org.etieskrill.engine.graphics.gl.BufferObject.Target.ARRAY;
@@ -25,29 +26,33 @@ public class BufferObject implements Disposable {
     private final Target target;
     private final int id;
 
+    private final @Getter int size;
+
     private ByteBuffer buffer;
 
     //TODO add vao slot to ensure in-use (bound) buffers are not accidentally used elsewhere
 
-    public static Builder create(long byteSize) {
-        return new Builder(byteSize, null);
+    public static Builder create(int elementByteSize, int numElements) {
+        return new Builder((long) elementByteSize * numElements, null, numElements);
     }
 
     public static Builder create(Buffer buffer) {
-        return new Builder(null, buffer);
+        return new Builder(null, buffer, buffer.capacity());
     }
 
     public static class Builder {
         private final @Nullable Long byteSize;
         private final @Nullable Buffer buffer;
+        private final int numElements;
 
         private Target target = ARRAY;
         private Frequency frequency = STATIC;
         private AccessType accessType = DRAW;
 
-        private Builder(@Nullable Long byteSize, @Nullable Buffer buffer) {
+        private Builder(@Nullable Long byteSize, @Nullable Buffer buffer, int numElements) {
             this.byteSize = byteSize;
             this.buffer = buffer;
+            this.numElements = numElements;
         }
 
         public Builder target(@NotNull Target target) {
@@ -55,24 +60,25 @@ public class BufferObject implements Disposable {
             return this;
         }
 
-        public Builder frequency(@NotNull Frequency frequency) {
-            this.frequency = frequency;
+        public Builder frequency(@Nullable Frequency frequency) {
+            this.frequency = requireNonNullElse(frequency, STATIC);
             return this;
         }
 
-        public Builder accessType(@NotNull AccessType accessType) {
-            this.accessType = accessType;
+        public Builder accessType(@Nullable AccessType accessType) {
+            this.accessType = requireNonNullElse(accessType, DRAW);
             return this;
         }
 
         public BufferObject build() {
-            return new BufferObject(byteSize, buffer, target, frequency, accessType);
+            return new BufferObject(byteSize, buffer, numElements, target, frequency, accessType);
         }
     }
 
-    private BufferObject(Long byteSize, Buffer buffer, Target target, Frequency frequency, AccessType accessType) {
+    private BufferObject(Long byteSize, Buffer buffer, int numElements, Target target, Frequency frequency, AccessType accessType) {
         clearError();
 
+        this.size = numElements;
         this.target = target;
         this.id = glGenBuffers();
         bind();

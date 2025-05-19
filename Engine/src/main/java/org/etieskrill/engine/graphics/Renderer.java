@@ -6,6 +6,7 @@ import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.etieskrill.engine.graphics.model.CubeMapModel;
 import org.etieskrill.engine.graphics.model.Model;
+import org.etieskrill.engine.graphics.pipeline.Pipeline;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.joml.Matrix4fc;
 import org.joml.Vector3fc;
@@ -73,6 +74,9 @@ public interface Renderer {
     void renderWireframe(TransformC transform, Model model, ShaderProgram shader, Camera camera);
 
     void render(CubeMapModel cubemap, ShaderProgram shader, Matrix4fc combined);
+
+
+    void render(Pipeline<?> pipeline);
 
 
     //TODO move to another interface with more "primitive" drawing calls with backing singleton/per-renderer instances

@@ -48,7 +48,10 @@ public class VertexArrayObject<T> implements Disposable {
                               @Nullable Integer numIndices,
                               @Nullable Collection<Integer> indices,
                               @Nullable BufferObject indexBuffer,
-                              VertexArrayAccessor<T> accessor) {
+                              VertexArrayAccessor<T> accessor,
+                              @Nullable BufferObject.Frequency frequency,
+                              @Nullable BufferObject.AccessType accessType
+    ) {
         clearError();
 
         if (accessor == null) {
@@ -66,11 +69,19 @@ public class VertexArrayObject<T> implements Disposable {
             this.vertexBuffer = vertexBuffer;
             this.vertexBuffer.bind();
         } else if (vertexElements != null) {
-            this.vertexBuffer = BufferObject.create((long) vertexElements.size() * accessor.getElementByteSize()).build();
+            this.vertexBuffer = BufferObject
+                    .create(accessor.getElementByteSize(), vertexElements.size())
+                    .frequency(frequency)
+                    .accessType(accessType)
+                    .build();
             this.vertexBuffer.bind();
             setVertices(vertexElements);
         } else if (numVertexElements != null) {
-            this.vertexBuffer = BufferObject.create(numVertexElements * accessor.getElementByteSize()).build();
+            this.vertexBuffer = BufferObject
+                    .create(accessor.getElementByteSize(), Math.toIntExact(numVertexElements))
+                    .frequency(frequency)
+                    .accessType(accessType)
+                    .build();
             this.vertexBuffer.bind();
         } else {
             throw new BufferCreationException("Vertex buffer size, data or buffer object must be set");
@@ -85,11 +96,19 @@ public class VertexArrayObject<T> implements Disposable {
             this.indexBuffer = indexBuffer;
             this.indexBuffer.bind();
         } else if (indices != null) {
-            this.indexBuffer = BufferObject.create((long) indices.size() * Integer.BYTES).target(ELEMENT_ARRAY).build();
+            this.indexBuffer = BufferObject
+                    .create(Integer.BYTES, indices.size()).target(ELEMENT_ARRAY)
+                    .frequency(frequency)
+                    .accessType(accessType)
+                    .build();
             this.indexBuffer.bind();
             setIndices(indices);
         } else if (numIndices != null) {
-            this.indexBuffer = BufferObject.create(numIndices * Integer.BYTES).target(ELEMENT_ARRAY).build();
+            this.indexBuffer = BufferObject
+                    .create(Integer.BYTES, numIndices).target(ELEMENT_ARRAY)
+                    .frequency(frequency)
+                    .accessType(accessType)
+                    .build();
             this.indexBuffer.bind();
         } else {
             this.indexBuffer = null;

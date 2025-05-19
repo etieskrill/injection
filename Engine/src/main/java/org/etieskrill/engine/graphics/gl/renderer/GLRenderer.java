@@ -15,6 +15,8 @@ import org.etieskrill.engine.graphics.gl.shader.Shaders;
 import org.etieskrill.engine.graphics.gl.shader.Shaders_OutlineShaderKt;
 import org.etieskrill.engine.graphics.gl.shader.impl.MissingShader;
 import org.etieskrill.engine.graphics.model.*;
+import org.etieskrill.engine.graphics.pipeline.DrawMode;
+import org.etieskrill.engine.graphics.pipeline.Pipeline;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.etieskrill.engine.util.Loaders;
 import org.jetbrains.annotations.Nullable;
@@ -158,6 +160,99 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
         glBlendFunc(GL_ONE, GL_ZERO);
         _render(null, cubemap, shader, combined);
         glDepthMask(true);
+    }
+
+    private static int dummyVAO = -1;
+
+    public static int getDummyVAO() {
+        if (dummyVAO == -1) dummyVAO = glGenVertexArrays();
+        return dummyVAO;
+    }
+
+    @Override
+    public void render(Pipeline<?> pipeline) {
+        if (pipeline.getFrameBuffer() != null) {
+            pipeline.getFrameBuffer().bind(); //TODO at least cache current framebuffer somewhere and check - minimising context switches after that is task of higher abstraction
+        } else {
+            FrameBuffer.bindScreenBuffer();
+        }
+
+        boolean indexed;
+        if (pipeline.getVao() != null) {
+            pipeline.getVao().bind();
+            indexed = pipeline.getVao().isIndexed();
+        } else {
+            glBindVertexArray(getDummyVAO());
+            indexed = false;
+        }
+
+        pipeline.getShader().start();
+
+        switch (pipeline.getConfig().getAlphaMode()) {
+            case OPAQUE -> glBlendFunc(GL_ONE, GL_ZERO);
+            case SOURCE_ALPHA -> glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        }
+
+        int primitiveType = switch (pipeline.getConfig().getPrimitiveType()) {
+            case POINTS -> GL_POINTS;
+            case TRIANGLES -> GL_TRIANGLES;
+            case TRIANGLE_STRIP -> GL_TRIANGLE_STRIP;
+        };
+
+        switch (pipeline.getConfig().getCullingMode()) {
+            case NONE -> glDisable(GL_CULL_FACE);
+            case BACK -> {
+                glEnable(GL_CULL_FACE);
+                glCullFace(GL_BACK);
+            }
+            case FRONT -> {
+                glEnable(GL_CULL_FACE);
+                glCullFace(GL_FRONT);
+            }
+            case FRONT_AND_BACK -> {
+                glEnable(GL_CULL_FACE);
+                glCullFace(GL_FRONT_AND_BACK);
+            }
+        }
+
+        if (pipeline.getConfig().getDepthTest()) {
+            glEnable(GL_DEPTH_TEST);
+        } else {
+            glDisable(GL_DEPTH_TEST);
+        }
+
+        glDepthMask(pipeline.getConfig().getWriteDepth());
+
+        glPolygonMode(GL_FRONT, toGLPolygonMode(pipeline.getConfig().getFrontFaceDrawMode()));
+        glPolygonMode(GL_BACK, toGLPolygonMode(pipeline.getConfig().getBackFaceDrawMode()));
+
+        int vertexCount;
+
+        if (indexed) {
+            vertexCount = pipeline.getVao().getIndexBuffer().getSize();
+            glDrawElements(primitiveType, vertexCount, GL_UNSIGNED_INT, 0L);
+        } else {
+            if (pipeline.getVao() == null && pipeline.getVertexCount() == null) {
+                throw new IllegalStateException("Pipeline without vertex array object must have vertex count set");
+            }
+            vertexCount = pipeline.getVertexCount();
+            glDrawArrays(primitiveType, 0, vertexCount);
+        }
+
+        renderCalls++;
+        trianglesDrawn += switch (pipeline.getConfig().getPrimitiveType()) {
+            case POINTS -> 0;
+            case TRIANGLES -> vertexCount / 3;
+            case TRIANGLE_STRIP -> vertexCount - 2;
+        };
+    }
+
+    private static int toGLPolygonMode(DrawMode mode) {
+        return switch (mode) {
+            case POINT -> GL_POINT;
+            case LINE -> GL_LINE;
+            case FILL -> GL_FILL;
+        };
     }
 
     @Override

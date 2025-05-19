@@ -1,4 +1,4 @@
-package org.etieskrill.engine.graphics.texture.font;
+package org.etieskrill.engine.graphics.text;
 
 import org.etieskrill.engine.Disposable;
 import org.joml.Vector2i;

@@ -24,7 +24,7 @@ public class Model implements Disposable {
 
     private static final Logger logger = LoggerFactory.getLogger(Model.class);
 
-    private final @Getter List<Node> nodes;
+    private final @Getter List<Node> nodes; //TODO flatten hierarchy by compatible/identical materials
     private final List<Material> materials; //TODO since meshes know their materials, these here may not be necessary?
 
     private final @Getter List<Animation> animations;

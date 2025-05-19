@@ -1,4 +1,4 @@
-package org.etieskrill.engine.graphics.texture.font;
+package org.etieskrill.engine.graphics.text;
 
 import org.etieskrill.engine.util.FileUtils;
 import org.etieskrill.engine.util.Loaders;

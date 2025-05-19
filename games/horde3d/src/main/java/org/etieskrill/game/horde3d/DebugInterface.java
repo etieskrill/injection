@@ -3,7 +3,7 @@ package org.etieskrill.game.horde3d;
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.camera.OrthographicCamera;
 import org.etieskrill.engine.graphics.gl.renderer.GLRenderer;
-import org.etieskrill.engine.graphics.texture.font.Fonts;
+import org.etieskrill.engine.graphics.text.Fonts;
 import org.etieskrill.engine.scene.Scene;
 import org.etieskrill.engine.scene.component.Container;
 import org.etieskrill.engine.scene.component.Label;
@@ -26,7 +26,7 @@ public class DebugInterface extends Scene {
     }
 
     public DebugInterface(Vector2ic windowSize, GLRenderer renderer, @Nullable LoopPacer pacer) {
-        setBatch(new Batch(renderer));
+        setBatch(new Batch(renderer, windowSize));
         setCamera(new OrthographicCamera(windowSize));
 
         this.renderer = renderer;
@@ -40,11 +40,11 @@ public class DebugInterface extends Scene {
 
     @Override
     public void update(double delta) {
-//        fpsLabel.setText("Fps: %s\nRender calls: %d\nTriangles: %d".formatted(
-//                pacer != null ? String.valueOf(Math.round(pacer.getAverageFPS())) : "n/a",
-//                renderer.getRenderCalls(),
-//                renderer.getTrianglesDrawn()
-//        ));
+        fpsLabel.setText("Fps: %s\nRender calls: %d\nTriangles: %d".formatted(
+                pacer != null ? String.valueOf(Math.round(pacer.getAverageFPS())) : "n/a",
+                renderer.getRenderCalls(),
+                renderer.getTrianglesDrawn()
+        ));
         super.update(delta);
     }
 

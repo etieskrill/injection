@@ -11,13 +11,15 @@ import org.etieskrill.engine.graphics.camera.PerspectiveCamera;
 import org.etieskrill.engine.graphics.data.DirectionalLight;
 import org.etieskrill.engine.graphics.gl.GLUtils;
 import org.etieskrill.engine.graphics.gl.renderer.GLRenderer;
+import org.etieskrill.engine.graphics.gl.shader.Shaders;
 import org.etieskrill.engine.graphics.gl.shader.impl.AnimationShader;
 import org.etieskrill.engine.graphics.gl.shader.impl.AnimationShaderKt;
 import org.etieskrill.engine.graphics.gl.shader.impl.StaticShader;
 import org.etieskrill.engine.graphics.gl.shader.impl.StaticShaderKt;
+import org.etieskrill.engine.graphics.model.CubeMapModel;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.model.Node;
-import org.etieskrill.engine.graphics.texture.font.TrueTypeFont;
+import org.etieskrill.engine.graphics.text.TrueTypeFont;
 import org.etieskrill.engine.input.Input;
 import org.etieskrill.engine.input.KeyInputManager;
 import org.etieskrill.engine.input.Keys;
@@ -28,6 +30,7 @@ import org.etieskrill.engine.util.FixedArrayDeque;
 import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.window.Window;
 import org.jetbrains.annotations.VisibleForTesting;
+import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 import org.slf4j.Logger;
@@ -55,11 +58,14 @@ public class Game {
     private static final Logger logger = LoggerFactory.getLogger(Game.class);
 
     private Window window;
-    private final Renderer renderer = new GLRenderer();
+    private Renderer renderer;
 
     private LoopPacer pacer;
 
     private Camera camera;
+
+    private CubeMapModel skybox;
+    private Shaders.CubeMapShader cubeMapShader;
 
     private Model vampy;
     private Model vampyBB;
@@ -137,8 +143,13 @@ public class Game {
 
         GLUtils.addDebugLogging();
 
+        renderer = new GLRenderer();
+
         camera = new PerspectiveCamera(window.getSize().getVec()).setRotation(0, 0, 0);
         window.addCursorInputs(new CursorCameraController(camera));
+
+        cubeMapShader = new Shaders.CubeMapShader();
+        skybox = new CubeMapModel("space");
 
         vampy = Loaders.ModelLoader.get().load("vampy", () ->
                 new Model.Builder("mixamo_walk_forward_skinned_vampire.dae")
@@ -333,6 +344,8 @@ public class Game {
 
             //TODO tone map + gamma correct
             renderer.prepare();
+
+            renderer.render(skybox, cubeMapShader, camera.getCombined().translate(camera.getPosition(), new Matrix4f()).scale(50));
 
             AnimationShaderKt.setViewPosition(vampyShader, camera.getPosition());
             renderer.render(vampyTransform, vampy, vampyShader, camera);

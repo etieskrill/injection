@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Objects;
 
 import static org.etieskrill.engine.config.ResourcePaths.CUBEMAP_PATH;
+import static org.etieskrill.engine.config.ResourcePaths.TEXTURE_CUBEMAP_PATH;
 import static org.etieskrill.engine.graphics.texture.Textures.NR_BITS_PER_COLOUR_CHANNEL;
 import static org.lwjgl.opengl.GL33C.*;
 import static org.lwjgl.stb.STBImage.stbi_image_free;
@@ -96,7 +97,7 @@ public class CubeMapTexture extends AbstractTexture implements FrameBufferAttach
             }
 
             for (String fileName : sortedFiles) {
-                TextureData data = Textures.loadFileOrDefault(fileName, Type.DIFFUSE);
+                TextureData data = Textures.loadFileOrDefault(TEXTURE_CUBEMAP_PATH + fileName, Type.DIFFUSE);
                 if (format == null) format = data.format();
                 if (data.format() != format)
                     throw new IllegalArgumentException("All textures must have the same colour format");

@@ -7,9 +7,7 @@ import org.joml.Vector3f
 import org.joml.Vector3fc
 import org.lwjgl.BufferUtils.*
 import org.lwjgl.openal.AL
-import org.lwjgl.openal.AL10.*
-import org.lwjgl.openal.AL11.AL_SAMPLE_OFFSET
-import org.lwjgl.openal.AL11.AL_SEC_OFFSET
+import org.lwjgl.openal.AL11.*
 import org.lwjgl.openal.ALC
 import org.lwjgl.openal.ALC10.*
 import org.lwjgl.openal.ALCCapabilities
@@ -63,8 +61,10 @@ private class AudioContext(val handle: Long, val caps: ALCapabilities, val liste
     override fun dispose() = alcDestroyContext(handle)
 }
 
+private typealias AudioBuffer = Int
+
 abstract class AudioSource internal constructor(
-    protected val handle: Int,
+    internal val handle: Int,
     val sampleRate: Int,
     val numSamples: Int,
     val buffer: ShortBuffer?,
@@ -166,6 +166,8 @@ object Audio : Disposable {
         return devices
     }
 
+    private val sources = mutableMapOf<AudioContext, MutableList<AudioSource>>()
+    private val buffers = mutableMapOf<AudioContext, MutableList<AudioBuffer>>()
     private lateinit var currentDevice: AudioDevice
     private val devices: MutableList<AudioDevice> = mutableListOf()
     private lateinit var currentContext: AudioContext
@@ -205,7 +207,7 @@ object Audio : Disposable {
         alSourcei(source, AL_BUFFER, buffer)
         checkError("Failed to bind buffer to source")
 
-        return when (pcmAudio.mode) {
+        val audioSource = when (pcmAudio.mode) {
             AudioMode.MONO -> MonoAudioSource(
                 source,
                 pcmAudio.sampleRate,
@@ -222,6 +224,11 @@ object Audio : Disposable {
 
             else -> error("uh oh")
         }
+
+        sources.getOrPut(currentContext) { mutableListOf() } += audioSource
+        buffers.getOrPut(currentContext) { mutableListOf() } += buffer
+
+        return audioSource
     }
 
     private fun checkInit() {
@@ -237,13 +244,24 @@ object Audio : Disposable {
     }
 
     override fun dispose() {
+        sources.forEach { (context, sources) ->
+            //TODO save context in objects and use direct methods
+            alDeleteSourcesDirect(context.handle, sources.map { it.handle }.toIntArray())
+        }
+        sources.clear()
+
+        buffers.forEach { (context, buffers) ->
+            alDeleteBuffersDirect(context.handle, buffers.toIntArray())
+        }
+        buffers.clear()
+
         alcMakeContextCurrent(0)
 
         defaultContexts.values.forEach { it.dispose() }
-        if (::currentContext.isInitialized) currentContext.dispose()
+        defaultContexts.clear()
 
         devices.forEach { it.dispose() }
-        if (::currentDevice.isInitialized) currentDevice.dispose()
+        devices.clear()
     }
 }
 

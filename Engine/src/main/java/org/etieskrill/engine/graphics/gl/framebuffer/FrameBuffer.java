@@ -18,7 +18,7 @@ import static java.util.Objects.requireNonNull;
 import static org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment.BufferAttachmentType.*;
 import static org.lwjgl.opengl.GL33C.*;
 
-public class FrameBuffer implements Disposable {
+public class FrameBuffer implements io.github.etieskrill.injection.extension.shader.dsl.FrameBuffer, Disposable {
 
     private final int fbo;
     private final @Getter Vector2ic size;
@@ -104,7 +104,17 @@ public class FrameBuffer implements Disposable {
 
             int ret;
             if ((ret = glCheckFramebufferStatus(GL_FRAMEBUFFER)) != GL_FRAMEBUFFER_COMPLETE) {
-                throw new FrameBufferCreationException("Framebuffer was not successfully completed", ret);
+                var message = switch (ret) {
+                    case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT -> "Incomplete attachment";
+                    case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT -> "Missing attachment";
+                    case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER -> "Incomplete draw buffer";
+                    case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER -> "Incomplete read buffer";
+                    case GL_FRAMEBUFFER_UNSUPPORTED -> "Unsupported framebuffer";
+                    case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE -> "Incomplete multisample buffer";
+                    case GL_FRAMEBUFFER_UNDEFINED -> "Undefined framebuffer";
+                    default -> "Unknown framebuffer error: " + ret;
+                };
+                throw new FrameBufferCreationException("Framebuffer was not successfully completed: " + message);
             }
 
             GLUtils.checkErrorThrowing("Error during framebuffer creation");
@@ -131,6 +141,7 @@ public class FrameBuffer implements Disposable {
         BOTH
     }
 
+    @Override
     public void bind() {
         bind(Binding.BOTH);
     }

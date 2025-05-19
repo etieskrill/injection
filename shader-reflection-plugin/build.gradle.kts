@@ -20,6 +20,10 @@ gradlePlugin {
     }
 }
 
+kotlin {
+    jvmToolchain(23)
+}
+
 val kspVersion: String by project
 
 dependencies {

@@ -1,9 +1,9 @@
 package org.etieskrill.engine.scene.component;
 
 import org.etieskrill.engine.graphics.Batch;
-import org.etieskrill.engine.graphics.texture.font.Font;
-import org.etieskrill.engine.graphics.texture.font.Fonts;
-import org.etieskrill.engine.graphics.texture.font.Glyph;
+import org.etieskrill.engine.graphics.text.Font;
+import org.etieskrill.engine.graphics.text.Fonts;
+import org.etieskrill.engine.graphics.text.Glyph;
 import org.etieskrill.engine.input.Key;
 import org.etieskrill.engine.input.Keys;
 import org.jetbrains.annotations.NotNull;

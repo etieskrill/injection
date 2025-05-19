@@ -2,19 +2,19 @@ package org.etieskrill.engine.graphics.gl.renderer;
 
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.graphics.TextRenderer;
-import org.etieskrill.engine.graphics.gl.BufferObject;
 import org.etieskrill.engine.graphics.gl.BufferObject.Frequency;
 import org.etieskrill.engine.graphics.gl.GLUtils;
+import org.etieskrill.engine.graphics.gl.VertexArrayObject;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
-import org.etieskrill.engine.graphics.texture.font.BitmapFont;
-import org.etieskrill.engine.graphics.texture.font.Font;
-import org.etieskrill.engine.graphics.texture.font.Glyph;
+import org.etieskrill.engine.graphics.text.BitmapFont;
+import org.etieskrill.engine.graphics.text.Font;
+import org.etieskrill.engine.graphics.text.Glyph;
 import org.joml.Matrix4fc;
 import org.joml.Vector2f;
 import org.joml.Vector2fc;
-import org.lwjgl.BufferUtils;
 
-import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 import static java.util.Objects.requireNonNullElse;
 import static org.lwjgl.opengl.GL46C.*;
@@ -23,14 +23,17 @@ public class GLTextRenderer extends GLDebuggableRenderer implements TextRenderer
 
     public static final int MAX_BATCH_LENGTH = 1 << 10; //Max text length is 1024 characters per draw call
 
-    private static final int
-            GLYPH_SIZE_BYTES = 2 * Float.BYTES, //TODO pass to buffer object on initialisation
-            GLYPH_POSITION_BYTES = 2 * Float.BYTES,
-            GLYPH_TEXTURE_INDEX_BYTES = Integer.BYTES,
-            GLYPH_TRANSFER_BYTES = GLYPH_SIZE_BYTES + GLYPH_POSITION_BYTES + GLYPH_TEXTURE_INDEX_BYTES;
+    private final List<RenderedGlyph> renderedGlyphs = new ArrayList<>(MAX_BATCH_LENGTH);
+    private final VertexArrayObject<RenderedGlyph> glyphVAO = VertexArrayObject
+            .builder(RenderedGlyphAccessor.getInstance())
+            .numVertexElements((long) MAX_BATCH_LENGTH)
+            .frequency(Frequency.STREAM)
+            .build();
 
-    private final ByteBuffer glyphBuffer =
-            BufferUtils.createByteBuffer(MAX_BATCH_LENGTH * GLYPH_TRANSFER_BYTES);
+    public GLTextRenderer() {
+        for (int i = 0; i < MAX_BATCH_LENGTH; i++)
+            renderedGlyphs.add(new RenderedGlyph());
+    }
 
     @Override
     public void render(String chars, Font font, Vector2fc position, ShaderProgram shader, Matrix4fc combined) {
@@ -49,8 +52,7 @@ public class GLTextRenderer extends GLDebuggableRenderer implements TextRenderer
     }
 
     private void renderBitmap(String chars, BitmapFont font, Vector2fc position, ShaderProgram shader) {
-        glyphBuffer.rewind().limit(chars.length() * GLYPH_TRANSFER_BYTES);
-
+        int renderedGlyphIndex = 0;
         Vector2f pen = new Vector2f(0);
         Vector2f penPosition = new Vector2f();
         for (Glyph glyph : font.getGlyphs(chars)) {
@@ -61,23 +63,39 @@ public class GLTextRenderer extends GLDebuggableRenderer implements TextRenderer
                 }
             }
 
-            glyph.getSize()
-                    .get(glyphBuffer).position(glyphBuffer.position() + GLYPH_SIZE_BYTES);
             penPosition
                     .set(position).add(pen)
-                    .add(glyph.getPosition())
-                    .get(glyphBuffer).position(glyphBuffer.position() + GLYPH_POSITION_BYTES);
-            glyphBuffer.putInt(glyph.getTextureIndex());
+                    .add(glyph.getPosition());
+
+            var renderedGlyph = renderedGlyphs.get(renderedGlyphIndex++);
+            renderedGlyph.getSize().set(glyph.getSize());
+            renderedGlyph.getPosition().set(penPosition);
+            renderedGlyph.setTextureIndex(glyph.getTextureIndex());
+
             pen.add(glyph.getAdvance());
         }
 
-        renderBitmapGlyphs(chars.length(), glyphBuffer, font, shader);
+        renderBitmapGlyphs(chars.length(), renderedGlyphs, font, shader);
         GLUtils.checkError("Error drawing bitmap glyphs");
     }
 
-    private void renderBitmapGlyphs(int numChars, ByteBuffer buffer, BitmapFont font, ShaderProgram shader) {
-        bufferBitmapGlyphs(buffer);
+    private void renderBitmapGlyphs(int numChars, List<RenderedGlyph> renderedGlyphs, BitmapFont font, ShaderProgram shader) {
+        glyphVAO.bind();
+        glyphVAO.setVertices(renderedGlyphs); //TODO have a looksy at how SSBOs work
         shader.setTexture("glyphs", font.getTextures(), false);
+
+        //TODO invert architecture somehow or split general purpose pipeline renderer off and parent all
+//        var glyphPipeline = new Pipeline<>(
+//                glyphVAO,
+//                new PipelineInfo(
+//                        BlendFunction.SOURCE_ALPHA,
+//                        PrimitiveType.POINTS,
+//                        CullingMode.NONE,
+//                        null
+//                ),
+//                shader, null);
+//
+//        renderer.render(glyphPipeline);
 
         glDisable(GL_CULL_FACE);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); //TODO transparency really belongs to a texture, not a model
@@ -88,45 +106,9 @@ public class GLTextRenderer extends GLDebuggableRenderer implements TextRenderer
         renderCalls++;
     }
 
-    private void bufferBitmapGlyphs(ByteBuffer buffer) {
-        //TODO have a looksy at how SSBOs work
-        bindGlyphVAO();
-        glyphVBO.setData(buffer);
-    }
-
-    private int glyphVAO = -1;
-    private BufferObject glyphVBO;
-
-    private void bindGlyphVAO() {
-        if (glyphVAO == -1) {
-            GLUtils.clearError();
-
-            glyphVAO = glCreateVertexArrays();
-            if (glyphVAO == -1)
-                throw new IllegalStateException("Could not initialize vertex array");
-            glBindVertexArray(glyphVAO);
-
-            glyphVBO = BufferObject
-                    .create(glyphBuffer.capacity())
-                    .frequency(Frequency.DYNAMIC)
-                    .build();
-
-            glEnableVertexAttribArray(0);
-            glVertexAttribPointer(0, 2, GL_FLOAT, false, GLYPH_TRANSFER_BYTES, 0L);
-            glEnableVertexAttribArray(1);
-            glVertexAttribPointer(1, 2, GL_FLOAT, false, GLYPH_TRANSFER_BYTES, GLYPH_SIZE_BYTES);
-            glEnableVertexAttribArray(2);
-            glVertexAttribIPointer(2, 1, GL_INT, GLYPH_TRANSFER_BYTES, GLYPH_SIZE_BYTES + GLYPH_POSITION_BYTES);
-            GLUtils.checkErrorThrowing("Failed to set vertex array attributes");
-        }
-
-        glBindVertexArray(glyphVAO);
-    }
-
     @Override
     public void dispose() {
-        glDeleteVertexArrays(glyphVAO);
-        glyphVBO.dispose();
+        glyphVAO.dispose();
     }
 
 }

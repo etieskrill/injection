@@ -25,7 +25,10 @@ interface ShaderVertexData {
     val position: vec4
 }
 
-interface FrameBuffer
+interface FrameBuffer {
+    fun bind()
+}
+
 class RenderTarget(
     vector: vec4,
     var frameBuffer: FrameBuffer? = null,
