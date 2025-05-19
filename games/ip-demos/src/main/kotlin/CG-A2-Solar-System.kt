@@ -27,12 +27,6 @@ fun main() {
 class `CG-A2-Solar-System` : GameApplication(window {
     size = Window.WindowSize.SVGA
 }) {
-    val camera = PerspectiveCamera(window.currentSize).apply {
-        setOrbit(true)
-        setOrbitDistance(15f)
-        setRotation(-30f, 0f, 0f)
-    }
-
     init {
         val shader = SingleColourShader()
         shader.colour = Vector4f(1f, 1f, 0f, 1f)
@@ -78,8 +72,15 @@ class `CG-A2-Solar-System` : GameApplication(window {
                 .withComponent(planet)
         }
 
+        val camera = PerspectiveCamera(window.currentSize).apply {
+            setOrbit(true)
+            setOrbitDistance(15f)
+            setRotation(-30f, 0f, 0f)
+        }
+
         entitySystem.addService(PlanetService(renderer, camera, window.currentSize).apply {
-            this.skybox = CubeMapModel("space")
+            skybox = CubeMapModel("textures/cubemaps/space")
+            blur(false)
         })
 
         window.addCursorInputs(CursorCameraController(camera))
@@ -87,9 +88,7 @@ class `CG-A2-Solar-System` : GameApplication(window {
         window.cursor.disable()
     }
 
-    override fun loop(delta: Double) {
-//        renderer.render(skybox, skyboxShader.shader as ShaderProgram, camera.combined)
-    }
+    override fun loop(delta: Double) {}
 }
 
 data class Planet(
@@ -98,6 +97,7 @@ data class Planet(
     val rotationSpeed: Float,
     val orbitDistance: Float,
     val orbitSpeed: Float,
+    //TODO orbital inclination etc.
 
     val parent: Planet? = null,
 
@@ -105,18 +105,16 @@ data class Planet(
     var orbitAngle: Float = 0f
 )
 
-open class PlanetService(
-    renderer: GLRenderer,
-    val camera: Camera,
-    windowSize: Vector2ic
-) : RenderService(renderer, camera, windowSize) {
+open class PlanetService(renderer: GLRenderer, camera: Camera, windowSize: Vector2ic) :
+    RenderService(renderer, camera, windowSize) {
+
     override fun canProcess(entity: Entity): Boolean {
         return super.canProcess(entity) && entity.hasComponents(Planet::class.java)
     }
 
     override fun process(targetEntity: Entity, entities: List<Entity?>, delta: Double) {
         val enabled = targetEntity.getComponent(Boolean::class.java)
-        if (enabled != null && !enabled) return
+        if (enabled != null && !enabled) return // flag not present -> default to enabled - hence explicit null check
 
         val drawable = targetEntity.getComponent(Drawable::class.java)!!
         if (!drawable.isVisible) return
@@ -151,4 +149,5 @@ open class PlanetService(
             renderer.renderWireframe(transform, drawable.model, shader, camera)
         }
     }
+
 }

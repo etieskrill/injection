@@ -14,8 +14,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-import static org.etieskrill.engine.config.ResourcePaths.CUBEMAP_PATH;
-import static org.etieskrill.engine.config.ResourcePaths.TEXTURE_CUBEMAP_PATH;
 import static org.etieskrill.engine.graphics.texture.Textures.NR_BITS_PER_COLOUR_CHANNEL;
 import static org.lwjgl.opengl.GL33C.*;
 import static org.lwjgl.stb.STBImage.stbi_image_free;
@@ -46,7 +44,7 @@ public class CubeMapTexture extends AbstractTexture implements FrameBufferAttach
             //TODO (for all external/classpath resources) first search in external facility (some folder/s, which is/are
             // specified via config), then fall back to classpath which should contain standard/error resource, then
             // throw exception
-            List<String> cubemapFiles = ResourceReader.getClasspathItems(CUBEMAP_PATH + file).stream()
+            List<String> cubemapFiles = ResourceReader.getClasspathItems(file).stream()
                     .filter(path -> path.endsWith(".png") || path.endsWith(".jpg"))
                     .toList();
 
@@ -91,13 +89,13 @@ public class CubeMapTexture extends AbstractTexture implements FrameBufferAttach
                     continue;
                 }
 
-                logger.info("Could not identify file name for cubemap: " + fileName);
+                logger.info("Could not identify file name for cubemap: {}", fileName);
                 sortedFiles = files;
                 break;
             }
 
             for (String fileName : sortedFiles) {
-                TextureData data = Textures.loadFileOrDefault(TEXTURE_CUBEMAP_PATH + fileName, Type.DIFFUSE);
+                TextureData data = Textures.loadFileOrDefault(fileName, Type.DIFFUSE);
                 if (format == null) format = data.format();
                 if (data.format() != format)
                     throw new IllegalArgumentException("All textures must have the same colour format");

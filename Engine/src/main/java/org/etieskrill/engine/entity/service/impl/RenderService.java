@@ -51,7 +51,7 @@ public class RenderService implements Service, Disposable {
     protected final GLRenderer renderer;
     private final GaussBlurPostBuffers gaussBlurPostBuffers;
     protected final @Getter FrameBuffer frameBuffer;
-    private final Camera camera;
+    protected final Camera camera;
     private @Getter
     @Accessors(fluent = true)
     @Setter Camera cullingCamera;
