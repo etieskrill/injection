@@ -59,11 +59,16 @@ data class PipelineConfig(
     val drawMode: DrawMode = DrawMode.FILL,
     val frontFaceDrawMode: DrawMode = drawMode,
     val backFaceDrawMode: DrawMode = drawMode,
+
+    val pointSize: Float = 1f,
+
+    val lineWidth: Float = 1f,
+    val lineAntiAliasing: Boolean = true,
 )
 
 enum class AlphaMode { OPAQUE, SOURCE_ALPHA }
 
-enum class PrimitiveType { POINTS, TRIANGLES, TRIANGLE_STRIP }
+enum class PrimitiveType { POINTS, LINES, LINE_STRIP, TRIANGLES, TRIANGLE_STRIP }
 
 enum class CullingMode { NONE, BACK, FRONT, FRONT_AND_BACK }
 

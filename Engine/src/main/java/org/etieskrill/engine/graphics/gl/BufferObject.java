@@ -176,7 +176,7 @@ public class BufferObject implements Disposable {
     public ByteBuffer getData() {
         bind();
         glGetBufferSubData(target.gl(), 0, getBuffer().rewind());
-        return buffer;
+        return buffer; //TODO asReadOnlyBuffer?
     }
 
     public void setData(ByteBuffer data) {

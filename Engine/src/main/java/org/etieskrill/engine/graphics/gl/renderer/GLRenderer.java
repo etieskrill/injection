@@ -195,6 +195,8 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
 
         int primitiveType = switch (pipeline.getConfig().getPrimitiveType()) {
             case POINTS -> GL_POINTS;
+            case LINES -> GL_LINES;
+            case LINE_STRIP -> GL_LINE_STRIP;
             case TRIANGLES -> GL_TRIANGLES;
             case TRIANGLE_STRIP -> GL_TRIANGLE_STRIP;
         };
@@ -226,6 +228,15 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
         glPolygonMode(GL_FRONT, toGLPolygonMode(pipeline.getConfig().getFrontFaceDrawMode()));
         glPolygonMode(GL_BACK, toGLPolygonMode(pipeline.getConfig().getBackFaceDrawMode()));
 
+        glPointSize(pipeline.getConfig().getPointSize());
+
+        glLineWidth(pipeline.getConfig().getLineWidth());
+        if (pipeline.getConfig().getLineAntiAliasing()) {
+            glEnable(GL_LINE_SMOOTH);
+        } else {
+            glDisable(GL_LINE_SMOOTH);
+        }
+
         int vertexCount;
 
         if (indexed) {
@@ -235,13 +246,17 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
             if (pipeline.getVao() == null && pipeline.getVertexCount() == null) {
                 throw new IllegalStateException("Pipeline without vertex array object must have vertex count set");
             }
-            vertexCount = pipeline.getVertexCount();
+            if (pipeline.getVao() != null) {
+                vertexCount = pipeline.getVao().getVertexBuffer().getSize();
+            } else {
+                vertexCount = pipeline.getVertexCount();
+            }
             glDrawArrays(primitiveType, 0, vertexCount);
         }
 
         renderCalls++;
         trianglesDrawn += switch (pipeline.getConfig().getPrimitiveType()) {
-            case POINTS -> 0;
+            case POINTS, LINES, LINE_STRIP -> 0;
             case TRIANGLES -> vertexCount / 3;
             case TRIANGLE_STRIP -> vertexCount - 2;
         };

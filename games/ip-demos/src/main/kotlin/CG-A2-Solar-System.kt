@@ -1,3 +1,10 @@
+import io.github.etieskrill.injection.extension.shader.dsl.RenderTarget
+import io.github.etieskrill.injection.extension.shader.dsl.ShaderBuilder
+import io.github.etieskrill.injection.extension.shader.dsl.ShaderVertexData
+import io.github.etieskrill.injection.extension.shader.dsl.rt
+import io.github.etieskrill.injection.extension.shader.mat4
+import io.github.etieskrill.injection.extension.shader.vec3
+import io.github.etieskrill.injection.extension.shader.vec4
 import org.etieskrill.engine.application.GameApplication
 import org.etieskrill.engine.entity.Entity
 import org.etieskrill.engine.entity.component.Drawable
@@ -5,18 +12,27 @@ import org.etieskrill.engine.entity.component.Transform
 import org.etieskrill.engine.entity.service.impl.RenderService
 import org.etieskrill.engine.graphics.camera.Camera
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera
+import org.etieskrill.engine.graphics.gl.VertexArrayAccessor
+import org.etieskrill.engine.graphics.gl.VertexArrayObject
 import org.etieskrill.engine.graphics.gl.renderer.GLRenderer
+import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
 import org.etieskrill.engine.graphics.gl.shader.impl.SingleColourShader
 import org.etieskrill.engine.graphics.gl.shader.impl.colour
 import org.etieskrill.engine.graphics.model.CubeMapModel
 import org.etieskrill.engine.graphics.model.model
 import org.etieskrill.engine.graphics.model.sphere
+import org.etieskrill.engine.graphics.pipeline.Pipeline
+import org.etieskrill.engine.graphics.pipeline.PipelineConfig
+import org.etieskrill.engine.graphics.pipeline.PrimitiveType
 import org.etieskrill.engine.input.controller.CursorCameraController
+import org.etieskrill.engine.util.FixedArrayDeque
 import org.etieskrill.engine.window.Window
 import org.etieskrill.engine.window.window
 import org.joml.Vector2ic
 import org.joml.Vector3f
+import org.joml.Vector3fc
 import org.joml.Vector4f
+import org.lwjgl.opengl.GL11C.glLineWidth
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -61,7 +77,8 @@ class `CG-A2-Solar-System` : GameApplication(window {
             colour = Vector4f(0f, 0.5f, 1f, 1f),
             rotationSpeed = 25f,
             orbitDistance = 6f,
-            orbitSpeed = 0.2f
+            orbitSpeed = 0.2f,
+            parent = sun
         )
         val planets = listOf(sun, vole, io, callisto)
 
@@ -102,11 +119,26 @@ data class Planet(
     val parent: Planet? = null,
 
     var rotation: Float = 0f,
-    var orbitAngle: Float = 0f
+    var orbitAngle: Float = 0f,
+
+    internal val previousPositions: FixedArrayDeque<Vector3fc> = FixedArrayDeque(1000),
+    internal val trailVAO: VertexArrayObject<Vector3fc> = VertexArrayObject
+        .builder(Vector3fcAccessor)
+        .numVertexElements(1000)
+        .build(),
+    internal var trailPipeline: Pipeline<TrailShader>? = null
 )
+
+private object Vector3fcAccessor : VertexArrayAccessor<Vector3fc>() {
+    override fun registerFields() {
+        addField(Vector3fc::class.java) { vec3, buffer -> vec3.get(buffer) }
+    }
+}
 
 open class PlanetService(renderer: GLRenderer, camera: Camera, windowSize: Vector2ic) :
     RenderService(renderer, camera, windowSize) {
+
+    private val trailShader = TrailShader()
 
     override fun canProcess(entity: Entity): Boolean {
         return super.canProcess(entity) && entity.hasComponents(Planet::class.java)
@@ -141,8 +173,31 @@ open class PlanetService(renderer: GLRenderer, camera: Camera, windowSize: Vecto
         }
         transform.setPosition(orbitPosition)
 
+        if (!planet.previousPositions.isFull) planet.previousPositions.fill(orbitPosition)
+        planet.previousPositions += orbitPosition
+        planet.trailVAO.setVertices(planet.previousPositions)
+
+        if (planet.trailPipeline == null) {
+            planet.trailPipeline = Pipeline(
+                planet.trailVAO,
+                PipelineConfig(
+                    primitiveType = PrimitiveType.LINE_STRIP,
+                    lineWidth = planet.size.let { x -> -2 / (x + 1) + 3 }
+                ),
+                trailShader,
+                frameBuffer
+            )
+        }
+
+        trailShader.colour = planet.colour
+        trailShader.combined = camera.combined
+
+        renderer.render(planet.trailPipeline)
+
+        frameBuffer.bind()
         val shader = getConfiguredShader(targetEntity, drawable)
         shader.setUniform("colour", planet.colour, false)
+        glLineWidth(1f)
         if (!drawable.isDrawWireframe) {
             renderer.render(transform, drawable.model, shader, camera)
         } else {
@@ -150,4 +205,21 @@ open class PlanetService(renderer: GLRenderer, camera: Camera, windowSize: Vecto
         }
     }
 
+}
+
+class TrailShader : ShaderBuilder<TrailShader.VertexAttributes, TrailShader.Vertex, TrailShader.RenderTargets>(
+    object : ShaderProgram(listOf("Trail.glsl")) {}
+) {
+    data class VertexAttributes(val position: vec3)
+    data class Vertex(override val position: vec4) : ShaderVertexData
+    data class RenderTargets(val fragColour: RenderTarget)
+
+    var colour by uniform<vec4>()
+
+    var combined by uniform<mat4>()
+
+    override fun program() {
+        vertex { Vertex(combined * vec4(it.position, 1.0)) }
+        fragment { RenderTargets(colour.rt) }
+    }
 }

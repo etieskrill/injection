@@ -1,5 +1,6 @@
 package org.etieskrill.engine.util;
 
+import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayDeque;
@@ -15,23 +16,23 @@ import java.util.Collection;
  */
 public class FixedArrayDeque<E> extends ArrayDeque<E> {
 
-    private final int size;
+    private final @Getter int capacity;
 
     public FixedArrayDeque(int numElements) {
         super(numElements);
-        this.size = numElements;
+        this.capacity = numElements;
     }
 
     @Override
     public void addFirst(@NotNull E e) {
-        if (size() > 0 && size() >= size)
+        if (size() > 0 && size() >= capacity)
             super.removeLast();
         super.addFirst(e);
     }
 
     @Override
     public void addLast(@NotNull E e) {
-        if (size() > 0 && size() >= size)
+        if (size() > 0 && size() >= capacity)
             super.removeFirst();
         super.addLast(e);
     }
@@ -41,4 +42,13 @@ public class FixedArrayDeque<E> extends ArrayDeque<E> {
         for (E element : c) addFirst(element);
         return true;
     }
+
+    public boolean isFull() {
+        return size() == capacity;
+    }
+
+    public void fill(E e) {
+        for (int i = 0; i <= capacity; i++) push(e);
+    }
+
 }
