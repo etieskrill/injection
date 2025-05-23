@@ -135,6 +135,7 @@ private data class TranspilerData(
     val evaluatedFunctions: Map<String, List<KCallable<*>>>,
     val templateFunctions: Map<String, Map<List<String>, String>>,
     val vertexDataStructName: String,
+    val renderTargetNames: Map<String, String>,
     val uniforms: Set<String>,
     var stage: ShaderStage = NONE,
     var operatorStack: MutableList<OperatorType> = mutableListOf(), //TODO remove brackets where neighboring operators are same or less binding
@@ -161,6 +162,7 @@ internal fun generateGlsl(
         programData.evaluatedFunctions,
         programData.templateFunctions,
         programData.vertexDataStructName,
+        programData.renderTargets,
         programData.uniforms.keys
     )
 
@@ -245,7 +247,7 @@ internal fun generateGlsl(
     }
 
     programData.renderTargets.forEach {
-        appendLine(generateStatement(GlslStorageQualifier.OUT, "vec4", it))
+        appendLine(generateStatement(GlslStorageQualifier.OUT, "vec4", it.value))
     }
     newline()
 
@@ -767,7 +769,7 @@ private class GlslReturnTranspiler(val root: GlslTranspiler) : IrVisitor<String,
                         }
                     }
 
-                    FRAGMENT -> "$param = $expression;"
+                    FRAGMENT -> "${data.renderTargetNames[param]} = $expression;"
                     else -> TODO("Constructor return call not implemented for stage ${data.stage}")
                 }
             }

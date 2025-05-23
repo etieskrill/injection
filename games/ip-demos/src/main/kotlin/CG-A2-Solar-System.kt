@@ -212,7 +212,7 @@ class TrailShader : ShaderBuilder<TrailShader.VertexAttributes, TrailShader.Vert
 ) {
     data class VertexAttributes(val position: vec3)
     data class Vertex(override val position: vec4) : ShaderVertexData
-    data class RenderTargets(val fragColour: RenderTarget)
+    data class RenderTargets(val colour: RenderTarget)
 
     var colour by uniform<vec4>()
 

@@ -193,9 +193,24 @@ internal class IrShaderGenerationExtension(
                 }
         }
 
+        val uniforms = shader.getDelegatedProperties<UniformDelegate<*>, GlslType>(
+            messageCollector,
+            shader.file
+        ) { property ->
+            property.name.asString() to property.backingField?.type?.let { type ->
+                when (type) {
+                    is IrSimpleType -> requireNotNull(type.arguments[0].typeOrFail.glslType)
+                    { "Shader uniforms may only be of GLSL primitive type: ${type.arguments[0].typeOrFail.simpleName} is not" } //TODO i just assume the delegate's type is always first
+                    else -> error("Unexpected type: $this")
+                }
+            }!!
+        }
+
+        val file = files[shader]!!
+
         val data = VisitorData(
             programParent = shader,
-            file = files[shader]!!,
+            file = file,
             vertexAttributes = types.vertexAttributesType.getGlslFields(),
             vertexDataStructType = types.vertexDataType.name.asString(),
             vertexDataStructName = "vertex",
@@ -204,38 +219,42 @@ internal class IrShaderGenerationExtension(
                     it,
                     { !isVar },
                     "Vertex data struct may only have val members: ${it.name.asString()} is var",
-                    files[shader]!!
+                    file
                 )
                 it.name.asString() != POSITION_FIELD_NAME
             },
-            renderTargets = types.renderTargetsType.getGlslFields {
+            renderTargets = types.renderTargetsType.properties.onEach {
                 requireToCompile(
                     it,
                     { !isVar },
                     "Render target struct may only have val members: ${it.name.asString()} is var",
-                    files[shader]!!
+                    file
                 )
                 requireToCompile(
                     it,
                     { backingField!!.type.equals<RenderTarget>() },
                     "Render target struct may only have members of type RenderTarget: ${it.name.asString()} is ${it.backingField!!.type.simpleName}",
-                    files[shader]!!
+                    file
                 )
-                true
-            }.keys.toList(),
+            }.map {
+                val name = it.name.asString()
+
+                val finalName = if (name in uniforms) {
+                    val altName = "${name}RenderTarget"
+                    if (altName in uniforms)
+                        messageCollector.compilerError(
+                            "Why is there a uniform named $name AND one named $altName? " +
+                                    "(render target alias to evade $name collides with $altName)", it, file
+                        )
+                    altName
+                } else {
+                    name
+                }
+
+                name to finalName
+            }.toMap(),
             constants = constDeclarations,
-            uniforms = shader.getDelegatedProperties<UniformDelegate<*>, GlslType>(
-                messageCollector,
-                shader.file
-            ) { property ->
-                property.name.asString() to property.backingField?.type?.let { type ->
-                    when (type) {
-                        is IrSimpleType -> requireNotNull(type.arguments[0].typeOrFail.glslType)
-                        { "Shader uniforms may only be of GLSL primitive type: ${type.arguments[0].typeOrFail.simpleName} is not" } //TODO i just assume the delegate's type is always first
-                        else -> error("Unexpected type: $this")
-                    }
-                }!!
-            },
+            uniforms = uniforms,
             definedFunctions = shader.declarations
                 .filterIsInstanceAnd<IrFunctionImpl> { it.name.asString() != "program" } //impl because exact type is needed
                 .onEach { check(it.typeParameters.isEmpty()) { "Shader functions may not have type parameters, but this one does:\n${it.render()}" } }
@@ -424,7 +443,7 @@ internal data class VisitorData(
     val vertexDataStructName: String,
     val vertexDataStruct: Map<String, GlslType>,
 
-    val renderTargets: List<String>,
+    val renderTargets: Map<String, String>, //may be alias on collision as class is unwrapped
 
     val constants: Map<String, GlslTypeInitialiser>,
 
