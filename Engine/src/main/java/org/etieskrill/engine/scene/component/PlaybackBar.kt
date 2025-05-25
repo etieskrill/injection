@@ -66,24 +66,28 @@ class PlaybackBar(
     var pauseAction: () -> Unit = {}
     var stopAction: () -> Unit = {}
 
-    private val playButton = Button(Image(/*"textures/"*/"icons/play-button-black.png").setSize(Vector2f(32f))).apply {
-        setSize(Vector2f(32f))
+    private val playButton = Button(
+        Image(/*"textures/"*/"icons/play-button-black.png").apply { size = Vector2f(32f) }
+    ).apply {
+        size = Vector2f(32f)
         setAction { state = State.PLAYING }
     }
     private val pauseButton =
-        Button(Image(/*"textures/"*/"icons/pause-button-black.png").setSize(Vector2f(32f))).apply {
-            setSize(Vector2f(32f))
+        Button(Image(/*"textures/"*/"icons/pause-button-black.png").apply { size = Vector2f(32f) }).apply {
+            size = Vector2f(32f)
             setAction { state = State.PAUSED }
         }
-    private val stopButton = Button(Image(/*"textures/"*/"icons/stop-button-black.png").setSize(Vector2f(32f))).apply {
-        setSize(Vector2f(32f))
+    private val stopButton = Button(
+        Image(/*"textures/"*/"icons/stop-button-black.png").apply { size = Vector2f(32f) }
+    ).apply {
+        size = Vector2f(32f)
         setAction { state = State.STOPPED }
     }
     private val progressBar = Slider(0f, 0f, 1f).apply {
-        setSize(Vector2f(500f, 15f))
+        size = Vector2f(500f, 15f)
         margin = Vector4f(5f)
 
-        action = {
+        this.action = {
             time = totalDuration * it.toDouble()
             this@PlaybackBar.action(time)
         }

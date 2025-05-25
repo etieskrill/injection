@@ -9,6 +9,7 @@ import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.etieskrill.engine.graphics.text.BitmapFont;
 import org.etieskrill.engine.graphics.text.Font;
 import org.etieskrill.engine.graphics.text.Glyph;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4fc;
 import org.joml.Vector2f;
 import org.joml.Vector2fc;
@@ -36,7 +37,20 @@ public class GLTextRenderer extends GLDebuggableRenderer implements TextRenderer
     }
 
     @Override
-    public void render(String chars, Font font, Vector2fc position, ShaderProgram shader, Matrix4fc combined) {
+    public void render(String chars, Font font, Vector2fc position, ShaderProgram shader, Matrix4fc combined, @Nullable Vector2f cursorPosition) {
+        render(chars, font, position, null, shader, combined, cursorPosition);
+    }
+
+    @Override
+    public void render(
+            String chars,
+            Font font,
+            Vector2fc position,
+            @Nullable Vector2fc size,
+            ShaderProgram shader,
+            Matrix4fc combined,
+            @Nullable Vector2f cursorPosition
+    ) {
         GLUtils.clearError();
 
         //can also be started just before rendering... but without it, a previously used shader is bound sometimes,
@@ -46,12 +60,22 @@ public class GLTextRenderer extends GLDebuggableRenderer implements TextRenderer
         shader.setUniform("combined", combined, false);
         shader.setUniform("glyphTextureSize", new Vector2f(font.getPixelSize()), false);
 
-        if (font instanceof BitmapFont bitmapFont) renderBitmap(chars, bitmapFont, position, shader);
+        if (font instanceof BitmapFont bitmapFont)
+            renderBitmap(chars, bitmapFont, position, size, shader, cursorPosition);
         else throw new UnsupportedOperationException( //TODO ttf
                 "Rendering font of type " + font.getClass().getSimpleName() + " is currently not supported");
+
+        GLUtils.checkError("Error drawing glyphs");
     }
 
-    private void renderBitmap(String chars, BitmapFont font, Vector2fc position, ShaderProgram shader) {
+    private void renderBitmap(
+            String chars,
+            BitmapFont font,
+            Vector2fc position,
+            @Nullable Vector2fc size,
+            ShaderProgram shader,
+            @Nullable Vector2f cursorPosition
+    ) {
         int renderedGlyphIndex = 0;
         Vector2f pen = new Vector2f(0);
         Vector2f penPosition = new Vector2f();
@@ -60,6 +84,12 @@ public class GLTextRenderer extends GLDebuggableRenderer implements TextRenderer
                 case '\n' -> {
                     pen.set(0, pen.y() + font.getLineHeight());
                     continue;
+                }
+                default -> {
+                    //TODO this is only the most primitive of wrapping; maybe add wrap mode enum? callback, even?
+                    if (size != null && (pen.x + glyph.getAdvance().x() > size.x())) { //special chars probably shouldn't get wrapped, right?
+                        pen.set(0, pen.y + font.getLineHeight());
+                    }
                 }
             }
 
@@ -75,8 +105,9 @@ public class GLTextRenderer extends GLDebuggableRenderer implements TextRenderer
             pen.add(glyph.getAdvance());
         }
 
+        if (cursorPosition != null) cursorPosition.set(pen);
+
         renderBitmapGlyphs(chars.length(), renderedGlyphs, font, shader);
-        GLUtils.checkError("Error drawing bitmap glyphs");
     }
 
     private void renderBitmapGlyphs(int numChars, List<RenderedGlyph> renderedGlyphs, BitmapFont font, ShaderProgram shader) {

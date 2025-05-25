@@ -33,7 +33,7 @@ class Slider(
         )
     }
 
-    override fun hit(button: Key?, action: Keys.Action?, posX: Double, posY: Double): Boolean {
+    override fun handleHit(button: Key, action: Keys.Action, posX: Double, posY: Double): Boolean {
         if (!doesHit(posX, posY)) return false
 
         if (button == Keys.LEFT_MOUSE.input && action == Keys.Action.RELEASE) {

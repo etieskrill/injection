@@ -6,7 +6,6 @@ import org.etieskrill.engine.input.Keys;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
-import org.joml.Vector4f;
 
 import static java.util.Objects.requireNonNull;
 import static org.etieskrill.engine.scene.component.LayoutUtils.getPreferredNodePosition;
@@ -37,29 +36,32 @@ public class Container extends Node<Container> {
 
     @Override
     public void render(@NotNull Batch batch) {
-        if (renderedColour.w != 0) batch.renderBox(
+        if (getRenderedColour().w != 0) batch.renderBox(
                 new Vector3f(getPosition(), 0),
                 new Vector3f(getSize(), 0),
-                renderedColour
+                getRenderedColour()
         );
         if (child != null) child.render(batch);
     }
 
     public void setChild(@NotNull Node<?> child) {
         invalidate();
-        this.child = requireNonNull(child).setParent(this);
-    }
-
-    public void setColour(@Nullable Vector4f colour) {
-        this.colour = colour;
-        if (colour != null) this.renderedColour.set(colour);
+        requireNonNull(child).setParent(this);
+        this.child = child;
     }
 
     @Override
-    public boolean hit(Key button, Keys.Action action, double posX, double posY) {
+    public boolean handleHit(@NotNull Key button, Keys.@NotNull Action action, double posX, double posY) {
         if (!doesHit(posX, posY)) return false;
         if (child == null) return false;
-        return child.hit(button, action, posX, posY); //container itself is not hittable
+        return child.handleHit(button, action, posX, posY); //container itself is not hittable
+    }
+
+    @Override
+    public boolean handleDrag(double deltaX, double deltaY, double posX, double posY) {
+        if (!doesHit(posX, posY)) return false;
+        if (child == null) return false;
+        return child.handleDrag(deltaX, deltaY, posX, posY);
     }
 
 }

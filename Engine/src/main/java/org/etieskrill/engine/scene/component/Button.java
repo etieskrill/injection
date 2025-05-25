@@ -24,12 +24,12 @@ public class Button extends Container {
         super(child);
     }
 
-    public void setAction(@NotNull SimpleAction action) {
+    public void setAction(@NotNull SimpleAction action) { //plz no remove kotlin needs this
         this.action = action;
     }
 
     @Override
-    public boolean hit(Key button, Keys.Action action, double posX, double posY) {
+    public boolean handleHit(@NotNull Key button, Keys.@NotNull Action action, double posX, double posY) {
         if (!enabled || !doesHit(posX, posY)) return false;
         if (this.action != null && action == Keys.Action.RELEASE && button.equals(Keys.LEFT_MOUSE.getInput())) {
             this.action.run();
@@ -40,14 +40,14 @@ public class Button extends Container {
 
     public void enable() {
         enabled = true;
-        renderedColour.set(colour);
-        if (child != null) child.renderedColour.set(child.colour);
+        getRenderedColour().set(getColour());
+        if (child != null) child.getRenderedColour().set(child.getColour());
     }
 
     public void disable() {
         enabled = false;
-        renderedColour.set(colour).mul(0.75f);
-        if (child != null) child.renderedColour.set(child.colour).mul(0.75f);
+        getRenderedColour().set(getColour()).mul(0.75f);
+        if (child != null) child.getRenderedColour().set(child.getColour()).mul(0.75f);
     }
 
 }

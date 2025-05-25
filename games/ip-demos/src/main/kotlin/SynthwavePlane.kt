@@ -133,7 +133,7 @@ class SynthwavePlane : GameApplication(window {
             scaleMode = HistogramScaleMode.FIXED,
             maxValue = 3000000f,
             drawSeparators = false
-        ).setSize(Vector2f(600f, 200f))
+        ).apply { size = Vector2f(600f, 200f) }
         playbackBar = PlaybackBar(audioSource.duration).apply {
             alignment = Node.Alignment.BOTTOM
             size = Vector2f(700f, 40f)
@@ -157,7 +157,7 @@ class SynthwavePlane : GameApplication(window {
                 fpsLabel,
                 fftGraph,
                 playbackBar
-            ).setSize(Vector2f(600f, 500f)),
+            ).apply { size = Vector2f(600f, 500f) },
             OrthographicCamera(window.currentSize)
         )
     }

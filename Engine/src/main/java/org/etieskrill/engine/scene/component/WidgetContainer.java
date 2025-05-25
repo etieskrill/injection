@@ -56,14 +56,14 @@ public class WidgetContainer extends Node<WidgetContainer> {
 
         if (collapsed) {
             if (actualSize.equals(-1, -1))
-                size.set(child.size.x, WIDGET_BAR_HEIGHT);
+                getSize().set(child.getSize().x, WIDGET_BAR_HEIGHT);
             else
-                size.set(actualSize.x, WIDGET_BAR_HEIGHT);
+                getSize().set(actualSize.x, WIDGET_BAR_HEIGHT);
         } else {
             if (actualSize.equals(-1, -1))
-                size.set(child.size).add(0, WIDGET_BAR_HEIGHT);
+                getSize().set(child.getSize()).add(0, WIDGET_BAR_HEIGHT);
             else
-                size.set(actualSize.x, actualSize.y + WIDGET_BAR_HEIGHT);
+                getSize().set(actualSize.x, actualSize.y + WIDGET_BAR_HEIGHT);
 
             child.format();
             child.setPosition(getPreferredNodePosition(getSize(), child).add(0, WIDGET_BAR_HEIGHT));
@@ -87,10 +87,10 @@ public class WidgetContainer extends Node<WidgetContainer> {
         }
 
         if (!collapsed) {
-            if (renderedColour.w != 0) batch.renderBox(
+            if (getRenderedColour().w != 0) batch.renderBox(
                     new Vector3f(position, 0),
                     new Vector3f(getSize(), 0),
-                    renderedColour
+                    getRenderedColour()
             );
             if (child != null) child.render(batch);
         }
@@ -98,17 +98,12 @@ public class WidgetContainer extends Node<WidgetContainer> {
 
     public void setChild(@NotNull Node<?> child) {
         invalidate();
-        this.child = requireNonNull(child).setParent(this);
-    }
-
-    public WidgetContainer setSize(@NotNull Vector2f size) {
-        actualSize.set(requireNonNull(size));
-        invalidate();
-        return this;
+        requireNonNull(child).setParent(this);
+        this.child = child;
     }
 
     @Override
-    public boolean hit(Key button, Keys.Action action, double posX, double posY) {
+    public boolean handleHit(@NotNull Key button, Keys.@NotNull Action action, double posX, double posY) {
         if (!doesHit(posX, posY)) return false;
 
         var position = getAbsolutePosition();
@@ -116,10 +111,11 @@ public class WidgetContainer extends Node<WidgetContainer> {
             && posX > position.x && posX <= position.x + WIDGET_BAR_HEIGHT
             && posY > position.y && posY <= position.y + WIDGET_BAR_HEIGHT) {
             setCollapsed(!collapsed);
+            requestFocus(); //any reason for a resetFocus instead?
             return true;
         }
 
-        return child.hit(button, action, posX, posY); //container itself is not hittable
+        return child.handleHit(button, action, posX, posY); //container itself is not hittable
     }
 
     public void setCollapsed(boolean collapsed) {
@@ -128,7 +124,7 @@ public class WidgetContainer extends Node<WidgetContainer> {
     }
 
     @Override
-    public boolean drag(double deltaX, double deltaY, double posX, double posY) {
+    public boolean handleDrag(double deltaX, double deltaY, double posX, double posY) {
         if (getAlignment() != Alignment.FIXED_POSITION) return false;
 
         if (!doesHit(posX, posY)) return false;

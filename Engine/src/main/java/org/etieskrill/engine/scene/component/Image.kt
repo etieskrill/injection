@@ -9,7 +9,7 @@ class Image(texturePath: String) : Node<Image>() {
     private val texture = Textures.ofFile(texturePath)
 
     init {
-        setColour(Vector4f(1f, 1f, 1f, 1f))
+        colour = Vector4f(1f, 1f, 1f, 1f)
     }
 
     override fun render(batch: Batch) {

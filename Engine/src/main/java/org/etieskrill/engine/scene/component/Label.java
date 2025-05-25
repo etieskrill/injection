@@ -62,7 +62,7 @@ public class Label extends Node {
     }
 
     @Override
-    public boolean hit(Key button, Keys.Action action, double posX, double posY) {
+    public boolean handleHit(Key button, Keys.Action action, double posX, double posY) {
         return false;
     }
 

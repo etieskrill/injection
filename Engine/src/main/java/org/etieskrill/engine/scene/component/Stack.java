@@ -52,17 +52,24 @@ public class Stack extends Node<Stack> {
     }
 
     public Stack addChildren(@NotNull Node<?>... children) {
-        List.of(children).forEach(child -> this.children.add(child.setParent(this)));
+        List.of(children).forEach(child -> {
+            child.setParent(this);
+            this.children.add(child);
+        });
         return this;
     }
 
     public Stack setChild(int index, @NotNull Node<?> child) {
-        this.children.set(index, child.setParent(this));
+        child.setParent(this);
+        this.children.set(index, child);
         return this;
     }
 
     public Stack removeChildren(@NotNull Node<?>... children) {
-        List.of(children).forEach(child -> this.children.remove(child.setParent(null)));
+        List.of(children).forEach(child -> {
+            child.setParent(null);
+            this.children.remove(child);
+        });
         return this;
     }
 
@@ -73,18 +80,21 @@ public class Stack extends Node<Stack> {
     }
 
     @Override
-    public boolean hit(Key button, Keys.Action action, double posX, double posY) {
+    public boolean handleHit(@NotNull Key button, Keys.@NotNull Action action, double posX, double posY) {
         if (!doesHit(posX, posY)) return false;
-        for (Node<?> child : children)
-            if (child.hit(button, action, posX, posY)) return true;
+        for (Node<?> child : children) {
+            if (child.handleHit(button, action, posX, posY)) {
+                return true;
+            }
+        }
         return false;
     }
 
     @Override
-    public boolean drag(double deltaX, double deltaY, double posX, double posY) {
+    public boolean handleDrag(double deltaX, double deltaY, double posX, double posY) {
         if (!doesHit(posX, posY)) return false;
         for (Node<?> child : children)
-            if (child.drag(deltaX, deltaY, posX, posY)) return true;
+            if (child.handleDrag(deltaX, deltaY, posX, posY)) return true;
         return false;
     }
 

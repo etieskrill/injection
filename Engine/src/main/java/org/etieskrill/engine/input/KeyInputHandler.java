@@ -8,5 +8,9 @@ public interface KeyInputHandler {
 
     //TODO type is probably useless, remove, and use enum types via lookups
     boolean invoke(Key.Type type, int key, int action, int modifiers);
-    
+
+    default boolean invokeCharacter(char character) {
+        return false;
+    }
+
 }

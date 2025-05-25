@@ -62,7 +62,29 @@ public class Batch {
     }
 
     public void renderText(String text, Font font, Vector2fc position) {
-        textRenderer.render(text, font, position, textShader, combined);
+        renderText(text, font, position, null);
+    }
+
+    /**
+     * @param cursorPosition will be set to the relative cursor position after rendering the text
+     */
+    public void renderText(String text, Font font, Vector2fc position, @Nullable Vector2f cursorPosition) {
+        textRenderer.render(text, font, position, textShader, combined, cursorPosition);
+    }
+
+    /**
+     * @param size the borders of the text field, after which the text will be wrapped
+     */
+    public void renderText(String text, Font font, Vector2fc position, Vector2fc size) {
+        renderText(text, font, position, size, null);
+    }
+
+    /**
+     * @param size           the borders of the text field, after which the text will be wrapped
+     * @param cursorPosition will be set to the relative cursor position after rendering the text
+     */
+    public void renderText(String text, Font font, Vector2fc position, Vector2fc size, @Nullable Vector2f cursorPosition) {
+        textRenderer.render(text, font, position, size, textShader, combined, cursorPosition);
     }
 
     private int dummyVAO = -1;

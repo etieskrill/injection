@@ -252,12 +252,12 @@ public class Window implements Disposable {
 
     @Builder(setterPrefix = "set")
     private Window( //TODO container classes for init/static/dynamic settings
-            WindowMode mode,
-            WindowSize size, Vector2fc position,
+                    WindowMode mode,
+                    WindowSize size, Vector2fc position,
                     float refreshRate, boolean vSyncEnabled, Integer samples, boolean resizeable,
-            String title,
-            Cursor cursor,
-            List<KeyInputHandler> keyInputs,
+                    String title,
+                    Cursor cursor,
+                    List<KeyInputHandler> keyInputs,
                     List<CursorInputHandler> cursorInputs,
                     boolean createHidden, boolean transparency
     ) {
@@ -271,7 +271,7 @@ public class Window implements Disposable {
         this.title = title;
 
         if (keyInputs.stream().anyMatch(Objects::isNull)
-                || cursorInputs.stream().anyMatch(Objects::isNull)) {
+            || cursorInputs.stream().anyMatch(Objects::isNull)) {
             throw new IllegalArgumentException("Input handlers must not contain null entries");
         }
         this.keyInputs = keyInputs;
@@ -378,11 +378,19 @@ public class Window implements Disposable {
             glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
         }
 
-        glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
-            if (window == this.window) {
-                keyInputs.forEach(keyInputHandlers ->
-                        keyInputHandlers.invoke(Key.Type.KEYBOARD, key, action, mods));
-            }
+        glfwSetKeyCallback(window, (window, key, _, action, mods) -> {
+            if (window != this.window) return;
+            keyInputs.forEach(keyInputHandler ->
+                    keyInputHandler.invoke(Key.Type.KEYBOARD, key, action, mods)
+            );
+            if (scene != null) scene.invoke(Key.Type.KEYBOARD, key, action, mods);
+        });
+        glfwSetCharCallback(window, (window, scancode) -> {
+            if (window != this.window) return;
+            keyInputs.forEach(keyInputHandler ->
+                    keyInputHandler.invokeCharacter((char) scancode)
+            );
+            if (scene != null) scene.invokeCharacter((char) scancode);
         });
         final double[] posX = new double[1], posY = new double[1];
         glfwSetMouseButtonCallback(window, (window, button, action, glfwMods) -> {
@@ -599,7 +607,7 @@ public class Window implements Disposable {
         if (error != NO_ERROR) {
             throw new IllegalStateException(
                     header != null ? header + ":\n" : "GLFW error occurred:\n"
-                            + error.toString() + " " + memUTF8(description.get())
+                                                      + error.toString() + " " + memUTF8(description.get())
             );
         }
     }
@@ -651,14 +659,14 @@ public class Window implements Disposable {
     @Override
     public String toString() {
         return "Window{" +
-                "mode=" + mode +
-                ", size=" + size +
-                ", targetFrameRate=" + targetFrameRate +
-                ", vSyncEnabled=" + vSyncEnabled +
-                ", samples=" + samples +
-                ", title='" + title + '\'' +
-                ", scene=" + scene +
-                '}';
+               "mode=" + mode +
+               ", size=" + size +
+               ", targetFrameRate=" + targetFrameRate +
+               ", vSyncEnabled=" + vSyncEnabled +
+               ", samples=" + samples +
+               ", title='" + title + '\'' +
+               ", scene=" + scene +
+               '}';
     }
 
 }
