@@ -14,7 +14,7 @@ import org.etieskrill.engine.graphics.data.PointLight
 import org.etieskrill.engine.graphics.gl.framebuffer.DirectionalShadowMap
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
 import org.etieskrill.engine.graphics.gl.shader.UniformMappable
-import org.etieskrill.engine.graphics.gl.shader.impl.BlitShader
+import org.etieskrill.engine.graphics.gl.shader.impl.BlitDepthShader
 import org.etieskrill.engine.graphics.gl.shader.impl.StaticShader
 import org.etieskrill.engine.graphics.gl.shader.impl.globalLights
 import org.etieskrill.engine.graphics.gl.shader.impl.lights
@@ -27,9 +27,7 @@ import org.etieskrill.engine.window.window
 import org.joml.Vector2f
 import org.joml.Vector2i
 import org.joml.Vector3f
-import org.lwjgl.opengl.GL11C.*
-import org.lwjgl.opengl.GL30C.glBindVertexArray
-import org.lwjgl.opengl.GL30C.glGenVertexArrays
+import org.lwjgl.opengl.GL30C.*
 
 fun main() {
     App().run()
@@ -41,7 +39,7 @@ class App : GameApplication(window {
 }) {
 
     private lateinit var shadowMap: DirectionalShadowMap
-    private val blitShader = BlitShader()
+    private val blitShadowShader = BlitDepthShader()
 
     override fun init() {
         val shipModel = Loaders.ModelLoader.get().load("human-bb") { Model.ofFile("hooman-bb.glb") }
@@ -78,16 +76,17 @@ class App : GameApplication(window {
                 shadowMap,
                 OrthographicCamera(Vector2i(1024), 20f, -20f, -20f, 20f).apply {
                     // FIXME i hate myself
-//                    setOrbit(true)
-//                    setOrbitDistance(10f)
-//                    setRotation(0f, 0f, 0f)
-                    setPosition(Vector3f(10f))
-                    setRotation(-45f, 0f, 0f)
+                    setOrbit(true)
+                    setOrbitDistance(10f)
+                    setRotation(-45f, 90f + 45f, 0f)
+
+                    near = -1f
+                    far = 100f
                 }
             ))
 
-        entitySystem.addService(RenderService(renderer, camera, window.currentSize))
         entitySystem.addService(DirectionalShadowMappingService(renderer))
+        entitySystem.addService(RenderService(renderer, camera, window.currentSize))
 
         window.addKeyInputs(KeyCameraController(camera))
         window.addCursorInputs(CursorCameraController(camera))
@@ -100,14 +99,20 @@ class App : GameApplication(window {
     private val dummyVAO = glGenVertexArrays()
 
     override fun render() {
-        blitShader.size = Vector2f(300f)
-        blitShader.sprite = shadowMap.texture
-        blitShader.windowSize = Vector2f(window.currentSize)
-        blitShader.start()
+        shadowMap.texture.bind()
+        glTexParameteri(shadowMap.texture.target.gl(), GL_TEXTURE_COMPARE_MODE, GL_NONE)
+
+        blitShadowShader.start()
+        blitShadowShader.size = Vector2f(300f)
+        blitShadowShader.sprite = shadowMap.texture
+        blitShadowShader.windowSize = Vector2f(window.currentSize)
 
         glBindVertexArray(dummyVAO)
         glViewport(0, 0, window.currentSize.x(), window.currentSize.y()) //TODO i hate global state
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)
+
+        shadowMap.texture.bind()
+        glTexParameteri(shadowMap.texture.target.gl(), GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE)
     }
 }
 

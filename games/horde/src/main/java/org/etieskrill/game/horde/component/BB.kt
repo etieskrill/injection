@@ -24,7 +24,7 @@ data class BB(
 //            .map("punchThrough", punchThrough)
 //        return true
 //    }
-    override fun map(mapper: UniformMapper?): Boolean = mapper!!.map {
+override fun map(mapper: UniformMapper): Boolean = mapper.map {
         "sprite" to sprite
         "size" to size
         "offset" to offset
