@@ -4,20 +4,22 @@ import io.github.etieskrill.injection.extension.shader.vec4
 import org.etieskrill.engine.application.GameApplication
 import org.etieskrill.engine.entity.component.DirectionalLightComponent
 import org.etieskrill.engine.entity.component.Drawable
+import org.etieskrill.engine.entity.component.PointLightComponent
 import org.etieskrill.engine.entity.component.Transform
 import org.etieskrill.engine.entity.service.impl.DirectionalShadowMappingService
+import org.etieskrill.engine.entity.service.impl.PointShadowMappingService
 import org.etieskrill.engine.entity.service.impl.RenderService
 import org.etieskrill.engine.graphics.camera.OrthographicCamera
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera
 import org.etieskrill.engine.graphics.data.DirectionalLight
 import org.etieskrill.engine.graphics.data.PointLight
 import org.etieskrill.engine.graphics.gl.framebuffer.DirectionalShadowMap
+import org.etieskrill.engine.graphics.gl.framebuffer.PointShadowMapArray
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
 import org.etieskrill.engine.graphics.gl.shader.UniformMappable
 import org.etieskrill.engine.graphics.gl.shader.impl.BlitDepthShader
-import org.etieskrill.engine.graphics.gl.shader.impl.StaticShader
-import org.etieskrill.engine.graphics.gl.shader.impl.globalLights
-import org.etieskrill.engine.graphics.gl.shader.impl.lights
+import org.etieskrill.engine.graphics.gl.shader.impl.DepthCubeMapArrayShader
+import org.etieskrill.engine.graphics.model.CubeMapModel
 import org.etieskrill.engine.graphics.model.Model
 import org.etieskrill.engine.input.controller.CursorCameraController
 import org.etieskrill.engine.input.controller.KeyCameraController
@@ -44,21 +46,9 @@ class App : GameApplication(window {
     override fun init() {
         val shipModel = Loaders.ModelLoader.get().load("human-bb") { Model.ofFile("hooman-bb.glb") }
 
-        shipModel.nodes.forEach { println(it.name) } //TODO some ootils for searching and traversing in node hierarchies would be nice
-        val centralEnginePlume = shipModel.nodes.single { it.name == "engine-plume-main" }
-        val farLeftEnginePlume = shipModel.nodes.single { it.name == "engine-plume-far-left" }
-
-        //FIXME why is there no diffuse lighting? - try setting a material at least
-        //TODO self-shadows would be nice - scratch that, they're a must
-        val shader = StaticShader()
-        shader.globalLights = arrayOf(DirectionalLight(Vector3f(-1f)))
-        shader.lights = arrayOf( // @formatter:off
-            PointLight(centralEnginePlume.hierarchyTransform.position, Vector3f(0f, 1f, 1f), Vector3f(0f, 1f, 1f), Vector3f(0f, 1f, 1f), 1f, .14f, .07f),
-            PointLight(farLeftEnginePlume.hierarchyTransform.position, Vector3f(0f, 1f, 1f), Vector3f(0f, 1f, 1f), Vector3f(0f, 1f, 1f), 1f, .14f, .07f)
-        ) // @formatter:on
         entitySystem.createEntity()
             .withComponent(Transform())
-            .withComponent(Drawable(shipModel, shader))
+            .withComponent(Drawable(shipModel))
 
         val camera = PerspectiveCamera(window.currentSize).apply {
             setOrbit(true)
@@ -66,27 +56,62 @@ class App : GameApplication(window {
             setFar(50f)
         }
 
-        shadowMap = DirectionalShadowMap.generate(Vector2i(1024))
+        shadowMap = DirectionalShadowMap.generate(Vector2i(2048))
 
         entitySystem.createEntity()
             .withComponent(Transform())
             .withComponent(
                 DirectionalLightComponent(
-                DirectionalLight(Vector3f(-1f)),
-                shadowMap,
-                OrthographicCamera(Vector2i(1024), 20f, -20f, -20f, 20f).apply {
-                    // FIXME i hate myself
-                    setOrbit(true)
-                    setOrbitDistance(10f)
-                    setRotation(-45f, 90f + 45f, 0f)
+                    DirectionalLight(Vector3f(-1f), Vector3f(0f), Vector3f(1f), Vector3f(1f)),
+                    shadowMap,
+                    OrthographicCamera(Vector2i(2048), 20f, -20f, -20f, 20f).apply {
+                        // FIXME i hate myself
+                        setOrbit(true)
+                        setOrbitDistance(10f)
+                        setRotation(-45f, 90f + 45f, 0f)
 
-                    near = -1f
-                    far = 100f
-                }
-            ))
+                        near = -1f
+                        far = 20f
+                    }
+                ))
+
+        val engineNodes = arrayOf(
+            "engine-plume-far-left",
+            "engine-plume-left",
+            "engine-plume-main",
+            "engine-plume-right",
+            "engine-plume-far-right"
+        )
+
+        val pointShadowMaps = PointShadowMapArray.generate(Vector2i(256), engineNodes.size)
+
+        engineNodes.map { nodeName ->
+            PointLight(
+                shipModel.nodes.single { it.name == nodeName }.hierarchyTransform.position,
+                Vector3f(0f),
+                Vector3f(0f, 5f, 5f),
+                Vector3f(0f, 1f, 1f),
+                1f,
+                .14f,
+                .07f //TODO custom "volumetric" glow instead of bloom
+            )
+        }.forEachIndexed { index, light ->
+            entitySystem.createEntity()
+                .withComponent(Transform())
+                .withComponent(
+                    PointLightComponent(
+                        light,
+                        pointShadowMaps, index,
+                        pointShadowMaps.getCombinedMatrices(0.1f, 20f, light), 20f
+                    )
+                )
+        }
 
         entitySystem.addService(DirectionalShadowMappingService(renderer))
-        entitySystem.addService(RenderService(renderer, camera, window.currentSize))
+        entitySystem.addService(PointShadowMappingService(renderer, DepthCubeMapArrayShader()))
+        entitySystem.addService(RenderService(renderer, camera, window.currentSize).apply {
+            skybox = CubeMapModel("textures/cubemaps/space")
+        })
 
         window.addKeyInputs(KeyCameraController(camera))
         window.addCursorInputs(CursorCameraController(camera))

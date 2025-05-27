@@ -3,7 +3,7 @@
 #define LIMIT_ATTENUATION true
 
 #define NR_DIRECTIONAL_LIGHTS 1
-#define NR_POINT_LIGHTS 2
+#define NR_POINT_LIGHTS 5
 //#define NR_SPOT_LIGHTS 1
 
 struct DirectionalLight {
@@ -41,6 +41,7 @@ struct SpotLight {
 };
 
 uniform struct Material {
+    bool hasDiffuse;
     sampler2D diffuse0;
     bool specularTexture;
     sampler2D specular0;
@@ -77,7 +78,7 @@ uniform PointLight lights[NR_POINT_LIGHTS];
 uniform bool hasShadowMap;
 uniform sampler2DShadow shadowMap;
 uniform bool hasPointShadowMaps;
-uniform samplerCubeArrayShadow pointShadowMaps;
+uniform samplerCubeArrayShadow pointShadowMaps0;
 
 uniform float pointShadowFarPlane;
 
@@ -105,8 +106,11 @@ void main()
         normalVec = vert_out.normal;
     }
 
-    vec4 texel = texture(material.diffuse0, vert_out.texCoord);
-    if (texel.a == 0.0) discard;
+    vec4 texel = vec4(0.0, 0.0, 0.0, 1.0);
+    if (material.hasDiffuse) {
+        texel = texture(material.diffuse0, vert_out.texCoord); //so, using a sampler with a wrong texture bound to it is a panic case for... the driver? the gpu? _some_ gpus?
+        if (texel.a == 0.0) discard;
+    }
 
     vec3 combinedLight = vec3(0.0);
     for (int i = 0; i < NR_DIRECTIONAL_LIGHTS; i++) {
@@ -164,14 +168,17 @@ vec3 getPointLight(PointLight light, vec3 normal, vec3 fragPosition, vec3 viewPo
 
 vec3 getAmbient(vec3 lightAmbient)
 {
-    return lightAmbient * texture(material.diffuse0, vert_out.texCoord).rgb;
+    vec3 ambient = lightAmbient;
+    if (material.hasDiffuse) ambient *= texture(material.diffuse0, vert_out.texCoord).rgb;
+    return ambient;
 }
 
 vec3 getDiffuse(vec3 lightDirection, vec3 normal, vec3 lightDiffuse)
 {
     float diff = max(dot(normal, lightDirection), 0.0);
     vec3 diffuse = lightDiffuse * diff;
-    return diffuse * texture(material.diffuse0, vert_out.texCoord).rgb;
+    if (material.hasDiffuse) diffuse *= texture(material.diffuse0, vert_out.texCoord).rgb;
+    return diffuse;
 }
 
 vec3 getSpecular(vec3 lightDirection, vec3 lightPosition, vec3 normal, vec3 fragPosition, vec3 lightDirFragPosition, vec3 viewPosition, vec3 lightSpecular)
@@ -249,7 +256,7 @@ float getInPointShadow(int index, vec3 fragToLight) {
     for (int x = -1; x <= 1; x++) {
         for (int y = -1; y <= 1; y++) {
             for (int z = -1; z <= 1; z++) {
-                shadow += texture(pointShadowMaps, vec4(fragToLight + vec3(x, y, z) * offset, index), currentDepth);
+                shadow += texture(pointShadowMaps0, vec4(fragToLight + vec3(x, y, z) * offset, index), currentDepth);
             }
         }
     }
