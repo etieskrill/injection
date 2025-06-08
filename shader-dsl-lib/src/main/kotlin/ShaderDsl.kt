@@ -6,6 +6,7 @@ import io.github.etieskrill.injection.extension.shader.float
 import io.github.etieskrill.injection.extension.shader.int
 import io.github.etieskrill.injection.extension.shader.ivec2
 import io.github.etieskrill.injection.extension.shader.mat2
+import io.github.etieskrill.injection.extension.shader.mat3
 import io.github.etieskrill.injection.extension.shader.mat4
 import io.github.etieskrill.injection.extension.shader.sampler2D
 import io.github.etieskrill.injection.extension.shader.samplerCube
@@ -25,6 +26,8 @@ interface ShaderVertexData {
     val position: vec4
 }
 
+class VertexData(override val position: vec4) : ShaderVertexData
+
 interface FrameBuffer {
     fun bind()
 }
@@ -37,6 +40,9 @@ class RenderTarget(
         this.frameBuffer = frameBuffer
     }
 }
+
+data class ColourRenderTarget(val colour: RenderTarget)
+data class ColourBloomRenderTarget(val colour: RenderTarget, val bloom: RenderTarget)
 
 val vec4.rt: RenderTarget //FIXME kinda ugly, maybe just turn em into delegates like with uniforms
     get() = RenderTarget(this)
@@ -185,10 +191,14 @@ open class GlslReceiver {
     operator fun vec4.minus(v: vec4): vec4 = error()
     operator fun vec4.times(v: Number): vec4 = error()
     operator fun vec4.times(v: vec4): vec4 = error()
+    operator fun vec4.div(s: Number): vec4 = error()
 
     operator fun mat2.times(v: vec2): vec2 = error()
 
+    operator fun mat3.times(v: vec3): vec3 = error()
+
     operator fun mat4.times(v: vec4): vec4 = error()
+    operator fun mat4.times(m: mat4): mat4 = error()
 
     fun normalize(v: vec3): vec3 = error()
 

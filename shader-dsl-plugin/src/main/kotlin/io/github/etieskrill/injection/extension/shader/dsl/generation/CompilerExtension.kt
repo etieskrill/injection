@@ -16,7 +16,9 @@ import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.getCompilerMessageLocation
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
 import org.jetbrains.kotlin.cli.common.messages.MessageCollector
+import org.jetbrains.kotlin.fir.lazy.Fir2IrLazySimpleFunction
 import org.jetbrains.kotlin.ir.IrElement
+import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrDeclaration
 import org.jetbrains.kotlin.ir.declarations.IrDeclarationParent
@@ -44,6 +46,7 @@ import org.jetbrains.kotlin.ir.util.defaultType
 import org.jetbrains.kotlin.ir.util.file
 import org.jetbrains.kotlin.ir.util.findDeclaration
 import org.jetbrains.kotlin.ir.util.getArgumentsWithIr
+import org.jetbrains.kotlin.ir.util.getNameWithAssert
 import org.jetbrains.kotlin.ir.util.isStrictSubtypeOfClass
 import org.jetbrains.kotlin.ir.util.isSubtypeOfClass
 import org.jetbrains.kotlin.ir.util.patchDeclarationParents
@@ -113,7 +116,7 @@ internal class IrShaderGenerationExtension(
                     is IrSimpleType -> shaderType
                         .arguments
                         .map { it.typeOrFail.classifierOrFail.resolveTypeParameter(clazz.symbol, shaderType) }
-                        .run { ShaderDataTypes(get(0), get(1), get(2)) }
+                        .run { ShaderDataTypes(get(0), get(1), get(2)) } //FIXME not found for java classes?
 
                     else -> error("Unsupported shader data type $shaderType")
                 }
@@ -211,7 +214,18 @@ internal class IrShaderGenerationExtension(
         val data = VisitorData(
             programParent = shader,
             file = file,
-            vertexAttributes = types.vertexAttributesType.getGlslFields(),
+            vertexAttributes = types.vertexAttributesType.getGlslFields()
+                .onEach {
+                    if (it.key in uniforms.keys) {
+                        messageCollector.compilerError(
+                            "Vertex attribute name '${it.key}' clashes with uniform of same name, rename for now",
+                            if (types.vertexAttributesType.startOffset != UNDEFINED_OFFSET)
+                                types.vertexAttributesType
+                            else shader,
+                            file
+                        )
+                    }
+                }, //TODO attribute aliases (a_<attributeName> or similar)
             vertexDataStructType = types.vertexDataType.name.asString(),
             vertexDataStructName = "vertex",
             vertexDataStruct = types.vertexDataType.getGlslFields {
@@ -390,6 +404,21 @@ private fun IrClass.getGlslFields(condition: (IrProperty) -> Boolean = { true })
         it.name.checkNotGlslBuiltin()
         it.name.asString() to (it.backingField!!.type.glslType
             ?: error("Shader data type may only have fields of GLSL primitive type"))
+    } + declarations //TODO condition for this
+    .filter { (it is Fir2IrLazySimpleFunction || it is IrFunction) && it.name.asString().startsWith("get") }
+    .associate {
+        val type = when (it) {
+            is Fir2IrLazySimpleFunction -> it.returnType
+            is IrFunction -> it.returnType
+            else -> error("Could not parse Java object property getter function")
+        }.glslType ?: error("Field is not GLSL primitive: ${it.returnType.fullName}")
+
+        val name = it
+            .getNameWithAssert().asString()
+            .removePrefix("get")
+            .replaceFirstChar { it.lowercase() }
+
+        name to type
     }
 
 private fun Name.checkNotGlslBuiltin() =

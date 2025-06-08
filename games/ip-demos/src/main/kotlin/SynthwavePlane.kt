@@ -106,17 +106,17 @@ class SynthwavePlane : GameApplication(window {
         entitySystem.addService(renderService)
         frameBuffer = renderService.frameBuffer
         frameTexture = renderService.frameBuffer.attachments[BufferAttachmentType.COLOUR0] as Texture2D
+        frameBuffer.setClearColour(Vector4f(0.01f, 0f, 0.02f, 1f))
 
         entitySystem.createEntity()
             .withComponent(transform)
             .withComponent(Drawable(plane, shader.shader as ShaderProgram))
 
-        renderer.setClearColour(Vector3f(0.01f, 0f, 0.02f))
-
         audioSource = Audio.read(
 //            "1khz-sine.ogg"
+            "mr.edwardz-little-violet-charlston-boogie-runnrest.ogg"
             //TODO innerbloom might be cool to see dissected too
-            "avlönskt-bad-apple-multilanguage.ogg"
+//            "avlönskt-bad-apple-multilanguage.ogg"
 //            "nightstop-she-dances-in-the-dark.ogg"
 //            "pumped-up-kicks-synthwave.ogg"
             , AudioMode.STEREO, true

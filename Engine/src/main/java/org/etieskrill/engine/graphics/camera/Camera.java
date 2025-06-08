@@ -24,6 +24,7 @@ public abstract class Camera implements UniformMappable {
 
     protected final @Getter Matrix4f view, perspective;
     protected final Matrix4f combined;
+    private final Matrix4f invCombined;
 
     protected @Getter float near, far;
     protected final Vector3f worldUp;
@@ -54,6 +55,7 @@ public abstract class Camera implements UniformMappable {
         this.view = new Matrix4f();
         this.perspective = new Matrix4f();
         this.combined = new Matrix4f();
+        this.invCombined = new Matrix4f();
 
         //the near fucking clipping plane needs to be positive in order for the z-buffer to work, but only for perspective projection?
         this.near = 0.1f;
@@ -202,8 +204,14 @@ public abstract class Camera implements UniformMappable {
         return combined;
     }
 
+    public Matrix4fc getInvCombined() {
+        update();
+        return invCombined;
+    }
+
     private void updateCombined() {
         combined.set(perspective).mul(view);
+        combined.invert(invCombined);
     }
 
     public Camera setNear(float near) {
@@ -290,6 +298,7 @@ public abstract class Camera implements UniformMappable {
                 .map("view", getView())
                 .map("perspective", getPerspective())
                 .map("combined", getCombined())
+                .map("invCombined", getInvCombined())
                 .map("position", viewPosition)
                 .map("near", near)
                 .map("far", far)

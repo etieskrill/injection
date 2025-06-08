@@ -1,6 +1,5 @@
 package io.github.etieskrill.games.leverage
 
-import io.github.etieskrill.injection.extension.shader.vec4
 import org.etieskrill.engine.application.GameApplication
 import org.etieskrill.engine.entity.component.DirectionalLightComponent
 import org.etieskrill.engine.entity.component.Drawable
@@ -15,12 +14,11 @@ import org.etieskrill.engine.graphics.data.DirectionalLight
 import org.etieskrill.engine.graphics.data.PointLight
 import org.etieskrill.engine.graphics.gl.framebuffer.DirectionalShadowMap
 import org.etieskrill.engine.graphics.gl.framebuffer.PointShadowMapArray
-import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
-import org.etieskrill.engine.graphics.gl.shader.UniformMappable
 import org.etieskrill.engine.graphics.gl.shader.impl.BlitDepthShader
 import org.etieskrill.engine.graphics.gl.shader.impl.DepthCubeMapArrayShader
 import org.etieskrill.engine.graphics.model.CubeMapModel
 import org.etieskrill.engine.graphics.model.Model
+import org.etieskrill.engine.input.Keys
 import org.etieskrill.engine.input.controller.CursorCameraController
 import org.etieskrill.engine.input.controller.KeyCameraController
 import org.etieskrill.engine.util.Loaders
@@ -38,6 +36,7 @@ fun main() {
 class App : GameApplication(window {
     size = Window.WindowSize.LARGEST_FIT
     mode = Window.WindowMode.BORDERLESS
+    vSync = true
 }) {
 
     private lateinit var shadowMap: DirectionalShadowMap
@@ -46,9 +45,16 @@ class App : GameApplication(window {
     override fun init() {
         val shipModel = Loaders.ModelLoader.get().load("human-bb") { Model.ofFile("hooman-bb.glb") }
 
-        entitySystem.createEntity()
+        val bbDrawable = entitySystem.createEntity()
             .withComponent(Transform())
-            .withComponent(Drawable(shipModel))
+            .addComponent(Drawable(shipModel).apply { isDrawOutline = true })
+        window.addKeyInputs { type, key, action, modifiers ->
+            if (key == Keys.Q.input.value && action == Keys.Action.RELEASE.glfwAction) {
+                bbDrawable.isDrawOutline = !bbDrawable.isDrawOutline
+                true
+            }
+            false
+        }
 
         val camera = PerspectiveCamera(window.currentSize).apply {
             setOrbit(true)
@@ -138,36 +144,5 @@ class App : GameApplication(window {
 
         shadowMap.texture.bind()
         glTexParameteri(shadowMap.texture.target.gl(), GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE)
-    }
-}
-
-data class PhongMaterial(
-//    var diffuse0: sampler2D?,
-//    var specularTexture: bool,
-//    var specular0: sampler2D,
-//    var shininess: float,
-//    var specularity: float,
-//    var hasNormalMap: bool,
-//    var normal0: sampler2D,
-//    var emissiveTexture: bool,
-//    var emissive0: sampler2D,
-//    var cubemap0: samplerCube,
-
-    var colourDiffuse: vec4,
-) : UniformMappable {
-    override fun map(mapper: ShaderProgram.UniformMapper): Boolean {
-        mapper
-//            .map("diffuse0", diffuse0)
-//            .map("specularTexture", specularTexture)
-//            .map("specular0", specular0)
-//            .map("shininess", shininess)
-//            .map("specularity", specularity)
-//            .map("hasNormalMap", hasNormalMap)
-//            .map("normal0", normal0)
-//            .map("emissiveTexture", emissiveTexture)
-//            .map("emissive0", emissive0)
-//            .map("cubemap0", cubemap0)
-            .map("colourDiffuse", colourDiffuse)
-        return true
     }
 }

@@ -67,6 +67,8 @@ public class RenderService implements Service, Disposable {
     @Nullable CubeMapModel skybox;
     private final SkyboxShader skyboxShader;
 
+    private final OutlineShader outlineShader;
+
     private @Accessors(fluent = true)
     @Setter boolean blur = true;
 
@@ -98,6 +100,8 @@ public class RenderService implements Service, Disposable {
         this.particleRenderService = new ParticleRenderService(new GLParticleRenderer(), camera);
 
         this.skyboxShader = new SkyboxShader();
+
+        this.outlineShader = new OutlineShader();
     }
 
     private record ShaderParams(
@@ -208,6 +212,15 @@ public class RenderService implements Service, Disposable {
         WorldSpaceAABB aabb = targetEntity.getComponent(WorldSpaceAABB.class);
         if (aabb != null && !cullingCamera.frustumTestAABB(aabb)) { //TODO check if relevant service is even present
             return;
+        }
+
+        if (drawable.isDrawOutline()) {
+            glDepthMask(false);
+            glDisable(GL_CULL_FACE);
+            //FIXME and now the lighting's fucked - probs some blending issue, depth should *NOT* be written
+            renderer.render(transform, drawable.getModel(), (ShaderProgram) outlineShader.getShader(), camera);
+            glDepthMask(true);
+            glEnable(GL_CULL_FACE);
         }
 
         ShaderProgram shader = getConfiguredShader(targetEntity, drawable);
@@ -334,6 +347,9 @@ class GaussBlurPostBuffers implements Disposable {
         boolean blurBuffer1IsTarget = false;
 
         if (blur) {
+            blurFrameBuffer1.clear();
+            blurFrameBuffer2.clear();
+
             blurFrameBuffer1.bind();
             gaussBlurShader.start();
             gaussBlurShader.setSource(bloomBuffer);

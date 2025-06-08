@@ -10,10 +10,14 @@ import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Collections;
 import java.util.List;
-import java.util.stream.Stream;
 
 import static org.etieskrill.engine.config.ResourcePaths.ENGINE_RESOURCE_PATH;
 
@@ -88,9 +92,19 @@ public class ResourceReader {
             throw new ResourceLoadException("Classpath folder %s could not be located or access was denied".formatted(folder));
         }
 
-        return Stream.of(getClasspathResource(parentResource).split("\n"))
-                .map(file -> parentResource + "/" + file)
-                .toList();
+        try (var fileSystem = FileSystems.newFileSystem(
+                ClassLoader.getSystemResource(parentResource).toURI(),
+                Collections.emptyMap()
+        )) {
+            try (var files = Files.walk(fileSystem.getPath(parentResource))) {
+                return files
+                        .filter(Files::isRegularFile)
+                        .map(Path::toString)
+                        .toList();
+            }
+        } catch (IOException | URISyntaxException e) {
+            throw new ResourceLoadException("Classpath resources could not be enumerated", e);
+        }
     }
 
     public static boolean classpathResourceExists(String file) {

@@ -8,6 +8,8 @@ import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.texture.Textures;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2ic;
+import org.joml.Vector4f;
+import org.joml.Vector4fc;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,6 +27,7 @@ public class FrameBuffer implements io.github.etieskrill.injection.extension.sha
     private final @Getter Map<BufferAttachmentType, FrameBufferAttachment> attachments;
     private final int glBufferClearMask;
     private final int @Nullable [] glColourDrawBuffers;
+    private final @Getter Vector4f clearColour;
 
     private static final Logger logger = LoggerFactory.getLogger(FrameBuffer.class);
 
@@ -57,12 +60,12 @@ public class FrameBuffer implements io.github.etieskrill.injection.extension.sha
         public FrameBuffer build() {
             GLUtils.clearError();
             int glBufferClearMask =
-                    getBufferBit(GL_COLOR_BUFFER_BIT, COLOUR0)
-                            | getBufferBit(GL_DEPTH_BUFFER_BIT, DEPTH, DEPTH_STENCIL)
-                            | getBufferBit(GL_STENCIL_BUFFER_BIT, STENCIL, DEPTH_STENCIL);
+                    getBufferBit(GL_COLOR_BUFFER_BIT, COLOUR0, COLOUR1, COLOUR2, COLOUR3, COLOUR31)
+                    | getBufferBit(GL_DEPTH_BUFFER_BIT, DEPTH, DEPTH_STENCIL)
+                    | getBufferBit(GL_STENCIL_BUFFER_BIT, STENCIL, DEPTH_STENCIL);
             int[] glColourDrawBuffers = attachments.keySet().stream()
                     .filter(attachment -> attachment.toGLAttachment() >= COLOUR0.toGLAttachment()
-                            && attachment.toGLAttachment() <= COLOUR31.toGLAttachment())
+                                          && attachment.toGLAttachment() <= COLOUR31.toGLAttachment())
                     .mapToInt(BufferAttachmentType::toGLAttachment)
                     .sorted()
                     .toArray();
@@ -98,7 +101,7 @@ public class FrameBuffer implements io.github.etieskrill.injection.extension.sha
 
                 if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT) {
                     throw new FrameBufferCreationException("Incomplete framebuffer attachment for " +
-                            type.name() + ": " + attachment);
+                                                           type.name() + ": " + attachment);
                 }
             }
 
@@ -132,6 +135,7 @@ public class FrameBuffer implements io.github.etieskrill.injection.extension.sha
         this.size = size;
         this.glBufferClearMask = glBufferClearMask;
         this.glColourDrawBuffers = glColourDrawBuffers;
+        this.clearColour = new Vector4f();
         this.attachments = new HashMap<>(3);
     }
 
@@ -171,8 +175,23 @@ public class FrameBuffer implements io.github.etieskrill.injection.extension.sha
 
     public void clear() {
         bind();
+        glClearColor(clearColour.x, clearColour.y, clearColour.z, clearColour.w);
         glClear(glBufferClearMask);
         unbind();
+    }
+
+    public static void clearScreenBuffer() {
+        clearScreenBuffer(null);
+    }
+
+    public static void clearScreenBuffer(@Nullable Vector4fc clearColour) {
+        bindScreenBuffer();
+        if (clearColour != null) glClearColor(clearColour.x(), clearColour.y(), clearColour.z(), clearColour.w());
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    }
+
+    public void setClearColour(Vector4fc clearColour) {
+        this.clearColour.set(clearColour);
     }
 
     public FrameBufferAttachment getAttachment(BufferAttachmentType type) {

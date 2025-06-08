@@ -12,6 +12,8 @@ public class Drawable {
     private final Vector2f textureScale;
     private boolean drawWireframe;
     private @Nullable ShaderProgram shader;
+    private boolean drawOutline;
+    private float outlineWidth;
 
     //TODO some kind of grouping mechanism
 
@@ -25,6 +27,8 @@ public class Drawable {
         this.textureScale = new Vector2f(1);
         this.drawWireframe = false;
         this.shader = shader;
+        this.drawOutline = false;
+        this.outlineWidth = 0.05f;
     }
 
     public Model getModel() {
@@ -61,6 +65,22 @@ public class Drawable {
 
     public void setShader(@Nullable ShaderProgram shader) {
         this.shader = shader;
+    }
+
+    public boolean isDrawOutline() {
+        return drawOutline;
+    }
+
+    public void setDrawOutline(boolean drawOutline) {
+        this.drawOutline = drawOutline;
+    }
+
+    public float getOutlineWidth() {
+        return outlineWidth;
+    }
+
+    public void setOutlineWidth(float outlineWidth) {
+        this.outlineWidth = outlineWidth;
     }
 
 }

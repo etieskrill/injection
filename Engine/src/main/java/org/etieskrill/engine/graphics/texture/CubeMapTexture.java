@@ -44,7 +44,8 @@ public class CubeMapTexture extends AbstractTexture implements FrameBufferAttach
             //TODO (for all external/classpath resources) first search in external facility (some folder/s, which is/are
             // specified via config), then fall back to classpath which should contain standard/error resource, then
             // throw exception
-            List<String> cubemapFiles = ResourceReader.getClasspathItems(file).stream()
+            List<String> cubemapFiles = ResourceReader.getClasspathItems(file);
+            cubemapFiles = cubemapFiles.stream()
                     .filter(path -> path.endsWith(".png") || path.endsWith(".jpg"))
                     .toList();
 

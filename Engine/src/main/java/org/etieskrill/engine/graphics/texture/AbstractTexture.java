@@ -334,7 +334,7 @@ public abstract class AbstractTexture implements Texture, Disposable {
 
     @Override
     public void bind() {
-        bind(0); //FIXME tf - is this not being implemented just intellisense whining?
+        bind(0);
     }
 
     //TODO rework binding system; perhaps standard bind to 0, and only use units in specific cases like rendering

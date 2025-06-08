@@ -396,7 +396,13 @@ private open class GlslTranspiler(
         return when {
             expression.origin == IrStatementOrigin.GET_PROPERTY -> {
                 var propertyOwner = expression.evalChildren(this, data)
-                val propertyName = functionPropertyName
+                var propertyName = functionPropertyName
+
+                if (propertyName.startsWith("get")) { //when accessor is defined in java
+                    propertyName = propertyName
+                        .removePrefix("get")
+                        .replaceFirstChar { it.lowercase() }
+                }
 
                 if (propertyOwner!!.startsWith("\$context_receiver_")) { //accessing a stage receiver property
                     return builtinProperties[data.stage]!![propertyName]!!
@@ -443,6 +449,7 @@ private open class GlslTranspiler(
                 handleResolvedOperator(functionName.resolvedGlslOperator!!, expression, data)
             }
 
+            functionName == "CHECK_NOT_NULL" -> expression.arguments[0]!!.accept(this, data)
             functionName in listOf("toFloat", "toDouble") -> expression.receiver!!.accept(this, data)
             functionName in builtinFunctionNames -> handleFunction(functionName, expression, data)
             functionPropertyName in builtinFunctionNames -> { //could split using KClass::memberFunctions and KClass::memberProperties if needed

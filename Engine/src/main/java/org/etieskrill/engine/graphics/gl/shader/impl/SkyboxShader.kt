@@ -19,15 +19,15 @@ class SkyboxShader : PureShaderBuilder<SkyboxShader.Vertex, SkyboxShader.RenderT
 
     private val vertices by const(arrayOf(vec2(-1, -1), vec2(1, -1), vec2(-1, 1), vec2(1, 1)))
 
-    private var combined by uniform<mat4>() //TODO check that uniforms are var
+    private var invCombined by uniform<mat4>() //TODO check that uniforms are var
     private var skybox by uniform<samplerCube>()
 
     override fun program() {
         vertex {
             val ndc = vertices[vertexID]
 
-            var nearPoint = inverse(combined) * vec4(ndc, -1, 1)
-            var farPoint = inverse(combined) * vec4(ndc, 1, 1)
+            var nearPoint = invCombined * vec4(ndc, -1, 1)
+            var farPoint = invCombined * vec4(ndc, 1, 1)
 
             nearPoint /= nearPoint.w
             farPoint /= farPoint.w

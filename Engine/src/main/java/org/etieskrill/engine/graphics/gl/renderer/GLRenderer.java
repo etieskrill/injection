@@ -35,7 +35,7 @@ import static org.lwjgl.opengl.GL33C.*;
 public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer, Disposable {
 
     private static final float CLEAR_COLOUR = 0.25f;//0.025f;
-    private @Setter Vector3f clearColour = new Vector3f(CLEAR_COLOUR);
+    private @Setter Vector4f clearColour = new Vector4f(CLEAR_COLOUR, CLEAR_COLOUR, CLEAR_COLOUR, 1);
     private static final int MAX_USABLE_TEXTURE_UNIT = 8; //TODO make more configurable
 
     private final Map<ShaderProgram, ShaderTextureContext> textureContexts = new HashMap<>();
@@ -47,9 +47,6 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
 
     @Override
     public void prepare() {
-        glClearColor(clearColour.x, clearColour.y, clearColour.z, 1f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
         textureContexts.forEach((shader, textureContext) -> {
             textureContext.nextTexture = 1;
             textureContext.manuallyBoundTextures = 0;
@@ -59,6 +56,7 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
     @Override
     public void nextFrame() {
         FrameBuffer.bindScreenBuffer();
+        FrameBuffer.clearScreenBuffer(clearColour);
         prepare();
 
         queryGpuTime();
@@ -289,18 +287,20 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
 
     private void _render(TransformC transform, Model model, ShaderProgram shader, Matrix4fc combined, boolean instanced, int numInstances) {
         shader.setUniform("combined", combined, false);
+        shader.setUniform("invCombined", combined.invert(new Matrix4f()), false);
         _render(transform, model, shader, instanced, numInstances);
     }
 
     private void _render(TransformC transform, Model model, ShaderProgram shader, Camera camera, boolean instanced, int numInstances) {
         shader.setUniform("combined", camera.getCombined(), false); //TODO leave be?
+        shader.setUniform("invCombined", camera.getInvCombined(), false);
         shader.setUniform("camera", camera, false);
         _render(transform, model, shader, instanced, numInstances);
     }
 
     private void _render(@Nullable TransformC transform, Model model, ShaderProgram shader, boolean instanced, int numInstances) {
         if (transform != null) {
-            try (MemoryStack stack = MemoryStack.stackPush()) {
+            try (MemoryStack stack = MemoryStack.stackPush()) { //FIXME this literally does jackshit
                 Matrix4f transformMatrix = new Matrix4f(transform.getMatrix());// = new Matrix4f(model.getFinalTransform().getMatrix().get(stack.callocFloat(16)));
                 shader.setUniform("model", transformMatrix, false);
                 shader.setUniform("normal", transformMatrix.invert().transpose().get3x3(new Matrix3f(stack.callocFloat(9))), false);
