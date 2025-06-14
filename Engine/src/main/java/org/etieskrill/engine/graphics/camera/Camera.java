@@ -111,7 +111,7 @@ public abstract class Camera implements UniformMappable {
         return rotation;
     }
 
-    public Camera setRotation(Quaternionf rotation) {
+    public Camera setRotation(Quaternionfc rotation) {
         this.rotation.set(rotation);
         dirty();
         return this;

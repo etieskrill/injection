@@ -54,7 +54,7 @@ fun main() {
     val buffer = alGenBuffers()
     checkError("Failed to create buffer")
 
-    val encodedAudio = ResourceReader.getRawClasspathResource("audio/pumped-up-kicks-synthwave.ogg")
+    val encodedAudio = ResourceReader.getRawResource("audio/pumped-up-kicks-synthwave.ogg")
     val (channels, sampleRate, pcmAudio) = vorbisDecodeToPCM(encodedAudio)
 
     val format = if (channels == 1) AL_FORMAT_MONO16 else AL_FORMAT_STEREO16

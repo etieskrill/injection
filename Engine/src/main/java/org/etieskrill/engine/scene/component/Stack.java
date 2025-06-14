@@ -91,6 +91,17 @@ public class Stack extends Node<Stack> {
     }
 
     @Override
+    public boolean handleHover(double posX, double posY) {
+        if (!doesHit(posX, posY)) return false;
+        for (Node<?> child : children) {
+            if (child.handleHover(posX, posY)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
     public boolean handleDrag(double deltaX, double deltaY, double posX, double posY) {
         if (!doesHit(posX, posY)) return false;
         for (Node<?> child : children)

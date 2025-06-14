@@ -1,6 +1,5 @@
 package org.etieskrill.engine.graphics.model;
 
-import lombok.Getter;
 import lombok.Setter;
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.graphics.gl.VertexArrayObject;
@@ -11,7 +10,6 @@ import java.util.List;
 
 import static org.lwjgl.opengl.GL33C.*;
 
-@Getter
 public class Mesh implements Disposable {
 
     private final Material material;
@@ -59,8 +57,28 @@ public class Mesh implements Disposable {
         this.drawMode = drawMode;
     }
 
+    public Material getMaterial() {
+        return this.material;
+    }
+
+    public List<Bone> getBones() {
+        return this.bones;
+    }
+
+    public VertexArrayObject<Vertex> getVao() {
+        return this.vao;
+    }
+
+    public int getNumIndices() {
+        return this.numIndices;
+    }
+
     public AABBf getBoundingBox() {
         return boundingBox;
+    }
+
+    public DrawMode getDrawMode() {
+        return this.drawMode;
     }
 
     @Override

@@ -24,15 +24,15 @@ public class Model implements Disposable {
 
     private static final Logger logger = LoggerFactory.getLogger(Model.class);
 
-    private final @Getter List<Node> nodes; //TODO flatten hierarchy by compatible/identical materials
+    private final List<Node> nodes; //TODO flatten hierarchy by compatible/identical materials
     private final List<Material> materials; //TODO since meshes know their materials, these here may not be necessary?
 
-    private final @Getter List<Animation> animations;
-    private final @Getter List<Bone> bones;
+    private final List<Animation> animations;
+    private final List<Bone> bones;
 
-    private final @Getter AABBf boundingBox;
+    private final AABBf boundingBox;
 
-    private final @Getter String name;
+    private final String name;
 
     private final boolean culling;
     private final boolean transparency;
@@ -180,6 +180,26 @@ public class Model implements Disposable {
 
         this.culling = builder.culling;
         this.transparency = builder.hasTransparency;
+    }
+
+    public List<Node> getNodes() {
+        return this.nodes;
+    }
+
+    public List<Animation> getAnimations() {
+        return this.animations;
+    }
+
+    public List<Bone> getBones() {
+        return this.bones;
+    }
+
+    public AABBf getBoundingBox() {
+        return this.boundingBox;
+    }
+
+    public String getName() {
+        return this.name;
     }
 
     public boolean doCulling() {

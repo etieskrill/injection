@@ -26,7 +26,7 @@ public class ResizeTexture {
             int[] width = new int[1], height = new int[1], colourChannels = new int[1];
 
             ByteBuffer textureData = stbi_load_from_memory(
-                    ResourceReader.getRawClasspathResource(TEXTURE_PATH + fileName + ".png"),
+                    ResourceReader.getRawResource(TEXTURE_PATH + fileName + ".png"),
                     width, height, colourChannels, 0
             );
 

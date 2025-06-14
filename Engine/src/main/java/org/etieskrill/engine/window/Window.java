@@ -466,7 +466,7 @@ public class Window implements Disposable {
             GLUtils.clearError();
             glNamedStringARB(GL_SHADER_INCLUDE_ARB,
                     "/" + classpathName.substring(SHADER_PATH.length()),
-                    ResourceReader.getClasspathResource(classpathName)
+                    ResourceReader.getResource(classpathName)
             );
             GLUtils.checkErrorThrowing("Failed to load shader library: " + classpathName);
         }

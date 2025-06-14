@@ -5,6 +5,7 @@ import org.etieskrill.engine.graphics.gl.renderer.GLRenderer;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shader.Shaders;
 import org.etieskrill.engine.graphics.gl.shader.impl.BlitShader;
+import org.etieskrill.engine.graphics.pipeline.Pipeline;
 import org.etieskrill.engine.graphics.text.Font;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.jetbrains.annotations.NotNull;
@@ -87,6 +88,10 @@ public class Batch {
         textRenderer.render(text, font, position, size, textShader, combined, cursorPosition);
     }
 
+    public void render(Pipeline<?> pipeline) {
+        renderer.render(pipeline);
+    }
+
     private int dummyVAO = -1;
 
     private int getDummyVAO() {
@@ -113,6 +118,10 @@ public class Batch {
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
         glBlendFunc(GL_ONE, GL_ZERO);
+    }
+
+    public Matrix4fc getCombined() {
+        return combined;
     }
 
     public Batch setCombined(Matrix4fc mat) {

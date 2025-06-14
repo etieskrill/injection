@@ -73,8 +73,10 @@ public class Scene extends MouseGestureHandler implements KeyInputHandler {
         batch.setCombined(camera.getCombined());
 
         glDisable(GL_DEPTH_TEST); //TODO either this or implement with depth testing
+        glDepthMask(false);
         root.render(batch);
         glEnable(GL_DEPTH_TEST);
+        glDepthMask(true);
     }
 
     public @NotNull Batch getBatch() {
@@ -134,6 +136,12 @@ public class Scene extends MouseGestureHandler implements KeyInputHandler {
     public boolean invokeClick(Key button, @NotNull Keys.Action action, double posX, double posY) {
         super.invokeClick(button, action, posX, posY);
         return root.handleHit(button, action, posX, posY);
+    }
+
+    @Override
+    public boolean invokeMove(double posX, double posY) {
+        super.invokeMove(posX, posY);
+        return root.handleHover(posX, posY);
     }
 
     @Override

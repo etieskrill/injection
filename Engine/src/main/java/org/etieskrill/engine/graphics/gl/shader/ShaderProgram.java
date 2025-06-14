@@ -34,7 +34,7 @@ import static org.etieskrill.engine.graphics.gl.shader.ShaderProgram.ShaderType.
 import static org.etieskrill.engine.graphics.gl.shader.ShaderProgram.Uniform.INVALID_UNIFORM_LOCATION;
 import static org.etieskrill.engine.graphics.gl.shader.ShaderProgram.Uniform.NESTED_UNIFORM_LOCATION;
 import static org.etieskrill.engine.util.ResourceReader.classpathResourceExists;
-import static org.etieskrill.engine.util.ResourceReader.getClasspathResource;
+import static org.etieskrill.engine.util.ResourceReader.getResource;
 import static org.lwjgl.opengl.ARBShadingLanguageInclude.GL_SHADER_INCLUDE_ARB;
 import static org.lwjgl.opengl.ARBShadingLanguageInclude.glNamedStringARB;
 import static org.lwjgl.opengl.GL46C.*;
@@ -155,7 +155,7 @@ public abstract class ShaderProgram implements Disposable,
                 default ->
                         throw new ShaderCreationException("Cannot load shader with unknown file extension: " + fileName);
             };
-            return new ShaderFile(fileName, type, getClasspathResource(SHADER_PATH + fileName));
+            return new ShaderFile(fileName, type, getResource(SHADER_PATH + fileName));
         }).collect(Collectors.toSet());
 
         if (files.size() == 1 && !files.stream().allMatch(file -> file.getType() == COMPOSITE)) {
@@ -202,7 +202,7 @@ public abstract class ShaderProgram implements Disposable,
         //TODO filter and warn on duplicates, prefer config, then UniformEntries, then autodetected
         var uniformFileName = ConstantsKt.UNIFORM_RESOURCE_PREFIX + ClassUtils.getFullName(this) + ".csv";
         if (classpathResourceExists(uniformFileName)) {
-            getClasspathResource(uniformFileName)
+            getResource(uniformFileName)
                     .lines()
                     .filter(line -> !line.isBlank())
                     .map(line -> line.split(","))
@@ -425,7 +425,7 @@ public abstract class ShaderProgram implements Disposable,
 
     //TODO use named string arbs to modularise shaders
     private void loadLibrary(String file) {
-        glNamedStringARB(GL_SHADER_INCLUDE_ARB, file.split("\\.")[0], getClasspathResource(file));
+        glNamedStringARB(GL_SHADER_INCLUDE_ARB, file.split("\\.")[0], getResource(file));
     }
 
     private void disposeShaders() {

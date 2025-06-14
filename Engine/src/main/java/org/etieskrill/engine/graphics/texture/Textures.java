@@ -13,7 +13,6 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.MissingResourceException;
 
-import static org.etieskrill.engine.config.ResourcePaths.TEXTURE_CUBEMAP_PATH;
 import static org.etieskrill.engine.config.ResourcePaths.TEXTURE_PATH;
 import static org.etieskrill.engine.graphics.texture.AbstractTexture.Type.DIFFUSE;
 import static org.etieskrill.engine.graphics.texture.AbstractTexture.Type.UNKNOWN;
@@ -50,7 +49,7 @@ public class Textures {
             String reason = stbi_failure_reason();
             logger.info("Texture {} could not be loaded, using placeholder because:\n\t{}",
                     file, reason != null ? reason : e.getMessage());
-            file = type == DIFFUSE || type == UNKNOWN ? DEFAULT_TEXTURE : TRANSPARENT_TEXTURE;
+            file = TEXTURE_PATH + (type == DIFFUSE || type == UNKNOWN ? DEFAULT_TEXTURE : TRANSPARENT_TEXTURE);
             try {
                 data = Textures.loadFile(file, type);
             } catch (MissingResourceException | ResourceLoadException ex) {
@@ -67,7 +66,7 @@ public class Textures {
 
         //stbi_set_flip_vertically_on_load(true); the uv coords are already flipped while loading the models
         ByteBuffer textureData = stbi_load_from_memory(
-                ResourceReader.getRawClasspathResource(file.contains("/" + TEXTURE_CUBEMAP_PATH) ? file : TEXTURE_PATH + file),
+                ResourceReader.getRawResource(file),
                 bufferWidth, bufferHeight, bufferColourChannels, 0);
         if (textureData == null || !textureData.hasRemaining())
             throw new MissingResourceException("Texture %s could not be loaded:%n%s".formatted(file, stbi_failure_reason()),
@@ -87,7 +86,7 @@ public class Textures {
     public static Texture2D ofFile(String file, AbstractTexture.Type type) {
         return new Texture2D.FileBuilder(file, type).build();
     }
-    
+
     public static CubeMapTexture getSkybox(String name) {
         return (CubeMapTexture) Loaders.TextureLoader.get().load("cubemap/" + name, () ->
                 CubeMapTexture.CubemapTextureBuilder.get(name)

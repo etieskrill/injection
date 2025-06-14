@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static java.lang.Math.max;
-import static org.etieskrill.engine.util.ResourceReader.getClasspathResourceAsStream;
+import static org.etieskrill.engine.util.ResourceReader.getResourceAsStream;
 
 public class TextureAnimationYamlParser {
 
@@ -22,7 +22,7 @@ public class TextureAnimationYamlParser {
     static TextureAnimationMetadata loadAnimationMetadata(String metaFile) {
         Yaml yaml = new Yaml();
         YamlTextureAnimationMetadata yamlMetaData = yaml.loadAs(
-                getClasspathResourceAsStream(ResourcePaths.TEXTURE_PATH + metaFile),
+                getResourceAsStream(ResourcePaths.TEXTURE_PATH + metaFile),
                 YamlTextureAnimationMetadata.class
         );
         if (yamlMetaData.resources == null || yamlMetaData.resources.get("texture") == null) {

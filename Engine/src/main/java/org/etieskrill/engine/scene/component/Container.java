@@ -58,6 +58,13 @@ public class Container extends Node<Container> {
     }
 
     @Override
+    public boolean handleHover(double posX, double posY) {
+        if (!doesHit(posX, posY)) return false;
+        if (child != null) return child.handleHover(posX, posY);
+        return false;
+    }
+
+    @Override
     public boolean handleDrag(double deltaX, double deltaY, double posX, double posY) {
         if (!doesHit(posX, posY)) return false;
         if (child == null) return false;

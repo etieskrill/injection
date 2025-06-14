@@ -192,7 +192,7 @@ object Audio : Disposable {
         checkInit()
 
         require(path.endsWith(".ogg")) { "Can only parse OGG sound files" }
-        val encodedAudio = ResourceReader.getRawClasspathResource(AUDIO_PATH + path)
+        val encodedAudio = ResourceReader.getRawResource(AUDIO_PATH + path)
         val pcmAudio = vorbisDecodeToPCM(encodedAudio, mode)
         check(pcmAudio.mode != AudioMode.DONT_CARE)
 

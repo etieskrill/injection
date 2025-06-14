@@ -8,6 +8,7 @@ import org.etieskrill.engine.entity.component.Transform
 import org.etieskrill.engine.entity.service.impl.DirectionalShadowMappingService
 import org.etieskrill.engine.entity.service.impl.PointShadowMappingService
 import org.etieskrill.engine.entity.service.impl.RenderService
+import org.etieskrill.engine.graphics.Batch
 import org.etieskrill.engine.graphics.camera.OrthographicCamera
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera
 import org.etieskrill.engine.graphics.data.DirectionalLight
@@ -21,6 +22,9 @@ import org.etieskrill.engine.graphics.model.Model
 import org.etieskrill.engine.input.Keys
 import org.etieskrill.engine.input.controller.CursorCameraController
 import org.etieskrill.engine.input.controller.KeyCameraController
+import org.etieskrill.engine.scene.Scene
+import org.etieskrill.engine.scene.component.Container
+import org.etieskrill.engine.scene.component.TranslateGizmo
 import org.etieskrill.engine.util.Loaders
 import org.etieskrill.engine.window.Window
 import org.etieskrill.engine.window.window
@@ -42,6 +46,14 @@ class App : GameApplication(window {
     private lateinit var shadowMap: DirectionalShadowMap
     private val blitShadowShader = BlitDepthShader()
 
+    val camera = PerspectiveCamera(window.currentSize).apply {
+        setOrbit(true)
+        setOrbitDistance(10f)
+        setFar(50f)
+    }
+
+    val gizmoCamera = OrthographicCamera(Vector2i(1, 1))
+
     override fun init() {
         val shipModel = Loaders.ModelLoader.get().load("human-bb") { Model.ofFile("hooman-bb.glb") }
 
@@ -54,12 +66,6 @@ class App : GameApplication(window {
                 true
             }
             false
-        }
-
-        val camera = PerspectiveCamera(window.currentSize).apply {
-            setOrbit(true)
-            setOrbitDistance(10f)
-            setFar(50f)
         }
 
         shadowMap = DirectionalShadowMap.generate(Vector2i(2048))
@@ -123,9 +129,25 @@ class App : GameApplication(window {
         window.addCursorInputs(CursorCameraController(camera))
 
         window.cursor.disable()
+
+        window.scene = Scene(
+            Batch(renderer, window.currentSize),
+            Container(TranslateGizmo {}),
+            gizmoCamera.apply {
+                near = -10000f
+                far = 10000f
+
+                setOrbit(true)
+                setOrbitDistance(10f)
+            }
+        )
     }
 
-    override fun loop(delta: Double) {}
+    override fun loop(delta: Double) {
+        //FIXME ts makes peak no sense
+        gizmoCamera.setRotation(camera.rotation)
+        gizmoCamera.setRotation(camera.pitch, -camera.yaw, camera.roll)
+    }
 
     private val dummyVAO = glGenVertexArrays()
 
