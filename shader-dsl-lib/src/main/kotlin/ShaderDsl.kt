@@ -19,8 +19,8 @@ import org.joml.Vector3f
 import org.joml.Vector4f
 import kotlin.properties.ReadOnlyProperty
 import kotlin.properties.ReadWriteProperty
-import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
+import kotlin.reflect.javaType
 
 interface ShaderVertexData {
     val position: vec4
@@ -58,6 +58,7 @@ abstract class ShaderBuilder<VA : Any, V : ShaderVertexData, RT : Any>(val shade
     AbstractShader by shader {
 
     protected fun <T : Any> uniform() = UniformDelegate<T>() //TODO add default param
+    protected fun <T : Any> uniformArray(size: Int) = UniformArrayDelegate<T>(size)
 
     protected fun <T : Number> const(value: T) = ConstDelegate<T>() //TODO pass GlslReceiver block for dsl instead
     protected fun const(value: Boolean) = ConstDelegate<Boolean>()
@@ -107,12 +108,15 @@ open class GlslReceiver {
     operator fun Number.times(s: Number): Number = error()
     operator fun Number.times(v: vec2): vec2 = error()
     operator fun Number.times(v: vec3): vec3 = error()
+    operator fun Number.div(s: Number): Number = error()
     operator fun Number.rem(n: Number): Number = error()
     operator fun Number.unaryMinus(): Number = error()
     operator fun Number.compareTo(s: Number): Int = error()
 
     operator fun Number.div(v: vec2): vec2 = error()
     operator fun Number.div(v: ivec2): vec2 = error()
+
+    fun int(s: Number): int = error()
 
     fun vec2(s: Number): vec2 = Vector2f()
     fun vec2(x: Number, y: Number): vec2 = error()
@@ -151,6 +155,7 @@ open class GlslReceiver {
     var vec4.y: float by swizzle()
     var vec4.z: float by swizzle()
     var vec4.w: float by swizzle()
+    var vec4.xy: vec2 by swizzle()
     var vec4.xz: vec2 by swizzle()
     var vec4.xyz: vec3 by swizzle()
     val vec4.rgb: vec3 by swizzle()
@@ -236,7 +241,7 @@ open class GlslReceiver {
     fun abs(v: vec2): vec2 = error()
     fun abs(v: vec3): vec3 = error()
 
-    fun floor(n: Number): float = error()
+    fun <T : Number> floor(n: T): T = error()
     fun floor(n: vec2): vec2 = error()
     fun floor(n: vec3): vec3 = error()
     fun floor(n: vec4): vec4 = error()
@@ -257,6 +262,8 @@ open class GlslReceiver {
         error() //FIXME default values never present in IrValueParameter for some reason
 
     fun inverse(m: mat4): mat4 = error()
+
+    fun discard(): Unit = error()
 
 }
 
@@ -285,21 +292,48 @@ private fun error(): Nothing = error("don't actually call these dingus")
 
 class UniformDelegate<T : Any> :
     ReadWriteProperty<ShaderBuilder<*, *, *>, T> { //FIXME would have to be protected and internal... has this really never been a usecase?
-    var initialised = false
+    private var initialised = false
 
     override fun getValue(thisRef: ShaderBuilder<*, *, *>, property: KProperty<*>): T =
         TODO("AbstractShader is gonna have to grow some getters")
 
     override fun setValue(thisRef: ShaderBuilder<*, *, *>, property: KProperty<*>, value: T) {
         if (!initialised) { //TODO for getter also i guess?
-            thisRef.addUniform(property.name, (property.returnType.classifier as KClass<*>).javaObjectType)
+            when (value) {
+                is Array<*> -> thisRef.addUniformArray(property.name, value.size, value::class.javaObjectType)
+                else -> thisRef.addUniform(property.name, value::class.javaObjectType)
+            }
             initialised = true
         }
-        when (value) { //TODO move to specific array delegate class and overload builder function
-            is Array<*> -> thisRef.setUniformArray(property.name, value as Array<Any>)
+        when (value) {
+            is Array<*> -> error("impossiburu")
+            is Collection<*> -> error("impossiburu")
             is Texture -> thisRef.setTexture(property.name, value)
             else -> thisRef.setUniform(property.name, value)
         }
+    }
+}
+
+class UniformArrayDelegate<T : Any>(private val size: Int) : ReadWriteProperty<ShaderBuilder<*, *, *>, Array<T>> {
+    private var initialised = false
+
+    override fun getValue(thisRef: ShaderBuilder<*, *, *>, property: KProperty<*>): Array<T> =
+        TODO("AbstractShader is gonna have to grow some getters")
+
+    @OptIn(ExperimentalStdlibApi::class)
+    override fun setValue(thisRef: ShaderBuilder<*, *, *>, property: KProperty<*>, value: Array<T>) {
+        if (!initialised) {
+            thisRef.addUniformArray(
+                property.name,
+                value.size,
+                (property.returnType.javaType as Class<*>).componentType!!
+            )
+            initialised = true
+        }
+
+        check(value.size <= size) { "Array value size must be smaller than or equal to uniform array size" }
+
+        thisRef.setUniformArray(property.name, value as Array<Any>)
     }
 }
 

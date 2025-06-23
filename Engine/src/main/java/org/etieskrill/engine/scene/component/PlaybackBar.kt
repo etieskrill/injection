@@ -5,7 +5,7 @@ import org.joml.Vector4f
 import kotlin.time.Duration
 
 class PlaybackBar(
-    val totalDuration: Duration,
+    private val totalDuration: Duration,
     var action: (Duration) -> Unit = {}
 ) : HBox() {
 
@@ -67,18 +67,18 @@ class PlaybackBar(
     var stopAction: () -> Unit = {}
 
     private val playButton = Button(
-        Image(/*"textures/"*/"icons/play-button-black.png").apply { size = Vector2f(32f) }
+        Image("textures/icons/play-button-black.png").apply { size = Vector2f(32f) }
     ).apply {
         size = Vector2f(32f)
         setAction { state = State.PLAYING }
     }
     private val pauseButton =
-        Button(Image(/*"textures/"*/"icons/pause-button-black.png").apply { size = Vector2f(32f) }).apply {
+        Button(Image("textures/icons/pause-button-black.png").apply { size = Vector2f(32f) }).apply {
             size = Vector2f(32f)
             setAction { state = State.PAUSED }
         }
     private val stopButton = Button(
-        Image(/*"textures/"*/"icons/stop-button-black.png").apply { size = Vector2f(32f) }
+        Image("textures/icons/stop-button-black.png").apply { size = Vector2f(32f) }
     ).apply {
         size = Vector2f(32f)
         setAction { state = State.STOPPED }

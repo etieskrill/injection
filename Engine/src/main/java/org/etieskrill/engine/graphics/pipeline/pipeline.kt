@@ -8,11 +8,14 @@ import org.etieskrill.engine.graphics.gl.VertexArrayObject
 class PostPassPipeline<S : PureShaderBuilder<*, *>>(
     shader: S,
     frameBuffer: FrameBuffer?,
-    opaque: Boolean = true
+    opaque: Boolean = true,
+    depthTest: Boolean = true
 ) : Pipeline<S>(
     4, PipelineConfig(
-        if (opaque) AlphaMode.OPAQUE else AlphaMode.SOURCE_ALPHA,
-        PrimitiveType.TRIANGLE_STRIP, CullingMode.NONE
+        alphaMode = if (opaque) AlphaMode.OPAQUE else AlphaMode.SOURCE_ALPHA,
+        primitiveType = PrimitiveType.TRIANGLE_STRIP,
+        cullingMode = CullingMode.NONE,
+        depthTest = depthTest
     ), shader, frameBuffer
 )
 

@@ -41,7 +41,7 @@ public class WidgetContainer extends Node<WidgetContainer> {
 
     public WidgetContainer(@NotNull Node<?> child) {
         setChild(child);
-        this.chevronIcon = Textures.ofFile("icons/chevron-down-solid-black.png");
+        this.chevronIcon = Textures.ofFile("textures/icons/chevron-down-solid-black.png");
         this.titleFont = Fonts.getDefault(((int) WIDGET_BAR_HEIGHT) - 4);
     }
 

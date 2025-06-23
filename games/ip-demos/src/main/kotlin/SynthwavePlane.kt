@@ -49,7 +49,6 @@ import org.joml.Matrix4f
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector4f
-import org.joml.times
 import org.jtransforms.fft.FloatFFT_1D
 import kotlin.math.abs
 import kotlin.math.cos
@@ -65,7 +64,8 @@ fun main() {
 @Suppress("MemberVisibilityCanBePrivate")
 class SynthwavePlane : GameApplication(window {
     title = "Synthwave Plane"
-    mode = Window.WindowMode.FULLSCREEN
+//    mode = Window.WindowMode.FULLSCREEN
+    mode = Window.WindowMode.BORDERLESS
     size = Window.WindowSize.LARGEST_FIT
     vSync = true
 }) {
@@ -117,6 +117,7 @@ class SynthwavePlane : GameApplication(window {
             "mr.edwardz-little-violet-charlston-boogie-runnrest.ogg"
             //TODO innerbloom might be cool to see dissected too
 //            "avlönskt-bad-apple-multilanguage.ogg"
+//            "infected-mushroom-spitfire-monstercat-release.ogg"
 //            "nightstop-she-dances-in-the-dark.ogg"
 //            "pumped-up-kicks-synthwave.ogg"
             , AudioMode.STEREO, true
@@ -131,7 +132,7 @@ class SynthwavePlane : GameApplication(window {
         fftGraph = Histogram(
             FFT_BINS.toInt(),
             scaleMode = HistogramScaleMode.FIXED,
-            maxValue = 3000000f,
+            maxValue = 0.5f,
             drawSeparators = false
         ).apply { size = Vector2f(600f, 200f) }
         playbackBar = PlaybackBar(audioSource.duration).apply {
@@ -154,7 +155,7 @@ class SynthwavePlane : GameApplication(window {
                     position = Vector2f(50f, 0f)
                     isCollapsed = true
                 },
-                fpsLabel,
+                fpsLabel, //FIXME how in gods name is the fps graph right-side up, and the fft is not??
                 fftGraph,
                 playbackBar
             ).apply { size = Vector2f(600f, 500f) },
@@ -185,7 +186,8 @@ class SynthwavePlane : GameApplication(window {
             // shenanigans should just be converted to a proper shader anyways
             //TODO or this (sparse data points) should probably be it's own node... "Line{Chart,Plot,Graph}"?
             val index = floor((-(0.1f / ((t.toFloat() / FFT_BINS) + 0.1f)) + 1f) * FFT_BINS).toInt()
-            fftAverageMagnitudes[index] = (fftAverageMagnitudes[index] + value) / 2
+            val sample = (fftAverageMagnitudes[index] + value) / 2
+            fftAverageMagnitudes[index] = sqrt(sample / 5000000f)
         }
         fftGraph.values.addAll(fftAverageMagnitudes)
 
@@ -217,7 +219,7 @@ class SynthwavePlane : GameApplication(window {
 }
 
 //TODO move to helper class
-const val FFT_BINS = 1024L
+const val FFT_BINS = 512L
 var fft = FloatFFT_1D(2 * FFT_BINS)
 val fftBuffer = MutableList(FFT_BINS.toInt()) { 0f }
 const val COS_WINDOW_a0 = 0.5f // <-- hann, hamming: 25/46f
