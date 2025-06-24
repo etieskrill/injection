@@ -236,7 +236,7 @@ internal class IrShaderGenerationExtension(
                     file
                 )
                 it.name.asString() != POSITION_FIELD_NAME
-            },
+            }.toMutableMap(),
             renderTargets = types.renderTargetsType.properties.onEach {
                 requireToCompile(
                     it,
@@ -470,7 +470,7 @@ internal data class VisitorData(
 
     val vertexDataStructType: String,
     val vertexDataStructName: String,
-    val vertexDataStruct: Map<String, GlslType>,
+    val vertexDataStruct: MutableMap<String, GlslType>,
 
     val renderTargets: Map<String, String>, //may be alias on collision as class is unwrapped
 

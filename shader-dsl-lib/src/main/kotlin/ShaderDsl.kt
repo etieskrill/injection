@@ -107,6 +107,7 @@ open class GlslReceiver {
     operator fun Number.times(s: Number): Number = error()
     operator fun Number.times(v: vec2): vec2 = error()
     operator fun Number.times(v: vec3): vec3 = error()
+    operator fun Number.div(s: Number): Number = error()
     operator fun Number.rem(n: Number): Number = error()
     operator fun Number.unaryMinus(): Number = error()
     operator fun Number.compareTo(s: Number): Int = error()
@@ -118,6 +119,7 @@ open class GlslReceiver {
     fun vec2(x: Number, y: Number): vec2 = error()
     fun vec2(v: vec2): vec2 = error()
     fun vec2(v: ivec2): vec2 = error()
+    fun vec2(v: vec4): vec2 = error()
 
     fun ivec2(s: Int): ivec2 = Vector2i()
     fun ivec2(v: vec2): ivec2 = error()

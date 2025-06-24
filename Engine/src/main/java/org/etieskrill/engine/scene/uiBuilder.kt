@@ -75,3 +75,10 @@ class ButtonBuilder(
 }
 
 fun button(vararg properties: Any, block: ButtonBuilder.() -> Unit) = block(ButtonBuilder(block, properties.toList()))
+
+class ImageBuilder(
+    override val block: ImageBuilder.() -> Unit,
+    override val properties: List<Any>
+) : NodeBuilder<ImageBuilder>(block, properties)
+
+fun image(vararg properties: Any, block: ImageBuilder.() -> Unit) = block(ImageBuilder(block, properties.toList()))

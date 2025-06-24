@@ -182,6 +182,18 @@ internal fun generateGlsl(
     )
     newline()
 
+    transpilerData.stage = FRAGMENT
+    val usedVertexPositionInFrag = programData.stageBodies[FRAGMENT]!!.findElement<IrCall> {
+        it.origin == IrStatementOrigin.GET_PROPERTY
+                && it.symbol.owner.name.asString() == "<get-$POSITION_FIELD_NAME>"
+                && it.evalChildren(GlslTranspiler(), transpilerData) == "it" //FIXME replace with more robust version
+    } != null
+    transpilerData.stage = NONE
+
+    if (usedVertexPositionInFrag) {
+        programData.vertexDataStruct["position"] = GlslType("vec4")
+    }
+
     val generateVertexStruct = programData.vertexDataStruct.isNotEmpty()
 
     if (generateVertexStruct) {
@@ -233,7 +245,10 @@ internal fun generateGlsl(
         newline()
     }
 
-    appendLine(generateMain(programData.stageBodies[VERTEX]!!, transpilerData))
+    val vertexPositionStatement = if (usedVertexPositionInFrag) {
+        "vertex.position = gl_Position;"
+    } else ""
+    appendLine(generateMain(programData.stageBodies[VERTEX]!!, transpilerData, vertexPositionStatement))
     newline()
 
     transpilerData.stage = FRAGMENT
@@ -329,7 +344,8 @@ private fun generateFunction(function: IrFunction, data: TranspilerData) = build
     append("}")
 }
 
-private fun generateMain(body: IrBlockBody, data: TranspilerData) = buildIndentedString {
+private fun generateMain(body: IrBlockBody, data: TranspilerData, additionalStatements: String = "") =
+    buildIndentedString {
     appendLine("void main() {")
     indent {
         val statements = body.statements.associateWith { it.accept(GlslTranspiler(unwrapReturn = true), data) }
@@ -347,7 +363,7 @@ private fun generateMain(body: IrBlockBody, data: TranspilerData) = buildIndente
             }
         }
 
-        appendMultiLine(formattedStatements.joinToString("\n"))
+        appendMultiLine((formattedStatements + additionalStatements).joinToString("\n"))
     }
     append("}")
 }
@@ -417,12 +433,12 @@ private open class GlslTranspiler(
                 when (propertyOwner) {
                     "<this>" -> propertyName //direct shader class members, e.g. uniforms
                     "it" -> when (data.stage) { //implicit lambda parameter //FIXME find and use declared name if not implicit
-                        VERTEX -> propertyName
-                        FRAGMENT -> when (propertyName) {
+                        VERTEX -> when (propertyName) {
                             POSITION_FIELD_NAME -> GL_POSITION_NAME
-                            else -> "${data.vertexDataStructName}.$propertyName"
+                            else -> propertyName
                         }
 
+                        FRAGMENT -> "${data.vertexDataStructName}.$propertyName"
                         NONE -> error("Implicit receiver called outside of any stage; presumably stage function trying to generate while not in respective stage")
                         else -> TODO("Getter for implicit lambda parameter call not implemented for stage ${data.stage}")
                     }

@@ -26,3 +26,5 @@ dependencyResolutionManagement {
 //        }
 //    }
 }
+include("games:circles")
+findProject(":games:circles")?.name = "circles"
