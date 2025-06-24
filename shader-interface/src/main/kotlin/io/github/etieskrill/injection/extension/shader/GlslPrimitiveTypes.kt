@@ -12,6 +12,8 @@ import org.joml.Vector2i
 import org.joml.Vector2ic
 import org.joml.Vector3f
 import org.joml.Vector3fc
+import org.joml.Vector3i
+import org.joml.Vector3ic
 import org.joml.Vector4f
 import org.joml.Vector4fc
 import org.joml.Vector4i
@@ -27,6 +29,7 @@ typealias vec3 = Vector3fc
 typealias vec4 = Vector4fc
 
 typealias ivec2 = Vector2ic
+typealias ivec3 = Vector3ic
 typealias ivec4 = Vector4ic
 
 typealias mat2 = Matrix2fc
@@ -69,6 +72,7 @@ private val primitiveTypes = mutableMapOf(
     bool::class to "bool",
     vec2::class to "vec2",
     ivec2::class to "ivec2",
+    ivec3::class to "ivec3",
     ivec4::class to "ivec4",
     vec3::class to "vec3",
     vec4::class to "vec4",
@@ -81,6 +85,7 @@ private val jomlConstants = mapOf(
     Vector2f::class to Vector2fc::class,
     Vector2i::class to Vector2ic::class,
     Vector3f::class to Vector3fc::class,
+    Vector3i::class to Vector3ic::class,
     Vector4f::class to Vector4fc::class,
     Vector4i::class to Vector4ic::class,
     Matrix2f::class to Matrix2fc::class,

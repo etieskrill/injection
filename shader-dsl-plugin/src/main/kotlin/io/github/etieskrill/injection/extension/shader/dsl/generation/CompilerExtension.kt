@@ -5,6 +5,7 @@ import io.github.etieskrill.injection.extension.shader.ShaderStage.*
 import io.github.etieskrill.injection.extension.shader.dsl.ConstDelegate
 import io.github.etieskrill.injection.extension.shader.dsl.RenderTarget
 import io.github.etieskrill.injection.extension.shader.dsl.ShaderBuilder
+import io.github.etieskrill.injection.extension.shader.dsl.UniformArrayDelegate
 import io.github.etieskrill.injection.extension.shader.dsl.UniformDelegate
 import io.github.etieskrill.injection.extension.shader.dsl.gradle.ShaderDslCompilerOptions
 import io.github.etieskrill.injection.extension.shader.dsl.std.ConstEval
@@ -29,6 +30,7 @@ import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.declarations.impl.IrFunctionImpl
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.expressions.IrCall
+import org.jetbrains.kotlin.ir.expressions.IrConst
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.symbols.IrClassifierSymbol
@@ -43,7 +45,6 @@ import org.jetbrains.kotlin.ir.types.classifierOrFail
 import org.jetbrains.kotlin.ir.types.isArray
 import org.jetbrains.kotlin.ir.types.typeOrFail
 import org.jetbrains.kotlin.ir.util.defaultType
-import org.jetbrains.kotlin.ir.util.file
 import org.jetbrains.kotlin.ir.util.findDeclaration
 import org.jetbrains.kotlin.ir.util.getArgumentsWithIr
 import org.jetbrains.kotlin.ir.util.getNameWithAssert
@@ -56,6 +57,7 @@ import org.jetbrains.kotlin.ir.util.superTypes
 import org.jetbrains.kotlin.ir.visitors.IrVisitor
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.utils.addToStdlib.ifFalse
+import org.jetbrains.kotlin.utils.addToStdlib.ifTrue
 import org.jetbrains.kotlin.utils.filterIsInstanceAnd
 import org.jetbrains.kotlin.utils.getOrPutNullable
 import java.io.File
@@ -176,9 +178,11 @@ internal class IrShaderGenerationExtension(
         types: ShaderDataTypes,
         files: Map<IrDeclaration, IrFile>,
     ): VisitorData {
+        val file = files[shader]!!
+
         val constDeclarations = shader.getDelegatedProperties<ConstDelegate<*>, GlslTypeInitialiser>(
             messageCollector,
-            shader.file
+            file
         ) { property ->
             val initialiser = property.backingField!!.initializer!!.expression
             property.name.asString() to (initialiser as IrCall)
@@ -196,20 +200,41 @@ internal class IrShaderGenerationExtension(
                 }
         }
 
-        val uniforms = shader.getDelegatedProperties<UniformDelegate<*>, GlslType>(
-            messageCollector,
-            shader.file
-        ) { property ->
-            property.name.asString() to property.backingField?.type?.let { type ->
+        fun IrProperty.getUniformNameAndType() =
+            name.asString() to backingField?.type?.let { type ->
                 when (type) {
-                    is IrSimpleType -> requireNotNull(type.arguments[0].typeOrFail.glslType)
-                    { "Shader uniforms may only be of GLSL primitive type: ${type.arguments[0].typeOrFail.simpleName} is not" } //TODO i just assume the delegate's type is always first
+                    is IrSimpleType -> requireNotNull(type.arguments[0].typeOrFail.glslType) {
+                        "Shader uniforms may only be of GLSL primitive type: ${
+                            type.arguments[0].typeOrFail.simpleName
+                        } is not ${
+                            type.arguments[0].typeOrFail
+                                .isArray()
+                                .ifTrue { "(use uniformArray<...>() for arrays instead)" }
+                                .orEmpty()
+                        }"
+                    } //TODO i just assume the delegate's type is always first
                     else -> error("Unexpected type: $this")
                 }
             }!!
-        }
 
-        val file = files[shader]!!
+        val uniforms = shader.getDelegatedProperties<UniformDelegate<*>, GlslType>(
+            messageCollector, file, IrProperty::getUniformNameAndType
+        )
+
+        val arrayUniforms = shader.getDelegatedProperties<UniformArrayDelegate<*>, Pair<GlslType, Int>>(
+            messageCollector, file
+        ) {
+            val (name, type) = it.getUniformNameAndType()
+            val size = when (val sizeArgument = (it.backingField!!.initializer!!.expression as IrCall)
+                .getValueArgument(0)!!) {
+                is IrConst -> sizeArgument.value.toString()
+                else -> messageCollector.compilerError(
+                    "Uniform array size must be compile constant for now", sizeArgument, file
+                )
+            }.toInt()
+
+            name to (type to size)
+        }
 
         val data = VisitorData(
             programParent = shader,
@@ -219,6 +244,15 @@ internal class IrShaderGenerationExtension(
                     if (it.key in uniforms.keys) {
                         messageCollector.compilerError(
                             "Vertex attribute name '${it.key}' clashes with uniform of same name, rename for now",
+                            if (types.vertexAttributesType.startOffset != UNDEFINED_OFFSET)
+                                types.vertexAttributesType
+                            else shader,
+                            file
+                        )
+                    }
+                    if (it.key in arrayUniforms.keys) {
+                        messageCollector.compilerError(
+                            "Vertex attribute name '${it.key}' clashes with array uniform of same name, rename for now",
                             if (types.vertexAttributesType.startOffset != UNDEFINED_OFFSET)
                                 types.vertexAttributesType
                             else shader,
@@ -253,9 +287,9 @@ internal class IrShaderGenerationExtension(
             }.map {
                 val name = it.name.asString()
 
-                val finalName = if (name in uniforms) {
+                val finalName = if (name in uniforms || name in arrayUniforms) {
                     val altName = "${name}RenderTarget"
-                    if (altName in uniforms)
+                    if (altName in uniforms || altName in arrayUniforms)
                         messageCollector.compilerError(
                             "Why is there a uniform named $name AND one named $altName? " +
                                     "(render target alias to evade $name collides with $altName)", it, file
@@ -269,6 +303,7 @@ internal class IrShaderGenerationExtension(
             }.toMap(),
             constants = constDeclarations,
             uniforms = uniforms,
+            arrayUniforms = arrayUniforms,
             definedFunctions = shader.declarations
                 .filterIsInstanceAnd<IrFunctionImpl> { it.name.asString() != "program" } //impl because exact type is needed
                 .onEach { check(it.typeParameters.isEmpty()) { "Shader functions may not have type parameters, but this one does:\n${it.render()}" } }
@@ -477,6 +512,7 @@ internal data class VisitorData(
     val constants: Map<String, GlslTypeInitialiser>,
 
     val uniforms: Map<String, GlslType>,
+    val arrayUniforms: Map<String, Pair<GlslType, Int>>,
 
     val definedFunctions: Map<String, Pair<ShaderStage, IrFunction>>,
 

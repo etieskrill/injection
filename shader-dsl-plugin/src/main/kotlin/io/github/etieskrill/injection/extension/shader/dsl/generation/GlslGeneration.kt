@@ -1,4 +1,4 @@
-@file:OptIn(UnsafeDuringIrConstructionAPI::class, ExperimentalStdlibApi::class)
+@file:OptIn(UnsafeDuringIrConstructionAPI::class)
 
 package io.github.etieskrill.injection.extension.shader.dsl.generation
 
@@ -135,10 +135,12 @@ private data class TranspilerData(
     val evaluatedFunctions: Map<String, List<KCallable<*>>>,
     val templateFunctions: Map<String, Map<List<String>, String>>,
     val vertexDataStructName: String,
+    val vertexDataStruct: Map<String, GlslType>,
     val renderTargetNames: Map<String, String>,
     val uniforms: Set<String>,
     var stage: ShaderStage = NONE,
     var operatorStack: MutableList<OperatorType> = mutableListOf(), //TODO remove brackets where neighboring operators are same or less binding
+    var useFragmentVertexPositionAccessor: Boolean = false
 ) {
     val irFunctions: List<IrFunction>
         get() = definedFunctions.map { it.value.second }
@@ -152,6 +154,13 @@ internal fun generateGlsl(
     pluginContext: IrPluginContext,
     messageCollector: MessageCollector
 ): String = buildIndentedString {
+    val genFragPosAccessor = programData.stageBodies[FRAGMENT]!!
+        .findElement<IrCall> {
+            val functionPropertyName = it.symbol.owner.name.asString()
+                .removePrefix("<get-").removeSuffix(">")
+            it.origin == IrStatementOrigin.GET_PROPERTY && functionPropertyName == POSITION_FIELD_NAME
+        } != null
+
     val transpilerData = TranspilerData(
         pluginContext,
         messageCollector,
@@ -162,8 +171,14 @@ internal fun generateGlsl(
         programData.evaluatedFunctions,
         programData.templateFunctions,
         programData.vertexDataStructName,
+        programData.vertexDataStruct.let {
+            if (genFragPosAccessor) {
+                mutableMapOf("position" to GlslType("vec4")).apply { putAll(it) }
+            } else it
+        },
         programData.renderTargets,
-        programData.uniforms.keys
+        programData.uniforms.keys,
+        useFragmentVertexPositionAccessor = genFragPosAccessor
     )
 
     appendLine(
@@ -182,22 +197,10 @@ internal fun generateGlsl(
     )
     newline()
 
-    transpilerData.stage = FRAGMENT
-    val usedVertexPositionInFrag = programData.stageBodies[FRAGMENT]!!.findElement<IrCall> {
-        it.origin == IrStatementOrigin.GET_PROPERTY
-                && it.symbol.owner.name.asString() == "<get-$POSITION_FIELD_NAME>"
-                && it.evalChildren(GlslTranspiler(), transpilerData) == "it" //FIXME replace with more robust version
-    } != null
-    transpilerData.stage = NONE
-
-    if (usedVertexPositionInFrag) {
-        programData.vertexDataStruct["position"] = GlslType("vec4")
-    }
-
-    val generateVertexStruct = programData.vertexDataStruct.isNotEmpty()
+    val generateVertexStruct = transpilerData.vertexDataStruct.isNotEmpty()
 
     if (generateVertexStruct) {
-        appendLine(generateStruct(programData.vertexDataStructType, programData.vertexDataStruct))
+        appendLine(generateStruct(programData.vertexDataStructType, transpilerData.vertexDataStruct))
         newline()
     }
 
@@ -217,6 +220,11 @@ internal fun generateGlsl(
 
     programData.uniforms.forEach { (name, type) ->
         appendLine(generateStatement(GlslStorageQualifier.UNIFORM, type, name))
+    }
+    newline()
+
+    programData.arrayUniforms.forEach { (name, typeAndSize) ->
+        appendLine(generateArrayStatement(GlslStorageQualifier.UNIFORM, typeAndSize.first, typeAndSize.second, name))
     }
     newline()
 
@@ -245,10 +253,7 @@ internal fun generateGlsl(
         newline()
     }
 
-    val vertexPositionStatement = if (usedVertexPositionInFrag) {
-        "vertex.position = gl_Position;"
-    } else ""
-    appendLine(generateMain(programData.stageBodies[VERTEX]!!, transpilerData, vertexPositionStatement))
+    appendLine(generateMain(programData.stageBodies[VERTEX]!!, transpilerData))
     newline()
 
     transpilerData.stage = FRAGMENT
@@ -344,8 +349,7 @@ private fun generateFunction(function: IrFunction, data: TranspilerData) = build
     append("}")
 }
 
-private fun generateMain(body: IrBlockBody, data: TranspilerData, additionalStatements: String = "") =
-    buildIndentedString {
+private fun generateMain(body: IrBlockBody, data: TranspilerData) = buildIndentedString {
     appendLine("void main() {")
     indent {
         val statements = body.statements.associateWith { it.accept(GlslTranspiler(unwrapReturn = true), data) }
@@ -363,7 +367,7 @@ private fun generateMain(body: IrBlockBody, data: TranspilerData, additionalStat
             }
         }
 
-        appendMultiLine((formattedStatements + additionalStatements).joinToString("\n"))
+        appendMultiLine(formattedStatements.joinToString("\n"))
     }
     append("}")
 }
@@ -411,7 +415,7 @@ private open class GlslTranspiler(
 
         return when {
             expression.origin == IrStatementOrigin.GET_PROPERTY -> {
-                var propertyOwner = expression.evalChildren(this, data)
+                val propertyOwner = expression.evalChildren(this, data)
                 var propertyName = functionPropertyName
 
                 if (propertyName.startsWith("get")) { //when accessor is defined in java
@@ -433,11 +437,7 @@ private open class GlslTranspiler(
                 when (propertyOwner) {
                     "<this>" -> propertyName //direct shader class members, e.g. uniforms
                     "it" -> when (data.stage) { //implicit lambda parameter //FIXME find and use declared name if not implicit
-                        VERTEX -> when (propertyName) {
-                            POSITION_FIELD_NAME -> GL_POSITION_NAME
-                            else -> propertyName
-                        }
-
+                        VERTEX -> propertyName
                         FRAGMENT -> "${data.vertexDataStructName}.$propertyName"
                         NONE -> error("Implicit receiver called outside of any stage; presumably stage function trying to generate while not in respective stage")
                         else -> TODO("Getter for implicit lambda parameter call not implemented for stage ${data.stage}")
@@ -467,6 +467,7 @@ private open class GlslTranspiler(
 
             functionName == "CHECK_NOT_NULL" -> expression.arguments[0]!!.accept(this, data)
             functionName in listOf("toFloat", "toDouble") -> expression.receiver!!.accept(this, data)
+            functionName == "discard" -> "discard"
             functionName in builtinFunctionNames -> handleFunction(functionName, expression, data)
             functionPropertyName in builtinFunctionNames -> { //could split using KClass::memberFunctions and KClass::memberProperties if needed
                 when {
@@ -505,8 +506,8 @@ private open class GlslTranspiler(
         if (booleanOperator != null) {
             check(expression.branches.size == 2)
 
-            var leftSide: String
-            var rightSide: String
+            val leftSide: String
+            val rightSide: String
 
             when (booleanOperator) {
                 OperatorType.OROR -> {
@@ -569,9 +570,9 @@ private open class GlslTranspiler(
     }
 
     override fun visitSetValue(expression: IrSetValue, data: TranspilerData): String {
-        var leftSide: String
-        var operator: String
-        var rightSideExpression: IrExpression
+        val leftSide: String
+        val operator: String
+        val rightSideExpression: IrExpression
 
         when (expression.origin) {
             EQ -> {
@@ -608,15 +609,14 @@ private open class GlslTranspiler(
         expression.receiver?.let { "${it.accept(this, data)}." } + expression.symbol.owner.name.asString()
 
     override fun visitSetField(expression: IrSetField, data: TranspilerData): String {
-        val receiver = expression.receiver!!
-        val receiverRepr = when (receiver) {
+        val receiverRepr = when (val receiver = expression.receiver!!) {
             is IrGetValue -> receiver.symbol.owner.name.asString()
             is IrTypeOperatorCall -> receiver.argument.accept(this, data)
             else -> TODO()
         }
-        var leftSide = "$receiverRepr.${expression.symbol.owner.name.asString()}"
-        var operator: String
-        var rightSideExpression: IrExpression
+        val leftSide = "$receiverRepr.${expression.symbol.owner.name.asString()}"
+        val operator: String
+        val rightSideExpression: IrExpression
 
         when (expression.origin) {
             EQ -> {
@@ -625,8 +625,6 @@ private open class GlslTranspiler(
             }
 
             in assignmentOperators -> {
-                error("${expression.dump()}\n$leftSide\n${expression.value.accept(this, data)}")
-
                 operator = assignmentOperators[expression.origin]!!
                 rightSideExpression =
                     (expression.value as IrCall) //TODO wrapper funcs, especially for getting params //FIXME if assignment op is passed, this will be IrGetValue instead of IrCall
@@ -657,8 +655,8 @@ private open class GlslTranspiler(
             )
         }
 
-        var leftSide: String
-        var rightSide: String
+        val leftSide: String
+        val rightSide: String
 
         if (!operator.booleanOperator) {
             check(expression.origin?.debugName?.lowercase() !in OperatorType.entries.map { it.name.lowercase() }
@@ -684,8 +682,8 @@ private open class GlslTranspiler(
         expression: IrCall,
         data: TranspilerData
     ): String {
-        var leftSide: String
-        var rightSide: String
+        val leftSide: String
+        val rightSide: String
 
         val firstArg = expression.getValueArgument(0)!!
         if (firstArg is IrCall && firstArg.symbol.owner.name.asString() == "compareTo") {
@@ -727,8 +725,8 @@ private open class GlslTranspiler(
         data: TranspilerData
     ): String {
         val function = data.evaluatedFunctions[functionName]!!
-            .single {
-                it.valueParameters.map { (it.type.classifier!! as KClass<*>).qualifiedName!! }
+            .single { function ->
+                function.valueParameters.map { (it.type.classifier!! as KClass<*>).qualifiedName!! }
                     .containsAll(expression.valueArguments.filterNotNull().map { it.type.fullName })
             }
 
@@ -737,7 +735,7 @@ private open class GlslTranspiler(
             it.accept(this, data)
         }
 
-        var result: Any
+        val result: Any
         try {
             result = function.call(*arguments.toTypedArray())!!
         } catch (e: InvocationTargetException) {
@@ -787,7 +785,11 @@ private class GlslReturnTranspiler(val root: GlslTranspiler) : IrVisitor<String,
                 when (data.stage) {
                     VERTEX -> {
                         when (param) {
-                            POSITION_FIELD_NAME -> "$GL_POSITION_NAME = $expression;"
+                            POSITION_FIELD_NAME -> {
+                                "$GL_POSITION_NAME = $expression;" + if (data.useFragmentVertexPositionAccessor) {
+                                    "\n${data.vertexDataStructName}.$POSITION_FIELD_NAME = $GL_POSITION_NAME;"
+                                } else ""
+                            }
                             else -> "${data.vertexDataStructName}.$param = $expression;"
                         }
                     }
@@ -909,7 +911,7 @@ private fun IrStatement.evalChildren(visitor: IrVisitor<String, TranspilerData>,
 }
 
 internal inline fun <reified T> IrType?.equals() =
-    this?.fullName.let { it == T::class.qualifiedName!! } == true
+    this?.fullName.let { it == T::class.qualifiedName!! }
 
 internal inline fun <reified T> IrExpression.returns() = type.equals<T>()
 
