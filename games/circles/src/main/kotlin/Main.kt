@@ -3,7 +3,13 @@ package io.github.etieskrill.games.circles
 import org.etieskrill.engine.application.GameApplication
 import org.etieskrill.engine.graphics.Batch
 import org.etieskrill.engine.graphics.camera.OrthographicCamera
+import org.etieskrill.engine.graphics.gl.framebuffer.FrameBuffer
+import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment
 import org.etieskrill.engine.graphics.pipeline.PostPassPipeline
+import org.etieskrill.engine.graphics.texture.Texture2D
+import org.etieskrill.engine.input.CursorInputAdapter
+import org.etieskrill.engine.input.Key
+import org.etieskrill.engine.input.Keys
 import org.etieskrill.engine.scene.Scene
 import org.etieskrill.engine.scene.component.Button
 import org.etieskrill.engine.scene.component.Label
@@ -27,6 +33,26 @@ class Main : GameApplication(
 ) {
     val camera = OrthographicCamera(window.currentSize)
 
+    val paintTexture = Texture2D.BlankBuilder(window.currentSize).build()
+    val paintFrameBuffer = FrameBuffer.Builder(window.currentSize)
+        .attach(paintTexture, FrameBufferAttachment.BufferAttachmentType.COLOUR0)
+        .build()
+    val paintPipeline = PostPassPipeline(
+        PaintShader(),
+        paintFrameBuffer,
+        opaque = false,
+        depthTest = false
+    )
+
+    val paintFeedbackPipeline = PostPassPipeline(
+        FullScreenTextureShader(),
+        null,
+        opaque = false,
+        depthTest = false
+    )
+
+    var drawing = false
+
     init {
         window.scene = Scene(
             Batch(renderer, window.currentSize),
@@ -44,6 +70,14 @@ class Main : GameApplication(
             ),
             camera
         )
+
+        window.addCursorInputs(object : CursorInputAdapter {
+            override fun invokeClick(button: Key?, action: Keys.Action?, posX: Double, posY: Double): Boolean {
+                drawing = button == Keys.LEFT_MOUSE.input
+                        && action == Keys.Action.PRESS
+                return false
+            }
+        })
     }
 
     val pipeline = PostPassPipeline(CircleShader(), null)
@@ -59,5 +93,18 @@ class Main : GameApplication(
         }
 
         renderer.render(pipeline)
+
+        if (drawing) {
+            paintPipeline.shader.apply {
+                position = Vector2f(window.cursor.position).div(Vector2f(window.currentSize))
+                size = Vector2f(1f).div(Vector2f(window.currentSize))
+            }
+            renderer.render(paintPipeline)
+        }
+        FrameBuffer.bindScreenBuffer()
+
+        //FIXME probably does not render because of culling
+        paintFeedbackPipeline.shader.sprite = paintTexture
+        renderer.render(paintFeedbackPipeline)
     }
 }
