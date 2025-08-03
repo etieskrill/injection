@@ -7,6 +7,8 @@ import org.joml.Vector3f
 import org.joml.Vector3fc
 import org.lwjgl.BufferUtils.*
 import org.lwjgl.openal.AL
+import org.lwjgl.openal.AL10
+import org.lwjgl.openal.AL10.alGetSourcei
 import org.lwjgl.openal.AL11.*
 import org.lwjgl.openal.ALC
 import org.lwjgl.openal.ALC10.*
@@ -70,6 +72,8 @@ abstract class AudioSource internal constructor(
     val buffer: ShortBuffer?,
     val duration: Duration = (numSamples / sampleRate).seconds
 ) : Disposable {
+
+    val isPlaying: Boolean = alGetSourcei(handle, AL_SOURCE_STATE) == AL_PLAYING
 
     fun play() = alSourcePlay(handle)
 
@@ -194,6 +198,47 @@ object Audio : Disposable {
         require(path.endsWith(".ogg")) { "Can only parse OGG sound files" }
         val encodedAudio = ResourceReader.getRawResource(AUDIO_PATH + path)
         val pcmAudio = vorbisDecodeToPCM(encodedAudio, mode)
+        check(pcmAudio.mode != AudioMode.DONT_CARE)
+
+        val buffer = alGenBuffers()
+
+        alBufferData(buffer, pcmAudio.mode.al, pcmAudio.buffer, pcmAudio.sampleRate)
+        checkError("Failed to buffer audio data")
+
+        val source = alGenSources()
+        checkError("Failed to create source")
+
+        alSourcei(source, AL_BUFFER, buffer)
+        checkError("Failed to bind buffer to source")
+
+        val audioSource = when (pcmAudio.mode) {
+            AudioMode.MONO -> MonoAudioSource(
+                source,
+                pcmAudio.sampleRate,
+                pcmAudio.numSamples,
+                pcmAudio.buffer.takeIf { retainBuffer }
+            )
+
+            AudioMode.STEREO -> StereoAudioSource(
+                source,
+                pcmAudio.sampleRate,
+                pcmAudio.numSamples,
+                pcmAudio.buffer.takeIf { retainBuffer }
+            )
+
+            else -> error("uh oh")
+        }
+
+        sources.getOrPut(currentContext) { mutableListOf() } += audioSource
+        buffers.getOrPut(currentContext) { mutableListOf() } += buffer
+
+        return audioSource
+    }
+
+    fun createSource(sampleRate: Int, encodedAudio: ShortBuffer, retainBuffer: Boolean = false): AudioSource {
+        checkInit()
+
+        val pcmAudio = PCMAudio(sampleRate, encodedAudio.capacity(), AudioMode.MONO, encodedAudio) //TODO update with stereo?
         check(pcmAudio.mode != AudioMode.DONT_CARE)
 
         val buffer = alGenBuffers()

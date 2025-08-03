@@ -17,6 +17,7 @@ import org.etieskrill.engine.audio.Audio
 import org.etieskrill.engine.audio.AudioListener
 import org.etieskrill.engine.audio.AudioMode
 import org.etieskrill.engine.audio.AudioSource
+import org.etieskrill.engine.audio.MonoAudioSource
 import org.etieskrill.engine.audio.StereoAudioSource
 import org.etieskrill.engine.entity.component.Drawable
 import org.etieskrill.engine.entity.component.Transform
@@ -50,10 +51,12 @@ import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector4f
 import org.jtransforms.fft.FloatFFT_1D
+import org.lwjgl.BufferUtils
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.floor
 import kotlin.math.max
+import kotlin.math.sin
 import kotlin.math.sqrt
 import kotlin.time.Duration.Companion.seconds
 
@@ -80,7 +83,7 @@ class SynthwavePlane : GameApplication(window {
     val frameTexture: Texture2D
     val sunPipeline = PostPassPipeline(SunPostPass(), null, false)
 
-    val audioSource: StereoAudioSource
+    val audioSource: MonoAudioSource
     val audioListener: AudioListener
 
     val fpsLabel: Label
@@ -112,16 +115,34 @@ class SynthwavePlane : GameApplication(window {
             .withComponent(transform)
             .withComponent(Drawable(plane, shader.shader as ShaderProgram))
 
-        audioSource = Audio.read(
+        val buf = BufferUtils.createShortBuffer(10 * 44100)
+        while (buf.position() < buf.limit()) {
+            val index = buf.position()
+//            var value = (
+//                        sin((240.0 * index.toDouble()) / (org.joml.Math.PI_OVER_2 * 1.0/10.0 * 44100.0))
+//                                * Short.MAX_VALUE / 10.0
+//                        ).toInt().toShort()
+            val samples = (10.0 / 44100.0)
+            var value = (index.toDouble() * Short.MAX_VALUE.toDouble() / samples) % 1.0
+//            value = (value + (
+//                    sin((245.0 * index.toDouble()) / (org.joml.Math.PI_OVER_2 * 1.0/10.0 * 44100.0))
+//                            * Short.MAX_VALUE / 10.0
+//                    ).toInt().toShort()).toShort()
+            buf.put(value.toInt().toShort())
+        }
+        buf.rewind()
+        audioSource = Audio.createSource(44100, buf, retainBuffer = true) as MonoAudioSource
+//        audioSource = Audio.read(
 //            "1khz-sine.ogg"
-            "mr.edwardz-little-violet-charlston-boogie-runnrest.ogg"
-            //TODO innerbloom might be cool to see dissected too
+//            "mr.edwardz-little-violet-charlston-boogie-runnrest.ogg"
+//            "payday-2-donacdum.ogg"
+        //TODO innerbloom might be cool to see dissected too
 //            "avlönskt-bad-apple-multilanguage.ogg"
 //            "infected-mushroom-spitfire-monstercat-release.ogg"
 //            "nightstop-she-dances-in-the-dark.ogg"
 //            "pumped-up-kicks-synthwave.ogg"
-            , AudioMode.STEREO, true
-        ) as StereoAudioSource
+//            , AudioMode.STEREO, true
+//        ) as StereoAudioSource
 
         audioListener = Audio.listener
 
@@ -161,6 +182,8 @@ class SynthwavePlane : GameApplication(window {
             ).apply { size = Vector2f(600f, 500f) },
             OrthographicCamera(window.currentSize)
         )
+
+        audioSource.play()
     }
 
     var frameSample = 0
