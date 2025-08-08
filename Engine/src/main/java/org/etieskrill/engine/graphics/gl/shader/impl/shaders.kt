@@ -1,5 +1,6 @@
 package org.etieskrill.engine.graphics.gl.shader.impl
 
+import io.github.etieskrill.injection.extension.shader.bool
 import io.github.etieskrill.injection.extension.shader.dsl.ColourRenderTarget
 import io.github.etieskrill.injection.extension.shader.dsl.PureShaderBuilder
 import io.github.etieskrill.injection.extension.shader.dsl.RenderTarget
@@ -28,6 +29,7 @@ class BlitShader : PureShaderBuilder<BlitShader.Vertex, BlitShader.RenderTargets
     val vertices by const(arrayOf(vec2(-1, -1), vec2(1, -1), vec2(-1, 1), vec2(1, 1)))
 
     var sprite by uniform<sampler2D>()
+    var useSpriteColour by uniform<bool>()
 
     var position by uniform<vec2>() //TODO either disable strict checking for builders, or do not compile
     var size by uniform<vec2>()
@@ -38,6 +40,7 @@ class BlitShader : PureShaderBuilder<BlitShader.Vertex, BlitShader.RenderTargets
     var windowSize by uniform<vec2>() //TODO check if used without being set
 
     init {
+        useSpriteColour = false
         position = Vector2f(0f)
         size = Vector2f(100f)
         rotation = 0f
@@ -54,7 +57,11 @@ class BlitShader : PureShaderBuilder<BlitShader.Vertex, BlitShader.RenderTargets
             Vertex(vec4(point, 0, 1), max(vec2(0), vertices[vertexID]))
         }
         fragment {
-            val texel = vec4(colour.rgb, texture(sprite, it.textureCoords).a * colour.a)
+            val texel = if (useSpriteColour) {
+                texture(sprite, it.textureCoords) * colour
+            } else {
+                vec4(colour.rgb, texture(sprite, it.textureCoords).a * colour.a)
+            }
             RenderTargets(texel.rt)
         }
     }

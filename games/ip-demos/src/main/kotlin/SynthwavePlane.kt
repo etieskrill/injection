@@ -15,7 +15,6 @@ import io.github.etieskrill.injection.extension.shader.vec4
 import org.etieskrill.engine.application.GameApplication
 import org.etieskrill.engine.audio.Audio
 import org.etieskrill.engine.audio.AudioListener
-import org.etieskrill.engine.audio.AudioMode
 import org.etieskrill.engine.audio.AudioSource
 import org.etieskrill.engine.audio.MonoAudioSource
 import org.etieskrill.engine.audio.StereoAudioSource
@@ -122,8 +121,23 @@ class SynthwavePlane : GameApplication(window {
 //                        sin((240.0 * index.toDouble()) / (org.joml.Math.PI_OVER_2 * 1.0/10.0 * 44100.0))
 //                                * Short.MAX_VALUE / 10.0
 //                        ).toInt().toShort()
-            val samples = (10.0 / 44100.0)
-            var value = (index.toDouble() * Short.MAX_VALUE.toDouble() / samples) % 1.0
+            val wavelength = 1.0 / (250.0 / 8)
+            var value = abs((index.toDouble() / wavelength) % 44100.0 - 44100.0/2.0) / 44100.0
+            value += abs((index.toDouble() / wavelength * 2) % 44100.0 - 44100.0/2.0) / 44100.0
+            value += abs((index.toDouble() / wavelength * 4) % 44100.0 - 44100.0/2.0) / 44100.0
+
+            value += sin((250.0 / 2.0 * index.toDouble()) / (org.joml.Math.PI_OVER_2 * 1.0 / 10.0 * 44100.0))
+            value += sin((250.0 / 4.0 * index.toDouble()) / (org.joml.Math.PI_OVER_2 * 1.0 / 10.0 * 44100.0))
+
+            value *= Short.MAX_VALUE / 4.0
+
+            val slowTremolo = 0.5 * (sin((1 * index.toDouble()) / (org.joml.Math.PI_OVER_2 * 1.0 / 10.0 * 44100.0)) + 1)
+            value *= slowTremolo
+
+            val fastTremolo =
+                0.2 * sin((25 * index.toDouble()) / (org.joml.Math.PI_OVER_2 * 1.0 / 10.0 * 44100.0)) + 0.8
+            value *= fastTremolo
+
 //            value = (value + (
 //                    sin((245.0 * index.toDouble()) / (org.joml.Math.PI_OVER_2 * 1.0/10.0 * 44100.0))
 //                            * Short.MAX_VALUE / 10.0
@@ -131,6 +145,9 @@ class SynthwavePlane : GameApplication(window {
             buf.put(value.toInt().toShort())
         }
         buf.rewind()
+//        val boof = ShortArray(buf.capacity())
+//        buf.get(boof)
+//        println(boof.contentToString())
         audioSource = Audio.createSource(44100, buf, retainBuffer = true) as MonoAudioSource
 //        audioSource = Audio.read(
 //            "1khz-sine.ogg"
