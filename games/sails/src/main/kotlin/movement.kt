@@ -22,12 +22,15 @@ class ShipPhysicsService : Service {
         val transform = targetEntity.getComponent(NavalTransform::class.java)!!
         val inputDirection = targetEntity.getComponent(InputDirection::class.java)!!
 
-        transform.rotation += inputDirection.direction.x * delta.toFloat()
-        println(transform.rotation)
-        val orientedDirection = Matrix2f().rotation(-transform.rotation) * inputDirection.direction
+        val newRotation = 2 * transform.rotation - transform.prevRotation +
+                inputDirection.direction.x * (delta * delta).toFloat()
+
+        val orientedDirection = Matrix2f().rotation(newRotation) * inputDirection.direction
         val newPosition = transform.position.mul(2f, Vector2f()) - transform.prevPosition +
                 orientedDirection.mul(inputDirection.strength, Vector2f()).mul((delta * delta).toFloat(), Vector2f())
 
+        transform.prevRotation = transform.rotation
+        transform.rotation = newRotation
         transform.prevPosition.set(transform.position)
         transform.position.set(newPosition)
     }
