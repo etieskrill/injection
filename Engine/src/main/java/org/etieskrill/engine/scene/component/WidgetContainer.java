@@ -39,10 +39,12 @@ public class WidgetContainer extends Node<WidgetContainer> {
     private final Font titleFont;
     private @Getter @Setter String text;
 
+    public @Getter final float barHeight = WIDGET_BAR_HEIGHT;
+
     public WidgetContainer(@NotNull Node<?> child) {
         setChild(child);
         this.chevronIcon = Textures.ofFile("textures/icons/chevron-down-solid-black.png");
-        this.titleFont = Fonts.getDefault(((int) WIDGET_BAR_HEIGHT) - 4);
+        this.titleFont = Fonts.getDefault(((int) getBarHeight()) - 4);
     }
 
     @Override
@@ -51,21 +53,21 @@ public class WidgetContainer extends Node<WidgetContainer> {
     }
 
     @Override
-    public void format() {
+    public void format() { //FIXME bar height is still ignored somehow
         if (!shouldFormat()) return;
 
         if (collapsed) {
             if (actualSize.equals(-1, -1))
-                getSize().set(child.getSize().x, WIDGET_BAR_HEIGHT);
+                getSize().set(child.getSize().x, getBarHeight());
             else
-                getSize().set(actualSize.x, WIDGET_BAR_HEIGHT);
+                getSize().set(actualSize.x, getBarHeight());
         } else {
             if (actualSize.equals(-1, -1))
-                getSize().set(child.getSize()).add(0, WIDGET_BAR_HEIGHT);
+                getSize().set(child.getSize()).add(0, getBarHeight());
             else
-                getSize().set(actualSize.x, actualSize.y + WIDGET_BAR_HEIGHT);
+                getSize().set(actualSize.x, actualSize.y + getBarHeight());
 
-            child.setPosition(getPreferredNodePosition(getSize(), child).add(0, WIDGET_BAR_HEIGHT));
+            child.setPosition(getPreferredNodePosition(getSize(), child).add(0, getBarHeight()));
             child.format();
         }
     }
@@ -74,16 +76,16 @@ public class WidgetContainer extends Node<WidgetContainer> {
     public void render(@NotNull Batch batch) {
         var position = getAbsolutePosition();
 
-        batch.renderBox(new Vector3f(position, 0), new Vector3f(getSize().x, WIDGET_BAR_HEIGHT, 0), WIDGET_BAR_COLOUR);
+        batch.renderBox(new Vector3f(position, 0), new Vector3f(getSize().x, getBarHeight(), 0), WIDGET_BAR_COLOUR);
         batch.blit(chevronIcon,
                 new Vector2f(position).add(WIDGET_CHEVRON_MARGIN, WIDGET_CHEVRON_MARGIN),
-                new Vector2f(WIDGET_BAR_HEIGHT - 2 * WIDGET_CHEVRON_MARGIN),
+                new Vector2f(getBarHeight() - 2 * WIDGET_CHEVRON_MARGIN),
                 collapsed ? (float) Math.toRadians(90) : (float) Math.toRadians(-180),
                 WIDGET_CHEVRON_COLOUR
         );
         if (text != null && !text.isBlank()) {
             //TODO use label with autoscaling font instead of hardcoding - scale bar height too actually
-            batch.renderText(text, titleFont, new Vector2f(position).add(WIDGET_BAR_HEIGHT + 2, -3));
+            batch.renderText(text, titleFont, new Vector2f(position).add(getBarHeight() + 2, -3));
         }
 
         if (!collapsed) {
@@ -112,8 +114,8 @@ public class WidgetContainer extends Node<WidgetContainer> {
 
         var position = getAbsolutePosition();
         if (action == Keys.Action.PRESS
-            && posX > position.x && posX <= position.x + WIDGET_BAR_HEIGHT
-            && posY > position.y && posY <= position.y + WIDGET_BAR_HEIGHT) {
+            && posX > position.x && posX <= position.x + getBarHeight()
+            && posY > position.y && posY <= position.y + getBarHeight()) {
             setCollapsed(!collapsed);
             requestFocus(); //any reason for a resetFocus instead?
             return true;
@@ -134,8 +136,8 @@ public class WidgetContainer extends Node<WidgetContainer> {
         if (!doesHit(posX, posY)) return false;
 
         var position = getAbsolutePosition();
-        if (!(posX > position.x + WIDGET_BAR_HEIGHT && posX <= position.x + getSize().x
-              && posY > position.y && posY <= position.y + WIDGET_BAR_HEIGHT
+        if (!(posX > position.x + getBarHeight() && posX <= position.x + getSize().x
+              && posY > position.y && posY <= position.y + getBarHeight()
         )) return false;
 
         setPosition(getPosition().sub((float) deltaX, (float) deltaY));

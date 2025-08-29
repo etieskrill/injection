@@ -34,7 +34,9 @@ import org.etieskrill.engine.input.Input
 import org.etieskrill.engine.input.Keys
 import org.etieskrill.engine.input.controller.CursorCameraController
 import org.etieskrill.engine.scene.Scene
+import org.etieskrill.engine.scene.component.Checkbox
 import org.etieskrill.engine.scene.component.Dropdown
+import org.etieskrill.engine.scene.component.HBox
 import org.etieskrill.engine.scene.component.Label
 import org.etieskrill.engine.scene.component.Node
 import org.etieskrill.engine.scene.component.PlaybackBar
@@ -52,6 +54,7 @@ import org.joml.Matrix4f
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector4f
+import org.joml.times
 import org.jtransforms.fft.FloatFFT_1D
 import org.lwjgl.BufferUtils
 import kotlin.math.abs
@@ -127,13 +130,19 @@ class SynthwavePlane : GameApplication(window {
 
     lateinit var playbackBar: PlaybackBar
 
+    var screenShake = false
+
     init {
-        window.addCursorInputs(CursorCameraController(camera))
+        val controller = CursorCameraController(camera)
+        window.addCursorInputs(controller)
         window.addKeyInputs(Input.of(Input.bind(Keys.CTRL).to { ->
-            if (window.cursor.mode == Cursor.CursorMode.DISABLED)
+            if (window.cursor.mode == Cursor.CursorMode.DISABLED) {
                 window.cursor.mode = Cursor.CursorMode.CAPTURED
-            else
+                controller.disable()
+            } else {
                 window.cursor.mode = Cursor.CursorMode.DISABLED
+                controller.enable()
+            }
         }))
         window.cursor.disable()
 
@@ -206,7 +215,13 @@ class SynthwavePlane : GameApplication(window {
                     ) { index, option ->
                         currentSound = option
                     }.apply { size = Vector2f(400f, 150f) },
-                ).apply { size = Vector2f(600f, 500f) },
+                    HBox(
+                        Checkbox({
+                            screenShake = it
+                        }, ticked=screenShake).apply { size = Vector2f(30f) },
+                        Label("Screen shake")
+                    )
+                ).apply { size = Vector2f(600f, 700f); margin = Vector4f(10f) },
                 playbackBar,
                 WidgetContainer(fpsGraph).apply {
                     text = "GPU"
@@ -263,12 +278,22 @@ class SynthwavePlane : GameApplication(window {
 
         fpsLabel.text = pacer.averageFPS.toInt().toString()
         if (pacer.totalFramesElapsed % 5L == 0L) fpsGraph.values.push(1 / pacer.deltaTimeSeconds.toFloat())
+
+        if (screenShake) {
+            val cameraShake = Vector2f(sin(100 * pacer.time).toFloat(), sin(150 * pacer.time).toFloat())
+                .times(0.2f * max(0f, (averageSample / 1000000f) - 0.1f)
+                        * if (playbackBar.state == PlaybackBar.State.PLAYING) 1 else 0)
+
+            camera.rotate(cameraShake.x, cameraShake.y, 0f)
+        }
     }
 
     override fun render() {
-        sunPipeline.shader.invCombined = camera.combined.invert(Matrix4f())
-        sunPipeline.shader.time = pacer.time.toFloat()
-        sunPipeline.shader.intensity = averageSample / 1000000f + 0.5f
+        sunPipeline.shader.apply {
+            invCombined = camera.combined.invert(Matrix4f())
+            time = pacer.time.toFloat()
+            intensity = averageSample / 1000000f + 0.5f
+        }
 
         renderer.render(sunPipeline)
     }

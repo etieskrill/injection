@@ -55,7 +55,8 @@ class Dropdown(
             it.size = Vector2f(size.x, size.y / options.size)
         }
 
-        container.child.size = size
+        container.size = size
+        container.child.size = Vector2f(size).sub(0f, container.barHeight) //FIXME dis shit dont work dawg, and also; its shit
 
         container.format()
     }
