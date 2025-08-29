@@ -553,6 +553,10 @@ public class Window implements Disposable {
         return currentSize;
     }
 
+    public float getAspectRatio() {
+        return (float) currentSize.x / currentSize.y;
+    }
+
     public void setCursor(Cursor cursor) {
         glfwSetCursor(window, cursor.getId());
         this.cursor = cursor;

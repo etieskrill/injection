@@ -34,7 +34,7 @@ public class Enemy extends Entity {
         billBoard = addComponent(new AnimatedBillBoard(
                 new AnimatedTexturePlayer(
                         AnimatedTexture.builder()
-                                .file("zombie.png")
+                                .file("textures/zombie.png")
                                 .setMipMapping(MinFilter.NEAREST, MagFilter.NEAREST)
                                 .setWrapping(Wrapping.CLAMP_TO_EDGE)
                                 .build()

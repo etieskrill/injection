@@ -36,7 +36,7 @@ public class Player extends Entity {
 
         transform = addComponent(new Transform());
         billBoard = addComponent(new BillBoard(
-                new Texture2D.FileBuilder("dude.png")
+                new Texture2D.FileBuilder("textures/dude.png")
                         .setMipMapping(MinFilter.NEAREST, MagFilter.NEAREST).build(),
                 new Vector2f()
         ));

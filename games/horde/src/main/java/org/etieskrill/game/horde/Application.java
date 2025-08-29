@@ -64,6 +64,7 @@ public class Application extends GameApplication {
         super(Window.builder()
                 .setTitle("Horde")
                 .setMode(Window.WindowMode.BORDERLESS)
+                .setSize(Window.WindowSize.LARGEST_FIT)
                 .setVSyncEnabled(true)
                 .setSamples(4)
                 .build());
@@ -91,7 +92,7 @@ public class Application extends GameApplication {
 
         dummyVao = glGenVertexArrays();
 
-        floorTexture = new Texture2D.FileBuilder("grass.png")
+        floorTexture = new Texture2D.FileBuilder("textures/grass.png")
                 .setMipMapping(MinFilter.NEAREST, MagFilter.NEAREST).build();
         floorShader = new FloorShader();
 
@@ -121,7 +122,7 @@ public class Application extends GameApplication {
 
         Random random = new Random(69420);
 
-        var bushTexture = getPixelTexture("bush1.png");
+        var bushTexture = getPixelTexture("textures/bush1.png");
         for (int i = 0; i < 100; i++) {
             entitySystem.createEntity()
                     .withComponent(new Transform().setPosition(new Vector3f(random.nextFloat(-10, 10), 0, random.nextFloat(-10, 10))))
@@ -135,7 +136,7 @@ public class Application extends GameApplication {
                     }));
         }
 
-        var treeTexture = getPixelTexture("tree01.png");
+        var treeTexture = getPixelTexture("textures/tree01.png");
         for (int i = 0; i < 50; i++) {
             entitySystem.createEntity()
                     .withComponent(new Transform().setPosition(new Vector3f(random.nextFloat(-10, 10), 0, random.nextFloat(-10, 10))))
@@ -193,6 +194,7 @@ public class Application extends GameApplication {
     @Override
     protected void render() {
         stoopidShader.start();
+        BlitShaderKt.setAspectRatio(stoopidShader, window.getAspectRatio());
         BlitShaderKt.setTex(stoopidShader, dirLight.getShadowMap().getTexture()); //improper handling for testing purposes
 
         glBindVertexArray(dummyVao);
