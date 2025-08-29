@@ -92,6 +92,17 @@ public class ResourceReader {
      * @return all regular files
      */
     public static List<String> getClasspathItems(String directory) {
+        return getClasspathItems(directory, false);
+    }
+
+    /**
+     * Searches the classpath in the specified {@code directory} for any regular files while not listing
+     * directories. Subdirectories are <b>NOT</b> searched. Links are resolved.
+     *
+     * @param directory directory to search
+     * @return all regular files
+     */
+    public static List<String> getClasspathItems(String directory, boolean relativePaths) {
         var parentResource = getResourcePath(directory);
         if (parentResource == null) {
             throw new ResourceLoadException("Classpath directory %s could not be located or access was denied".formatted(directory));
@@ -107,13 +118,23 @@ public class ResourceReader {
         //kinda hacky, dunno how reliable this is
         switch (realPath.getScheme()) {
             case "file" -> { //unarchived dev build
-                return listFilePaths(Path.of(realPath));
+                var paths = listFilePaths(Path.of(realPath));
+
+                if (relativePaths) {
+                    paths = paths.stream()
+                            .map(path -> path.substring(
+                                    realPath.getPath().length()
+                                    - directory.length()
+                                    - 1)) //slash inserted by path
+                            .toList();
+                }
+
+                return paths;
             }
             case "jar" -> { //"normal" packaged build
+                //TODO resolve/include relative path shenanigans
                 try (var fileSystem = FileSystems.newFileSystem(realPath, Collections.emptyMap())) {
-                    var a = listFilePaths(fileSystem.getPath(parentResource));
-                    System.out.println(a);
-                    return a;
+                    return listFilePaths(fileSystem.getPath(parentResource));
                 } catch (IOException e) {
                     throw new ResourceLoadException("Failed to open jar file system", e);
                 }

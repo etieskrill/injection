@@ -49,6 +49,7 @@ dependencies {
     api(libs.slf4j.api) //FIXME compileOnlyApi? >:)
     runtimeOnly(libs.slf4j.simple)
 //    implementation "org.slf4j:slf4j-reload4j:2.0.17" //FIXME something about the build config is **REALLY** wrong
+    api("io.github.oshai:kotlin-logging-jvm:7.0.13")
 
     //Test framework and libraries
     testImplementation(libs.junit.jupiter)

@@ -2,11 +2,14 @@ package org.etieskrill.engine.graphics.text;
 
 import org.etieskrill.engine.graphics.texture.ArrayTexture;
 import org.etieskrill.engine.graphics.texture.Texture2D;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2ic;
 
 import java.util.Map;
 import java.util.Objects;
+
+import static java.util.Objects.requireNonNullElse;
 
 public class BitmapFont implements Font {
 
@@ -42,12 +45,12 @@ public class BitmapFont implements Font {
     }
 
     @Override
-    public Glyph getGlyph(char c) {
-        return glyphs.get(c);
+    public @NotNull Glyph getGlyph(char c) {
+        return requireNonNullElse(glyphs.get(c), glyphs.get((char) 0));
     }
 
     @Override
-    public Glyph[] getGlyphs(String s) {
+    public @NotNull Glyph[] getGlyphs(String s) {
         return s.codePoints().mapToObj(c -> getGlyph((char) c)).toArray(Glyph[]::new);
     }
 

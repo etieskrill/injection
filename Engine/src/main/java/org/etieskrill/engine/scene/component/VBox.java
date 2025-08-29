@@ -17,6 +17,10 @@ public class VBox extends Stack {
         super(List.of(children));
     }
 
+    public VBox(@NotNull List<Node<?>> children) {
+        super(children);
+    }
+
     @Override
     public void format() {
         if (!shouldFormat()) return;

@@ -1,13 +1,11 @@
 package org.etieskrill.engine.audio
 
 import org.etieskrill.engine.Disposable
-import org.etieskrill.engine.config.ResourcePaths.AUDIO_PATH
 import org.etieskrill.engine.util.ResourceReader
 import org.joml.Vector3f
 import org.joml.Vector3fc
 import org.lwjgl.BufferUtils.*
 import org.lwjgl.openal.AL
-import org.lwjgl.openal.AL10
 import org.lwjgl.openal.AL10.alGetSourcei
 import org.lwjgl.openal.AL11.*
 import org.lwjgl.openal.ALC
@@ -70,23 +68,25 @@ abstract class AudioSource internal constructor(
     val sampleRate: Int,
     val numSamples: Int,
     val buffer: ShortBuffer?,
-    val duration: Duration = (numSamples / sampleRate).seconds
+    val duration: Duration = (numSamples / sampleRate).seconds,
+    private var disposed: Boolean = false
 ) : Disposable {
 
-    val isPlaying: Boolean = alGetSourcei(handle, AL_SOURCE_STATE) == AL_PLAYING
+    val isPlaying: Boolean = checkNotDisposed { alGetSourcei(handle, AL_SOURCE_STATE) == AL_PLAYING }
 
-    fun play() = alSourcePlay(handle)
+    fun play() = checkNotDisposed { alSourcePlay(handle) }
 
-    fun pause() = alSourcePause(handle)
+    fun pause() = checkNotDisposed { alSourcePause(handle) }
 
-    fun stop() = alSourceStop(handle)
+    fun stop() = checkNotDisposed { alSourceStop(handle) }
 
     /**
      * The current offset into the bound buffer in samples.
      */
     var offsetSamples: Int
-        get() = alGetSourcei(handle, AL_SAMPLE_OFFSET)
+        get() = checkNotDisposed { alGetSourcei(handle, AL_SAMPLE_OFFSET) }
         set(value) {
+            checkNotDisposed {}
             require(value >= 0) { "Offset must not be negative" }
             require(value < numSamples) { "Offset must be smaller than the number of samples" }
 
@@ -97,8 +97,9 @@ abstract class AudioSource internal constructor(
      * The current offset into the bound buffer in seconds.
      */
     var offsetSeconds: Float
-        get() = alGetSourcef(handle, AL_SEC_OFFSET)
+        get() = checkNotDisposed { alGetSourcef(handle, AL_SEC_OFFSET) }
         set(value) {
+            checkNotDisposed {}
             require(value >= 0) { "Offset must not be negative" }
             require(value * sampleRate < numSamples) { "Offset must be smaller than the duration" }
 
@@ -106,13 +107,22 @@ abstract class AudioSource internal constructor(
         }
 
     var gain: Float
-        get() = alGetSourcef(handle, AL_GAIN)
+        get() = checkNotDisposed { alGetSourcef(handle, AL_GAIN) }
         set(value) {
+            checkNotDisposed {}
             require(gain >= 0) { "Gain must be positive" }
             alSourcef(handle, AL_GAIN, value)
         }
 
-    override fun dispose() = alDeleteSources(handle)
+    override fun dispose() {
+        alDeleteSources(handle)
+        disposed = true
+    }
+
+    private fun <T> checkNotDisposed(block: () -> T): T {
+        check(!disposed) { "Audio source was already disposed" }
+        return block()
+    }
 
 }
 
@@ -196,7 +206,7 @@ object Audio : Disposable {
         checkInit()
 
         require(path.endsWith(".ogg")) { "Can only parse OGG sound files" }
-        val encodedAudio = ResourceReader.getRawResource(AUDIO_PATH + path)
+        val encodedAudio = ResourceReader.getRawResource(path)
         val pcmAudio = vorbisDecodeToPCM(encodedAudio, mode)
         check(pcmAudio.mode != AudioMode.DONT_CARE)
 

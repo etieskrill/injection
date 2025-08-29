@@ -47,7 +47,13 @@ abstract class Node<T : Node<T>> {
     protected val renderedColour = Vector4f(0f)
 
     var parent: Node<*>? = null
-        private set
+        set(value) {
+            check(value != this) { "A node may not be it's own parent" }
+            checkRecursively({ it != this }) { "A node may not be it's own parent anywhere in the hierarchy" }
+
+            field = value
+            if (field != null) invalidate()
+        }
 
     var focused: Boolean = false
         internal set
@@ -75,14 +81,6 @@ abstract class Node<T : Node<T>> {
 
     fun hide() {
         isVisible = false
-    }
-
-    protected fun setParent(parent: Node<*>?) {
-        check(parent != this) { "A node may not be it's own parent" }
-        checkRecursively({ it != this }) { "A node may not be it's own parent anywhere in the hierarchy" }
-
-        this.parent = parent
-        if (parent != null) invalidate()
     }
 
     private fun checkRecursively(condition: (Node<*>) -> Boolean, message: () -> String) {

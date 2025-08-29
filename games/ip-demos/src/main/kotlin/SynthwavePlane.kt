@@ -34,14 +34,17 @@ import org.etieskrill.engine.input.Input
 import org.etieskrill.engine.input.Keys
 import org.etieskrill.engine.input.controller.CursorCameraController
 import org.etieskrill.engine.scene.Scene
+import org.etieskrill.engine.scene.component.Dropdown
 import org.etieskrill.engine.scene.component.Label
 import org.etieskrill.engine.scene.component.Node
 import org.etieskrill.engine.scene.component.PlaybackBar
+import org.etieskrill.engine.scene.component.Stack
 import org.etieskrill.engine.scene.component.VBox
 import org.etieskrill.engine.scene.component.WidgetContainer
 import org.etieskrill.engine.scene.component.plot.Histogram
 import org.etieskrill.engine.scene.component.plot.HistogramScaleMode
 import org.etieskrill.engine.util.FixedArrayDeque
+import org.etieskrill.engine.util.ResourceReader
 import org.etieskrill.engine.window.Cursor
 import org.etieskrill.engine.window.Window
 import org.etieskrill.engine.window.window
@@ -66,7 +69,6 @@ fun main() {
 @Suppress("MemberVisibilityCanBePrivate")
 class SynthwavePlane : GameApplication(window {
     title = "Synthwave Plane"
-//    mode = Window.WindowMode.FULLSCREEN
     mode = Window.WindowMode.BORDERLESS
     size = Window.WindowSize.LARGEST_FIT
     vSync = true
@@ -82,15 +84,48 @@ class SynthwavePlane : GameApplication(window {
     val frameTexture: Texture2D
     val sunPipeline = PostPassPipeline(SunPostPass(), null, false)
 
-    val audioSource: MonoAudioSource
+    lateinit var audioSource: AudioSource
     val audioListener: AudioListener
+
+    val generatedSource: AudioSource
+
+    var currentSound = "synthesised"
+        set(value) {
+            if (::audioSource.isInitialized) {
+                audioSource.stop()
+                if (currentSound != "synthesised") audioSource.dispose()
+            }
+
+            audioSource =
+                if (value == "synthesised") generatedSource
+                else Audio.read(value, retainBuffer = true)
+
+            if (!::playbackBar.isInitialized) {
+                playbackBar = PlaybackBar(audioSource.duration).apply {
+                    alignment = Node.Alignment.BOTTOM
+                    size = Vector2f(700f, 40f)
+                    margin = Vector4f(10f)
+
+                    playAction = { audioSource.play() }
+                    pauseAction = { audioSource.pause() }
+                    stopAction = { audioSource.stop() }
+
+                    action = { audioSource.offsetSeconds = it.inWholeSeconds.toFloat() }
+                }
+            }
+
+            playbackBar.state = PlaybackBar.State.STOPPED
+            playbackBar.totalDuration = audioSource.duration
+
+            field = value
+        }
 
     val fpsLabel: Label
     val fpsGraph: Histogram
 
     val fftGraph: Histogram
 
-    val playbackBar: PlaybackBar
+    lateinit var playbackBar: PlaybackBar
 
     init {
         window.addCursorInputs(CursorCameraController(camera))
@@ -122,9 +157,9 @@ class SynthwavePlane : GameApplication(window {
 //                                * Short.MAX_VALUE / 10.0
 //                        ).toInt().toShort()
             val wavelength = 1.0 / (250.0 / 8)
-            var value = abs((index.toDouble() / wavelength) % 44100.0 - 44100.0/2.0) / 44100.0
-            value += abs((index.toDouble() / wavelength * 2) % 44100.0 - 44100.0/2.0) / 44100.0
-            value += abs((index.toDouble() / wavelength * 4) % 44100.0 - 44100.0/2.0) / 44100.0
+            var value = abs((index.toDouble() / wavelength) % 44100.0 - 44100.0 / 2.0) / 44100.0
+            value += abs((index.toDouble() / wavelength * 2) % 44100.0 - 44100.0 / 2.0) / 44100.0
+            value += abs((index.toDouble() / wavelength * 4) % 44100.0 - 44100.0 / 2.0) / 44100.0
 
             value += sin((250.0 / 2.0 * index.toDouble()) / (org.joml.Math.PI_OVER_2 * 1.0 / 10.0 * 44100.0))
             value += sin((250.0 / 4.0 * index.toDouble()) / (org.joml.Math.PI_OVER_2 * 1.0 / 10.0 * 44100.0))
@@ -145,21 +180,8 @@ class SynthwavePlane : GameApplication(window {
             buf.put(value.toInt().toShort())
         }
         buf.rewind()
-//        val boof = ShortArray(buf.capacity())
-//        buf.get(boof)
-//        println(boof.contentToString())
-        audioSource = Audio.createSource(44100, buf, retainBuffer = true) as MonoAudioSource
-//        audioSource = Audio.read(
-//            "1khz-sine.ogg"
-//            "mr.edwardz-little-violet-charlston-boogie-runnrest.ogg"
-//            "payday-2-donacdum.ogg"
+        generatedSource = Audio.createSource(44100, buf, retainBuffer = true) as MonoAudioSource
         //TODO innerbloom might be cool to see dissected too
-//            "avlönskt-bad-apple-multilanguage.ogg"
-//            "infected-mushroom-spitfire-monstercat-release.ogg"
-//            "nightstop-she-dances-in-the-dark.ogg"
-//            "pumped-up-kicks-synthwave.ogg"
-//            , AudioMode.STEREO, true
-//        ) as StereoAudioSource
 
         audioListener = Audio.listener
 
@@ -173,34 +195,28 @@ class SynthwavePlane : GameApplication(window {
             maxValue = 0.5f,
             drawSeparators = false
         ).apply { size = Vector2f(600f, 200f) }
-        playbackBar = PlaybackBar(audioSource.duration).apply {
-            alignment = Node.Alignment.BOTTOM
-            size = Vector2f(700f, 40f)
-            margin = Vector4f(10f)
-
-            playAction = { audioSource.play() }
-            pauseAction = { audioSource.pause() }
-            stopAction = { audioSource.stop() }
-
-            action = { audioSource.offsetSeconds = it.inWholeSeconds.toFloat() }
-        }
         window.scene = Scene(
             Batch(renderer, window.currentSize),
-            VBox(
+            Stack(
+                VBox(
+                    fpsLabel, //FIXME how in gods name is the fps graph right-side up, and the fft is not??
+                    fftGraph,
+                    Dropdown(
+                        listOf("synthesised") + ResourceReader.getClasspathItems("audio", true)
+                    ) { index, option ->
+                        currentSound = option
+                    }.apply { size = Vector2f(400f, 150f) },
+                ).apply { size = Vector2f(600f, 500f) },
+                playbackBar,
                 WidgetContainer(fpsGraph).apply {
                     text = "GPU"
                     alignment = Node.Alignment.FIXED_POSITION
-                    position = Vector2f(50f, 0f)
+                    position = Vector2f(window.currentSize.x() - fpsGraph.size.x, 0f)
                     isCollapsed = true
-                },
-                fpsLabel, //FIXME how in gods name is the fps graph right-side up, and the fft is not??
-                fftGraph,
-                playbackBar
-            ).apply { size = Vector2f(600f, 500f) },
+                }
+            ),
             OrthographicCamera(window.currentSize)
         )
-
-        audioSource.play()
     }
 
     var frameSample = 0

@@ -65,8 +65,8 @@ public class WidgetContainer extends Node<WidgetContainer> {
             else
                 getSize().set(actualSize.x, actualSize.y + WIDGET_BAR_HEIGHT);
 
-            child.format();
             child.setPosition(getPreferredNodePosition(getSize(), child).add(0, WIDGET_BAR_HEIGHT));
+            child.format();
         }
     }
 
@@ -94,6 +94,10 @@ public class WidgetContainer extends Node<WidgetContainer> {
             );
             if (child != null) child.render(batch);
         }
+    }
+
+    public Node<?> getChild() {
+        return child;
     }
 
     public void setChild(@NotNull Node<?> child) {

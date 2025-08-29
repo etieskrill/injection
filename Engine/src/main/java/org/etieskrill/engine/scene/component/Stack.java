@@ -8,7 +8,6 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
-import static java.util.Objects.requireNonNull;
 import static org.etieskrill.engine.scene.component.LayoutUtils.getPreferredNodePosition;
 
 /**
@@ -16,14 +15,18 @@ import static org.etieskrill.engine.scene.component.LayoutUtils.getPreferredNode
  */
 public class Stack extends Node<Stack> {
 
-    private final List<Node<?>> children;
+    private final List<Node<?>> children = new ArrayList<>();
 
     public Stack() {
         this(new ArrayList<>());
     }
 
     public Stack(@NotNull List<Node<?>> children) {
-        this.children = new ArrayList<>(requireNonNull(children));
+        addChildren(children.toArray(new Node<?>[0]));
+    }
+
+    public Stack(@NotNull Node<?>... children) {
+        addChildren(children);
     }
 
     @Override
@@ -47,7 +50,7 @@ public class Stack extends Node<Stack> {
         children.forEach(child -> child.render(batch));
     }
 
-    protected List<Node<?>> getChildren() {
+    public List<Node<?>> getChildren() {
         return children;
     }
 

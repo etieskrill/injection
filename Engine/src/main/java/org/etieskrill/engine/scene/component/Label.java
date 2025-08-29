@@ -13,7 +13,7 @@ import java.util.Objects;
 
 import static java.util.Objects.requireNonNullElse;
 
-public class Label extends Node {
+public class Label extends Node<Label> {
     
     private final Font font;
     private String text;
@@ -62,7 +62,7 @@ public class Label extends Node {
     }
 
     @Override
-    public boolean handleHit(Key button, Keys.Action action, double posX, double posY) {
+    public boolean handleHit(@NotNull Key button, Keys.@NotNull Action action, double posX, double posY) {
         return false;
     }
 

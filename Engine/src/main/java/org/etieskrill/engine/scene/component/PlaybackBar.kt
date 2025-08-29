@@ -5,7 +5,7 @@ import org.joml.Vector4f
 import kotlin.time.Duration
 
 class PlaybackBar(
-    private val totalDuration: Duration,
+    var totalDuration: Duration,
     var action: (Duration) -> Unit = {}
 ) : HBox() {
 

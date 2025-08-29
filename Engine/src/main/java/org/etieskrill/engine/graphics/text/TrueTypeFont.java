@@ -3,6 +3,7 @@ package org.etieskrill.engine.graphics.text;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.etieskrill.engine.graphics.texture.ArrayTexture;
 import org.etieskrill.engine.util.ResourceReader;
+import org.jetbrains.annotations.NotNull;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 import org.joml.Vector2ic;
@@ -171,7 +172,7 @@ public class TrueTypeFont implements Font {
 
     //TODO implement
     @Override
-    public Glyph getGlyph(char c) {
+    public @NotNull Glyph getGlyph(char c) {
         if (disposed) return null;
         if (FT_Load_Char(face, c, FT_LOAD_RENDER) != FT_Err_Ok) return null;
         return null;
