@@ -19,7 +19,8 @@ internal const val GEN_RESOURCE_DIR = "build/generated/shader-dsl/main/resources
 internal class ShaderDslGradlePlugin : KotlinCompilerPluginSupportPlugin {
 
     companion object {
-        const val GROUP_ID = "io.github.etieskrill.injection.extension.shader.dsl"
+        const val EXTENSION_GROUP_ID = "io.github.etieskrill.injection.extension.shader"
+        const val GROUP_ID = "$EXTENSION_GROUP_ID.dsl"
         const val ARTIFACT_ID = "shader-dsl-plugin"
         const val VERSION = "1.0.0-SNAPSHOT"
     }
@@ -40,6 +41,7 @@ internal class ShaderDslGradlePlugin : KotlinCompilerPluginSupportPlugin {
     override fun apply(target: Project): Unit = target.run {
         val dependencyConfig = if (plugins.hasPlugin(JavaLibraryPlugin::class.java)) "api" else "implementation"
         dependencies.apply {
+            add(dependencyConfig, "$EXTENSION_GROUP_ID:shader-interface")
             add(dependencyConfig, "$GROUP_ID:shader-dsl-lib")
             add(dependencyConfig, "$GROUP_ID.std:shader-dsl-std-lib")
         }

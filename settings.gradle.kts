@@ -11,6 +11,8 @@ includeBuild("shader-dsl-std-lib")
 
 include("engine")
 
+include("injection-sandbox")
+
 file("games").listFiles().forEach {
     include("games:${it.name}")
 }
@@ -26,5 +28,3 @@ dependencyResolutionManagement {
 //        }
 //    }
 }
-include("games:circles")
-findProject(":games:circles")?.name = "circles"
