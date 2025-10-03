@@ -6,16 +6,25 @@ plugins {
     id("io.github.etieskrill.injection.shader.dsl")
 }
 
-group = "io.github.etieskrill.sandbox"
+group = "injection.sandbox"
 version = "unspecified"
 
-repositories {
-    mavenLocal()
-    mavenCentral()
+dependencies {
+    implementation(project(":engine"))
+
+    implementation(platform("org.lwjgl:lwjgl-bom:${libs.versions.lwjgl.get()}")) //TODO figure out platforms & catalogs
+    implementation(libs.lwjgl.openal)
+    implementation(libs.lwjgl.opengl)
+    implementation(libs.lwjgl.stb)
+    //natives not specified as they are brought in by the engine
+
+    implementation("io.github.etieskrill.injection.extension.shader.dsl:shader-dsl-plugin:1.0.0-SNAPSHOT")
 }
 
-dependencies {
-    implementation("io.github.etieskrill.injection.extension.shader.dsl:shader-dsl-plugin:1.0.0-SNAPSHOT")
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.add("-Xcontext-receivers")
+    }
 }
 
 tasks.register<Exec>("compileShaders") {
