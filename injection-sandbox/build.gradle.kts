@@ -1,6 +1,3 @@
-import org.gradle.process.internal.ExecException
-import kotlin.text.Regex
-
 plugins {
     alias(libs.plugins.kotlin.jvm)
     id("io.github.etieskrill.injection.shader.dsl")

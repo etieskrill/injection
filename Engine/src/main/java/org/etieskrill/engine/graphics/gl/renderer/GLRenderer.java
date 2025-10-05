@@ -238,14 +238,14 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
         int vertexCount;
 
         if (indexed) {
-            vertexCount = pipeline.getVao().getIndexBuffer().getSize();
+            vertexCount = pipeline.getVao().getIndexBuffer().getNumElements();
             glDrawElements(primitiveType, vertexCount, GL_UNSIGNED_INT, 0L);
         } else {
             if (pipeline.getVao() == null && pipeline.getVertexCount() == null) {
                 throw new IllegalStateException("Pipeline without vertex array object must have vertex count set");
             }
             if (pipeline.getVao() != null) {
-                vertexCount = pipeline.getVao().getVertexBuffer().getSize();
+                vertexCount = pipeline.getVao().getVertexBuffer().getNumElements();
             } else {
                 vertexCount = pipeline.getVertexCount();
             }

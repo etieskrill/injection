@@ -76,9 +76,11 @@ public class GLTextRenderer extends GLDebuggableRenderer implements TextRenderer
             ShaderProgram shader,
             @Nullable Vector2f cursorPosition
     ) {
+        int numRenderableChars = 0;
         int renderedGlyphIndex = 0;
         Vector2f pen = new Vector2f(0);
         Vector2f penPosition = new Vector2f();
+
         for (Glyph glyph : font.getGlyphs(chars)) {
             switch (requireNonNullElse(glyph.getCharacter(), (char) 0)) {
                 case '\n' -> {
@@ -90,6 +92,7 @@ public class GLTextRenderer extends GLDebuggableRenderer implements TextRenderer
                     if (size != null && (pen.x + glyph.getAdvance().x() > size.x())) { //special chars probably shouldn't get wrapped, right?
                         pen.set(0, pen.y + font.getLineHeight());
                     }
+                    numRenderableChars++;
                 }
             }
 
@@ -107,7 +110,7 @@ public class GLTextRenderer extends GLDebuggableRenderer implements TextRenderer
 
         if (cursorPosition != null) cursorPosition.set(pen);
 
-        renderBitmapGlyphs(chars.length(), renderedGlyphs, font, shader);
+        renderBitmapGlyphs(numRenderableChars, renderedGlyphs, font, shader);
     }
 
     private void renderBitmapGlyphs(int numChars, List<RenderedGlyph> renderedGlyphs, BitmapFont font, ShaderProgram shader) {
