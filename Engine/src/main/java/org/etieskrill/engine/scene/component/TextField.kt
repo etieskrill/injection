@@ -43,15 +43,20 @@ class TextField : Node<TextField>() {
 
     override fun handleKey(key: Key, action: Keys.Action): Boolean {
         if (!focused) return false
-
         if (action != Keys.Action.RELEASE) return false
-        when (key) {
-            Keys.BACKSPACE.input -> textEditor.remove()
-            Keys.ENTER.input -> textEditor += '\n'
-            Keys.UP.input -> textEditor.cursor.up()
-            Keys.DOWN.input -> textEditor.cursor.down()
-            Keys.LEFT.input -> textEditor.cursor.left()
-            Keys.RIGHT.input -> textEditor.cursor.right()
+
+        val ctrl = key.modifiers and Keys.Mod.CONTROL.glfwKey != 0
+        val shift = key.modifiers and Keys.Mod.SHIFT.glfwKey != 0
+
+        when (key.value) { //FIXME i hate my trash fucking api
+            Keys.BACKSPACE.input.value -> textEditor.remove(ctrl = ctrl)
+            Keys.ENTER.input.value -> textEditor += '\n'
+            Keys.UP.input.value -> textEditor.cursor.up()
+            Keys.DOWN.input.value -> textEditor.cursor.down()
+            Keys.LEFT.input.value -> textEditor.cursor.left(ctrl = ctrl)
+            Keys.RIGHT.input.value -> textEditor.cursor.right(ctrl = ctrl)
+            Keys.HOME.input.value -> textEditor.cursor.home(ctrl = ctrl)
+            Keys.END.input.value -> textEditor.cursor.end(ctrl = ctrl)
             else -> return false
         }
         return true

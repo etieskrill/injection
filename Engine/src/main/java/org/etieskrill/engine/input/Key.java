@@ -20,7 +20,7 @@ public class Key {
         this.type = type;
         this.value = value;
         this.modifier = (modifiers & 0x32) != 0;
-        this.modifiers = isModifier() ? 0 : modifiers;
+        this.modifiers = modifiers;
     }
     
     public Type getType() {

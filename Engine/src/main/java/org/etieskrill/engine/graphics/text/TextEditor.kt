@@ -8,15 +8,9 @@ private val logger = KotlinLogging.logger {}
 
 class TextEditor(font: Font) {
 
-    var text: String
-        get() = toString()
-        set(value) = TODO()
+    var text: String get() = toString(); set(value) = TODO()
     private val field = TextEditorField()
-    var font: Font = font
-        get() = field
-        set(value) {
-            field = value
-        }
+    var font: Font = font; get() = field; set(value) = TODO()
     var size: Vector2i? = null
 
     fun write(c: Char) {
@@ -48,11 +42,12 @@ class TextEditor(font: Font) {
     fun remove(ctrl: Boolean = false) {
         if (ctrl) TODO()
 
-        if (field[cursor.position].isEmpty()) {
+        if (field[cursor.position].isEmpty()
+            || field.text[cursor.position.y].size == 1 && field.text[cursor.position.y][0] == '\n'
+        ) {
+            field.text.removeAt(cursor.position.y)
             cursor.up()
             cursor.end()
-            field.remove(cursor.position)
-            cursor.left()
         } else {
             field.remove(cursor.position)
             cursor.left()
@@ -77,31 +72,70 @@ class TextEditor(font: Font) {
         fun down(select: Boolean = false) = position.apply {
             x = kotlin.math.min(x, if (field.text.size > y + 1) field.text[y + 1].size else 0)
             y = kotlin.math.min(y + 1, field.text.size - 1)
-            println("cursor pos: $position")
         }
 
         fun left(ctrl: Boolean = false, select: Boolean = false) = position.apply {
-            if (position.y > 0 && x - 1 < 0) {
+            if (position.y > 0 && x - 1 < 0) { // wraparound from start of line
                 up()
                 end()
-            } else {
-                x = kotlin.math.max(0, x - 1)
+                return@apply
             }
+
+            var shift =
+                if (ctrl) getNextWordBoundaryOffset(false)
+                else -1
+            x = kotlin.math.max(0, x + shift)
         }
 
         fun right(ctrl: Boolean = false, select: Boolean = false) = position.apply {
             if (field.text.size - 1 > position.y && x + 1 > field.text[position.y].count { it != '\n' }) { //TODO replace with isPrintable or w/e
                 down()
                 home()
-            } else {
-                val lineLength = if (field.text.size > position.y) field.text[position.y].size else 0
-                x = kotlin.math.min(x + 1, lineLength)
+                return@apply
             }
+
+            var shift =
+                if (ctrl) getNextWordBoundaryOffset(true)
+                else 1
+
+            val lineLength = if (field.text.size > position.y) field.text[position.y].size else 0
+            x = kotlin.math.min(x + shift, lineLength)
         }
 
-        fun home(ctrl: Boolean = false, select: Boolean = false) = position.apply { x = 0 }
+        fun home(ctrl: Boolean = false, select: Boolean = false) = position.apply {
+            if (ctrl) y = 0
+            x = 0
+        }
+
         fun end(ctrl: Boolean = false, select: Boolean = false) = position.apply {
-            x = if (field.text.size > position.y) field.text[position.y].count { it != '\n' } else 0
+            if (ctrl) y = field.text.size - 1
+            x = if (field.text.size > y) field.text[y].count { it != '\n' } else 0
+        }
+
+        //TODO additional behaviours; skip first encountered whitespace etc.
+        private val isWordChar = { c: Char -> c.isLetterOrDigit() || c == '_' }
+
+        private fun getNextWordBoundaryOffset(forward: Boolean): Int {
+            val xLimit = if (forward) field.text[position.y].size else 0
+            if (position.x == xLimit || field.text.isEmpty() || field.text[position.y].isEmpty()) return 0
+
+            var shift = 0
+            val line = field.text[position.y]
+            val lineLength = if (field.text.size > position.y) field.text[position.y].size else 0
+            val lastCharPos = position.x - if (forward) 0 else 1
+            var lastWasWord = isWordChar(line[lastCharPos])
+
+            val interval =
+                if (forward) position.x..(lineLength - 1)
+                else (position.x - 1) downTo 0
+            for (i in interval) {
+                if (lastWasWord == isWordChar(line[i])) {
+                    if (forward) shift++
+                    else shift--
+                } else break
+            }
+
+            return shift
         }
     }
 
@@ -127,11 +161,8 @@ class TextEditor(font: Font) {
         val text = mutableListOf<MutableList<Char>>()
 
         fun remove(position: Vector2i) {
-            text.takeIf { it.size <= position.y }
-                ?.add(mutableListOf())
-
-            text[position.y]
-                .takeIf { it.isNotEmpty() }
+            text.getOrNull(position.y)
+                ?.takeIf { it.isNotEmpty() }
                 ?.removeAt(position.x - 1)
         }
 

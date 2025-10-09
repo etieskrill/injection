@@ -63,7 +63,7 @@ public class GLTextRenderer extends GLDebuggableRenderer implements TextRenderer
 
             numChars++;
 
-            if (currentCursorPosition.equals(cursorPosition)) return pen;
+            if (currentCursorPosition.equals(cursorPosition) || numChars == text.length()) return pen;
             else if (numChars > text.length()) return null;
         }
 

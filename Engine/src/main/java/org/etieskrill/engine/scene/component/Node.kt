@@ -159,7 +159,7 @@ abstract class Node<T : Node<T>> {
             ?: false
 
     /**
-     * Calling this method will request {@link Node this Node} to be focused. This means, that all non-cursor input
+     * Calling this method will request [this Node][Node] to be focused. This means, that all non-cursor input
      * will be directed to this node instead of the hierarchy root.
      * <p>
      * By default, the root node will be in focus.

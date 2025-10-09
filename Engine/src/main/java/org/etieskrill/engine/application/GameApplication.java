@@ -61,8 +61,14 @@ public abstract class GameApplication {
         this.window = window;
         this.window.addKeyInputs((type, key, action, modifiers) -> {
             if (type == Key.Type.KEYBOARD
-                    && key == Keys.ESC.getInput().getValue()
-                    && modifiers == Keys.Mod.SHIFT.getGlfwKey()) {
+                && key == Keys.ESC.getInput().getValue()
+                && modifiers == Keys.Mod.SHIFT.getGlfwKey()) {
+                window.close();
+                return true;
+            }
+            if (type == Key.Type.KEYBOARD
+                && key == Keys.W.getInput().getValue()
+                && modifiers == Keys.Mod.CONTROL.getGlfwKey()) {
                 window.close();
                 return true;
             }
