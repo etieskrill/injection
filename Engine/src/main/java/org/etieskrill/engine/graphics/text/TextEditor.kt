@@ -3,6 +3,7 @@ package org.etieskrill.engine.graphics.text
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.joml.Vector2i
 import org.joml.Vector2ic
+import kotlin.math.abs
 
 private val logger = KotlinLogging.logger {}
 
@@ -40,18 +41,26 @@ class TextEditor(font: Font) {
     operator fun plusAssign(c: Char) = write(c)
 
     fun remove(ctrl: Boolean = false) {
-        if (ctrl) TODO()
-
         if (field[cursor.position].isEmpty()
             || field.text[cursor.position.y].size == 1 && field.text[cursor.position.y][0] == '\n'
         ) {
             field.text.removeAt(cursor.position.y)
             cursor.up()
             cursor.end()
-        } else {
-            field.remove(cursor.position)
-            cursor.left()
+            return
         }
+
+        if (ctrl) {
+            val numWordChars = abs(getNextWordBoundaryOffset(false))
+            cursor.left(ctrl = true)
+            repeat(numWordChars) {
+                field.text[cursor.position.y].removeAt(cursor.position.x)
+            }
+            return
+        }
+
+        field.remove(cursor.position)
+        cursor.left()
         update()
     }
 
@@ -70,8 +79,13 @@ class TextEditor(font: Font) {
         }
 
         fun down(select: Boolean = false) = position.apply {
+            if (y == field.text.size - 1) {
+                end()
+                return@apply
+            }
+
             x = kotlin.math.min(x, if (field.text.size > y + 1) field.text[y + 1].size else 0)
-            y = kotlin.math.min(y + 1, field.text.size - 1)
+            y = kotlin.math.min(y + 1, kotlin.math.max(0, field.text.size - 1))
         }
 
         fun left(ctrl: Boolean = false, select: Boolean = false) = position.apply {
@@ -111,32 +125,33 @@ class TextEditor(font: Font) {
             if (ctrl) y = field.text.size - 1
             x = if (field.text.size > y) field.text[y].count { it != '\n' } else 0
         }
+    }
 
-        //TODO additional behaviours; skip first encountered whitespace etc.
-        private val isWordChar = { c: Char -> c.isLetterOrDigit() || c == '_' }
+    //TODO additional behaviours; skip first encountered whitespace etc.
+    private val isWordChar = { c: Char -> c.isLetterOrDigit() || c == '_' }
 
-        private fun getNextWordBoundaryOffset(forward: Boolean): Int {
-            val xLimit = if (forward) field.text[position.y].size else 0
-            if (position.x == xLimit || field.text.isEmpty() || field.text[position.y].isEmpty()) return 0
+    private fun getNextWordBoundaryOffset(forward: Boolean): Int {
+        val pos = cursor.position
+        val xLimit = if (forward) field.text[pos.y].size else 0
+        if (pos.x == xLimit || field.text.isEmpty() || field.text[pos.y].isEmpty()) return 0
 
-            var shift = 0
-            val line = field.text[position.y]
-            val lineLength = if (field.text.size > position.y) field.text[position.y].size else 0
-            val lastCharPos = position.x - if (forward) 0 else 1
-            var lastWasWord = isWordChar(line[lastCharPos])
+        var shift = 0
+        val line = field.text[pos.y]
+        val lineLength = if (field.text.size > pos.y) field.text[pos.y].size else 0
+        val lastCharPos = pos.x - if (forward) 0 else 1
+        var lastWasWord = isWordChar(line[lastCharPos])
 
-            val interval =
-                if (forward) position.x..(lineLength - 1)
-                else (position.x - 1) downTo 0
-            for (i in interval) {
-                if (lastWasWord == isWordChar(line[i])) {
-                    if (forward) shift++
-                    else shift--
-                } else break
-            }
-
-            return shift
+        val interval =
+            if (forward) pos.x..(lineLength - 1)
+            else (pos.x - 1) downTo 0
+        for (i in interval) {
+            if (lastWasWord == isWordChar(line[i])) {
+                if (forward) shift++
+                else shift--
+            } else break
         }
+
+        return shift
     }
 
     private val _gridSize = listOf<Int>()
