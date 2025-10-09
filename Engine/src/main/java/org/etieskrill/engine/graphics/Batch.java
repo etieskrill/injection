@@ -62,6 +62,10 @@ public class Batch {
         shader.setUniform("colour", resetColour, false);
     }
 
+    public @Nullable Vector2f getAbsoluteCursorPosition(Vector2ic cursorPosition, String text, Font font, Vector2fc size) {
+        return textRenderer.getAbsoluteCursorPosition(cursorPosition, text, font, size);
+    }
+
     public void renderText(String text, Font font, Vector2fc position) {
         renderText(text, font, position, null);
     }
@@ -82,7 +86,7 @@ public class Batch {
 
     /**
      * @param size           the borders of the text field, after which the text will be wrapped
-     * @param cursorPosition will be set to the relative cursor position after rendering the text
+     * @param cursorPosition returns the relative cursor position after rendering the text
      */
     public void renderText(String text, Font font, Vector2fc position, Vector2fc size, @Nullable Vector2f cursorPosition) {
         textRenderer.render(text, font, position, size, textShader, combined, cursorPosition);

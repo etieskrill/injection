@@ -10,9 +10,7 @@ import org.etieskrill.engine.graphics.text.BitmapFont;
 import org.etieskrill.engine.graphics.text.Font;
 import org.etieskrill.engine.graphics.text.Glyph;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Matrix4fc;
-import org.joml.Vector2f;
-import org.joml.Vector2fc;
+import org.joml.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +32,42 @@ public class GLTextRenderer extends GLDebuggableRenderer implements TextRenderer
     public GLTextRenderer() {
         for (int i = 0; i < MAX_BATCH_LENGTH; i++)
             renderedGlyphs.add(new RenderedGlyph());
+    }
+
+    @Override
+    public @Nullable Vector2f getAbsoluteCursorPosition(Vector2ic cursorPosition, String text, Font font, @Nullable Vector2fc size) {
+        if (cursorPosition.equals(0, 0)) return new Vector2f(0, 0);
+
+        int numChars = 0;
+        Vector2f pen = new Vector2f(0);
+        Vector2i currentCursorPosition = new Vector2i(0);
+
+        for (Glyph glyph : font.getGlyphs(text)) {
+            switch (requireNonNullElse(glyph.getCharacter(), (char) 0)) {
+                case '\n' -> {
+                    pen.set(0, pen.y() + font.getLineHeight());
+                    currentCursorPosition.x = 0;
+                    currentCursorPosition.y++;
+                }
+                default -> {
+                    //TODO this is only the most primitive of wrapping; maybe add wrap mode enum? callback, even?
+                    if (size != null && (pen.x + glyph.getAdvance().x() > size.x())) { //special chars probably shouldn't get wrapped, right?
+                        pen.set(0, pen.y + font.getLineHeight());
+                        currentCursorPosition.x = 0;
+                        currentCursorPosition.y++;
+                    }
+                    currentCursorPosition.x++;
+                    pen.add(glyph.getAdvance());
+                }
+            }
+
+            numChars++;
+
+            if (currentCursorPosition.equals(cursorPosition)) return pen;
+            else if (numChars > text.length()) return null;
+        }
+
+        return null;
     }
 
     @Override
