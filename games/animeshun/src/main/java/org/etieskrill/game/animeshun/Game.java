@@ -136,6 +136,7 @@ public class Game {
         window = Window.builder()
                 .setTitle("Animeshun yeeees")
                 .setMode(Window.WindowMode.BORDERLESS)
+                .setSize(Window.WindowSize.LARGEST_FIT)
                 .setRefreshRate(FRAMERATE)
                 .setKeyInputHandlers(controls)
                 .setSamples(4)
@@ -344,6 +345,7 @@ public class Game {
 
             //TODO tone map + gamma correct
             renderer.prepare();
+            renderer.nextFrame();
 
             renderer.render(skybox, cubeMapShader, camera.getCombined().translate(camera.getPosition(), new Matrix4f()).scale(50));
 

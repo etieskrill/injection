@@ -99,6 +99,9 @@ public class FrameBuffer implements io.github.etieskrill.injection.extension.sha
 
                 attachment.attach(type);
 
+                //FIXME this could be anything from improperly sized attachments to any other attribute not matching
+                // exactly, so either exercise VERY strict validation before/during/after attaching, or find a way to
+                // get any sort of logs
                 if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT) {
                     throw new FrameBufferCreationException("Incomplete framebuffer attachment for " +
                                                            type.name() + ": " + attachment);

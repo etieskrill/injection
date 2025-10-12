@@ -522,6 +522,14 @@ public class Window implements Disposable {
     }
 
     public void setSize(WindowSize size) {
+        if (size == WindowSize.LARGEST_FIT) {
+            monitor = glfwGetPrimaryMonitor();
+            if (monitor == NULL) throw new IllegalStateException("Could not find primary monitor");
+
+            var videoMode = requireNonNull(glfwGetVideoMode(monitor), "Failed to get video mode");
+            size = WindowSize.getLargestFit(videoMode.width(), videoMode.height());
+        }
+
         this.size = size;
         glfwSetWindowSize(window, size.getWidth(), size.getHeight());
     }

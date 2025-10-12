@@ -190,9 +190,9 @@ public class Application extends GameApplication {
         OrthographicCamera uiCamera = new OrthographicCamera(window.getSize().getVec());
         uiCamera.setPosition(new Vector3f(window.getSize().getVec(), 0).div(2));
         fpsLabel = new Label("", Fonts.getDefault(36));
-        fpsLabel.setAlignment(Node.Alignment.TOP_LEFT)
-                .setMargin(new Vector4f(10));
-        window.setScene(new Scene(new Batch(renderer), new Container(fpsLabel), uiCamera));
+        fpsLabel.setAlignment(Node.Alignment.TOP_LEFT);
+        fpsLabel.setMargin(new Vector4f(10));
+        window.setScene(new Scene(new Batch(renderer, window.getCurrentSize()), new Container(fpsLabel), uiCamera));
     }
 
     @Override

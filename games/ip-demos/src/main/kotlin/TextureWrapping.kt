@@ -54,7 +54,7 @@ class App : GameApplication(window {
             )
         }
 
-    val texture: Texture2D = Texture2D.FileBuilder("lena_rgb.png").build()
+    val texture: Texture2D = Texture2D.FileBuilder("textures/lena_rgb.png").build()
     val shader: TextureWrappingShader = TextureWrappingShader()
     val dummyVAO: Int = glGenVertexArrays()
 

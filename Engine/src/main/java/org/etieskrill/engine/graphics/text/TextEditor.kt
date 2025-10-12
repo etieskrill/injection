@@ -11,6 +11,7 @@ class TextEditor(font: Font) {
 
     var text: String get() = toString(); set(value) = TODO()
     private val field = TextEditorField()
+    val selector = Selector()
     var font: Font = font; get() = field; set(value) = TODO()
     var size: Vector2i? = null
 
@@ -41,12 +42,37 @@ class TextEditor(font: Font) {
     operator fun plusAssign(c: Char) = write(c)
 
     fun remove(ctrl: Boolean = false) {
+        if (field.text.isEmpty()) return
+
         if (field[cursor.position].isEmpty()
             || field.text[cursor.position.y].size == 1 && field.text[cursor.position.y][0] == '\n'
         ) {
             field.text.removeAt(cursor.position.y)
             cursor.up()
             cursor.end()
+            return
+        }
+
+        //FIXME multiline deletion
+        if (selector.hasSelection) {
+            if (selector.start.y() != selector.end.y()) TODO("multiline deletion")
+
+            val numSelectedChars = selector.end.x() - selector.start.x()
+
+            //TODO an absolute cursor set method is gonna be necessary at some point anyways
+            val xDistance = cursor.position.x - selector.start.x()
+            if (xDistance > 0) {
+                repeat(xDistance) { cursor.left() }
+            } else {
+                repeat(abs(xDistance)) { cursor.right() }
+            }
+
+            repeat(numSelectedChars) {
+                field.text[cursor.position.y].removeAt(cursor.position.x)
+            }
+
+            selector.move(false, cursor.position)
+
             return
         }
 
@@ -76,35 +102,45 @@ class TextEditor(font: Font) {
         fun up(select: Boolean = false) = position.apply {
             x = kotlin.math.min(x, if (field.text.size > y - 1 && y - 1 >= 0) field.text[y - 1].size - 1 else 0)
             y = kotlin.math.max(0, y - 1)
+
+            selector.move(select, position) //FIXME multiline selection (probs works here, just not rendered?)
         }
 
         fun down(select: Boolean = false) = position.apply {
             if (y == field.text.size - 1) {
                 end()
+                selector.move(select, position)
                 return@apply
             }
 
             x = kotlin.math.min(x, if (field.text.size > y + 1) field.text[y + 1].size else 0)
             y = kotlin.math.min(y + 1, kotlin.math.max(0, field.text.size - 1))
+
+            selector.move(select, position)
         }
 
         fun left(ctrl: Boolean = false, select: Boolean = false) = position.apply {
-            if (position.y > 0 && x - 1 < 0) { // wraparound from start of line
+            if (y > 0 && x - 1 < 0) { // wraparound from start of line
                 up()
                 end()
+                selector.move(select, position)
                 return@apply
             }
 
             var shift =
                 if (ctrl) getNextWordBoundaryOffset(false)
                 else -1
+
             x = kotlin.math.max(0, x + shift)
+
+            selector.move(select, position)
         }
 
         fun right(ctrl: Boolean = false, select: Boolean = false) = position.apply {
             if (field.text.size - 1 > position.y && x + 1 > field.text[position.y].count { it != '\n' }) { //TODO replace with isPrintable or w/e
                 down()
                 home()
+                selector.move(select, position)
                 return@apply
             }
 
@@ -114,16 +150,48 @@ class TextEditor(font: Font) {
 
             val lineLength = if (field.text.size > position.y) field.text[position.y].size else 0
             x = kotlin.math.min(x + shift, lineLength)
+
+            selector.move(select, position)
         }
 
         fun home(ctrl: Boolean = false, select: Boolean = false) = position.apply {
             if (ctrl) y = 0
             x = 0
+
+            selector.move(select, position)
         }
 
         fun end(ctrl: Boolean = false, select: Boolean = false) = position.apply {
             if (ctrl) y = field.text.size - 1
             x = if (field.text.size > y) field.text[y].count { it != '\n' } else 0
+
+            selector.move(select, position)
+        }
+    }
+
+    inner class Selector {
+        var hasSelection = false; private set
+
+        //hold procedural start and end-point, not positional, i.e. end may be before start in terms of position
+        private val _start = Vector2i()
+        private val _end = Vector2i()
+
+        //properties return actual positional start and end points (like this because getters on above would be mutually recursive)
+        val start: Vector2ic
+            get() = if (
+                _start.y < _end.y
+                || _start.y == _end.y && _start.x <= _end.x
+            ) _start else _end
+        val end: Vector2ic
+            get() = if (
+                _start.y < _end.y
+                || _start.y == _end.y && _start.x <= _end.x
+            ) _end else _start
+
+        fun move(selected: Boolean, position: Vector2ic) {
+            hasSelection = selected
+            if (!selected) _start.set(position)
+            _end.set(position)
         }
     }
 
@@ -158,9 +226,6 @@ class TextEditor(font: Font) {
     private val _wrappedGridSize = listOf<List<Int>>()
     val gridSize: List<Int>
         get() = if (size == null) _gridSize else _wrappedGridSize.flatten()
-
-    val selectedPosition: Vector2ic = Vector2i()
-    val selectedSize: Vector2ic = Vector2i()
 
     val numPrintableChars: Int
         get() = TODO()

@@ -3,12 +3,15 @@ import org.etieskrill.engine.graphics.Batch
 import org.etieskrill.engine.graphics.camera.OrthographicCamera
 import org.etieskrill.engine.scene.Scene
 import org.etieskrill.engine.scene.component.TextField
+import org.etieskrill.engine.window.window
 
 fun main() {
     Noteify.run()
 }
 
-object Noteify : GameApplication() {
+object Noteify : GameApplication(window {
+    resizeable = true
+}) {
 
     init {
         window.scene = Scene(

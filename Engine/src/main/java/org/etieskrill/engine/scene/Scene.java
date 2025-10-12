@@ -92,9 +92,11 @@ public class Scene extends MouseGestureHandler implements KeyInputHandler {
     }
 
     public void setRoot(@NotNull Node<?> root) {
-        if (this.root == focusedNode) focusedNode = root;
-        this.root.setFocusRequestCallback(null);
-        this.root.setFocused$engine(false);
+        if (this.root != null && this.root == focusedNode) {
+            focusedNode = root;
+            this.root.setFocusRequestCallback(null);
+            this.root.setFocused$engine(false);
+        }
 
         this.root = root;
         this.root.setFocusRequestCallback(focusCallback);

@@ -10,7 +10,7 @@ public class CubeMapModel extends Model {
                 .setMaterials(
                         new Material.Builder()
                                 .addTextures(
-                                        Textures.getSkybox(name))
+                                        Textures.getSkybox("textures/cubemaps/" + name))
                                 .build())
                 .setCulling(false)
                 .build());

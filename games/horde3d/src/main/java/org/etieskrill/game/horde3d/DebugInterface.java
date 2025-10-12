@@ -33,8 +33,8 @@ public class DebugInterface extends Scene {
         this.pacer = pacer;
 
         this.fpsLabel = new Label("", Fonts.getDefault(36));
-        this.fpsLabel.setAlignment(Node.Alignment.TOP_LEFT)
-                .setMargin(new Vector4f(10));
+        this.fpsLabel.setAlignment(Node.Alignment.TOP_LEFT);
+        this.fpsLabel.setMargin(new Vector4f(10));
         setRoot(new Container(fpsLabel));
     }
 

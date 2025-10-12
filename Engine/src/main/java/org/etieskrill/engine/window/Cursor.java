@@ -4,6 +4,9 @@ import org.etieskrill.engine.Disposable;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2d;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
@@ -15,6 +18,8 @@ public class Cursor implements Disposable {
     protected Window window;
 
     private boolean windowSet = false;
+
+    private static Map<CursorShape, Long> defaultCursors;
 
     public static Cursor getDefault() {
         return getDefault(CursorShape.ARROW);
@@ -28,12 +33,16 @@ public class Cursor implements Disposable {
     }
 
     //TODO constructor which loads some cursor files, may require list of images for cursor modes
+    //TODO cursor loader
     protected Cursor(CursorShape shape) {
-        this(glfwCreateStandardCursor(shape.glfw()));
-    }
+        if (defaultCursors == null) {
+            defaultCursors = new HashMap<>();
+            for (CursorShape cursorShape : CursorShape.values()) {
+                defaultCursors.put(cursorShape, glfwCreateStandardCursor(cursorShape.glfw()));
+            }
+        }
 
-    protected Cursor(long cursorId) {
-        this.cursorId = cursorId;
+        this.cursorId = defaultCursors.get(shape);
     }
 
     public enum CursorMode {
@@ -121,25 +130,9 @@ public class Cursor implements Disposable {
         }
     }
 
-    public void setShape(CursorShape shape) { //TODO create internal list of cursors for this
-        throw new UnsupportedOperationException("Not implemented yet");
-
-//        checkWindow();
-//        int glfwShape = switch (shape) {
-//            case ARROW -> GLFW_ARROW_CURSOR;
-//            case IBEAM -> GLFW_IBEAM_CURSOR;
-//            case CROSSHAIR -> GLFW_CROSSHAIR_CURSOR;
-//            case POINTING_HAND -> GLFW_POINTING_HAND_CURSOR;
-//            case RESIZE_EW -> GLFW_RESIZE_EW_CURSOR;
-//            case RESIZE_NS -> GLFW_RESIZE_NS_CURSOR;
-//            case RESIZE_NWSE -> GLFW_RESIZE_NWSE_CURSOR;
-//            case RESIZE_NESW -> GLFW_RESIZE_NESW_CURSOR;
-//            case RESIZE_ALL -> GLFW_RESIZE_ALL_CURSOR;
-//            case NOT_ALLOWED -> GLFW_NOT_ALLOWED_CURSOR;
-//        };
-//
-//        glfwCreateStandardCursor(glfwShape);
-//        glfwSetInputMode(window, );
+    public void setShape(CursorShape shape) {
+        checkWindow();
+        glfwSetCursor(window.getID(), defaultCursors.get(shape));
     }
 
     private final double[] posx = new double[1], posy = new double[1];

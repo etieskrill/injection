@@ -29,17 +29,15 @@ public class DebugOverlay extends Scene {
 
         this.renderStatistics = new Label();
 
-        setBatch(new Batch(renderer, renderer).setShader(Shaders.getTextShader()));
+        setBatch(new Batch(renderer, windowSize).setShader(Shaders.getTextShader()));
         setRoot(getRootNode());
         setCamera(new OrthographicCamera(windowSize));
     }
 
     private Node getRootNode() {
-        return new Stack(List.of(
-                renderStatistics
-                        .setAlignment(org.etieskrill.engine.scene.component.Node.Alignment.TOP_LEFT)
-                        .setMargin(new Vector4f(10))
-        ));
+        renderStatistics.setAlignment(org.etieskrill.engine.scene.component.Node.Alignment.TOP_LEFT);
+        renderStatistics.setMargin(new Vector4f(10));
+        return new Stack(List.of(renderStatistics));
     }
 
     public void setCpuTime(double cpuTime) {

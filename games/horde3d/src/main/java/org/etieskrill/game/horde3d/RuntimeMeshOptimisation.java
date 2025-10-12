@@ -38,12 +38,14 @@ public class RuntimeMeshOptimisation extends GameApplication {
 
     @Override
     protected void init() {
-        PerspectiveCamera camera = new PerspectiveCamera(window.getSize().getVec());
+        window.setSize(Window.WindowSize.LARGEST_FIT);
+
+        PerspectiveCamera camera = new PerspectiveCamera(window.getCurrentSize());
         camera.setRotation(0, -90, 0);
 
         entitySystem.addService(new AnimationService());
         entitySystem.addService(new DirectionalShadowMappingService(renderer));
-        entitySystem.addService(new RenderService(renderer, camera, window.getSize().getVec()));
+        entitySystem.addService(new RenderService(renderer, camera, window.getCurrentSize()));
 
         entitySystem.createEntity(id -> new Entity(id)
                 .withComponent(new Transform().setPosition(new Vector3f(0, -1.5f, 0)))
@@ -69,7 +71,7 @@ public class RuntimeMeshOptimisation extends GameApplication {
         window.getCursor().disable();
         window.addKeyInputs(new KeyCameraController(camera));
 
-        window.setScene(new DebugInterface(window.getSize().getVec(), renderer, pacer));
+        window.setScene(new DebugInterface(window.getCurrentSize(), renderer, pacer));
     }
 
     private void spawnZombies() {
@@ -103,6 +105,7 @@ public class RuntimeMeshOptimisation extends GameApplication {
         for (int i = 0; i < numSkellyZombies; i++) {
             float angle = toRadians(360 * i / numSkellyZombies);
 
+            //FIXME why the skellington rig borked?
             Model model = ModelLoader.get().load("skeleton_zombie", () ->
                     new Model.Builder("mixamo_skeletonzombie_skin.glb")
                             .optimiseMeshes()
@@ -146,6 +149,6 @@ public class RuntimeMeshOptimisation extends GameApplication {
     }
 
     public static void main(String[] args) {
-        new RuntimeMeshOptimisation();
+        new RuntimeMeshOptimisation().run();
     }
 }

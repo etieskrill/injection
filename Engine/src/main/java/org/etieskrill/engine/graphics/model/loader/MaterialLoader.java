@@ -165,13 +165,13 @@ class MaterialLoader {
                             .setType(type)
                             .build();
                 };
-            } else if (classpathResourceExists(TEXTURE_PATH + textureFile.getFullPath())) {
+            } else if (classpathResourceExists(textureFile.getFullPath())) {
                 logger.trace("Texture '{}' is loaded from file {}", textureName, textureFile);
                 supplier = () -> Textures.ofFile(textureFile.getFullPath(), type);
             } else if (classpathResourceExists(TEXTURE_PATH + textureFile.getName())) {
                 //TODO this is prone to breaking due to the undivided nature of model data/textures, should be proofed a bit more
                 logger.debug("Texture '{}' is loaded as fallback based on filename from file {}", textureFile.getName(), textureFile);
-                supplier = () -> Textures.ofFile(textureFile.getName(), type);
+                supplier = () -> Textures.ofFile("textures/" + textureFile.getName(), type);
             } else if (embeddedTextures.values().stream()
                     .map(AbstractTexture.Builder::getType)
                     .anyMatch(builderType -> builderType == type)) {
