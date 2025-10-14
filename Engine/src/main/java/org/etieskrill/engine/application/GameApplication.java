@@ -40,9 +40,9 @@ public abstract class GameApplication {
     private @Getter(PROTECTED) double avgCpuTime;
     private final ArrayDeque<Double> cpuTimes;
 
-    private final StepTimer timer;
+    protected final StepTimer timer;
 
-    private static final Logger logger;
+    protected static final Logger logger;
 
     static {
         InjectionConfig.init();

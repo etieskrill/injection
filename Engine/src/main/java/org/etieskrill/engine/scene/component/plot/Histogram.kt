@@ -49,7 +49,7 @@ class Histogram(
 
         batch.renderBox(Vector3f(position, 0f), Vector3f(size, 0f), backgroundColour)
 
-        val maxValue = values.max()
+        val maxValue = values.maxOrNull() ?: 0f
 
         values.forEachIndexed { index, value ->
             arrayValues[arrayValues.size - 1 - index] = when (scaleMode) {

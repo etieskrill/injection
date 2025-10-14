@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalCoroutinesApi::class, DelicateCoroutinesApi::class)
+
 package io.github.etieskrill.games.ip.demos.synthwave
 
 import io.github.etieskrill.injection.extension.shader.Texture2D
@@ -12,7 +14,12 @@ import io.github.etieskrill.injection.extension.shader.mat4
 import io.github.etieskrill.injection.extension.shader.vec2
 import io.github.etieskrill.injection.extension.shader.vec3
 import io.github.etieskrill.injection.extension.shader.vec4
-import org.etieskrill.engine.application.GameApplication
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.etieskrill.engine.audio.Audio
 import org.etieskrill.engine.audio.AudioListener
 import org.etieskrill.engine.audio.AudioSource
@@ -65,17 +72,15 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 import kotlin.time.Duration.Companion.seconds
 
-fun main() {
-    SynthwavePlane().run()
-}
+fun main() = runSuspendApp { SynthwavePlane(it) }
 
 @Suppress("MemberVisibilityCanBePrivate")
-class SynthwavePlane : GameApplication(window {
+class SynthwavePlane(uiDispatcher: CoroutineDispatcher) : SuspendApp(window {
     title = "Synthwave Plane"
     mode = Window.WindowMode.BORDERLESS
     size = Window.WindowSize.LARGEST_FIT
     vSync = true
-}) {
+}, uiDispatcher) {
 
     val transform = Transform()
     val plane = model("plane") { plane(Vector2f(-100f, -100f), Vector2f(100f, 100f)) }
@@ -87,48 +92,29 @@ class SynthwavePlane : GameApplication(window {
     val frameTexture: Texture2D
     val sunPipeline = PostPassPipeline(SunPostPass(), null, false)
 
-    lateinit var audioSource: AudioSource
+    var audioSource: AudioSource? = null
     val audioListener: AudioListener
 
     val generatedSource: AudioSource
 
-    var currentSound = "synthesised"
-        set(value) {
-            if (::audioSource.isInitialized) {
-                audioSource.stop()
-                if (currentSound != "synthesised") audioSource.dispose()
-            }
-
-            audioSource =
-                if (value == "synthesised") generatedSource
-                else Audio.read(value, retainBuffer = true)
-
-            if (!::playbackBar.isInitialized) {
-                playbackBar = PlaybackBar(audioSource.duration).apply {
-                    alignment = Node.Alignment.BOTTOM
-                    size = Vector2f(700f, 40f)
-                    margin = Vector4f(10f)
-
-                    playAction = { audioSource.play() }
-                    pauseAction = { audioSource.pause() }
-                    stopAction = { audioSource.stop() }
-
-                    action = { audioSource.offsetSeconds = it.inWholeSeconds.toFloat() }
-                }
-            }
-
-            playbackBar.state = PlaybackBar.State.STOPPED
-            playbackBar.totalDuration = audioSource.duration
-
-            field = value
-        }
+    private var currentSound: String = "synthesised"
 
     val fpsLabel: Label
     val fpsGraph: Histogram
 
     val fftGraph: Histogram
 
-    lateinit var playbackBar: PlaybackBar
+    var playbackBar: PlaybackBar = PlaybackBar(0.seconds).apply {
+        alignment = Node.Alignment.BOTTOM
+        size = Vector2f(700f, 40f)
+        margin = Vector4f(10f)
+
+        playAction = { audioSource?.play() }
+        pauseAction = { audioSource?.pause() }
+        stopAction = { audioSource?.stop() }
+
+        action = { audioSource?.offsetSeconds = it.inWholeSeconds.toFloat() }
+    }
 
     var screenShake = false
 
@@ -194,6 +180,8 @@ class SynthwavePlane : GameApplication(window {
 
         audioListener = Audio.listener
 
+        setCurrentSound("synthesised")
+
         fpsLabel = Label()
         fpsGraph = Histogram(100, scaleMode = HistogramScaleMode.FIXED, maxValue = 1.1f * window.refreshRate).apply {
             size = Vector2f(400f, 150f)
@@ -212,13 +200,12 @@ class SynthwavePlane : GameApplication(window {
                     fftGraph,
                     Dropdown(
                         listOf("synthesised") + ResourceReader.getClasspathItems("audio", true)
-                    ) { index, option ->
-                        currentSound = option
-                    }.apply { size = Vector2f(400f, 150f) },
+                    ) { _, option -> setCurrentSound(option) }
+                        .apply { size = Vector2f(400f, 150f) },
                     HBox(
                         Checkbox({
                             screenShake = it
-                        }, ticked=screenShake).apply { size = Vector2f(30f) },
+                        }, ticked = screenShake).apply { size = Vector2f(30f) },
                         Label("Screen shake")
                     )
                 ).apply { size = Vector2f(600f, 700f); margin = Vector4f(10f) },
@@ -232,6 +219,24 @@ class SynthwavePlane : GameApplication(window {
             ),
             OrthographicCamera(window.currentSize)
         )
+    }
+
+    //TODO cancel if this is running while another song button is pressed
+    fun setCurrentSound(sound: String) = uiScope.launch {
+        val newAudioSource = withContext(Dispatchers.IO) {
+            if (sound == "synthesised") generatedSource
+            else Audio.read(sound, retainBuffer = true)
+        }
+
+        audioSource?.stop()
+        if (currentSound != "synthesised") audioSource?.dispose()
+
+        audioSource = newAudioSource
+
+        playbackBar.state = PlaybackBar.State.STOPPED
+        playbackBar.totalDuration = audioSource?.duration ?: 0.seconds
+
+        currentSound = sound
     }
 
     var frameSample = 0
@@ -250,39 +255,44 @@ class SynthwavePlane : GameApplication(window {
         audioListener.position = camera.position
         audioListener.direction = camera.direction.normalize()
 
-        val fftMagnitudes = doFFT(audioSource)
+        audioSource?.takeIf { it.buffer != null }
+            ?.let { audioSource -> //i dunno about this, is this really safe to concurrent modifications?
+                val fftMagnitudes = doFFT(audioSource)
 
-        fftMagnitudes.forEachIndexed { t, value ->
-            //TODO probably interpolate (spline-esque?) between missing values - the whole histogram rendering
-            // shenanigans should just be converted to a proper shader anyways
-            //TODO or this (sparse data points) should probably be it's own node... "Line{Chart,Plot,Graph}"?
-            val index = floor((-(0.1f / ((t.toFloat() / FFT_BINS) + 0.1f)) + 1f) * FFT_BINS).toInt()
-            val sample = (fftAverageMagnitudes[index] + value) / 2
-            fftAverageMagnitudes[index] = sqrt(sample / 5000000f)
-        }
-        fftGraph.values.addAll(fftAverageMagnitudes)
+                fftMagnitudes.forEachIndexed { t, value ->
+                    //TODO probably interpolate (spline-esque?) between missing values - the whole histogram rendering
+                    // shenanigans should just be converted to a proper shader anyways
+                    //TODO or this (sparse data points) should probably be it's own node... "Line{Chart,Plot,Graph}"?
+                    val index = floor((-(0.1f / ((t.toFloat() / FFT_BINS) + 0.1f)) + 1f) * FFT_BINS).toInt()
+                    val sample = (fftAverageMagnitudes[index] + value) / 2
+                    fftAverageMagnitudes[index] = sqrt(sample / 5000000f)
+                }
+                fftGraph.values.addAll(fftAverageMagnitudes)
 
-        val sample = audioSource.offsetSamples
-        val windowSize = (audioSource.sampleRate / pacer.averageFPS).toInt()
-        var sampleValue = 0
-        for (i in max(0, sample - windowSize)..sample) {
-            sampleValue += abs(audioSource.buffer!![i].toInt())
-        }
-        sampleValue /= windowSize
+                val sample = audioSource.offsetSamples
+                val windowSize = (audioSource.sampleRate / pacer.averageFPS).toInt()
+                var sampleValue = 0
+                for (i in max(0, sample - windowSize)..sample) {
+                    sampleValue += abs(audioSource.buffer!![i].toInt())
+                }
+                sampleValue /= windowSize
 
-        frameSample = sampleValue
-        samples.push(((fftMagnitudes[2] + fftMagnitudes[3] + fftMagnitudes[4]) / 3).toInt())
-        averageSample = samples.average().toInt()
+                frameSample = sampleValue
+                samples.push(((fftMagnitudes[2] + fftMagnitudes[3] + fftMagnitudes[4]) / 3).toInt())
+                averageSample = samples.average().toInt()
+            }
 
-        playbackBar.time = audioSource.offsetSeconds.toDouble().seconds
+        playbackBar.time = audioSource?.offsetSeconds?.toDouble()?.seconds ?: 0.seconds
 
         fpsLabel.text = pacer.averageFPS.toInt().toString()
         if (pacer.totalFramesElapsed % 5L == 0L) fpsGraph.values.push(1 / pacer.deltaTimeSeconds.toFloat())
 
         if (screenShake) {
             val cameraShake = Vector2f(sin(100 * pacer.time).toFloat(), sin(150 * pacer.time).toFloat())
-                .times(0.2f * max(0f, (averageSample / 1000000f) - 0.1f)
-                        * if (playbackBar.state == PlaybackBar.State.PLAYING) 1 else 0)
+                .times(
+                    0.2f * max(0f, (averageSample / 1000000f) - 0.1f)
+                            * if (playbackBar.state == PlaybackBar.State.PLAYING) 1 else 0
+                )
 
             camera.rotate(cameraShake.x, cameraShake.y, 0f)
         }

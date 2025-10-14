@@ -10,6 +10,8 @@ version = "unspecified"
 dependencies {
     implementation(project(":engine"))
 
+    implementation(libs.kotlin.coroutines)
+
     implementation(platform("org.lwjgl:lwjgl-bom:${libs.versions.lwjgl.get()}")) //TODO figure out platforms & catalogs
     implementation(libs.lwjgl.openal)
     implementation(libs.lwjgl.opengl)

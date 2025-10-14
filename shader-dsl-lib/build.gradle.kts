@@ -1,6 +1,6 @@
 plugins {
     `java-library`
-    kotlin("jvm") version "2.1.20" //TODO VERSION CATALÖÖÖÖÖÖÖG
+    kotlin("jvm") version "2.2.20" //TODO VERSION CATALÖÖÖÖÖÖÖG
 }
 
 group = "io.github.etieskrill.injection.extension.shader.dsl"
@@ -16,11 +16,11 @@ dependencies {
 
     implementation("org.joml:joml:1.10.8")
 
-    runtimeOnly("org.jetbrains.kotlin:kotlin-reflect:2.1.20")
+    runtimeOnly("org.jetbrains.kotlin:kotlin-reflect:2.2.20")
 }
 
 kotlin {
     compilerOptions {
-        freeCompilerArgs.add("-Xcontext-receivers")
+        freeCompilerArgs.add("-Xcontext-parameters")
     }
 }

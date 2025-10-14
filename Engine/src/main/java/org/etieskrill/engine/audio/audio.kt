@@ -116,6 +116,7 @@ abstract class AudioSource internal constructor(
 
     override fun dispose() {
         alDeleteSources(handle)
+        //FIXME the buffers are in the goddamn walls (even the heap buffer copies are not cleaned up grrrr)
         disposed = true
     }
 
@@ -208,48 +209,27 @@ object Audio : Disposable {
         require(path.endsWith(".ogg")) { "Can only parse OGG sound files" }
         val encodedAudio = ResourceReader.getRawResource(path)
         val pcmAudio = vorbisDecodeToPCM(encodedAudio, mode)
-        check(pcmAudio.mode != AudioMode.DONT_CARE)
 
-        val buffer = alGenBuffers()
-
-        alBufferData(buffer, pcmAudio.mode.al, pcmAudio.buffer, pcmAudio.sampleRate)
-        checkError("Failed to buffer audio data")
-
-        val source = alGenSources()
-        checkError("Failed to create source")
-
-        alSourcei(source, AL_BUFFER, buffer)
-        checkError("Failed to bind buffer to source")
-
-        val audioSource = when (pcmAudio.mode) {
-            AudioMode.MONO -> MonoAudioSource(
-                source,
-                pcmAudio.sampleRate,
-                pcmAudio.numSamples,
-                pcmAudio.buffer.takeIf { retainBuffer }
-            )
-
-            AudioMode.STEREO -> StereoAudioSource(
-                source,
-                pcmAudio.sampleRate,
-                pcmAudio.numSamples,
-                pcmAudio.buffer.takeIf { retainBuffer }
-            )
-
-            else -> error("uh oh")
-        }
-
-        sources.getOrPut(currentContext) { mutableListOf() } += audioSource
-        buffers.getOrPut(currentContext) { mutableListOf() } += buffer
-
-        return audioSource
+        return createSource(pcmAudio, retainBuffer)
     }
 
     fun createSource(sampleRate: Int, encodedAudio: ShortBuffer, retainBuffer: Boolean = false): AudioSource {
         checkInit()
 
-        val pcmAudio = PCMAudio(sampleRate, encodedAudio.capacity(), AudioMode.MONO, encodedAudio) //TODO update with stereo?
+        val pcmAudio = PCMAudio(
+            sampleRate,
+            encodedAudio.capacity(),
+            AudioMode.MONO,
+            encodedAudio
+        ) //TODO update with stereo?
+
+        return createSource(pcmAudio, retainBuffer)
+    }
+
+    private fun createSource(pcmAudio: PCMAudio, retainBuffer: Boolean): AudioSource {
         check(pcmAudio.mode != AudioMode.DONT_CARE)
+
+        check(pcmAudio.buffer.isDirect) { "Only direct (off-heap) buffers can be read by OpenAL" }
 
         val buffer = alGenBuffers()
 
@@ -267,14 +247,18 @@ object Audio : Disposable {
                 source,
                 pcmAudio.sampleRate,
                 pcmAudio.numSamples,
-                pcmAudio.buffer.takeIf { retainBuffer }
+                pcmAudio.buffer.takeIf { retainBuffer }?.let {
+                    ShortBuffer.allocate(it.capacity()).put(it).rewind()
+                }
             )
 
             AudioMode.STEREO -> StereoAudioSource(
                 source,
                 pcmAudio.sampleRate,
                 pcmAudio.numSamples,
-                pcmAudio.buffer.takeIf { retainBuffer }
+                pcmAudio.buffer.takeIf { retainBuffer }?.let {
+                    ShortBuffer.allocate(it.capacity()).put(it).rewind()
+                }
             )
 
             else -> error("uh oh")
@@ -383,6 +367,7 @@ private fun vorbisLoadMono(decoder: Long, channels: Int, numSamples: Int): Short
     pointers.rewind()
 
     stb_vorbis_get_samples_short(decoder, pointers, numSamples)
+
     return buffer
 }
 
@@ -391,6 +376,7 @@ private fun vorbisLoadStereo(decoder: Long, channels: Int, numSamples: Int): Sho
 
     val buffer = createShortBuffer(numSamples * channels)
     stb_vorbis_get_samples_short_interleaved(decoder, channels, buffer)
+
     return buffer
 }
 

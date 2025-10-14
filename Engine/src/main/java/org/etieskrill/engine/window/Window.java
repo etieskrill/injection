@@ -662,6 +662,17 @@ public class Window implements Disposable {
         }
     }
 
+    @kotlin.Deprecated(message = "Only call if you know what you are doing.")
+    public void attachContext() {
+        glfwMakeContextCurrent(window);
+        GL.createCapabilities();
+    }
+
+    @kotlin.Deprecated(message = "Only call if you know what you are doing.")
+    public void detachContext() {
+        glfwMakeContextCurrent(NULL);
+    }
+
     @Override
     public void dispose() {
         glfwDestroyWindow(window);
