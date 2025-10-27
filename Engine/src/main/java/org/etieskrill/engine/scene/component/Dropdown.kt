@@ -11,7 +11,7 @@ private val logger = KotlinLogging.logger {}
 
 class Dropdown(
     private val options: List<String>,
-    private val action: (Int, String) -> Unit
+    private val action: suspend (Int, String) -> Unit
 ) : Node<Dropdown>() {
 
     var currentOption: String = ""
@@ -22,7 +22,7 @@ class Dropdown(
             }
 
             field = value
-            action(currentOptionIndex, field)
+            ui { action(currentOptionIndex, field) }
         }
 
     var currentOptionIndex: Int
@@ -31,24 +31,29 @@ class Dropdown(
             if (value !in 0..options.size) {
                 logger.warn { "Index $value is out of bounds for ${options.size} options" }
             }
+            currentOption = options[value]
         }
 
     private val font = Fonts.getDefault(16)
     private val container = WidgetContainer(
         VBox(options.map { option ->
-            Button(Label(option, font)).apply {
-                setAction { currentOption = option }
-            }
+            Button(Label(option, font)) { currentOption = option }
         })
     ).also { it.parent = this }
 
     init {
         check(options.isNotEmpty()) { "Dropdown must have at least one option" }
-        currentOption = options[0]
-        currentOptionIndex = 0
+        check(options.none { it.isBlank() }) { "Dropdown options must not be blank" }
+//        currentOption = options[0]
+//        currentOptionIndex = 0
     }
 
     override fun format() {
+        if (currentOption == "") { //FIXME there is a need for a manual init after scene graph is built, an equivalent of Godot's ready
+            currentOption = options[0]
+            currentOptionIndex = 0
+        }
+
         if (!shouldFormat()) return
 
         (container.child as VBox).children.forEach {

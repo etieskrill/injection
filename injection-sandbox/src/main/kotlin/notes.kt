@@ -1,4 +1,4 @@
-import org.etieskrill.engine.application.GameApplication
+import org.etieskrill.engine.application.App
 import org.etieskrill.engine.graphics.Batch
 import org.etieskrill.engine.graphics.camera.OrthographicCamera
 import org.etieskrill.engine.scene.Scene
@@ -9,7 +9,7 @@ fun main() {
     Noteify.run()
 }
 
-object Noteify : GameApplication(window {
+object Noteify : App(window {
     resizeable = true
 }) {
 

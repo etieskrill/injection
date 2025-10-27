@@ -12,6 +12,7 @@ version = "1.0.0-SNAPSHOT"
 
 dependencies {
     api(libs.kotlin.stdlib)
+    implementation(libs.kotlin.coroutines)
 
     //LWJGL native interfaces
     implementation(platform("org.lwjgl:lwjgl-bom:${libs.versions.lwjgl.get()}"))

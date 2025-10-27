@@ -1,5 +1,6 @@
 package org.etieskrill.engine.window;
 
+import kotlinx.coroutines.CoroutineScope;
 import lombok.Builder;
 import lombok.Getter;
 import org.etieskrill.engine.Disposable;
@@ -8,6 +9,7 @@ import org.etieskrill.engine.graphics.gl.GLUtils;
 import org.etieskrill.engine.input.*;
 import org.etieskrill.engine.scene.Scene;
 import org.etieskrill.engine.util.ResourceReader;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.*;
 import org.lwjgl.BufferUtils;
@@ -66,6 +68,8 @@ public class Window implements Disposable {
     private final List<KeyInputHandler> keyInputs;
     private final List<CursorInputHandler> cursorInputs;
     private @Getter Scene scene;
+
+    private @NotNull CoroutineScope uiScope;
 
     private boolean built = false;
 
@@ -279,7 +283,8 @@ public class Window implements Disposable {
 
         init(position, createHidden, transparency);
 
-        this.setCursor(cursor.setWindow(this));
+        checkErrorThrowing("Error before cursor creation"); //TODO remove
+        this.setCursor(cursor);
 
         checkErrorThrowing("Error during window creation");
 
@@ -352,6 +357,7 @@ public class Window implements Disposable {
 
         glfwMakeContextCurrent(window);
         initGl();
+        checkErrorThrowing("Failed to initialise GL context");
 
         glfwSwapInterval(vSyncEnabled ? 1 : 0);
 
@@ -493,6 +499,7 @@ public class Window implements Disposable {
 
     public void update(double delta) {
         if (scene != null) {
+            scene.setCoroutineScope(uiScope);
             scene.setSize(currentSize);
             scene.update(delta);
             scene.getCamera()
@@ -555,6 +562,7 @@ public class Window implements Disposable {
     //on Windows, will only succeed if entire window is still within screen space after translation
     public void setPos(Vector2fc pos) {
         glfwSetWindowPos(this.window, (int) pos.x(), (int) pos.y());
+        checkError("If you are not on Wayland, be concerned");
     }
 
     public Vector2ic getCurrentSize() {
@@ -566,7 +574,8 @@ public class Window implements Disposable {
     }
 
     public void setCursor(Cursor cursor) {
-        glfwSetCursor(window, cursor.getId());
+        if (this.cursor != null) this.cursor.unsetWindow();
+        cursor.setWindow(this);
         this.cursor = cursor;
     }
 
@@ -601,11 +610,20 @@ public class Window implements Disposable {
         this.scene.setSize(this.size.getVec());
     }
 
+    public void setUiScope(@NotNull CoroutineScope uiScope) {
+        this.uiScope = uiScope;
+    }
+
     private static void checkError() {
+        checkError(null);
+    }
+
+    private static void checkError(@Nullable String header) {
         PointerBuffer description = BufferUtils.createPointerBuffer(1);
         GLFWError error = GLFWError.fromGLFW(glfwGetError(description));
         if (error != NO_ERROR) {
-            logger.warn("GLFW error occurred: {} {}", error.toString(), memUTF8(description.get()));
+            if (header == null) header = "GLFW error occurred";
+            logger.warn("{}: {} {}", header, error.toString(), memUTF8(description.get()));
         }
     }
 

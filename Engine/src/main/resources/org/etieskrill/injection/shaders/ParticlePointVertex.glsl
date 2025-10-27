@@ -7,10 +7,10 @@ uniform struct Camera {
 } camera;
 
 #ifdef VERTEX_SHADER
-layout (location = 0) attribute vec3 a_Position;
-layout (location = 1) attribute vec2 a_Transform0;
-layout (location = 2) attribute vec2 a_Transform1;
-layout (location = 3) attribute vec4 a_Colour;
+layout (location = 0) in vec3 a_Position;
+layout (location = 1) in vec2 a_Transform0;
+layout (location = 2) in vec2 a_Transform1;
+layout (location = 3) in vec4 a_Colour;
 
 flat out vec4 particleColour;
 flat out mat2 transform;

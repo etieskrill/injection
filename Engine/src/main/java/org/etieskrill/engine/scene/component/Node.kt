@@ -1,5 +1,8 @@
 package org.etieskrill.engine.scene.component
 
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import org.etieskrill.engine.graphics.Batch
 import org.etieskrill.engine.input.Key
 import org.etieskrill.engine.input.Keys
@@ -39,12 +42,12 @@ abstract class Node<T : Node<T>> {
 
     var isVisible = true
 
-    protected var colour = Vector4f(0f)
+    var colour = Vector4f(0f)
         set(value) {
             field.set(value)
             renderedColour.set(value)
         }
-    protected val renderedColour = Vector4f(0f)
+    val renderedColour = Vector4f(0f)
 
     var parent: Node<*>? = null
         set(value) {
@@ -58,6 +61,22 @@ abstract class Node<T : Node<T>> {
     var focused: Boolean = false
         internal set
     var focusRequestCallback: ((Node<*>) -> Boolean)? = null
+
+    protected val uiDispatcher get() = rootUiDispatcher!!
+    internal var rootUiDispatcher: CoroutineDispatcher? = null
+        get() = parent
+            ?.rootUiDispatcher
+            ?: field
+            ?: error("Root node has no coroutine dispatcher set; probably due to it not being in valid scene")
+
+    protected val uiScope get() = rootUiScope!!
+    internal var rootUiScope: CoroutineScope? = null
+        get() = parent
+            ?.rootUiScope
+            ?: field
+            ?: error("Root node has no coroutine scope set; probably due to it not being in valid scene")
+
+    protected fun ui(block: suspend CoroutineScope.() -> Unit) = uiScope.launch(block = block)
 
     private var shouldFormat = true
 

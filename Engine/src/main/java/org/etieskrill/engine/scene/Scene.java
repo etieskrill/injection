@@ -1,6 +1,7 @@
 package org.etieskrill.engine.scene;
 
 import kotlin.jvm.functions.Function1;
+import kotlinx.coroutines.CoroutineScope;
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.input.Key;
@@ -132,6 +133,10 @@ public class Scene extends MouseGestureHandler implements KeyInputHandler {
     public void setSize(Vector2ic size) {
         this.size.set(size);
         root.invalidate();
+    }
+
+    public void setCoroutineScope(CoroutineScope coroutineScope) {
+        root.setRootUiScope$engine(coroutineScope);
     }
 
     @Override

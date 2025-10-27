@@ -68,21 +68,13 @@ class PlaybackBar(
 
     private val playButton = Button(
         Image("textures/icons/play-button-black.png").apply { size = Vector2f(32f) }
-    ).apply {
-        size = Vector2f(32f)
-        setAction { state = State.PLAYING }
-    }
-    private val pauseButton =
-        Button(Image("textures/icons/pause-button-black.png").apply { size = Vector2f(32f) }).apply {
-            size = Vector2f(32f)
-            setAction { state = State.PAUSED }
-        }
+    ) { state = State.PLAYING }.apply { size = Vector2f(32f) }
+    private val pauseButton = Button(
+        Image("textures/icons/pause-button-black.png").apply { size = Vector2f(32f) }
+    ) { state = State.PAUSED }.apply { size = Vector2f(32f) }
     private val stopButton = Button(
         Image("textures/icons/stop-button-black.png").apply { size = Vector2f(32f) }
-    ).apply {
-        size = Vector2f(32f)
-        setAction { state = State.STOPPED }
-    }
+    ) { state = State.STOPPED }.apply { size = Vector2f(32f) }
     private val progressBar = Slider(0f, 0f, 1f).apply {
         size = Vector2f(500f, 15f)
         margin = Vector4f(5f)

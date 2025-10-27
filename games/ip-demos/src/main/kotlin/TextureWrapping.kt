@@ -80,6 +80,7 @@ class App : GameApplication(window {
                 textureOffset.y += deltaY
                 return true
             }
+
             override fun invokeScroll(deltaX: Double, deltaY: Double): Boolean {
                 textureSize.add((deltaY.toFloat() / 20) * textureSize.x, (deltaY.toFloat() / 20) * textureSize.y)
                 return true
@@ -92,13 +93,13 @@ class App : GameApplication(window {
                 fpsLabel,
                 modeLabel,
                 Label("Press '${Keys.Q}' and '${Keys.E}' to cycle modes\nMouse drag to move\nScroll to zoom"),
-                Button(Label("Previous mode").apply { alignment = Alignment.CENTER }).apply {
-                    setAction { previousMode() }
+                Button(Label("Previous mode").apply { alignment = Alignment.CENTER }
+                ) { previousMode() }.apply {
                     alignment = Alignment.BOTTOM_LEFT
                     size = Vector2f(150f, 50f)
                 },
-                Button(Label("Next mode").apply { alignment = Alignment.CENTER }).apply {
-                    setAction { nextMode() }
+                Button(Label("Next mode").apply { alignment = Alignment.CENTER }
+                ) { nextMode() }.apply {
                     alignment = Alignment.BOTTOM_RIGHT
                     size = Vector2f(150f, 50f)
                 },

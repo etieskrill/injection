@@ -1,7 +1,8 @@
 @file:OptIn(ExperimentalCoroutinesApi::class, DelicateCoroutinesApi::class)
 
-package io.github.etieskrill.games.ip.demos.synthwave
+package org.etieskrill.engine.application
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -12,48 +13,58 @@ import kotlinx.coroutines.newSingleThreadContext
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
-import org.etieskrill.engine.application.GameApplication
 import org.etieskrill.engine.time.TimeResolutionUtils.setSystemTimeResolution
 import org.etieskrill.engine.window.Window
 
 //TODO consider local list/channel to put dispatchers, each app will then search for the dispatcher it's current on
+private var dispatcher: CoroutineDispatcher? = null
+private var firstApp = true
 
-fun <T : SuspendApp> runSuspendApp(block: (CoroutineDispatcher) -> T) = runBlocking {
+private val logger = KotlinLogging.logger {}
+
+fun <T : SuspendApp> runSuspendApp(block: () -> T) = runBlocking {
+    if (!firstApp) TODO("Can only launch one app+window for now")
+    else firstApp = false
+
     val uiDispatcher = newSingleThreadContext("UI")
-    val app = withContext(uiDispatcher) { block(uiDispatcher) }
+    dispatcher = uiDispatcher
+    val app = withContext(uiDispatcher) { block() }
     app.runSuspend()
 }
 
-abstract class SuspendApp(
-    window: Window,
-    val uiDispatcher: CoroutineDispatcher,
-    val uiScope: CoroutineScope = CoroutineScope(uiDispatcher)
-) : GameApplication(window) {
+abstract class SuspendApp(window: Window) : App(window) {
+
+    override val uiDispatcher = dispatcher!!
+    override val uiScope = CoroutineScope(uiDispatcher)
 
     override fun run() = throw UnsupportedOperationException("Call 'runSuspend' instead")
+
+    init {
+        window.setUiScope(uiScope) //juuust a little bit disgusting
+    }
 
     suspend fun runSuspend() {
         try {
             //TODO separation: which parts in main and which in window main?
             withContext(uiDispatcher) { init() }
             timer.info("Initialised application")
-            _loop()
+            internalLoop()
             while (!window.shouldClose()) delay(100) //TODO expand to multiwindow etc.
         } catch (e: Exception) {
-            logger.warn("Caught application exception", e) //TODO better handling and scopes
+            logger.error(e) { "Caught application exception" } //TODO better handling and scopes
         } finally {
             withContext(uiDispatcher) { terminate() }
             timer.info("Terminated application")
         }
     }
 
-    override fun _loop() {
+    override fun internalLoop() {
         uiScope.launch {
             setSystemTimeResolution(1)
             pacer.start()
 
             while (!window.shouldClose()) {
-                doLoop()
+                update()
                 yield()
                 pacer.nextFrame()
             }

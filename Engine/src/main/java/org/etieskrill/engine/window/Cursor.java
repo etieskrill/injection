@@ -3,17 +3,22 @@ package org.etieskrill.engine.window;
 import org.etieskrill.engine.Disposable;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2d;
+import org.lwjgl.BufferUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
 import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.system.MemoryUtil.NULL;
+import static org.lwjgl.system.MemoryUtil.memASCII;
 
 //TODO update disposable once custom cursors are implemented
 public class Cursor implements Disposable {
 
-    protected final long cursorId;
+    protected CursorShape shape;
 
     protected Window window;
 
@@ -21,10 +26,22 @@ public class Cursor implements Disposable {
 
     private static Map<CursorShape, Long> defaultCursors;
 
+    private static final Logger logger = LoggerFactory.getLogger(Cursor.class);
+
     public static Cursor getDefault() {
         return getDefault(CursorShape.ARROW);
     }
 
+    /**
+     * Loads the system's cursors, and activates {@code shape}.
+     * <p>
+     * If any {@link CursorShape} could not be loaded, it will fall back to {@link CursorShape#ARROW}.
+     * If {@link CursorShape#ARROW} must always be available, otherwise
+     *
+     * @param shape the activated cursor
+     * @return the default cursor object
+     * @throws IllegalStateException if no default cursor could be loaded
+     */
     public static Cursor getDefault(CursorShape shape) {
         //TODO perhaps make loaded libraries more safe, for instance via a static init for window/cursor class
         if (!glfwInit())
@@ -36,13 +53,36 @@ public class Cursor implements Disposable {
     //TODO cursor loader
     protected Cursor(CursorShape shape) {
         if (defaultCursors == null) {
+            var pointer = BufferUtils.createPointerBuffer(1);
+
             defaultCursors = new HashMap<>();
-            for (CursorShape cursorShape : CursorShape.values()) {
-                defaultCursors.put(cursorShape, glfwCreateStandardCursor(cursorShape.glfw()));
+
+            var arrowCursor = glfwCreateStandardCursor(CursorShape.ARROW.glfw());
+            var error = Window.GLFWError.fromGLFW(glfwGetError(pointer));
+            if (error != Window.GLFWError.NO_ERROR) {
+                var message = memASCII(pointer.get());
+                throw new IllegalStateException("Default cursor shape ARROW could not be created: [" + message + "] " + message);
+            }
+
+            defaultCursors.put(CursorShape.ARROW, arrowCursor);
+
+            for (CursorShape cursorShape : Arrays.stream(CursorShape.values()).filter(s -> s != CursorShape.ARROW).toList()) {
+                var cursor = glfwCreateStandardCursor(cursorShape.glfw());
+
+                error = Window.GLFWError.fromGLFW(glfwGetError(pointer));
+                if (error != Window.GLFWError.NO_ERROR) {
+                    var message = memASCII(pointer.get());
+                    logger.warn("Failed to create cursor shape {}, using fallback of ARROW instead: [{}] {}", cursorShape, error, message);
+                    pointer.rewind();
+
+                    cursor = defaultCursors.get(CursorShape.ARROW);
+                }
+
+                defaultCursors.put(cursorShape, cursor);
             }
         }
 
-        this.cursorId = defaultCursors.get(shape);
+        this.shape = shape;
     }
 
     public enum CursorMode {
@@ -132,7 +172,8 @@ public class Cursor implements Disposable {
 
     public void setShape(CursorShape shape) {
         checkWindow();
-        glfwSetCursor(window.getID(), defaultCursors.get(shape));
+        this.shape = shape;
+        glfwSetCursor(window.getID(), defaultCursors.get(this.shape));
     }
 
     private final double[] posx = new double[1], posy = new double[1];
@@ -147,20 +188,28 @@ public class Cursor implements Disposable {
         if (!windowSet) throw new IllegalStateException("Cursor is not assigned to window");
     }
 
-    long getId() {
-        return cursorId;
-    }
-
     Cursor setWindow(Window window) {
         if (windowSet) throw new UnsupportedOperationException("Cursor is already assigned to window");
         this.window = window;
         windowSet = true;
+
+        setShape(shape);
+
         return this;
+    }
+
+    void unsetWindow() {
+        if (!windowSet) throw new UnsupportedOperationException("Cursor is not assigned to window");
+        this.window = null;
+        windowSet = false;
     }
 
     @Override
     public void dispose() {
-        if (cursorId != NULL) glfwDestroyCursor(cursorId);
+        //TODO cursor loader
+        for (long cursorId : new HashSet<>(defaultCursors.values())) {
+            glfwDestroyCursor(cursorId);
+        }
     }
 
 }

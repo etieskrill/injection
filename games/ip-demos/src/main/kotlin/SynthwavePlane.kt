@@ -14,12 +14,12 @@ import io.github.etieskrill.injection.extension.shader.mat4
 import io.github.etieskrill.injection.extension.shader.vec2
 import io.github.etieskrill.injection.extension.shader.vec3
 import io.github.etieskrill.injection.extension.shader.vec4
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.etieskrill.engine.application.SuspendApp
+import org.etieskrill.engine.application.runSuspendApp
 import org.etieskrill.engine.audio.Audio
 import org.etieskrill.engine.audio.AudioListener
 import org.etieskrill.engine.audio.AudioSource
@@ -72,15 +72,16 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 import kotlin.time.Duration.Companion.seconds
 
-fun main() = runSuspendApp { SynthwavePlane(it) }
+fun main() = runSuspendApp { SynthwavePlane() }
+//fun main() = SynthwavePlane().run() //TODO replace and test with immediate when fixed
 
 @Suppress("MemberVisibilityCanBePrivate")
-class SynthwavePlane(uiDispatcher: CoroutineDispatcher) : SuspendApp(window {
+class SynthwavePlane() : SuspendApp(window {
     title = "Synthwave Plane"
     mode = Window.WindowMode.BORDERLESS
     size = Window.WindowSize.LARGEST_FIT
     vSync = true
-}, uiDispatcher) {
+}) {
 
     val transform = Transform()
     val plane = model("plane") { plane(Vector2f(-100f, -100f), Vector2f(100f, 100f)) }
@@ -180,7 +181,7 @@ class SynthwavePlane(uiDispatcher: CoroutineDispatcher) : SuspendApp(window {
 
         audioListener = Audio.listener
 
-        setCurrentSound("synthesised")
+        uiDo { setCurrentSound("synthesised") }
 
         fpsLabel = Label()
         fpsGraph = Histogram(100, scaleMode = HistogramScaleMode.FIXED, maxValue = 1.1f * window.refreshRate).apply {
@@ -221,8 +222,21 @@ class SynthwavePlane(uiDispatcher: CoroutineDispatcher) : SuspendApp(window {
         )
     }
 
+    //TODO so two general approaches:
+    // 1. do no automatic concurrency control (apart from maybe application launch), meaning both ui scope for ui
+    //    actions and io scope for io actions have to be manually specified
+    // 2. do as much automatic concurrency control as reasonable:
+    //    - having all actions of ui elements launch a ui coroutine, the action lambdas are then suspend
+    //      (the dispatcher + scope can be passed via a recursive property in the Node class, and are automatically set
+    //      for the root node in a scene attached to a window),
+    //    - all factory methods are
+    //      a) suspend, and use the io dispatcher (also makes blocking behaviour more explicit in regular code)
+    //      b) using a loader for caching
+    //    while this makes home-brewn stuff less intuitive to use, i think the advantages above are worth it. it also
+    //    encourages (or, well, requires) more event- and result-driven behaviour, as opposed to imperative, which may
+    //    increase robustness as much as it increases complexity
     //TODO cancel if this is running while another song button is pressed
-    fun setCurrentSound(sound: String) = uiScope.launch {
+    suspend fun setCurrentSound(sound: String) {
         val newAudioSource = withContext(Dispatchers.IO) {
             if (sound == "synthesised") generatedSource
             else Audio.read(sound, retainBuffer = true)
