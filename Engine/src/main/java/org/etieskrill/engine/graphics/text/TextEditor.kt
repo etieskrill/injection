@@ -10,7 +10,10 @@ private val logger = KotlinLogging.logger {}
 class TextEditor(font: Font) {
 
     var text: String get() = toString(); set(value) = TODO()
+
     private val field = TextEditorField()
+    val rawField get() = field.text
+
     val selector = Selector()
     var font: Font = font; get() = field; set(value) = TODO()
     var size: Vector2i? = null
@@ -53,25 +56,59 @@ class TextEditor(font: Font) {
             return
         }
 
-        //FIXME multiline deletion
         if (selector.hasSelection) {
-            if (selector.start.y() != selector.end.y()) TODO("multiline deletion")
+            if (selector.start.y() == selector.end.y()) {
+                val numSelectedChars = selector.end.x() - selector.start.x()
 
-            val numSelectedChars = selector.end.x() - selector.start.x()
+                //TODO an absolute cursor set method is gonna be necessary at some point anyways
+                val xDistance = cursor.position.x - selector.start.x()
+                if (xDistance > 0) {
+                    repeat(xDistance) { cursor.left() }
+                } else {
+                    repeat(abs(xDistance)) { cursor.right() }
+                }
 
-            //TODO an absolute cursor set method is gonna be necessary at some point anyways
-            val xDistance = cursor.position.x - selector.start.x()
-            if (xDistance > 0) {
-                repeat(xDistance) { cursor.left() }
-            } else {
-                repeat(abs(xDistance)) { cursor.right() }
+                repeat(numSelectedChars) {
+                    field.text[cursor.position.y].removeAt(cursor.position.x)
+                }
+
+                selector.move(false, cursor.position)
+                return
             }
 
-            repeat(numSelectedChars) {
-                field.text[cursor.position.y].removeAt(cursor.position.x)
+            for (line in selector.start.y() + 1..selector.end.y() - 1) {
+                field.text.removeAt(line)
             }
 
+            val lineLengths = gridSize
+
+            repeat(lineLengths[selector.start.y()] - selector.start.x()) {
+                field.text[selector.start.y()].removeLast()
+            }
+            repeat(selector.end.x() + 1) {
+                field.text[selector.start.y() + 1].removeFirst()
+            }
+            field.text[selector.start.y()].run {
+                if (first() == '\n') removeFirst()
+            }
+            field.text[selector.start.y()].addAll(field.text[selector.start.y() + 1])
+            field.text.removeAt(selector.start.y() + 1)
+
+            cursor.position.set(selector.start)
             selector.move(false, cursor.position)
+
+            return
+        }
+
+        if (cursor.position.equals(0, 0)) return
+        if (cursor.position.x == 0 && cursor.position.y != 0) {
+            field.text[cursor.position.y - 1].run {
+                removeLast()
+                addAll(field.text[cursor.position.y])
+            }
+            val xPos = field.text[cursor.position.y].size
+            field.text.removeAt(cursor.position.y)
+            cursor.position.apply { x = xPos; y -= 1 }
 
             return
         }
@@ -103,7 +140,7 @@ class TextEditor(font: Font) {
             x = kotlin.math.min(x, if (field.text.size > y - 1 && y - 1 >= 0) field.text[y - 1].size - 1 else 0)
             y = kotlin.math.max(0, y - 1)
 
-            selector.move(select, position) //FIXME multiline selection (probs works here, just not rendered?)
+            selector.move(select, position)
         }
 
         fun down(select: Boolean = false) = position.apply {
@@ -115,7 +152,8 @@ class TextEditor(font: Font) {
                 return@apply
             }
 
-            x = kotlin.math.min(x, if (field.text.size > y + 1) field.text[y + 1].size else 0)
+            //TODO internal max x value, display max line value
+            x = kotlin.math.min(x, if (field.text.size > y + 1) field.text[y + 1].count { it != '\n' } else 0)
             y = kotlin.math.min(y + 1, kotlin.math.max(0, field.text.size - 1))
 
             selector.move(select, position)
@@ -257,6 +295,7 @@ class TextEditor(font: Font) {
         var pen = Vector2i()
     }
 
+    fun toEscapedString() = field.toEscapedString()
     override fun toString() = field.toString()
 
     private class TextEditorField {

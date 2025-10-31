@@ -93,6 +93,7 @@ class TextField : Node<TextField>() {
         val ctrl = key.modifiers and Keys.Mod.CONTROL.glfwKey != 0
         val shift = key.modifiers and Keys.Mod.SHIFT.glfwKey != 0
 
+        var handled = true
         when (key.value) { //FIXME i hate my trash fucking api
             Keys.BACKSPACE.input.value -> textEditor.remove(ctrl = ctrl)
             Keys.ENTER.input.value -> {
@@ -106,9 +107,10 @@ class TextField : Node<TextField>() {
             Keys.RIGHT.input.value -> textEditor.cursor.right(ctrl = ctrl, select = shift)
             Keys.HOME.input.value -> textEditor.cursor.home(ctrl = ctrl, select = shift)
             Keys.END.input.value -> textEditor.cursor.end(ctrl = ctrl, select = shift)
-            else -> return false
+            else -> handled = false
         }
-        return true
+        println("text field: ${textEditor.rawField}")
+        return handled
     }
 
     override fun handleCharacter(char: Char): Boolean {
