@@ -41,9 +41,9 @@ internal class ShaderDslGradlePlugin : KotlinCompilerPluginSupportPlugin {
     override fun apply(target: Project): Unit = target.run {
         val dependencyConfig = if (plugins.hasPlugin(JavaLibraryPlugin::class.java)) "api" else "implementation"
         dependencies.apply {
-            add(dependencyConfig, "$EXTENSION_GROUP_ID:shader-interface")
-            add(dependencyConfig, "$GROUP_ID:shader-dsl-lib")
-            add(dependencyConfig, "$GROUP_ID.std:shader-dsl-std-lib")
+            add(dependencyConfig, "$EXTENSION_GROUP_ID:shader-interface:1.0.0-SNAPSHOT")
+            add(dependencyConfig, "$GROUP_ID:shader-dsl-lib:1.0.0-SNAPSHOT")
+            add(dependencyConfig, "$GROUP_ID.std:shader-dsl-std-lib:1.0.0-SNAPSHOT")
         }
 
         extensions.configure<JavaPluginExtension>("java") { javaExtension ->

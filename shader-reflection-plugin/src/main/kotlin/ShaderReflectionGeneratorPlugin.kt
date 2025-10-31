@@ -39,8 +39,11 @@ class ShaderReflectionGeneratorPlugin : Plugin<Project> {
 
         val dependencyConfig = if (plugins.hasPlugin(JavaLibraryPlugin::class.java)) "api" else "implementation"
         dependencies.apply {
-            add(dependencyConfig, "io.github.etieskrill.injection.extension.shader:shader-interface")
-            add(dependencyConfig, "io.github.etieskrill.injection.extension.shader.reflection:shader-reflection-lib")
+            add(dependencyConfig, "io.github.etieskrill.injection.extension.shader:shader-interface:1.0.0-SNAPSHOT")
+            add(
+                dependencyConfig,
+                "io.github.etieskrill.injection.extension.shader.reflection:shader-reflection-lib:1.0.0-SNAPSHOT"
+            )
         }
     }
 }

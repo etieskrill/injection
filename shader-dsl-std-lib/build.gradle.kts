@@ -1,6 +1,8 @@
 plugins {
     `java-library`
     kotlin("jvm") version "2.1.20"
+
+    `maven-publish`
 }
 
 group = "io.github.etieskrill.injection.extension.shader.dsl.std"
@@ -21,5 +23,17 @@ dependencies {
 kotlin {
     compilerOptions {
         freeCompilerArgs.add("-Xcontext-receivers")
+    }
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            groupId = "io.github.etieskrill.injection.extension.shader.dsl.std"
+            artifactId = "shader-dsl-std-lib"
+            version = "1.0.0-SNAPSHOT"
+
+            from(components["kotlin"])
+        }
     }
 }

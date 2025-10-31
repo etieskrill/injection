@@ -5,6 +5,8 @@ plugins {
     alias(libs.plugins.kotlin.jvm)
     id("io.github.etieskrill.injection.shader.reflection")
     id("io.github.etieskrill.injection.shader.dsl")
+
+    `maven-publish`
 }
 
 group = "org.etieskrill.engine"
@@ -67,4 +69,16 @@ kotlin {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            groupId = "org.etieskrill.engine"
+            artifactId = "engine"
+            version = project.version.toString()
+
+            from(components["java"])
+        }
+    }
 }
