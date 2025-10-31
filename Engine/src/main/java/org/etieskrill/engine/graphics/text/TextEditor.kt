@@ -108,7 +108,9 @@ class TextEditor(font: Font) {
 
         fun down(select: Boolean = false) = position.apply {
             if (y == field.text.size - 1) {
-                end()
+                selector.ignore {
+                    end()
+                }
                 selector.move(select, position)
                 return@apply
             }
@@ -121,8 +123,10 @@ class TextEditor(font: Font) {
 
         fun left(ctrl: Boolean = false, select: Boolean = false) = position.apply {
             if (y > 0 && x - 1 < 0) { // wraparound from start of line
-                up()
-                end()
+                selector.ignore {
+                    up()
+                    end()
+                }
                 selector.move(select, position)
                 return@apply
             }
@@ -137,9 +141,11 @@ class TextEditor(font: Font) {
         }
 
         fun right(ctrl: Boolean = false, select: Boolean = false) = position.apply {
-            if (field.text.size - 1 > position.y && x + 1 > field.text[position.y].count { it != '\n' }) { //TODO replace with isPrintable or w/e
-                down()
-                home()
+            if (field.text.size - 1 > position.y && x + 1 > field.text[position.y].countPrintable()) { //wraparound from end of line
+                selector.ignore {
+                    down()
+                    home()
+                }
                 selector.move(select, position)
                 return@apply
             }
@@ -163,7 +169,7 @@ class TextEditor(font: Font) {
 
         fun end(ctrl: Boolean = false, select: Boolean = false) = position.apply {
             if (ctrl) y = field.text.size - 1
-            x = if (field.text.size > y) field.text[y].count { it != '\n' } else 0
+            x = if (field.text.size > y) field.text[y].countPrintable() else 0
 
             selector.move(select, position)
         }
@@ -171,6 +177,8 @@ class TextEditor(font: Font) {
 
     inner class Selector {
         var hasSelection = false; private set
+
+        private var active = true
 
         //hold procedural start and end-point, not positional, i.e. end may be before start in terms of position
         private val _start = Vector2i()
@@ -189,9 +197,17 @@ class TextEditor(font: Font) {
             ) _end else _start
 
         fun move(selected: Boolean, position: Vector2ic) {
+            if (!active) return
+
             hasSelection = selected
             if (!selected) _start.set(position)
             _end.set(position)
+        }
+
+        internal fun ignore(block: () -> Unit) {
+            active = false
+            block()
+            active = true
         }
     }
 
@@ -225,10 +241,16 @@ class TextEditor(font: Font) {
     private val _gridSize = listOf<Int>()
     private val _wrappedGridSize = listOf<List<Int>>()
     val gridSize: List<Int>
-        get() = if (size == null) _gridSize else _wrappedGridSize.flatten()
+        get() = this.field.text.map {
+            if (it.last() == '\n') it.size - 1
+            else it.size
+        }
+//        get() = if (size == null) _gridSize else _wrappedGridSize.flatten()
 
     val numPrintableChars: Int
         get() = TODO()
+
+    private fun Collection<Char>.countPrintable() = count { it != '\n' }
 
     //adjusts _gridSize, _wrappedGridSize, checks if cursor and selection have valid state
     private fun update() {

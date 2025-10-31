@@ -5,6 +5,9 @@ import org.etieskrill.engine.graphics.text.Fonts
 import org.etieskrill.engine.graphics.text.TextEditor
 import org.etieskrill.engine.input.Key
 import org.etieskrill.engine.input.Keys
+import org.joml.Vector2f
+import org.joml.Vector2fc
+import org.joml.Vector2i
 import org.joml.Vector2ic
 import org.joml.Vector3f
 import org.joml.Vector4f
@@ -19,7 +22,14 @@ class TextField : Node<TextField>() {
 
     override fun render(batch: Batch) {
         if (textEditor.selector.hasSelection)
-            drawSelection(batch, textEditor.toString(), textEditor.selector.start, textEditor.selector.end)
+            drawSelection(
+                batch,
+                textEditor.toString(),
+                textEditor.gridSize,
+                textEditor.selector.start,
+                textEditor.selector.end
+            )
+//        drawSelection(batch, "asdfasdf\nasdf\nasdf", listOf(8, 4, 4), Vector2i(4, 0), Vector2i(2, 2))
 
         batch.renderText(textEditor.toString(), font, absolutePosition)
         val absoluteCursorPosition = batch.getAbsoluteCursorPosition(
@@ -40,18 +50,34 @@ class TextField : Node<TextField>() {
         )
     }
 
-    private fun drawSelection(batch: Batch, text: String, start: Vector2ic, end: Vector2ic) {
-        if (start.y() != end.y()) TODO("Multiline selection")
+    private fun drawSelection(batch: Batch, text: String, lineLengths: List<Int>, start: Vector2ic, end: Vector2ic) {
+        if (start.y() == end.y()) {
+            val absStartPos = batch.getAbsoluteCursorPosition(start, text, font, size)!!
+            val absEndPos = batch.getAbsoluteCursorPosition(end, text, font, size)!!
+            drawSelectionLine(batch, absStartPos, absEndPos - absStartPos)
+            return
+        }
 
         val absStartPos = batch.getAbsoluteCursorPosition(start, text, font, size)!!
-        val absEndPos = batch.getAbsoluteCursorPosition(end, text, font, size)!!
-        val absSize = absEndPos - absStartPos
-        batch.renderBox(
-            Vector3f(absolutePosition + absStartPos.add(0f, 0.2f * font.lineHeight), 0f),
-            Vector3f(absSize.x, font.lineHeight.toFloat() + absSize.y, 0f),
-            Vector4f(0.4f, 0.4f, 1f, 1f)
-        )
+        val absEndPos = batch.getAbsoluteCursorPosition(Vector2i(lineLengths[start.y()], start.y()), text, font, size)!!
+        drawSelectionLine(batch, absStartPos, absEndPos - absStartPos)
+
+        for (i in start.y() + 1..end.y() - 1) {
+            absStartPos.set(batch.getAbsoluteCursorPosition(Vector2i(0, i), text, font, size)!!)
+            absEndPos.set(batch.getAbsoluteCursorPosition(Vector2i(lineLengths[i], i), text, font, size)!!)
+            drawSelectionLine(batch, absStartPos, absEndPos - absStartPos)
+        }
+
+        absStartPos.set(batch.getAbsoluteCursorPosition(Vector2i(0, end.y()), text, font, size)!!)
+        absEndPos.set(batch.getAbsoluteCursorPosition(end, text, font, size)!!)
+        drawSelectionLine(batch, absStartPos, absEndPos - absStartPos)
     }
+
+    private fun drawSelectionLine(batch: Batch, absStartPos: Vector2fc, absSize: Vector2fc) = batch.renderBox(
+        Vector3f(absolutePosition + absStartPos.add(0f, 0.2f * font.lineHeight, Vector2f()), 0f),
+        Vector3f(absSize.x(), font.lineHeight.toFloat() + absSize.y(), 0f),
+        Vector4f(0.4f, 0.4f, 1f, 1f)
+    )
 
     override fun handleHit(button: Key, action: Keys.Action, posX: Double, posY: Double): Boolean {
         if (!doesHit(posX, posY) || button != Keys.LEFT_MOUSE.input || action != Keys.Action.RELEASE) return false
@@ -69,13 +95,17 @@ class TextField : Node<TextField>() {
 
         when (key.value) { //FIXME i hate my trash fucking api
             Keys.BACKSPACE.input.value -> textEditor.remove(ctrl = ctrl)
-            Keys.ENTER.input.value -> textEditor += '\n'
-            Keys.UP.input.value -> textEditor.cursor.up()
-            Keys.DOWN.input.value -> textEditor.cursor.down()
+            Keys.ENTER.input.value -> {
+                if (shift) textEditor.cursor.end()
+                textEditor += '\n'
+            }
+
+            Keys.UP.input.value -> textEditor.cursor.up(select = shift)
+            Keys.DOWN.input.value -> textEditor.cursor.down(select = shift)
             Keys.LEFT.input.value -> textEditor.cursor.left(ctrl = ctrl, select = shift)
             Keys.RIGHT.input.value -> textEditor.cursor.right(ctrl = ctrl, select = shift)
-            Keys.HOME.input.value -> textEditor.cursor.home(ctrl = ctrl)
-            Keys.END.input.value -> textEditor.cursor.end(ctrl = ctrl)
+            Keys.HOME.input.value -> textEditor.cursor.home(ctrl = ctrl, select = shift)
+            Keys.END.input.value -> textEditor.cursor.end(ctrl = ctrl, select = shift)
             else -> return false
         }
         return true
