@@ -204,9 +204,9 @@ class SynthwavePlane() : SuspendApp(window {
                     ) { _, option -> setCurrentSound(option) }
                         .apply { size = Vector2f(400f, 150f) },
                     HBox(
-                        Checkbox({
+                        Checkbox(ticked = screenShake) {
                             screenShake = it
-                        }, ticked = screenShake).apply { size = Vector2f(30f) },
+                        }.apply { size = Vector2f(30f) },
                         Label("Screen shake")
                     )
                 ).apply { size = Vector2f(600f, 700f); margin = Vector4f(10f) },

@@ -124,6 +124,11 @@ public class WidgetContainer extends Node<WidgetContainer> {
         return child.handleHit(button, action, posX, posY); //container itself is not hittable
     }
 
+    @Override
+    public boolean handleKey(@NotNull Key key, Keys.@NotNull Action action) {
+        return child.handleKey(key, action);
+    }
+
     public void setCollapsed(boolean collapsed) {
         invalidate();
         this.collapsed = collapsed;

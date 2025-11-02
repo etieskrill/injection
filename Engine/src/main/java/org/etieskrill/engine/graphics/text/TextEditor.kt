@@ -9,7 +9,12 @@ private val logger = KotlinLogging.logger {}
 
 class TextEditor(font: Font) {
 
-    var text: String get() = toString(); set(value) = TODO()
+    var text: String
+        get() = toString()
+        set(value) {
+            this.field.set(value)
+            cursor.position.set(0, 0)
+        }
 
     private val field = TextEditorField()
     val rawField get() = field.text
@@ -322,6 +327,15 @@ class TextEditor(font: Font) {
                     else add(position.x, c)
                 }
             }
+        }
+
+        fun set(content: String) {
+            text.clear()
+            text.addAll(
+                content.split("\r\n")
+                .map { it.split('\n') }
+                .flatten()
+                .map { it.toMutableList().apply { add('\n') } })
         }
 
         fun toEscapedString() = text.joinToString("") { it.joinToString("").replace("\n", "\\n") }

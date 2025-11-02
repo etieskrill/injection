@@ -1,11 +1,13 @@
 package org.etieskrill.engine.graphics;
 
 import lombok.Getter;
+import org.etieskrill.engine.graphics.animation.UiOutlineShader;
 import org.etieskrill.engine.graphics.gl.renderer.GLRenderer;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shader.Shaders;
 import org.etieskrill.engine.graphics.gl.shader.impl.BlitShader;
 import org.etieskrill.engine.graphics.pipeline.Pipeline;
+import org.etieskrill.engine.graphics.pipeline.PostPassPipeline;
 import org.etieskrill.engine.graphics.text.Font;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.jetbrains.annotations.NotNull;
@@ -29,6 +31,13 @@ public class Batch {
 
     private final Matrix4f combined;
     private final Vector2ic viewportSize;
+
+    private final PostPassPipeline<UiOutlineShader> uiOutlinePipeline = new PostPassPipeline<>(
+            new UiOutlineShader(),
+            null,
+            false,
+            true
+    );
 
     public Batch(@NotNull GLRenderer renderer, @NotNull Vector2ic viewportSize) {
         this(renderer, renderer, viewportSize);
@@ -64,6 +73,21 @@ public class Batch {
 
     public @Nullable Vector2f getAbsoluteCursorPosition(Vector2ic cursorPosition, String text, Font font, Vector2fc size) {
         return textRenderer.getAbsoluteCursorPosition(cursorPosition, text, font, size);
+    }
+
+    public void renderBackground(Vector2fc position,
+                                 Vector2fc size,
+                                 Vector4fc backgroundColour,
+                                 float borderTickness,
+                                 Vector4fc borderColour) {
+        var shader = uiOutlinePipeline.getShader();
+        shader.setPosition(position.div(new Vector2f(viewportSize), new Vector2f()).mul(2, -2).sub(1f, -1f));
+        shader.setSize(size.div(new Vector2f(viewportSize), new Vector2f()).mul(2, -2));
+        shader.setBackgroundColour(backgroundColour);
+        shader.setBorderThickness(new Vector2f(borderTickness).div(new Vector2f(viewportSize)));
+        shader.setBorderColour(borderColour);
+
+        renderer.render(uiOutlinePipeline);
     }
 
     public void renderText(String text, Font font, Vector2fc position) {

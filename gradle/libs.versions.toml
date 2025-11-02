@@ -16,6 +16,7 @@ lwjgl-meshoptimizer = { module = "org.lwjgl:lwjgl-meshoptimizer" }
 lwjgl-openal = { module = "org.lwjgl:lwjgl-openal" }
 lwjgl-opengl = { module = "org.lwjgl:lwjgl-opengl" }
 lwjgl-stb = { module = "org.lwjgl:lwjgl-stb" }
+lwjgl-tinyfd = { module = "org.lwjgl:lwjgl-tinyfd" }
 
 joml = { module = "org.joml:joml", version = "1.10.8" }
 joml-primitives = { module = "org.joml:joml-primitives", version = "1.10.0" }

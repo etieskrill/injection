@@ -94,6 +94,14 @@ public class Stack extends Node<Stack> {
     }
 
     @Override
+    public boolean handleKey(@NotNull Key key, Keys.@NotNull Action action) {
+        for (Node<?> child : children) {
+            if (child.handleKey(key, action)) return true;
+        }
+        return false;
+    }
+
+    @Override
     public boolean handleHover(double posX, double posY) {
         if (!doesHit(posX, posY)) return false;
         for (Node<?> child : children) {

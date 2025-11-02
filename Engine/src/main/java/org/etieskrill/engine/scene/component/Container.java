@@ -58,6 +58,12 @@ public class Container extends Node<Container> {
     }
 
     @Override
+    public boolean handleKey(@NotNull Key key, Keys.@NotNull Action action) {
+        if (child == null) return false;
+        return child.handleKey(key, action);
+    }
+
+    @Override
     public boolean handleHover(double posX, double posY) {
         if (!doesHit(posX, posY)) return false;
         if (child != null) return child.handleHover(posX, posY);

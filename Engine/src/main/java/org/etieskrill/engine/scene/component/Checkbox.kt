@@ -8,9 +8,9 @@ import org.joml.Vector3f
 import org.joml.Vector4f
 
 class Checkbox(
-    var action: (Boolean) -> Unit,
     var ticked: Boolean = false,
-    var enabled: Boolean = true
+    var enabled: Boolean = true,
+    var action: (Boolean) -> Unit
 ) : Node<Checkbox>() {
 
     companion object {

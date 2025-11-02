@@ -5,6 +5,7 @@ import org.etieskrill.engine.graphics.text.Fonts
 import org.etieskrill.engine.graphics.text.TextEditor
 import org.etieskrill.engine.input.Key
 import org.etieskrill.engine.input.Keys
+import org.etieskrill.engine.time.LoopPacer
 import org.joml.Vector2f
 import org.joml.Vector2fc
 import org.joml.Vector2i
@@ -14,13 +15,30 @@ import org.joml.Vector4f
 import org.joml.minus
 import org.joml.plus
 
-class TextField : Node<TextField>() {
+class TextField(
+    private val pacer: LoopPacer
+) : Node<TextField>() {
 
     private val font = Fonts.getDefault()
 
     var textEditor = TextEditor(font)
+    var changeCallback: () -> Unit = {}
+
+    init {
+        colour = Vector4f(0.1f)
+    }
+
+    private val highlightColour = Vector4f(0.4f, 0.4f, 1f, 1f)
 
     override fun render(batch: Batch) {
+        batch.renderBackground(
+            absolutePosition,
+            size,
+            colour,
+            2f,
+            if (focused) highlightColour else Vector4f(0f)
+        )
+
         if (textEditor.selector.hasSelection)
             drawSelection(
                 batch,
@@ -29,7 +47,6 @@ class TextField : Node<TextField>() {
                 textEditor.selector.start,
                 textEditor.selector.end
             )
-//        drawSelection(batch, "asdfasdf\nasdf\nasdf", listOf(8, 4, 4), Vector2i(4, 0), Vector2i(2, 2))
 
         batch.renderText(textEditor.toString(), font, absolutePosition)
         val absoluteCursorPosition = batch.getAbsoluteCursorPosition(
@@ -38,16 +55,14 @@ class TextField : Node<TextField>() {
             font,
             size
         )
-        if (absoluteCursorPosition == null) { //TODO remove
-            batch.getAbsoluteCursorPosition(textEditor.cursor.position, textEditor.toString(), font, size)
-            println(textEditor.cursor.position)
-            println("'${textEditor}'")
+
+        if (focused && pacer.time % 1 < 0.5) {
+            batch.renderBox(
+                Vector3f(absolutePosition + absoluteCursorPosition!!.add(0f, 0.2f * font.lineHeight), 0f),
+                Vector3f(font.lineHeight / 12f, font.lineHeight.toFloat(), 0f),
+                Vector4f(1f)
+            )
         }
-        batch.renderBox(
-            Vector3f(absolutePosition + absoluteCursorPosition!!.add(0f, 0.2f * font.lineHeight), 0f),
-            Vector3f(font.lineHeight / 12f, font.lineHeight.toFloat(), 0f),
-            Vector4f(1f)
-        )
     }
 
     private fun drawSelection(batch: Batch, text: String, lineLengths: List<Int>, start: Vector2ic, end: Vector2ic) {
@@ -76,7 +91,7 @@ class TextField : Node<TextField>() {
     private fun drawSelectionLine(batch: Batch, absStartPos: Vector2fc, absSize: Vector2fc) = batch.renderBox(
         Vector3f(absolutePosition + absStartPos.add(0f, 0.2f * font.lineHeight, Vector2f()), 0f),
         Vector3f(absSize.x(), font.lineHeight.toFloat() + absSize.y(), 0f),
-        Vector4f(0.4f, 0.4f, 1f, 1f)
+        highlightColour
     )
 
     override fun handleHit(button: Key, action: Keys.Action, posX: Double, posY: Double): Boolean {
@@ -93,12 +108,16 @@ class TextField : Node<TextField>() {
         val ctrl = key.modifiers and Keys.Mod.CONTROL.glfwKey != 0
         val shift = key.modifiers and Keys.Mod.SHIFT.glfwKey != 0
 
-        var handled = true
         when (key.value) { //FIXME i hate my trash fucking api
-            Keys.BACKSPACE.input.value -> textEditor.remove(ctrl = ctrl)
+            Keys.BACKSPACE.input.value -> {
+                textEditor.remove(ctrl = ctrl)
+                changeCallback()
+            }
+
             Keys.ENTER.input.value -> {
                 if (shift) textEditor.cursor.end()
                 textEditor += '\n'
+                changeCallback()
             }
 
             Keys.UP.input.value -> textEditor.cursor.up(select = shift)
@@ -107,14 +126,14 @@ class TextField : Node<TextField>() {
             Keys.RIGHT.input.value -> textEditor.cursor.right(ctrl = ctrl, select = shift)
             Keys.HOME.input.value -> textEditor.cursor.home(ctrl = ctrl, select = shift)
             Keys.END.input.value -> textEditor.cursor.end(ctrl = ctrl, select = shift)
-            else -> handled = false
+            else -> return false
         }
-        println("text field: ${textEditor.rawField}")
-        return handled
+        return true
     }
 
     override fun handleCharacter(char: Char): Boolean {
         textEditor += char
+        changeCallback()
         return true
     }
 

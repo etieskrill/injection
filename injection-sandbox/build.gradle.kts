@@ -14,6 +14,8 @@ dependencies {
     implementation(libs.lwjgl.openal)
     implementation(libs.lwjgl.opengl)
     implementation(libs.lwjgl.stb)
+    implementation(libs.lwjgl.tinyfd)
+    implementation("org.lwjgl:lwjgl-tinyfd::natives-windows")
     //natives not specified as they are brought in by the engine
 
     implementation("io.github.etieskrill.injection.extension.shader.dsl:shader-dsl-plugin:1.0.0-SNAPSHOT")
