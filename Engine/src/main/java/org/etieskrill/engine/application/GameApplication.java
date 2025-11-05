@@ -1,5 +1,6 @@
 package org.etieskrill.engine.application;
 
+import kotlin.Deprecated;
 import lombok.Getter;
 import org.etieskrill.engine.audio.Audio;
 import org.etieskrill.engine.config.InjectionConfig;
@@ -26,6 +27,7 @@ import static org.etieskrill.engine.time.TimeResolutionUtils.resetSystemTimeReso
 import static org.etieskrill.engine.time.TimeResolutionUtils.setSystemTimeResolution;
 import static org.lwjgl.glfw.GLFW.glfwTerminate;
 
+@Deprecated(message = "Use generic App instead.")
 public abstract class GameApplication {
 
     private static final int SYSTEM_TIME_RESOLUTION_MILLIS = 1;

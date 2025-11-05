@@ -10,7 +10,8 @@ import kotlin.math.sin
 
 fun model(name: String, block: ModelBuilder.() -> Unit): Model {
     val model = Model.MemoryBuilder(name).apply { boundingBox = AABBf() }
-    block(ModelBuilder(model).apply(block))
+    val builder = ModelBuilder(model = model).apply { block() }
+    model.culling = builder.culling
     return model.build()
 }
 
@@ -20,16 +21,18 @@ data class GeometryCounters(
 )
 
 class ModelBuilder(
+    var culling: Boolean = true,
     internal val model: Model.Builder,
     internal val counters: GeometryCounters = GeometryCounters()
 )
 
 fun ModelBuilder.plane(a: Vector2f, b: Vector2f) {
+    val cross = Vector3f(0f, 1f, 0f)
     val vertices: List<Vertex> = listOf(
-        Vertex.builder(Vector3f(a.x, 0f, a.y)).build(),
-        Vertex.builder(Vector3f(a.x, 0f, b.y)).build(),
-        Vertex.builder(Vector3f(b.x, 0f, b.y)).build(),
-        Vertex.builder(Vector3f(b.x, 0f, a.y)).build(),
+        Vertex.builder(Vector3f(a.x, 0f, a.y)).normal(cross).build(),
+        Vertex.builder(Vector3f(a.x, 0f, b.y)).normal(cross).build(),
+        Vertex.builder(Vector3f(b.x, 0f, b.y)).normal(cross).build(),
+        Vertex.builder(Vector3f(b.x, 0f, a.y)).normal(cross).build(),
     )
     val indices = listOf(0, 1, 2, 0, 2, 3)
 
@@ -51,16 +54,22 @@ fun ModelBuilder.sphere(radius: Float, numPoints: Int) {
 }
 
 fun ModelBuilder.primitiveSphere(radius: Float, xSegments: Int, ySegments: Int = xSegments) {
+    require(radius > 0) { "Sphere radius must be positive" }
+    require(xSegments >= 3) { "Sphere must have at least 3 horizontal segments" }
+    require(ySegments >= 1) { "Sphere must have at least 1 vertical segment" }
+
     val vertices = mutableListOf<Vertex>()
     val indices = mutableListOf<Int>()
 
     //TODO could improve by using vertical triangle strips instead
 
-    vertices += Vertex.builder(Vector3f(0f, radius, 0f)).build()
+    vertices += Vertex.builder(Vector3f(0f, radius, 0f))
+        .normal(Vector3f(0f, 1f, 0f))
+        .build()
     for (xSegment in 0..<xSegments) {
         indices += 0
-        indices += xSegment + 2
         indices += xSegment + 1
+        indices += xSegment + 2
     }
 
     for (ySegment in 1..<ySegments) {
@@ -72,22 +81,27 @@ fun ModelBuilder.primitiveSphere(radius: Float, xSegments: Int, ySegments: Int =
             val y = radius * cos(theta)
             val z = radius * sin(theta) * cos(phi)
 
-            vertices += Vertex.builder(Vector3f(x, y, z)).build()
+            val position = Vector3f(x, y, z)
+            vertices += Vertex.builder(position)
+                .normal(Vector3f(position).normalize())
+                .build()
 
             if (ySegment == ySegments - 1 && xSegment > xSegments - 3) continue
 
             indices += 1 + ySegment * ySegments + xSegment
-            indices += 1 + (ySegment - 1) * ySegments + xSegment
             indices += 1 + ySegment * ySegments + xSegment + 1
+            indices += 1 + (ySegment - 1) * ySegments + xSegment
 
             indices += 1 + (ySegment - 1) * ySegments + xSegment
-            indices += 1 + (ySegment - 1) * ySegments + xSegment + 1
             indices += 1 + ySegment * ySegments + xSegment + 1
+            indices += 1 + (ySegment - 1) * ySegments + xSegment + 1
         }
     }
 
-    vertices += Vertex.builder(Vector3f(0f, -radius, 0f)).build()
-    for (xSegment in 0..<xSegments - 1) {
+    vertices += Vertex.builder(Vector3f(0f, -radius, 0f))
+        .normal(Vector3f(0f, -1f, 0f))
+        .build()
+    for (xSegment in -1..<xSegments - 1) {
         indices += vertices.lastIndex
         indices += vertices.lastIndex - ySegments + xSegment + 1
         indices += vertices.lastIndex - ySegments + xSegment
@@ -96,7 +110,10 @@ fun ModelBuilder.primitiveSphere(radius: Float, xSegments: Int, ySegments: Int =
     val numPoints = (ySegments - 1) * (xSegments + 1) + 2
     check(vertices.size == numPoints) { "Expected $numPoints points, but generated ${vertices.size}" }
 
-    createModel("sphere-${counters.spheres++}", vertices, indices)
+    createModel(
+        "sphere-${counters.spheres++}", vertices, indices,
+        AABBf(Vector3f(-radius), Vector3f(radius))
+    )
 }
 
 private fun ModelBuilder.createModel(

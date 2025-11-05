@@ -43,8 +43,8 @@ abstract class App(
 
     protected val timer = StepTimer()
 
-    protected open val uiDispatcher: CoroutineDispatcher = ImmediateDispatcher
-    protected open val uiScope = CoroutineScope(ImmediateDispatcher)
+    protected open val uiDispatcher: CoroutineDispatcher = ImmediateDispatcher.limitedParallelism(1)
+    protected open val uiScope = CoroutineScope(uiDispatcher)
 
     fun uiDo(block: suspend CoroutineScope.() -> Unit) = uiScope.launch(block = block)
 

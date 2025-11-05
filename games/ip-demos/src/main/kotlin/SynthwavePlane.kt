@@ -18,8 +18,7 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.withContext
-import org.etieskrill.engine.application.SuspendApp
-import org.etieskrill.engine.application.runSuspendApp
+import org.etieskrill.engine.application.App
 import org.etieskrill.engine.audio.Audio
 import org.etieskrill.engine.audio.AudioListener
 import org.etieskrill.engine.audio.AudioSource
@@ -72,11 +71,11 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 import kotlin.time.Duration.Companion.seconds
 
-fun main() = runSuspendApp { SynthwavePlane() }
-//fun main() = SynthwavePlane().run() //TODO replace and test with immediate when fixed
+//fun main() = runSuspendApp { SynthwavePlane() }
+fun main() = SynthwavePlane().run() //TODO replace and test with immediate when fixed
 
 @Suppress("MemberVisibilityCanBePrivate")
-class SynthwavePlane() : SuspendApp(window {
+class SynthwavePlane() : App(window {
     title = "Synthwave Plane"
     mode = Window.WindowMode.BORDERLESS
     size = Window.WindowSize.LARGEST_FIT
