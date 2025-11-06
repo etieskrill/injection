@@ -19,6 +19,8 @@ dependencies {
     //natives not specified as they are brought in by the engine
 
     implementation("io.github.etieskrill.injection.extension.shader.dsl:shader-dsl-plugin:1.0.0-SNAPSHOT")
+
+    implementation("com.github.wendykierp:JTransforms:3.1")
 }
 
 kotlin {
