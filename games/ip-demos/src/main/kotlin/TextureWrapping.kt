@@ -18,7 +18,7 @@ import org.etieskrill.engine.scene.Scene
 import org.etieskrill.engine.scene.component.Button
 import org.etieskrill.engine.scene.component.Label
 import org.etieskrill.engine.scene.component.Node.Alignment
-import org.etieskrill.engine.scene.component.VBox
+import org.etieskrill.engine.scene.component.container.VBox
 import org.etieskrill.engine.window.Cursor
 import org.etieskrill.engine.window.window
 import org.joml.Vector2d

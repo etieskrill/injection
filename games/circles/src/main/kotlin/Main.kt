@@ -13,7 +13,7 @@ import org.etieskrill.engine.input.Keys
 import org.etieskrill.engine.scene.Scene
 import org.etieskrill.engine.scene.component.Button
 import org.etieskrill.engine.scene.component.Label
-import org.etieskrill.engine.scene.component.VBox
+import org.etieskrill.engine.scene.component.container.VBox
 import org.etieskrill.engine.window.Window
 import org.etieskrill.engine.window.window
 import org.joml.Vector2f
@@ -57,15 +57,17 @@ class Main : GameApplication(
         window.scene = Scene(
             Batch(renderer, window.currentSize),
             VBox(
-                Button(Label("Circle")).apply {
+                Button(Label("Circle")) {
+                    pipeline.shader.shapeType = CircleShader.CIRCLE
+                }.apply {
                     size = Vector2f(200f, 50f)
                     margin = Vector4f(10f)
-                    setAction { pipeline.shader.shapeType = CircleShader.CIRCLE }
                 },
-                Button(Label("Fire rune")).apply {
+                Button(Label("Fire rune")) {
+                    pipeline.shader.shapeType = CircleShader.FIRE_RUNE
+                }.apply {
                     size = Vector2f(200f, 50f)
                     margin = Vector4f(10f)
-                    setAction { pipeline.shader.shapeType = CircleShader.FIRE_RUNE }
                 }
             ),
             camera

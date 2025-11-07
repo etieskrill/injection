@@ -1,5 +1,6 @@
 package org.etieskrill.engine.scene.component
 
+import org.etieskrill.engine.scene.component.container.HBox
 import org.joml.Vector2f
 import org.joml.Vector4f
 import kotlin.time.Duration

@@ -8,7 +8,7 @@ import org.etieskrill.engine.graphics.gl.shader.Shaders;
 import org.etieskrill.engine.scene.Scene;
 import org.etieskrill.engine.scene.component.Label;
 import org.etieskrill.engine.scene.component.Node;
-import org.etieskrill.engine.scene.component.Stack;
+import org.etieskrill.engine.scene.component.container.Stack;
 import org.etieskrill.engine.time.LoopPacer;
 import org.joml.Vector2ic;
 import org.joml.Vector4f;

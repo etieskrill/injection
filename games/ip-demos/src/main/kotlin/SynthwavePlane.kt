@@ -42,13 +42,13 @@ import org.etieskrill.engine.input.controller.CursorCameraController
 import org.etieskrill.engine.scene.Scene
 import org.etieskrill.engine.scene.component.Checkbox
 import org.etieskrill.engine.scene.component.Dropdown
-import org.etieskrill.engine.scene.component.HBox
+import org.etieskrill.engine.scene.component.container.HBox
 import org.etieskrill.engine.scene.component.Label
 import org.etieskrill.engine.scene.component.Node
 import org.etieskrill.engine.scene.component.PlaybackBar
-import org.etieskrill.engine.scene.component.Stack
-import org.etieskrill.engine.scene.component.VBox
-import org.etieskrill.engine.scene.component.WidgetContainer
+import org.etieskrill.engine.scene.component.container.Stack
+import org.etieskrill.engine.scene.component.container.VBox
+import org.etieskrill.engine.scene.component.container.WidgetContainer
 import org.etieskrill.engine.scene.component.plot.Histogram
 import org.etieskrill.engine.scene.component.plot.HistogramScaleMode
 import org.etieskrill.engine.util.FixedArrayDeque

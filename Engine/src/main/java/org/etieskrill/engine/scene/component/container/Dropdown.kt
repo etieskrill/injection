@@ -1,10 +1,13 @@
-package org.etieskrill.engine.scene.component
+package org.etieskrill.engine.scene.component.container
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.etieskrill.engine.graphics.Batch
 import org.etieskrill.engine.graphics.text.Fonts
 import org.etieskrill.engine.input.Key
 import org.etieskrill.engine.input.Keys
+import org.etieskrill.engine.scene.component.Button
+import org.etieskrill.engine.scene.component.Label
+import org.etieskrill.engine.scene.component.Node
 import org.joml.Vector2f
 
 private val logger = KotlinLogging.logger {}

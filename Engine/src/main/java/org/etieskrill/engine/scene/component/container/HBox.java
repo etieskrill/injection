@@ -1,12 +1,13 @@
-package org.etieskrill.engine.scene.component;
+package org.etieskrill.engine.scene.component.container;
 
+import org.etieskrill.engine.scene.component.Node;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector2f;
 
 import java.util.List;
 
-import static org.etieskrill.engine.scene.component.LayoutUtils.getMinNodeSize;
-import static org.etieskrill.engine.scene.component.LayoutUtils.getPreferredNodePosition;
+import static org.etieskrill.engine.scene.component.LayoutUtilsKt.getMinNodeSize;
+import static org.etieskrill.engine.scene.component.LayoutUtilsKt.getPreferredNodePosition;
 
 public class HBox extends Stack {
 
@@ -27,7 +28,7 @@ public class HBox extends Stack {
             Node<?> child = getChildren().get(i);
             child.format();
 
-            if (child.getAlignment() == Alignment.FIXED_POSITION) continue;
+            if (child.getAlignment() == Node.Alignment.FIXED_POSITION) continue;
 
             float margin = 0;
             Node<?> nextChild;
@@ -44,7 +45,7 @@ public class HBox extends Stack {
         //Place children ignoring vertical preference and adjust cursors
         for (int i = 0; i < getChildren().size(); i++) {
             Node<?> child = getChildren().get(i);
-            if (child.getAlignment() == Alignment.FIXED_POSITION) continue;
+            if (child.getAlignment() == Node.Alignment.FIXED_POSITION) continue;
             Vector2f newPos = getPreferredNodePosition(getSize(), child).mul(0, 1);
 
 

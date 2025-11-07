@@ -1,12 +1,13 @@
-package org.etieskrill.engine.scene.component;
+package org.etieskrill.engine.scene.component.container;
 
+import org.etieskrill.engine.scene.component.Node;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector2f;
 
 import java.util.List;
 
-import static org.etieskrill.engine.scene.component.LayoutUtils.getMinNodeSize;
-import static org.etieskrill.engine.scene.component.LayoutUtils.getPreferredNodePosition;
+import static org.etieskrill.engine.scene.component.LayoutUtilsKt.getMinNodeSize;
+import static org.etieskrill.engine.scene.component.LayoutUtilsKt.getPreferredNodePosition;
 
 public class VBox extends Stack {
 

@@ -1,4 +1,4 @@
-package org.etieskrill.engine.scene.component;
+package org.etieskrill.engine.scene.component.container;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -9,6 +9,7 @@ import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.texture.Textures;
 import org.etieskrill.engine.input.Key;
 import org.etieskrill.engine.input.Keys;
+import org.etieskrill.engine.scene.component.Node;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
@@ -16,7 +17,7 @@ import org.joml.Vector4f;
 import org.joml.Vector4fc;
 
 import static java.util.Objects.requireNonNull;
-import static org.etieskrill.engine.scene.component.LayoutUtils.getPreferredNodePosition;
+import static org.etieskrill.engine.scene.component.LayoutUtilsKt.getPreferredNodePosition;
 
 /**
  * A collapsible node with a draggable widget bar containing a single child.

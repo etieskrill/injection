@@ -5,10 +5,10 @@ import org.etieskrill.engine.graphics.camera.OrthographicCamera
 import org.etieskrill.engine.scene.Scene
 import org.etieskrill.engine.scene.component.Button
 import org.etieskrill.engine.scene.component.Checkbox
-import org.etieskrill.engine.scene.component.HBox
+import org.etieskrill.engine.scene.component.container.HBox
 import org.etieskrill.engine.scene.component.Label
 import org.etieskrill.engine.scene.component.TextField
-import org.etieskrill.engine.scene.component.VBox
+import org.etieskrill.engine.scene.component.container.VBox
 import org.etieskrill.engine.util.ResourceReader
 import org.etieskrill.engine.window.window
 import org.joml.Vector2f

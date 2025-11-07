@@ -1,14 +1,15 @@
-package org.etieskrill.engine.scene.component;
+package org.etieskrill.engine.scene.component.container;
 
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.input.Key;
 import org.etieskrill.engine.input.Keys;
+import org.etieskrill.engine.scene.component.Node;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.etieskrill.engine.scene.component.LayoutUtils.getPreferredNodePosition;
+import static org.etieskrill.engine.scene.component.LayoutUtilsKt.getPreferredNodePosition;
 
 /**
  * A node with any number of children, whose layouts are respected independently of each other.
