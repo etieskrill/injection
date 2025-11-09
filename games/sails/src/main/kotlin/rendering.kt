@@ -24,10 +24,12 @@ import org.joml.Vector2fc
 import org.joml.Vector2i
 import org.joml.Vector2ic
 import org.joml.Vector3f
+import org.joml.Vector3fc
 import org.joml.Vector4f
 import org.joml.minus
 import org.joml.plus
 import org.joml.times
+import kotlin.math.log2
 
 class ShipRenderService(private val renderer: Renderer, private val window: Window) : Service {
 
@@ -48,7 +50,7 @@ class ShipRenderService(private val renderer: Renderer, private val window: Wind
 
     override fun process(
         targetEntity: Entity,
-        entities: List<Entity?>,
+        entities: List<Entity>,
         delta: Double
     ) {
         val transform = targetEntity.getComponent<NavalTransform>()!!
@@ -58,8 +60,9 @@ class ShipRenderService(private val renderer: Renderer, private val window: Wind
             sprite = shipSprite
             useSpriteColour = true
 
-            val spriteSize = Vector2f(100f)
+            val spriteSize = Vector2f(transform.size)
             position = transform.position - spriteSize.div(2f, Vector2f())
+            size = spriteSize
             rotation = transform.rotation + org.joml.Math.PI.toFloat()
 
             windowSize = Vector2f(window.currentSize)
@@ -68,14 +71,13 @@ class ShipRenderService(private val renderer: Renderer, private val window: Wind
         renderer.render(pipeline)
 
         linePipeline.shader.apply {
-            pointA = Vector3f((transform.position * 2f - window.currentSize) / window.currentSize, 0f)
-                .apply { y *= -1 }
+            pointA = Vector3f((transform.position * 2f - window.currentSize) / window.currentSize, 0f).negateY()
             pointB = Vector3f(
                 (transform.position * 2f - window.currentSize
                         + Matrix2f().rotation(transform.rotation)
-                        * Vector2f(inputDirection.direction).apply { x *= -1 } * inputDirection.strength * 100f)
+                        * Vector2f(inputDirection.direction).negateX() * 25f * log2(inputDirection.strength + 1))
                         / window.currentSize, 0f
-            ).apply { y *= -1 }
+            ).negateY()
 
             colour = Vector4f(1f, 0f, 1f, 1f)
         }
@@ -83,6 +85,13 @@ class ShipRenderService(private val renderer: Renderer, private val window: Wind
     }
 
 }
+
+fun Vector2fc.negateX() = Vector2f(-x(), y())
+fun Vector2fc.negateY() = Vector2f(x(), -y())
+
+fun Vector3fc.negateX() = Vector3f(-x(), y(), z())
+fun Vector3fc.negateY() = Vector3f(x(), -y(), z())
+fun Vector3fc.negateZ() = Vector3f(x(), y(), -z())
 
 fun Vector2fc.toInt() = Vector2i(x().toInt(), y().toInt())
 fun Vector2ic.toFloat() = Vector2f(x().toFloat(), y().toFloat())

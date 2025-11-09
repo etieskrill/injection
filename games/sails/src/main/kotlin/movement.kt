@@ -1,12 +1,20 @@
 package io.github.etieskrill.games.sails
 
 import org.etieskrill.engine.entity.Entity
+import org.etieskrill.engine.entity.getComponent
 import org.etieskrill.engine.entity.service.Service
+import org.joml.Math
 import org.joml.Matrix2f
 import org.joml.Vector2f
 import org.joml.minus
+import org.joml.minusAssign
 import org.joml.plus
+import org.joml.plusAssign
 import org.joml.times
+import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.pow
 
 class ShipPhysicsService : Service {
 
@@ -16,18 +24,60 @@ class ShipPhysicsService : Service {
 
     override fun process(
         targetEntity: Entity,
-        entities: List<Entity?>,
+        entities: List<Entity>,
         delta: Double
     ) {
         val transform = targetEntity.getComponent(NavalTransform::class.java)!!
         val inputDirection = targetEntity.getComponent(InputDirection::class.java)!!
 
-        val newRotation = 2 * transform.rotation - transform.prevRotation +
-                inputDirection.direction.x * (delta * delta).toFloat()
+        inputDirection.direction.max(Vector2f(-1f))
+        inputDirection.direction.min(Vector2f(1f))
 
-        val orientedDirection = Matrix2f().rotation(newRotation) * inputDirection.direction
+        updatePosition(transform, inputDirection, delta)
+        targetEntity.getComponent<ShipCollider>()?.also { doCollisions(targetEntity, transform, it, entities, delta) }
+    }
+
+    private fun updatePosition(transform: NavalTransform, inputDirection: InputDirection, delta: Double) {
+        val relativeSpeed = Matrix2f().rotation(-transform.rotation) * (transform.position - transform.prevPosition)
+
+        val angularSpeed = transform.rotation - transform.prevRotation
+        val angularDrag =
+            max(0f, (transform.lateralDrag * 997 * Math.toDegrees(angularSpeed).pow(2) * transform.size) / 100000)
+
+        val angularStationaryDrag =
+            min(1f, max(0f, abs(relativeSpeed.y)).pow(2)) //imitate that rudder does nothing when stationary
+        val angularMovementDrag = min(
+            1f, max(
+                0f,
+                transform.lateralDrag * relativeSpeed.y * relativeSpeed.y * (transform.size / 100f).pow(2)
+            ) / 2 / 2
+        )
+
+        val newRotation = 2 * transform.rotation - transform.prevRotation +
+                (
+                        inputDirection.direction.x * angularStationaryDrag
+                                + (angularDrag + angularMovementDrag) * if (angularSpeed > 0) -1f else 1f
+                        ) * (delta * delta).toFloat()
+
+        val rotate = Matrix2f().rotation(newRotation)
+
+        //dragForce = dragCoefficient * fluidDensity * flowSpeed^2 * area #(reference area == projected frontal area) / 2
+        val lateralDragForce = transform.lateralDrag *
+                997 * //density water
+                relativeSpeed.x * relativeSpeed.x *
+                (transform.size / 100f).pow(2) / 2 //very rough approximation for sideways cross-sectional area
+
+        val frontalDragForce = transform.frontalDrag *
+                997 *
+                relativeSpeed.y * relativeSpeed.y *
+                (transform.size / 500f).pow(2) / 2 //very rough approximation for frontal cross-sectional area
+
         val newPosition = transform.position.mul(2f, Vector2f()) - transform.prevPosition +
-                orientedDirection.mul(inputDirection.strength, Vector2f()).mul((delta * delta).toFloat(), Vector2f())
+                (
+                        (rotate * Vector2f(0f, inputDirection.direction.y * inputDirection.strength)) +
+                                rotate.times(Vector2f(if (relativeSpeed.x > 0) -1f else 1f, 0f)).mul(lateralDragForce) +
+                                rotate.times(Vector2f(0f, if (relativeSpeed.y > 0) -1f else 1f)).mul(frontalDragForce)
+                        ).mul((delta * delta).toFloat(), Vector2f())
 
         transform.prevRotation = transform.rotation
         transform.rotation = newRotation
@@ -35,4 +85,46 @@ class ShipPhysicsService : Service {
         transform.position.set(newPosition)
     }
 
+    private fun doCollisions(
+        entity: Entity,
+        transform: NavalTransform,
+        collider: ShipCollider,
+        entities: List<Entity>,
+        delta: Double
+    ) {
+        val targetEntities = entities.zip(
+            entities.filter { it != entity }
+                .extractComponents2<NavalTransform, ShipCollider>()
+        )
+
+        targetEntities.forEach { (otherEntity, components) ->
+            val (otherTransform, otherCollider) = components
+
+            collider.collisions.clear()
+            otherCollider.collisions.clear()
+
+            val arbitrarySizeCorrectionFactor = 1 / 4f
+
+            val distance = transform.position - otherTransform.position
+            if (distance.length() > (transform.size + otherTransform.size) * arbitrarySizeCorrectionFactor) return@forEach
+
+            val overlap = (transform.size + otherTransform.size) * arbitrarySizeCorrectionFactor - distance.length()
+            val force = distance.normalize(Vector2f()).mul((delta * delta).toFloat() * 1000 * overlap)
+            transform.position.plusAssign(force * (otherTransform.mass / transform.mass))
+            otherTransform.position.minusAssign(force * (transform.mass / otherTransform.mass))
+
+            val speed = ((transform.position - transform.prevPosition)
+                    - (otherTransform.position - otherTransform.prevPosition)).length()
+            collider.collisions.add(ShipCollision(otherEntity, speed))
+            otherCollider.collisions.add(ShipCollision(entity, speed))
+        }
+    }
+
 }
+
+private inline fun <reified C1> Collection<Entity>.extractComponents(): List<C1> =
+    mapNotNull { it.getComponent<C1>()!! }
+
+private inline fun <reified C1, reified C2> Collection<Entity>.extractComponents2(): List<Pair<C1, C2>> =
+    filter { it.hasComponents(C1::class.java, C2::class.java) }
+        .map { it.getComponent<C1>()!! to it.getComponent<C2>()!! }
