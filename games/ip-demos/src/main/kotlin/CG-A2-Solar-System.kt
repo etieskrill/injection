@@ -144,7 +144,7 @@ open class PlanetService(renderer: GLRenderer, camera: Camera, windowSize: Vecto
         return super.canProcess(entity) && entity.hasComponents(Planet::class.java)
     }
 
-    override fun process(targetEntity: Entity, entities: List<Entity?>, delta: Double) {
+    override fun process(targetEntity: Entity, entities: List<Entity>, delta: Double) {
         val enabled = targetEntity.getComponent(Boolean::class.java)
         if (enabled != null && !enabled) return // flag not present -> default to enabled - hence explicit null check
 

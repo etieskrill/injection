@@ -69,8 +69,9 @@ private val builtinProperties = mapOf(
 
 private enum class OperatorType(
     val operator: String,
-    val assignmentOperator: IrStatementOrigin,
-    val booleanOperator: Boolean = false
+    val assignmentOperator: IrStatementOrigin? = null,
+    val booleanOperator: Boolean = false,
+    val bitwiseOperator: String? = null
 ) {
     PLUS("+", PLUSEQ),
     MINUS("-", MINUSEQ),
@@ -78,13 +79,20 @@ private enum class OperatorType(
     DIV("/", DIVEQ),
     REM("%", PERCEQ),
 
+    SHL("shl", bitwiseOperator = "<<"),
+    SHR("shr", bitwiseOperator = ">>"),
+    AND("and", bitwiseOperator = "&"),
+    OR("or", bitwiseOperator = "|"),
+    XOR("xor", bitwiseOperator = "^"),
+    INV("inv", bitwiseOperator = "!"),
+
     EQEQ("==", IrStatementOrigin.EQEQ, true),
     OROR("||", IrStatementOrigin.OROR, true),
     ANDAND("&&", IrStatementOrigin.ANDAND, true),
 
     ieee754equals("==", IrStatementOrigin.EQEQ, true); //just don't question it
 
-    override fun toString(): String = operator
+    override fun toString(): String = bitwiseOperator ?: operator
 }
 
 private val assignmentOperators = mapOf(
@@ -466,7 +474,11 @@ private open class GlslTranspiler(
             }
 
             functionName == "CHECK_NOT_NULL" -> expression.arguments[0]!!.accept(this, data)
-            functionName in listOf("toFloat", "toDouble") -> expression.receiver!!.accept(this, data)
+            functionName == "toInt" -> "int(${expression.receiver!!.accept(this, data)})"
+            functionName in listOf("toFloat", "toDouble") -> expression.receiver!!.accept(
+                this,
+                data
+            ) //FIXME so far these conversions have never been necessary, but when might they be?
             functionName == "discard" -> "discard"
             functionName in builtinFunctionNames -> handleFunction(functionName, expression, data)
             functionPropertyName in builtinFunctionNames -> { //could split using KClass::memberFunctions and KClass::memberProperties if needed
@@ -647,7 +659,9 @@ private open class GlslTranspiler(
         expression.argument.accept(this, data)
 
     private fun handleOperator(operator: OperatorType, expression: IrCall, data: TranspilerData): String {
-        if (expression.origin == null) { //TODO oo, look at the CompilerMessageSeverity#OUTPUT description
+        if (expression.origin == null
+            && operator.bitwiseOperator == null //curse kotlin and its inconsistent operators
+        ) { //TODO oo, look at the CompilerMessageSeverity#OUTPUT description
             data.messageCollector.reportWarning(
                 "Consider using an operator instead of a function call",
                 expression,
@@ -790,6 +804,7 @@ private class GlslReturnTranspiler(val root: GlslTranspiler) : IrVisitor<String,
                                     "\n${data.vertexDataStructName}.$POSITION_FIELD_NAME = $GL_POSITION_NAME;"
                                 } else ""
                             }
+
                             else -> "${data.vertexDataStructName}.$param = $expression;"
                         }
                     }
@@ -809,7 +824,7 @@ private class GlslValueTranspiler(
     override fun visitCall(expression: IrCall, data: TranspilerData): String {
         val functionName = expression.symbol.owner.name.asString()
         return when {
-            functionName == "arrayOf" -> {
+            functionName in listOf("arrayOf", "intArrayOf", "floatArrayOf", "doubleArrayOf") -> {
                 val elements = expression.getArgumentsWithIr()
                     .first()
                     .second as IrVararg

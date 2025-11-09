@@ -64,6 +64,7 @@ abstract class ShaderBuilder<VA : Any, V : ShaderVertexData, RT : Any>(val shade
     protected fun const(value: Boolean) = ConstDelegate<Boolean>()
     protected fun <T : Number> const(value: Array<T>) = ConstDelegate<Array<T>>()
     protected fun const(value: Array<Boolean>) = ConstDelegate<Array<Boolean>>()
+    protected fun const(value: IntArray) = ConstDelegate<IntArray>()
     protected fun const(value: vec2) = ConstDelegate<vec2>()
     protected fun const(value: Array<vec2>) = ConstDelegate<Array<vec2>>()
     protected fun const(value: ivec2) = ConstDelegate<ivec2>()

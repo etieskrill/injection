@@ -48,6 +48,7 @@ import org.jetbrains.kotlin.ir.util.defaultType
 import org.jetbrains.kotlin.ir.util.findDeclaration
 import org.jetbrains.kotlin.ir.util.getArgumentsWithIr
 import org.jetbrains.kotlin.ir.util.getNameWithAssert
+import org.jetbrains.kotlin.ir.util.isPrimitiveArray
 import org.jetbrains.kotlin.ir.util.isStrictSubtypeOfClass
 import org.jetbrains.kotlin.ir.util.isSubtypeOfClass
 import org.jetbrains.kotlin.ir.util.patchDeclarationParents
@@ -193,10 +194,19 @@ internal class IrShaderGenerationExtension(
                 .run {
                     val type = when {
                         value.type.isArray() -> (value.type as IrSimpleType).arguments.first().typeOrFail.glslType!!
-                        else -> value.type.glslType!!
+                        value.type.isPrimitiveArray() -> GlslType(
+                            when (value.type.fullName) {
+                                IntArray::class.qualifiedName!! -> "int"
+                                FloatArray::class.qualifiedName!! -> "float"
+                                DoubleArray::class.qualifiedName!! -> "double"
+                                else -> error("Cannot convert primitive array type: ${value.type.fullName}")
+                            }
+                        )
+
+                        else -> value.type.glslType ?: error(value.render())
                     }
 
-                    GlslTypeInitialiser(type, value.type.isArray(), value)
+                    GlslTypeInitialiser(type, value.type.isArray() || value.type.isPrimitiveArray(), value)
                 }
         }
 
@@ -310,22 +320,25 @@ internal class IrShaderGenerationExtension(
                 .groupBy { it.name.asString() }
                 .flatMap { (functionName, overloads) ->
                     overloads.mapIndexed { i, function ->
-                        val funcWrapper = function.body!!.findElement<IrCall>() ?: messageCollector.compilerError(
-                            "Could not find function wrapper for ${
-                                function.name.asString()
-                            }(${
-                                function.valueParameters.joinToString { it.type.simpleName }
-                            }). Add one like 'fun someFunction() = func[Vert,Frag] { ... }'",
-                            function, files[shader]!!
-                        )
+                        val funcWrapper = function.body!!.findElement<IrCall>(atDepth = 2) {
+                            it.symbol.owner.name.asString() in listOf("func", "vertFunc", "fragFunc")
+                        } ?: run {
+                            val funcSignature =
+                                "${function.name.asString()}(${function.valueParameters.joinToString { it.type.simpleName }})"
+                            messageCollector.compilerError(
+                                "Could not find function wrapper for $funcSignature. Add one like 'fun $funcSignature = func[Vert,Frag] { ... }'",
+                                function, files[shader]!!
+                            )
+                        }
                         val funcType = when (funcWrapper.symbol.owner.name.asString()) {
                             "func" -> NONE
                             "vertFunc" -> VERTEX
                             "fragFunc" -> FRAGMENT
-                            else -> error(
+                            else -> messageCollector.compilerError(
                                 "Could not infer wrapper function type for '${
                                     funcWrapper.symbol.owner.name
-                                }', must be one of [func, funcVert, funcFrag]"
+                                }', must be one of [func, funcVert, funcFrag]",
+                                funcWrapper, file
                             )
                         }
 

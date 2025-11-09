@@ -59,7 +59,7 @@ public interface Service {
      * @param entities     all entities
      * @param delta        delta time of the last two frames
      */
-    void process(@NotNull Entity targetEntity, @NotNull List<Entity> entities, double delta);
+    void process(@NotNull Entity targetEntity, @NotNull List<@NotNull Entity> entities, double delta);
 
     /**
      * Specifies an absolute set of services which, if present, must be run after this service does its processing.
