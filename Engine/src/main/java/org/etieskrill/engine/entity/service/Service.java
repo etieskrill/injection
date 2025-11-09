@@ -39,7 +39,7 @@ public interface Service {
      *
      * @param entities all entities
      */
-    default void preProcess(List<Entity> entities) {
+    default void preProcess(@NotNull List<Entity> entities) {
     }
 
     /**

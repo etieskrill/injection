@@ -9,13 +9,17 @@ import io.github.etieskrill.injection.extension.shader.vec4
 import org.etieskrill.engine.entity.Entity
 import org.etieskrill.engine.entity.getComponent
 import org.etieskrill.engine.entity.service.Service
+import org.etieskrill.engine.graphics.Batch
 import org.etieskrill.engine.graphics.Renderer
+import org.etieskrill.engine.graphics.TextRenderer
+import org.etieskrill.engine.graphics.camera.OrthographicCamera
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
 import org.etieskrill.engine.graphics.gl.shader.impl.BlitShader
 import org.etieskrill.engine.graphics.pipeline.Pipeline
 import org.etieskrill.engine.graphics.pipeline.PipelineConfig
 import org.etieskrill.engine.graphics.pipeline.PostPassPipeline
 import org.etieskrill.engine.graphics.pipeline.PrimitiveType
+import org.etieskrill.engine.graphics.text.Fonts
 import org.etieskrill.engine.graphics.texture.Textures
 import org.etieskrill.engine.window.Window
 import org.joml.Matrix2f
@@ -30,11 +34,26 @@ import org.joml.minus
 import org.joml.plus
 import org.joml.times
 import kotlin.math.log2
+import kotlin.math.max
+import kotlin.math.sqrt
 
-class ShipRenderService(private val renderer: Renderer, private val window: Window) : Service {
+class ShipRenderService(
+    private val renderer: Renderer,
+    textRenderer: TextRenderer,
+    private val window: Window
+) : Service {
 
     private val shipSprite = Textures.ofFile("textures/ship-icon.png")
     private val pipeline = PostPassPipeline(BlitShader(), null, opaque = false, depthTest = false)
+
+    private val batch = Batch(renderer, textRenderer, window.currentSize).apply {
+        combined = OrthographicCamera(window.currentSize).apply {
+            setRotation(0f, 180f, 0f)
+            setPosition(Vector3f(viewportSize, 0f).div(2f))
+        }.combined
+    }
+
+    private val font = Fonts.getDefault(12)
 
     private val linePipeline = Pipeline(
         2,
@@ -45,7 +64,8 @@ class ShipRenderService(private val renderer: Renderer, private val window: Wind
 
     override fun canProcess(entity: Entity) = entity.hasComponents(
         NavalTransform::class.java,
-        InputDirection::class.java
+        InputDirection::class.java,
+        ShipStats::class.java
     )
 
     override fun process(
@@ -55,7 +75,20 @@ class ShipRenderService(private val renderer: Renderer, private val window: Wind
     ) {
         val transform = targetEntity.getComponent<NavalTransform>()!!
         val inputDirection = targetEntity.getComponent<InputDirection>()!!
+        val stats = targetEntity.getComponent<ShipStats>()!!
 
+        when (stats.state) {
+            ShipStats.State.ALIVE -> {
+                pipeline.shader.colour = Colour.WHITE
+            }
+
+            ShipStats.State.DYING -> {
+                stats.deathProgress += delta.toFloat()
+                pipeline.shader.colour = Vector4f(1f, 1f, 1f, 1 - stats.deathProgress)
+            }
+
+            ShipStats.State.DEAD -> return
+        }
         pipeline.shader.apply {
             sprite = shipSprite
             useSpriteColour = true
@@ -69,6 +102,19 @@ class ShipRenderService(private val renderer: Renderer, private val window: Wind
         }
 
         renderer.render(pipeline)
+
+        val healthBarPosition = transform.position + Vector2f(-25f, -5f * sqrt(transform.size))
+        batch.renderBackground(healthBarPosition, Vector2f(50f, 5f), Colour.BLACK, 0f, Colour.BLACK)
+        batch.renderBackground(
+            healthBarPosition,
+            Vector2f(50f * (stats.currentHealth.toFloat() / stats.maxHealth.toFloat()), 5f),
+            if (!targetEntity.hasComponents(EnemyShipController::class.java)) Colour.GREEN else Colour.RED,
+            0f, Colour.BLACK
+        )
+        batch.renderText(
+            "${max(0, stats.currentHealth)}/${stats.maxHealth}",
+            font, healthBarPosition + Vector2f(55f, -8f)
+        )
 
         linePipeline.shader.apply {
             pointA = Vector3f((transform.position * 2f - window.currentSize) / window.currentSize, 0f).negateY()
@@ -84,6 +130,13 @@ class ShipRenderService(private val renderer: Renderer, private val window: Wind
         renderer.render(linePipeline)
     }
 
+}
+
+object Colour {
+    val BLACK = Vector4f(0f, 0f, 0f, 1f)
+    val WHITE = Vector4f(1f)
+    val RED = Vector4f(1f, 0f, 0f, 1f)
+    val GREEN = Vector4f(0f, 1f, 0f, 1f)
 }
 
 fun Vector2fc.negateX() = Vector2f(-x(), y())

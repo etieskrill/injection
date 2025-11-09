@@ -50,6 +50,8 @@ data class ShipCollision(val entity: Entity, val speed: Float) {
     }
 
     override fun hashCode() = entity.hashCode()
+
+    override fun toString() = "ShipCollision(entity=${entity.id}, speed=$speed)"
 }
 
 data class ShipCollider(
@@ -57,12 +59,30 @@ data class ShipCollider(
     val collisions: MutableSet<ShipCollision> = mutableSetOf()
 )
 
-data class ShipStats(
+class ShipStats(
     val maxHealth: Int,
-    var currentHealth: Int = maxHealth,
+    currentHealth: Int = maxHealth,
+
+    var state: State = State.ALIVE,
 
     val rammingDamageModifier: Float = 1f
-)
+) {
+    var currentHealth: Int = currentHealth
+        set(value) {
+            field = value
+            if (field < 0) state = State.DYING
+        }
+
+    var deathProgress: Float = 0.0f
+        set(value) {
+            field = value
+            if (field >= 1) state = State.DEAD
+        }
+
+    enum class State {
+        ALIVE, DYING, DEAD
+    }
+}
 
 object Game : App(window {
     size = Window.WindowSize.FHD
@@ -96,12 +116,13 @@ object Game : App(window {
             .withComponent(InputDirection())
             .withComponent(EnemyShipController())
             .withComponent(ShipCollider())
-            .withComponent(ShipStats(100))
+            .withComponent(ShipStats(50))
 
         entitySystem.addService(PlayerShipControllerService(window))
         entitySystem.addService(EnemyShipControllerService())
         entitySystem.addService(ShipPhysicsService())
-        entitySystem.addService(ShipRenderService(renderer, window))
+        entitySystem.addService(ShipCollisionService())
+        entitySystem.addService(ShipRenderService(renderer, renderer, window))
     }
 
 //    private val islandsPipeline = PostPassPipeline(IslandShader(), null, opaque = false, depthTest = false)

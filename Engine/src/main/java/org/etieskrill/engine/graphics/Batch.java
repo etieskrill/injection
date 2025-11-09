@@ -36,7 +36,7 @@ public class Batch {
             new UiOutlineShader(),
             null,
             false,
-            true
+            false
     );
 
     public Batch(@NotNull GLRenderer renderer, @NotNull Vector2ic viewportSize) {

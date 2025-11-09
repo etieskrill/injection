@@ -22,11 +22,18 @@ class ShipPhysicsService : Service {
         NavalTransform::class.java, InputDirection::class.java
     )
 
+    override fun preProcess(entities: MutableList<Entity>) {
+        entities.extractComponents<ShipCollider>()
+            .forEach { it.collisions.clear() }
+    }
+
     override fun process(
         targetEntity: Entity,
         entities: List<Entity>,
         delta: Double
     ) {
+        if (targetEntity.getComponent<ShipStats>()!!.state != ShipStats.State.ALIVE) return
+
         val transform = targetEntity.getComponent(NavalTransform::class.java)!!
         val inputDirection = targetEntity.getComponent(InputDirection::class.java)!!
 
@@ -92,16 +99,13 @@ class ShipPhysicsService : Service {
         entities: List<Entity>,
         delta: Double
     ) {
-        val targetEntities = entities.zip(
+        entities.filter { it != entity }.zip(
             entities.filter { it != entity }
-                .extractComponents2<NavalTransform, ShipCollider>()
-        )
+                .extractComponents3<NavalTransform, ShipCollider, ShipStats>()
+        ).forEach { (otherEntity, components) ->
+            val (otherTransform, otherCollider, otherStats) = components
 
-        targetEntities.forEach { (otherEntity, components) ->
-            val (otherTransform, otherCollider) = components
-
-            collider.collisions.clear()
-            otherCollider.collisions.clear()
+            if (otherStats.state != ShipStats.State.ALIVE) return@forEach
 
             val arbitrarySizeCorrectionFactor = 1 / 4f
 
@@ -113,6 +117,8 @@ class ShipPhysicsService : Service {
             transform.position.plusAssign(force * (otherTransform.mass / transform.mass))
             otherTransform.position.minusAssign(force * (transform.mass / otherTransform.mass))
 
+            if (entity in otherCollider.collisions.map { it.entity }) return@forEach //collision already handled by other party
+
             val speed = ((transform.position - transform.prevPosition)
                     - (otherTransform.position - otherTransform.prevPosition)).length()
             collider.collisions.add(ShipCollision(otherEntity, speed))
@@ -123,8 +129,12 @@ class ShipPhysicsService : Service {
 }
 
 private inline fun <reified C1> Collection<Entity>.extractComponents(): List<C1> =
-    mapNotNull { it.getComponent<C1>()!! }
+    mapNotNull { it.getComponent<C1>() }
 
 private inline fun <reified C1, reified C2> Collection<Entity>.extractComponents2(): List<Pair<C1, C2>> =
     filter { it.hasComponents(C1::class.java, C2::class.java) }
         .map { it.getComponent<C1>()!! to it.getComponent<C2>()!! }
+
+private inline fun <reified C1, reified C2, reified C3> Collection<Entity>.extractComponents3(): List<Triple<C1, C2, C3>> =
+    filter { it.hasComponents(C1::class.java, C2::class.java, C3::class.java) }
+        .map { Triple(it.getComponent<C1>()!!, it.getComponent<C2>()!!, it.getComponent<C3>()!!) }
