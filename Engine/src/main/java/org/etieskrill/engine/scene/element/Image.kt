@@ -1,7 +1,8 @@
-package org.etieskrill.engine.scene.component
+package org.etieskrill.engine.scene.element
 
 import org.etieskrill.engine.graphics.Batch
 import org.etieskrill.engine.graphics.texture.Textures
+import org.etieskrill.engine.scene.Node
 import org.joml.Vector4f
 
 class Image(texturePath: String) : Node<Image>() {

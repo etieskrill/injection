@@ -8,7 +8,6 @@ import org.etieskrill.engine.input.Key;
 import org.etieskrill.engine.input.KeyInputHandler;
 import org.etieskrill.engine.input.Keys;
 import org.etieskrill.engine.input.MouseGestureHandler;
-import org.etieskrill.engine.scene.component.Node;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2f;

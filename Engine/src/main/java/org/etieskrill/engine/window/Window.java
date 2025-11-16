@@ -377,6 +377,7 @@ public class Window implements Disposable {
         glfwSetFramebufferSizeCallback(window, (_, width, height) -> {
             glViewport(0, 0, width, height);
             currentSize.set(width, height);
+            if (scene != null) scene.setSize(currentSize);
         });
         //glfwSetWindowRefreshCallback() //TODO can be used to update during moving, resizing etc.
 

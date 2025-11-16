@@ -11,9 +11,9 @@ import org.etieskrill.engine.input.CursorInputAdapter
 import org.etieskrill.engine.input.Key
 import org.etieskrill.engine.input.Keys
 import org.etieskrill.engine.scene.Scene
-import org.etieskrill.engine.scene.component.Button
-import org.etieskrill.engine.scene.component.Label
-import org.etieskrill.engine.scene.component.container.VBox
+import org.etieskrill.engine.scene.container.VBox
+import org.etieskrill.engine.scene.element.Button
+import org.etieskrill.engine.scene.element.Label
 import org.etieskrill.engine.window.Window
 import org.etieskrill.engine.window.window
 import org.joml.Vector2f

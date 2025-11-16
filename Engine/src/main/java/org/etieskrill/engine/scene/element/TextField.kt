@@ -1,10 +1,11 @@
-package org.etieskrill.engine.scene.component
+package org.etieskrill.engine.scene.element
 
 import org.etieskrill.engine.graphics.Batch
 import org.etieskrill.engine.graphics.text.Fonts
 import org.etieskrill.engine.graphics.text.TextEditor
 import org.etieskrill.engine.input.Key
 import org.etieskrill.engine.input.Keys
+import org.etieskrill.engine.scene.Node
 import org.etieskrill.engine.time.LoopPacer
 import org.joml.Vector2f
 import org.joml.Vector2fc

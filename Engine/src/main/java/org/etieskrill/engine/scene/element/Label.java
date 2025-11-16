@@ -1,10 +1,11 @@
-package org.etieskrill.engine.scene.component;
+package org.etieskrill.engine.scene.element;
 
 import kotlin.NotImplementedError;
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.text.Font;
 import org.etieskrill.engine.graphics.text.Fonts;
 import org.etieskrill.engine.graphics.text.Glyph;
+import org.etieskrill.engine.scene.Node;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;

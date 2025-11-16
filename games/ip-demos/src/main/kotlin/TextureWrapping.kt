@@ -14,11 +14,11 @@ import org.etieskrill.engine.graphics.texture.AbstractTexture.Wrapping
 import org.etieskrill.engine.graphics.texture.Texture2D
 import org.etieskrill.engine.input.Keys
 import org.etieskrill.engine.input.MouseGestureHandler
+import org.etieskrill.engine.scene.Node.Alignment
 import org.etieskrill.engine.scene.Scene
-import org.etieskrill.engine.scene.component.Button
-import org.etieskrill.engine.scene.component.Label
-import org.etieskrill.engine.scene.component.Node.Alignment
-import org.etieskrill.engine.scene.component.container.VBox
+import org.etieskrill.engine.scene.container.VBox
+import org.etieskrill.engine.scene.element.Button
+import org.etieskrill.engine.scene.element.Label
 import org.etieskrill.engine.window.Cursor
 import org.etieskrill.engine.window.window
 import org.joml.Vector2d

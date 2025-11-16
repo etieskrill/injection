@@ -1,8 +1,7 @@
 package org.etieskrill.engine.scene
 
 import org.etieskrill.engine.input.Keys
-import org.etieskrill.engine.scene.component.Node
-import org.etieskrill.engine.scene.component.Node.Alignment
+import org.etieskrill.engine.scene.Node.Alignment
 
 fun main() {
     var wrapping = 0
@@ -42,7 +41,7 @@ abstract class NodeBuilder<T : NodeBuilder<T>>(
     protected open val block: T.() -> Unit,
     open val properties: List<Any>
 ) {
-    var alignment: Node.Alignment = Node.Alignment.TOP_LEFT
+    var alignment: Alignment = Alignment.TOP_LEFT
 }
 
 class VBoxBuilder(

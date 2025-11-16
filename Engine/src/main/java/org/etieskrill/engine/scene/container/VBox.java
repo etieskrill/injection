@@ -1,13 +1,13 @@
-package org.etieskrill.engine.scene.component.container;
+package org.etieskrill.engine.scene.container;
 
-import org.etieskrill.engine.scene.component.Node;
+import org.etieskrill.engine.scene.Node;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector2f;
 
 import java.util.List;
 
-import static org.etieskrill.engine.scene.component.LayoutUtilsKt.getMinNodeSize;
-import static org.etieskrill.engine.scene.component.LayoutUtilsKt.getPreferredNodePosition;
+import static org.etieskrill.engine.scene.LayoutUtilsKt.getMinNodeSize;
+import static org.etieskrill.engine.scene.LayoutUtilsKt.getPreferredNodePosition;
 
 public class VBox extends Stack {
 
@@ -41,8 +41,19 @@ public class VBox extends Stack {
 
         //Pre-calculate the size of the smallest fitting box around the children and position cursors accordingly
         float topPointer = 0, centerPointer = getFormattedSize().y() / 2, bottomPointer = getFormattedSize().y();
+        float numTopGrow = 0, numCenterGrow = 0, numBottomGrow = 0;
         for (int i = 0; i < getChildren().size(); i++) {
             Node<?> child = getChildren().get(i);
+
+            if (child.getScaleMode() == ScaleMode.GROW) {
+                switch (child.getAlignment()) {
+                    case TOP_LEFT, TOP, TOP_RIGHT -> numTopGrow++;
+                    case CENTER, CENTER_LEFT, CENTER_RIGHT -> numCenterGrow++;
+                    case BOTTOM, BOTTOM_LEFT, BOTTOM_RIGHT -> numBottomGrow++;
+                }
+                continue;
+            }
+
             child.computeFixedSizes();
 
             if (child.getAlignment() == Alignment.FIXED_POSITION) continue;
@@ -54,15 +65,34 @@ public class VBox extends Stack {
             }
 
             switch (child.getAlignment()) {
+                case TOP_LEFT, TOP, TOP_RIGHT -> topPointer += getMinNodeSize(child).y - margin;
                 case CENTER, CENTER_LEFT, CENTER_RIGHT -> centerPointer -= child.getFormattedSize().y() / 2;
                 case BOTTOM, BOTTOM_LEFT, BOTTOM_RIGHT -> bottomPointer -= getMinNodeSize(child).y() - margin;
             }
         }
 
+        float topGrowCapacity = numTopGrow > 0 ? (getFormattedSize().y - topPointer) / numTopGrow : 0;
+        float centerGrowCapacity = numCenterGrow > 0 ? (getFormattedSize().y - centerPointer) * 2 / numCenterGrow : 0;
+        float bottomGrowCapacity = numBottomGrow > 0 ? (getFormattedSize().y - (getFormattedSize().y - bottomPointer)) / numBottomGrow : 0;
+
+        topPointer = 0;
+
         //Place children ignoring vertical preference and adjust cursors
         for (int i = 0; i < getChildren().size(); i++) {
             Node<?> child = getChildren().get(i);
 
+            if (child.getScaleMode() == ScaleMode.GROW) {
+                child.getFormattedSize().set(
+                        getFormattedSize().x,
+                        switch (child.getAlignment()) {
+                            case TOP_LEFT, TOP, TOP_RIGHT -> topGrowCapacity;
+                            case CENTER_LEFT, CENTER, CENTER_RIGHT -> centerGrowCapacity;
+                            case BOTTOM_LEFT, BOTTOM, BOTTOM_RIGHT -> bottomGrowCapacity;
+                            case FIXED_POSITION -> child.getFormattedSize().y;
+                        }
+                );
+                child.setComputedFixedSize(true);
+            }
             child.layout();
 
             if (child.getAlignment() == Alignment.FIXED_POSITION) continue;
@@ -89,6 +119,9 @@ public class VBox extends Stack {
                 case BOTTOM, BOTTOM_LEFT, BOTTOM_RIGHT -> bottomPointer += childHeight + margin;
             }
         }
+
+        if (getChildren().stream().anyMatch(child -> !child.getComputedFixedSize()))
+            throw new IllegalStateException("Absolute size could not be computed for all children");
     }
 
 }

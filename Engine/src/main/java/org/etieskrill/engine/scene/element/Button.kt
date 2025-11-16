@@ -1,8 +1,9 @@
-package org.etieskrill.engine.scene.component
+package org.etieskrill.engine.scene.element
 
 import org.etieskrill.engine.input.Key
 import org.etieskrill.engine.input.Keys
-import org.etieskrill.engine.scene.component.container.Container
+import org.etieskrill.engine.scene.Node
+import org.etieskrill.engine.scene.container.Container
 import org.joml.timesAssign
 
 typealias SimpleAction = suspend () -> Unit

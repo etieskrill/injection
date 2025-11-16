@@ -1,10 +1,10 @@
-package org.etieskrill.engine.scene.component.container
+package org.etieskrill.engine.scene.container
 
 import org.etieskrill.engine.graphics.Batch
 import org.etieskrill.engine.input.Key
 import org.etieskrill.engine.input.Keys
-import org.etieskrill.engine.scene.component.Node
-import org.etieskrill.engine.scene.component.getPreferredNodePosition
+import org.etieskrill.engine.scene.Node
+import org.etieskrill.engine.scene.getPreferredNodePosition
 import org.joml.Vector3f
 
 /**
@@ -60,6 +60,10 @@ open class Container(child: Node<*>?) : Node<Container>() {
         if (!shouldFormat()) return
 
         child?.run {
+            if (scaleMode == ScaleMode.GROW) {
+                formattedSize = this@Container.formattedSize
+                computedFixedSize = true
+            }
             layout()
             position = getPreferredNodePosition(this@Container.formattedSize, this)
         }

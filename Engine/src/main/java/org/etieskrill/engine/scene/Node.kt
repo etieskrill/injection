@@ -1,4 +1,4 @@
-package org.etieskrill.engine.scene.component
+package org.etieskrill.engine.scene
 
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope

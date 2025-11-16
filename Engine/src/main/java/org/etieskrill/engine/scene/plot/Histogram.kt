@@ -1,4 +1,4 @@
-package org.etieskrill.engine.scene.component.plot
+package org.etieskrill.engine.scene.plot
 
 import io.github.etieskrill.injection.extension.shader.dsl.ColourRenderTarget
 import io.github.etieskrill.injection.extension.shader.dsl.PureShaderBuilder
@@ -12,7 +12,7 @@ import io.github.etieskrill.injection.extension.shader.vec4
 import org.etieskrill.engine.graphics.Batch
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
 import org.etieskrill.engine.graphics.pipeline.PostPassPipeline
-import org.etieskrill.engine.scene.component.Node
+import org.etieskrill.engine.scene.Node
 import org.etieskrill.engine.util.FixedArrayDeque
 import org.joml.Vector3f
 import org.joml.Vector4f

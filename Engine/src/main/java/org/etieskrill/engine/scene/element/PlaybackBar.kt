@@ -1,7 +1,7 @@
-package org.etieskrill.engine.scene.component
+package org.etieskrill.engine.scene.element
 
 import org.etieskrill.engine.graphics.text.Fonts
-import org.etieskrill.engine.scene.component.container.HBox
+import org.etieskrill.engine.scene.container.HBox
 import org.joml.Vector2f
 import org.joml.Vector4f
 import kotlin.time.Duration
@@ -92,7 +92,7 @@ class PlaybackBar(
         size = Vector2f(50f, Fonts.DEFAULT_FONT_SIZE.toFloat())
     }
 
-    var time: Duration = Duration.ZERO
+    var time: Duration = Duration.Companion.ZERO
         set(value) {
             progressBar.value = time.inWholeMilliseconds.toFloat() / totalDuration.inWholeMilliseconds
             val seconds = value.inWholeSeconds % 60

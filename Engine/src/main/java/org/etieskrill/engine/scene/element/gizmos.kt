@@ -1,4 +1,4 @@
-package org.etieskrill.engine.scene.component
+package org.etieskrill.engine.scene.element
 
 import org.etieskrill.engine.graphics.Batch
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
@@ -6,6 +6,7 @@ import org.etieskrill.engine.graphics.model.Model
 import org.etieskrill.engine.graphics.pipeline.CullingMode
 import org.etieskrill.engine.graphics.pipeline.Pipeline
 import org.etieskrill.engine.graphics.pipeline.PipelineConfig
+import org.etieskrill.engine.scene.Node
 import org.joml.Quaternionfc
 import org.joml.Vector3f
 import org.joml.Vector3fc

@@ -5,10 +5,10 @@ import org.etieskrill.engine.graphics.camera.OrthographicCamera;
 import org.etieskrill.engine.graphics.gl.renderer.GLDebuggableRenderer;
 import org.etieskrill.engine.graphics.gl.renderer.GLRenderer;
 import org.etieskrill.engine.graphics.gl.shader.Shaders;
+import org.etieskrill.engine.scene.Node;
 import org.etieskrill.engine.scene.Scene;
-import org.etieskrill.engine.scene.component.Label;
-import org.etieskrill.engine.scene.component.Node;
-import org.etieskrill.engine.scene.component.container.Stack;
+import org.etieskrill.engine.scene.container.Stack;
+import org.etieskrill.engine.scene.element.Label;
 import org.etieskrill.engine.time.LoopPacer;
 import org.joml.Vector2ic;
 import org.joml.Vector4f;
@@ -35,7 +35,7 @@ public class DebugOverlay extends Scene {
     }
 
     private Node getRootNode() {
-        renderStatistics.setAlignment(org.etieskrill.engine.scene.component.Node.Alignment.TOP_LEFT);
+        renderStatistics.setAlignment(Node.Alignment.TOP_LEFT);
         renderStatistics.setMargin(new Vector4f(10));
         return new Stack(List.of(renderStatistics));
     }

@@ -46,7 +46,7 @@ data class ClothCollider(val points: List<ClothPoint>)
 class ClothPhysicsService(val pacer: LoopPacer) : Service {
     override fun canProcess(entity: Entity) = entity.hasComponents(ClothCollider::class.java)
 
-    override fun process(targetEntity: Entity, entities: List<Entity?>, delta: Double) {
+    override fun process(targetEntity: Entity, entities: List<Entity>, delta: Double) {
         val points = targetEntity.getComponent<ClothCollider>()!!.points
 
         for (point in points) {
@@ -110,7 +110,7 @@ class ClothRenderService(val renderer: Renderer, val camera: Camera) : Service {
 
     override fun canProcess(entity: Entity) = entity.hasComponents(ClothCollider::class.java)
 
-    override fun process(targetEntity: Entity, entities: List<Entity?>, delta: Double) {
+    override fun process(targetEntity: Entity, entities: List<Entity>, delta: Double) {
         val transform = targetEntity.getComponent<Transform>()!!
         val clothCollider = targetEntity.getComponent<ClothCollider>()!!
 

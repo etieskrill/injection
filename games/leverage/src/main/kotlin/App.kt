@@ -24,7 +24,7 @@ import org.etieskrill.engine.input.controller.CursorCameraController
 import org.etieskrill.engine.input.controller.KeyCameraController
 import org.etieskrill.engine.scene.Scene
 import org.etieskrill.engine.scene.component.Container
-import org.etieskrill.engine.scene.component.TranslateGizmo
+import org.etieskrill.engine.scene.element.TranslateGizmo
 import org.etieskrill.engine.util.Loaders
 import org.etieskrill.engine.window.Window
 import org.etieskrill.engine.window.window

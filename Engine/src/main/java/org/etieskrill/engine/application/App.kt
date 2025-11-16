@@ -5,6 +5,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.launch
+import org.etieskrill.engine.Disposable
 import org.etieskrill.engine.audio.Audio
 import org.etieskrill.engine.config.InjectionConfig
 import org.etieskrill.engine.entity.system.EntitySystem
@@ -30,7 +31,7 @@ private val logger = KotlinLogging.logger {}
 
 abstract class App(
     protected val window: Window
-) {
+) : Disposable {
 
     protected val pacer = SystemNanoTimePacer(1.0 / window.refreshRate)
 
@@ -125,6 +126,7 @@ abstract class App(
     protected open fun render() {}
 
     protected fun terminate() {
+        dispose()
         resetSystemTimeResolution(SYSTEM_TIME_RESOLUTION_MILLIS)
         window.close()
         window.dispose()
@@ -134,5 +136,7 @@ abstract class App(
         GLFW.glfwTerminate()
         Audio.dispose()
     }
+
+    override fun dispose() = Unit
 
 }

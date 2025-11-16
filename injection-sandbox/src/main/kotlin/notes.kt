@@ -2,20 +2,19 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import org.etieskrill.engine.application.App
 import org.etieskrill.engine.graphics.Batch
 import org.etieskrill.engine.graphics.camera.OrthographicCamera
+import org.etieskrill.engine.scene.Node.ScaleMode
 import org.etieskrill.engine.scene.Scene
-import org.etieskrill.engine.scene.component.Button
-import org.etieskrill.engine.scene.component.Checkbox
-import org.etieskrill.engine.scene.component.Label
-import org.etieskrill.engine.scene.component.TextField
-import org.etieskrill.engine.scene.component.container.HBox
-import org.etieskrill.engine.scene.component.container.VBox
+import org.etieskrill.engine.scene.container.HBox
+import org.etieskrill.engine.scene.container.VBox
+import org.etieskrill.engine.scene.element.Button
+import org.etieskrill.engine.scene.element.Checkbox
+import org.etieskrill.engine.scene.element.Label
+import org.etieskrill.engine.scene.element.TextField
 import org.etieskrill.engine.util.ResourceReader
 import org.etieskrill.engine.window.window
-import org.joml.Vector2f
 import org.joml.Vector4f
 import org.lwjgl.BufferUtils
-import org.lwjgl.system.MemoryUtil.memAddress
-import org.lwjgl.system.MemoryUtil.memUTF8
+import org.lwjgl.system.MemoryUtil.*
 import org.lwjgl.system.Platform
 import org.lwjgl.util.tinyfd.TinyFileDialogs.tinyfd_openFileDialog
 import org.lwjgl.util.tinyfd.TinyFileDialogs.tinyfd_saveFileDialog
@@ -55,8 +54,7 @@ object Noteify : App(window {
     init {
         val textField = TextField(pacer).apply {
             changeCallback = { changed = true }
-            size = Vector2f(200f)
-//            scaleMode = Node.ScaleMode.GROW //TODO
+            scaleMode = ScaleMode.GROW
         }
 
         val root = VBox(
@@ -84,10 +82,10 @@ object Noteify : App(window {
 
                     logger.info { "Opened file: $openFile" }
                 }.apply { margin = Vector4f(10f) },
-                Label("Wrapping"),
+                Label("Wrapping").apply { margin = Vector4f(10f) },
                 Checkbox {
                     logger.info { "Switch wrapping" }
-                }
+                }.apply { margin = Vector4f(10f) }
             ),
             textField
         )
@@ -121,6 +119,15 @@ object Noteify : App(window {
             window.title = title
             this.title = title
         }
+    }
+
+    override fun dispose() {
+        fileTypeBuffer.rewind()
+        while (fileTypeBuffer.hasRemaining()) {
+            val pointer = fileTypeBuffer.get()
+            if (pointer != 0L) nmemFree(pointer)
+        }
+        fileTypeBuffer.free()
     }
 
 }

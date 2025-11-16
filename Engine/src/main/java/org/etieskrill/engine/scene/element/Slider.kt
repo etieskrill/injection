@@ -1,8 +1,9 @@
-package org.etieskrill.engine.scene.component
+package org.etieskrill.engine.scene.element
 
 import org.etieskrill.engine.graphics.Batch
 import org.etieskrill.engine.input.Key
 import org.etieskrill.engine.input.Keys
+import org.etieskrill.engine.scene.Node
 import org.joml.Vector3f
 import org.joml.Vector4f
 

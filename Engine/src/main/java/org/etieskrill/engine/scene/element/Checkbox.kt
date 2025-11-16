@@ -1,9 +1,11 @@
-package org.etieskrill.engine.scene.component
+package org.etieskrill.engine.scene.element
 
 import org.etieskrill.engine.graphics.Batch
+import org.etieskrill.engine.graphics.text.Fonts
 import org.etieskrill.engine.graphics.texture.Textures
 import org.etieskrill.engine.input.Key
 import org.etieskrill.engine.input.Keys
+import org.etieskrill.engine.scene.Node
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector4f
@@ -20,7 +22,7 @@ class Checkbox(
 
     init {
         colour = Vector4f(0.1f)
-        size = Vector2f(16f)
+        size = Vector2f(Fonts.DEFAULT_FONT_SIZE.toFloat())
         scaleMode = ScaleMode.FIXED
     }
 
