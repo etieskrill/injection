@@ -21,7 +21,7 @@ enum class HistogramScaleMode { FIXED, MAX_VALUE }
 
 class Histogram(
     private val columns: Int,
-    private val scaleMode: HistogramScaleMode = HistogramScaleMode.MAX_VALUE,
+    private val histogramScaleMode: HistogramScaleMode = HistogramScaleMode.MAX_VALUE,
     private val maxValue: Float = 0f,
     private val backgroundColour: Vector4f = Vector4f(0f, 0f, 0f, 1f),
     private val drawSeparators: Boolean = true,
@@ -52,7 +52,7 @@ class Histogram(
         val maxValue = values.maxOrNull() ?: 0f
 
         values.forEachIndexed { index, value ->
-            arrayValues[arrayValues.size - 1 - index] = when (scaleMode) {
+            arrayValues[arrayValues.size - 1 - index] = when (histogramScaleMode) {
                 HistogramScaleMode.FIXED -> value / this.maxValue
                 HistogramScaleMode.MAX_VALUE -> maxValue / maxValue
             }

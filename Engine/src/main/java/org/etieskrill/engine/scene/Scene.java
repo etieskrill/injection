@@ -64,9 +64,11 @@ public class Scene extends MouseGestureHandler implements KeyInputHandler {
     public void update(double delta) {
         root.getPosition().set(0);
         root.getSize().set(size);
+        root.setScaleMode(Node.ScaleMode.FIXED);
         root.update(delta);
 
-        root.format();
+        root.computeFixedSizes();
+        root.layout();
     }
 
     public void render() {

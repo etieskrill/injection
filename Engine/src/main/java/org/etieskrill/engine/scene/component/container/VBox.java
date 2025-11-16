@@ -23,14 +23,27 @@ public class VBox extends Stack {
     }
 
     @Override
-    public void format() {
+    protected void computeBoundingBox() {
+        float width = 0, height = 0;
+
+        for (Node<?> child : getChildren()) {
+            var nodeSize = getMinNodeSize(child);
+            height += nodeSize.y;
+            width = Math.max(width, nodeSize.x);
+        }
+
+        getFormattedSize().set(width, height);
+    }
+
+    @Override
+    public void layout() {
         if (!shouldFormat()) return;
 
         //Pre-calculate the size of the smallest fitting box around the children and position cursors accordingly
-        float topPointer = 0, centerPointer = getSize().y() / 2, bottomPointer = getSize().y();
+        float topPointer = 0, centerPointer = getFormattedSize().y() / 2, bottomPointer = getFormattedSize().y();
         for (int i = 0; i < getChildren().size(); i++) {
             Node<?> child = getChildren().get(i);
-            child.format();
+            child.computeFixedSizes();
 
             if (child.getAlignment() == Alignment.FIXED_POSITION) continue;
 
@@ -41,7 +54,7 @@ public class VBox extends Stack {
             }
 
             switch (child.getAlignment()) {
-                case CENTER, CENTER_LEFT, CENTER_RIGHT -> centerPointer -= child.getSize().y() / 2;
+                case CENTER, CENTER_LEFT, CENTER_RIGHT -> centerPointer -= child.getFormattedSize().y() / 2;
                 case BOTTOM, BOTTOM_LEFT, BOTTOM_RIGHT -> bottomPointer -= getMinNodeSize(child).y() - margin;
             }
         }
@@ -49,8 +62,11 @@ public class VBox extends Stack {
         //Place children ignoring vertical preference and adjust cursors
         for (int i = 0; i < getChildren().size(); i++) {
             Node<?> child = getChildren().get(i);
+
+            child.layout();
+
             if (child.getAlignment() == Alignment.FIXED_POSITION) continue;
-            Vector2f newPos = getPreferredNodePosition(getSize(), child).mul(1, 0);
+            Vector2f newPos = getPreferredNodePosition(getFormattedSize(), child).mul(1, 0);
 
             child.setPosition(newPos.add(0,
                     switch (child.getAlignment()) {
@@ -66,7 +82,7 @@ public class VBox extends Stack {
                 margin = Math.max(nextChild.getMargin().y(), child.getMargin().x());
             }
 
-            float childHeight = child.getSize().y();
+            float childHeight = child.getFormattedSize().y();
             switch (child.getAlignment()) {
                 case TOP, TOP_LEFT, TOP_RIGHT -> topPointer += childHeight + margin;
                 case CENTER, CENTER_LEFT, CENTER_RIGHT -> centerPointer += childHeight + margin;

@@ -8,7 +8,7 @@ import org.etieskrill.engine.input.Keys
 import org.etieskrill.engine.scene.component.Button
 import org.etieskrill.engine.scene.component.Label
 import org.etieskrill.engine.scene.component.Node
-import org.joml.Vector2f
+import org.joml.Vector4f
 
 private val logger = KotlinLogging.logger {}
 
@@ -47,11 +47,14 @@ class Dropdown(
     init {
         check(options.isNotEmpty()) { "Dropdown must have at least one option" }
         check(options.none { it.isBlank() }) { "Dropdown options must not be blank" }
+
 //        currentOption = options[0]
 //        currentOptionIndex = 0
+
+        container.colour = Vector4f(0.2f)
     }
 
-    override fun format() {
+    override fun computeFixedSizes() {
         if (currentOption == "") { //FIXME there is a need for a manual init after scene graph is built, an equivalent of Godot's ready
             currentOption = options[0]
             currentOptionIndex = 0
@@ -59,14 +62,30 @@ class Dropdown(
 
         if (!shouldFormat()) return
 
-        (container.child as VBox).children.forEach {
-            it.size = Vector2f(size.x, size.y / options.size)
+        container.computeFixedSizes()
+        computedFixedSize = false
+
+        when (scaleMode) {
+            ScaleMode.FIXED -> {
+                formattedSize = size
+                computedFixedSize = true
+            }
+
+            ScaleMode.CONTENT -> {
+                if (container.scaleMode == ScaleMode.GROW || !container.computedFixedSize) {
+                    TODO("ScaleMode.GROW for WidgetContainer and Dropdown")
+                }
+
+                formattedSize = container.formattedSize
+                computedFixedSize = true
+            }
+
+            ScaleMode.GROW -> TODO("ScaleMode.GROW for WidgetContainer and Dropdown")
         }
+    }
 
-        container.size = size
-        container.child.size = Vector2f(size).sub(0f, container.barHeight) //FIXME dis shit dont work dawg, and also; its shit
-
-        container.format()
+    override fun layout() {
+        container.layout()
     }
 
     override fun render(batch: Batch) {

@@ -25,15 +25,19 @@ class TextField(
     var changeCallback: () -> Unit = {}
 
     init {
-        colour = Vector4f(0.1f)
+        colour = Vector4f(0.2f, 0.2f, 0.2f, 0.5f)
     }
 
     private val highlightColour = Vector4f(0.4f, 0.4f, 1f, 1f)
 
+    override fun computeFixedSizes() {
+        formattedSize.set(size)
+    }
+
     override fun render(batch: Batch) {
         batch.renderBackground(
             absolutePosition,
-            size,
+            formattedSize,
             colour,
             2f,
             if (focused) highlightColour else Vector4f(0f)
@@ -53,7 +57,7 @@ class TextField(
             textEditor.cursor.position,
             textEditor.toString(),
             font,
-            size
+            formattedSize
         )
 
         if (focused && pacer.time % 1 < 0.5) {
@@ -67,24 +71,25 @@ class TextField(
 
     private fun drawSelection(batch: Batch, text: String, lineLengths: List<Int>, start: Vector2ic, end: Vector2ic) {
         if (start.y() == end.y()) {
-            val absStartPos = batch.getAbsoluteCursorPosition(start, text, font, size)!!
-            val absEndPos = batch.getAbsoluteCursorPosition(end, text, font, size)!!
+            val absStartPos = batch.getAbsoluteCursorPosition(start, text, font, formattedSize)!!
+            val absEndPos = batch.getAbsoluteCursorPosition(end, text, font, formattedSize)!!
             drawSelectionLine(batch, absStartPos, absEndPos - absStartPos)
             return
         }
 
-        val absStartPos = batch.getAbsoluteCursorPosition(start, text, font, size)!!
-        val absEndPos = batch.getAbsoluteCursorPosition(Vector2i(lineLengths[start.y()], start.y()), text, font, size)!!
+        val absStartPos = batch.getAbsoluteCursorPosition(start, text, font, formattedSize)!!
+        val absEndPos =
+            batch.getAbsoluteCursorPosition(Vector2i(lineLengths[start.y()], start.y()), text, font, formattedSize)!!
         drawSelectionLine(batch, absStartPos, absEndPos - absStartPos)
 
         for (i in start.y() + 1..end.y() - 1) {
-            absStartPos.set(batch.getAbsoluteCursorPosition(Vector2i(0, i), text, font, size)!!)
-            absEndPos.set(batch.getAbsoluteCursorPosition(Vector2i(lineLengths[i], i), text, font, size)!!)
+            absStartPos.set(batch.getAbsoluteCursorPosition(Vector2i(0, i), text, font, formattedSize)!!)
+            absEndPos.set(batch.getAbsoluteCursorPosition(Vector2i(lineLengths[i], i), text, font, formattedSize)!!)
             drawSelectionLine(batch, absStartPos, absEndPos - absStartPos)
         }
 
-        absStartPos.set(batch.getAbsoluteCursorPosition(Vector2i(0, end.y()), text, font, size)!!)
-        absEndPos.set(batch.getAbsoluteCursorPosition(end, text, font, size)!!)
+        absStartPos.set(batch.getAbsoluteCursorPosition(Vector2i(0, end.y()), text, font, formattedSize)!!)
+        absEndPos.set(batch.getAbsoluteCursorPosition(end, text, font, formattedSize)!!)
         drawSelectionLine(batch, absStartPos, absEndPos - absStartPos)
     }
 

@@ -1,5 +1,6 @@
 package org.etieskrill.engine.scene.component
 
+import org.etieskrill.engine.graphics.text.Fonts
 import org.etieskrill.engine.scene.component.container.HBox
 import org.joml.Vector2f
 import org.joml.Vector4f
@@ -79,13 +80,17 @@ class PlaybackBar(
     private val progressBar = Slider(0f, 0f, 1f).apply {
         size = Vector2f(500f, 15f)
         margin = Vector4f(5f)
+        colour = Vector4f(0f, 0f, 0f, 1f)
 
         this.action = {
             time = totalDuration * it.toDouble()
             this@PlaybackBar.action(time)
         }
     }
-    private val progressLabel = Label("0:00")
+    private val progressLabel = Label("0:00").apply {
+        scaleMode = ScaleMode.FIXED
+        size = Vector2f(50f, Fonts.DEFAULT_FONT_SIZE.toFloat())
+    }
 
     var time: Duration = Duration.ZERO
         set(value) {

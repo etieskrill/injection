@@ -19,14 +19,27 @@ public class HBox extends Stack {
     }
 
     @Override
-    public void format() {
+    protected void computeBoundingBox() {
+        float width = 0, height = 0;
+
+        for (Node<?> child : getChildren()) {
+            var nodeSize = getMinNodeSize(child);
+            width += nodeSize.x;
+            height = Math.max(height, nodeSize.y);
+        }
+
+        getFormattedSize().set(width, height);
+    }
+
+    @Override
+    public void layout() {
         if (!shouldFormat()) return;
 
         //Pre-calculate the size of the smallest fitting box around the children and position cursors accordingly
-        float topPointer = 0, centerPointer = getSize().x() / 2, bottomPointer = getSize().x();
+        float topPointer = 0, centerPointer = getFormattedSize().x() / 2, bottomPointer = getFormattedSize().x();
         for (int i = 0; i < getChildren().size(); i++) {
             Node<?> child = getChildren().get(i);
-            child.format();
+            child.computeFixedSizes();
 
             if (child.getAlignment() == Node.Alignment.FIXED_POSITION) continue;
 
@@ -37,7 +50,7 @@ public class HBox extends Stack {
             }
 
             switch (child.getAlignment()) {
-                case CENTER, CENTER_LEFT, CENTER_RIGHT -> centerPointer -= child.getSize().x() / 2;
+                case CENTER, CENTER_LEFT, CENTER_RIGHT -> centerPointer -= child.getFormattedSize().x() / 2;
                 case BOTTOM, BOTTOM_LEFT, BOTTOM_RIGHT -> bottomPointer -= getMinNodeSize(child).x() - margin;
             }
         }
@@ -45,8 +58,11 @@ public class HBox extends Stack {
         //Place children ignoring vertical preference and adjust cursors
         for (int i = 0; i < getChildren().size(); i++) {
             Node<?> child = getChildren().get(i);
+
+            child.layout();
+
             if (child.getAlignment() == Node.Alignment.FIXED_POSITION) continue;
-            Vector2f newPos = getPreferredNodePosition(getSize(), child).mul(0, 1);
+            Vector2f newPos = getPreferredNodePosition(getFormattedSize(), child).mul(0, 1);
 
 
             child.setPosition(newPos.add(
@@ -63,7 +79,7 @@ public class HBox extends Stack {
                 margin = Math.max(nextChild.getMargin().z(), child.getMargin().w());
             }
 
-            float childWidth = child.getSize().x();
+            float childWidth = child.getFormattedSize().x();
             switch (child.getAlignment()) {
                 case TOP, TOP_LEFT, TOP_RIGHT -> topPointer += childWidth + margin;
                 case CENTER, CENTER_LEFT, CENTER_RIGHT -> centerPointer += childWidth + margin;

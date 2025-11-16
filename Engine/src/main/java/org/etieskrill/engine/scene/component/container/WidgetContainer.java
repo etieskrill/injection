@@ -38,9 +38,11 @@ public class WidgetContainer extends Node<WidgetContainer> {
     private final Texture2D chevronIcon;
 
     private final Font titleFont;
-    private @Getter @Setter String text;
+    private @Getter
+    @Setter String text;
 
-    public @Getter final float barHeight = WIDGET_BAR_HEIGHT;
+    public @Getter
+    final float barHeight = WIDGET_BAR_HEIGHT;
 
     public WidgetContainer(@NotNull Node<?> child) {
         setChild(child);
@@ -54,30 +56,62 @@ public class WidgetContainer extends Node<WidgetContainer> {
     }
 
     @Override
-    public void format() { //FIXME bar height is still ignored somehow
-        if (!shouldFormat()) return;
+    public void computeFixedSizes() { //FIXME bar height is still ignored somehow
+        if (!getShouldFormat()) return;
+
+        child.computeFixedSizes();
+
+        setComputedFixedSize(false);
 
         if (collapsed) {
-            if (actualSize.equals(-1, -1))
-                getSize().set(child.getSize().x, getBarHeight());
-            else
-                getSize().set(actualSize.x, getBarHeight());
-        } else {
-            if (actualSize.equals(-1, -1))
-                getSize().set(child.getSize()).add(0, getBarHeight());
-            else
-                getSize().set(actualSize.x, actualSize.y + getBarHeight());
-
-            child.setPosition(getPreferredNodePosition(getSize(), child).add(0, getBarHeight()));
-            child.format();
+            switch (getScaleMode()) {
+                case FIXED -> {
+                    getFormattedSize().set(getSize().x, getBarHeight());
+                    setComputedFixedSize(true);
+                }
+                case CONTENT -> {
+                    if (child.getScaleMode() != ScaleMode.GROW && child.getComputedFixedSize()) {
+                        getFormattedSize().set(child.getFormattedSize().x, getBarHeight());
+                        setComputedFixedSize(true);
+                    } else {
+                        throw new UnsupportedOperationException("TODO: ScaleMode.GROW for WidgetContainer");
+                    }
+                }
+                case GROW -> throw new UnsupportedOperationException("TODO: ScaleMode.GROW for WidgetContainer");
+            }
+            return;
         }
+
+        switch (getScaleMode()) {
+            case FIXED -> {
+                getFormattedSize().set(getSize().x, getSize().y + getBarHeight());
+                setComputedFixedSize(true);
+            }
+            case CONTENT -> {
+                if (child.getScaleMode() != ScaleMode.GROW && child.getComputedFixedSize()) {
+                    getFormattedSize().set(child.getFormattedSize()).add(0f, getBarHeight());
+                    setComputedFixedSize(true);
+                } else {
+                    throw new UnsupportedOperationException("TODO: ScaleMode.GROW for WidgetContainer");
+                }
+            }
+            case GROW -> throw new UnsupportedOperationException("TODO: ScaleMode.GROW for WidgetContainer");
+        }
+    }
+
+    @Override
+    public void layout() {
+        if (!shouldFormat()) return;
+
+        child.layout();
+        child.setPosition(getPreferredNodePosition(getFormattedSize(), child).add(0, getBarHeight()));
     }
 
     @Override
     public void render(@NotNull Batch batch) {
         var position = getAbsolutePosition();
 
-        batch.renderBox(new Vector3f(position, 0), new Vector3f(getSize().x, getBarHeight(), 0), WIDGET_BAR_COLOUR);
+        batch.renderBox(new Vector3f(position, 0), new Vector3f(getFormattedSize().x, getBarHeight(), 0), WIDGET_BAR_COLOUR);
         batch.blit(chevronIcon,
                 new Vector2f(position).add(WIDGET_CHEVRON_MARGIN, WIDGET_CHEVRON_MARGIN),
                 new Vector2f(getBarHeight() - 2 * WIDGET_CHEVRON_MARGIN),
@@ -91,8 +125,8 @@ public class WidgetContainer extends Node<WidgetContainer> {
 
         if (!collapsed) {
             if (getRenderedColour().w != 0) batch.renderBox(
-                    new Vector3f(position, 0),
-                    new Vector3f(getSize(), 0),
+                    new Vector3f(getAbsolutePosition(), 0).add(0f, getBarHeight(), 0f),
+                    new Vector3f(getFormattedSize(), 0).sub(0f, getBarHeight(), 0f),
                     getRenderedColour()
             );
             if (child != null) child.render(batch);
@@ -142,7 +176,7 @@ public class WidgetContainer extends Node<WidgetContainer> {
         if (!doesHit(posX, posY)) return false;
 
         var position = getAbsolutePosition();
-        if (!(posX > position.x + getBarHeight() && posX <= position.x + getSize().x
+        if (!(posX > position.x + getBarHeight() && posX <= position.x + getFormattedSize().x
               && posY > position.y && posY <= position.y + getBarHeight()
         )) return false;
 

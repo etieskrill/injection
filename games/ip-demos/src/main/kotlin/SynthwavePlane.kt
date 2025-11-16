@@ -41,11 +41,11 @@ import org.etieskrill.engine.input.Keys
 import org.etieskrill.engine.input.controller.CursorCameraController
 import org.etieskrill.engine.scene.Scene
 import org.etieskrill.engine.scene.component.Checkbox
-import org.etieskrill.engine.scene.component.Dropdown
-import org.etieskrill.engine.scene.component.container.HBox
 import org.etieskrill.engine.scene.component.Label
 import org.etieskrill.engine.scene.component.Node
 import org.etieskrill.engine.scene.component.PlaybackBar
+import org.etieskrill.engine.scene.component.container.Dropdown
+import org.etieskrill.engine.scene.component.container.HBox
 import org.etieskrill.engine.scene.component.container.Stack
 import org.etieskrill.engine.scene.component.container.VBox
 import org.etieskrill.engine.scene.component.container.WidgetContainer
@@ -183,12 +183,13 @@ class SynthwavePlane() : App(window {
         uiDo { setCurrentSound("synthesised") }
 
         fpsLabel = Label()
-        fpsGraph = Histogram(100, scaleMode = HistogramScaleMode.FIXED, maxValue = 1.1f * window.refreshRate).apply {
+        fpsGraph =
+            Histogram(100, histogramScaleMode = HistogramScaleMode.FIXED, maxValue = 1.1f * window.refreshRate).apply {
             size = Vector2f(400f, 150f)
         }
         fftGraph = Histogram(
             FFT_BINS.toInt(),
-            scaleMode = HistogramScaleMode.FIXED,
+            histogramScaleMode = HistogramScaleMode.FIXED,
             maxValue = 0.5f,
             drawSeparators = false
         ).apply { size = Vector2f(600f, 200f) }
@@ -200,8 +201,7 @@ class SynthwavePlane() : App(window {
                     fftGraph,
                     Dropdown(
                         listOf("synthesised") + ResourceReader.getClasspathItems("audio", true)
-                    ) { _, option -> setCurrentSound(option) }
-                        .apply { size = Vector2f(400f, 150f) },
+                    ) { _, option -> setCurrentSound(option) },
                     HBox(
                         Checkbox(ticked = screenShake) {
                             screenShake = it

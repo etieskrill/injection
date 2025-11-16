@@ -27,20 +27,49 @@ open class Container(child: Node<*>?) : Node<Container>() {
         child?.update(delta)
     }
 
-    override fun format() {
+    override fun computeFixedSizes() {
+        if (!shouldFormat) return
+
+        child?.let { child ->
+            child.computeFixedSizes()
+
+            when (scaleMode) {
+                ScaleMode.FIXED -> {
+                    computedFixedSize = true
+                    formattedSize.set(size)
+                }
+
+                ScaleMode.CONTENT -> {
+                    if (child.scaleMode == ScaleMode.GROW
+                        || child.computedFixedSize == false
+                    ) {
+                        computedFixedSize = false
+                        return
+                    }
+
+                    formattedSize.set(child.formattedSize)
+                    computedFixedSize = true
+                }
+
+                ScaleMode.GROW -> computedFixedSize = false
+            }
+        }
+    }
+
+    override fun layout() {
         if (!shouldFormat()) return
 
         child?.run {
-            format()
-            position = getPreferredNodePosition(size, this)
+            layout()
+            position = getPreferredNodePosition(this@Container.formattedSize, this)
         }
     }
 
     override fun render(batch: Batch) {
         if (renderedColour.w != 0f) {
             batch.renderBox(
-                Vector3f(position, 0f),
-                Vector3f(size, 0f),
+                Vector3f(absolutePosition, 0f),
+                Vector3f(formattedSize, 0f),
                 renderedColour
             )
         }

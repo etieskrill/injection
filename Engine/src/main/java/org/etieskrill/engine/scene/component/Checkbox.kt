@@ -4,6 +4,7 @@ import org.etieskrill.engine.graphics.Batch
 import org.etieskrill.engine.graphics.texture.Textures
 import org.etieskrill.engine.input.Key
 import org.etieskrill.engine.input.Keys
+import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector4f
 
@@ -18,7 +19,9 @@ class Checkbox(
     }
 
     init {
-        colour = Vector4f(0.25f)
+        colour = Vector4f(0.1f)
+        size = Vector2f(16f)
+        scaleMode = ScaleMode.FIXED
     }
 
     override fun handleHit(button: Key, action: Keys.Action, posX: Double, posY: Double): Boolean {
@@ -34,8 +37,8 @@ class Checkbox(
     //TODO handle hover
 
     override fun render(batch: Batch) {
-        if (colour.w != 0f) batch.renderBox(Vector3f(absolutePosition, 0f), Vector3f(size, 0f), colour)
-        if (ticked) batch.blit(sprite, absolutePosition, size, 0f)
+        if (colour.w != 0f) batch.renderBox(Vector3f(absolutePosition, 0f), Vector3f(formattedSize, 0f), colour)
+        if (ticked) batch.blit(sprite, absolutePosition, formattedSize, 0f)
     }
 
 }

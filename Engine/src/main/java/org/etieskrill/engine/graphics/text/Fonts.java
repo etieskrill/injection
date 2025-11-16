@@ -7,10 +7,11 @@ import java.io.IOException;
 
 public final class Fonts {
 
+    public static final int DEFAULT_FONT_SIZE = 24;
     public static final String DEFAULT_FONT = "AGENCYB.TTF";
 
     public static Font getDefault() {
-        return getFontOrDefault(DEFAULT_FONT, 24);
+        return getFontOrDefault(DEFAULT_FONT, DEFAULT_FONT_SIZE);
     }
     
     public static Font getDefault(int pixelHeight) {

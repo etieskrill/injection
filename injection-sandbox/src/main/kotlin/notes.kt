@@ -5,9 +5,9 @@ import org.etieskrill.engine.graphics.camera.OrthographicCamera
 import org.etieskrill.engine.scene.Scene
 import org.etieskrill.engine.scene.component.Button
 import org.etieskrill.engine.scene.component.Checkbox
-import org.etieskrill.engine.scene.component.container.HBox
 import org.etieskrill.engine.scene.component.Label
 import org.etieskrill.engine.scene.component.TextField
+import org.etieskrill.engine.scene.component.container.HBox
 import org.etieskrill.engine.scene.component.container.VBox
 import org.etieskrill.engine.util.ResourceReader
 import org.etieskrill.engine.window.window
@@ -56,6 +56,7 @@ object Noteify : App(window {
         val textField = TextField(pacer).apply {
             changeCallback = { changed = true }
             size = Vector2f(200f)
+//            scaleMode = Node.ScaleMode.GROW //TODO
         }
 
         val root = VBox(
@@ -87,7 +88,7 @@ object Noteify : App(window {
                 Checkbox {
                     logger.info { "Switch wrapping" }
                 }
-            ).apply { size = Vector2f(600f, 150f) },
+            ),
             textField
         )
 

@@ -5,6 +5,7 @@ import org.etieskrill.engine.input.Key;
 import org.etieskrill.engine.input.Keys;
 import org.etieskrill.engine.scene.component.Node;
 import org.jetbrains.annotations.NotNull;
+import org.joml.Vector2f;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,13 +37,83 @@ public class Stack extends Node<Stack> {
     }
 
     @Override
-    public void format() {
-        if (!shouldFormat()) return;
+    public void computeFixedSizes() {
+        if (!getShouldFormat()) return;
 
         for (Node<?> child : children) {
-            child.format();
+            child.computeFixedSizes();
+        }
+
+        switch (getScaleMode()) {
+            case FIXED -> {
+                setComputedFixedSize(true);
+                getFormattedSize().set(getSize());
+                layout();
+            }
+            case CONTENT -> {
+                if (children.stream().anyMatch(child ->
+                        child.getScaleMode() == ScaleMode.GROW
+                        || !child.getComputedFixedSize()
+                )) {
+                    setComputedFixedSize(false);
+                    return;
+                }
+
+                computeBoundingBox();
+                setComputedFixedSize(true);
+                layout();
+            }
+            case GROW -> setComputedFixedSize(false);
+        }
+    }
+
+    /**
+     * Guaranteed to be called only when all children have either fixed or computed size.
+     */
+    protected void computeBoundingBox() {
+        Vector2f min = null;
+        Vector2f max = null;
+
+        for (Node<?> child : children) {
+            if (min == null) {
+                min = new Vector2f(child.getPosition());
+                max = new Vector2f(child.getPosition()).add(child.getSize());
+                continue;
+            }
+
+            min.min(child.getPosition());
+            max.max(new Vector2f(child.getPosition()).add(child.getSize()));
+        }
+
+        if (min != null) {
+            getFormattedSize().set(max.sub(min));
+        } else {
+            getFormattedSize().set(0f);
+        }
+    }
+
+    @Override
+    public void layout() {
+        if (!shouldFormat()) return;
+
+        if (getParent() == null && getScaleMode() != ScaleMode.FIXED)
+            throw new IllegalStateException("Scale mode for root node must be FIXED");
+
+        for (Node<?> child : children) {
+            child.layout();
+            switch (child.getScaleMode()) {
+                case FIXED -> {
+                }
+                case CONTENT -> {
+                    if (!child.getComputedFixedSize()) { //growing child inside
+                        child.getFormattedSize().set(getFormattedSize());
+                    }
+                }
+                case GROW -> child.getFormattedSize().set(getFormattedSize());
+            }
+
             if (child.getAlignment() != Alignment.FIXED_POSITION)
-                child.setPosition(getPreferredNodePosition(getSize(), child));
+                child.setPosition(getPreferredNodePosition(getFormattedSize(), child));
         }
     }
 

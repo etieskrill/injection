@@ -24,11 +24,28 @@ abstract class Node<T : Node<T>> {
             return parentPosition
         }
 
-    var size = Vector2f(100f)
+    var size = Vector2f(-1f)
         set(value) {
             field.set(value)
             invalidate()
         }
+
+    var formattedSize = Vector2f(size) //TODO protecc or internal
+        set(value) {
+            field.set(value)
+        }
+
+    var scaleMode = ScaleMode.CONTENT
+        set(value) {
+            field = value
+            invalidate()
+        }
+
+    enum class ScaleMode {
+        CONTENT, FIXED, GROW
+    }
+
+    var computedFixedSize = false //TODO protecc or internal
 
     var alignment = Alignment.TOP_LEFT
         set(value) {
@@ -78,7 +95,7 @@ abstract class Node<T : Node<T>> {
 
     protected fun ui(block: suspend CoroutineScope.() -> Unit) = uiScope.launch(block = block)
 
-    private var shouldFormat = true
+    protected var shouldFormat = true
 
     enum class Alignment {
         FIXED_POSITION,
@@ -90,7 +107,40 @@ abstract class Node<T : Node<T>> {
 
     open fun update(delta: Double) = Unit
 
-    open fun format() = Unit
+    /**
+     * Computes the [Node]'s [formattedSize] based on its children (if any) given its [scaleMode] and sets the
+     * [computedFixedSize] flag.
+     *
+     * Must be called prior to [layout].
+     *
+     * Works bottom-to-top.
+     *
+     * @see layout
+     */
+    open fun computeFixedSizes() {
+        if (!shouldFormat) return
+
+        when (scaleMode) {
+            ScaleMode.FIXED, ScaleMode.CONTENT -> {
+                computedFixedSize = true
+                formattedSize.set(size)
+            }
+
+            ScaleMode.GROW -> computedFixedSize = false
+        }
+    }
+
+    /**
+     * Partitions the [Node]'s area to assign a size to children (if any) with [ScaleMode.GROW], then positions the
+     * children according to their layout preference.
+     *
+     * Requires [computeFixedSizes] to be called beforehand.
+     *
+     * Works top-to-bottom.
+     *
+     * @see computeFixedSizes
+     */
+    open fun layout() = Unit
 
     open fun render(batch: Batch) = Unit
 
@@ -136,8 +186,8 @@ abstract class Node<T : Node<T>> {
 
     open fun doesHit(posX: Double, posY: Double): Boolean {
         val absPos = absolutePosition
-        return absPos.x() + size.x() >= posX && posX >= absPos.x() &&
-                absPos.y() + size.y() >= posY && posY >= absPos.y()
+        return absPos.x() + formattedSize.x() >= posX && posX >= absPos.x() &&
+                absPos.y() + formattedSize.y() >= posY && posY >= absPos.y()
     }
 
     /**

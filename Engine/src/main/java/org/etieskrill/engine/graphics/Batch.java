@@ -60,14 +60,18 @@ public class Batch {
      */
     public void renderCenteredBox(Vector3fc position, Vector3fc size, Vector4fc colour) {
         shader.setUniform("colour", colour, false);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         renderer.renderBox(position, size, shader, combined);
+        glBlendFunc(GL_ONE, GL_ZERO);
         shader.setUniform("colour", resetColour, false);
     }
 
     public void renderBox(Vector3fc position, Vector3fc size, Vector4fc colour) {
         shader.setUniform("colour", colour, false);
         var topLeftPosition = new Vector3f(size).div(2).add(position);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         renderer.renderBox(topLeftPosition, size, shader, combined);
+        glBlendFunc(GL_ONE, GL_ZERO);
         shader.setUniform("colour", resetColour, false);
     }
 
