@@ -8,6 +8,7 @@ import org.etieskrill.engine.graphics.gl.shader.UniformMappable;
 import org.jetbrains.annotations.Contract;
 import org.joml.*;
 import org.joml.primitives.AABBf;
+import org.joml.primitives.Rayf;
 
 import java.lang.Math;
 import java.util.function.Consumer;
@@ -42,6 +43,8 @@ public abstract class Camera implements UniformMappable {
      * logical {@link Camera#position}.
      */
     private final @Getter Vector3f viewPosition = new Vector3f();
+
+    private final FrustumRayBuilder rayBuilder = new FrustumRayBuilder();
 
     protected boolean dirty;
 
@@ -262,6 +265,33 @@ public abstract class Camera implements UniformMappable {
         //TODO FrustumIntersection for more complicated stuff
 //        FrustumIntersection
         return getCombined().testSphere(center.x(), center.y(), center.z(), radius);
+    }
+
+    /**
+     * Casts a ray in world space from this camera's {@link Camera#position} through the pixel defined by {@code x} and
+     * {@code y} in the {@link Camera#viewportSize viewport}.
+     * <p>
+     * {@code x} and {@code y} must range from 0 to {@link Camera#viewportSize} respectively.
+     *
+     * @param x horizontal viewport pixel coordinate
+     * @param y vertical viewport pixel coordinate
+     * @return world space ray with {@code origin} and {@code direction}
+     */
+    //TODO figure out if this works with ortho too (the docs kinda imply it doesn't)
+    public Rayf castViewportRay(int x, int y) {
+        rayBuilder.set(getCombined());
+
+        var ray = new Rayf();
+
+        var vector = (Vector3f) rayBuilder.origin(new Vector3f());
+        ray.oX = vector.x();
+        ray.oY = vector.y();
+        ray.oZ = vector.z();
+        rayBuilder.dir((float) x / viewportSize.x, 1f - (float) y / viewportSize.y, vector);
+        ray.dX = vector.x();
+        ray.dY = vector.y();
+        ray.dZ = vector.z();
+        return ray;
     }
 
     /**

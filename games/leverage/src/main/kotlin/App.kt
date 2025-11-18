@@ -39,8 +39,6 @@ import org.etieskrill.engine.input.controller.KeyCameraController
 import org.etieskrill.engine.util.Loaders
 import org.etieskrill.engine.window.Window
 import org.etieskrill.engine.window.window
-import org.joml.Math
-import org.joml.Matrix3f
 import org.joml.Vector2f
 import org.joml.Vector2i
 import org.joml.Vector3f
@@ -164,36 +162,24 @@ class App : org.etieskrill.engine.application.App(window {
                 }
 
                 if (button.value == Keys.LEFT_MOUSE.input.value && action!! == Keys.Action.RELEASE) {
-                    val normLocalDir = (Vector2f(posX.toFloat(), posY.toFloat())
-                            / Vector2f(camera.viewportSize)).mul(-2f, 2f).sub(-1f, 1f)
+                    lastRay = camera.castViewportRay(posX.toInt(), posY.toInt())
 
-                    val xFov = camera.fov * (camera.viewportSize.x().toFloat() / camera.viewportSize.y().toFloat())
-                    val rayDirMatrix = camera.rotation[Matrix3f()]
-                        .rotateY(Math.PI_OVER_2_f * normLocalDir.x * (xFov / 180f))
-                        .rotateX(Math.PI_OVER_2_f * normLocalDir.y * (camera.fov / 180f))
+                    entitySystem.entities.forEach {
+                        val transform = it.getComponent<Transform>() ?: return@forEach
+                        val drawable = it.getComponent<Drawable>() ?: return@forEach
 
-                    val ray = Rayf(camera.viewPosition, rayDirMatrix * Vector3f(0f, 0f, 1f))
-                    lastRay = ray
+                        val worldSpaceAABB = AABBf(drawable.model.boundingBox).transform(transform.matrix)
 
-                    entitySystem.entities
-                        .filter { it.hasComponents(Transform::class.java, Drawable::class.java) }
-                        .forEach {
-                            val transform = it.getComponent<Transform>()!!
-                            val drawable = it.getComponent<Drawable>()!!
-
-                            val worldSpaceAABB = AABBf(drawable.model.boundingBox).transform(transform.matrix)
-
-                            if (intersectRayAab(ray, worldSpaceAABB, Vector2f())) {
-                                selectedEntity = it
-                                drawable.isDrawOutline = true
-                            } else {
-                                selectedEntity = null
-                                drawable.isDrawOutline = false
-                            }
-
-                            return true
+                        if (intersectRayAab(lastRay, worldSpaceAABB, Vector2f())) {
+                            selectedEntity = it
+                            drawable.isDrawOutline = true
+                        } else {
+                            selectedEntity = null
+                            drawable.isDrawOutline = false
                         }
 
+                        return true
+                    }
                 }
 
                 return false
