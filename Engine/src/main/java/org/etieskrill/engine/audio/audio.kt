@@ -42,7 +42,7 @@ class AudioDevice private constructor(val name: String, internal val handle: Lon
     }
 }
 
-private class AudioContext(val handle: Long, val caps: ALCapabilities, val listener: AudioListener) : Disposable {
+internal class AudioContext(val handle: Long, val caps: ALCapabilities, val listener: AudioListener) : Disposable {
     companion object {
         fun create(device: AudioDevice): AudioContext {
             val alContext = alcCreateContext(device.handle, null as IntArray?)
@@ -110,7 +110,7 @@ abstract class AudioSource internal constructor(
         get() = checkNotDisposed { alGetSourcef(handle, AL_GAIN) }
         set(value) {
             checkNotDisposed {}
-            require(gain >= 0) { "Gain must be positive" }
+            require(value >= 0) { "Gain must be positive" }
             alSourcef(handle, AL_GAIN, value)
         }
 
@@ -151,13 +151,13 @@ class AudioListener {
     var direction: Vector3fc = Vector3f(0f)
         set(value) {
             field = value
-            setOrientation(direction, up)
+            setOrientation(field, up)
         }
 
     var up: Vector3fc = Vector3f(0f, 1f, 0f)
         set(value) {
             field = value
-            setOrientation(direction, up)
+            setOrientation(direction, field)
         }
 
     private val orientationBuffer = createFloatBuffer(6)
@@ -181,12 +181,12 @@ object Audio : Disposable {
         return devices
     }
 
-    private val sources = mutableMapOf<AudioContext, MutableList<AudioSource>>()
-    private val buffers = mutableMapOf<AudioContext, MutableList<AudioBuffer>>()
-    private lateinit var currentDevice: AudioDevice
-    private val devices: MutableList<AudioDevice> = mutableListOf()
-    private lateinit var currentContext: AudioContext
-    private val defaultContexts: MutableMap<AudioDevice, AudioContext> = mutableMapOf()
+    internal val sources = mutableMapOf<AudioContext, MutableList<AudioSource>>()
+    internal val buffers = mutableMapOf<AudioContext, MutableList<AudioBuffer>>()
+    internal lateinit var currentDevice: AudioDevice
+    internal val devices: MutableList<AudioDevice> = mutableListOf()
+    internal lateinit var currentContext: AudioContext
+    internal val defaultContexts: MutableMap<AudioDevice, AudioContext> = mutableMapOf()
 
     fun useAudioDevice(device: AudioDevice) {
         currentDevice = device

@@ -150,7 +150,7 @@ public class Game {
         window.addCursorInputs(new CursorCameraController(camera));
 
         cubeMapShader = new Shaders.CubeMapShader();
-        skybox = new CubeMapModel("space");
+        skybox = new CubeMapModel("textures/cubemaps/space");
 
         vampy = Loaders.ModelLoader.get().load("vampy", () ->
                 new Model.Builder("mixamo_walk_forward_skinned_vampire.dae")

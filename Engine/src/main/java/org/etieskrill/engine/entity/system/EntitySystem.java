@@ -52,6 +52,10 @@ public class EntitySystem {
         return entity;
     }
 
+    public @NotNull ArrayList<@NotNull Entity> getEntities() {
+        return entities;
+    }
+
     public boolean entityExists(@Nullable Entity entity) {
         return entities.contains(entity);
     }

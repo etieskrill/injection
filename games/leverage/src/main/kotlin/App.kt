@@ -1,43 +1,62 @@
 package io.github.etieskrill.games.leverage
 
-import org.etieskrill.engine.application.GameApplication
+import io.github.etieskrill.injection.extension.shader.dsl.ColourRenderTarget
+import io.github.etieskrill.injection.extension.shader.dsl.PureShaderBuilder
+import io.github.etieskrill.injection.extension.shader.dsl.VertexData
+import io.github.etieskrill.injection.extension.shader.dsl.rt
+import io.github.etieskrill.injection.extension.shader.mat4
+import io.github.etieskrill.injection.extension.shader.vec3
+import io.github.etieskrill.injection.extension.shader.vec4
+import org.etieskrill.engine.entity.Entity
 import org.etieskrill.engine.entity.component.DirectionalLightComponent
 import org.etieskrill.engine.entity.component.Drawable
 import org.etieskrill.engine.entity.component.PointLightComponent
 import org.etieskrill.engine.entity.component.Transform
+import org.etieskrill.engine.entity.getComponent
 import org.etieskrill.engine.entity.service.impl.DirectionalShadowMappingService
 import org.etieskrill.engine.entity.service.impl.PointShadowMappingService
 import org.etieskrill.engine.entity.service.impl.RenderService
-import org.etieskrill.engine.graphics.Batch
 import org.etieskrill.engine.graphics.camera.OrthographicCamera
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera
 import org.etieskrill.engine.graphics.data.DirectionalLight
 import org.etieskrill.engine.graphics.data.PointLight
 import org.etieskrill.engine.graphics.gl.framebuffer.DirectionalShadowMap
 import org.etieskrill.engine.graphics.gl.framebuffer.PointShadowMapArray
+import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
 import org.etieskrill.engine.graphics.gl.shader.impl.BlitDepthShader
 import org.etieskrill.engine.graphics.gl.shader.impl.DepthCubeMapArrayShader
 import org.etieskrill.engine.graphics.model.CubeMapModel
 import org.etieskrill.engine.graphics.model.Model
+import org.etieskrill.engine.graphics.pipeline.AlphaMode
+import org.etieskrill.engine.graphics.pipeline.Pipeline
+import org.etieskrill.engine.graphics.pipeline.PipelineConfig
+import org.etieskrill.engine.graphics.pipeline.PrimitiveType
+import org.etieskrill.engine.input.CursorInputAdapter
+import org.etieskrill.engine.input.Key
 import org.etieskrill.engine.input.Keys
 import org.etieskrill.engine.input.controller.CursorCameraController
 import org.etieskrill.engine.input.controller.KeyCameraController
-import org.etieskrill.engine.scene.Scene
-import org.etieskrill.engine.scene.component.Container
-import org.etieskrill.engine.scene.element.TranslateGizmo
 import org.etieskrill.engine.util.Loaders
 import org.etieskrill.engine.window.Window
 import org.etieskrill.engine.window.window
+import org.joml.Math
+import org.joml.Matrix3f
 import org.joml.Vector2f
 import org.joml.Vector2i
 import org.joml.Vector3f
+import org.joml.Vector4f
+import org.joml.plus
+import org.joml.primitives.AABBf
+import org.joml.primitives.Intersectionf.intersectRayAab
+import org.joml.primitives.Rayf
+import org.joml.times
 import org.lwjgl.opengl.GL30C.*
 
 fun main() {
     App().run()
 }
 
-class App : GameApplication(window {
+class App : org.etieskrill.engine.application.App(window {
     size = Window.WindowSize.LARGEST_FIT
     mode = Window.WindowMode.BORDERLESS
     vSync = true
@@ -54,19 +73,22 @@ class App : GameApplication(window {
 
     val gizmoCamera = OrthographicCamera(Vector2i(1, 1))
 
+    val rayPipeline = Pipeline(
+        2,
+        PipelineConfig(alphaMode = AlphaMode.SOURCE_ALPHA, primitiveType = PrimitiveType.LINES),
+        LineShader(),
+        null
+    )
+
+    var lastRay: Rayf? = null
+    var selectedEntity: Entity? = null
+
     override fun init() {
         val shipModel = Loaders.ModelLoader.get().load("human-bb") { Model.ofFile("hooman-bb.glb") }
 
-        val bbDrawable = entitySystem.createEntity()
+        entitySystem.createEntity()
             .withComponent(Transform())
-            .addComponent(Drawable(shipModel).apply { isDrawOutline = true })
-        window.addKeyInputs { type, key, action, modifiers ->
-            if (key == Keys.Q.input.value && action == Keys.Action.RELEASE.glfwAction) {
-                bbDrawable.isDrawOutline = !bbDrawable.isDrawOutline
-                true
-            }
-            false
-        }
+            .addComponent(Drawable(shipModel))
 
         shadowMap = DirectionalShadowMap.generate(Vector2i(2048))
 
@@ -126,21 +148,69 @@ class App : GameApplication(window {
         })
 
         window.addKeyInputs(KeyCameraController(camera))
-        window.addCursorInputs(CursorCameraController(camera))
+        val cursorCameraController = CursorCameraController(camera).apply { disable() }
+        window.addCursorInputs(cursorCameraController)
 
-        window.cursor.disable()
+        window.addCursorInputs(object : CursorInputAdapter {
+            override fun invokeClick(button: Key?, action: Keys.Action?, posX: Double, posY: Double): Boolean {
+                if (button!!.value == Keys.MIDDLE_MOUSE.input.value) {
+                    when (action!!) {
+                        Keys.Action.PRESS -> cursorCameraController.enable()
+                        Keys.Action.RELEASE -> cursorCameraController.disable()
+                        Keys.Action.REPEAT -> {}
+                    }
 
-        window.scene = Scene(
-            Batch(renderer, window.currentSize),
-            Container(TranslateGizmo {}),
-            gizmoCamera.apply {
-                near = -10000f
-                far = 10000f
+                    return true
+                }
 
-                setOrbit(true)
-                setOrbitDistance(10f)
+                if (button.value == Keys.LEFT_MOUSE.input.value && action!! == Keys.Action.RELEASE) {
+                    val normLocalDir = (Vector2f(posX.toFloat(), posY.toFloat())
+                            / Vector2f(camera.viewportSize)).mul(-2f, 2f).sub(-1f, 1f)
+
+                    val xFov = camera.fov * (camera.viewportSize.x().toFloat() / camera.viewportSize.y().toFloat())
+                    val rayDirMatrix = camera.rotation[Matrix3f()]
+                        .rotateY(Math.PI_OVER_2_f * normLocalDir.x * (xFov / 180f))
+                        .rotateX(Math.PI_OVER_2_f * normLocalDir.y * (camera.fov / 180f))
+
+                    val ray = Rayf(camera.viewPosition, rayDirMatrix * Vector3f(0f, 0f, 1f))
+                    lastRay = ray
+
+                    entitySystem.entities
+                        .filter { it.hasComponents(Transform::class.java, Drawable::class.java) }
+                        .forEach {
+                            val transform = it.getComponent<Transform>()!!
+                            val drawable = it.getComponent<Drawable>()!!
+
+                            val worldSpaceAABB = AABBf(drawable.model.boundingBox).transform(transform.matrix)
+
+                            if (intersectRayAab(ray, worldSpaceAABB, Vector2f())) {
+                                selectedEntity = it
+                                drawable.isDrawOutline = true
+                            } else {
+                                selectedEntity = null
+                                drawable.isDrawOutline = false
+                            }
+
+                            return true
+                        }
+
+                }
+
+                return false
             }
-        )
+        })
+
+//        window.scene = Scene(
+//            Batch(renderer, window.currentSize),
+//            Container(TranslateGizmo {}),
+//            gizmoCamera.apply {
+//                near = -10000f
+//                far = 10000f
+//
+//                setOrbit(true)
+//                setOrbitDistance(10f)
+//            }
+//        )
     }
 
     override fun loop(delta: Double) {
@@ -166,5 +236,35 @@ class App : GameApplication(window {
 
         shadowMap.texture.bind()
         glTexParameteri(shadowMap.texture.target.gl(), GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE)
+
+        lastRay?.run {
+            rayPipeline.shader.apply {
+                pointA = Vector3f(oX, oY, oZ)
+                pointB = Vector3f(oX, oY, oZ) + Vector3f(dX, dY, dZ) * 10f
+                colour = Vector4f(1f, 0f, 0f, 0.5f)
+                combined = camera.combined
+            }
+            renderer.render(rayPipeline)
+        }
+    }
+}
+
+class LineShader : PureShaderBuilder<VertexData, ColourRenderTarget>(
+    object : ShaderProgram(listOf("Line.glsl")) {}
+) {
+    var pointA by uniform<vec3>()
+    var pointB by uniform<vec3>()
+
+    var colour by uniform<vec4>()
+
+    var combined by uniform<mat4>()
+
+    override fun program() {
+//        vertex { VertexData(vec4(if (vertexID == 0) pointA else pointB, 1)) } //FIXME ruh oh
+        vertex {
+            val point = if (vertexID == 0) pointA else pointB
+            VertexData(combined * vec4(point, 1))
+        }
+        fragment { ColourRenderTarget(colour.rt) }
     }
 }
