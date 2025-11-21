@@ -19,9 +19,9 @@ class ShipCollisionService : Service {
         val stats = targetEntity.getComponent<ShipStats>()!!
 
         collider.collisions.forEach {
-            val damage = it.speed * it.entity.getComponent<ShipStats>()!!.rammingDamageModifier *
-                    min(1f, it.entity.getComponent<NavalTransform>()!!.mass / transform.mass)
-            stats.currentHealth -= (10 * damage * damage).toInt()
+            val damage = it.speed * min(1f, it.entity.getComponent<NavalTransform>()!!.mass / transform.mass)
+            val rammingDamageModifier = it.entity.getComponent<ShipStats>()!!.rammingDamageModifier
+            stats.currentHealth -= (10 * rammingDamageModifier * damage * damage).toInt()
         }
     }
 

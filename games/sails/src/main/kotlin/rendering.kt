@@ -4,6 +4,9 @@ import io.github.etieskrill.injection.extension.shader.dsl.ColourRenderTarget
 import io.github.etieskrill.injection.extension.shader.dsl.PureShaderBuilder
 import io.github.etieskrill.injection.extension.shader.dsl.VertexData
 import io.github.etieskrill.injection.extension.shader.dsl.rt
+import io.github.etieskrill.injection.extension.shader.dsl.std.rotationMat2
+import io.github.etieskrill.injection.extension.shader.float
+import io.github.etieskrill.injection.extension.shader.vec2
 import io.github.etieskrill.injection.extension.shader.vec3
 import io.github.etieskrill.injection.extension.shader.vec4
 import org.etieskrill.engine.entity.Entity
@@ -22,6 +25,7 @@ import org.etieskrill.engine.graphics.pipeline.PrimitiveType
 import org.etieskrill.engine.graphics.text.Fonts
 import org.etieskrill.engine.graphics.texture.Textures
 import org.etieskrill.engine.window.Window
+import org.joml.Math.PI_f
 import org.joml.Matrix2f
 import org.joml.Vector2f
 import org.joml.Vector2fc
@@ -45,6 +49,8 @@ class ShipRenderService(
 
     private val shipSprite = Textures.ofFile("textures/ship-icon.png")
     private val pipeline = PostPassPipeline(BlitShader(), null, opaque = false, depthTest = false)
+
+    private val hardpointPipeline = PostPassPipeline(HardpointShader(), null, opaque = false, depthTest = false)
 
     private val batch = Batch(renderer, textRenderer, window.currentSize).apply {
         combined = OrthographicCamera(window.currentSize).apply {
@@ -89,6 +95,7 @@ class ShipRenderService(
 
             ShipStats.State.DEAD -> return
         }
+
         pipeline.shader.apply {
             sprite = shipSprite
             useSpriteColour = true
@@ -100,8 +107,25 @@ class ShipRenderService(
 
             windowSize = Vector2f(window.currentSize)
         }
-
         renderer.render(pipeline)
+
+        for ((hardpoint, weapon) in stats.hardpoints) {
+            hardpointPipeline.shader.apply {
+                position = Matrix2f().rotation(PI_f - transform.rotation) * hardpoint.position +
+                        ((transform.position / window.currentSize) * Vector2f(-2f, 2f) - Vector2f(-1f, 1f)) * Vector2f(
+                    window.currentSize.x().toFloat() / window.currentSize.y().toFloat(), 1f
+                )
+
+                angle = hardpoint.angle + Math.toDegrees(PI_f - transform.rotation.toDouble()).toFloat()
+                angleLimit = hardpoint.angleLimit
+
+                colour = Vector4f(1f, 0f, 0f, 0.2f)
+
+                windowSize = window.currentSize.toFloat()
+            }
+            renderer.render(hardpointPipeline)
+            println("rendering $hardpoint")
+        }
 
         val healthBarPosition = transform.position + Vector2f(-25f, -5f * sqrt(transform.size))
         batch.renderBackground(healthBarPosition, Vector2f(50f, 5f), Colour.BLACK, 0f, Colour.BLACK)
@@ -151,6 +175,55 @@ fun Vector2ic.toFloat() = Vector2f(x().toFloat(), y().toFloat())
 
 operator fun Vector2fc.minus(other: Vector2ic) = Vector2f(x() - other.x(), y() - other.y())
 operator fun Vector2fc.div(other: Vector2ic) = Vector2f(x() / other.x(), y() / other.y())
+
+class HardpointShader : PureShaderBuilder<VertexData, ColourRenderTarget>( //TODO object for transpiler
+    object : ShaderProgram(listOf("Hardpoint.glsl")) {}
+) {
+    val vertices by const(arrayOf(vec2(-1, -1), vec2(1, -1), vec2(-1, 1), vec2(1, 1)))
+
+    var position by uniform<vec2>()
+    var angle by uniform<float>()
+    var angleLimit by uniform<float>()
+
+    var colour by uniform<vec4>()
+
+    var windowSize by uniform<vec2>()
+
+    override fun program() {
+        vertex { VertexData(vec4(vertices[vertexID], 0, 1)) }
+        fragment {
+            val pos = it.position.xy
+            pos.x = pos.x * (windowSize.x / windowSize.y)
+
+            val rotAngle = angle * (Math.PI.toFloat() / 180f)
+            pos.xy = rotationMat2(rotAngle) * (pos + position)
+
+            val angle = clamp(angleLimit, 0.001, 179.999f)
+            val triangle: Float
+            val factor = tan((90f - angle) * (Math.PI / 180f))
+
+            if (angle <= 90f) {
+                if (pos.y > 0 && factor * abs(pos.x) / pos.y < 1) {
+                    triangle = 1f
+                } else {
+                    triangle = 0f
+                }
+            } else {
+                if (pos.y < 0 && factor * abs(pos.x) / pos.y < 1) {
+                    triangle = 0f
+                } else {
+                    triangle = 1f
+                }
+            }
+
+            val circle = if (length(pos) < 1) 1f else 0f
+
+            val cone = if (triangle == 1f && circle == 1f) 1f else 0f
+
+            ColourRenderTarget((vec4(cone) * colour).rt)
+        }
+    }
+}
 
 class LineShader : PureShaderBuilder<VertexData, ColourRenderTarget>(
     object : ShaderProgram(listOf("Line.glsl")) {}

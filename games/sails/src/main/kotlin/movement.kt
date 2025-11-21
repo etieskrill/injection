@@ -32,7 +32,8 @@ class ShipPhysicsService : Service {
         entities: List<Entity>,
         delta: Double
     ) {
-        if (targetEntity.getComponent<ShipStats>()!!.state != ShipStats.State.ALIVE) return
+        val stats = targetEntity.getComponent<ShipStats>()!!
+        if (stats.state == ShipStats.State.DEAD) return
 
         val transform = targetEntity.getComponent(NavalTransform::class.java)!!
         val inputDirection = targetEntity.getComponent(InputDirection::class.java)!!
@@ -41,7 +42,10 @@ class ShipPhysicsService : Service {
         inputDirection.direction.min(Vector2f(1f))
 
         updatePosition(transform, inputDirection, delta)
-        targetEntity.getComponent<ShipCollider>()?.also { doCollisions(targetEntity, transform, it, entities, delta) }
+        if (stats.state == ShipStats.State.ALIVE) {
+            targetEntity.getComponent<ShipCollider>()
+                ?.also { doCollisions(targetEntity, transform, it, entities, delta) }
+        }
     }
 
     private fun updatePosition(transform: NavalTransform, inputDirection: InputDirection, delta: Double) {
@@ -113,7 +117,8 @@ class ShipPhysicsService : Service {
             if (distance.length() > (transform.size + otherTransform.size) * arbitrarySizeCorrectionFactor) return@forEach
 
             val overlap = (transform.size + otherTransform.size) * arbitrarySizeCorrectionFactor - distance.length()
-            val force = distance.normalize(Vector2f()).mul((delta * delta).toFloat() * 1000 * overlap)
+            val force =
+                distance.max(Vector2f(0.1f), Vector2f()).normalize().mul((delta * delta).toFloat() * 1000 * overlap)
             transform.position.plusAssign(force * (otherTransform.mass / transform.mass))
             otherTransform.position.minusAssign(force * (transform.mass / otherTransform.mass))
 

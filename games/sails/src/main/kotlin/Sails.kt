@@ -5,9 +5,9 @@ import io.github.etieskrill.injection.extension.shader.dsl.PureShaderBuilder
 import io.github.etieskrill.injection.extension.shader.dsl.VertexData
 import io.github.etieskrill.injection.extension.shader.dsl.rt
 import io.github.etieskrill.injection.extension.shader.vec2
-import io.github.etieskrill.injection.extension.shader.vec4
 import org.etieskrill.engine.application.App
 import org.etieskrill.engine.entity.Entity
+import org.etieskrill.engine.entity.system.EntitySystem
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
 import org.etieskrill.engine.input.KeyInputManager
 import org.etieskrill.engine.window.Window
@@ -65,7 +65,9 @@ class ShipStats(
 
     var state: State = State.ALIVE,
 
-    val rammingDamageModifier: Float = 1f
+    val rammingDamageModifier: Float = 0.5f,
+
+    val hardpoints: Map<Hardpoint, Weapon?> = mapOf()
 ) {
     var currentHealth: Int = currentHealth
         set(value) {
@@ -84,7 +86,24 @@ class ShipStats(
     }
 }
 
+data class Hardpoint(
+    val position: Vector2f,
+    val angle: Float,
+    val angleLimit: Float,
+    val turnSpeed: Float
+)
+
+open class Weapon(
+    val damage: Float,
+    val muzzleVelocity: Float,
+    val projectileDrag: Float,
+    val projectileVelocity: Float,
+    val range: Float,
+    val angle: Float,
+)
+
 object Game : App(window {
+    mode = Window.WindowMode.BORDERLESS
     size = Window.WindowSize.FHD
     samples = 4
 }) {
@@ -93,36 +112,69 @@ object Game : App(window {
     init {
         renderer.setClearColour(Vector4f(25f, 100f, 200f, 255f).div(255f))
 
-        playerShip = entitySystem.createEntity()
-            .withComponent(
-                NavalTransform(
-                    position = Vector2f(window.currentSize.div(2f, Vector2i())),
-                    rotation = Math.PI_f
+        playerShip = entitySystem.configureEntity {
+            +NavalTransform(
+                position = Vector2f(window.currentSize.div(2f, Vector2i())),
+                rotation = Math.PI_f
+            )
+            +InputDirection()
+            +PlayerShipController()
+            +ShipCollider()
+            +ShipStats(
+                100, hardpoints = mapOf(
+                    Hardpoint(Vector2f(0.04f, -0.03f + 0.02f), 90f, 15f, 1f) to null,
+                    Hardpoint(Vector2f(0.04f, 0f + 0.02f), 90f, 15f, 1f) to null,
+                    Hardpoint(Vector2f(0.04f, 0.03f + 0.02f), 90f, 15f, 1f) to null,
+                    Hardpoint(Vector2f(-0.04f, -0.03f + 0.02f), -90f, 15f, 1f) to null,
+                    Hardpoint(Vector2f(-0.04f, 0f + 0.02f), -90f, 15f, 1f) to null,
+                    Hardpoint(Vector2f(-0.04f, 0.03f + 0.02f), -90f, 15f, 1f) to null,
                 )
             )
-            .withComponent(InputDirection())
-            .withComponent(PlayerShipController())
-            .withComponent(ShipCollider())
-            .withComponent(ShipStats(100))
+        }
 
-        entitySystem.createEntity()
-            .withComponent(
-                NavalTransform(
-                    Vector2f(window.currentSize.div(4f, Vector2i()).mul(2, 1)),
-                    size = 80f,
-                    mass = 70f
-                )
+        entitySystem.configureEntity {
+            +NavalTransform(
+                Vector2f(window.currentSize.div(4f, Vector2i()).mul(2, 1)),
+                size = 80f,
+                mass = 70f
             )
-            .withComponent(InputDirection())
-            .withComponent(EnemyShipController())
-            .withComponent(ShipCollider())
-            .withComponent(ShipStats(50))
+            +InputDirection()
+            +EnemyShipController()
+            +ShipCollider()
+            +ShipStats(50)
+        }
 
-        entitySystem.addService(PlayerShipControllerService(window))
-        entitySystem.addService(EnemyShipControllerService())
-        entitySystem.addService(ShipPhysicsService())
-        entitySystem.addService(ShipCollisionService())
-        entitySystem.addService(ShipRenderService(renderer, renderer, window))
+        entitySystem.configureEntity {
+            +NavalTransform(
+                Vector2f(window.currentSize.div(4f, Vector2i()).mul(2, 1)).sub(100f, 0f),
+                size = 80f,
+                mass = 70f
+            )
+            +InputDirection()
+            +EnemyShipController()
+            +ShipCollider()
+            +ShipStats(50)
+        }
+
+        entitySystem.configureEntity {
+            +NavalTransform(
+                Vector2f(window.currentSize.div(4f, Vector2i()).mul(2, 1)).add(100f, 0f),
+                size = 80f,
+                mass = 70f
+            )
+            +InputDirection()
+            +EnemyShipController()
+            +ShipCollider()
+            +ShipStats(50)
+        }
+
+        entitySystem.addServices(
+            PlayerShipControllerService(window),
+            EnemyShipControllerService(),
+            ShipPhysicsService(),
+            ShipCollisionService(),
+            ShipRenderService(renderer, renderer, window)
+        )
     }
 
 //    private val islandsPipeline = PostPassPipeline(IslandShader(), null, opaque = false, depthTest = false)
@@ -135,6 +187,12 @@ object Game : App(window {
 //        renderer.render(islandsPipeline)
     }
 }
+
+class EntityBuilder(val entity: Entity) {
+    operator fun Any.unaryPlus() = entity.withComponent(this)!!
+}
+
+fun EntitySystem.configureEntity(block: EntityBuilder.() -> Unit) = EntityBuilder(createEntity()).apply(block).entity
 
 class IslandShader : PureShaderBuilder<VertexData, ColourRenderTarget>(
     object : ShaderProgram(listOf("Island.glsl"), false) {}

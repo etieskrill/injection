@@ -109,6 +109,7 @@ open class GlslReceiver {
     operator fun Number.times(s: Number): Number = error()
     operator fun Number.times(v: vec2): vec2 = error()
     operator fun Number.times(v: vec3): vec3 = error()
+    operator fun Number.times(v: vec4): vec4 = error()
     operator fun Number.div(s: Number): Number = error()
     operator fun Number.rem(n: Number): Number = error()
     operator fun Number.unaryMinus(): Number = error()
@@ -195,10 +196,12 @@ open class GlslReceiver {
 
     operator fun vec4.plus(s: Number): vec4 = error()
     operator fun vec4.plus(v: vec4): vec4 = error()
+    operator fun vec4.minus(s: Number): vec4 = error()
     operator fun vec4.minus(v: vec4): vec4 = error()
     operator fun vec4.times(v: Number): vec4 = error()
     operator fun vec4.times(v: vec4): vec4 = error()
     operator fun vec4.div(s: Number): vec4 = error()
+    operator fun vec4.div(v: vec4): vec4 = error()
 
     operator fun mat2.times(v: vec2): vec2 = error()
 
@@ -231,8 +234,10 @@ open class GlslReceiver {
 
     fun sin(s: Number): float = error()
 
-    fun cos(n: Number): float = error()
-    fun acos(n: Number): float = error()
+    fun cos(s: Number): float = error()
+    fun acos(s: Number): float = error()
+
+    fun tan(s: Number): float = error()
 
     fun smoothstep(a: Number, b: Number, t: Number): float = error()
     fun smoothstep(a: Number, b: Number, t: vec2): vec2 = error()
