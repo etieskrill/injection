@@ -17,6 +17,7 @@ import org.etieskrill.engine.graphics.gl.renderer.GLRenderer;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shader.impl.*;
 import org.etieskrill.engine.graphics.model.CubeMapModel;
+import org.etieskrill.engine.graphics.pipeline.PostPassPipeline;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.texture.Textures;
@@ -67,7 +68,11 @@ public class RenderService implements Service, Disposable {
     @Nullable CubeMapModel skybox;
     private final SkyboxShader skyboxShader;
 
-    private final OutlineShader outlineShader;
+    private final Texture2D outlineTexture;
+    private final Texture2D outlineStencilTexture;
+    private final FrameBuffer outlineFrameBuffer;
+    private final PostPassPipeline<FullScreenColourShader> fullScreenPipeline;
+    private final PostPassPipeline<DilationOutlineShader> outlinePipeline;
 
     private @Accessors(fluent = true)
     @Setter boolean blur = true;
@@ -101,7 +106,20 @@ public class RenderService implements Service, Disposable {
 
         this.skyboxShader = new SkyboxShader();
 
-        this.outlineShader = new OutlineShader();
+        this.outlineTexture = new Texture2D.BlankBuilder(windowSize)
+                .setFormat(AbstractTexture.Format.SRGBA)
+                .setWrapping(AbstractTexture.Wrapping.CLAMP_TO_BORDER)
+                .build();
+        this.outlineStencilTexture = new Texture2D.BlankBuilder(windowSize)
+                .setFormat(AbstractTexture.Format.DEPTH_STENCIL)
+                .build();
+        this.outlineFrameBuffer = new FrameBuffer.Builder(windowSize)
+                .attach(outlineTexture, COLOUR0)
+                .attach(outlineStencilTexture, BufferAttachmentType.DEPTH_STENCIL)
+                .build();
+
+        this.fullScreenPipeline = new PostPassPipeline<>(new FullScreenColourShader(), outlineFrameBuffer, false, false);
+        this.outlinePipeline = new PostPassPipeline<>(new DilationOutlineShader(), frameBuffer, false, false);
     }
 
     private record ShaderParams(
@@ -141,6 +159,12 @@ public class RenderService implements Service, Disposable {
 
     @Override
     public void preProcess(List<Entity> entities) {
+        glDepthMask(true); //glClear does not write depth/stencil when mask is disabled (duh)
+        glStencilMask(0xFF);
+        outlineFrameBuffer.clear();
+
+        //TODO either revert to previously bound framebuffer, or use dsa
+
         frameBuffer.clear();
         frameBuffer.bind();
         renderer.prepare();
@@ -214,13 +238,16 @@ public class RenderService implements Service, Disposable {
             return;
         }
 
+        glEnable(GL_DEPTH_TEST);
+
         if (drawable.isDrawOutline()) {
-            glDepthMask(false);
-            glDisable(GL_CULL_FACE);
-            //FIXME and now the lighting's fucked - probs some blending issue, depth should *NOT* be written
-            renderer.render(transform, drawable.getModel(), (ShaderProgram) outlineShader.getShader(), camera);
-            glDepthMask(true);
-            glEnable(GL_CULL_FACE);
+            glEnable(GL_STENCIL_TEST);
+            glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+            glStencilFunc(GL_ALWAYS, 0xFF, 0xFF);
+            glStencilMask(0xFF);
+        } else {
+            glDisable(GL_STENCIL_TEST);
+            glStencilMask(0x00);
         }
 
         ShaderProgram shader = getConfiguredShader(targetEntity, drawable);
@@ -276,11 +303,32 @@ public class RenderService implements Service, Disposable {
             }
         }
 
+        drawOutlines();
+
         frameBuffer.unbind();
         if (customViewport != null) {
             glViewport(customViewport.x(), customViewport.y(), customViewport.z(), customViewport.w());
         }
         gaussBlurPostBuffers.renderToScreen(blur);
+    }
+
+    private void drawOutlines() {
+        outlineStencilTexture.bind();
+        glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, 0, 0, windowSize.x(), windowSize.y(), 0);
+
+        glEnable(GL_STENCIL_TEST);
+        glStencilFunc(GL_EQUAL, 0xFF, 0xFF);
+        glStencilMask(0x00);
+
+        fullScreenPipeline.getShader().setColour(new Vector4f(1f, 0f, 0f, 1f));
+        renderer.render(fullScreenPipeline);
+
+        glStencilFunc(GL_NOTEQUAL, 0xFF, 0xFF);
+
+        outlinePipeline.getShader().setOutline(outlineTexture);
+        renderer.render(outlinePipeline);
+
+        glDisable(GL_STENCIL_TEST);
     }
 
     @Override

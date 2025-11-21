@@ -13,8 +13,7 @@ import java.nio.ByteBuffer;
 import static org.etieskrill.engine.graphics.texture.Textures.NR_BITS_PER_COLOUR_CHANNEL;
 import static org.etieskrill.engine.graphics.texture.Textures.loadFileOrDefault;
 import static org.lwjgl.opengl.GL11C.GL_TEXTURE_2D;
-import static org.lwjgl.opengl.GL30C.GL_FRAMEBUFFER;
-import static org.lwjgl.opengl.GL30C.glFramebufferTexture2D;
+import static org.lwjgl.opengl.GL30C.*;
 import static org.lwjgl.opengl.GL33C.GL_UNSIGNED_BYTE;
 import static org.lwjgl.opengl.GL33C.glTexImage2D;
 import static org.lwjgl.stb.STBImage.stbi_image_free;
@@ -129,8 +128,9 @@ public class Texture2D extends AbstractTexture implements FrameBufferAttachment,
 
             Texture2D texture = new Texture2D(this);
             texture.bind(0);
+            var texelFormat = format != Format.DEPTH_STENCIL ? GL_UNSIGNED_BYTE : GL_UNSIGNED_INT_24_8;
             glTexImage2D(target.gl(), 0, format.toGlInternalFormat(), pixelSize.x(), pixelSize.y(),
-                    0, format.toGLFormat(), GL_UNSIGNED_BYTE, textureData);
+                    0, format.toGLFormat(), texelFormat, textureData);
 
             return texture;
         }

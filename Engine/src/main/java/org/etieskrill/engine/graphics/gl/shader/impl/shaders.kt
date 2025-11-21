@@ -135,3 +135,46 @@ class OutlineShader : ShaderBuilder<OutlineShader.Vertex, VertexData, ColourRend
         }
     }
 }
+
+class FullScreenColourShader : PureShaderBuilder<VertexData, ColourRenderTarget>(
+    object : ShaderProgram(listOf("FullScreenColour.glsl")) {}
+) {
+    val vertices by const(arrayOf(vec2(-1, -1), vec2(1, -1), vec2(-1, 1), vec2(1, 1)))
+
+    var colour by uniform<vec4>()
+
+    override fun program() {
+        vertex { VertexData(vec4(vertices[vertexID], 0, 1)) }
+        fragment { ColourRenderTarget(colour.rt) }
+    }
+}
+
+class DilationOutlineShader : PureShaderBuilder<VertexData, ColourRenderTarget>(
+    object : ShaderProgram(listOf("DilationOutline.glsl")) {}
+) {
+    val vertices by const(arrayOf(vec2(-1, -1), vec2(1, -1), vec2(-1, 1), vec2(1, 1)))
+
+    var outline by uniform<sampler2D>()
+
+    override fun program() {
+        vertex { VertexData(vec4(vertices[vertexID], 0, 1)) }
+        fragment {
+            //TODO maybe numeric types have a point after all - or just cast everything to float unless explicit
+            val texCoord = vec2(it.position.x, it.position.y) / 2.0 + 0.5
+            val texSize = vec2(textureSize(outline, 0))
+
+            var fragColour = vec4(0)
+            val maskSize = 7
+            for (y in -((maskSize - 1) / 2)..((maskSize - 1) / 2)) {
+                for (x in -((maskSize - 1) / 2)..((maskSize - 1) / 2)) {
+                    val offset = vec2(x, y) / texSize
+                    fragColour = max(fragColour, texture(outline, texCoord + offset))
+//                    fragColour += texture(outline, texCoord + offset)
+                }
+            }
+//            fragColour /= maskSize*maskSize
+
+            ColourRenderTarget(fragColour.rt)
+        }
+    }
+}

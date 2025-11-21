@@ -166,6 +166,7 @@ open class GlslReceiver {
     var vec4.gb: vec2 by swizzle()
     var vec4.a: float by swizzle()
 
+    operator fun vec2.plus(s: Number): vec2 = error()
     operator fun vec2.plus(v: vec2): vec2 = error()
     operator fun vec2.minus(s: Number): vec2 = error()
     operator fun vec2.minus(v: vec2): vec2 = error()
@@ -227,6 +228,7 @@ open class GlslReceiver {
     fun min(a: Number, b: Number): Number = error()
     fun max(v: vec2, s: Number): vec2 = error()
     fun max(v1: vec2, v2: vec2): vec2 = error()
+    fun max(v1: vec4, v2: vec4): vec4 = error()
 
     fun pow(v1: vec3, v2: vec3): vec3 = error()
     fun exp(s: Number): float = error()

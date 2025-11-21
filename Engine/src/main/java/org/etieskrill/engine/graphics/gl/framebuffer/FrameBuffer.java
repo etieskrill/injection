@@ -138,7 +138,7 @@ public class FrameBuffer implements io.github.etieskrill.injection.extension.sha
         this.size = size;
         this.glBufferClearMask = glBufferClearMask;
         this.glColourDrawBuffers = glColourDrawBuffers;
-        this.clearColour = new Vector4f();
+        this.clearColour = new Vector4f(0f);
         this.attachments = new HashMap<>(3);
     }
 

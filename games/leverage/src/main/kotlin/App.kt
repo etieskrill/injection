@@ -23,7 +23,6 @@ import org.etieskrill.engine.graphics.data.PointLight
 import org.etieskrill.engine.graphics.gl.framebuffer.DirectionalShadowMap
 import org.etieskrill.engine.graphics.gl.framebuffer.PointShadowMapArray
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
-import org.etieskrill.engine.graphics.gl.shader.impl.BlitDepthShader
 import org.etieskrill.engine.graphics.gl.shader.impl.DepthCubeMapArrayShader
 import org.etieskrill.engine.graphics.model.CubeMapModel
 import org.etieskrill.engine.graphics.model.Model
@@ -48,7 +47,6 @@ import org.joml.primitives.AABBf
 import org.joml.primitives.Intersectionf.intersectRayAab
 import org.joml.primitives.Rayf
 import org.joml.times
-import org.lwjgl.opengl.GL30C.*
 
 fun main() {
     App().run()
@@ -57,11 +55,9 @@ fun main() {
 class App : org.etieskrill.engine.application.App(window {
     size = Window.WindowSize.LARGEST_FIT
     mode = Window.WindowMode.BORDERLESS
+    samples = 4
     vSync = true
 }) {
-
-    private lateinit var shadowMap: DirectionalShadowMap
-    private val blitShadowShader = BlitDepthShader()
 
     val camera = PerspectiveCamera(window.currentSize).apply {
         setOrbit(true)
@@ -88,14 +84,12 @@ class App : org.etieskrill.engine.application.App(window {
             .withComponent(Transform())
             .addComponent(Drawable(shipModel))
 
-        shadowMap = DirectionalShadowMap.generate(Vector2i(2048))
-
         entitySystem.createEntity()
             .withComponent(Transform())
             .withComponent(
                 DirectionalLightComponent(
                     DirectionalLight(Vector3f(-1f), Vector3f(0f), Vector3f(1f), Vector3f(1f)),
-                    shadowMap,
+                    DirectionalShadowMap.generate(Vector2i(2048)),
                     OrthographicCamera(Vector2i(2048), 20f, -20f, -20f, 20f).apply {
                         // FIXME i hate myself
                         setOrbit(true)
@@ -205,23 +199,22 @@ class App : org.etieskrill.engine.application.App(window {
         gizmoCamera.setRotation(camera.pitch, -camera.yaw, camera.roll)
     }
 
-    private val dummyVAO = glGenVertexArrays()
-
     override fun render() {
-        shadowMap.texture.bind()
-        glTexParameteri(shadowMap.texture.target.gl(), GL_TEXTURE_COMPARE_MODE, GL_NONE)
-
-        blitShadowShader.start()
-        blitShadowShader.size = Vector2f(300f)
-        blitShadowShader.sprite = shadowMap.texture
-        blitShadowShader.windowSize = Vector2f(window.currentSize)
-
-        glBindVertexArray(dummyVAO)
-        glViewport(0, 0, window.currentSize.x(), window.currentSize.y()) //TODO i hate global state
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)
-
-        shadowMap.texture.bind()
-        glTexParameteri(shadowMap.texture.target.gl(), GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE)
+        //depth texture access reference
+//        shadowMap.texture.bind()
+//        glTexParameteri(shadowMap.texture.target.gl(), GL_TEXTURE_COMPARE_MODE, GL_NONE)
+//
+//        blitShadowShader.start()
+//        blitShadowShader.size = Vector2f(300f)
+//        blitShadowShader.sprite = shadowMap.texture
+//        blitShadowShader.windowSize = Vector2f(window.currentSize)
+//
+//        glBindVertexArray(dummyVAO)
+//        glViewport(0, 0, window.currentSize.x(), window.currentSize.y()) //TODO i hate global state
+//        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)
+//
+//        shadowMap.texture.bind()
+//        glTexParameteri(shadowMap.texture.target.gl(), GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE)
 
         lastRay?.run {
             rayPipeline.shader.apply {

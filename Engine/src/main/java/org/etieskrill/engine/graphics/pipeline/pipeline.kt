@@ -15,7 +15,8 @@ class PostPassPipeline<S : PureShaderBuilder<*, *>>(
         alphaMode = if (opaque) AlphaMode.OPAQUE else AlphaMode.SOURCE_ALPHA,
         primitiveType = PrimitiveType.TRIANGLE_STRIP,
         cullingMode = CullingMode.NONE,
-        depthTest = depthTest
+        depthTest = depthTest,
+        writeDepth = false
     ), shader, frameBuffer
 )
 

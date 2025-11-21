@@ -62,7 +62,8 @@ public abstract class AbstractTexture implements Texture, Disposable {
         SRGB(GL_RGB, GL_SRGB, 3),
         SRGBA(GL_RGBA, GL_SRGB_ALPHA, 4),
         DEPTH(GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, 1),
-        STENCIL(GL_STENCIL_INDEX, GL_STENCIL_INDEX, 1);
+        STENCIL(GL_STENCIL_INDEX, GL_DEPTH_STENCIL, 1),
+        DEPTH_STENCIL(GL_DEPTH_STENCIL, GL_DEPTH_STENCIL, 2);
 
         private final int glFormat;
         private final int glInternalFormat;
@@ -313,7 +314,7 @@ public abstract class AbstractTexture implements Texture, Disposable {
 
         if (builder.autoSwizzleMask) {
             int[] swizzleMask = switch (builder.format) {
-                case GRAY, DEPTH, STENCIL -> new int[]{GL_RED, GL_RED, GL_RED, GL_ONE};
+                case GRAY, DEPTH, STENCIL, DEPTH_STENCIL -> new int[]{GL_RED, GL_RED, GL_RED, GL_ONE};
                 case ALPHA -> new int[]{GL_ONE, GL_ONE, GL_ALPHA, GL_RED};
                 case GA -> new int[]{GL_RED, GL_RED, GL_RED, GL_GREEN};
                 case RGB, RGBA, SRGB, SRGBA, RGBA_F16, RGBA_F32 -> new int[]{GL_RED, GL_GREEN, GL_BLUE, GL_ALPHA};
