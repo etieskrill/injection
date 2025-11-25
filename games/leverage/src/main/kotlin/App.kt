@@ -24,11 +24,13 @@ import org.etieskrill.engine.graphics.gl.framebuffer.DirectionalShadowMap
 import org.etieskrill.engine.graphics.gl.framebuffer.PointShadowMapArray
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
 import org.etieskrill.engine.graphics.gl.shader.impl.DepthCubeMapArrayShader
+import org.etieskrill.engine.graphics.gl.shader.impl.ScreenSpacePointShader
 import org.etieskrill.engine.graphics.model.CubeMapModel
 import org.etieskrill.engine.graphics.model.Model
 import org.etieskrill.engine.graphics.pipeline.AlphaMode
 import org.etieskrill.engine.graphics.pipeline.Pipeline
 import org.etieskrill.engine.graphics.pipeline.PipelineConfig
+import org.etieskrill.engine.graphics.pipeline.PostPassPipeline
 import org.etieskrill.engine.graphics.pipeline.PrimitiveType
 import org.etieskrill.engine.input.CursorInputAdapter
 import org.etieskrill.engine.input.Key
@@ -76,6 +78,8 @@ class App : org.etieskrill.engine.application.App(window {
 
     var lastRay: Rayf? = null
     var selectedEntity: Entity? = null
+
+    val comPipeline = PostPassPipeline(ScreenSpacePointShader(), null, false, false)
 
     override fun init() {
         val shipModel = Loaders.ModelLoader.get().load("human-bb") { Model.ofFile("hooman-bb.glb") }
@@ -224,6 +228,18 @@ class App : org.etieskrill.engine.application.App(window {
                 combined = camera.combined
             }
             renderer.render(rayPipeline)
+        }
+
+        selectedEntity?.let {
+            comPipeline.shader.apply {
+                //erm aktshually this is the centroid, and not the centre of mass - stfu
+                val centreOfMass = it.getComponent<Drawable>()!!.model.boundingBox.center(Vector3f())
+                ndcPosition = camera.worldToView(centreOfMass).xy(Vector2f())
+                aspectRatio = camera.aspectRatio
+                size = 5f / camera.viewportSize.y()
+                colour = Vector4f(1f, 0f, 0f, 1f)
+            }
+            renderer.render(comPipeline)
         }
     }
 }

@@ -155,6 +155,10 @@ public abstract class Camera implements UniformMappable {
 
     protected abstract void updateViewportSize();
 
+    public float getAspectRatio() {
+        return (float) viewportSize.x() / viewportSize.y();
+    }
+
     public Camera setZoom(float zoom) {
         this.zoom = Math.clamp(zoom, .01f, 10f);
         dirty();
@@ -268,6 +272,17 @@ public abstract class Camera implements UniformMappable {
     }
 
     /**
+     * Tests whether the world-space axis-aligned bounding box {@code aabb} intersects the volume projected by the
+     * camera's view frustum in any point.
+     *
+     * @param aabb the axis-aligned bounding box
+     * @return {@code true} if the aabb intersects the view frustum partially or fully, {@code false} otherwise
+     */
+    public boolean frustumTestAABB(AABBf aabb) {
+        return getCombined().testAab(aabb.minX(), aabb.minY(), aabb.minZ(), aabb.maxX(), aabb.maxY(), aabb.maxZ());
+    }
+
+    /**
      * Casts a ray in world space from this camera's {@link Camera#position} through the pixel defined by {@code x} and
      * {@code y} in the {@link Camera#viewportSize viewport}.
      * <p>
@@ -295,14 +310,18 @@ public abstract class Camera implements UniformMappable {
     }
 
     /**
-     * Tests whether the world-space axis-aligned bounding box {@code aabb} intersects the volume projected by the
-     * camera's view frustum in any point.
+     * Transfers a point in world coordinate space to this {@link Camera}'s normalized view space.
+     * <p>
+     * The result is returned in right-handed coordinates, i.e. {@code +x} is <b>right</b>, {@code +y} is <b>up</b>,
+     * and {@code +z} is <b>back</b>. Coordinates contained in the view frustum are in the range {@code [-1,1]}.
      *
-     * @param aabb the axis-aligned bounding box
-     * @return {@code true} if the aabb intersects the view frustum partially or fully, {@code false} otherwise
+     * @param point point in world space
+     * @return point in view space
      */
-    public boolean frustumTestAABB(AABBf aabb) {
-        return getCombined().testAab(aabb.minX(), aabb.minY(), aabb.minZ(), aabb.maxX(), aabb.maxY(), aabb.maxZ());
+    public Vector3f worldToView(Vector3fc point) {
+        var homogeneousPoint = getCombined().transform(new Vector4f(point, 1f));
+        homogeneousPoint.div(homogeneousPoint.w);
+        return homogeneousPoint.xyz(new Vector3f());
     }
 
     @Override
@@ -333,7 +352,7 @@ public abstract class Camera implements UniformMappable {
                 .map("near", near)
                 .map("far", far)
                 .map("viewport", viewportSize)
-                .map("aspect", viewportSize.x() / viewportSize.y());
+                .map("aspect", getAspectRatio());
         return true;
     }
 

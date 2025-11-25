@@ -3,6 +3,7 @@ package io.github.etieskrill.games.sails
 import org.etieskrill.engine.entity.Entity
 import org.etieskrill.engine.entity.getComponent
 import org.etieskrill.engine.entity.service.Service
+import org.etieskrill.engine.input.KeyInputManager
 import org.etieskrill.engine.input.Keys
 import org.etieskrill.engine.window.Window
 import org.joml.Matrix2f
@@ -10,6 +11,13 @@ import org.joml.Vector2f
 import org.joml.dot
 import org.joml.minus
 import org.joml.times
+
+data class InputDirection(val direction: Vector2f, var strength: Float) {
+    constructor() : this(Vector2f(), 0f)
+}
+
+class PlayerShipController(var initialised: Boolean = false) : KeyInputManager()
+class EnemyShipController //TODO behaviours
 
 class PlayerShipControllerService(private val window: Window) : Service {
 
@@ -67,8 +75,8 @@ class EnemyShipControllerService : Service {
         val rotation = targetDirection.normalize(Vector2f()) dot
                 (Matrix2f().rotation(transform.rotation) * Vector2f(-1f, 0f))
 
-        input.direction.set(rotation, targetDirection.length() / 500 + 0.5f)
-        input.strength = if (targetDirection.length() < 500) 10f else 0f
+        input.direction.set(rotation, targetDirection.length() / 1000 + 0.5f)
+        input.strength = if (targetDirection.length() < 1000) 10f else 0f
     }
 
 }

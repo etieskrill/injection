@@ -178,3 +178,24 @@ class DilationOutlineShader : PureShaderBuilder<VertexData, ColourRenderTarget>(
         }
     }
 }
+
+class ScreenSpacePointShader : PureShaderBuilder<VertexData, ColourRenderTarget>(
+    object : ShaderProgram(listOf("ScreenSpacePoint.glsl"), false) {}
+) {
+    val vertices by const(arrayOf(vec2(-1, -1), vec2(1, -1), vec2(-1, 1), vec2(1, 1)))
+
+    var ndcPosition by uniform<vec2>()
+    var aspectRatio by uniform<float>()
+    var size by uniform<float>()
+    var colour by uniform<vec4>()
+
+    override fun program() {
+        vertex { VertexData(vec4(vertices[vertexID], 0, 1)) }
+        fragment {
+            val distance = it.position.xy - ndcPosition
+            distance.x *= aspectRatio
+            val fragColour = if (length(distance) < size) colour else vec4(0)
+            ColourRenderTarget(fragColour.rt)
+        }
+    }
+}

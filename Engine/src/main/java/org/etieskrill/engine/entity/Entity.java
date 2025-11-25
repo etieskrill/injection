@@ -1,5 +1,6 @@
 package org.etieskrill.engine.entity;
 
+import kotlin.Deprecated;
 import lombok.Getter;
 import lombok.ToString;
 import org.jetbrains.annotations.Nullable;
@@ -15,10 +16,12 @@ public class Entity {
 
     private final @Getter int id;
     private final Map<Class<?>, Object> components;
+    private boolean valid;
 
     public Entity(int id) {
         this.id = id;
         this.components = new HashMap<>();
+        this.valid = false;
     }
 
     public <T> @Nullable T getComponent(Class<T> type) {
@@ -26,6 +29,8 @@ public class Entity {
     }
 
     public <T> T addComponent(T component) {
+        checkValid();
+
         if (components.putIfAbsent(component.getClass(), component) != null)
             throw new IllegalStateException("Entity already has component of type '" + getSimpleName(component) + "'");
 
@@ -33,6 +38,8 @@ public class Entity {
     }
 
     public Entity withComponent(Object component) {
+        checkValid();
+
         if (components.putIfAbsent(component.getClass(), component) != null)
             throw new IllegalStateException("Entity already has component of type '" + getSimpleName(component) + "'");
 
@@ -40,7 +47,22 @@ public class Entity {
     }
 
     public boolean hasComponents(Class<?>... components) {
+        checkValid();
         return this.components.keySet().containsAll(Set.of(components));
+    }
+
+    public boolean isValid() {
+        return valid;
+    }
+
+    @Deprecated(message = "Public because Java access qualifiers suck. Do not use.")
+    public void setValid(boolean valid) {
+        this.valid = valid;
+    }
+
+    private void checkValid() {
+        if (!isValid())
+            throw new IllegalStateException("Entity with id " + id + " is not valid and cannot be modified");
     }
 
     @Override
