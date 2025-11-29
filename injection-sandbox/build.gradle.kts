@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.com.intellij.util.system.OS
+
 plugins {
     application
     alias(libs.plugins.kotlin.jvm)
@@ -15,7 +17,13 @@ dependencies {
     implementation(libs.lwjgl.opengl)
     implementation(libs.lwjgl.stb)
     implementation(libs.lwjgl.tinyfd)
-    implementation("org.lwjgl:lwjgl-tinyfd::natives-windows")
+
+    val lwjglNatives = when (OS.CURRENT) {
+        OS.Windows -> "natives-windows"
+        OS.Linux -> "natives-linux"
+        else -> error("Unsupported OS: ${OS.CURRENT}")
+    }
+    implementation("org.lwjgl:lwjgl-tinyfd::$lwjglNatives")
     //natives not specified as they are brought in by the engine
 
     implementation("io.github.etieskrill.injection.extension.shader.dsl:shader-dsl-plugin:1.0.0-SNAPSHOT")

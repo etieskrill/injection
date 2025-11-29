@@ -17,6 +17,7 @@ import io.github.etieskrill.injection.extension.shader.vec2
 import io.github.etieskrill.injection.extension.shader.vec3
 import io.github.etieskrill.injection.extension.shader.vec4
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
+import org.joml.Matrix4f
 import org.joml.Vector2f
 import org.joml.Vector4f
 
@@ -197,5 +198,29 @@ class ScreenSpacePointShader : PureShaderBuilder<VertexData, ColourRenderTarget>
             val fragColour = if (length(distance) < size) colour else vec4(0)
             ColourRenderTarget(fragColour.rt)
         }
+    }
+}
+
+class LineShader : PureShaderBuilder<VertexData, ColourRenderTarget>(
+    object : ShaderProgram(listOf("Line.glsl")) {}
+) {
+    var pointA by uniform<vec3>()
+    var pointB by uniform<vec3>()
+
+    var colour by uniform<vec4>()
+
+    var combined by uniform<mat4>()
+
+    init {
+        combined = Matrix4f()
+    }
+
+    override fun program() {
+//        vertex { VertexData(vec4(if (vertexID == 0) pointA else pointB, 1)) } //FIXME ruh oh
+        vertex {
+            val point = if (vertexID == 0) pointA else pointB
+            VertexData(combined * vec4(point, 1))
+        }
+        fragment { ColourRenderTarget(colour.rt) }
     }
 }

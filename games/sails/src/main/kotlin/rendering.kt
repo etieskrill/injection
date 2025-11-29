@@ -7,7 +7,6 @@ import io.github.etieskrill.injection.extension.shader.dsl.rt
 import io.github.etieskrill.injection.extension.shader.dsl.std.rotationMat2
 import io.github.etieskrill.injection.extension.shader.float
 import io.github.etieskrill.injection.extension.shader.vec2
-import io.github.etieskrill.injection.extension.shader.vec3
 import io.github.etieskrill.injection.extension.shader.vec4
 import org.etieskrill.engine.entity.Entity
 import org.etieskrill.engine.entity.getComponent
@@ -19,6 +18,7 @@ import org.etieskrill.engine.graphics.camera.Camera
 import org.etieskrill.engine.graphics.camera.OrthographicCamera
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
 import org.etieskrill.engine.graphics.gl.shader.impl.BlitShader
+import org.etieskrill.engine.graphics.gl.shader.impl.LineShader
 import org.etieskrill.engine.graphics.gl.shader.impl.ScreenSpacePointShader
 import org.etieskrill.engine.graphics.pipeline.Pipeline
 import org.etieskrill.engine.graphics.pipeline.PipelineConfig
@@ -252,23 +252,5 @@ class HardpointShader : PureShaderBuilder<VertexData, ColourRenderTarget>( //TOD
 
             ColourRenderTarget((vec4(cone) * colour).rt)
         }
-    }
-}
-
-class LineShader : PureShaderBuilder<VertexData, ColourRenderTarget>(
-    object : ShaderProgram(listOf("Line.glsl")) {}
-) {
-    var pointA by uniform<vec3>()
-    var pointB by uniform<vec3>()
-
-    var colour by uniform<vec4>()
-
-    override fun program() {
-//        vertex { VertexData(vec4(if (vertexID == 0) pointA else pointB, 1)) } //FIXME ruh oh
-        vertex {
-            val point = if (vertexID == 0) pointA else pointB
-            VertexData(vec4(point, 1))
-        }
-        fragment { ColourRenderTarget(colour.rt) }
     }
 }

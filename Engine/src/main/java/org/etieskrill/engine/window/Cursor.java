@@ -184,6 +184,11 @@ public class Cursor implements Disposable {
         return new Vector2d(posx[0], posy[0]);
     }
 
+    public void setPosition(Vector2d position) {
+        checkWindow();
+        glfwSetCursorPos(window.getID(), position.x(), position.y());
+    }
+
     private void checkWindow() {
         if (!windowSet) throw new IllegalStateException("Cursor is not assigned to window");
     }
