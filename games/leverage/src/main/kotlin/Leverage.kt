@@ -46,7 +46,9 @@ import org.etieskrill.engine.window.Window
 import org.etieskrill.engine.window.window
 import org.joml.Vector2d
 import org.joml.Vector2f
+import org.joml.Vector2fc
 import org.joml.Vector2i
+import org.joml.Vector2ic
 import org.joml.Vector3f
 import org.joml.Vector4f
 import org.joml.minus
@@ -58,7 +60,11 @@ import org.joml.primitives.Planef
 import org.joml.primitives.Rayf
 import org.joml.times
 import org.joml.unaryMinus
-import kotlin.math.floor
+import kotlin.math.abs
+import kotlin.math.atan2
+import kotlin.math.sign
+import kotlin.math.sqrt
+import kotlin.mod as modStd
 
 fun main() {
     Leverage().run()
@@ -108,13 +114,16 @@ class Leverage : org.etieskrill.engine.application.App(window {
     }
 
     val translateController = TranslateController(camera)
+    val rotateController = RotateController(camera)
+    val scaleController = ScaleController(camera)
 
     val gridPipeline = Pipeline(
         1, PipelineConfig(
+            alphaMode = AlphaMode.SOURCE_ALPHA,
             primitiveType = PrimitiveType.POINTS,
             cullingMode = CullingMode.NONE,
             depthTest = false,
-            writeDepth = false
+            writeDepth = false,
         ), GridShader(), null
     )
 
@@ -226,15 +235,23 @@ class Leverage : org.etieskrill.engine.application.App(window {
 
         window.addKeyInputs(
             Input.of(
-                Input.bind(Keys.G).to { delta -> translate() },
-                Input.bind(Keys.W).to { delta -> rotate() },
-                Input.bind(Keys.S).to { delta -> scale() },
+                Input.bind(Keys.G).to { delta -> transform(TransformMode.TRANSLATE, translateController) },
+                Input.bind(Keys.R).to { delta -> transform(TransformMode.ROTATE, rotateController) },
+                Input.bind(Keys.F).to { delta ->
+                    transform(
+                        TransformMode.SCALE,
+                        scaleController
+                    )
+                }, //FIXME not needed for simple animation
                 Input.bind(Keys.ESC).to { delta -> cancel() }
             ))
 
         window.addCursorInputs(translateController)
+        window.addCursorInputs(rotateController)
+        window.addCursorInputs(scaleController)
 
         window.addKeyInputs { type, key, action, modifiers ->
+            if (transformMode != TransformMode.NONE) return@addKeyInputs false
             when (key) {
                 Keys.CTRL.glfwKey -> {
                     if (action != Keys.Action.RELEASE.glfwAction) {
@@ -273,46 +290,42 @@ class Leverage : org.etieskrill.engine.application.App(window {
 //        )
     }
 
-    fun translate() {
+    fun transform(mode: TransformMode, controller: TransformController) {
         if (selectedEntity == null) return
 
-        if (transformMode == TransformMode.TRANSLATE) {
-            translateController.apply()
-            cursorCameraController.enable()
+        if (transformMode == mode) {
+            controller.apply()
             val cursorPosition = window.cursor.position
             window.cursor.enable()
             window.cursor.position = Vector2d(
-                cursorPosition.x remActual window.currentSize.x().toDouble(),
-                cursorPosition.y remActual window.currentSize.y().toDouble()
+                cursorPosition.x mod window.currentSize.x().toDouble(),
+                cursorPosition.y mod window.currentSize.y().toDouble()
             )
             transformMode = TransformMode.NONE
             return
         }
 
-        translateController.activate(selectedEntity!!.getComponent<Transform>()!!, window.cursor.position)
-        transformMode = TransformMode.TRANSLATE
+        controller.activate(
+            selectedEntity!!.getComponent<Transform>()!!,
+            window.cursor.position,
+            selectedEntity!!.getComponent<Drawable>()!!.model.boundingBox.center(Vector3f())
+        )
+        transformMode = mode
 
         cursorCameraController.disable()
         window.cursor.disable()
     }
 
-    fun rotate() {
-        if (selectedEntity == null) return
-        transformMode = TransformMode.ROTATE
-
-        cursorCameraController.disable()
-    }
-
-    fun scale() {
-        if (selectedEntity == null) return
-        transformMode = TransformMode.SCALE
-    }
-
     fun cancel() {
         if (transformMode != TransformMode.NONE) {
-            translateController.cancel()
+            when (transformMode) {
+                TransformMode.TRANSLATE -> translateController.cancel()
+                TransformMode.ROTATE -> rotateController.cancel()
+                TransformMode.SCALE -> scaleController.cancel()
+                else -> error("boat")
+            }
             transformMode = TransformMode.NONE
-            cursorCameraController.enable()
+            cursorCameraController.disable()
             window.cursor.enable()
             return
         }
@@ -363,10 +376,10 @@ class Leverage : org.etieskrill.engine.application.App(window {
 
         selectedEntity?.let {
             comPipeline.shader.apply {
-                val position = it.getComponent<Transform>()!!.position
+                val transform = it.getComponent<Transform>()!!
                 //erm aktshually this is the centroid, and not the centre of mass - stfu
                 val centreOfMass = it.getComponent<Drawable>()!!.model.boundingBox.center(Vector3f())
-                ndcPosition = camera.worldToView(position + centreOfMass).xy(Vector2f())
+                ndcPosition = camera.worldToView(centreOfMass.mulPosition(transform.matrix)).xy(Vector2f())
                 aspectRatio = camera.aspectRatio
                 size = 5f / camera.viewportSize.y()
                 colour = Vector4f(1f, 0f, 0f, 1f)
@@ -374,19 +387,21 @@ class Leverage : org.etieskrill.engine.application.App(window {
             renderer.render(comPipeline)
         }
 
-        if (translateController.enabled) {
-            cursorPipeline.shader.apply {
-                sprite = translateCursorImage
-                useSpriteColour = true
+        listOf(translateController, rotateController, scaleController)
+            .singleOrNull { it.enabled }
+            ?.also {
+                cursorPipeline.shader.apply {
+                    sprite = translateCursorImage
+                    useSpriteColour = true
 
-                val cursorSize = Vector2f(translateCursorImage.size)
-                position = translateController.cursorPosition - cursorSize.div(2f, Vector2f())
-                size = cursorSize
+                    val cursorSize = Vector2f(translateCursorImage.size)
+                    position = it.cursorPosition - cursorSize.div(2f, Vector2f())
+                    size = cursorSize
 
-                windowSize = Vector2f(window.currentSize)
+                    windowSize = Vector2f(window.currentSize)
+                }
+                renderer.render(cursorPipeline)
             }
-            renderer.render(cursorPipeline)
-        }
 
         gridPipeline.shader.position = Vector3f(0f)
         gridPipeline.shader.camera = camera
@@ -394,10 +409,19 @@ class Leverage : org.etieskrill.engine.application.App(window {
     }
 }
 
-class TranslateController(val camera: Camera) : CursorInputAdapter {
-    var enabled = false
+interface TransformController {
+    val enabled: Boolean
+    val cursorPosition: Vector2f
+
+    fun activate(transform: Transform, cursorPosition: Vector2d, centreOfMass: Vector3f)
+    fun apply()
+    fun cancel()
+}
+
+class TranslateController(val camera: Camera) : CursorInputAdapter, TransformController {
+    override var enabled = false
         private set
-    val cursorPosition = Vector2f()
+    override val cursorPosition = Vector2f()
 
     private var transform: Transform? = null
 
@@ -407,21 +431,21 @@ class TranslateController(val camera: Camera) : CursorInputAdapter {
     private val originalPosition = Vector3f()
     private val originalCastPosition = Vector3f()
 
-    fun activate(transform: Transform, cursorPosition: Vector2d) {
+    override fun activate(transform: Transform, cursorPosition: Vector2d, centreOfMass: Vector3f) {
         enabled = true
         first = true
         this.transform = transform
         this.cursorPosition.set(cursorPosition)
     }
 
-    fun apply() {
+    override fun apply() {
         if (!enabled) return
 
         enabled = false
         transform = null
     }
 
-    fun cancel() {
+    override fun cancel() {
         if (!enabled) return
 
         transform!!.position.set(originalPosition)
@@ -451,8 +475,8 @@ class TranslateController(val camera: Camera) : CursorInputAdapter {
         transform!!.setPosition(originalPosition + pos - originalCastPosition)
 
         cursorPosition.set(
-            posX remActual camera.viewportSize.x().toDouble(),
-            posY remActual camera.viewportSize.y().toDouble()
+            posX mod camera.viewportSize.x().toDouble(),
+            posY mod camera.viewportSize.y().toDouble()
         )
 
         return true
@@ -485,4 +509,125 @@ class CursorCameraTranslationController(val camera: Camera) : CursorInputAdapter
     }
 }
 
-infix fun Double.remActual(other: Double) = (1 / other * this - floor(1 / other * this)) * other
+class RotateController(val camera: Camera) : CursorInputAdapter, TransformController {
+    override var enabled: Boolean = false
+        private set
+    override var cursorPosition = Vector2f()
+
+    private var transform: Transform? = null
+
+    private val centreOfMass = Vector3f()
+    private val viewCentreOfMass = Vector2f()
+    private var originalAngle = 0f
+    private val originalTransform = Transform()
+    private val rotationAxis = Vector3f()
+
+    override fun activate(transform: Transform, cursorPosition: Vector2d, centreOfMass: Vector3f) {
+        this.transform = transform
+        this.cursorPosition.set(cursorPosition)
+        this.centreOfMass.set(centreOfMass)
+        camera.worldToView(centreOfMass.mulPosition(transform.matrix))
+            .xy(this.viewCentreOfMass).mul(1f, -1f)
+            .div(2f).add(0.5f, 0.5f)
+            .mul(Vector2f(camera.viewportSize))
+        val delta = this.cursorPosition - this.viewCentreOfMass
+        originalAngle = atan2(delta.y, delta.x)
+        originalTransform.set(transform)
+        rotationAxis.set(camera.direction)
+        enabled = true
+    }
+
+    override fun apply() {
+        if (!enabled) return
+
+        transform = null
+        enabled = false
+    }
+
+    override fun cancel() {
+        if (!enabled) return
+
+        transform!!.set(originalTransform)
+        transform = null
+        enabled = false
+    }
+
+    override fun invokeMove(posX: Double, posY: Double): Boolean {
+        if (!enabled) return false
+
+        val transform = transform ?: error("Transform is null")
+
+        val position = Vector2f(posX.toFloat(), posY.toFloat())
+        val delta = position - viewCentreOfMass
+        val angle = atan2(delta.y, delta.x) - originalAngle
+
+        transform.set(originalTransform)
+        val originalCOM = transform.matrix.transformPosition(centreOfMass, Vector3f())
+        transform.rotation.rotateAxis(angle, rotationAxis)
+        val deltaPos = transform.matrix.transformPosition(centreOfMass, Vector3f()) - originalCOM
+        transform.translate(-deltaPos)
+
+        cursorPosition = position mod camera.viewportSize
+
+        return false
+    }
+}
+
+class ScaleController(val camera: Camera) : CursorInputAdapter, TransformController {
+    override var enabled = false
+        private set
+    override var cursorPosition = Vector2f()
+
+    private var transform: Transform? = null
+
+    private val originalPosition = Vector2f()
+    private var originalDistance = 0f
+    private var first = true
+
+    private val originalScale = Vector3f()
+
+    override fun activate(transform: Transform, cursorPosition: Vector2d, centreOfMass: Vector3f) {
+        this.transform = transform
+        enabled = true
+        first = true
+    }
+
+    override fun apply() {
+        transform = null
+        enabled = false
+    }
+
+    override fun cancel() {
+        transform = null
+        enabled = false
+    }
+
+    override fun invokeMove(posX: Double, posY: Double): Boolean {
+        if (!enabled) return false
+        val transform = transform ?: error("Transform is null")
+
+        val position = Vector2f(posX.toFloat(), posY.toFloat())
+
+        if (first) {
+            originalPosition.set(camera.worldToView(transform.position))
+            originalDistance = position.length()
+            originalScale.set(transform.scale)
+            first = false
+        }
+
+        var newScale = position.length() - originalDistance
+        newScale = sign(newScale) * sqrt(abs(newScale / 1000f))
+        transform.setScale(originalScale + Vector3f(newScale))
+
+        cursorPosition = position mod camera.viewportSize
+
+        return true
+    }
+}
+
+infix fun Float.mod(other: Float) = modStd(other)
+infix fun Double.mod(other: Double) = modStd(other)
+infix fun Vector2fc.mod(other: Vector2fc) = Vector2f(x() mod other.x(), y() mod other.y())
+infix fun Vector2fc.mod(other: Vector2ic) = Vector2f(x() mod other.x().toFloat(), y() mod other.y().toFloat())
+infix fun Vector2f.modAssign(other: Vector2fc) = set(x mod other.x(), y mod other.y())
+infix fun Vector2f.modAssign(other: Vector2ic) = set(x mod other.x().toFloat(), y mod other.y().toFloat())
