@@ -107,7 +107,7 @@ public class Material implements Disposable {
     }
 
     public Vector4f getColourProperty(Property colourProperty) {
-        return (Vector4f) requireNonNullElse(properties.get(colourProperty), new Vector4f(0));
+        return (Vector4f) requireNonNullElse(properties.get(colourProperty), new Vector4f(1f));
     }
 
     public @Nullable Number getValueProperty(Property valueProperty) {

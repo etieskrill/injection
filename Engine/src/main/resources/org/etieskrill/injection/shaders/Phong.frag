@@ -135,11 +135,11 @@ void main()
     //        combinedLight = mix(combinedLight, getCubeRefraction(1 / 1.52, normalVec), 0.5);
     //    }
 
-    fragColour = vec4(combinedLight, texel.a);
+    fragColour = material.colourDiffuse * vec4(combinedLight, texel.a);
 
     float brightness = dot(combinedLight.rgb, vec3(0.2126, 0.7152, 0.0722));
-    if (brightness > 2.0) bloomColour = vec4(combinedLight, texel.a);
-    else bloomColour = vec4(0.0, 0.0, 0.0, texel.a);
+    if (brightness > 2.0) bloomColour = fragColour;
+    else bloomColour = material.colourDiffuse * vec4(0.0, 0.0, 0.0, texel.a);
 }
 
 vec3 getDirLight(DirectionalLight light, vec3 normal, vec3 fragPosition, vec3 viewPosition, float inShadow)

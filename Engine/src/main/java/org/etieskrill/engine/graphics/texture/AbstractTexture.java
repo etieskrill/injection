@@ -283,7 +283,7 @@ public abstract class AbstractTexture implements Texture, Disposable {
             //Wack solution for post-creation method calls
             if (mipMaps) glGenerateMipmap(target.gl());
 
-            GLUtils.checkError("Error while creating texture");
+            GLUtils.checkErrorThrowing("Error while creating texture:\n" + this);
             freeResources();
             return texture;
         }

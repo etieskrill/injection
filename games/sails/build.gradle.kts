@@ -16,3 +16,5 @@ dependencies {
 application {
     mainClass = "io.github.etieskrill.games.sails.SailsKt"
 }
+
+kotlin.compilerOptions.freeCompilerArgs.add("-Xcontext-receivers")

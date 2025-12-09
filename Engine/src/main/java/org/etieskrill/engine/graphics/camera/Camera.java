@@ -45,6 +45,7 @@ public abstract class Camera implements UniformMappable {
     private final @Getter Vector3f viewPosition = new Vector3f();
 
     private final FrustumRayBuilder rayBuilder = new FrustumRayBuilder();
+    private Vector3f vector = new Vector3f();
 
     protected boolean dirty;
 
@@ -156,7 +157,7 @@ public abstract class Camera implements UniformMappable {
     protected abstract void updateViewportSize();
 
     public float getAspectRatio() {
-        return (float) viewportSize.x() / viewportSize.y();
+        return (float) viewportSize.x / (float) viewportSize.y;
     }
 
     public Camera setZoom(float zoom) {
@@ -298,7 +299,7 @@ public abstract class Camera implements UniformMappable {
 
         var ray = new Rayf();
 
-        var vector = (Vector3f) rayBuilder.origin(new Vector3f());
+        vector = (Vector3f) rayBuilder.origin(vector);
         ray.oX = vector.x();
         ray.oY = vector.y();
         ray.oZ = vector.z();

@@ -3,6 +3,7 @@ package org.etieskrill.engine.graphics.gl.shader.impl;
 import io.github.etieskrill.injection.extension.shader.reflection.ReflectShader;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.joml.Vector2f;
+import org.joml.Vector4f;
 
 import java.util.List;
 
@@ -21,5 +22,7 @@ public class StaticShader extends ShaderProgram {
         setHasPointShadowMaps(this, false);
 
         setPointShadowFarPlane(this, 20f);
+
+        setUniform("material.colourDiffuse", new Vector4f(1f), false);
     }
 }
