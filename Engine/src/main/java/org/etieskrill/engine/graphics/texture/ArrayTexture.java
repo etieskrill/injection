@@ -11,9 +11,11 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 
+import static org.etieskrill.engine.graphics.gl.GLUtils.checkErrorThrowing;
 import static org.etieskrill.engine.graphics.texture.AbstractTexture.Target.ARRAY;
 import static org.etieskrill.engine.graphics.texture.Textures.NR_BITS_PER_COLOUR_CHANNEL;
-import static org.lwjgl.opengl.GL11C.GL_UNSIGNED_BYTE;
+import static org.lwjgl.opengl.GL11C.*;
+import static org.lwjgl.opengl.GL12C.GL_MAX_3D_TEXTURE_SIZE;
 import static org.lwjgl.opengl.GL12C.glTexImage3D;
 
 @Getter
@@ -54,11 +56,11 @@ public class ArrayTexture extends AbstractTexture implements Texture2DArray {
             }
             if (data.remaining() != numBytesPerTexture) //TODO pad automatically if too small instead? specify which sides to pad explicitly
                 throw new IllegalArgumentException("Texture buffer does not contain correct number of bytes for " +
-                        pixelSize.x() + "x" + pixelSize.y() + " " + format.getChannels() + "-channel texture: expected " +
-                        numBytesPerTexture + " but got " + data.remaining());
+                                                   pixelSize.x() + "x" + pixelSize.y() + " " + format.getChannels() + "-channel texture: expected " +
+                                                   numBytesPerTexture + " but got " + data.remaining());
             if (buffer.position() + data.remaining() > buffer.capacity())
                 throw new IllegalArgumentException("Texture buffer contains too much data: " + data.remaining() +
-                        " does not fit in " + (buffer.capacity() - buffer.position()) + " bytes");
+                                                   " does not fit in " + (buffer.capacity() - buffer.position()) + " bytes");
 
             buffer.put(data); //TODO i think it's this operation which causes segfaults sometimes, one of the buffers is probably not allocated correctly
             logger.trace("Added texture to array, now contains {} of {} bytes", buffer.position(), buffer.capacity());
@@ -73,6 +75,14 @@ public class ArrayTexture extends AbstractTexture implements Texture2DArray {
 
             ArrayTexture texture = new ArrayTexture(this);
             texture.bind(0);
+
+            var maxTexSize = glGetInteger(GL_MAX_3D_TEXTURE_SIZE);
+            if (pixelSize.x() > maxTexSize || pixelSize.y() > maxTexSize || length > maxTexSize) {
+                throw new IllegalArgumentException(
+                        "Texture size (" + pixelSize.x() + "x" + pixelSize.y() + "x" + length + ")" +
+                        " exceeds max platform texture size of " + maxTexSize
+                );
+            }
 
             glTexImage3D(target.gl(), 0, format.toGlInternalFormat(), pixelSize.x(), pixelSize.y(), length,
                     0, format.toGLFormat(), GL_UNSIGNED_BYTE, buffer.rewind());

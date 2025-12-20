@@ -14,5 +14,5 @@ dependencies {
 }
 
 application {
-    mainClass = "io.github.etieskrill.games.circles.MainKt"
+    mainClass = "io.github.etieskrill.games.circles.CirclesKt"
 }

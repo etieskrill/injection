@@ -5,17 +5,19 @@ import org.etieskrill.engine.util.Loaders;
 
 import java.io.IOException;
 
+import static org.etieskrill.engine.config.ResourcePaths.FONT_PATH;
+
 public final class Fonts {
 
     public static final int DEFAULT_FONT_SIZE = 24;
     public static final String DEFAULT_FONT = "AGENCYB.TTF";
 
     public static Font getDefault() {
-        return getFontOrDefault(DEFAULT_FONT, DEFAULT_FONT_SIZE);
+        return getFontOrDefault(FONT_PATH + DEFAULT_FONT, DEFAULT_FONT_SIZE);
     }
     
     public static Font getDefault(int pixelHeight) {
-        return getFontOrDefault(DEFAULT_FONT, pixelHeight);
+        return getFontOrDefault(FONT_PATH + DEFAULT_FONT, pixelHeight);
     }
     
     public static Font getFontOrDefault(String path, int pixelHeight) {
@@ -30,7 +32,7 @@ public final class Fonts {
                         return new TrueTypeFont(file.getFullPath());
                     } catch (IOException e) {
                         try {
-                            return new TrueTypeFont(DEFAULT_FONT);
+                            return new TrueTypeFont(FONT_PATH + DEFAULT_FONT);
                         } catch (IOException ex) {
                             throw new RuntimeException("Internal exception: could not load default font", ex);
                         }

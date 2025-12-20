@@ -13,7 +13,7 @@ import org.joml.Vector2fc;
  * {@link Glyph#texture} will be {@code null}.
  */
 public class Glyph {
-    
+
     private final Vector2fc size;
     private final Vector2fc position;
     private final Vector2fc advance;
@@ -30,18 +30,18 @@ public class Glyph {
      * @param textureIndex the index in the texture atlas, if any
      * @param character    the character this glyph represents, if any
      */
-    public Glyph(Vector2fc size, Vector2fc position, Vector2fc advance,  @Nullable Integer textureIndex, @Nullable Character character) {
+    public Glyph(Vector2fc size, Vector2fc position, Vector2fc advance, @Nullable Integer textureIndex, @Nullable Character character) {
         this(size, position, advance, null, textureIndex, character);
     }
 
     /**
-     * @param size         the visible size of the glyph
-     * @param position     offset from the origin point
-     * @param advance      the amount of space this glyph actually takes in a line of text
-     * @param texture      the glyph's texture, if any
-     * @param character    the character this glyph represents, if any
+     * @param size      the visible size of the glyph
+     * @param position  offset from the origin point
+     * @param advance   the amount of space this glyph actually takes in a line of text
+     * @param texture   the glyph's texture, if any
+     * @param character the character this glyph represents, if any
      */
-    public Glyph(Vector2fc size, Vector2fc position, Vector2fc advance, @Nullable Texture2D texture,  @Nullable Character character) {
+    public Glyph(Vector2fc size, Vector2fc position, Vector2fc advance, @Nullable Texture2D texture, @Nullable Character character) {
         this(size, position, advance, texture, null, character);
     }
 
@@ -58,15 +58,15 @@ public class Glyph {
         this.textureIndex = textureIndex;
         this.character = character;
     }
-    
+
     public Vector2fc getSize() {
         return size;
     }
-    
+
     public Vector2fc getPosition() {
         return position;
     }
-    
+
     public Vector2fc getAdvance() {
         return advance;
     }
@@ -78,20 +78,20 @@ public class Glyph {
     public @Nullable Texture2D getTexture() {
         return texture;
     }
-    
+
     public @Nullable Character getCharacter() {
         return character;
     }
-    
+
     @Override
     public String toString() {
         return "Glyph{" +
-                "size=" + size +
-                ", position=" + position +
-                ", advance=" + advance +
-                ", texture=" + texture +
-                ", character=" + character +
-                '}';
+               "size=" + size +
+               ", position=" + position +
+               ", advance=" + advance +
+               ", texture=" + texture +
+               ", character=" + character + " (" + (int) character + ")" +
+               '}';
     }
-    
+
 }

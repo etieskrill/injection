@@ -42,6 +42,13 @@ public class VertexArrayObject<T> implements Disposable {
     //TODO add dummy accessor factory method - and probs class with UnsupportedOperationException
 
     @Builder
+    static class VertexArrayObjectBuilder<T> {
+        public void setVertexElements(@Nullable Collection<T> vertexElements) {
+            this.vertexElements = vertexElements;
+        }
+    }
+
+    @Builder
     private VertexArrayObject(@Nullable Long numVertexElements,
                               @Nullable Collection<T> vertexElements,
                               @Nullable BufferObject vertexBuffer,

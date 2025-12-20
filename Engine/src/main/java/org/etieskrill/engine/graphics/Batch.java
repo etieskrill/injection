@@ -14,6 +14,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.*;
 
+import java.util.Objects;
+
+import static java.util.Objects.requireNonNullElse;
 import static org.lwjgl.opengl.GL11C.*;
 import static org.lwjgl.opengl.GL30C.glBindVertexArray;
 import static org.lwjgl.opengl.GL30C.glGenVertexArrays;
@@ -53,6 +56,21 @@ public class Batch {
         this.viewportSize = viewportSize;
     }
 
+    public Batch(@NotNull Renderer renderer,
+                 @NotNull TextRenderer textRenderer,
+                 @NotNull Vector2ic viewportSize,
+                 @Nullable ShaderProgram shader,
+                 @Nullable ShaderProgram textShader,
+                 @Nullable BlitShader blitShader) {
+        this.renderer = renderer;
+        this.textRenderer = textRenderer;
+        this.viewportSize = viewportSize;
+        this.shader = requireNonNullElse(shader, Shaders.getTextureShader());
+        this.textShader = requireNonNullElse(textShader, Shaders.getTextShader());
+        this.blitShader = requireNonNullElse(blitShader, new BlitShader());
+        this.combined = new Matrix4f().identity();
+    }
+
     private static final Vector4f resetColour = new Vector4f(1);
 
     /**
@@ -82,13 +100,13 @@ public class Batch {
     public void renderBackground(Vector2fc position,
                                  Vector2fc size,
                                  Vector4fc backgroundColour,
-                                 float borderTickness,
+                                 float borderThickness,
                                  Vector4fc borderColour) {
         var shader = uiOutlinePipeline.getShader();
         shader.setPosition(position.div(new Vector2f(viewportSize), new Vector2f()).mul(2, -2).sub(1f, -1f));
         shader.setSize(size.div(new Vector2f(viewportSize), new Vector2f()).mul(2, -2));
         shader.setBackgroundColour(backgroundColour);
-        shader.setBorderThickness(new Vector2f(borderTickness).div(new Vector2f(viewportSize)));
+        shader.setBorderThickness(new Vector2f(borderThickness).div(new Vector2f(viewportSize)));
         shader.setBorderColour(borderColour);
 
         renderer.render(uiOutlinePipeline);
@@ -142,6 +160,7 @@ public class Batch {
         blitShader.setSize(size);
         blitShader.setRotation(rotation);
         blitShader.setWindowSize(new Vector2f(viewportSize));
+        blitShader.setUseSpriteColour(colour == null);
         if (colour != null) blitShader.setColour(colour);
         blitShader.start();
 

@@ -22,6 +22,7 @@ import org.etieskrill.engine.graphics.gl.shader.impl.LineShader
 import org.etieskrill.engine.graphics.gl.shader.impl.ScreenSpacePointShader
 import org.etieskrill.engine.graphics.gl.shader.impl.camera
 import org.etieskrill.engine.graphics.gl.shader.impl.position
+import org.etieskrill.engine.graphics.model.CubeMapModel
 import org.etieskrill.engine.graphics.model.Model
 import org.etieskrill.engine.graphics.pipeline.AlphaMode
 import org.etieskrill.engine.graphics.pipeline.CullingMode
@@ -132,7 +133,7 @@ class Leverage : org.etieskrill.engine.application.App(window {
 
         entitySystem.createEntity()
             .withComponent(Transform())
-            .addComponent(Drawable(shipModel))
+            .withComponent(Drawable(shipModel))
 
         entitySystem.createEntity()
             .withComponent(Transform())
@@ -173,7 +174,7 @@ class Leverage : org.etieskrill.engine.application.App(window {
 //            )
 //        }.forEachIndexed { index, light ->
 //            entitySystem.createEntity()
-//                .withComponent(Transform())
+//                .withComponent(ship.getComponent<Transform>()!!)
 //                .withComponent(
 //                    PointLightComponent(
 //                        light,
@@ -186,7 +187,8 @@ class Leverage : org.etieskrill.engine.application.App(window {
         entitySystem.addService(DirectionalShadowMappingService(renderer))
         entitySystem.addService(PointShadowMappingService(renderer, DepthCubeMapArrayShader()))
         entitySystem.addService(RenderService(renderer, camera, window.currentSize).apply {
-//            skybox = CubeMapModel("textures/cubemaps/space")
+            //FIXME the weird glitching only happens on iris, but not e.g. an rtx 4070?
+            skybox = CubeMapModel("textures/cubemaps/space")
         })
 
         window.addKeyInputs(KeyCameraController(camera))
@@ -237,12 +239,7 @@ class Leverage : org.etieskrill.engine.application.App(window {
             Input.of(
                 Input.bind(Keys.G).to { delta -> transform(TransformMode.TRANSLATE, translateController) },
                 Input.bind(Keys.R).to { delta -> transform(TransformMode.ROTATE, rotateController) },
-                Input.bind(Keys.F).to { delta ->
-                    transform(
-                        TransformMode.SCALE,
-                        scaleController
-                    )
-                }, //FIXME not needed for simple animation
+                Input.bind(Keys.F).to { delta -> transform(TransformMode.SCALE, scaleController) },
                 Input.bind(Keys.ESC).to { delta -> cancel() }
             ))
 
@@ -276,18 +273,6 @@ class Leverage : org.etieskrill.engine.application.App(window {
             Container(statusLabel),
             OrthographicCamera(window.currentSize)
         )
-
-//        window.scene = Scene(
-//            Batch(renderer, window.currentSize),
-//            Container(TranslateGizmo {}),
-//            gizmoCamera.apply {
-//                near = -10000f
-//                far = 10000f
-//
-//                setOrbit(true)
-//                setOrbitDistance(10f)
-//            }
-//        )
     }
 
     fun transform(mode: TransformMode, controller: TransformController) {
@@ -313,6 +298,7 @@ class Leverage : org.etieskrill.engine.application.App(window {
         transformMode = mode
 
         cursorCameraController.disable()
+        cursorCameraTranslationController.enabled = false
         window.cursor.disable()
     }
 
@@ -474,10 +460,7 @@ class TranslateController(val camera: Camera) : CursorInputAdapter, TransformCon
 
         transform!!.setPosition(originalPosition + pos - originalCastPosition)
 
-        cursorPosition.set(
-            posX mod camera.viewportSize.x().toDouble(),
-            posY mod camera.viewportSize.y().toDouble()
-        )
+        cursorPosition.set(posX, posY) modAssign camera.viewportSize
 
         return true
     }
@@ -513,6 +496,7 @@ class RotateController(val camera: Camera) : CursorInputAdapter, TransformContro
     override var enabled: Boolean = false
         private set
     override var cursorPosition = Vector2f()
+        private set
 
     private var transform: Transform? = null
 
@@ -577,6 +561,7 @@ class ScaleController(val camera: Camera) : CursorInputAdapter, TransformControl
     override var enabled = false
         private set
     override var cursorPosition = Vector2f()
+        private set
 
     private var transform: Transform? = null
 
@@ -615,6 +600,7 @@ class ScaleController(val camera: Camera) : CursorInputAdapter, TransformControl
             first = false
         }
 
+        //FIXME use centre of mass
         var newScale = position.length() - originalDistance
         newScale = sign(newScale) * sqrt(abs(newScale / 1000f))
         transform.setScale(originalScale + Vector3f(newScale))

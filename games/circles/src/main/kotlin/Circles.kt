@@ -1,11 +1,13 @@
 package io.github.etieskrill.games.circles
 
+import org.etieskrill.engine.application.App
 import org.etieskrill.engine.application.GameApplication
 import org.etieskrill.engine.graphics.Batch
 import org.etieskrill.engine.graphics.camera.OrthographicCamera
 import org.etieskrill.engine.graphics.gl.framebuffer.FrameBuffer
 import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment
 import org.etieskrill.engine.graphics.pipeline.PostPassPipeline
+import org.etieskrill.engine.graphics.text.TrueTypeFont
 import org.etieskrill.engine.graphics.texture.Texture2D
 import org.etieskrill.engine.input.CursorInputAdapter
 import org.etieskrill.engine.input.Key
@@ -17,13 +19,14 @@ import org.etieskrill.engine.scene.element.Label
 import org.etieskrill.engine.window.Window
 import org.etieskrill.engine.window.window
 import org.joml.Vector2f
+import org.joml.Vector2fc
 import org.joml.Vector4f
 
 fun main() {
-    Main().run()
+    Circles().run()
 }
 
-class Main : GameApplication(
+class Circles : App(
     window {
         title = "Circles"
         size = Window.WindowSize.XGA
@@ -33,10 +36,12 @@ class Main : GameApplication(
 ) {
     val camera = OrthographicCamera(window.currentSize)
 
-    val paintTexture = Texture2D.BlankBuilder(window.currentSize).build()
+    val batch = Batch(renderer, window.currentSize)
+
+    val paintTexture = Texture2D.BlankBuilder(window.currentSize).build()!!
     val paintFrameBuffer = FrameBuffer.Builder(window.currentSize)
         .attach(paintTexture, FrameBufferAttachment.BufferAttachmentType.COLOUR0)
-        .build()
+        .build()!!
     val paintPipeline = PostPassPipeline(
         PaintShader(),
         paintFrameBuffer,
@@ -53,20 +58,25 @@ class Main : GameApplication(
 
     var drawing = false
 
+    val junicodeFont = TrueTypeFont("fonts/Junicode-Regular.ttf")
+        .generateBitmapFont(48, (0x16A0..0x16FF).map { it.toChar() }.toSet())
+    val symbolaFont = TrueTypeFont("fonts/Symbola.ttf")
+        .generateBitmapFont(48, (0x1F700..0x1F77F).map { it.toChar() }.toSet())
+
     init {
         window.scene = Scene(
-            Batch(renderer, window.currentSize),
+            batch,
             VBox(
                 Button(Label("Circle")) {
                     pipeline.shader.shapeType = CircleShader.CIRCLE
                 }.apply {
-                    size = Vector2f(200f, 50f)
+//                    size = Vector2f(200f, 50f)
                     margin = Vector4f(10f)
                 },
                 Button(Label("Fire rune")) {
                     pipeline.shader.shapeType = CircleShader.FIRE_RUNE
                 }.apply {
-                    size = Vector2f(200f, 50f)
+//                    size = Vector2f(200f, 50f)
                     margin = Vector4f(10f)
                 }
             ),
@@ -105,8 +115,29 @@ class Main : GameApplication(
         }
         FrameBuffer.bindScreenBuffer()
 
+        batch.renderText(
+            (0x16A0..0x16F0).joinToString("") { it.toChar().toString() },
+            junicodeFont,
+            Vector2f(50f, 100f),
+            Vector2f(200f) as Vector2fc
+        )
+        batch.renderText(
+            (0x1F700..0x1F77F).joinToString("") { it.toChar().toString() },
+            symbolaFont,
+            Vector2f(300f, 100f),
+            Vector2f(400f) as Vector2fc
+        )
+//        batch.renderText(
+//            (0x1F723..0x1F724).joinToString("") { it.toChar().toString() },
+//            symbolaFont,
+//            Vector2f(300f, 100f),
+//            Vector2f(400f) as Vector2fc
+//        )
+
+
+//        batch.blit(paintTexture, Vector2f(0f), Vector2f(window.currentSize), 0f)
         //FIXME probably does not render because of culling
-        paintFeedbackPipeline.shader.sprite = paintTexture
-        renderer.render(paintFeedbackPipeline)
+//        paintFeedbackPipeline.shader.sprite = paintTexture
+//        renderer.render(paintFeedbackPipeline)
     }
 }

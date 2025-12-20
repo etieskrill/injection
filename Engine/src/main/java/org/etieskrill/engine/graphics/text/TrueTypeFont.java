@@ -2,11 +2,11 @@ package org.etieskrill.engine.graphics.text;
 
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.etieskrill.engine.graphics.texture.ArrayTexture;
+import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.util.ResourceReader;
 import org.jetbrains.annotations.NotNull;
-import org.joml.Vector2f;
-import org.joml.Vector2i;
-import org.joml.Vector2ic;
+import org.jetbrains.annotations.Nullable;
+import org.joml.*;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.util.freetype.*;
@@ -14,13 +14,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.lang.Math;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
-import static org.etieskrill.engine.config.ResourcePaths.FONT_PATH;
-import static org.lwjgl.opengl.GL11C.GL_UNPACK_ALIGNMENT;
-import static org.lwjgl.opengl.GL11C.glPixelStorei;
+import static org.etieskrill.engine.graphics.text.Fonts.DEFAULT_FONT;
+import static org.lwjgl.BufferUtils.zeroBuffer;
+import static org.lwjgl.opengl.GL11C.*;
+import static org.lwjgl.opengl.GL12C.GL_MAX_3D_TEXTURE_SIZE;
 import static org.lwjgl.util.freetype.FreeType.*;
 
 public class TrueTypeFont implements Font {
@@ -42,7 +46,7 @@ public class TrueTypeFont implements Font {
         if (library == 0) initLibrary();
 
         PointerBuffer faceBuffer = BufferUtils.createPointerBuffer(1);
-        ByteBuffer fontFile = ResourceReader.getRawResource(FONT_PATH + file);
+        ByteBuffer fontFile = ResourceReader.getRawResource(file);
         check(FT_New_Memory_Face(library, fontFile, 0, faceBuffer),
                 "Font could not be loaded from file \"" + file + "\"");
 
@@ -72,15 +76,51 @@ public class TrueTypeFont implements Font {
         library = libBuffer.get();
     }
 
+    /**
+     * @param characters a subset of characters to load (optional)
+     * @return a rendered bitmap font
+     */
     //TODO bitmap texture packer
-    public BitmapFont generateBitmapFont(int pixelWidth, int pixelHeight, boolean verticalUp) throws IOException {
+    //FIXME there is probably some use-after-free or similarly nasty issue here, which only surfaces sporadically if the
+    // number of loaded characters is relatively large (>~1000, dependent on platform) (pathetically small really)
+    // try using e.g. STBTruetype if this cannot be resolved
+    public BitmapFont generateBitmapFont(
+            int pixelWidth,
+            int pixelHeight,
+            boolean verticalUp,
+            @Nullable Set<Character> characters
+    ) throws IOException {
         if (pixelHeight <= 0) throw new IllegalArgumentException("Font height must be greater than zero");
         if (pixelWidth < 0) throw new IllegalArgumentException("Font width must not be smaller than zero");
-        if (disposed) throw new IllegalStateException("Cannot generate bitmap as freetype resource was already disposed");
+        if (disposed)
+            throw new IllegalStateException("Cannot generate bitmap as freetype resource was already disposed");
+
+        check(FT_Select_Charmap(face, FT_ENCODING_UNICODE), "Failed to select unicode character map");
+        var gid = BufferUtils.createIntBuffer(1);
+        long charcode = FT_Get_First_Char(face, gid);
+        var availableChars = new ArrayList<Long>();
+        availableChars.add(0L);
+        while (gid.get(0) != 0) {
+            if (characters == null || characters.contains((char) charcode) || charcode == 0L) {
+                availableChars.add(charcode);
+            }
+            charcode = FT_Get_Next_Char(face, charcode, gid);
+
+            if (charcode == 0x1F723 || charcode == 0x1F724) {
+                FT_Load_Char(face, 0x1F724, FT_LOAD_RENDER);
+                var metrics = face.glyph().metrics();
+                System.out.println("Font metrics for " + (char) charcode + ", " + gid.get(0) + ": " + metrics.width() / 64 + "x" + metrics.height() / 64 + " of " + pixelWidth + "x" + pixelHeight);
+            }
+        }
+
+        //TODO probably split into multiple textures
+        var maxChars = glGetInteger(GL_MAX_3D_TEXTURE_SIZE);
+        if (availableChars.size() > maxChars) {
+            throw new IllegalArgumentException("Can only load " + maxChars + " characters due to platform limitations; load a subset of characters instead");
+        }
 
         //Is FT_Set_Char_Size ever going to be more practical than this?
-        check(FT_Set_Pixel_Sizes(face, pixelWidth, pixelHeight),
-                "Failed to set font pixel size");
+        check(FT_Set_Pixel_Sizes(face, pixelWidth, pixelHeight), "Failed to set font pixel size");
 
         int glyphIndex = 0;
 
@@ -91,54 +131,71 @@ public class TrueTypeFont implements Font {
 
         ArrayTexture.BufferBuilder textures = (ArrayTexture.BufferBuilder) new ArrayTexture.BufferBuilder(
                 new Vector2i(pixelWidth, pixelHeight),
-                NUM_CHARS_ASCII,
+                availableChars.size(),
                 AbstractTexture.Format.ALPHA
         )
                 .setType(AbstractTexture.Type.DIFFUSE)
                 .setMipMapping(AbstractTexture.MinFilter.NEAREST, AbstractTexture.MagFilter.LINEAR) //TODO min nearest is better for small text, but when rendering using pixel sizes this should never be used anyway
                 .setWrapping(AbstractTexture.Wrapping.CLAMP_TO_BORDER);
 
+        ByteBuffer buffer = BufferUtils.createByteBuffer(pixelWidth * pixelHeight);
+
         Map<Character, Glyph> glyphs = new HashMap<>();
-        for (int i = 0; i < NUM_CHARS_ASCII; i++) {
-            check(FT_Load_Char(face, i, FT_LOAD_RENDER),
-                    "Could not load character \"%c\"".formatted((char) i));
+        for (long c : availableChars) {
+            var charLoadRet = FT_Load_Char(face, c, FT_LOAD_RENDER);
+            if (charLoadRet == FT_Err_Invalid_Outline) continue;
+            check(charLoadRet, "Could not load character \"%c\"".formatted((char) c));
 
             FT_GlyphSlot ftGlyph = face.glyph();
             if (ftGlyph == null) {
-                logger.warn("Failed to load character \"{}\" from face", (char) i);
+                logger.warn("Failed to load character \"{}\" from face", (char) c);
                 continue;
             }
-            //despite the enticing suggestion by intellisense, do NOT close these resources, it causes significant pain
-            FT_Bitmap bitmap = ftGlyph.bitmap();
-            FT_Vector adv = ftGlyph.advance();
+
+            @SuppressWarnings("resource") FT_Bitmap bitmap = ftGlyph.bitmap();
+            @SuppressWarnings("resource") FT_Vector adv = ftGlyph.advance();
 
             Vector2f size = new Vector2f(bitmap.width(), bitmap.rows());
             Vector2f position = new Vector2f(ftGlyph.bitmap_left(), ftGlyph.bitmap_top());
             if (!verticalUp) position.mul(1, -1).add(0, getMinLineHeight());
-            Vector2f advance = new Vector2f(adv.x(), adv.y()).mul(1 / 64f);
+            Vector2f advance = new Vector2f(adv.x() / 64f, adv.y() / 64f);
             if (!verticalUp) advance.mul(1, -1);
 
+            var metrics = ftGlyph.metrics();
             ByteBuffer _buffer = bitmap.buffer((int) (size.x() * size.y()));
-            ByteBuffer buffer = null;
-            if (_buffer != null) { //Pad top and right of buffer to specified pixel size
-                buffer = BufferUtils.createByteBuffer(pixelWidth * pixelHeight);
-                for (int j = 0; j < size.y(); j++) {
-                    for (int k = 0; k < size.x(); k++) buffer.put(_buffer.get());
-                    for (int k = 0; k < pixelWidth - size.x(); k++) buffer.put((byte) 0);
-                }
-                for (int j = 0; j < pixelHeight - size.y(); j++) {
-                    for (int k = 0; k < pixelWidth; k++) buffer.put((byte) 0);
-                }
-                buffer.rewind();
+
+            if (metrics.width() == 0 || metrics.height() == 0 || _buffer == null) {
+                logger.trace("Character with code '{}' (code: {}) has no bitmap, using empty texture", (char) c, c);
+
+                zeroBuffer(buffer.position(0).limit(buffer.capacity()));
+                textures.addTexture(buffer);
+                Glyph glyph = new Glyph(size, position, advance, glyphIndex++, (char) c);
+
+                glyphs.put((char) c, glyph);
+
+                continue;
             }
 
-            if (buffer == null)
-                logger.trace("Encountered glyph '{}' (code: {}) without buffer, proceeding with blank bitmap", (char) i, i);
+            //Pad top and right of buffer to specified pixel size
+            buffer.position(0).limit(buffer.capacity());
+            //FIXME how to handle characters that go out of texture bounds?
+            var clampedWidth = Math.min(pixelSize.x, size.x());
+            var clampedHeight = Math.min(pixelSize.y, size.y());
+            for (int j = 0; j < clampedHeight; j++) {
+//                for (int k = 0; k < size.x(); k++) buffer.put(_buffer.get());
+//                for (int k = 0; k < pixelWidth - size.x(); k++) buffer.put((byte) 0);
+                for (int k = 0; k < clampedWidth; k++) buffer.put(_buffer.get());
+                for (int k = 0; k < pixelWidth - size.x(); k++) buffer.put((byte) 0);
+            }
+            for (int j = 0; j < pixelHeight - size.y(); j++) {
+                for (int k = 0; k < clampedWidth; k++) buffer.put((byte) 0);
+            }
+            buffer.rewind();
 
             textures.addTexture(buffer);
-            Glyph glyph = new Glyph(size, position, advance, glyphIndex++, (char) i);
+            Glyph glyph = new Glyph(size, position, advance, glyphIndex++, (char) c);
 
-            glyphs.put((char) i, glyph);
+            glyphs.put((char) c, glyph);
         }
 
         //TODO figure out whether the face height is actually scaled via FT_Set_Pixel_Sizes or the like
@@ -159,15 +216,19 @@ public class TrueTypeFont implements Font {
     }
 
     public BitmapFont generateBitmapFont(int pixelWidth, int pixelHeight) throws IOException {
-        return generateBitmapFont(pixelWidth, pixelHeight, false);
+        return generateBitmapFont(pixelWidth, pixelHeight, false, null);
     }
 
     public BitmapFont generateBitmapFont(int pixelSize, boolean verticalUp) throws IOException {
-        return generateBitmapFont(0, pixelSize, verticalUp);
+        return generateBitmapFont(0, pixelSize, verticalUp, null);
+    }
+
+    public BitmapFont generateBitmapFont(int pixelSize, Set<Character> characters) throws IOException {
+        return generateBitmapFont(0, pixelSize, false, characters);
     }
 
     public BitmapFont generateBitmapFont(int pixelSize) throws IOException {
-        return generateBitmapFont(0, pixelSize, false);
+        return generateBitmapFont(0, pixelSize, false, null);
     }
 
     //TODO implement
