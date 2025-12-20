@@ -28,6 +28,13 @@ dependencies {
 
     implementation("io.github.etieskrill.injection.extension.shader.dsl:shader-dsl-plugin:1.0.0-SNAPSHOT")
 
+    implementation(libs.kotlin.coroutines)
+
+    implementation("org.jetbrains.kotlin:kotlin-compiler-embeddable:2.2.0")
+    implementation("org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable:2.2.0")
+    implementation("org.jetbrains.kotlin:kotlin-scripting-jvm:2.2.0")
+    implementation("org.jetbrains.kotlin:kotlin-scripting-jvm-host:2.2.0")
+
     implementation("com.github.wendykierp:JTransforms:3.1")
 }
 

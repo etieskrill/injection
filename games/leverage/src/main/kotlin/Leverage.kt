@@ -22,6 +22,7 @@ import org.etieskrill.engine.graphics.gl.shader.impl.LineShader
 import org.etieskrill.engine.graphics.gl.shader.impl.ScreenSpacePointShader
 import org.etieskrill.engine.graphics.gl.shader.impl.camera
 import org.etieskrill.engine.graphics.gl.shader.impl.position
+import org.etieskrill.engine.graphics.model.CubeMapModel
 import org.etieskrill.engine.graphics.model.Model
 import org.etieskrill.engine.graphics.pipeline.AlphaMode
 import org.etieskrill.engine.graphics.pipeline.CullingMode
@@ -44,6 +45,8 @@ import org.etieskrill.engine.scene.element.Label
 import org.etieskrill.engine.util.Loaders
 import org.etieskrill.engine.window.Window
 import org.etieskrill.engine.window.window
+import org.joml.AxisAngle4f
+import org.joml.Quaternionf
 import org.joml.Vector2d
 import org.joml.Vector2f
 import org.joml.Vector2fc
@@ -186,7 +189,7 @@ class Leverage : org.etieskrill.engine.application.App(window {
         entitySystem.addService(DirectionalShadowMappingService(renderer))
         entitySystem.addService(PointShadowMappingService(renderer, DepthCubeMapArrayShader()))
         entitySystem.addService(RenderService(renderer, camera, window.currentSize).apply {
-//            skybox = CubeMapModel("textures/cubemaps/space")
+            skybox = CubeMapModel("textures/cubemaps/space")
         })
 
         window.addKeyInputs(KeyCameraController(camera))
@@ -563,7 +566,14 @@ class RotateController(val camera: Camera) : CursorInputAdapter, TransformContro
 
         transform.set(originalTransform)
         val originalCOM = transform.matrix.transformPosition(centreOfMass, Vector3f())
-        transform.rotation.rotateAxis(angle, rotationAxis)
+        transform.rotation.premul(
+            Quaternionf(
+                AxisAngle4f(
+                    angle,
+                    rotationAxis
+                )
+            )
+        ) //why would the new transform be applied first?
         val deltaPos = transform.matrix.transformPosition(centreOfMass, Vector3f()) - originalCOM
         transform.translate(-deltaPos)
 

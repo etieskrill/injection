@@ -61,8 +61,8 @@ void main() {
     float alpha = min(1, 10 / dist);
     vec2 aa = 2 * fwidth(fragPos.xz);
 
-    vec2 grid = smoothstep(width + aa, width - aa, abs(vec2(fragPos.xz) % 1.0));
-    grid += smoothstep(width - aa, width + aa, abs(vec2(fragPos.xz) % 1.0) - 1.0 + 2 * width);
+    vec2 grid = smoothstep(width + aa, width - aa, abs(mod(vec2(fragPos.xz), 1.0)));
+    grid += smoothstep(width - aa, width + aa, abs(mod(vec2(fragPos.xz), 1.0)) - 1.0 + 2 * width);
     float lines = (grid.x + grid.y) * (1 - smoothstep(camera.far * 1/2, camera.far, dist));
     vec3 gridColour;
     if (abs(fragPos.x) < aa.x) {

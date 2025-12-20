@@ -14,5 +14,5 @@ dependencies {
 }
 
 application {
-    mainClass = "io.github.etieskrill.games.leverage.AppKt"
+    mainClass = "io.github.etieskrill.games.leverage.LeverageKt"
 }

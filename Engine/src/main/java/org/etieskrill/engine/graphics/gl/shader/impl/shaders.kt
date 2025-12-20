@@ -68,6 +68,52 @@ class BlitShader : PureShaderBuilder<BlitShader.Vertex, BlitShader.RenderTargets
     }
 }
 
+class ScreenSpaceBlitShader : PureShaderBuilder<ScreenSpaceBlitShader.Vertex, ColourRenderTarget>(
+    object : ShaderProgram(listOf("ScreenSpaceBlit.glsl")) {}
+) {
+    data class Vertex(override val position: vec4, val textureCoords: vec2) : ShaderVertexData
+
+    val vertices by const(arrayOf(vec2(-1, -1), vec2(1, -1), vec2(-1, 1), vec2(1, 1)))
+
+    var sprite by uniform<sampler2D>()
+    var useSpriteColour by uniform<bool>()
+
+    var ndcPosition by uniform<vec2>()
+    var ndcSize by uniform<vec2>()
+    var rotation by uniform<float>()
+
+    var colour by uniform<vec4>()
+
+//    var windowSize by uniform<vec2>()
+
+    init {
+        useSpriteColour = false
+        ndcPosition = Vector2f(0f)
+        ndcSize = Vector2f(100f)
+        rotation = 0f
+        colour = Vector4f(1f)
+    }
+
+    override fun program() {
+        vertex {
+            var point = rotationMat2(rotation) * vertices[vertexID]
+            point *= ndcSize
+            point += 2 * vec2(ndcPosition.x, -ndcPosition.y) - vec2(-ndcSize.x, ndcSize.y)
+//            point /= windowSize
+            point -= vec2(1, -1)
+            Vertex(vec4(point, 0, 1), max(vec2(0), vertices[vertexID]))
+        }
+        fragment {
+            val texel = if (useSpriteColour) {
+                texture(sprite, it.textureCoords) * colour
+            } else {
+                vec4(colour.rgb, texture(sprite, it.textureCoords).a * colour.a)
+            }
+            ColourRenderTarget(texel.rt)
+        }
+    }
+}
+
 //TODO compile constants - e.g. colour blend mode to merge this with above
 class BlitDepthShader : PureShaderBuilder<BlitDepthShader.Vertex, BlitDepthShader.RenderTargets>(
     object : ShaderProgram(listOf("BlitDepth.glsl")) {}

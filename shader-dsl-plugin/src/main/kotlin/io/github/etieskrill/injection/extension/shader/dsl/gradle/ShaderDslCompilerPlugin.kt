@@ -14,7 +14,7 @@ internal class ShaderDslCompilerPlugin : CompilerPluginRegistrar() {
     override val supportsK2: Boolean = true
 
     override fun ExtensionStorage.registerExtensions(configuration: CompilerConfiguration) {
-        val genResourcePath = configuration[ShaderDslCommandLineProcessor.GEN_RESOURCE_DIR_KEY]!!
+        val genResourcePath = configuration[ShaderDslCommandLineProcessor.GEN_RESOURCE_DIR_KEY] ?: GEN_RESOURCE_DIR
         val genResourceDir = File(genResourcePath)
         if (!genResourceDir.exists()) {
             genResourceDir.mkdirs()

@@ -10,8 +10,10 @@ import org.joml.Vector2ic;
 import org.joml.Vector4fc;
 
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.Objects;
 
+import static org.etieskrill.engine.graphics.texture.AbstractTexture.Format.*;
 import static org.lwjgl.BufferUtils.createFloatBuffer;
 import static org.lwjgl.assimp.Assimp.*;
 import static org.lwjgl.opengl.GL40C.*;
@@ -281,7 +283,9 @@ public abstract class AbstractTexture implements Texture, Disposable {
             T texture = bufferTextureData();
 
             //Wack solution for post-creation method calls
-            if (mipMaps) glGenerateMipmap(target.gl());
+            if (mipMaps && !List.of(DEPTH, STENCIL, DEPTH_STENCIL).contains(format)) {
+                glGenerateMipmap(target.gl());
+            }
 
             GLUtils.checkErrorThrowing("Error while creating texture:\n" + this);
             freeResources();
