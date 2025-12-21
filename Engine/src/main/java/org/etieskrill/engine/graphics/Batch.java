@@ -138,6 +138,7 @@ public class Batch {
 
     public void blit(Texture2D texture, Vector2fc position, Vector2fc size, float rotation, @Nullable Vector4fc colour) {
         blitShader.setSprite(texture);
+        blitShader.setUseSpriteColour(true);
         blitShader.setPosition(position);
         blitShader.setSize(size);
         blitShader.setRotation(rotation);
@@ -152,6 +153,15 @@ public class Batch {
         glBlendFunc(GL_ONE, GL_ZERO);
     }
 
+    public Vector2f ndcToScreenSpace(Vector2f ndc) {
+        return new Vector2f(ndc).div(2).add(0.5f, 0.5f).mul(viewportSize.x(), viewportSize.y());
+    }
+
+    public Batch setShader(ShaderProgram shader) {
+        this.shader = shader;
+        return this;
+    }
+
     public Matrix4fc getCombined() {
         return combined;
     }
@@ -161,9 +171,8 @@ public class Batch {
         return this;
     }
 
-    public Batch setShader(ShaderProgram shader) {
-        this.shader = shader;
-        return this;
+    public Vector2ic getViewportSize() {
+        return viewportSize;
     }
 
 }

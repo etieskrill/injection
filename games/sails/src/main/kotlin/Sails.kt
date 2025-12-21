@@ -1,9 +1,9 @@
 package io.github.etieskrill.games.sails
 
+import io.github.etieskrill.games.sails.EnemyShipController.Behaviours.CircleBehaviour
 import org.etieskrill.engine.application.App
 import org.etieskrill.engine.entity.Entity
 import org.etieskrill.engine.entity.system.EntitySystem
-import org.etieskrill.engine.graphics.camera.Camera
 import org.etieskrill.engine.graphics.camera.OrthographicCamera
 import org.etieskrill.engine.window.Window
 import org.etieskrill.engine.window.window
@@ -21,13 +21,9 @@ object Game : App(window {
     size = Window.WindowSize.FHD
     samples = 4
 }) {
-    val playerShip: Entity
-
-    val camera: Camera
-
     init {
         renderer.setClearColour(Vector4f(25f, 100f, 200f, 255f).div(255f))
-        camera = OrthographicCamera(window.currentSize)
+        val camera = OrthographicCamera(window.currentSize)
 
         fun hardpoint(x: Float, y: Float, angle: Float) = Hardpoint(
             position = Vector2f(x, y),
@@ -45,35 +41,41 @@ object Game : App(window {
             reloadTime = 5f
         )
 
-        playerShip = entitySystem.configureEntity {
+        entitySystem.configureEntity {
             +NavalTransform(position = Vector2f(0f, -300f))
             +InputDirection()
             +PlayerShipController()
             +ShipCollider()
             +ShipStats(
-                100, hardpoints = mapOf(
-                    hardpoint(-40f, 20f, 90f) to Cannon(),
-                    hardpoint(-40f, -20f, 90f) to Cannon(),
-                    hardpoint(-40f, -60f, 90f) to Cannon(),
-                    hardpoint(40f, 20f, -90f) to Cannon(),
-                    hardpoint(40f, -20f, -90f) to Cannon(),
-                    hardpoint(40f, -60f, -90f) to Cannon()
+                100, faction = PLAYER_FACTION, hardpoints = mapOf(
+                    hardpoint(-20f, 10f, 90f) to Cannon(),
+                    hardpoint(-20f, -10f, 90f) to Cannon(),
+                    hardpoint(-20f, -30f, 90f) to Cannon(),
+                    hardpoint(20f, 10f, -90f) to Cannon(),
+                    hardpoint(20f, -10f, -90f) to Cannon(),
+                    hardpoint(20f, -30f, -90f) to Cannon()
                 )
             )
         }
 
-        for (position in listOf(Vector2f(-200f, 300f), Vector2f(0f, 300f), Vector2f(200f, 300f))) {
+        for (position in listOf<Vector2f>(
+//            Vector2f(-400f, 300f),
+//            Vector2f(-200f, 300f),
+            Vector2f(0f, 300f),
+//            Vector2f(200f, 300f),
+//            Vector2f(400f, 300f)
+        )) {
             entitySystem.configureEntity {
-                +NavalTransform(
-                    position,
-                    rotation = Math.PI_f,
-                    size = 80f,
-                    mass = 70f
-                )
+                +NavalTransform(position, rotation = Math.PI_f, size = 80f, mass = 70f)
                 +InputDirection()
-                +EnemyShipController()
+                +EnemyShipController(CircleBehaviour(400f, 700f))
                 +ShipCollider()
-                +ShipStats(50)
+                +ShipStats(
+                    50, faction = ENEMY_FACTION, hardpoints = mapOf(
+                        hardpoint(-15f, -10f, 90f) to Cannon(),
+                        hardpoint(15f, -10f, -90f) to Cannon()
+                    )
+                )
             }
         }
 

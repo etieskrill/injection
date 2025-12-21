@@ -84,7 +84,7 @@ class ShipPhysicsService : Service {
 
         val angularSpeed = transform.rotation - transform.prevRotation
         val angularDrag =
-            max(0f, (transform.lateralDrag * 997 * Math.toDegrees(angularSpeed).pow(2) * transform.size) / 100000)
+            max(0f, (transform.lateralDrag * 997 * Math.toDegrees(angularSpeed).pow(2) * transform.size) / 10000)
 
         val angularStationaryDrag =
             min(1f, max(0f, abs(relativeSpeed.y)).pow(2)) //imitate that rudder does nothing when stationary

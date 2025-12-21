@@ -10,7 +10,7 @@ import org.joml.Vector3f
 /**
  * A node with a single child.
  */
-open class Container(child: Node<*>?) : Node<Container>() {
+open class Container(child: Node<*>? = null) : Node<Container>() {
 
     var child: Node<*>? = child
         set(value) {

@@ -17,7 +17,6 @@ import org.etieskrill.engine.graphics.TextRenderer
 import org.etieskrill.engine.graphics.camera.Camera
 import org.etieskrill.engine.graphics.camera.OrthographicCamera
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
-import org.etieskrill.engine.graphics.gl.shader.impl.BlitShader
 import org.etieskrill.engine.graphics.gl.shader.impl.LineShader
 import org.etieskrill.engine.graphics.gl.shader.impl.ScreenSpacePointShader
 import org.etieskrill.engine.graphics.pipeline.Pipeline
@@ -27,8 +26,7 @@ import org.etieskrill.engine.graphics.pipeline.PrimitiveType
 import org.etieskrill.engine.graphics.text.Fonts
 import org.etieskrill.engine.graphics.texture.Textures
 import org.etieskrill.engine.window.Window
-import org.joml.Math.PI_f
-import org.joml.Math.toDegrees
+import org.joml.Math.PI_OVER_2_f
 import org.joml.Matrix2f
 import org.joml.Vector2f
 import org.joml.Vector2fc
@@ -48,16 +46,15 @@ class ShipRenderService(
     private val camera: Camera,
     private val renderer: Renderer,
     textRenderer: TextRenderer,
-    private val window: Window
+    window: Window
 ) : Service {
 
     private val shipSprite = Textures.ofFile("textures/ship-icon.png")
-    private val pipeline = PostPassPipeline(BlitShader(), null, opaque = false, depthTest = false)
 
     private val hardpointPipeline = PostPassPipeline(HardpointShader(), null, opaque = false, depthTest = false)
 
     private val batch = Batch(renderer, textRenderer, window.currentSize).apply {
-        combined = OrthographicCamera(window.currentSize).apply {
+        combined = OrthographicCamera(viewportSize).apply {
             setRotation(0f, 180f, 0f)
             setPosition(Vector3f(viewportSize, 0f).div(2f))
         }.combined
@@ -87,59 +84,48 @@ class ShipRenderService(
         val inputDirection = targetEntity.getComponent<InputDirection>()!!
         val stats = targetEntity.getComponent<ShipStats>()!!
 
-        when (stats.state) {
-            ShipStats.State.ALIVE -> pipeline.shader.colour = Colour.WHITE
-            ShipStats.State.DYING -> pipeline.shader.colour = Vector4f(1f, 1f, 1f, 1 - stats.deathProgress)
+        val spriteColour = when (stats.state) {
+            ShipStats.State.ALIVE -> Colour.WHITE
+            ShipStats.State.DYING -> Vector4f(1f, 1f, 1f, 1 - stats.deathProgress)
             ShipStats.State.DEAD -> return
         }
 
-        pipeline.shader.apply {
-            sprite = shipSprite
-            useSpriteColour = true
-
-            val spriteSize = Vector2f(transform.size)
-            position = transform.position.toScreenSpace(camera) +
-                    (spriteSize.div(
-                        camera.aspectRatio,
-                        Vector2f()
-                    )) //FIXME this cannot be right. why does it even work?
-            size = spriteSize * (camera.worldToView(Vector3f(1f, 0f, 0f)).x * camera.viewportSize.y())
-            rotation = transform.rotation + PI_f
-
-            windowSize = Vector2f(window.currentSize)
-        }
-        renderer.render(pipeline)
+        val spriteSize = Vector2f(transform.size) * (batch.viewportSize.toFloat() / camera.viewportSize)
+        batch.blit(
+            shipSprite,
+            batch.ndcToScreenSpace((transform.position).toNDC(camera)) - Vector2f(spriteSize) / 2f,
+            spriteSize,
+            transform.rotation,
+            spriteColour
+        )
 
         for ((hardpoint, weapon) in stats.hardpoints) {
             hardpointPipeline.shader.apply {
-                position = camera.worldToView(
-                    Vector3f(
-                        (transform.position + Matrix2f().rotation(transform.rotation) * hardpoint.position).div(
-                            2f / camera.aspectRatio,
-                            2f,
-                            Vector2f()
-                        ), 0f
-                    )
-                ).xy(Vector2f()).negateX()
+                position = (transform.position + Matrix2f().rotation(transform.rotation) * hardpoint.position)
+                    .toNDC(camera).negateX()
 
-                angle = toDegrees(hardpoint.angle + PI_f - transform.rotation)
-                angleLimit = toDegrees(hardpoint.angleLimit)
+                angle = -hardpoint.angle - transform.rotation
+                angleLimit = hardpoint.angleLimit
 
-                range = weapon?.range ?: 200f
+                range = (weapon?.range ?: 200f) / (camera.viewportSize.y() / camera.aspectRatio) * 1.095f //¯\_(ツ)_/¯
 
                 colour = Vector4f(1f, 0f, 0f, 0.2f)
 
-                windowSize = window.currentSize.toFloat()
+                aspectRatio = camera.aspectRatio
             }
             renderer.render(hardpointPipeline)
         }
 
-        val healthBarPosition = transform.position.toScreenSpace(camera) + Vector2f(-25f, -6f * sqrt(transform.size))
+        val healthBarPosition = batch.ndcToScreenSpace(transform.position.toNDC(camera)) +
+                Vector2f(
+                    -25f,
+                    -6f * sqrt(transform.size) * (batch.viewportSize.y().toFloat() / camera.viewportSize.y())
+                )
         batch.renderBackground(healthBarPosition, Vector2f(50f, 5f), Colour.BLACK, 0f, Colour.BLACK)
         batch.renderBackground(
             healthBarPosition,
             Vector2f(50f * (stats.currentHealth.toFloat() / stats.maxHealth.toFloat()), 5f),
-            if (!targetEntity.hasComponents(EnemyShipController::class.java)) Colour.GREEN else Colour.RED,
+            if (stats.faction == PLAYER_FACTION) Colour.GREEN else Colour.RED,
             0f, Colour.BLACK
         )
         batch.renderText(
@@ -148,13 +134,10 @@ class ShipRenderService(
         )
 
         linePipeline.shader.apply {
-            pointA = Vector3f(transform.position.toNDC(camera) - Vector2f(1f), 0f).negateY()
-            pointB = Vector3f(
-                (transform.position.toNDC(camera) - Vector2f(1f)
-                        + (Matrix2f().rotation(transform.rotation + PI_f)
-                        * Vector2f(inputDirection.direction).negateX() * 25f * log2(inputDirection.strength + 1))
-                        / window.currentSize), 0f
-            ).negateY()
+            pointA = Vector3f(transform.position.toNDC(camera), 0f).negateY()
+            val offset = (Matrix2f().rotation(transform.rotation)
+                    * Vector2f(inputDirection.direction).negateX() * 15f * log2(inputDirection.strength + 1))
+            pointB = Vector3f((transform.position + offset).toNDC(camera), 0f).negateY()
 
             colour = Vector4f(1f, 0f, 1f, 1f)
         }
@@ -172,8 +155,7 @@ class ProjectileRenderService(val camera: Camera, val renderer: Renderer, val wi
         val projectile = targetEntity.getComponent<Projectile>()!!
 
         projectilePipeline.shader.apply {
-            ndcPosition = camera.worldToView(Vector3f(projectile.position.div(2f, Vector2f()), 0f))
-                .xy(Vector2f()).negateY()
+            ndcPosition = projectile.position.toNDC(camera).negateY()
             aspectRatio = window.aspectRatio
             size = projectile.size / window.currentSize.y()
             colour = Vector4f(0.15f, 0.15f, 0.15f, 1f)
@@ -182,8 +164,7 @@ class ProjectileRenderService(val camera: Camera, val renderer: Renderer, val wi
     }
 }
 
-fun Vector2fc.toNDC(camera: Camera) = camera.worldToView(Vector3f(this, 0f)).xy(Vector2f()) / 2f + Vector2f(1f)
-fun Vector2fc.toScreenSpace(camera: Camera): Vector2f = toNDC(camera) * camera.viewportSize.toFloat() / 2f
+fun Vector2fc.toNDC(camera: Camera) = camera.worldToView(Vector3f(this, 0f)).xy(Vector2f())!!
 
 object Colour {
     val BLACK = Vector4f(0f, 0f, 0f, 1f)
@@ -217,22 +198,20 @@ class HardpointShader : PureShaderBuilder<VertexData, ColourRenderTarget>( //TOD
 
     var colour by uniform<vec4>()
 
-    var windowSize by uniform<vec2>()
+    var aspectRatio by uniform<float>()
 
     override fun program() {
         vertex { VertexData(vec4(vertices[vertexID], 0, 1)) }
         fragment {
-            val pos = it.position.xy
-            pos.x *= (windowSize.x / windowSize.y)
+            val normalPos = vec2(it.position.x * aspectRatio, it.position.y) +
+                    vec2(position.x * aspectRatio, position.y)
+            val pos = rotationMat2(angle) * normalPos
 
-            val rotAngle = angle * (Math.PI.toFloat() / 180f)
-            pos.xy = rotationMat2(rotAngle) * (pos + position)
-
-            val angle = clamp(angleLimit, 0.001, 179.999f)
+            val angle = clamp(angleLimit, 0.0001, Math.PI - 0.0001)
             val triangle: Float
-            val factor = tan((90f - angle) * (Math.PI / 180f))
+            val factor = tan(PI_OVER_2_f - angle)
 
-            if (angle <= 90f) {
+            if (angle <= PI_OVER_2_f) {
                 if (pos.y > 0 && factor * abs(pos.x) / pos.y < 1) {
                     triangle = 1f
                 } else {
@@ -246,7 +225,7 @@ class HardpointShader : PureShaderBuilder<VertexData, ColourRenderTarget>( //TOD
                 }
             }
 
-            val circle = if (length(pos) < range / windowSize.y) 1f else 0f
+            val circle = if (length(pos) < range) 1f else 0f
 
             val cone = if (triangle == 1f && circle == 1f) 1f else 0f
 

@@ -18,6 +18,11 @@ import kotlin.math.floor
 import kotlin.math.min
 import kotlin.math.sin
 
+typealias Faction = Int
+
+const val PLAYER_FACTION: Faction = 0
+const val ENEMY_FACTION: Faction = 1
+
 class ShipStats(
     val maxHealth: Int,
     currentHealth: Int = maxHealth,
@@ -27,12 +32,14 @@ class ShipStats(
     val rammingDamageTaken: Float = 1f,
     val rammingDamageDealt: Float = 1f,
 
+    val faction: Faction,
+
     val hardpoints: Map<Hardpoint, Weapon?> = mapOf()
 ) {
     var currentHealth: Int = currentHealth
         set(value) {
             field = value
-            if (field < 0) state = State.DYING
+            if (field <= 0) state = State.DYING
         }
 
     var deathProgress: Float = 0.0f
@@ -121,9 +128,12 @@ class WeaponService(val entitySystem: EntitySystem) : Service {
         val transform = entity.getComponent<NavalTransform>()!!
         val stats = entity.getComponent<ShipStats>()!!
 
+        if (stats.state != State.ALIVE) return
+
         val enemies = entities
-            .filter { it.hasComponents(NavalTransform::class.java, EnemyShipController::class.java) }
-            .associateWith { it.getComponent<NavalTransform>()!!.run { position to size } }
+            .filter { it.hasComponents(NavalTransform::class.java, ShipStats::class.java) }
+            .filter { it.getComponent<ShipStats>()!!.faction != stats.faction } //TODO alignment table
+            .getComponents<NavalTransform>()
 
         stats.hardpoints.filter { it.value != null }
             .forEach { (hardpoint, weapon) ->
@@ -138,16 +148,15 @@ class WeaponService(val entitySystem: EntitySystem) : Service {
                 val hardpointMinAngle = wrap(hardpointAngle - hardpoint.angleLimit)
                 val hardpointMaxAngle = wrap(hardpointAngle + hardpoint.angleLimit)
 
-                val (targetEntity, targetTransform) = enemies.mapNotNull { (_, enemyTransform) ->
-                    val angle = wrap((hardpointPosition - enemyTransform.first).run { atan2(y, x) } + PI_OVER_2_f)
-                    if (hardpointMinAngle < angle && angle < hardpointMaxAngle) {
-                        entity to Triple(enemyTransform.first, enemyTransform.second, angle)
-                    } else {
-                        null
+                val (_, _, targetAngle) = enemies
+                    .mapNotNull { enemyTransform ->
+                        val angle =
+                            wrap((hardpointPosition - enemyTransform.position).run { atan2(y, x) } + PI_OVER_2_f)
+                        if (angle !in hardpointMinAngle..hardpointMaxAngle) null
+                        else Triple(enemyTransform.position, enemyTransform.size, angle)
                     }
-                }
-                    .filter { (transform.position - it.second.first).length() < weapon.range }
-                    .minByOrNull { (transform.position - it.second.first).length() }
+                    .filter { (transform.position - it.first).length() < weapon.range }
+                    .minByOrNull { (transform.position - it.first).length() }
                     ?: return@forEach
 
                 weapon.angle = 0f
@@ -157,8 +166,8 @@ class WeaponService(val entitySystem: EntitySystem) : Service {
                         weapon.damage,
                         hardpointPosition,
                         hardpointPosition + Vector2f(
-                            weapon.muzzleVelocity * cos(targetTransform.third - PI_OVER_2_f),
-                            weapon.muzzleVelocity * sin(targetTransform.third - PI_OVER_2_f)
+                            weapon.muzzleVelocity * cos(targetAngle - PI_OVER_2_f),
+                            weapon.muzzleVelocity * sin(targetAngle - PI_OVER_2_f)
                         ),
                         weapon.projectileSize,
                         weapon.range,
