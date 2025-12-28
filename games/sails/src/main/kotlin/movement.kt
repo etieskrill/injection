@@ -140,10 +140,12 @@ class ShipPhysicsService : Service {
 
             if (otherStats.state != ShipStats.State.ALIVE) return@forEach
 
-            val distance = transform.position - otherTransform.position
-            if (distance.length() > (transform.size + otherTransform.size) * 0.5f) return@forEach
+            val arbitrarySizeCorrection = 0.3f
 
-            val overlap = (transform.size + otherTransform.size) * 0.5f - distance.length()
+            val distance = transform.position - otherTransform.position
+            if (distance.length() > (transform.size + otherTransform.size) * arbitrarySizeCorrection) return@forEach
+
+            val overlap = (transform.size + otherTransform.size) * arbitrarySizeCorrection - distance.length()
             val force =
                 distance.max(Vector2f(0.1f), Vector2f()).normalize().mul((delta * delta).toFloat() * 1000 * overlap)
             transform.position.plusAssign(force * (otherTransform.mass / transform.mass))

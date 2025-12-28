@@ -1,8 +1,8 @@
 package io.github.etieskrill.games.sails
 
-import io.github.etieskrill.games.sails.EnemyShipController.Behaviours.CircleBehaviour
 import org.etieskrill.engine.application.App
 import org.etieskrill.engine.entity.Entity
+import org.etieskrill.engine.entity.getComponent
 import org.etieskrill.engine.entity.system.EntitySystem
 import org.etieskrill.engine.graphics.camera.OrthographicCamera
 import org.etieskrill.engine.window.Window
@@ -10,7 +10,9 @@ import org.etieskrill.engine.window.window
 import org.joml.Math
 import org.joml.Math.toRadians
 import org.joml.Vector2f
+import org.joml.Vector3f
 import org.joml.Vector4f
+import org.joml.times
 
 fun main() {
     Game.run()
@@ -21,9 +23,11 @@ object Game : App(window {
     size = Window.WindowSize.FHD
     samples = 4
 }) {
+    val camera = OrthographicCamera(window.currentSize * 2)
+    val player: Entity
+
     init {
         renderer.setClearColour(Vector4f(25f, 100f, 200f, 255f).div(255f))
-        val camera = OrthographicCamera(window.currentSize)
 
         fun hardpoint(x: Float, y: Float, angle: Float) = Hardpoint(
             position = Vector2f(x, y),
@@ -37,11 +41,11 @@ object Game : App(window {
             muzzleVelocity = 10f,
             projectileDrag = 0f,
             projectileSize = 10f,
-            range = 500f,
+            range = 300f,
             reloadTime = 5f
         )
 
-        entitySystem.configureEntity {
+        player = entitySystem.configureEntity {
             +NavalTransform(position = Vector2f(0f, -300f))
             +InputDirection()
             +PlayerShipController()
@@ -59,16 +63,20 @@ object Game : App(window {
         }
 
         for (position in listOf<Vector2f>(
-//            Vector2f(-400f, 300f),
+            Vector2f(-400f, 300f),
+            Vector2f(-400f, 150f),
+            Vector2f(-400f, 0f),
+            Vector2f(-400f, -150f),
+            Vector2f(-400f, -300f),
 //            Vector2f(-200f, 300f),
-            Vector2f(0f, 300f),
+//            Vector2f(0f, 300f),
 //            Vector2f(200f, 300f),
 //            Vector2f(400f, 300f)
         )) {
             entitySystem.configureEntity {
                 +NavalTransform(position, rotation = Math.PI_f, size = 80f, mass = 70f)
                 +InputDirection()
-                +EnemyShipController(CircleBehaviour(400f, 700f))
+                +EnemyShipController(CircleBehaviour(150f, 350f))
                 +ShipCollider()
                 +ShipStats(
                     50, faction = ENEMY_FACTION, hardpoints = mapOf(
@@ -93,6 +101,7 @@ object Game : App(window {
     }
 
     override fun loop(delta: Double) {
+        camera.position = Vector3f(player.getComponent<NavalTransform>()!!.position, 0f)
     }
 }
 

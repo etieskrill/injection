@@ -5,14 +5,16 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sqrt
 
-val Number.radians get() = this.toFloat()
+val Number.radians get() = toFloat()
 val Number.rad get() = radians
 
-val Number.degrees get() = this.toFloat() / (PI / 180)
+val Number.degrees get() = toFloat() / (PI / 180)
 val Number.deg get() = degrees
 
-val Number.turn get() = this.toFloat() / (2 * PI)
+val Number.turn get() = toFloat() / (2 * PI)
 val Number.tr get() = turn
+
+val Number.tau get() = 2 * toFloat()
 
 // @formatter:off
 data class Vec2(var x: Float, var y: Float) : Iterable<Float> {
