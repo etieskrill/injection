@@ -40,10 +40,10 @@ public class World {
         Material floorMaterial = floorModel.getNodes().get(2).getMeshes().getFirst().getMaterial();
         floorMaterial.setProperty(Material.Property.SHININESS, 256f);
         floorMaterial.getTextures().clear();
-        floorMaterial.getTextures().add(Textures.ofFile("TilesSlateSquare001_COL_2K_METALNESS.png", DIFFUSE));
-        floorMaterial.getTextures().add(Textures.ofFile("TilesSlateSquare001_ROUGHNESS_2K_METALNESS.png", SPECULAR));
+        floorMaterial.getTextures().add(Textures.ofFile("textures/TilesSlateSquare001_COL_2K_METALNESS.png", DIFFUSE));
+        floorMaterial.getTextures().add(Textures.ofFile("textures/TilesSlateSquare001_ROUGHNESS_2K_METALNESS.png", SPECULAR));
         floorMaterial.getTextures().add(
-                new Texture2D.FileBuilder("TilesSlateSquare001_NRM_2K_METALNESS.png", NORMAL)
+                new Texture2D.FileBuilder("textures/TilesSlateSquare001_NRM_2K_METALNESS.png", NORMAL)
                         .setFormat(AbstractTexture.Format.RGB) //TODO MMMMMMHHHHH select correct format automatically
                         .build()
         );

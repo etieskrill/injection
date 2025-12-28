@@ -37,6 +37,13 @@ public class Entity {
         return component;
     }
 
+    protected <T> T addComponentNoCheck(T component) {
+        if (components.putIfAbsent(component.getClass(), component) != null)
+            throw new IllegalStateException("Entity already has component of type '" + getSimpleName(component) + "'");
+
+        return component;
+    }
+
     public Entity withComponent(Object component) {
         checkValid();
 

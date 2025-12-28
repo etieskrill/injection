@@ -24,8 +24,6 @@ import static org.joml.Math.toRadians;
 
 public class EntityApplication extends GameApplication {
 
-    private static final int FRAME_RATE = 1000;
-
     static final Loaders.ModelLoader MODELS = Loaders.ModelLoader.get();
 
     private static final Logger logger = LoggerFactory.getLogger(EntityApplication.class);
@@ -57,18 +55,18 @@ public class EntityApplication extends GameApplication {
                 .setTitle("Horde3d")
                 .setSize(Window.WindowSize.LARGEST_FIT)
                 .setMode(Window.WindowMode.BORDERLESS)
-                .setRefreshRate(FRAME_RATE)
                 .setSamples(4)
                 .setVSyncEnabled(true)
                 .build()
         );
+        renderer.setQueryGpuTime(false);
     }
 
     @Override
     protected void init() {
         GLUtils.addDebugLogging();
 
-        camera = new PerspectiveCamera(window.getSize().getVec());
+        camera = new PerspectiveCamera(window.getCurrentSize());
 
         world = new World(entitySystem);
 
@@ -81,23 +79,26 @@ public class EntityApplication extends GameApplication {
                 new DepthCubeMapArrayShader()
         ));
         entitySystem.addService(new AnimationService());
-        RenderService renderService = new RenderService(renderer, camera, window.getSize().getVec());
+
+        entitySystem.addService(new ParticleUpdateService());
+
+        RenderService renderService = new RenderService(renderer, camera, window.getCurrentSize());
         entitySystem.addService(renderService);
 
         float smolFactor = 4;
         secondaryRenderService = new RenderService(renderer,
-                new PerspectiveCamera(window.getSize().getVec())
+                new PerspectiveCamera(window.getCurrentSize())
                         .setPosition(new Vector3f(-10, 10, -10))
                         .setRotation(-45, -45, 0)
                         .setZoom(10f),
-                new Vector2i(window.getSize().getVec()).div(smolFactor))
+                new Vector2i(window.getCurrentSize()).div(smolFactor))
                 .cullingCamera(camera)
                 .blur(false)
                 .customViewport(new Vector4i(
-                        (int) (window.getSize().getWidth() * (1f - 1f / smolFactor)),
-                        (int) (window.getSize().getHeight() * (1f - 1f / smolFactor)),
-                        (int) (window.getSize().getWidth() * 1f / smolFactor),
-                        (int) (window.getSize().getHeight() * 1f / smolFactor))
+                        (int) (window.getCurrentSize().x() * (1f - 1f / smolFactor)),
+                        (int) (window.getCurrentSize().y() * (1f - 1f / smolFactor)),
+                        (int) (window.getCurrentSize().x() * 1f / smolFactor),
+                        (int) (window.getCurrentSize().y() * 1f / smolFactor))
                 );
         entitySystem.addService(secondaryRenderService);
 
@@ -156,7 +157,7 @@ public class EntityApplication extends GameApplication {
         ));
 
         //FIXME loading the scene (the label font specifically) before the above stuff causes a segfault from freetype??
-        debugInterface = new DebugInterface(window.getSize().getVec(), renderer, pacer);
+        debugInterface = new DebugInterface(window.getCurrentSize(), renderer, pacer);
         window.setScene(debugInterface);
 
         GLUtils.removeDebugLogging();
@@ -198,7 +199,7 @@ public class EntityApplication extends GameApplication {
     }
 
     public static void main(String[] args) {
-        new EntityApplication();
+        new EntityApplication().run();
     }
 
 }

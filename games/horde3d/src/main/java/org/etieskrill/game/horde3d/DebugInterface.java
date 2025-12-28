@@ -6,7 +6,7 @@ import org.etieskrill.engine.graphics.gl.renderer.GLRenderer;
 import org.etieskrill.engine.graphics.text.Fonts;
 import org.etieskrill.engine.scene.Node;
 import org.etieskrill.engine.scene.Scene;
-import org.etieskrill.engine.scene.component.Container;
+import org.etieskrill.engine.scene.container.Container;
 import org.etieskrill.engine.scene.element.Label;
 import org.etieskrill.engine.time.LoopPacer;
 import org.etieskrill.engine.window.Window;

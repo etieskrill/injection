@@ -1,66 +1,74 @@
-package org.etieskrill.game.horde3d;
+package org.etieskrill.game.horde3d
 
-import org.etieskrill.engine.common.Interpolator;
-import org.etieskrill.engine.entity.component.Transform;
-import org.etieskrill.engine.graphics.particle.ParticleEmitter;
-import org.etieskrill.engine.graphics.particle.ParticleNode;
-import org.etieskrill.engine.graphics.texture.AbstractTexture;
-import org.etieskrill.engine.graphics.texture.Texture2D;
-import org.joml.Vector3f;
-import org.joml.Vector4f;
+import org.etieskrill.engine.common.Interpolator
+import org.etieskrill.engine.entity.component.Transform
+import org.etieskrill.engine.graphics.particle.ParticleEmitter
+import org.etieskrill.engine.graphics.particle.ParticleNode
+import org.etieskrill.engine.graphics.texture.AbstractTexture
+import org.etieskrill.engine.graphics.texture.Texture2D
+import org.joml.Vector3f
+import org.joml.Vector4f
+import kotlin.time.Duration.Companion.seconds
 
-public class DashParticles {
+class DashParticles {
 
-    private final ParticleNode particles;
+    val particles: ParticleNode
 
-    public DashParticles() {
-        ParticleEmitter riftSmokeEmitter = ParticleEmitter.builder(
-                        1,
-                        new Texture2D.FileBuilder("particles/smoke_05.png", AbstractTexture.Type.DIFFUSE).build())
-                .particlesPerSecond(500)
-                .randomVelocity(2)
-                .colour(new Vector4f(.005f, 0, .043f, 1))
-                .updateAlphaFunction(Interpolator.QUADRATIC)
-                .scatter(new Vector3f(.5f, 1.5f, .5f))
-                .build();
+    init {
+        val riftSmokeEmitter = ParticleEmitter(
+            lifetime = 1.seconds,
+            sprite = Texture2D.FileBuilder("textures/particles/smoke_05.png")
+                .setWrapping(AbstractTexture.Wrapping.CLAMP_TO_BORDER).build(),
+            particlesPerSecond = 500f,
+            randomVelocity = 2f,
+            baseColour = Vector4f(0.005f, 0f, 0.043f, 1f),
+            colourUpdate = { lifetime, outColour -> outColour.w = Interpolator.QUADRATIC.interpolate(lifetime) },
+            scatter = Vector3f(0.5f, 1.5f, 0.5f),
+        )
 
-        ParticleEmitter riftSparkEmitter = ParticleEmitter.builder(
-                        .5f,
-                        new Texture2D.FileBuilder("particles/spark_04.png", AbstractTexture.Type.DIFFUSE).build())
-                .lifetimeSpread(.5f)
-                .particlesPerSecond(20)
-                .particleDelaySpreadSeconds(.25f)
-                .colour(8, 5, 8)
-                .size(1.5f)
-                .updateFunction((lifetime, colour) -> {
-                    lifetime = (2 * lifetime) % 1f;
-                    colour.w = lifetime < 0.1 ? 0 : (lifetime < 0.5 ? 0.1f : (lifetime < 0.55 ? 1 : 0));
-                })
-                .scatter(.5f, 1.5f, .5f)
-                .maxScatterAngle(360)
-                .revolutionsPerSecond(.1f)
-                .build();
+        val riftSparkEmitter = ParticleEmitter(
+            lifetime = 0.5.seconds,
+            sprite = Texture2D.FileBuilder("textures/particles/spark_04.png")
+                .setWrapping(AbstractTexture.Wrapping.CLAMP_TO_BORDER).build(),
+            particlesPerSecond = 20f,
+            particleSpawnDelaySpread = 0.25.seconds,
+            baseColour = Vector4f(8f, 5f, 8f, 1f),
+            size = 1.5f,
+            colourUpdate = { lifetime, outColour ->
+                val t = (2 * lifetime) % 1f
+                outColour.w = when {
+                    t < 0.1 -> 0f
+                    t < 0.5 -> 0.1f
+                    t < 0.55 -> 1f
+                    else -> 0f
+                }
+            },
+            scatter = Vector3f(0.5f, 1.5f, 0.5f),
+            rotationsPerSecond = 0.1f,
+        )
 
-        ParticleEmitter riftShineEmitter = ParticleEmitter.builder(
-                        1,
-                        new Texture2D.FileBuilder("particles/star_01.png", AbstractTexture.Type.DIFFUSE).build())
-                .particlesPerSecond(.5f)
-                .particlesMoveWithEmitter(true)
-                .colour(1, .75f, 1)
-                .updateAlphaFunction(Interpolator.SMOOTHSTEP)
-                .size(5)
-                .build();
+        val riftShineEmitter = ParticleEmitter(
+            lifetime = 1.seconds,
+            numParticles = 1,
+            sprite = Texture2D.FileBuilder("textures/particles/star_01.png")
+                .setWrapping(AbstractTexture.Wrapping.CLAMP_TO_BORDER).build(),
+            particlesMoveWithEmitter = true,
+            baseColour = Vector4f(1f, 0.75f, 1f, 1f),
+            colourUpdate = { lifetime, outColour ->
+                outColour.w = Interpolator.SMOOTHSTEP.interpolate(lifetime)
+            },
+            size = 5f,
+            scatterAngleRange = 0f..0f
+        )
 
-        particles = ParticleNode.builder()
-                .emitter(riftSmokeEmitter)
-                .emitter(riftSparkEmitter)
-                .emitter(riftShineEmitter)
-                .transform(new Transform().setPosition(new Vector3f(0, 5, 0)))
-                .build();
-    }
-
-    public ParticleNode getParticles() {
-        return particles;
+        particles = ParticleNode(
+            emitters = listOf(
+                riftSmokeEmitter,
+                riftSparkEmitter,
+                riftShineEmitter
+            ),
+            transform = Transform().setPosition(Vector3f(0f, 5f, 0f)),
+        )
     }
 
 }

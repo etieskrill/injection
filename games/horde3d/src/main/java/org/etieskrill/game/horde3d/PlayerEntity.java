@@ -37,18 +37,18 @@ public class PlayerEntity extends Entity {
         this.transform = new Transform();
         this.moveForce = new Acceleration(new Vector3f(), 20);
 
-        withComponent(transform);
+        addComponentNoCheck(transform);
 
         boundingBox = new AABBf(-.5f, 0, -.5f, .5f, 2, .5f);
-        withComponent(boundingBox);
-        withComponent(new WorldSpaceAABB());
+        addComponentNoCheck(boundingBox);
+        addComponentNoCheck(new WorldSpaceAABB());
 
         collider = new DynamicCollider();
-        withComponent(collider);
-        withComponent(new DirectionalForceComponent(new Vector3f(0, -15, 0)));
+        addComponentNoCheck(collider);
+        addComponentNoCheck(new DirectionalForceComponent(new Vector3f(0, -15, 0)));
 
-        withComponent(moveForce);
-        withComponent(new Friction(8f));
+        addComponentNoCheck(moveForce);
+        addComponentNoCheck(new Friction(8f));
 
         Model model = Loaders.ModelLoader.get().load("player", () ->
                 new Model.Builder("vampire.glb")
@@ -57,7 +57,7 @@ public class PlayerEntity extends Entity {
                         .build());
         shader = new VampireShader();
         Drawable drawable = new Drawable(model, shader);
-        withComponent(drawable);
+        addComponentNoCheck(drawable);
 
         animator = new Animator(model);
         animator.add(loadModelAnimations("vampire_idle.glb", model).getFirst());
@@ -70,15 +70,15 @@ public class PlayerEntity extends Entity {
                 .playbackSpeed(1.5)
                 .enabled(false));
         animator.play();
-        withComponent(animator);
+        addComponentNoCheck(animator);
 
         dashState = new DashState(.6f, 5, 20, 100);
-        withComponent(dashState);
+        addComponentNoCheck(dashState);
 
         dashParticles = new DashParticles();
-        withComponent(dashParticles.getParticles());
+        addComponentNoCheck(dashParticles.getParticles());
 
-        withComponent(new Scripts(List.of(
+        addComponentNoCheck(new Scripts(List.of(
                 this::rotatePlayerToHeading,
                 this::updateWalkingTransition,
                 this::updateDashAction

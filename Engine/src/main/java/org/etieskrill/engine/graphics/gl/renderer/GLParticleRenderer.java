@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import java.util.HashSet;
 import java.util.Set;
 
+import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElse;
 import static org.lwjgl.opengl.GL11C.*;
 
@@ -53,7 +54,7 @@ public class GLParticleRenderer implements ParticleRenderer {
         for (@NotNull ParticleEmitter emitter : node.getEmitters()) {
             if (!invalidEmitters.contains(emitter)) {
                 if (emitter.getMaxNumParticles() <= MAX_PARTICLES) {
-                    renderEmitter(new Matrix4f(transform).mul(emitter.getTransform().getMatrix()), emitter, camera, shader);
+                    renderEmitter(new Matrix4f(transform).mul(emitter.getTransform$engine().getMatrix()), emitter, camera, shader);
                 } else {
                     invalidEmitters.add(emitter);
                     logger.warn("Emitter has max of {} particles, but renderer can only draw {}", emitter.getMaxNumParticles(), MAX_PARTICLES);
@@ -68,11 +69,10 @@ public class GLParticleRenderer implements ParticleRenderer {
     }
 
     private void renderEmitter(Matrix4fc transform, ParticleEmitter emitter, Camera camera, ShaderProgram shader) {
-        shader.setUniform("model", emitter.isParticlesMoveWithEmitter() ? transform : IDENTITY);
+        shader.setUniform("model", emitter.getParticlesMoveWithEmitter$engine() ? transform : IDENTITY);
         shader.setUniform("camera", camera);
-        shader.setUniform("size", emitter.getSize());
-        emitter.getSprite().bind(0);
-        shader.setUniform("sprite", 0);
+        shader.setUniform("size", emitter.getSize$engine());
+        shader.setTexture("sprite", requireNonNull(emitter.getSprite$engine()));
 
         vao.setVertices(emitter.getAliveParticles());
         vao.bind();

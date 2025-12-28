@@ -29,17 +29,17 @@ public class Zombie extends Entity {
         super(id);
 
         transform = new Transform();
-        withComponent(transform);
-        withComponent(new AABBf(new Vector3f(-.5f, 0, -.5f), new Vector3f(.5f, 2, .5f)));
-        withComponent(new WorldSpaceAABB());
+        addComponentNoCheck(transform);
+        addComponentNoCheck(new AABBf(new Vector3f(-.5f, 0, -.5f), new Vector3f(.5f, 2, .5f)));
+        addComponentNoCheck(new WorldSpaceAABB());
 
         Model model = Loaders.ModelLoader.get().load("zombie", () ->
                 new Model.Builder("mixamo_zombie_skinned_walking.glb")
                         .setName("zombie")
                         .optimiseMeshes()
                         .build());
-//        addComponent(new Drawable(model, ShaderLoader.get().load("animation_shader", AnimationShader::new))); //FIXME
-        withComponent(new Drawable(model, new ZombieShader()));
+//        addComponentNoCheck(new Drawable(model, ShaderLoader.get().load("animation_shader", AnimationShader::new))); //FIXME
+        addComponentNoCheck(new Drawable(model, new ZombieShader()));
 
         Animator animator = new Animator(model);
         Animation walkingAnimation = AnimationLoader.get().load("zombie_walking", () ->
@@ -48,18 +48,18 @@ public class Zombie extends Entity {
 
         double offset = new Random().nextDouble(0, walkingAnimation.getDurationSeconds());
         animator.play(offset);
-        withComponent(animator);
+        addComponentNoCheck(animator);
 
-        withComponent(new DirectionalForceComponent(new Vector3f(0, -15, 0)));
-        withComponent(new Friction(8));
+        addComponentNoCheck(new DirectionalForceComponent(new Vector3f(0, -15, 0)));
+        addComponentNoCheck(new Friction(8));
         collider = new DynamicCollider();
         collider.setPreviousPosition(transform.getPosition());
-        withComponent(collider);
+        addComponentNoCheck(collider);
 
         acceleration = new Acceleration(new Vector3f(), 20);
-        withComponent(acceleration);
+        addComponentNoCheck(acceleration);
 
-        withComponent(new Scripts(List.of(
+        addComponentNoCheck(new Scripts(List.of(
                 this::rotateToHeading
         )));
     }

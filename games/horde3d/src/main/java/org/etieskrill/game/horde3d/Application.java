@@ -1,6 +1,6 @@
 package org.etieskrill.game.horde3d;
 
-import org.etieskrill.engine.application.GameApplication;
+import org.etieskrill.engine.application.App;
 import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.camera.Camera;
@@ -11,6 +11,7 @@ import org.etieskrill.engine.graphics.data.PointLight;
 import org.etieskrill.engine.graphics.gl.GLUtils;
 import org.etieskrill.engine.graphics.gl.framebuffer.DirectionalShadowMap;
 import org.etieskrill.engine.graphics.gl.framebuffer.PointShadowMapArray;
+import org.etieskrill.engine.graphics.gl.renderer.GLRenderer;
 import org.etieskrill.engine.graphics.gl.shader.Shaders;
 import org.etieskrill.engine.graphics.gl.shader.impl.*;
 import org.etieskrill.engine.graphics.model.Material;
@@ -26,8 +27,9 @@ import org.etieskrill.engine.input.controller.CursorCameraController;
 import org.etieskrill.engine.input.controller.KeyCameraController;
 import org.etieskrill.engine.scene.Node;
 import org.etieskrill.engine.scene.Scene;
-import org.etieskrill.engine.scene.component.Container;
+import org.etieskrill.engine.scene.container.Container;
 import org.etieskrill.engine.scene.element.Label;
+import org.etieskrill.engine.time.LoopPacer;
 import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.window.Window;
 import org.joml.*;
@@ -42,7 +44,7 @@ import static org.lwjgl.opengl.GL11C.*;
 import static org.lwjgl.opengl.GL30C.GL_FRAMEBUFFER_SRGB;
 
 //FIXME
-public class Application extends GameApplication {
+public class Application extends App {
 
     private static final int FRAME_RATE = 60;
 
@@ -83,6 +85,10 @@ public class Application extends GameApplication {
 
     private Label fpsLabel;
 
+    private final Window window = getWindow();
+    private final GLRenderer renderer = getRenderer();
+    private final LoopPacer pacer = getPacer();
+
     public Application() {
         super(Window.builder()
                 .setTitle("Horde")
@@ -95,7 +101,7 @@ public class Application extends GameApplication {
     }
 
     @Override
-    protected void init() {
+    public void init() {
         GLUtils.addDebugLogging();
 
         floorModel = ModelFactory.box(new Vector3f(100, .1f, 100));
