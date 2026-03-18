@@ -1,0 +1,18 @@
+# format:
+# --- <x>x<y> <name>
+# <grid>
+# ---
+# tiles; ' ': empty, 'W': wall, 'H': horse
+--- 5x5 example
+  WW
+W
+  HWW
+ W
+ WW
+--- 5x5 example enclosed
+ WWW
+W  W
+W HWW
+ W W
+ WW
+---

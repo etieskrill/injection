@@ -38,6 +38,10 @@ dependencies {
     implementation("com.github.wendykierp:JTransforms:3.1")
 }
 
+application {
+    mainClass = "LSystemsKt"
+}
+
 kotlin {
     compilerOptions {
         freeCompilerArgs.add("-Xcontext-receivers")

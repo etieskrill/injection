@@ -19,7 +19,7 @@ class WindowBuilder(
     var refreshRate: Int = GLFW_DONT_CARE,
     var vSync: Boolean = false,
     var samples: Int = 0,
-    var resizeable: Boolean = false,
+    var resizeable: Boolean = true,
     var title: String = "Injection Window",
     var cursor: Cursor? = Cursor.getDefault(),
     var createHidden: Boolean = false,

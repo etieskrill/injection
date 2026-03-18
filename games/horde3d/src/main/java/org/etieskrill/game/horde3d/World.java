@@ -61,7 +61,7 @@ public class World {
 
         Model sphere = MODELS.load("sphere", () ->
                 new Model.Builder("Sphere.obj")
-                        .optimiseMeshes(5000, .05f)
+                        .optimiseMeshes(2000, .05f)
                         .build());
 
         Entity sun = entitySystem.createEntity();

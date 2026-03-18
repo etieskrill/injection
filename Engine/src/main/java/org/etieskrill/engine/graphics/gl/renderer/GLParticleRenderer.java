@@ -5,6 +5,8 @@ import org.etieskrill.engine.graphics.gl.VertexArrayObject;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shader.impl.ParticleShader;
 import org.etieskrill.engine.graphics.particle.*;
+import org.etieskrill.engine.graphics.texture.AbstractTexture;
+import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.util.Loaders;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -16,7 +18,6 @@ import org.slf4j.LoggerFactory;
 import java.util.HashSet;
 import java.util.Set;
 
-import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElse;
 import static org.lwjgl.opengl.GL11C.*;
 
@@ -28,6 +29,8 @@ public class GLParticleRenderer implements ParticleRenderer {
 
     private final VertexArrayObject<Particle> vao;
     private final ShaderProgram particleShader;
+
+    private final Texture2D defaultParticleTexture;
 
     private final Set<ParticleEmitter> invalidEmitters;
 
@@ -41,6 +44,9 @@ public class GLParticleRenderer implements ParticleRenderer {
                 .build();
         this.particleShader = Loaders.ShaderLoader.get()
                 .load("particle_shader", ParticleShader::new);
+
+        this.defaultParticleTexture = new Texture2D.FileBuilder("textures/particles/circle.png")
+                .setWrapping(AbstractTexture.Wrapping.CLAMP_TO_BORDER).build();
 
         this.invalidEmitters = new HashSet<>();
     }
@@ -72,7 +78,7 @@ public class GLParticleRenderer implements ParticleRenderer {
         shader.setUniform("model", emitter.getParticlesMoveWithEmitter$engine() ? transform : IDENTITY);
         shader.setUniform("camera", camera);
         shader.setUniform("size", emitter.getSize$engine());
-        shader.setTexture("sprite", requireNonNull(emitter.getSprite$engine()));
+        shader.setTexture("sprite", requireNonNullElse(emitter.getSprite$engine(), defaultParticleTexture));
 
         vao.setVertices(emitter.getAliveParticles());
         vao.bind();

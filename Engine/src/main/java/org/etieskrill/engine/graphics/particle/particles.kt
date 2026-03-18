@@ -36,7 +36,6 @@ class Particle(
     var initialLifetimeSeconds: Float = initialLifetimeSeconds; internal set
 
     fun update(delta: Float, emitter: ParticleEmitter) {
-        println("particle update")
         lifetimeSeconds -= delta
 
         relativePosition += velocity * delta
@@ -177,6 +176,17 @@ class ParticleEmitter(
             }
 
             secondsSinceLastParticle -= particleSpawnDelay.toSeconds().toFloat()
+        }
+    }
+
+    fun <T : Any> setParticles(source: List<T>, block: (source: T, target: Particle) -> Unit) {
+        check(source.size <= maxNumParticles)
+        { "Source contains too many entries (${source.size}) for emitter with max particle count of $maxNumParticles" }
+
+        internalAliveParticles.clear()
+        source.zip(particles).forEach {
+            block(it.first, it.second)
+            internalAliveParticles.add(it.second)
         }
     }
 

@@ -44,6 +44,11 @@ public class FrameBuffer implements io.github.etieskrill.injection.extension.sha
                 .build();
     }
 
+    public static FrameBuffer getColour(Vector2ic size) {
+        Texture2D colourBufferTexture = Textures.genBlank(size, Texture2D.Format.RGB);
+        return new Builder(size).attach(colourBufferTexture, COLOUR0).build();
+    }
+
     public static class Builder {
         protected Vector2ic size;
         private final Map<BufferAttachmentType, FrameBufferAttachment> attachments = new HashMap<>();

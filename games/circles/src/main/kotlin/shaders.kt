@@ -59,7 +59,7 @@ class CircleShader : PureShaderBuilder<VertexData, ColourRenderTarget>(
 //            val colour = exp(-distance) //FIXME oh bollocks these types of collisions exist too, of course
             val fragColour = exp(-50 * distance)
 
-            ColourRenderTarget(vec4(fragColour, fragColour, fragColour, 1.0).rt)
+            ColourRenderTarget(vec4(1, 1, 1, fragColour).rt)
         }
     }
 }

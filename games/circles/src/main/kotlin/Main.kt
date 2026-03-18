@@ -1,6 +1,6 @@
 package io.github.etieskrill.games.circles
 
-import org.etieskrill.engine.application.GameApplication
+import org.etieskrill.engine.application.App
 import org.etieskrill.engine.graphics.Batch
 import org.etieskrill.engine.graphics.camera.OrthographicCamera
 import org.etieskrill.engine.graphics.gl.framebuffer.FrameBuffer
@@ -23,7 +23,7 @@ fun main() {
     Main().run()
 }
 
-class Main : GameApplication(
+class Main : App(
     window {
         title = "Circles"
         size = Window.WindowSize.XGA
@@ -82,31 +82,39 @@ class Main : GameApplication(
         })
     }
 
-    val pipeline = PostPassPipeline(CircleShader(), null)
+    val pipeline = PostPassPipeline(CircleShader(), null, opaque = false)
 
     override fun loop(delta: Double) {}
 
     override fun render() {
-        pipeline.shader.apply {
-            cursorPosition = Vector2f(window.cursor.position)
-            size = .2f
-            combined = camera.combined
-            aspect = camera.viewportSize.x().toFloat() / camera.viewportSize.y()
-        }
+//        pipeline.shader.apply {
+//            cursorPosition = Vector2f(window.cursor.position)
+//            size = .2f
+//            combined = camera.combined
+//            aspect = camera.viewportSize.x().toFloat() / camera.viewportSize.y()
+//        }
+//
+//        renderer.render(pipeline)
+//
+//        if (drawing) {
+//            paintPipeline.shader.apply {
+//                position = Vector2f(window.cursor.position).div(Vector2f(window.currentSize))
+//                size = Vector2f(1f).div(Vector2f(window.currentSize))
+//            }
+//            renderer.render(paintPipeline)
+//        }
+//        FrameBuffer.bindScreenBuffer()
+//
+//        //FIXME probably does not render because of culling
+//        paintFeedbackPipeline.shader.sprite = paintTexture
+//        renderer.render(paintFeedbackPipeline)
 
-        renderer.render(pipeline)
-
-        if (drawing) {
-            paintPipeline.shader.apply {
-                position = Vector2f(window.cursor.position).div(Vector2f(window.currentSize))
-                size = Vector2f(1f).div(Vector2f(window.currentSize))
-            }
-            renderer.render(paintPipeline)
-        }
-        FrameBuffer.bindScreenBuffer()
-
-        //FIXME probably does not render because of culling
-        paintFeedbackPipeline.shader.sprite = paintTexture
-        renderer.render(paintFeedbackPipeline)
+        val primRuneEmpty = PrimaryRune("empty")
+        renderCircle(
+            Circle(
+                null, listOf(primRuneEmpty, primRuneEmpty, primRuneEmpty, primRuneEmpty, primRuneEmpty),
+                1, listOf()
+            ), Vector2f(window.currentSize) / 2f, 0.5f, renderer
+        )
     }
 }

@@ -142,6 +142,8 @@ public class Window implements Disposable {
     }
 
     public static class WindowBuilder {
+        private boolean resizeable = true;
+
         private WindowBuilder() {
             this.createHidden = false;
             this.transparency = false;
@@ -568,6 +570,14 @@ public class Window implements Disposable {
 
     public Vector2ic getCurrentSize() {
         return currentSize;
+    }
+
+    public void setCurrentSize(Vector2ic newSize) {
+        if (!resizeable) throw new UnsupportedOperationException("Window resizing is disabled");
+
+        currentSize.set(newSize);
+        glfwSetWindowSize(window, newSize.x(), newSize.y());
+        //TODO resize callbacks
     }
 
     public float getAspectRatio() {
