@@ -16,8 +16,14 @@ import org.etieskrill.engine.scene.element.Button
 import org.etieskrill.engine.scene.element.Label
 import org.etieskrill.engine.window.Window
 import org.etieskrill.engine.window.window
+import org.joml.Math.cos
+import org.joml.Math.sin
+import org.joml.Math.toRadians
 import org.joml.Vector2f
 import org.joml.Vector4f
+import org.joml.minus
+import org.joml.plus
+import org.joml.times
 
 fun main() {
     Main().run()
@@ -83,6 +89,7 @@ class Main : App(
     }
 
     val pipeline = PostPassPipeline(CircleShader(), null, opaque = false)
+    val hideCirclePipeline = PostPassPipeline(CircleHideShader(), null, opaque = false)
 
     override fun loop(delta: Double) {}
 
@@ -109,12 +116,27 @@ class Main : App(
 //        paintFeedbackPipeline.shader.sprite = paintTexture
 //        renderer.render(paintFeedbackPipeline)
 
+        var hoveringOverRune: Int? = null
+
+        for (angle in 0..<360 step 60) {
+            val runePos = Vector2f(window.currentSize) / 2f + Vector2f(
+                cos(toRadians(angle.toFloat())),
+                sin(toRadians(angle.toFloat()))
+            ) * 0.5f * 0.91f * camera.viewportSize.x().toFloat() / 2f
+            val runeSize = (camera.invCombined * Vector4f(0.2f * 0.5f, 0f, 0f, 0f)).x
+
+            if ((Vector2f(window.cursor.position) - runePos).length() < runeSize) {
+                hoveringOverRune = angle
+            }
+        }
+
         val primRuneEmpty = PrimaryRune("empty")
         renderCircle(
             Circle(
                 null, listOf(primRuneEmpty, primRuneEmpty, primRuneEmpty, primRuneEmpty, primRuneEmpty),
                 1, listOf()
-            ), Vector2f(window.currentSize) / 2f, 0.5f, renderer
+            ), Vector2f(window.currentSize) / 2f, 0.5f, renderer,
+            hoveringOverRune
         )
     }
 }

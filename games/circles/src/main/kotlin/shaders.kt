@@ -57,9 +57,41 @@ class CircleShader : PureShaderBuilder<VertexData, ColourRenderTarget>(
             }
 
 //            val colour = exp(-distance) //FIXME oh bollocks these types of collisions exist too, of course
-            val fragColour = exp(-50 * distance)
+            val fragColour = exp(-100 * distance)
 
             ColourRenderTarget(vec4(1, 1, 1, fragColour).rt)
+        }
+    }
+}
+
+class CircleHideShader : PureShaderBuilder<VertexData, ColourRenderTarget>(
+    object : ShaderProgram(listOf("CircleHide.glsl"), false) {}
+) {
+    val vertices by const(arrayOf(vec2(-1, -1), vec2(1, -1), vec2(-1, 1), vec2(1, 1)))
+
+    var position by uniform<vec2>()
+    var size by uniform<float>()
+
+    var combined by uniform<mat4>()
+    var aspect by uniform<float>()
+
+    fun sdfUnion(d1: float, d2: float) = func { min(d1, d2).toFloat() }
+    fun sdfSubtract(d1: float, d2: float) = func { max(d1, -d2).toFloat() }
+    fun sdfIntersect(d1: float, d2: float) = func { max(d1, d2).toFloat() }
+    fun sdfXor(d1: float, d2: float) = func { max(min(d1, d2), -max(d1, d2)).toFloat() }
+
+    fun sdfCircle(pos: vec2, size: float) = func { length(pos) - size }
+
+    override fun program() {
+        vertex { VertexData(vec4(vertices[vertexID], 0, 1)) }
+        fragment {
+            val pos = vec2(it.position) - vec2(combined * vec4(position, 0, 1))
+            pos.y /= aspect
+
+            val distance = sdfCircle(pos, size * 0.9875f)
+            val a = if (distance > 0) 0 else 1
+
+            ColourRenderTarget(vec4(0, 0, 0, a).rt)
         }
     }
 }
