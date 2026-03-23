@@ -1,11 +1,15 @@
 package org.etieskrill.engine.graphics.gl;
 
+import io.github.etieskrill.injection.extension.shader.Buffer;
+import io.github.etieskrill.injection.extension.shader.BufferAccessor;
 import lombok.Getter;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.*;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.function.BiConsumer;
 
@@ -16,10 +20,32 @@ import static org.lwjgl.opengl.GL11C.*;
 /**
  * @param <T> type of data accessed
  */
-public abstract class VertexArrayAccessor<T> {
+public abstract class VertexArrayAccessor<T> implements BufferAccessor<T> {
 
     protected final @Getter(PACKAGE) List<FieldAccessor<?>> fields;
     private final @Getter int elementByteSize;
+
+    @Override
+    public void map(@NotNull Collection<? extends T> vertices, @NotNull Buffer<T> vertexBuffer) {
+        var buffer = vertexBuffer.getBuffer()
+                .rewind()
+                .limit(getElementByteSize() * vertices.size());
+
+        int position = 0;
+        for (T value : vertices) {
+            for (var field : fields) {
+                buffer.position(position);
+                position += field.getFieldByteSize(); //FIXME maybe too much handholding?
+                field.getAccessor().accept(value, buffer);
+            }
+        }
+
+        if (position != buffer.limit()) {
+            throw new IllegalStateException("Vertex buffer position does not align with data byte length");
+        }
+
+        vertexBuffer.setData(buffer.flip());
+    }
 
     @Getter
     protected final class FieldAccessor<F> {

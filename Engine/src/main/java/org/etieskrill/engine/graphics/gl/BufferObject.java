@@ -1,5 +1,6 @@
 package org.etieskrill.engine.graphics.gl;
 
+import io.github.etieskrill.injection.extension.shader.BufferAccessor;
 import lombok.Getter;
 import org.etieskrill.engine.Disposable;
 import org.jetbrains.annotations.NotNull;
@@ -12,6 +13,8 @@ import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+import java.util.Collection;
+import java.util.Collections;
 
 import static java.util.Objects.requireNonNullElse;
 import static org.etieskrill.engine.graphics.gl.BufferObject.AccessType.DRAW;
@@ -22,9 +25,11 @@ import static org.etieskrill.engine.graphics.gl.GLUtils.clearError;
 import static org.etieskrill.engine.util.ClassUtils.getSimpleName;
 import static org.lwjgl.opengl.GL15C.*;
 import static org.lwjgl.opengl.GL30C.GL_R8I;
+import static org.lwjgl.opengl.GL30C.glBindBufferBase;
+import static org.lwjgl.opengl.GL43C.GL_SHADER_STORAGE_BUFFER;
 import static org.lwjgl.opengl.GL43C.glClearBufferSubData;
 
-public class BufferObject implements Disposable {
+public class BufferObject<T> implements io.github.etieskrill.injection.extension.shader.Buffer<T>, Disposable {
 
     @Getter
     private final Target target;
@@ -33,21 +38,23 @@ public class BufferObject implements Disposable {
     private final @Getter int numElements;
     private final @Getter long byteSize;
 
+    private final BufferAccessor<T> accessor;
     private ByteBuffer buffer;
 
     private static final Logger logger = LoggerFactory.getLogger(BufferObject.class);
 
     //TODO add vao slot to ensure in-use (bound) buffers are not accidentally used elsewhere
 
-    public static Builder create(int elementByteSize, int numElements) {
-        return new Builder((long) elementByteSize * numElements, null, numElements);
+    public static <T> Builder<T> create(BufferAccessor<T> accessor, int numElements) {
+        return new Builder<>(accessor, (long) accessor.getElementByteSize() * numElements, null, numElements);
     }
 
-    public static Builder create(Buffer buffer) {
-        return new Builder(null, buffer, buffer.capacity());
+    public static <T> Builder<T> create(BufferAccessor<T> accessor, Buffer buffer) {
+        return new Builder<>(accessor, null, buffer, buffer.capacity());
     }
 
-    public static class Builder {
+    public static class Builder<T> {
+        private final BufferAccessor<T> accessor;
         private final @Nullable Long byteSize;
         private final @Nullable Buffer buffer;
         private final int numElements;
@@ -56,39 +63,43 @@ public class BufferObject implements Disposable {
         private Frequency frequency = STATIC;
         private AccessType accessType = DRAW;
 
-        private Builder(@Nullable Long byteSize, @Nullable Buffer buffer, int numElements) {
+        private Builder(@NotNull BufferAccessor<T> accessor, @Nullable Long byteSize, @Nullable Buffer buffer, int numElements) {
+            this.accessor = accessor;
             this.byteSize = byteSize;
             this.buffer = buffer;
             this.numElements = numElements;
         }
 
-        public Builder target(@NotNull Target target) {
+        public Builder<T> target(@NotNull Target target) {
             this.target = target;
             return this;
         }
 
-        public Builder frequency(@Nullable Frequency frequency) {
+        public Builder<T> frequency(@Nullable Frequency frequency) {
             this.frequency = requireNonNullElse(frequency, STATIC);
             return this;
         }
 
-        public Builder accessType(@Nullable AccessType accessType) {
+        public Builder<T> accessType(@Nullable AccessType accessType) {
             this.accessType = requireNonNullElse(accessType, DRAW);
             return this;
         }
 
-        public BufferObject build() {
-            return new BufferObject(byteSize, buffer, numElements, target, frequency, accessType);
+        public BufferObject<T> build() {
+            return new BufferObject<>(accessor, byteSize, buffer, numElements, target, frequency, accessType);
         }
     }
 
-    private BufferObject(Long byteSize, Buffer buffer, int numElements, Target target, Frequency frequency, AccessType accessType) {
+    protected BufferObject(BufferAccessor<T> accessor, Long byteSize, Buffer buffer, int numElements, Target target, Frequency frequency, AccessType accessType) {
         clearError();
 
+        this.accessor = accessor;
         this.numElements = numElements;
         this.target = target;
+
         this.id = glGenBuffers();
         bind();
+
         if (buffer != null) {
             buffer.rewind();
             switch (buffer) {
@@ -164,13 +175,18 @@ public class BufferObject implements Disposable {
         glBindBuffer(target.gl(), 0);
     }
 
+    @Override
+    public @NotNull BufferAccessor<T> getAccessor() {
+        return accessor;
+    }
+
     /**
      * Returns a {@link ByteBuffer} sized to this {@link BufferObject}. On the first call to this method (or
      * {@link BufferObject#getData()}), a new buffer is created, after which point the same object is always returned.
      *
      * @return a buffer sized to this buffer object
      */
-    public ByteBuffer getBuffer() {
+    public @NotNull ByteBuffer getBuffer() {
         if (buffer == null) {
             bind();
             buffer = BufferUtils.createByteBuffer((int) byteSize);
@@ -194,12 +210,17 @@ public class BufferObject implements Disposable {
         return buffer; //TODO asReadOnlyBuffer?
     }
 
+    @Override
+    public void setData(@NotNull Collection<? extends T> elements) {
+        getAccessor().map(elements, this);
+    }
+
     /**
      * Sets the buffer's data to the values provided in {@code data}.
      *
      * @param data the data to set in the buffer
      */
-    public void setData(ByteBuffer data) {
+    public void setData(@NotNull ByteBuffer data) {
         setData(data, false);
     }
 

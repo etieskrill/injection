@@ -37,6 +37,8 @@ import static org.etieskrill.engine.util.ResourceReader.classpathResourceExists;
 import static org.etieskrill.engine.util.ResourceReader.getResource;
 import static org.lwjgl.opengl.ARBShadingLanguageInclude.GL_SHADER_INCLUDE_ARB;
 import static org.lwjgl.opengl.ARBShadingLanguageInclude.glNamedStringARB;
+import static org.lwjgl.opengl.GL43C.GL_SHADER_STORAGE_BLOCK;
+import static org.lwjgl.opengl.GL43C.glGetProgramResourceIndex;
 import static org.lwjgl.opengl.GL46C.*;
 
 public abstract class ShaderProgram implements Disposable,
@@ -66,6 +68,8 @@ public abstract class ShaderProgram implements Disposable,
     private final int MAX_TEXTURE_UNITS;
     private int currentTextureUnit;
     private final Map<String, Integer> boundTextures; //TODO this is actually per context, so it could use a ThreadLocal - it also causes incoherent state if #start() is not called properly
+
+    private final Map<String, Integer> storageBuffers = new HashMap<>();
 
     private static final Logger genericLogger = LoggerFactory.getLogger(ShaderProgram.class);
     private final Logger logger = LoggerFactory.getLogger(getClass());
@@ -526,6 +530,16 @@ public abstract class ShaderProgram implements Disposable,
         texture.bind(unit);
     }
 
+    @Override
+    public void setStorageBuffer(@NotNull String blockName, @NotNull StorageBuffer<?> buffer) {
+        if (blockName.isBlank()) throw new IllegalArgumentException("Name must not be empty");
+
+        Integer bindingPoint = storageBuffers.get(blockName);
+        if (bindingPoint == null) return;
+
+        buffer.bind(bindingPoint);
+    }
+
     private <T extends Uniform> void setUniform(String name, Object value, Map<String, T> uniformMap, boolean strict, boolean array) {
         if (name.isBlank()) throw new IllegalArgumentException("Name must not be empty");
 
@@ -970,8 +984,7 @@ public abstract class ShaderProgram implements Disposable,
         }
 
         if (STRICT_UNIFORM_DETECTION)
-            throw new ShaderUniformException(
-                    "Cannot register non-existent or non-used array uniform in strict mode", name);
+            throw new ShaderUniformException("Cannot register non-existent or non-used array uniform in strict mode", name);
 
         logger.debug("Could not find array uniform '{}' of type {}", name, type);
     }
@@ -983,6 +996,29 @@ public abstract class ShaderProgram implements Disposable,
     private void setStandardArrayValue(Uniform.Type type, int location, int size) {
         Object[] defaultValues = Stream.generate(type.defaultValueGenerator).limit(size).toArray();
         setUniformArrayValue(type, location, defaultValues);
+    }
+
+    @Override
+    public void addStorageBuffer(@NotNull String name, @NotNull BufferAccessor<?> layout) {
+        if (storageBuffers.containsKey(name)) {
+            logger.info("Storage buffer with name {} was already registered", name);
+            return;
+        }
+
+        //IMPORTANT: requires block name, not instance name
+        var bindingPoint = glGetProgramResourceIndex(programID, GL_SHADER_STORAGE_BLOCK, name);
+
+        if (bindingPoint != GL_INVALID_INDEX) {
+            storageBuffers.put(name, bindingPoint);
+            logger.trace("Registered storage buffer binding point {} with name '{}'", bindingPoint, name);
+            return;
+        }
+
+        if (STRICT_UNIFORM_DETECTION) {
+            throw new ShaderException("Cannot register non-existent or non-used storage block in strict mode");
+        }
+
+        logger.warn("Storage buffer binding point with name '{}' not found", name);
     }
 
     protected void disableStrictUniformChecking() {

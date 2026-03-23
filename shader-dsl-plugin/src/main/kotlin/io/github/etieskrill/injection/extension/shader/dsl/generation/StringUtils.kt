@@ -49,3 +49,5 @@ internal fun String.appendIf(string: String, condition: String.() -> Boolean): S
 
 internal fun String.appendIfNotEndsIn(string: String) =
     appendIf(string) { !endsWith(string) }
+
+internal fun String.capitaliseFirst() = replaceFirstChar { it.uppercase() }

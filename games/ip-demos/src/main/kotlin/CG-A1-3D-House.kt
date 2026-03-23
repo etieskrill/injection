@@ -72,7 +72,7 @@ fun main() {
 
 class `CG-03-A` : GameApplication() {
     val houseVAO = VertexArrayObject.builder(VertexAccessor)
-        .vertexBuffer(BufferObject.create(BufferUtils.createFloatBuffer(houseVertices.size).put(houseVertices)).build())
+        .vertexBuffer(BufferObject.create(VertexAccessor, BufferUtils.createFloatBuffer(houseVertices.size).put(houseVertices)).build())
         .indices(houseIndices.toMutableList())
         .build()
 

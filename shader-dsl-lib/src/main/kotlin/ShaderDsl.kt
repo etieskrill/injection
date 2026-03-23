@@ -1,6 +1,8 @@
 package io.github.etieskrill.injection.extension.shader.dsl
 
 import io.github.etieskrill.injection.extension.shader.AbstractShader
+import io.github.etieskrill.injection.extension.shader.BufferAccessor
+import io.github.etieskrill.injection.extension.shader.StorageBuffer
 import io.github.etieskrill.injection.extension.shader.Texture
 import io.github.etieskrill.injection.extension.shader.float
 import io.github.etieskrill.injection.extension.shader.int
@@ -74,6 +76,8 @@ abstract class ShaderBuilder<VA : Any, V : ShaderVertexData, RT : Any>(val shade
     protected fun const(value: vec4) = ConstDelegate<vec4>()
     protected fun const(value: Array<vec4>) = ConstDelegate<Array<vec4>>()
 
+    protected fun <T> storageBuffer() = StorageBufferDelegate<T>()
+
     protected fun <T> func(block: context(GlslReceiver) () -> T): T = error()
     protected fun <T> vertFunc(block: context(VertexReceiver) (VA) -> T): T = error()
     protected fun <T> fragFunc(block: context(FragmentReceiver) (V) -> T): T = error()
@@ -102,6 +106,7 @@ abstract class PureShaderBuilder<V : ShaderVertexData, RT : Any>(shader: Abstrac
 @ShaderDslMarker
 @Suppress("unused", "UNUSED_PARAMETER")
 open class GlslReceiver {
+
     operator fun Number.plus(s: Number): Number = error()
     operator fun Number.plus(v: vec2): vec2 = error()
     operator fun Number.minus(s: Number): Number = error()
@@ -274,11 +279,15 @@ open class GlslReceiver {
 
     fun discard(): Unit = error()
 
+    // ---------------- SYNTAX HELPERS / NOT PART OF GLSL ----------------
+    operator fun <T> StorageBuffer<T>.iterator(): Iterator<T> = error()
+
 }
 
 @ShaderDslMarker
 class VertexReceiver : GlslReceiver() {
     val vertexID: int = error()
+    val instanceID: int = error()
 }
 
 @ShaderDslMarker
@@ -309,14 +318,13 @@ class UniformDelegate<T : Any> :
     override fun setValue(thisRef: ShaderBuilder<*, *, *>, property: KProperty<*>, value: T) {
         if (!initialised) { //TODO for getter also i guess?
             when (value) {
-                is Array<*> -> thisRef.addUniformArray(property.name, value.size, value::class.javaObjectType)
+                is Array<*>, is Collection<*> -> error("impossiburu")
                 else -> thisRef.addUniform(property.name, value::class.javaObjectType)
             }
             initialised = true
         }
         when (value) {
-            is Array<*> -> error("impossiburu")
-            is Collection<*> -> error("impossiburu")
+            is Array<*>, is Collection<*> -> error("impossiburu")
             is Texture -> thisRef.setTexture(property.name, value)
             else -> thisRef.setUniform(property.name, value)
         }
@@ -343,6 +351,20 @@ class UniformArrayDelegate<T : Any>(private val size: Int) : ReadWriteProperty<S
         check(value.size <= size) { "Array value size must be smaller than or equal to uniform array size" }
 
         thisRef.setUniformArray(property.name, value as Array<Any>)
+    }
+}
+
+class StorageBufferDelegate<T> : ReadWriteProperty<ShaderBuilder<*, *, *>, StorageBuffer<T>> {
+    private var initialised = false
+
+    override fun getValue(thisRef: ShaderBuilder<*, *, *>, property: KProperty<*>): StorageBuffer<T> = TODO()
+    override fun setValue(thisRef: ShaderBuilder<*, *, *>, property: KProperty<*>, value: StorageBuffer<T>) {
+        if (!initialised) { //TODO use resolved name to avoid name clashes
+            thisRef.addStorageBuffer("${property.name.replaceFirstChar { it.uppercase() }}Buffer", value.accessor)
+            initialised = true
+        }
+
+        thisRef.setStorageBuffer("${property.name.replaceFirstChar { it.uppercase() }}Buffer", value)
     }
 }
 

@@ -9,6 +9,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 
@@ -27,8 +28,8 @@ public class VertexArrayObject<T> implements Disposable {
     public static final int MAX_VERTEX_ATTRIB_BINDINGS = 16;
 
     private final @Getter(NONE) int id;
-    private final @NotNull BufferObject vertexBuffer;
-    private final @Nullable BufferObject indexBuffer;
+    private final @NotNull BufferObject<T> vertexBuffer;
+    private final @Nullable BufferObject<Integer> indexBuffer;
 
     private final @Delegate VertexArrayAccessor<T> accessor;
 
@@ -41,13 +42,26 @@ public class VertexArrayObject<T> implements Disposable {
 
     //TODO add dummy accessor factory method - and probs class with UnsupportedOperationException
 
+    private static class IndexArrayAccessor extends VertexArrayAccessor<Integer> { //TODO maybe move field logic to root?
+        private static final IndexArrayAccessor INSTANCE = new IndexArrayAccessor();
+
+        public static IndexArrayAccessor getInstance() {
+            return INSTANCE;
+        }
+
+        @Override
+        protected void registerFields() {
+            addField(Integer.class, (integer, byteBuffer) -> byteBuffer.putInt(integer));
+        }
+    }
+
     @Builder
     private VertexArrayObject(@Nullable Long numVertexElements,
                               @Nullable Collection<T> vertexElements,
-                              @Nullable BufferObject vertexBuffer,
+                              @Nullable BufferObject<T> vertexBuffer,
                               @Nullable Integer numIndices,
                               @Nullable Collection<Integer> indices,
-                              @Nullable BufferObject indexBuffer,
+                              @Nullable BufferObject<Integer> indexBuffer,
                               VertexArrayAccessor<T> accessor,
                               @Nullable BufferObject.Frequency frequency,
                               @Nullable BufferObject.AccessType accessType
@@ -70,7 +84,7 @@ public class VertexArrayObject<T> implements Disposable {
             this.vertexBuffer.bind();
         } else if (vertexElements != null) {
             this.vertexBuffer = BufferObject
-                    .create(accessor.getElementByteSize(), vertexElements.size())
+                    .create(accessor, vertexElements.size())
                     .frequency(frequency)
                     .accessType(accessType)
                     .build();
@@ -78,7 +92,7 @@ public class VertexArrayObject<T> implements Disposable {
             setVertices(vertexElements);
         } else if (numVertexElements != null) {
             this.vertexBuffer = BufferObject
-                    .create(accessor.getElementByteSize(), Math.toIntExact(numVertexElements))
+                    .create(accessor, Math.toIntExact(numVertexElements))
                     .frequency(frequency)
                     .accessType(accessType)
                     .build();
@@ -97,7 +111,7 @@ public class VertexArrayObject<T> implements Disposable {
             this.indexBuffer.bind();
         } else if (indices != null) {
             this.indexBuffer = BufferObject
-                    .create(Integer.BYTES, indices.size()).target(ELEMENT_ARRAY)
+                    .create(IndexArrayAccessor.getInstance(), indices.size()).target(ELEMENT_ARRAY)
                     .frequency(frequency)
                     .accessType(accessType)
                     .build();
@@ -105,7 +119,7 @@ public class VertexArrayObject<T> implements Disposable {
             setIndices(indices);
         } else if (numIndices != null) {
             this.indexBuffer = BufferObject
-                    .create(Integer.BYTES, numIndices).target(ELEMENT_ARRAY)
+                    .create(IndexArrayAccessor.getInstance(), numIndices).target(ELEMENT_ARRAY)
                     .frequency(frequency)
                     .accessType(accessType)
                     .build();
@@ -118,9 +132,7 @@ public class VertexArrayObject<T> implements Disposable {
     }
 
     private void configureAttributeArrays(VertexArrayAccessor<T> accessor) {
-        int totalStrideBytes = accessor.getFields().stream()
-                .mapToInt(VertexArrayAccessor.FieldAccessor::getFieldByteSize)
-                .sum();
+        int totalStrideBytes = accessor.getElementByteSize();
 
         //TODO if standard attrib naming - use glGetAttribLocation instead
         int bindingIndex = 0;
@@ -163,23 +175,7 @@ public class VertexArrayObject<T> implements Disposable {
     }
 
     public void setVertices(Collection<T> vertices) {
-        ByteBuffer buffer = vertexBuffer.getBuffer()
-                .rewind()
-                .limit(accessor.getElementByteSize() * vertices.size());
-        int position = 0;
-        for (T value : vertices) {
-            for (var field : accessor.getFields()) {
-                buffer.position(position);
-                position += field.getFieldByteSize(); //FIXME maybe too much handholding?
-                field.getAccessor().accept(value, buffer);
-            }
-        }
-
-        if (position != buffer.limit()) {
-            throw new IllegalStateException("Vertex buffer position does not align with data byte length");
-        }
-
-        vertexBuffer.setData(buffer);
+        vertexBuffer.setData(vertices);
     }
 
     public void setIndices(Collection<Integer> indices) {

@@ -11,7 +11,9 @@ import io.github.etieskrill.injection.extension.shader.dsl.ShaderVertexData
 import io.github.etieskrill.injection.extension.shader.dsl.VertexReceiver
 import io.github.etieskrill.injection.extension.shader.dsl.generation.GlslStorageQualifier.CONST
 import io.github.etieskrill.injection.extension.shader.vec3
+import org.gradle.kotlin.dsl.support.uppercaseFirstChar
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+import org.jetbrains.kotlin.backend.jvm.codegen.anyTypeArgument
 import org.jetbrains.kotlin.cli.common.messages.MessageCollector
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.IrStatement
@@ -21,6 +23,7 @@ import org.jetbrains.kotlin.ir.declarations.IrDeclarationParent
 import org.jetbrains.kotlin.ir.declarations.IrFile
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrVariable
+import org.jetbrains.kotlin.ir.declarations.name
 import org.jetbrains.kotlin.ir.expressions.IrBlock
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.expressions.IrCall
@@ -46,8 +49,10 @@ import org.jetbrains.kotlin.ir.expressions.IrVararg
 import org.jetbrains.kotlin.ir.expressions.IrWhen
 import org.jetbrains.kotlin.ir.expressions.IrWhileLoop
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+import org.jetbrains.kotlin.ir.types.IrSimpleType
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.isArray
+import org.jetbrains.kotlin.ir.types.typeOrFail
 import org.jetbrains.kotlin.ir.util.dump
 import org.jetbrains.kotlin.ir.util.getAllArgumentsWithIr
 import org.jetbrains.kotlin.ir.util.getArgumentsWithIr
@@ -208,7 +213,19 @@ internal fun generateGlsl(
     val generateVertexStruct = transpilerData.vertexDataStruct.isNotEmpty()
 
     if (generateVertexStruct) {
-        appendLine(generateStruct(programData.vertexDataStructType, transpilerData.vertexDataStruct))
+        appendMultiLine(generateStruct(programData.vertexDataStructType, transpilerData.vertexDataStruct))
+        newline()
+    }
+
+    for ((_, typeAndStruct) in programData.storageBuffers.entries.distinctBy { it.value }) {
+        val (type, struct) = typeAndStruct
+        appendMultiLine(generateStruct(type.simpleName, struct)) //TODO check for name clashes
+        newline()
+    }
+    //FIXME check number of available buffer binding slots
+    programData.storageBuffers.onEachIndexed { index, (fieldName, typeAndStruct) ->
+        val (type, _) = typeAndStruct
+        appendMultiLine(generateStorageBufferStatement(index, type.simpleName, fieldName)) //TODO check for name clashes
         newline()
     }
 
@@ -342,11 +359,22 @@ private fun generateArrayStatement(
     return "$qualifier $type $name[$size]${initialiser?.let { " = $initialiser" } ?: ""};"
 }
 
+private fun generateStorageBufferStatement(
+    binding: Int, blockType: String, arrayName: String
+): String { //TODO block with instance name may be simpler
+    //TODO read/write modifiers
+    return """
+        layout (std430, binding = $binding) readonly buffer ${arrayName.capitaliseFirst()}Buffer {
+            $blockType $arrayName[];
+        };
+    """.trimIndent()
+}
+
 private fun generateFunction(function: IrFunction, data: TranspilerData) = buildIndentedString {
     val returnType = data.resolveGlslType(function.returnType)
     val parameters = function.valueParameters
         .onEach { check(it.defaultValue == null) { TODO("Default value splitting... mangling i think it's called?") } }
-        .joinToString(",") { "${data.resolveGlslType(it.type)} ${it.name.asString()}" }
+        .joinToString(", ") { "${data.resolveGlslType(it.type)} ${it.name.asString()}" }
 
     val body = function.body!!.findElement<IrBlockBody>()!!
 
@@ -850,9 +878,9 @@ private class GlslForLoopTranspiler(
     override fun visitElement(element: IrElement, data: TranspilerData): String = TODO("Not yet implemented")
 
     override fun visitBlock(expression: IrBlock, data: TranspilerData): String {
-        val iterable = expression.findElement<IrCall> {
-            it.origin == IrStatementOrigin.FOR_LOOP_ITERATOR && it.symbol.owner.name.asString() == "iterator"
-        }!!.accept(this, data)
+        var iterable = expression
+            .findElement<IrCall>(atDepth = 2) { it.symbol.owner.name.asString() == "iterator" }!!
+            .accept(this, data)
 
         val loop = expression.findElement<IrWhileLoop> { it.origin == IrStatementOrigin.FOR_LOOP_INNER_WHILE }!!
 
@@ -866,28 +894,54 @@ private class GlslForLoopTranspiler(
             .accept(generalTranspiler, data)
 
         return buildIndentedString {
-            val (start, end) = iterable.split("|")
+            when (iterable.split(",")[0]) {
+                "numberIterator" -> {
+                    val start = iterable.split(",")[1].split("|")[0]
+                    val end = iterable.split(",")[1].split("|")[1]
 
-            appendLine("for ($loopVariableType $loopVariableName = $start; $loopVariableName < $end; $loopVariableName++) {")
-            indent { appendMultiLine(loopBody) }
-            append("}")
+                    appendLine("for ($loopVariableType $loopVariableName = $start; $loopVariableName < $end; $loopVariableName++) {")
+                    indent { appendMultiLine(loopBody) }
+                    append("}")
+                }
+                "objectIterator" -> {
+                    val iterableName = iterable.split(",")[1].split("|")[0]
+
+                    appendLine("for (int i = 0; i < $iterableName.length(); i++) {")
+                    indent { append("$loopVariableType $loopVariableName = $iterableName[i];") }
+                    newline()
+                    indent { appendMultiLine(loopBody) }
+                    append("}")
+                }
+                else -> error("Nope")
+            }
         }
     }
 
-    override fun visitCall(expression: IrCall, data: TranspilerData): String {
-        val receiver = expression.receiver as? IrCall
-            ?: return super.visitCall(expression, data)
+    override fun visitCall(expression: IrCall, data: TranspilerData): String = when (expression.type.simpleName) {
+        "IntIterator", "LongIterator", "FloatIterator", "DoubleIterator" -> {
+            val receiver = expression.receiver as? IrCall
+                ?: return super.visitCall(expression, data)
 
-        return when (receiver.symbol.owner.name.asString()) {
-            "rangeTo" -> {
-                val start = receiver.receiver!!.accept(generalTranspiler, data)
-                val end = receiver.getValueArgument(0)!!.accept(generalTranspiler, data)
+            when (val name = receiver.symbol.owner.name.asString()) {
+                "rangeTo", "rangeUntil" -> {
+                    val start = receiver.receiver!!.accept(generalTranspiler, data)
+                    val end = receiver.getValueArgument(0)!!.accept(generalTranspiler, data)
+                        .appendIf(" + 1") { name == "rangeUntil" }
 
-                "$start|$end" //FIXME beautiful, i know
+                    "numberIterator,$start|$end" //FIXME beautiful, i know
+                }
+
+                else -> error("Unknown number range function: $name")
             }
-
-            else -> TODO()
         }
+
+        "Iterator" -> {
+            val receiver = expression.receiver as IrCall
+            val name = receiver.symbol.owner.name.asString().removePrefix("<get-").removeSuffix(">")
+            "objectIterator,$name"
+        }
+
+        else -> error("Unknown for-loop iterator type: ${expression.type.simpleName}")
     }
 }
 

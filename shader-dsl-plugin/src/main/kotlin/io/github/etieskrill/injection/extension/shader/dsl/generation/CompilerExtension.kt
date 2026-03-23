@@ -5,6 +5,7 @@ import io.github.etieskrill.injection.extension.shader.ShaderStage.*
 import io.github.etieskrill.injection.extension.shader.dsl.ConstDelegate
 import io.github.etieskrill.injection.extension.shader.dsl.RenderTarget
 import io.github.etieskrill.injection.extension.shader.dsl.ShaderBuilder
+import io.github.etieskrill.injection.extension.shader.dsl.StorageBufferDelegate
 import io.github.etieskrill.injection.extension.shader.dsl.UniformArrayDelegate
 import io.github.etieskrill.injection.extension.shader.dsl.UniformDelegate
 import io.github.etieskrill.injection.extension.shader.dsl.gradle.ShaderDslCompilerOptions
@@ -42,9 +43,9 @@ import org.jetbrains.kotlin.ir.types.IrTypeProjection
 import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.types.classOrFail
 import org.jetbrains.kotlin.ir.types.classifierOrFail
+import org.jetbrains.kotlin.ir.types.getClass
 import org.jetbrains.kotlin.ir.types.isArray
 import org.jetbrains.kotlin.ir.types.typeOrFail
-import org.jetbrains.kotlin.ir.util.defaultType
 import org.jetbrains.kotlin.ir.util.findDeclaration
 import org.jetbrains.kotlin.ir.util.getArgumentsWithIr
 import org.jetbrains.kotlin.ir.util.getNameWithAssert
@@ -246,6 +247,12 @@ internal class IrShaderGenerationExtension(
             name to (type to size)
         }
 
+        val storageBuffers = shader.getDelegatedProperties<StorageBufferDelegate<*>, IrType>(
+            messageCollector, file
+        ) { it.name.asString() to (it.backingField?.type!! as IrSimpleType).arguments[0].typeOrFail }
+            .mapValues { (_, type) -> type to type.getClass()!!.getGlslFields() }
+            .onEach { checkStorageBufferAlignment(it, messageCollector, file) }
+
         val data = VisitorData(
             programParent = shader,
             file = file,
@@ -373,10 +380,10 @@ internal class IrShaderGenerationExtension(
 
                         parameters to template
                     }
-                }
+                },
+            structTypes = storageBuffers.values.map { it.first }.distinct().toMutableList(),
+            storageBuffers = storageBuffers
         )
-
-        data.structTypes += types.vertexDataType.defaultType
 
         val programBodies = shader
             .findDeclaration<IrFunction> { it.name.asString() == "program" }!!
@@ -395,7 +402,7 @@ internal class IrShaderGenerationExtension(
 
         data.stageBodies[FRAGMENT] = fragmentProgram
 
-        postProcess(data)
+        postProcess(data, messageCollector, file, shader)
 
         return data
     }
@@ -410,21 +417,70 @@ internal class IrShaderGenerationExtension(
     }
 }
 
-private fun postProcess(data: VisitorData) {
-    data.definedFunctions.values.forEach { (_, function) -> unwrapInlineConditions(function.body!!.findElement<IrBlockBody>()!!) }
-    data.stageBodies.values.forEach { unwrapInlineConditions(it) }
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+private fun checkStorageBufferAlignment(
+    buffer: Map.Entry<String, Pair<IrType, Map<String, GlslType>>>,
+    messageCollector: MessageCollector,
+    file: IrFile
+) {
+    val (_, typeAndFields) = buffer
+    val (structType, fields) = typeAndFields
+
+    var offset = 0
+
+    fields.entries.zip(structType.getClass()!!.properties.asIterable())
+        .map { (fieldAndType, property) ->
+            val (field, type) = fieldAndType
+
+            if (offset % type.byteOffset + type.byteSize > type.byteOffset) { //FIXME dunno if this is complete
+                messageCollector.compilerError(
+                    "Field '$field: $type' of storage buffer struct ${structType.getClass()!!.name.asString()
+                    } must align to ${type.byteOffset} bytes, but current alignment is ${type.byteSize} + ${
+                        (offset + type.byteSize) % type.byteOffset} (${offset + type.byteSize} total)",
+                    property,
+                    file
+                )
+            }
+
+            offset += type.byteSize
+        }
+}
+
+private val GlslType.byteSize: Int get() = when (type) { //see primitiveTypes list of shader interface
+    "int", "float", "bool" -> 4
+    "double", "vec2", "ivec2" -> 8
+    "vec3", "ivec3" -> 12
+    "vec4", "ivec4", "mat2" -> 16
+    "mat3" -> 36
+    "mat4" -> 64
+    else -> error("Unknown buffer field type: $type")
+}
+
+private val GlslType.byteOffset: Int get() = when (type) { //see https://ktstephano.github.io/rendering/opengl/ssbos
+    "int", "float", "bool" -> 4
+    "double", "vec2", "ivec2" -> 8
+    "vec3", "ivec3", "vec4", "ivec4", "mat2" -> 16
+    "mat3" -> 48
+    "mat4" -> 64
+    else -> error("Unknown buffer field type: $type")
+}
+
+private fun postProcess(data: VisitorData, messageCollector: MessageCollector, file: IrFile, shader: IrClass) {
+    data.definedFunctions.values.forEach { (_, function) ->
+        unwrapInlineConditions(function.body!!.findElement<IrBlockBody>()!!, messageCollector, file, shader) }
+    data.stageBodies.values.forEach { unwrapInlineConditions(it, messageCollector, file, shader) }
     data.programParent.patchDeclarationParents()
 }
 
-private fun unwrapInlineConditions(body: IrBlockBody) {
+private fun unwrapInlineConditions(body: IrBlockBody, messageCollector: MessageCollector, file: IrFile, shader: IrClass) {
     val transformer = InlineConditionalTransformer()
     var transformerData: InlineConditionalTransformerData
     var transformerIteration = 0
     do {
         check(transformerIteration++ < 1000) { "Inline condition transformer ran for more than a thousand iterations: something is probably bricked" }
-        transformerData = InlineConditionalTransformerData()
+        transformerData = InlineConditionalTransformerData(messageCollector, file, shader, transformerIteration)
         body.transform(transformer, transformerData)
-    } while (transformerData.inlineCondition != null)
+    } while (transformerData.type != null)
 }
 
 private class CompilerAbortException : RuntimeException()
@@ -456,8 +512,7 @@ private fun IrClass.getGlslFields(condition: (IrProperty) -> Boolean = { true })
     .filter { (it is Fir2IrLazySimpleFunction || it is IrFunction) && it.name.asString().startsWith("get") }
     .associate {
         val type = when (it) {
-            is Fir2IrLazySimpleFunction -> it.returnType
-            is IrFunction -> it.returnType
+            is Fir2IrLazySimpleFunction, is IrFunction -> it.returnType
             else -> error("Could not parse Java object property getter function")
         }.glslType ?: error("Field is not GLSL primitive: ${it.returnType.fullName}")
 
@@ -490,7 +545,7 @@ private inline fun <reified T, R> IrClass.getDelegatedProperties(
     }
     .associate(mapper)
 
-internal enum class GlslVersion { `330` }
+internal enum class GlslVersion { `330`, `430` }
 internal enum class GlslProfile { CORE, COMPATIBILITY }
 
 @JvmInline
@@ -511,7 +566,7 @@ internal data class VisitorData(
     val programParent: IrDeclarationParent,
     val file: IrFile,
 
-    val version: GlslVersion = GlslVersion.`330`,
+    val version: GlslVersion = GlslVersion.`430`,
     val profile: GlslProfile = GlslProfile.CORE,
 
     val vertexAttributes: Map<String, GlslType>,
@@ -533,6 +588,8 @@ internal data class VisitorData(
     val templateFunctions: Map<String, Map<List<String>, String>>,
 
     val structTypes: MutableList<IrType> = mutableListOf(),
+
+    val storageBuffers: Map</*buffer name, not instance name (all are anonymous)*/ String, Pair<IrType, Map<String, GlslType>>> = mutableMapOf(),
 
     val stageBodies: MutableMap<ShaderStage, IrBlockBody> = mutableMapOf(),
 )
