@@ -25,11 +25,13 @@ class StorageBufferObject<T> : StorageBuffer<T>, Disposable {
 
     override val accessor: BufferAccessor<T>
 
+    private val numElementsBuffer = IntArray(4)
+
     private val id: Int = glCreateBuffers() //TODO context ensurance stuff, WebGPU may actually be better here
 
     constructor(maxNumElements: Int, accessor: BufferAccessor<T>) {
         this.maxNumElements = maxNumElements
-        this.byteSize = maxNumElements * accessor.elementByteSize.toLong()
+        this.byteSize = 4L * Int.SIZE_BYTES + maxNumElements * accessor.elementByteSize.toLong()
         this.buffer = BufferUtils.createByteBuffer(byteSize.toInt())
         this.accessor = accessor
         init()
@@ -37,7 +39,7 @@ class StorageBufferObject<T> : StorageBuffer<T>, Disposable {
 
     constructor(data: Collection<T>, accessor: BufferAccessor<T>) {
         this.maxNumElements = data.size
-        this.byteSize = data.size * accessor.elementByteSize.toLong()
+        this.byteSize = 4L * Int.SIZE_BYTES + data.size * accessor.elementByteSize.toLong()
         this.buffer = BufferUtils.createByteBuffer(byteSize.toInt())
         this.accessor = accessor
         init()
@@ -66,8 +68,11 @@ class StorageBufferObject<T> : StorageBuffer<T>, Disposable {
             "Buffer overflow: tried to insert $numElements into buffer of size $maxNumElements"
         }
 
+        numElementsBuffer[0] = numElements
+
         bind()
-        glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, data)
+        glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0L, numElementsBuffer)
+        glBufferSubData(GL_SHADER_STORAGE_BUFFER, 4L * Int.SIZE_BYTES, data)
     }
 
     override fun bind() {

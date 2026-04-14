@@ -176,6 +176,13 @@ public class Transform implements TransformC {
         return this;
     }
 
+    /**
+     * @return the local up unit vector
+     */
+    public Vector3f getUp() {
+        return rotation.transform(new Vector3f(0f, 1f, 0f));
+    }
+
     @Override
     public Matrix4fc getMatrix() {
         //Transform is lazily updated

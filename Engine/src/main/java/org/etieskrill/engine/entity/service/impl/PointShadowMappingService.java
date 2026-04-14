@@ -37,7 +37,7 @@ public class PointShadowMappingService implements Service {
     }
 
     @Override
-    public void preProcess(List<Entity> entities) {
+    public void preProcess(Double delta, List<Entity> entities) {
         if (++cycle >= updateFrequency) {
             cycle = 0;
         } else return;

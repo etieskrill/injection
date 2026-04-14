@@ -50,7 +50,7 @@ public class BillBoardRenderService implements Service {
     }
 
     @Override
-    public void preProcess(List<Entity> entities) {
+    public void preProcess(Double delta, List<Entity> entities) {
         FrameBuffer.bindScreenBuffer();
         glViewport(0, 0, camera.getViewportSize().x(), camera.getViewportSize().y());
 

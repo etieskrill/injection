@@ -1,6 +1,8 @@
 package io.github.etieskrill.sandbox
 
 import io.github.etieskrill.injection.extension.shader.AbstractShader
+import io.github.etieskrill.injection.extension.shader.BufferAccessor
+import io.github.etieskrill.injection.extension.shader.StorageBuffer
 import io.github.etieskrill.injection.extension.shader.Texture
 import io.github.etieskrill.injection.extension.shader.dsl.ColourBloomRenderTarget
 import io.github.etieskrill.injection.extension.shader.dsl.ShaderBuilder
@@ -25,11 +27,19 @@ val dummyShaderClass = object : AbstractShader {
         TODO("Not yet implemented")
     }
 
+    override fun setStorageBuffer(blockName: String, buffer: StorageBuffer<*>) {
+        TODO("Not yet implemented")
+    }
+
     override fun addUniform(name: String, type: Class<*>) {
         TODO("Not yet implemented")
     }
 
     override fun addUniformArray(name: String, size: Int, type: Class<*>) {
+        TODO("Not yet implemented")
+    }
+
+    override fun addStorageBuffer(blockName: String, layout: BufferAccessor<*>) {
         TODO("Not yet implemented")
     }
 

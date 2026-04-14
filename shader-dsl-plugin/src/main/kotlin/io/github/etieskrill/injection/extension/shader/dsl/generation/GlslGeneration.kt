@@ -365,6 +365,8 @@ private fun generateStorageBufferStatement(
     //TODO read/write modifiers
     return """
         layout (std430, binding = $binding) readonly buffer ${arrayName.capitaliseFirst()}Buffer {
+            int num${arrayName.capitaliseFirst().appendIfNotEndsIn("s")};
+            int _num${arrayName.capitaliseFirst().appendIfNotEndsIn("s")}Padding[3];
             $blockType $arrayName[];
         };
     """.trimIndent()
@@ -906,7 +908,7 @@ private class GlslForLoopTranspiler(
                 "objectIterator" -> {
                     val iterableName = iterable.split(",")[1].split("|")[0]
 
-                    appendLine("for (int i = 0; i < $iterableName.length(); i++) {")
+                    appendLine("for (int i = 0; i < num${iterableName.capitaliseFirst().appendIfNotEndsIn("s")}; i++) {")
                     indent { append("$loopVariableType $loopVariableName = $iterableName[i];") }
                     newline()
                     indent { appendMultiLine(loopBody) }

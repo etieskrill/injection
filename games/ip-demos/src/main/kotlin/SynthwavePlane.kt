@@ -397,8 +397,13 @@ class GridShader : ShaderBuilder<GridShader.InputVertex, GridShader.Vertex, Grid
             grid += horizon
 
             val brightness = dot(grid, vec3(0.2126, 0.7152, 0.0722))
-            val bloom = if (brightness > 1) vec4(grid, 1)
-            else vec4(0, 0, 0, 1)
+            val bloom: vec4
+            @Suppress("LiftReturnOrAssignment") //TODO any if unwraps after first target first helper var ¯\_(ツ)_/¯
+            if (brightness > 1) {
+                bloom = vec4(grid, 1)
+            } else {
+                bloom = vec4(0, 0, 0, 1)
+            }
 
             bloom.xz += lines //TODO while this is technically not the way bloom is supposed to work, it does give a lot more control
 

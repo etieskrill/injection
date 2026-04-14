@@ -1,18 +1,44 @@
 # format:
-# --- <x>x<y> <name>
+# --- <width>x<height> <name>
 # <grid>
 # ---
 # tiles; ' ': empty, 'W': wall, 'H': horse
---- 5x5 example
+--- 5x5 4 example
   WW
 W
   HWW
  W
  WW
---- 5x5 example enclosed
+--- 5x5 0 example enclosed
  WWW
 W  W
 W HWW
  W W
  WW
----
+--- 8x8 8 example max single gosper
+WWWW WWW
+W      W
+   W  W
+    H
+W      W
+W  W  W
+W
+W  W   W
+--- 17x17 10 Day 88 - Confetti
+ W          W W
+WWW  WWWWWW  W
+ W W W    W W W
+     W WW W
+     W  W W W
+  W  WWWW W     W
+ WWW        W
+  W     W
+      W    WWWWW
+W  W WWW H     W
+      W  W WWW W
+ W W       W W W
+  W  WW W  W   W
+ W W W  W  WWWWW
+     WWWW
+    W       W
+   WWW     WWW W

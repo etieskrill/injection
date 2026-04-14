@@ -142,7 +142,7 @@ public class EntitySystem {
             }
             entities = unmodifiableList(entities);
 
-            service.preProcess(entities);
+            service.preProcess(delta, entities);
             final List<Entity> finalEntities = entities;
             entities.forEach(entity -> {
                 var enabled = entity.getComponent(Enabled.class);
@@ -173,6 +173,9 @@ public class EntitySystem {
                 else entities.sort(comparing(Entity::getId));
             }));
             freeIndices.add(removedEntity.getId());
+            for (Service service : services) {
+                service.entityRemoved(removedEntity);
+            }
         }
         entities.sort(comparing(Entity::getId));
         markedForRemoval.clear();

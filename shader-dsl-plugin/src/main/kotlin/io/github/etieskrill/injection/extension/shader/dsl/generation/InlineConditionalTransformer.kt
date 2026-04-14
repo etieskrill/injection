@@ -6,13 +6,11 @@ import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFile
-import org.jetbrains.kotlin.ir.declarations.IrValueDeclaration
 import org.jetbrains.kotlin.ir.declarations.IrVariable
 import org.jetbrains.kotlin.ir.declarations.nameWithPackage
 import org.jetbrains.kotlin.ir.expressions.IrBlock
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.expressions.IrBody
-import org.jetbrains.kotlin.ir.expressions.IrBranch
 import org.jetbrains.kotlin.ir.expressions.IrContainerExpression
 import org.jetbrains.kotlin.ir.expressions.IrDeclarationReference
 import org.jetbrains.kotlin.ir.expressions.IrExpression
@@ -26,10 +24,7 @@ import org.jetbrains.kotlin.ir.expressions.impl.IrBlockImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrSetValueImpl
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.util.dump
-import org.jetbrains.kotlin.ir.util.patchDeclarationParents
-import org.jetbrains.kotlin.ir.util.render
 import org.jetbrains.kotlin.ir.visitors.IrTransformer
-import kotlin.collections.contains
 
 internal enum class InlineStatementType { VARIABLE, SETTER, PARAMETER }
 
@@ -112,6 +107,7 @@ internal class InlineConditionalTransformer : IrTransformer<InlineConditionalTra
         if (data.container == null) data.container = expression
         if (data.type == null && expression.origin in listOf(IF, WHEN, null)) data.container = expression
         val new = super.visitContainerExpression(expression, data)
+        //FIXME: with multiple inline ifs in the same block: i think data.container is not reset properly when moving to an outer scope
         if (data.type == null && expression.origin in listOf(IF, WHEN, null)) data.container = expression
         return new
     }

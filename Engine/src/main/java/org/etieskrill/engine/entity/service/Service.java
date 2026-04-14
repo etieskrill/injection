@@ -35,11 +35,22 @@ public interface Service {
     }
 
     /**
+     * Tells the service to do its processing on the given entity. The entity is guaranteed to have the requisite
+     * components, which are accessible via the component's type. Entities are presented in the order specified by the
+     * {@link #comparator() comparator}, if any is set.
+     *
+     * @param targetEntity the entity
+     * @param entities     all entities
+     * @param delta        delta time of the last two frames
+     */
+    void process(@NotNull Entity targetEntity, @NotNull List<@NotNull Entity> entities, double delta);
+
+    /**
      * Called once before any entities are processed.
      *
      * @param entities all entities
      */
-    default void preProcess(@NotNull List<Entity> entities) {
+    default void preProcess(Double delta, @NotNull List<@NotNull Entity> entities) {
     }
 
     /**
@@ -51,15 +62,12 @@ public interface Service {
     }
 
     /**
-     * Tells the service to do its processing on the given entity. The entity is guaranteed to have the requisite
-     * components, which are accessible via the component's type. Entities are presented in the order specified by the
-     * {@link #comparator() comparator}, if any is set.
+     * Called if an entity is removed from the system at the end of entity processing.
      *
-     * @param targetEntity the entity
-     * @param entities     all entities
-     * @param delta        delta time of the last two frames
+     * @param entity the entity that was removed
      */
-    void process(@NotNull Entity targetEntity, @NotNull List<@NotNull Entity> entities, double delta);
+    default void entityRemoved(@NotNull Entity entity) {
+    }
 
     /**
      * Specifies an absolute set of services which, if present, must be run after this service does its processing.

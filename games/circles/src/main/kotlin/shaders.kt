@@ -6,9 +6,7 @@ import io.github.etieskrill.injection.extension.shader.dsl.VertexData
 import io.github.etieskrill.injection.extension.shader.dsl.rt
 import io.github.etieskrill.injection.extension.shader.float
 import io.github.etieskrill.injection.extension.shader.int
-import io.github.etieskrill.injection.extension.shader.ivec2
 import io.github.etieskrill.injection.extension.shader.mat4
-import io.github.etieskrill.injection.extension.shader.sampler2D
 import io.github.etieskrill.injection.extension.shader.vec2
 import io.github.etieskrill.injection.extension.shader.vec4
 import org.etieskrill.engine.graphics.gl.VertexArrayAccessor
@@ -113,8 +111,7 @@ class SDFShader : PureShaderBuilder<VertexData, ColourRenderTarget>(
         fragment { vertex ->
             var fragColour = vec4(0)
             for (sdf in sdfLayers) {
-                val pos = vec2(vertex.position) - vec2(combined * vec4(sdf.position, 0, 1))
-                pos.y /= aspect
+                val pos = vec2(vertex.position) - sdf.position
 
                 val distance =
                     if (sdf.shapeType == SHAPE_CIRCLE) { //FIXME for inlines, only single expressions work -> check if branch result is body/container, replace only return statements, otherwise no change
@@ -131,7 +128,19 @@ class SDFShader : PureShaderBuilder<VertexData, ColourRenderTarget>(
                         0.0f
                     }
 
-                fragColour += sdf.colour * exp(-sdf.glowStrength * distance) //-50
+                val layerColour = sdf.colour * exp(-(1.0/max(0.000000001, sdf.glowStrength)) * distance)
+
+                if (sdf.layerType == LAYER_ADD) {
+                    fragColour += layerColour
+                } else if (sdf.layerType == LAYER_SUB) {
+                    fragColour -= layerColour
+                }
+
+                fragColour = max(vec4(0), fragColour)
+
+//                fragColour += vec4(sdf.colour.rgb, sdf.colour.a * exp(-sdf.glowStrength * distance))
+//                val alpha = exp(-sdf.glowStrength * distance)
+//                fragColour = ((1.0 - alpha) * fragColour) + (alpha * sdf.colour)
             }
 
             ColourRenderTarget(fragColour.rt)

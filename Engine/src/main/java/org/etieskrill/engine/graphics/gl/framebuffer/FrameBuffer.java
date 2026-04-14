@@ -4,6 +4,7 @@ import lombok.Getter;
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.graphics.gl.GLUtils;
 import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment.BufferAttachmentType;
+import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.texture.Textures;
 import org.jetbrains.annotations.Nullable;
@@ -45,7 +46,7 @@ public class FrameBuffer implements io.github.etieskrill.injection.extension.sha
     }
 
     public static FrameBuffer getColour(Vector2ic size) {
-        Texture2D colourBufferTexture = Textures.genBlank(size, Texture2D.Format.RGB);
+        Texture2D colourBufferTexture = Textures.genBlank(size, Texture2D.Format.RGBA);
         return new Builder(size).attach(colourBufferTexture, COLOUR0).build();
     }
 

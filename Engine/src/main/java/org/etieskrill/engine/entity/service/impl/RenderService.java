@@ -158,7 +158,7 @@ public class RenderService implements Service, Disposable {
     }
 
     @Override
-    public void preProcess(List<Entity> entities) {
+    public void preProcess(Double delta, List<Entity> entities) {
         glDepthMask(true); //glClear does not write depth/stencil when mask is disabled (duh)
         glStencilMask(0xFF);
         outlineFrameBuffer.clear();

@@ -432,7 +432,7 @@ private fun checkStorageBufferAlignment(
         .map { (fieldAndType, property) ->
             val (field, type) = fieldAndType
 
-            if (offset % type.byteOffset + type.byteSize > type.byteOffset) { //FIXME dunno if this is complete
+            if (offset % type.byteOffset + type.byteSize != type.byteOffset) { //FIXME dunno if this is complete
                 messageCollector.compilerError(
                     "Field '$field: $type' of storage buffer struct ${structType.getClass()!!.name.asString()
                     } must align to ${type.byteOffset} bytes, but current alignment is ${type.byteSize} + ${
