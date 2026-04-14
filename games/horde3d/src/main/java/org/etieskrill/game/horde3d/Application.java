@@ -198,7 +198,7 @@ public class Application extends App {
         fpsLabel = new Label("", Fonts.getDefault(36));
         fpsLabel.setAlignment(Node.Alignment.TOP_LEFT);
         fpsLabel.setMargin(new Vector4f(10));
-        window.setScene(new Scene(new Batch(renderer, window.getCurrentSize()), new Container(fpsLabel), uiCamera));
+        window.setScene(new Scene(new Batch(getScreenBuffer(), renderer, window.getCurrentSize()), new Container(fpsLabel), uiCamera));
     }
 
     @Override

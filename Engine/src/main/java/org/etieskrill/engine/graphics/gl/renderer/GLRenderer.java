@@ -55,10 +55,7 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
 
     @Override
     public void nextFrame() {
-        FrameBuffer.bindScreenBuffer();
-        FrameBuffer.clearScreenBuffer(clearColour);
         prepare();
-
         queryGpuTime();
         resetCounters();
     }
@@ -169,11 +166,7 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
 
     @Override
     public void render(Pipeline<?> pipeline) {
-        if (pipeline.getFrameBuffer() != null) {
-            pipeline.getFrameBuffer().bind(); //TODO at least cache current framebuffer somewhere and check - minimising context switches after that is task of higher abstraction
-        } else {
-            FrameBuffer.bindScreenBuffer();
-        }
+        pipeline.getFrameBuffer().bind(); //TODO at least cache current framebuffer somewhere and check - minimising context switches after that is task of higher abstraction
 
         boolean indexed;
         if (pipeline.getVao() != null) {

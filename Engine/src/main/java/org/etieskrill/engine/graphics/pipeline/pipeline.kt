@@ -7,7 +7,7 @@ import org.etieskrill.engine.graphics.gl.VertexArrayObject
 
 class PostPassPipeline<S : PureShaderBuilder<*, *>>(
     shader: S,
-    frameBuffer: FrameBuffer?,
+    frameBuffer: FrameBuffer,
     opaque: Boolean = true,
     depthTest: Boolean = true
 ) : Pipeline<S>(
@@ -31,9 +31,9 @@ open class Pipeline<S : AbstractShader> private constructor(
     /**
      * Passing `null` targets the window's default framebuffer.
      */
-    val frameBuffer: FrameBuffer?
+    val frameBuffer: FrameBuffer
 ) {
-    constructor(vao: VertexArrayObject<*>, config: PipelineConfig, shader: S, frameBuffer: FrameBuffer?) : this(
+    constructor(vao: VertexArrayObject<*>, config: PipelineConfig, shader: S, frameBuffer: FrameBuffer) : this(
         vao,
         null,
         config,
@@ -41,7 +41,7 @@ open class Pipeline<S : AbstractShader> private constructor(
         frameBuffer
     )
 
-    constructor(vertexCount: Int, config: PipelineConfig, shader: S, frameBuffer: FrameBuffer?) : this(
+    constructor(vertexCount: Int, config: PipelineConfig, shader: S, frameBuffer: FrameBuffer) : this(
         null,
         vertexCount,
         config,

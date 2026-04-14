@@ -136,7 +136,7 @@ class CircleService(private val environment: VisEnvironment) : Service {
         // 1. search every path from an emitter to a receiver for every element by bfs
         // 2. remove all non-compatible vis paths
 
-        return TODO()
+//        return TODO()
         return listOf(
             SupplyChainNode(
                 circle, listOf(

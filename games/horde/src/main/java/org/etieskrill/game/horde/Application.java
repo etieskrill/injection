@@ -1,5 +1,6 @@
 package org.etieskrill.game.horde;
 
+import org.etieskrill.engine.application.App;
 import org.etieskrill.engine.application.GameApplication;
 import org.etieskrill.engine.entity.component.DirectionalLightComponent;
 import org.etieskrill.engine.entity.component.Transform;
@@ -43,7 +44,7 @@ import static org.lwjgl.opengl.GL11C.*;
 import static org.lwjgl.opengl.GL30C.glBindVertexArray;
 import static org.lwjgl.opengl.GL30C.glGenVertexArrays;
 
-public class Application extends GameApplication {
+public class Application extends App {
 
     Camera camera;
     GridShader gridShader;
@@ -74,19 +75,21 @@ public class Application extends GameApplication {
     protected void init() {
         GLUtils.addDebugLogging();
 
-        camera = new PerspectiveCamera(window.getSize().getVec())
+        camera = new PerspectiveCamera(getWindow().getSize().getVec())
                 .setOrbit(true)
                 .setOrbitDistance(2)
                 .setZoom(7);
 
-        entitySystem.addService(new EffectService());
-        entitySystem.addService(new SimpleCollisionService());
-        entitySystem.addService(new SimpleCollisionService());
-        entitySystem.addService(new DirectionalBillBoardShadowMappingService(camera));
-        entitySystem.addService(new BillBoardRenderService(camera));
-        entitySystem.addService(new SnippetsService());
+        getEntitySystem().addServices(
+                new EffectService(),
+                new SimpleCollisionService(),
+                new SimpleCollisionService(),
+                new DirectionalBillBoardShadowMappingService(camera),
+                new BillBoardRenderService(camera, getScreenBuffer()),
+                new SnippetsService()
+        );
 
-        window.getCursor().disable();
+        getWindow().getCursor().disable();
 
         gridShader = new GridShader();
 
@@ -96,7 +99,7 @@ public class Application extends GameApplication {
                 .setMipMapping(MinFilter.NEAREST, MagFilter.NEAREST).build();
         floorShader = new FloorShader();
 
-        dude = entitySystem.createEntity(id -> new Player(id, pacer)); //FIXME why tf does the player's billboard not render if this is put before the service definitions
+        dude = getEntitySystem().createEntity(id -> new Player(id, getPacer())); //FIXME why tf does the player's billboard not render if this is put before the service definitions
 
         playerController = new KeyCharacterController<>(dude.getTransform().getPosition(), (delta, target, deltaPosition, speed) -> {
             deltaPosition.y = 0;
@@ -111,20 +114,20 @@ public class Application extends GameApplication {
             deltaPosition.rotateY(toRadians(camera.getYaw()));
             target.add(deltaPosition.mul((float) delta * speed));
         });
-        window.addKeyInputs(playerController);
+        getWindow().addKeyInputs(playerController);
 
-        window.addKeyInputs(Input.of(
+        getWindow().addKeyInputs(Input.of(
                 Input.bind(Keys.A).to(() -> dude.setLookingRight(false)),
                 Input.bind(Keys.D).to(() -> dude.setLookingRight(true))
         ));
 
-        entitySystem.createEntity(id -> new Enemy(id, dude.getTransform().getPosition(), camera));
+        getEntitySystem().createEntity(id -> new Enemy(id, dude.getTransform().getPosition(), camera));
 
         Random random = new Random(69420);
 
         var bushTexture = getPixelTexture("textures/bush1.png");
         for (int i = 0; i < 100; i++) {
-            entitySystem.createEntity()
+            getEntitySystem().createEntity()
                     .withComponent(new Transform().setPosition(new Vector3f(random.nextFloat(-10, 10), 0, random.nextFloat(-10, 10))))
                     .withComponent(new BillBoard(
                             bushTexture,
@@ -138,7 +141,7 @@ public class Application extends GameApplication {
 
         var treeTexture = getPixelTexture("textures/tree01.png");
         for (int i = 0; i < 50; i++) {
-            entitySystem.createEntity()
+            getEntitySystem().createEntity()
                     .withComponent(new Transform().setPosition(new Vector3f(random.nextFloat(-10, 10), 0, random.nextFloat(-10, 10))))
                     .withComponent(new BillBoard(
                             treeTexture,
@@ -147,7 +150,7 @@ public class Application extends GameApplication {
                     .withComponent(new Collider(.5f, true, true));
         }
 
-        dirLight = entitySystem.createEntity()
+        dirLight = getEntitySystem().createEntity()
                 .addComponent(new DirectionalLightComponent(
                         new DirectionalLight(new Vector3f(1, -1, 1)),
                         DirectionalShadowMap.generate(new Vector2i(2048)),
@@ -162,7 +165,7 @@ public class Application extends GameApplication {
 
         stoopidShader = new BlitShader();
 
-        window.addKeyInputs(Input.of(
+        getWindow().addKeyInputs(Input.of(
                 Input.bind(Keys.Q).on(InputBinding.Trigger.TOGGLED).to(delta -> daylightCycleRotation += 20 * delta)
         ));
 
@@ -194,7 +197,7 @@ public class Application extends GameApplication {
     @Override
     protected void render() {
         stoopidShader.start();
-        BlitShaderKt.setAspectRatio(stoopidShader, window.getAspectRatio());
+        BlitShaderKt.setAspectRatio(stoopidShader, getWindow().getAspectRatio());
         BlitShaderKt.setTex(stoopidShader, dirLight.getShadowMap().getTexture()); //improper handling for testing purposes
 
         glBindVertexArray(dummyVao);

@@ -1,5 +1,6 @@
 package org.etieskrill.game.horde3d;
 
+import org.etieskrill.engine.application.App;
 import org.etieskrill.engine.application.GameApplication;
 import org.etieskrill.engine.entity.service.impl.*;
 import org.etieskrill.engine.graphics.camera.Camera;
@@ -22,7 +23,7 @@ import static org.etieskrill.engine.input.Input.bind;
 import static org.joml.Math.floor;
 import static org.joml.Math.toRadians;
 
-public class EntityApplication extends GameApplication {
+public class EntityApplication extends App {
 
     static final Loaders.ModelLoader MODELS = Loaders.ModelLoader.get();
 
@@ -59,78 +60,78 @@ public class EntityApplication extends GameApplication {
                 .setVSyncEnabled(true)
                 .build()
         );
-        renderer.setQueryGpuTime(false);
+        getRenderer().setQueryGpuTime(false);
     }
 
     @Override
     protected void init() {
         GLUtils.addDebugLogging();
 
-        camera = new PerspectiveCamera(window.getCurrentSize());
+        camera = new PerspectiveCamera(getWindow().getCurrentSize());
 
-        world = new World(entitySystem);
+        world = new World(getEntitySystem());
 
-        entitySystem.addService(new BoundingBoxService());
+        getEntitySystem().addService(new BoundingBoxService());
 
         //TODO fix static-animated root transform
-        entitySystem.addService(new DirectionalShadowMappingService(renderer));
-        entitySystem.addService(new PointShadowMappingService(renderer,
+        getEntitySystem().addService(new DirectionalShadowMappingService(getRenderer()));
+        getEntitySystem().addService(new PointShadowMappingService(getRenderer(),
 //                new DepthCubeMapArrayAnimatedShader() //TODO revert
                 new DepthCubeMapArrayShader()
         ));
-        entitySystem.addService(new AnimationService());
+        getEntitySystem().addService(new AnimationService());
 
-        entitySystem.addService(new ParticleUpdateService());
+        getEntitySystem().addService(new ParticleUpdateService());
 
-        RenderService renderService = new RenderService(renderer, camera, window.getCurrentSize());
-        entitySystem.addService(renderService);
+        RenderService renderService = new RenderService(getScreenBuffer(), getRenderer(), camera, getWindow().getCurrentSize());
+        getEntitySystem().addService(renderService);
 
         float smolFactor = 4;
-        secondaryRenderService = new RenderService(renderer,
-                new PerspectiveCamera(window.getCurrentSize())
+        secondaryRenderService = new RenderService(getScreenBuffer(), getRenderer(),
+                new PerspectiveCamera(getWindow().getCurrentSize())
                         .setPosition(new Vector3f(-10, 10, -10))
                         .setRotation(-45, -45, 0)
                         .setZoom(10f),
-                new Vector2i(window.getCurrentSize()).div(smolFactor))
+                new Vector2i(getWindow().getCurrentSize()).div(smolFactor))
                 .cullingCamera(camera)
                 .blur(false)
                 .customViewport(new Vector4i(
-                        (int) (window.getCurrentSize().x() * (1f - 1f / smolFactor)),
-                        (int) (window.getCurrentSize().y() * (1f - 1f / smolFactor)),
-                        (int) (window.getCurrentSize().x() * 1f / smolFactor),
-                        (int) (window.getCurrentSize().y() * 1f / smolFactor))
+                        (int) (getWindow().getCurrentSize().x() * (1f - 1f / smolFactor)),
+                        (int) (getWindow().getCurrentSize().y() * (1f - 1f / smolFactor)),
+                        (int) (getWindow().getCurrentSize().x() * 1f / smolFactor),
+                        (int) (getWindow().getCurrentSize().y() * 1f / smolFactor))
                 );
-        entitySystem.addService(secondaryRenderService);
+        getEntitySystem().addService(secondaryRenderService);
 
-        entitySystem.addService(new PhysicsService(AABB_SOLVER));
-        entitySystem.addService(new SnippetsService());
+        getEntitySystem().addService(new PhysicsService(AABB_SOLVER));
+        getEntitySystem().addService(new SnippetsService());
 
-        player = entitySystem.createEntity(PlayerEntity::new);
+        player = getEntitySystem().createEntity(PlayerEntity::new);
 
         final int numZombies = 10;
         for (int i = 0; i < numZombies; i++) {
             float angle = toRadians(((float) i / numZombies) * 360f);
 
-            zombie = entitySystem.createEntity(Zombie::new);
+            zombie = getEntitySystem().createEntity(Zombie::new);
             zombie.getTransform().getPosition().add(20 * Math.cos(angle), 0, 20 * Math.sin(angle));
             zombie.getCollider().setPreviousPosition(zombie.getTransform().getPosition());
         }
 
-        window.addCursorInputs(new CursorCameraController(camera));
+        getWindow().addCursorInputs(new CursorCameraController(camera));
         KeyCharacterTranslationController playerController =
                 new KeyCharacterTranslationController(player.getMoveForce().getForce(), camera);
         playerController
                 .removeBindings(Keys.SPACE.getInput(), Keys.SHIFT.getInput())
                 .addBindings(Input.bind(Keys.SPACE).to(player.getDashState()::trigger));
-        window.addKeyInputs(playerController);
-        window.getCursor().disable();
+        getWindow().addKeyInputs(playerController);
+        getWindow().getCursor().disable();
 
         light = true;
 
         hdrReinhardMapping = true;
         hdrExposure = 1;
 
-        window.addKeyInputs(Input.of(
+        getWindow().addKeyInputs(Input.of(
                 bind(Keys.Q).to(() -> {
                     light = !light;
                     logger.info("Turning sunlight {}", light ? "on" : "off");
@@ -157,8 +158,8 @@ public class EntityApplication extends GameApplication {
         ));
 
         //FIXME loading the scene (the label font specifically) before the above stuff causes a segfault from freetype??
-        debugInterface = new DebugInterface(window.getCurrentSize(), renderer, pacer);
-        window.setScene(debugInterface);
+        debugInterface = new DebugInterface(getScreenBuffer(), getWindow().getCurrentSize(), getRenderer(), getPacer());
+        getWindow().setScene(debugInterface);
 
         GLUtils.removeDebugLogging();
     }
@@ -178,19 +179,19 @@ public class EntityApplication extends GameApplication {
         world.getSunTransform().setPosition(new Vector3f(50).add(camera.getPosition()));
         world.getCubeTransform().applyRotation(quat -> quat.rotateAxis((float) delta, 1, 1, 1));
 
-        if (floor(pacer.getTime()) != floor(previousTime)) {
+        if (floor(getPacer().getTime()) != floor(previousTime)) {
             logger.info("Fps: {}, cpu time: {}ms, gpu time: {}ms, gpu delay: {}ms",
-                    "%4.1f".formatted(pacer.getAverageFPS()),
+                    "%4.1f".formatted(getPacer().getAverageFPS()),
                     "%5.2f".formatted(getAvgCpuTime()),
-                    "%5.2f".formatted(renderer.getAveragedGpuTime() / 1_000_000.0),
-                    "%5.2f".formatted(renderer.getGpuDelay() / 1_000_000.0));
+                    "%5.2f".formatted(getRenderer().getAveragedGpuTime() / 1_000_000.0),
+                    "%5.2f".formatted(getRenderer().getGpuDelay() / 1_000_000.0));
         }
-        previousTime = pacer.getTime();
+        previousTime = getPacer().getTime();
         debugInterface.getFpsLabel().setText(
                 "Fps: %d\nRender calls: %d\nTriangles: %d\nMapping: %s\nExposure: %4.2f\nDash cooldown: %.0f".formatted(
-                        Math.round(pacer.getAverageFPS()),
-                        renderer.getRenderCalls(),
-                        renderer.getTrianglesDrawn(),
+                        Math.round(getPacer().getAverageFPS()),
+                        getRenderer().getRenderCalls(),
+                        getRenderer().getTrianglesDrawn(),
                         hdrReinhardMapping ? "Reinhard" : "Exposure",
                         hdrExposure,
                         Math.max(0, player.getDashState().getCooldown())

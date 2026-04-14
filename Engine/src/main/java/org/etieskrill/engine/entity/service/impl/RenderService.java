@@ -52,6 +52,7 @@ public class RenderService implements Service, Disposable {
     protected final GLRenderer renderer;
     private final GaussBlurPostBuffers gaussBlurPostBuffers;
     protected final @Getter FrameBuffer frameBuffer;
+    private final FrameBuffer screenBuffer;
     protected final Camera camera;
     private @Getter
     @Accessors(fluent = true)
@@ -89,10 +90,11 @@ public class RenderService implements Service, Disposable {
     @Deprecated ParticleRenderService particleRenderService;
     private @Deprecated double lastDelta = 0;
 
-    public RenderService(GLRenderer renderer, Camera camera, Vector2ic windowSize) {
+    public RenderService(FrameBuffer screenBuffer, GLRenderer renderer, Camera camera, Vector2ic windowSize) {
         this.renderer = renderer;
-        this.gaussBlurPostBuffers = new GaussBlurPostBuffers(windowSize);
+        this.gaussBlurPostBuffers = new GaussBlurPostBuffers(windowSize, screenBuffer);
         this.frameBuffer = gaussBlurPostBuffers.getFrameBuffer();
+        this.screenBuffer = screenBuffer;
         this.camera = camera;
         this.cullingCamera = camera;
         this.windowSize = windowSize;
@@ -168,7 +170,6 @@ public class RenderService implements Service, Disposable {
         frameBuffer.clear();
         frameBuffer.bind();
         renderer.prepare();
-        glViewport(0, 0, windowSize.x(), windowSize.y()); //TODO move to framebuffer
 
         shaderParams.clear();
 
@@ -350,6 +351,7 @@ class GaussBlurPostBuffers implements Disposable {
 
     private static final int GAUSS_BLUR_ITERATIONS = 3;
 
+    private final FrameBuffer screenBuffer;
     private final @Getter FrameBuffer frameBuffer;
     private final Texture2D hdrBuffer;
     private final Texture2D bloomBuffer;
@@ -363,7 +365,8 @@ class GaussBlurPostBuffers implements Disposable {
 
     private final @Getter int dummyVAO;
 
-    public GaussBlurPostBuffers(Vector2ic windowSize) {
+    public GaussBlurPostBuffers(Vector2ic windowSize, FrameBuffer screenBuffer) {
+        this.screenBuffer = screenBuffer;
         this.hdrBuffer = Textures.genBlank(windowSize, RGBA_F16);
         this.bloomBuffer = Textures.genBlank(windowSize, RGBA_F16);
         RenderBuffer depthStencilBuffer = new RenderBuffer(windowSize, DEPTH_STENCIL);
@@ -415,7 +418,7 @@ class GaussBlurPostBuffers implements Disposable {
             }
         }
 
-        FrameBuffer.bindScreenBuffer();
+        screenBuffer.bind();
 
         hdrShader.start();
         hdrShader.setHdrBuffer(hdrBuffer);

@@ -10,6 +10,7 @@ import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera;
 import org.etieskrill.engine.graphics.data.DirectionalLight;
 import org.etieskrill.engine.graphics.gl.GLUtils;
+import org.etieskrill.engine.graphics.gl.framebuffer.ScreenBuffer;
 import org.etieskrill.engine.graphics.gl.renderer.GLRenderer;
 import org.etieskrill.engine.graphics.gl.shader.Shaders;
 import org.etieskrill.engine.graphics.gl.shader.impl.AnimationShader;
@@ -33,6 +34,8 @@ import org.jetbrains.annotations.VisibleForTesting;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
+import org.lwjgl.opengl.GL11C;
+import org.lwjgl.opengl.GL46C;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,6 +47,9 @@ import static org.etieskrill.engine.graphics.model.loader.Loader.loadModelAnimat
 import static org.etieskrill.engine.input.InputBinding.Trigger.ON_PRESS;
 import static org.etieskrill.engine.input.InputBinding.Trigger.PRESSED;
 import static org.joml.Math.toRadians;
+import static org.lwjgl.opengl.GL11C.*;
+import static org.lwjgl.opengl.GL30C.GL_FRAMEBUFFER;
+import static org.lwjgl.opengl.GL30C.glBindFramebuffer;
 
 public class Game {
 
@@ -346,6 +352,8 @@ public class Game {
             //TODO tone map + gamma correct
             renderer.prepare();
             renderer.nextFrame();
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
             renderer.render(skybox, cubeMapShader, camera.getCombined().translate(camera.getPosition(), new Matrix4f()).scale(50));
 

@@ -1,5 +1,6 @@
 package org.etieskrill.game.horde3d;
 
+import org.etieskrill.engine.application.App;
 import org.etieskrill.engine.application.GameApplication;
 import org.etieskrill.engine.entity.Entity;
 import org.etieskrill.engine.entity.component.DirectionalLightComponent;
@@ -32,27 +33,27 @@ import java.util.List;
 
 import static org.joml.Math.*;
 
-public class RuntimeMeshOptimisation extends GameApplication {
+public class RuntimeMeshOptimisation extends App {
 
     List<Transform> zombieTransforms;
 
     @Override
     protected void init() {
-        window.setSize(Window.WindowSize.LARGEST_FIT);
+        getWindow().setSize(Window.WindowSize.LARGEST_FIT);
 
-        PerspectiveCamera camera = new PerspectiveCamera(window.getCurrentSize());
+        PerspectiveCamera camera = new PerspectiveCamera(getWindow().getCurrentSize());
         camera.setRotation(0, -90, 0);
 
-        entitySystem.addService(new AnimationService());
-        entitySystem.addService(new DirectionalShadowMappingService(renderer));
-        entitySystem.addService(new RenderService(renderer, camera, window.getCurrentSize()));
+        getEntitySystem().addService(new AnimationService());
+        getEntitySystem().addService(new DirectionalShadowMappingService(getRenderer()));
+        getEntitySystem().addService(new RenderService(getScreenBuffer(), getRenderer(), camera, getWindow().getCurrentSize()));
 
-        entitySystem.createEntity(id -> new Entity(id)
+        getEntitySystem().createEntity(id -> new Entity(id)
                 .withComponent(new Transform().setPosition(new Vector3f(0, -1.5f, 0)))
                 .withComponent(new Drawable(ModelFactory.box(new Vector3f(30, 1, 30)), new PhongNoMaterialShader()))
         );
 
-        entitySystem.createEntity(id -> new Entity(id)
+        getEntitySystem().createEntity(id -> new Entity(id)
                 .withComponent(new DirectionalLightComponent(new DirectionalLight(
                         new Vector3f(1, -1, -1), new Vector3f(1), new Vector3f(1), new Vector3f(1)),
                         DirectionalShadowMap.generate(new Vector2i(4096)),
@@ -67,11 +68,11 @@ public class RuntimeMeshOptimisation extends GameApplication {
         spawnZombies();
         spawnSkeletonZombies();
 
-        window.addCursorInputs(new CursorCameraController(camera));
-        window.getCursor().disable();
-        window.addKeyInputs(new KeyCameraController(camera));
+        getWindow().addCursorInputs(new CursorCameraController(camera));
+        getWindow().getCursor().disable();
+        getWindow().addKeyInputs(new KeyCameraController(camera));
 
-        window.setScene(new DebugInterface(window.getCurrentSize(), renderer, pacer));
+        getWindow().setScene(new DebugInterface(getScreenBuffer(), getWindow().getCurrentSize(), getRenderer(), getPacer()));
     }
 
     private void spawnZombies() {
@@ -90,7 +91,7 @@ public class RuntimeMeshOptimisation extends GameApplication {
                     Loader.loadModelAnimations("mixamo_zombie_walking.glb", model).getFirst()));
             animator.play(random.nextFloat() * .25f);
 
-            var zombie = entitySystem.createEntity(id -> new Entity(id)
+            var zombie = getEntitySystem().createEntity(id -> new Entity(id)
                     .withComponent(new Transform()
                             .setPosition(new Vector3f(8 * cos(angle), -1, 8 * sin(angle))))
                     .withComponent(new Drawable(model, new ZombieShader()))
@@ -118,7 +119,7 @@ public class RuntimeMeshOptimisation extends GameApplication {
                     layer -> layer.setPlaybackSpeed(.8f));
             animator.play(random.nextFloat() * .175f);
 
-            entitySystem.createEntity(id -> new Entity(id)
+            getEntitySystem().createEntity(id -> new Entity(id)
                     .withComponent(new Transform()
                             .setPosition(new Vector3f(8 * cos(angle), 1, 8 * sin(angle)))
                             .applyRotation(quat -> quat.rotateY(-angle - toRadians(90))))
@@ -127,14 +128,14 @@ public class RuntimeMeshOptimisation extends GameApplication {
             );
         }
 
-        renderer.setQueryGpuTime(false);
+        getRenderer().setQueryGpuTime(false);
     }
 
     @Override
     protected void loop(double delta) {
         for (int i = 0; i < zombieTransforms.size(); i++) {
             float angle = toRadians(360 * i / (float) zombieTransforms.size());
-            float anglePosition = angle + (float) ((.05 * pacer.getTime()) % (2 * Math.PI));
+            float anglePosition = angle + (float) ((.05 * getPacer().getTime()) % (2 * Math.PI));
             zombieTransforms.get(i)
                     .setPosition(new Vector3f(8 * cos(anglePosition), -1, 8 * sin(anglePosition)))
                     .applyRotation(quat -> quat.rotationY(-anglePosition));

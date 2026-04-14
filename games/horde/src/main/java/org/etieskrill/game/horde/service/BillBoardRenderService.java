@@ -24,12 +24,14 @@ public class BillBoardRenderService implements Service {
     private final BillBoardShader shader;
     private final AnimatedBillBoardShader animatedShader;
     private final Camera camera;
+    private final FrameBuffer screenBuffer;
     private final int dummyVAO;
 
-    public BillBoardRenderService(Camera camera) {
+    public BillBoardRenderService(Camera camera, FrameBuffer screenBuffer) {
         this.shader = new BillBoardShader();
         this.animatedShader = new AnimatedBillBoardShader();
         this.camera = camera;
+        this.screenBuffer = screenBuffer;
         this.dummyVAO = glGenVertexArrays();
     }
 
@@ -51,7 +53,7 @@ public class BillBoardRenderService implements Service {
 
     @Override
     public void preProcess(Double delta, List<Entity> entities) {
-        FrameBuffer.bindScreenBuffer();
+        screenBuffer.bind();
         glViewport(0, 0, camera.getViewportSize().x(), camera.getViewportSize().y());
 
         configureShader(entities, shader);

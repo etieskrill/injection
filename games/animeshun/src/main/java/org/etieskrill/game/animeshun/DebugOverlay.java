@@ -2,6 +2,7 @@ package org.etieskrill.game.animeshun;
 
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.camera.OrthographicCamera;
+import org.etieskrill.engine.graphics.gl.framebuffer.FrameBuffer;
 import org.etieskrill.engine.graphics.gl.renderer.GLDebuggableRenderer;
 import org.etieskrill.engine.graphics.gl.renderer.GLRenderer;
 import org.etieskrill.engine.graphics.gl.shader.Shaders;
@@ -23,13 +24,13 @@ public class DebugOverlay extends Scene {
 
     private double cpuTime;
 
-    public DebugOverlay(GLRenderer renderer, LoopPacer pacer, Vector2ic windowSize) {
+    public DebugOverlay(FrameBuffer frameBuffer, GLRenderer renderer, LoopPacer pacer, Vector2ic windowSize) {
         this.renderer = renderer;
         this.pacer = pacer;
 
         this.renderStatistics = new Label();
 
-        setBatch(new Batch(renderer, windowSize).setShader(Shaders.getTextShader()));
+        setBatch(new Batch(frameBuffer, renderer, windowSize).setShader(Shaders.getTextShader()));
         setRoot(getRootNode());
         setCamera(new OrthographicCamera(windowSize));
     }

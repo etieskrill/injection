@@ -2,6 +2,7 @@ package org.etieskrill.engine.graphics;
 
 import lombok.Getter;
 import org.etieskrill.engine.graphics.animation.UiOutlineShader;
+import org.etieskrill.engine.graphics.gl.framebuffer.FrameBuffer;
 import org.etieskrill.engine.graphics.gl.renderer.GLRenderer;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shader.Shaders;
@@ -21,6 +22,8 @@ import static org.lwjgl.opengl.GL30C.glGenVertexArrays;
 //TODO since everything apart from like, chars in Strings is immediate-mode, this should be renamed
 public class Batch {
 
+    private final FrameBuffer frameBuffer;
+
     private final Renderer renderer;
     private final TextRenderer textRenderer;
 
@@ -32,18 +35,14 @@ public class Batch {
     private final Matrix4f combined;
     private final Vector2ic viewportSize;
 
-    private final PostPassPipeline<UiOutlineShader> uiOutlinePipeline = new PostPassPipeline<>(
-            new UiOutlineShader(),
-            null,
-            false,
-            false
-    );
+    private final PostPassPipeline<UiOutlineShader> uiOutlinePipeline;
 
-    public Batch(@NotNull GLRenderer renderer, @NotNull Vector2ic viewportSize) {
-        this(renderer, renderer, viewportSize);
+    public Batch(@NotNull FrameBuffer frameBuffer, @NotNull GLRenderer renderer, @NotNull Vector2ic viewportSize) {
+        this(frameBuffer, renderer, renderer, viewportSize);
     }
 
-    public Batch(@NotNull Renderer renderer, @NotNull TextRenderer textRenderer, @NotNull Vector2ic viewportSize) {
+    public Batch(FrameBuffer frameBuffer, @NotNull Renderer renderer, @NotNull TextRenderer textRenderer, @NotNull Vector2ic viewportSize) {
+        this.frameBuffer = frameBuffer;
         this.renderer = renderer;
         this.textRenderer = textRenderer;
         this.shader = Shaders.getTextureShader();
@@ -51,6 +50,12 @@ public class Batch {
         this.blitShader = new BlitShader();
         this.combined = new Matrix4f().identity();
         this.viewportSize = viewportSize;
+        this.uiOutlinePipeline = new PostPassPipeline<>(
+                new UiOutlineShader(),
+                frameBuffer,
+                false,
+                false
+        );
     }
 
     private static final Vector4f resetColour = new Vector4f(1);
@@ -171,8 +176,14 @@ public class Batch {
         return this;
     }
 
+    @SuppressWarnings("LombokGetterMayBeUsed") //kotlin
     public Vector2ic getViewportSize() {
         return viewportSize;
+    }
+
+    @SuppressWarnings("LombokGetterMayBeUsed") //kotlin
+    public FrameBuffer getFrameBuffer() {
+        return frameBuffer;
     }
 
 }

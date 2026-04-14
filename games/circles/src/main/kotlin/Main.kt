@@ -18,6 +18,7 @@ import org.joml.Vector2f
 import org.joml.Vector2i
 import org.joml.Vector3fc
 import org.joml.Vector4f
+import org.joml.minus
 
 fun main() {
     Main().run()
@@ -26,7 +27,7 @@ fun main() {
 class Main : App(
     window {
         title = "Circles"
-        size = Window.WindowSize.XGA
+        size = Window.WindowSize.FHD
         mode = Window.WindowMode.BORDERLESS
         position = Vector2f(1000f, 200f)
     }
@@ -38,13 +39,7 @@ class Main : App(
     val sdfFrameBuffer = FrameBuffer.getColour(Vector2i(800))!!
     val pipeline = PostPassPipeline(SDFShader(), sdfFrameBuffer)
 
-    val screenPipeline = PostPassPipeline(BlitShader(), null, opaque = false)
-
-    init {
-        window.currentSize = Vector2i(800)
-    }
-
-    override fun loop(delta: Double) {}
+    val screenPipeline = PostPassPipeline(BlitShader(), screenBuffer, opaque = false)
 
     val primRuneFire = EmitterRune(
         "fire", 10f, mapOf(VisType("fire", Vector4f(1f, 0.5f, 0f, 1f)) to 1f)
@@ -87,7 +82,11 @@ class Main : App(
                 override fun update(delta: Float) = Unit
             })
         )
+
+        screenBuffer.setClearColour(Vector4f(0.25f, 0.25f, 0.25f, 1f))
     }
+
+    override fun loop(delta: Double) {}
 
     override fun render() {
         sdfFrameBuffer.clear()
@@ -96,7 +95,8 @@ class Main : App(
         screenPipeline.shader.apply {
             sprite = sdfFrameBuffer.attachments[FrameBufferAttachment.BufferAttachmentType.COLOUR0] as Texture2D
             useSpriteColour = true
-            size = Vector2f(800f)
+            position = Vector2f(window.currentSize) - Vector2f(200f)
+            size = Vector2f(200f)
             windowSize = Vector2f(window.currentSize)
         }
         renderer.render(screenPipeline)

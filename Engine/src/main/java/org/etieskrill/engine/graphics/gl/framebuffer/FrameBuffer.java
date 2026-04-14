@@ -1,5 +1,7 @@
 package org.etieskrill.engine.graphics.gl.framebuffer;
 
+import kotlin.Deprecated;
+import kotlin.DeprecationLevel;
 import lombok.Getter;
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.graphics.gl.GLUtils;
@@ -11,6 +13,7 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2ic;
 import org.joml.Vector4f;
 import org.joml.Vector4fc;
+import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -148,6 +151,16 @@ public class FrameBuffer implements io.github.etieskrill.injection.extension.sha
         this.attachments = new HashMap<>(3);
     }
 
+    @Deprecated(message = "Only for screen buffer proxy, do not use")
+    protected FrameBuffer(Vector2ic size, boolean dummy) {
+        this.fbo = 0;
+        this.size = size;
+        this.glBufferClearMask = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT;
+        this.glColourDrawBuffers = new int[]{GL_COLOR_ATTACHMENT0};
+        this.clearColour = new Vector4f(0f);
+        this.attachments = new HashMap<>(3);
+    }
+
     public enum Binding {
         READ,
         WRITE,
@@ -168,17 +181,15 @@ public class FrameBuffer implements io.github.etieskrill.injection.extension.sha
         if (glColourDrawBuffers != null) {
             glDrawBuffers(glColourDrawBuffers);
         }
+        glViewport(0, 0, size.x(), size.y());
     }
 
+    /**
+     * Unbinds the currently bound framebuffer, which is identical to binding the
+     * {@link org.etieskrill.engine.window.Window}'s back buffer, except that it does <b>NOT</b> reset the viewport size
+     * to the back buffer's size.
+     */
     public void unbind() {
-        if (glColourDrawBuffers != null) {
-            glDrawBuffers(COLOUR0.toGLAttachment());
-        }
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    }
-
-    public static void bindScreenBuffer() {
-        glDrawBuffers(COLOUR0.toGLAttachment());
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
@@ -187,16 +198,6 @@ public class FrameBuffer implements io.github.etieskrill.injection.extension.sha
         glClearColor(clearColour.x, clearColour.y, clearColour.z, clearColour.w);
         glClear(glBufferClearMask);
         unbind();
-    }
-
-    public static void clearScreenBuffer() {
-        clearScreenBuffer(null);
-    }
-
-    public static void clearScreenBuffer(@Nullable Vector4fc clearColour) {
-        bindScreenBuffer();
-        if (clearColour != null) glClearColor(clearColour.x(), clearColour.y(), clearColour.z(), clearColour.w());
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     }
 
     public void setClearColour(Vector4fc clearColour) {

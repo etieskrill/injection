@@ -90,7 +90,7 @@ class SynthwavePlane() : App(window {
 
     val frameBuffer: FrameBuffer
     val frameTexture: Texture2D
-    val sunPipeline = PostPassPipeline(SunPostPass(), null, false)
+    val sunPipeline = PostPassPipeline(SunPostPass(), screenBuffer, false)
 
     var audioSource: AudioSource? = null
     val audioListener: AudioListener
@@ -134,7 +134,7 @@ class SynthwavePlane() : App(window {
 
         camera.setPosition(Vector3f(0f, 1f, 0f))
 
-        val renderService = RenderService(renderer, camera, window.currentSize)
+        val renderService = RenderService(screenBuffer, renderer, camera, window.currentSize)
         entitySystem.addService(renderService)
         frameBuffer = renderService.frameBuffer
         frameTexture = renderService.frameBuffer.attachments[BufferAttachmentType.COLOUR0] as Texture2D
@@ -194,7 +194,7 @@ class SynthwavePlane() : App(window {
             drawSeparators = false
         ).apply { size = Vector2f(600f, 200f) }
         window.scene = Scene(
-            Batch(renderer, window.currentSize),
+            Batch(screenBuffer, renderer, window.currentSize),
             Stack(
                 VBox(
                     fpsLabel, //FIXME how in gods name is the fps graph right-side up, and the fft is not??

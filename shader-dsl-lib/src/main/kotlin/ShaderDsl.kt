@@ -31,6 +31,8 @@ interface ShaderVertexData {
 class VertexData(override val position: vec4) : ShaderVertexData
 
 interface FrameBuffer {
+    val size: ivec2
+
     fun bind()
 }
 

@@ -42,9 +42,13 @@ class Histogram(
     val values: FixedArrayDeque<Float> = FixedArrayDeque(columns)
     private val arrayValues: Array<Float> = Array(columns) { 0.0f }
 
-    private val pipeline = PostPassPipeline(HistogramShader(), null, depthTest = false)
+    private lateinit var pipeline: PostPassPipeline<HistogramShader>
 
     override fun render(batch: Batch) {
+        if (::pipeline.isInitialized) { //TODO something like an init stage would be useful
+            pipeline = PostPassPipeline(HistogramShader(), batch.frameBuffer, depthTest = false)
+        }
+
         val position = absolutePosition
 
         batch.renderBox(Vector3f(position, 0f), Vector3f(size, 0f), backgroundColour)

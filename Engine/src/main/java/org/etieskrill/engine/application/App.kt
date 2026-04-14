@@ -9,6 +9,8 @@ import org.etieskrill.engine.Disposable
 import org.etieskrill.engine.audio.Audio
 import org.etieskrill.engine.config.InjectionConfig
 import org.etieskrill.engine.entity.system.EntitySystem
+import org.etieskrill.engine.graphics.gl.framebuffer.FrameBuffer
+import org.etieskrill.engine.graphics.gl.framebuffer.ScreenBuffer
 import org.etieskrill.engine.graphics.gl.renderer.GLRenderer
 import org.etieskrill.engine.graphics.text.TrueTypeFont
 import org.etieskrill.engine.input.Key
@@ -36,6 +38,7 @@ abstract class App(
     protected val pacer = SystemNanoTimePacer(1.0 / window.refreshRate)
 
     protected val renderer = GLRenderer()
+    protected val screenBuffer: FrameBuffer = ScreenBuffer(window.currentSize)
 
     protected val entitySystem = EntitySystem()
 
@@ -95,7 +98,7 @@ abstract class App(
         }
     }
 
-    open fun init() {}
+    protected open fun init() {}
 
     protected open fun internalLoop() {
         setSystemTimeResolution(SYSTEM_TIME_RESOLUTION_MILLIS)
@@ -107,6 +110,8 @@ abstract class App(
     }
 
     protected fun update() {
+        screenBuffer.clear()
+        screenBuffer.bind()
         renderer.nextFrame()
 
         val cpuTime = measureTime {

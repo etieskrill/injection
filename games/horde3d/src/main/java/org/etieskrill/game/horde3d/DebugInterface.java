@@ -2,6 +2,7 @@ package org.etieskrill.game.horde3d;
 
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.camera.OrthographicCamera;
+import org.etieskrill.engine.graphics.gl.framebuffer.FrameBuffer;
 import org.etieskrill.engine.graphics.gl.renderer.GLRenderer;
 import org.etieskrill.engine.graphics.text.Fonts;
 import org.etieskrill.engine.scene.Node;
@@ -21,12 +22,12 @@ public class DebugInterface extends Scene {
 
     private final Label fpsLabel;
 
-    public DebugInterface(Window window, GLRenderer renderer) {
-        this(window.getSize().getVec(), renderer, null);
+    public DebugInterface(Window window, FrameBuffer frameBuffer, GLRenderer renderer) {
+        this(frameBuffer, window.getSize().getVec(), renderer, null);
     }
 
-    public DebugInterface(Vector2ic windowSize, GLRenderer renderer, @Nullable LoopPacer pacer) {
-        setBatch(new Batch(renderer, windowSize));
+    public DebugInterface(FrameBuffer frameBuffer, Vector2ic windowSize, GLRenderer renderer, @Nullable LoopPacer pacer) {
+        setBatch(new Batch(frameBuffer, renderer, windowSize));
         setCamera(new OrthographicCamera(windowSize));
 
         this.renderer = renderer;
