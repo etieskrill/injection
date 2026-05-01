@@ -1,6 +1,6 @@
 package org.etieskrill.engine.graphics.gl.framebuffer;
 
-import org.etieskrill.engine.Disposable;
+import org.etieskrill.engine.common.Disposable;
 import org.joml.Vector2ic;
 
 import static org.lwjgl.opengl.GL30C.*;

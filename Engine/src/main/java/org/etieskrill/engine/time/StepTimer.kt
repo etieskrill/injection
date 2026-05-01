@@ -1,52 +1,29 @@
-package org.etieskrill.engine.time;
+package org.etieskrill.engine.time
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.github.oshai.kotlinlogging.KLogger
+import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlin.time.DurationUnit
+import kotlin.time.TimeSource
 
-public class StepTimer {
+private val logger = KotlinLogging.logger {}
 
-    private long time = 0;
-    private final Logger targetLogger;
+class StepTimer(
+    val targetLogger: KLogger = logger,
+) {
 
-    private static final Logger logger = LoggerFactory.getLogger(StepTimer.class);
+    private lateinit var time: kotlin.time.TimeMark
 
-    public StepTimer() {
-        this(logger);
+    fun start() {
+        time = TimeSource.Monotonic.markNow()
     }
 
-    public StepTimer(Logger logger) {
-        this.targetLogger = logger;
-    }
+    fun log(message: String) = debug(message)
+    fun info(message: String) = targetLogger.info { "$message [${getTimeFormatted()}s]" }
+    fun debug(message: String) = targetLogger.debug { "$message [${getTimeFormatted()}s]" }
+    fun trace(message: String) = targetLogger.trace { "$message [${getTimeFormatted()}s]" }
 
-    public void start() {
-        time = System.nanoTime();
-    }
-
-    public void log(String message) {
-        debug(message);
-    }
-
-    public void debug(String message) {
-        targetLogger.debug("{} [{}s]", message, getTimeFormatted());
-    }
-
-    public void info(String subject) {
-        targetLogger.info("{} [{}s]", subject, getTimeFormatted());
-    }
-
-    public void trace(String subject) {
-        targetLogger.trace("{} [{}s]", subject, getTimeFormatted());
-    }
-
-    private double getTime() {
-        long now = System.nanoTime();
-        double delta = (now - time) / 1_000_000_000d;
-        time = now;
-        return delta;
-    }
-
-    private String getTimeFormatted() {
-        return String.format("%.3f", getTime());
+    fun getTimeFormatted(): String {
+        return "%.3f".format(time.elapsedNow().toDouble(DurationUnit.SECONDS))
     }
 
 }

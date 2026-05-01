@@ -1,6 +1,6 @@
 package org.etieskrill.engine.window;
 
-import org.etieskrill.engine.Disposable;
+import org.etieskrill.engine.common.Disposable;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2d;
 import org.lwjgl.BufferUtils;

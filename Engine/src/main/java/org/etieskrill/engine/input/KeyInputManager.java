@@ -1,6 +1,6 @@
 package org.etieskrill.engine.input;
 
-import org.etieskrill.engine.EveryFrame;
+import org.etieskrill.engine.common.EveryFrame;
 import org.etieskrill.engine.input.InputBinding.Trigger;
 import org.etieskrill.engine.input.action.Action;
 import org.etieskrill.engine.input.action.DeltaAction;

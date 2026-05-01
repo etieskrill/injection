@@ -3,7 +3,7 @@ package org.etieskrill.engine.graphics.model;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
-import org.etieskrill.engine.Disposable;
+import org.etieskrill.engine.common.Disposable;
 import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.graphics.animation.Animation;
 import org.etieskrill.engine.graphics.texture.Texture2D;

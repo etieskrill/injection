@@ -1,6 +1,6 @@
 package org.etieskrill.engine.graphics.model;
 
-import org.etieskrill.engine.ApplicationDisposed;
+import org.etieskrill.engine.common.ApplicationDisposed;
 import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.graphics.model.loader.MeshLoader;
 import org.etieskrill.engine.util.Loaders;

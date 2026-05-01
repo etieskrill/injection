@@ -2,7 +2,7 @@ package org.etieskrill.engine.graphics.texture;
 
 import io.github.etieskrill.injection.extension.shader.Texture;
 import lombok.Getter;
-import org.etieskrill.engine.Disposable;
+import org.etieskrill.engine.common.Disposable;
 import org.etieskrill.engine.graphics.gl.GLUtils;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector2i;

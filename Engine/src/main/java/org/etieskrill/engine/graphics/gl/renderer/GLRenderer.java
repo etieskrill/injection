@@ -2,8 +2,8 @@ package org.etieskrill.engine.graphics.gl.renderer;
 
 import lombok.Getter;
 import lombok.Setter;
-import org.etieskrill.engine.ApplicationDisposed;
-import org.etieskrill.engine.Disposable;
+import org.etieskrill.engine.common.ApplicationDisposed;
+import org.etieskrill.engine.common.Disposable;
 import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.entity.component.TransformC;
 import org.etieskrill.engine.graphics.Renderer;

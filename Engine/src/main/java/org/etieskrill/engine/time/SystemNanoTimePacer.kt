@@ -1,54 +1,59 @@
-package org.etieskrill.engine.time;
+package org.etieskrill.engine.time
 
-import org.etieskrill.engine.util.FixedArrayDeque;
+import org.etieskrill.engine.util.FixedArrayDeque
+import kotlin.concurrent.atomics.AtomicReference
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
+import kotlin.math.max
+import kotlin.time.ComparableTimeMark
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.nanoseconds
+import kotlin.time.DurationUnit
+import kotlin.time.DurationUnit.NANOSECONDS
+import kotlin.time.TimeSource
 
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.LockSupport;
+class SystemNanoTimePacer(
+    private val targetDelta: Duration
+) : LoopPacer {
 
-
-public class SystemNanoTimePacer implements LoopPacer {
-
-    private static final long NANO_FACTOR = 1_000_000_000, MILLI_FACTOR = 1_000_000;
-    private static final int SPINLOCK_WINDOW_NANOS = 100_000;
-    private static final float AVERAGE_FRAMERATE_SPAN_SECONDS = 2;
-
-    private final FixedArrayDeque<Long> deltaBuffer;
-
-    private long targetDelta;
-    private volatile long timeLast, frameTime, delta;
-    private final AtomicLong timerTime = new AtomicLong();
-    private volatile boolean timerPaused;
-    private volatile double averageFPS;
-
-    private volatile long totalFrames, localFrames;
-
-    private boolean started = false;
-
-    private long thread, lastThread = 0;
-
-    public SystemNanoTimePacer(double targetDeltaSeconds) {
-        this.targetDelta = (long) (targetDeltaSeconds * NANO_FACTOR);
-        deltaBuffer = new FixedArrayDeque<>((int) (AVERAGE_FRAMERATE_SPAN_SECONDS / targetDeltaSeconds));
+    companion object {
+        val SPINLOCK_WINDOW = 100_000.nanoseconds
+        val AVERAGE_FRAMERATE_SPAN_SECONDS = 2
     }
 
-    @Override
-    public void start() {
-        if (started) throw new IllegalStateException("Pacer was already started");
+    private val deltaBuffer = FixedArrayDeque<Duration>(
+        (AVERAGE_FRAMERATE_SPAN_SECONDS / targetDelta.toDouble(DurationUnit.SECONDS)).toInt()
+    )
 
-        this.timeLast = getNanoTime();
-        this.started = true;
+    private lateinit var timeStart: ComparableTimeMark
+    private var timeLast = Duration.ZERO
+    private var frameTime = Duration.ZERO
+    private var delta = Duration.ZERO
+
+    @OptIn(ExperimentalAtomicApi::class)
+    private val timerTime = AtomicReference<Duration>(Duration.ZERO)
+    private var timerPaused = false
+    private var averageFPS = 0.0
+
+    private var totalFrames = 0L
+    private var localFrames = 0L
+
+    private var isStarted = false
+
+    override fun start() {
+        if (isStarted) throw IllegalStateException("Pacer was already started")
+
+        timeStart = TimeSource.Monotonic.markNow()
+        isStarted = true
     }
 
-    @Override
-    public void nextFrame() {
-        if (!started) throw new IllegalStateException("Pacer must be started before call to nextFrame");
-        if ((thread = Thread.currentThread().threadId()) != lastThread && lastThread != 0)
-            throw new WrongThreadException("nextFrame must not be called from more than one thread");
-        else lastThread = thread;
+    override fun nextFrame() {
+        if (!isStarted) throw IllegalStateException("Pacer must be started before call to nextFrame")
 
-        frameTime = getNanoTime() - timeLast;
+        val now = timeStart.elapsedNow()
+        frameTime = now - timeLast
 
-        long timeout = Math.max(targetDelta - frameTime - SPINLOCK_WINDOW_NANOS, 0);
+        val timeout = max((targetDelta - frameTime - SPINLOCK_WINDOW).toLong(NANOSECONDS), 0).nanoseconds
+        //TODO
         LockSupport.parkNanos(timeout);
         while ((getNanoTime() - timeLast) < targetDelta) {
         }
@@ -137,7 +142,7 @@ public class SystemNanoTimePacer implements LoopPacer {
         this.targetDelta = (long) (targetDeltaSeconds * NANO_FACTOR);
     }
 
-    private long getNanoTime() {
+    private fun getNanoTime() {
         return System.nanoTime();
     }
 

@@ -1,6 +1,6 @@
 package org.etieskrill.engine.graphics.gl.renderer;
 
-import org.etieskrill.engine.Disposable;
+import org.etieskrill.engine.common.Disposable;
 import org.etieskrill.engine.graphics.TextRenderer;
 import org.etieskrill.engine.graphics.gl.BufferObject.Frequency;
 import org.etieskrill.engine.graphics.gl.GLUtils;

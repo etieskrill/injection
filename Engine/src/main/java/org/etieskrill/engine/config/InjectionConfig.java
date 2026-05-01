@@ -3,7 +3,7 @@ package org.etieskrill.engine.config;
 /**
  * Delegates the necessary static config calls before any other part of the application has started.
  * <p>
- * Classes extending {@link org.etieskrill.engine.application.GameApplication GameApplication} call this at the right
+ * Classes extending {@link org.etieskrill.engine.application.App App} call this at the right
  * time on their own, so usually this class never has to be interacted with directly.
  */
 public class InjectionConfig {

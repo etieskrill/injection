@@ -1,7 +1,6 @@
 package org.etieskrill.game.horde;
 
 import org.etieskrill.engine.application.App;
-import org.etieskrill.engine.application.GameApplication;
 import org.etieskrill.engine.entity.component.DirectionalLightComponent;
 import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.entity.service.impl.SnippetsService;

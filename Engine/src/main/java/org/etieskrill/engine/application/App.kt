@@ -5,8 +5,8 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.launch
-import org.etieskrill.engine.Disposable
 import org.etieskrill.engine.audio.Audio
+import org.etieskrill.engine.common.Disposable
 import org.etieskrill.engine.config.InjectionConfig
 import org.etieskrill.engine.entity.system.EntitySystem
 import org.etieskrill.engine.graphics.gl.framebuffer.FrameBuffer
@@ -17,15 +17,16 @@ import org.etieskrill.engine.input.Key
 import org.etieskrill.engine.input.Keys
 import org.etieskrill.engine.time.StepTimer
 import org.etieskrill.engine.time.SystemNanoTimePacer
-import org.etieskrill.engine.time.TimeResolutionUtils.resetSystemTimeResolution
-import org.etieskrill.engine.time.TimeResolutionUtils.setSystemTimeResolution
+import org.etieskrill.engine.time.resetSystemTimeResolution
+import org.etieskrill.engine.time.setSystemTimeResolution
 import org.etieskrill.engine.util.FixedArrayDeque
 import org.etieskrill.engine.util.Loaders
 import org.etieskrill.engine.window.Window
 import org.etieskrill.engine.window.window
-import org.lwjgl.glfw.GLFW
-import org.lwjgl.opengl.GL
+import org.lwjgl.glfw.GLFW.glfwTerminate
+import org.lwjgl.opengl.GL.destroy
 import kotlin.coroutines.CoroutineContext
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.DurationUnit
 import kotlin.time.measureTime
 
@@ -101,7 +102,7 @@ abstract class App(
     protected open fun init() {}
 
     protected open fun internalLoop() {
-        setSystemTimeResolution(SYSTEM_TIME_RESOLUTION_MILLIS)
+        setSystemTimeResolution(SYSTEM_TIME_RESOLUTION_MILLIS.milliseconds)
         pacer.start()
         while (!window.shouldClose()) {
             update()
@@ -132,13 +133,13 @@ abstract class App(
 
     protected fun terminate() {
         dispose()
-        resetSystemTimeResolution(SYSTEM_TIME_RESOLUTION_MILLIS)
+        resetSystemTimeResolution(SYSTEM_TIME_RESOLUTION_MILLIS.milliseconds)
         window.close()
         window.dispose()
         Loaders.disposeDefaultLoaders()
         TrueTypeFont.disposeLibrary()
-        GL.destroy()
-        GLFW.glfwTerminate()
+        destroy()
+        glfwTerminate()
         Audio.dispose()
     }
 

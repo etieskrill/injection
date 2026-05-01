@@ -1,6 +1,6 @@
 package org.etieskrill.engine.graphics.model;
 
-import org.etieskrill.engine.Disposable;
+import org.etieskrill.engine.common.Disposable;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector4f;

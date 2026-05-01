@@ -1,6 +1,6 @@
 package org.etieskrill.engine.entity.service;
 
-import org.etieskrill.engine.Disposable;
+import org.etieskrill.engine.common.Disposable;
 import org.etieskrill.engine.entity.Entity;
 import org.etieskrill.engine.entity.system.EntitySystem;
 import org.jetbrains.annotations.NotNull;

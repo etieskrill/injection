@@ -7,7 +7,7 @@ import kotlin.text.Regex;
 import kotlin.text.RegexOption;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import org.etieskrill.engine.Disposable;
+import org.etieskrill.engine.common.Disposable;
 import org.etieskrill.engine.config.GLContextConfig;
 import org.etieskrill.engine.graphics.gl.shader.impl.MissingShader;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;

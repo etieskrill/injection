@@ -2,14 +2,11 @@ package org.etieskrill.engine.graphics.gl
 
 import io.github.etieskrill.injection.extension.shader.BufferAccessor
 import io.github.etieskrill.injection.extension.shader.StorageBuffer
-import org.etieskrill.engine.Disposable
+import org.etieskrill.engine.common.Disposable
 import org.etieskrill.engine.graphics.gl.GLUtils.checkErrorThrowing
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL15C
-import org.lwjgl.opengl.GL15C.glBindBuffer
-import org.lwjgl.opengl.GL15C.glBufferData
-import org.lwjgl.opengl.GL15C.glBufferSubData
-import org.lwjgl.opengl.GL15C.glDeleteBuffers
+import org.lwjgl.opengl.GL15C.*
 import org.lwjgl.opengl.GL30C.glBindBufferBase
 import org.lwjgl.opengl.GL43C.GL_SHADER_STORAGE_BUFFER
 import org.lwjgl.opengl.GL45C.glCreateBuffers

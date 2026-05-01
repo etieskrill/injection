@@ -1,7 +1,7 @@
 package org.etieskrill.engine.graphics.model;
 
 import lombok.Setter;
-import org.etieskrill.engine.Disposable;
+import org.etieskrill.engine.common.Disposable;
 import org.etieskrill.engine.graphics.gl.VertexArrayObject;
 import org.joml.primitives.AABBf;
 

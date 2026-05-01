@@ -1,31 +1,31 @@
-package org.etieskrill.engine.time;
+package org.etieskrill.engine.time
 
 //TODO rework interface and document
-public interface LoopPacer {
-    
-    void start();
-    
+interface LoopPacer {
+
+    fun start()
+
     /**
      * Primary function of a pacer. Must be called exactly once at any point in the target loop.
      */
-    void nextFrame();
-    
-    double getDeltaTimeSeconds();
-    double getSecondsElapsedTotal();
+    fun nextFrame()
 
-    void pauseTimer();
-    void resumeTimer();
-    boolean isPaused();
-    void resetTimer();
-    double getTime();
+    fun getDeltaTimeSeconds(): Double
+    fun getSecondsElapsedTotal(): Double
 
-    double getAverageFPS();
+    fun pauseTimer()
+    fun resumeTimer()
+    fun isPaused(): Boolean
+    fun resetTimer()
+    fun getTime(): Double
 
-    long getTotalFramesElapsed();
-    long getFramesElapsed();
-    void resetFrameCounter();
+    fun getAverageFPS(): Double
 
-    double getTargetDeltaTime();
-    void setTargetDeltaTime(double deltaSeconds);
-    
+    fun getTotalFramesElapsed(): Long
+    fun getFramesElapsed(): Long
+    fun resetFrameCounter()
+
+    fun getTargetDeltaTime(): Double
+    fun setTargetDeltaTime(deltaSeconds: Double)
+
 }

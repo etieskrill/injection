@@ -1,6 +1,6 @@
 package org.etieskrill.engine.audio
 
-import org.etieskrill.engine.Disposable
+import org.etieskrill.engine.common.Disposable
 import org.etieskrill.engine.util.ResourceReader
 import org.joml.Vector3f
 import org.joml.Vector3fc

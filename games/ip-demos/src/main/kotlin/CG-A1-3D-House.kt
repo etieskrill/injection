@@ -4,7 +4,7 @@ import io.github.etieskrill.injection.extension.shader.dsl.ShaderVertexData
 import io.github.etieskrill.injection.extension.shader.mat4
 import io.github.etieskrill.injection.extension.shader.vec3
 import io.github.etieskrill.injection.extension.shader.vec4
-import org.etieskrill.engine.application.GameApplication
+import org.etieskrill.engine.application.App
 import org.etieskrill.engine.graphics.camera.OrthographicCamera
 import org.etieskrill.engine.graphics.gl.BufferObject
 import org.etieskrill.engine.graphics.gl.VertexArrayAccessor
@@ -69,7 +69,7 @@ fun main() {
     `CG-03-A`().run()
 }
 
-class `CG-03-A` : GameApplication() {
+class `CG-03-A` : App() {
     val houseVAO = VertexArrayObject.builder(VertexAccessor)
         .vertexBuffer(BufferObject.create(VertexAccessor, BufferUtils.createFloatBuffer(houseVertices.size).put(houseVertices)).build())
         .indices(houseIndices.toMutableList())

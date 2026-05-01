@@ -3,7 +3,7 @@ package org.etieskrill.engine.window;
 import kotlinx.coroutines.CoroutineScope;
 import lombok.Builder;
 import lombok.Getter;
-import org.etieskrill.engine.Disposable;
+import org.etieskrill.engine.common.Disposable;
 import org.etieskrill.engine.config.GLContextConfig;
 import org.etieskrill.engine.graphics.gl.GLUtils;
 import org.etieskrill.engine.input.*;

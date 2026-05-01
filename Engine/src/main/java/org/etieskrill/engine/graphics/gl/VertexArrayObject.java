@@ -3,13 +3,12 @@ package org.etieskrill.engine.graphics.gl;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.experimental.Delegate;
-import org.etieskrill.engine.Disposable;
+import org.etieskrill.engine.common.Disposable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 

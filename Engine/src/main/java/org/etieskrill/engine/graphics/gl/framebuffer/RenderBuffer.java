@@ -1,6 +1,6 @@
 package org.etieskrill.engine.graphics.gl.framebuffer;
 
-import org.etieskrill.engine.Disposable;
+import org.etieskrill.engine.common.Disposable;
 import org.etieskrill.engine.graphics.gl.GLUtils;
 import org.joml.Vector2ic;
 

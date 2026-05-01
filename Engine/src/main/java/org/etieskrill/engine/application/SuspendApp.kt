@@ -13,8 +13,9 @@ import kotlinx.coroutines.newSingleThreadContext
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
-import org.etieskrill.engine.time.TimeResolutionUtils.setSystemTimeResolution
+import org.etieskrill.engine.time.setSystemTimeResolution
 import org.etieskrill.engine.window.Window
+import kotlin.time.Duration.Companion.milliseconds
 
 //TODO consider local list/channel to put dispatchers, each app will then search for the dispatcher it's current on
 private var dispatcher: CoroutineDispatcher? = null
@@ -60,7 +61,7 @@ abstract class SuspendApp(window: Window) : App(window) {
 
     override fun internalLoop() {
         uiScope.launch {
-            setSystemTimeResolution(1)
+            setSystemTimeResolution(1.milliseconds)
             pacer.start()
 
             while (!window.shouldClose()) {

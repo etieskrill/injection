@@ -1,6 +1,6 @@
 package org.etieskrill.engine.entity.component;
 
-import org.etieskrill.engine.Disposable;
+import org.etieskrill.engine.common.Disposable;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.etieskrill.engine.graphics.model.Model;
 import org.jetbrains.annotations.Nullable;

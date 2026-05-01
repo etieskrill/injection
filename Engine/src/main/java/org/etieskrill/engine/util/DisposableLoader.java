@@ -1,6 +1,6 @@
 package org.etieskrill.engine.util;
 
-import org.etieskrill.engine.Disposable;
+import org.etieskrill.engine.common.Disposable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

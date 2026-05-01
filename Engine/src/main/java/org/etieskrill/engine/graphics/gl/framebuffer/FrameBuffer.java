@@ -2,7 +2,7 @@ package org.etieskrill.engine.graphics.gl.framebuffer;
 
 import kotlin.Deprecated;
 import lombok.Getter;
-import org.etieskrill.engine.Disposable;
+import org.etieskrill.engine.common.Disposable;
 import org.etieskrill.engine.graphics.gl.GLUtils;
 import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment.BufferAttachmentType;
 import org.etieskrill.engine.graphics.texture.Texture2D;

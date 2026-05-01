@@ -1,6 +1,6 @@
 package org.etieskrill.engine.entity.system;
 
-import org.etieskrill.engine.Disposable;
+import org.etieskrill.engine.common.Disposable;
 import org.etieskrill.engine.entity.Entity;
 import org.etieskrill.engine.entity.component.Enabled;
 import org.etieskrill.engine.entity.service.Service;

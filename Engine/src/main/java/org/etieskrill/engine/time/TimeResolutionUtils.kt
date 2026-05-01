@@ -1,59 +1,48 @@
-package org.etieskrill.engine.time;
+package org.etieskrill.engine.time
 
-import org.lwjgl.system.JNI;
-import org.lwjgl.system.Platform;
-import org.lwjgl.system.windows.WindowsLibrary;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.github.oshai.kotlinlogging.KotlinLogging
+import org.lwjgl.system.JNI
+import org.lwjgl.system.Platform
+import org.lwjgl.system.Platform.LINUX
+import org.lwjgl.system.Platform.WINDOWS
+import org.lwjgl.system.windows.WindowsLibrary
+import kotlin.time.Duration
 
-public class TimeResolutionUtils {
+val logger = KotlinLogging.logger {}
 
-    private static final Logger logger = LoggerFactory.getLogger(TimeResolutionUtils.class);
-
-    public static void setSystemTimeResolution(int resolution) {
-        switch (Platform.get()) {
-            case WINDOWS -> {
-                try (WindowsLibrary lib = new WindowsLibrary("winmm.dll")) {
-                    long beginFunctionPointer = lib.getFunctionAddress("timeBeginPeriod");
-                    int ret = JNI.invokeI(resolution, beginFunctionPointer);
-                    if (ret != 0) {
-                        logger.warn("Unsuccessfully tried to set system time resolution to {}, return value: {}", resolution, ret);
-                    } else {
-                        logger.debug("Successfully set system time resolution to {}", resolution);
-                    }
-                }
-            }
-            case LINUX -> {
-                //could try to check res with clock_getres from time.h ... however one may load libs for linux
-                //the standard resolution appears to be 1000 hz according to the internet,
-                //and 1 ns according to me (a c program i wrote using the aforementioned function)
-                //the fact that even in wsl i get several hundreds of FPS seems to support the former theory however
-            }
-            default -> throw new UnsupportedOperationException("Unsupported platform: " + Platform.get());
+fun setSystemTimeResolution(resolution: Duration) = when (val platform = Platform.get()) {
+    WINDOWS -> {
+        val ret = WindowsLibrary("winmm.dll").use {
+            val beginFunctionPointer = it.getFunctionAddress("timeBeginPeriod")
+            JNI.invokeI(resolution.inWholeMilliseconds.toInt(), beginFunctionPointer)
         }
+
+        if (ret != 0) logger.warn { "Unsuccessfully tried to set system time resolution to $resolution, return value: $ret" }
+        else logger.debug { "Successfully set system time resolution to $resolution" }
     }
 
-    public static void resetSystemTimeResolution(int resolution) {
-        switch (Platform.get()) {
-            case WINDOWS -> {
-                try (WindowsLibrary lib = new WindowsLibrary("winmm.dll")) {
-                    long endFunctionPointer = lib.getFunctionAddress("timeEndPeriod");
-                    int ret = JNI.invokeI(resolution, endFunctionPointer);
-                    if (ret != 0) {
-                        logger.warn("Unsuccessfully tried to reset system time resolution, return value: {}", ret);
-                    } else {
-                        logger.debug("Successfully reset system time resolution");
-                    }
-                }
-            }
-            case LINUX -> {
-            }
-            default -> throw new UnsupportedOperationException("Unsupported platform: " + Platform.get());
+    LINUX -> {
+        //could try to check res with clock_getres from time.h ... however one may load libs for linux
+        //the standard resolution appears to be 1000 hz according to the internet,
+        //and 1 ns according to me (a c program i wrote using the aforementioned function)
+        //the fact that even in wsl i get several hundreds of FPS seems to support the former theory however
+    }
+
+    else -> throw UnsupportedOperationException("Unsupported platform: $platform")
+}
+
+fun resetSystemTimeResolution(resolution: Duration) = when (val platform = Platform.get()) {
+    WINDOWS -> {
+        val ret = WindowsLibrary("winmm.dll").use {
+            val endFunctionPointer = it.getFunctionAddress("timeEndPeriod")
+            JNI.invokeI(resolution.inWholeMilliseconds.toInt(), endFunctionPointer)
         }
+
+        if (ret != 0) logger.warn { "Unsuccessfully tried to reset system time resolution, return value: $ret" }
+        else logger.debug { "Successfully reset system time resolution" }
     }
 
-    private TimeResolutionUtils() {
-        throw new UnsupportedOperationException("Not intended for instantiation");
-    }
+    LINUX -> {}
 
+    else -> throw UnsupportedOperationException("Unsupported platform: $platform")
 }

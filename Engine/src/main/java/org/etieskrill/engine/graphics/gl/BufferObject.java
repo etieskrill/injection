@@ -2,7 +2,7 @@ package org.etieskrill.engine.graphics.gl;
 
 import io.github.etieskrill.injection.extension.shader.BufferAccessor;
 import lombok.Getter;
-import org.etieskrill.engine.Disposable;
+import org.etieskrill.engine.common.Disposable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.BufferUtils;

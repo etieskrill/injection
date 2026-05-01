@@ -1,4 +1,4 @@
-package org.etieskrill.engine;
+package org.etieskrill.engine.common
 
 /**
  * Mark methods which are called every frame, or otherwise in relation to the framerate.
@@ -7,4 +7,5 @@ package org.etieskrill.engine;
  */
 //TODO implement things to help IDEs, such as checks for new or method contracts which would hint to such
 //     reevaluate value of this after some time, and if good, make bigger, better, thiccer, EXPAND
-public @interface EveryFrame {}
+//FIXME jesse, is this even fucking possible?
+annotation class EveryFrame()

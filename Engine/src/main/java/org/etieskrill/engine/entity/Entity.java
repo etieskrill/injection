@@ -3,7 +3,7 @@ package org.etieskrill.engine.entity;
 import kotlin.Deprecated;
 import lombok.Getter;
 import lombok.ToString;
-import org.etieskrill.engine.Disposable;
+import org.etieskrill.engine.common.Disposable;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
