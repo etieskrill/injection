@@ -42,7 +42,7 @@ const vec2 vertices[4] = vec2[](vec2(-0.5, -0.5), vec2(0.5, -0.5), vec2(-0.5, 0.
 void main()
 {
     for (int i = 0; i < 4; i++) {
-        vec2 offset = (camera.perspective * vec4(vertices[i], 0, 0)).xy;
+        vec2 offset = (camera.projection * vec4(vertices[i], 0, 0)).xy;
         gl_Position = gl_in[0].gl_Position + vec4(offset * size, -0.05, 0);
         texCoords = (transform[0] * (vertices[i])) + vec2(0.5, 0.5);
         colour = particleColour[0];

@@ -577,7 +577,7 @@ public class Window implements Disposable {
 
         currentSize.set(newSize);
         glfwSetWindowSize(window, newSize.x(), newSize.y());
-        //TODO resize callbacks
+        //TODO resize callbacks (update screenBuffer too!)
     }
 
     public float getAspectRatio() {

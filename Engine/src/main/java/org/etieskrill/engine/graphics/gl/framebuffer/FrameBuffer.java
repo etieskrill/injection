@@ -1,19 +1,16 @@
 package org.etieskrill.engine.graphics.gl.framebuffer;
 
 import kotlin.Deprecated;
-import kotlin.DeprecationLevel;
 import lombok.Getter;
 import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.graphics.gl.GLUtils;
 import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment.BufferAttachmentType;
-import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.texture.Textures;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2ic;
 import org.joml.Vector4f;
 import org.joml.Vector4fc;
-import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -196,6 +193,9 @@ public class FrameBuffer implements io.github.etieskrill.injection.extension.sha
     public void clear() {
         bind();
         glClearColor(clearColour.x, clearColour.y, clearColour.z, clearColour.w);
+        if ((glBufferClearMask & GL_DEPTH_BUFFER_BIT) != 0) glDepthMask(true);
+        if ((glBufferClearMask & GL_STENCIL_BUFFER_BIT) != 0)
+            glStencilMask(0xFF); //TODO can stencil buffer be anything other than one byte in size?
         glClear(glBufferClearMask);
         unbind();
     }

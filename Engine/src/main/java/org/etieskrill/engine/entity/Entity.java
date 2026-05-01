@@ -3,6 +3,7 @@ package org.etieskrill.engine.entity;
 import kotlin.Deprecated;
 import lombok.Getter;
 import lombok.ToString;
+import org.etieskrill.engine.Disposable;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
@@ -12,7 +13,7 @@ import java.util.Set;
 import static org.etieskrill.engine.util.ClassUtils.getSimpleName;
 
 @ToString
-public class Entity {
+public class Entity implements Disposable {
 
     private final @Getter int id;
     private final Map<Class<?>, Object> components;
@@ -83,6 +84,15 @@ public class Entity {
     @Override
     public int hashCode() {
         return id;
+    }
+
+    @Override
+    public void dispose() {
+        for (Object component : components.values()) {
+            if (component instanceof Disposable) {
+                ((Disposable) component).dispose();
+            }
+        }
     }
 
 }

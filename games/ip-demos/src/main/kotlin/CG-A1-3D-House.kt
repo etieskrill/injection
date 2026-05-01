@@ -1,7 +1,6 @@
-import io.github.etieskrill.injection.extension.shader.dsl.RenderTarget
+import io.github.etieskrill.injection.extension.shader.dsl.ColourRenderTarget
 import io.github.etieskrill.injection.extension.shader.dsl.ShaderBuilder
 import io.github.etieskrill.injection.extension.shader.dsl.ShaderVertexData
-import io.github.etieskrill.injection.extension.shader.dsl.rt
 import io.github.etieskrill.injection.extension.shader.mat4
 import io.github.etieskrill.injection.extension.shader.vec3
 import io.github.etieskrill.injection.extension.shader.vec4
@@ -109,11 +108,10 @@ class `CG-03-A` : GameApplication() {
     }
 }
 
-class BasicShader : ShaderBuilder<Vertex, BasicShader.VertexData, BasicShader.RenderTargets>(
+class BasicShader : ShaderBuilder<Vertex, BasicShader.VertexData, ColourRenderTarget>(
     object : ShaderProgram(listOf("Basic.glsl")) {}
 ) {
     data class VertexData(override val position: vec4, val colour: vec3) : ShaderVertexData
-    data class RenderTargets(val colour: RenderTarget)
 
     var transform by uniform<mat4>()
 
@@ -122,7 +120,7 @@ class BasicShader : ShaderBuilder<Vertex, BasicShader.VertexData, BasicShader.Re
             VertexData(transform * vec4(it.position, 1), it.colour)
         }
         fragment {
-            RenderTargets(vec4(it.colour, 1).rt)
+            ColourRenderTarget(vec4(it.colour, 1))
         }
     }
 }

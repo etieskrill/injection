@@ -1,11 +1,10 @@
-import io.github.etieskrill.injection.extension.shader.dsl.RenderTarget
+import io.github.etieskrill.injection.extension.shader.dsl.ColourRenderTarget
 import io.github.etieskrill.injection.extension.shader.dsl.ShaderBuilder
 import io.github.etieskrill.injection.extension.shader.dsl.ShaderVertexData
-import io.github.etieskrill.injection.extension.shader.dsl.rt
 import io.github.etieskrill.injection.extension.shader.mat4
 import io.github.etieskrill.injection.extension.shader.vec3
 import io.github.etieskrill.injection.extension.shader.vec4
-import org.etieskrill.engine.application.GameApplication
+import org.etieskrill.engine.application.App
 import org.etieskrill.engine.entity.Entity
 import org.etieskrill.engine.entity.component.Drawable
 import org.etieskrill.engine.entity.component.Transform
@@ -14,6 +13,7 @@ import org.etieskrill.engine.graphics.camera.Camera
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera
 import org.etieskrill.engine.graphics.gl.VertexArrayAccessor
 import org.etieskrill.engine.graphics.gl.VertexArrayObject
+import org.etieskrill.engine.graphics.gl.framebuffer.FrameBuffer
 import org.etieskrill.engine.graphics.gl.renderer.GLRenderer
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
 import org.etieskrill.engine.graphics.gl.shader.impl.SingleColourShader
@@ -40,7 +40,7 @@ fun main() {
     `CG-A2-Solar-System`().run()
 }
 
-class `CG-A2-Solar-System` : GameApplication(window {
+class `CG-A2-Solar-System` : App(window {
     size = Window.WindowSize.SVGA
 }) {
     init {
@@ -95,7 +95,7 @@ class `CG-A2-Solar-System` : GameApplication(window {
             setRotation(-30f, 0f, 0f)
         }
 
-        entitySystem.addService(PlanetService(renderer, camera, window.currentSize).apply {
+        entitySystem.addService(PlanetService(screenBuffer, renderer, camera, window.currentSize).apply {
             skybox = CubeMapModel("textures/cubemaps/space")
             blur(false)
         })
@@ -135,8 +135,8 @@ private object Vector3fcAccessor : VertexArrayAccessor<Vector3fc>() {
     }
 }
 
-open class PlanetService(renderer: GLRenderer, camera: Camera, windowSize: Vector2ic) :
-    RenderService(renderer, camera, windowSize) {
+open class PlanetService(screenBuffer: FrameBuffer, renderer: GLRenderer, camera: Camera, windowSize: Vector2ic) :
+    RenderService(screenBuffer, renderer, camera, windowSize) {
 
     private val trailShader = TrailShader()
 
@@ -207,12 +207,11 @@ open class PlanetService(renderer: GLRenderer, camera: Camera, windowSize: Vecto
 
 }
 
-class TrailShader : ShaderBuilder<TrailShader.VertexAttributes, TrailShader.Vertex, TrailShader.RenderTargets>(
+class TrailShader : ShaderBuilder<TrailShader.VertexAttributes, TrailShader.Vertex, ColourRenderTarget>(
     object : ShaderProgram(listOf("Trail.glsl")) {}
 ) {
     data class VertexAttributes(val position: vec3)
     data class Vertex(override val position: vec4) : ShaderVertexData
-    data class RenderTargets(val colour: RenderTarget)
 
     var colour by uniform<vec4>()
 
@@ -220,6 +219,6 @@ class TrailShader : ShaderBuilder<TrailShader.VertexAttributes, TrailShader.Vert
 
     override fun program() {
         vertex { Vertex(combined * vec4(it.position, 1.0)) }
-        fragment { RenderTargets(colour.rt) }
+        fragment { ColourRenderTarget(colour) }
     }
 }

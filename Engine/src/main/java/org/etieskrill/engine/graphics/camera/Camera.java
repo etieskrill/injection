@@ -1,8 +1,6 @@
 package org.etieskrill.engine.graphics.camera;
 
 import lombok.Getter;
-import lombok.Setter;
-import lombok.experimental.Accessors;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shader.UniformMappable;
 import org.jetbrains.annotations.Contract;
@@ -23,7 +21,7 @@ public abstract class Camera implements UniformMappable {
 
     protected final Vector2i viewportSize;
 
-    protected final @Getter Matrix4f view, perspective;
+    protected final @Getter Matrix4f view, projection;
     protected final Matrix4f combined;
     private final Matrix4f invCombined;
 
@@ -33,16 +31,14 @@ public abstract class Camera implements UniformMappable {
     protected Vector3f eulerAngles;
     protected boolean clampPitch;
 
-    protected @Accessors(chain = true)
-    @Setter boolean orbit;
-    protected @Accessors(chain = true)
-    @Setter float orbitDistance;
+    protected boolean orbit;
+    protected float orbitDistance;
 
     /**
      * Returns the final view position which the camera renders from. In non-orbit mode, this is identical to the
      * logical {@link Camera#position}.
      */
-    private final @Getter Vector3f viewPosition = new Vector3f();
+    private final Vector3f viewPosition = new Vector3f();
 
     private final FrustumRayBuilder rayBuilder = new FrustumRayBuilder();
     private Vector3f vector = new Vector3f();
@@ -57,7 +53,7 @@ public abstract class Camera implements UniformMappable {
         this.viewportSize = new Vector2i(viewportSize);
 
         this.view = new Matrix4f();
-        this.perspective = new Matrix4f();
+        this.projection = new Matrix4f();
         this.combined = new Matrix4f();
         this.invCombined = new Matrix4f();
 
@@ -92,6 +88,10 @@ public abstract class Camera implements UniformMappable {
         this.position.set(position);
         dirty();
         return this;
+    }
+
+    public Vector3f getViewPosition() {
+        return viewPosition;
     }
 
     /**
@@ -166,6 +166,18 @@ public abstract class Camera implements UniformMappable {
         return this;
     }
 
+    public Camera setOrbit(boolean orbit) {
+        this.orbit = orbit;
+        dirty();
+        return this;
+    }
+
+    public Camera setOrbitDistance(float orbitDistance) {
+        this.orbitDistance = orbitDistance;
+        dirty();
+        return this;
+    }
+
     protected void dirty() {
         dirty = true;
     }
@@ -177,7 +189,7 @@ public abstract class Camera implements UniformMappable {
         rotation.getEulerAnglesYXZ(eulerAngles).mul(57.29577951308232f); //rad to deg constant
 
         updateView();
-        updatePerspective();
+        updateProjection();
         updateCombined();
     }
 
@@ -195,10 +207,10 @@ public abstract class Camera implements UniformMappable {
 
     //TODO orbit cam using arcball
 
-    protected abstract void updatePerspective();
+    protected abstract void updateProjection();
 
-    protected void setPerspective(Matrix4fc perspective) {
-        this.perspective.set(perspective);
+    protected void setProjection(Matrix4fc projection) {
+        this.projection.set(projection);
         dirty();
     }
 
@@ -218,7 +230,7 @@ public abstract class Camera implements UniformMappable {
     }
 
     private void updateCombined() {
-        combined.set(perspective).mul(view);
+        combined.set(projection).mul(view);
         combined.invert(invCombined);
     }
 
@@ -346,7 +358,7 @@ public abstract class Camera implements UniformMappable {
         update();
         mapper
                 .map("view", getView())
-                .map("perspective", getPerspective())
+                .map("projection", getProjection())
                 .map("combined", getCombined())
                 .map("invCombined", getInvCombined())
                 .map("position", viewPosition)

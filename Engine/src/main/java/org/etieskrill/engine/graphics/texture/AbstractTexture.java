@@ -198,12 +198,20 @@ public abstract class AbstractTexture implements Texture, Disposable {
         UNKNOWN(aiTextureType_UNKNOWN), DIFFUSE(aiTextureType_DIFFUSE), SPECULAR(aiTextureType_SPECULAR),
         SHININESS(aiTextureType_SHININESS), HEIGHT(aiTextureType_HEIGHT), EMISSIVE(aiTextureType_EMISSIVE),
         NORMAL(aiTextureType_NORMALS), METALNESS(aiTextureType_METALNESS),
-        DIFFUSE_ROUGHNESS(aiTextureType_DIFFUSE_ROUGHNESS), SHADOW(-1);
+        DIFFUSE_ROUGHNESS(aiTextureType_DIFFUSE_ROUGHNESS),
+
+        SHADOW, //engine texture type for shadow maps
+
+        G_POSITION, G_DEPTH, G_COLOUR, G_NORMAL; //engine texture types for deferred rendering pipelines
 
         private final int aiType;
 
         Type(int aiType) {
             this.aiType = aiType;
+        }
+
+        Type() {
+            this(-1);
         }
 
         public static Type ai(int aiTextureType) {
@@ -213,6 +221,9 @@ public abstract class AbstractTexture implements Texture, Disposable {
         }
 
         public int ai() {
+            if (aiType == -1) {
+                throw new IllegalStateException("Texture type '" + this.name() + "' has no corresponding assimp type");
+            }
             return aiType;
         }
     }
@@ -259,6 +270,15 @@ public abstract class AbstractTexture implements Texture, Disposable {
         public Builder<T> disableAutoSwizzleMask() {
             this.autoSwizzleMask = false;
             return this;
+        }
+
+        public void setMinFilter(MinFilter minFilter) {
+            this.mipMaps = minFilter == MinFilter.NEAREST || minFilter == MinFilter.LINEAR;
+            this.minFilter = minFilter;
+        }
+
+        public void setMagFilter(MagFilter magFilter) {
+            this.magFilter = magFilter;
         }
 
         public Builder<T> setMipMapping(MinFilter minFilter, MagFilter magFilter) {

@@ -1,12 +1,10 @@
+import io.github.etieskrill.injection.extension.shader.dsl.ColourRenderTarget
 import io.github.etieskrill.injection.extension.shader.dsl.PureShaderBuilder
-import io.github.etieskrill.injection.extension.shader.dsl.RenderTarget
 import io.github.etieskrill.injection.extension.shader.dsl.ShaderVertexData
-import io.github.etieskrill.injection.extension.shader.dsl.rt
 import io.github.etieskrill.injection.extension.shader.ivec2
 import io.github.etieskrill.injection.extension.shader.sampler2D
 import io.github.etieskrill.injection.extension.shader.vec2
 import io.github.etieskrill.injection.extension.shader.vec4
-import org.etieskrill.engine.application.GameApplication
 import org.etieskrill.engine.graphics.Batch
 import org.etieskrill.engine.graphics.camera.OrthographicCamera
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
@@ -35,7 +33,7 @@ fun main() {
     App().run()
 }
 
-class App : GameApplication(window {
+class App : org.etieskrill.engine.application.App(window {
     resizeable = true
     cursor = Cursor.getDefault(Cursor.CursorShape.RESIZE_ALL)
     refreshRate = 10000
@@ -88,7 +86,7 @@ class App : GameApplication(window {
         })
 
         window.scene = Scene(
-            Batch(renderer, window.currentSize),
+            Batch(screenBuffer, renderer, window.currentSize),
             VBox(
                 fpsLabel,
                 modeLabel,
@@ -146,11 +144,10 @@ class App : GameApplication(window {
 
 enum class TextureWrapping { NONE, CLAMP_TO_EDGE, REPEAT, MIRROR } //none is CLAMP_TO_BORDER - so long as border is black
 
-class TextureWrappingShader : PureShaderBuilder<TextureWrappingShader.Vertex, TextureWrappingShader.RenderTargets>(
+class TextureWrappingShader : PureShaderBuilder<TextureWrappingShader.Vertex, ColourRenderTarget>(
     object : ShaderProgram(listOf("TextureWrapping.glsl")) {}
 ) {
     data class Vertex(override val position: vec4, val texCoords: vec2) : ShaderVertexData
-    data class RenderTargets(val colour: RenderTarget)
 
     val vertices by const(arrayOf(vec2(-1, -1), vec2(1, -1), vec2(-1, 1), vec2(1, 1)))
 
@@ -178,7 +175,7 @@ class TextureWrappingShader : PureShaderBuilder<TextureWrappingShader.Vertex, Te
             val texel = texture(targetTexture, scaledCoords).rgb
             val alpha = if (texel == vec3(0)) 0.75 else 1.0
 
-            RenderTargets(vec4(texel, alpha).rt)
+            ColourRenderTarget(vec4(texel, alpha))
         }
     }
 }

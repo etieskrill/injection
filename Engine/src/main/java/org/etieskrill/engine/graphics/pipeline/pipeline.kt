@@ -33,21 +33,11 @@ open class Pipeline<S : AbstractShader> private constructor(
      */
     val frameBuffer: FrameBuffer
 ) {
-    constructor(vao: VertexArrayObject<*>, config: PipelineConfig, shader: S, frameBuffer: FrameBuffer) : this(
-        vao,
-        null,
-        config,
-        shader,
-        frameBuffer
-    )
+    constructor(vao: VertexArrayObject<*>, config: PipelineConfig, shader: S, frameBuffer: FrameBuffer)
+            : this(vao, null, config, shader, frameBuffer)
 
-    constructor(vertexCount: Int, config: PipelineConfig, shader: S, frameBuffer: FrameBuffer) : this(
-        null,
-        vertexCount,
-        config,
-        shader,
-        frameBuffer
-    )
+    constructor(vertexCount: Int, config: PipelineConfig, shader: S, frameBuffer: FrameBuffer)
+            : this(null, vertexCount, config, shader, frameBuffer)
 }
 
 data class PipelineConfig(

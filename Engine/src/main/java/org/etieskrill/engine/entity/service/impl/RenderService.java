@@ -92,7 +92,7 @@ public class RenderService implements Service, Disposable {
 
     public RenderService(FrameBuffer screenBuffer, GLRenderer renderer, Camera camera, Vector2ic windowSize) {
         this.renderer = renderer;
-        this.gaussBlurPostBuffers = new GaussBlurPostBuffers(windowSize, screenBuffer);
+        this.gaussBlurPostBuffers = new GaussBlurPostBuffers(windowSize);
         this.frameBuffer = gaussBlurPostBuffers.getFrameBuffer();
         this.screenBuffer = screenBuffer;
         this.camera = camera;
@@ -161,8 +161,6 @@ public class RenderService implements Service, Disposable {
 
     @Override
     public void preProcess(Double delta, List<Entity> entities) {
-        glDepthMask(true); //glClear does not write depth/stencil when mask is disabled (duh)
-        glStencilMask(0xFF);
         outlineFrameBuffer.clear();
 
         //TODO either revert to previously bound framebuffer, or use dsa
@@ -306,11 +304,7 @@ public class RenderService implements Service, Disposable {
 
         drawOutlines();
 
-        frameBuffer.unbind();
-        if (customViewport != null) {
-            glViewport(customViewport.x(), customViewport.y(), customViewport.z(), customViewport.w());
-        }
-        gaussBlurPostBuffers.renderToScreen(blur);
+        gaussBlurPostBuffers.renderToScreen(screenBuffer, blur, customViewport);
     }
 
     private void drawOutlines() {
@@ -351,7 +345,6 @@ class GaussBlurPostBuffers implements Disposable {
 
     private static final int GAUSS_BLUR_ITERATIONS = 3;
 
-    private final FrameBuffer screenBuffer;
     private final @Getter FrameBuffer frameBuffer;
     private final Texture2D hdrBuffer;
     private final Texture2D bloomBuffer;
@@ -365,8 +358,7 @@ class GaussBlurPostBuffers implements Disposable {
 
     private final @Getter int dummyVAO;
 
-    public GaussBlurPostBuffers(Vector2ic windowSize, FrameBuffer screenBuffer) {
-        this.screenBuffer = screenBuffer;
+    public GaussBlurPostBuffers(Vector2ic windowSize) {
         this.hdrBuffer = Textures.genBlank(windowSize, RGBA_F16);
         this.bloomBuffer = Textures.genBlank(windowSize, RGBA_F16);
         RenderBuffer depthStencilBuffer = new RenderBuffer(windowSize, DEPTH_STENCIL);
@@ -392,7 +384,7 @@ class GaussBlurPostBuffers implements Disposable {
         dummyVAO = glGenVertexArrays();
     }
 
-    public void renderToScreen(boolean blur) {
+    public void renderToScreen(FrameBuffer screenBuffer, boolean blur, @Nullable Vector4ic customViewport) {
         glBindVertexArray(dummyVAO); //though effectively unused in the shader, no bound vao causes undefined behaviour while rendering. this ensures there is always one bound
 
         boolean blurBuffer1IsTarget = false;
@@ -419,6 +411,9 @@ class GaussBlurPostBuffers implements Disposable {
         }
 
         screenBuffer.bind();
+        if (customViewport != null) {
+            glViewport(customViewport.x(), customViewport.y(), customViewport.z(), customViewport.w());
+        }
 
         hdrShader.start();
         hdrShader.setHdrBuffer(hdrBuffer);

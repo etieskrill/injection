@@ -51,10 +51,10 @@ public class OrthographicCamera extends Camera {
     }
 
     @Override
-    protected void updatePerspective() {
+    protected void updateProjection() {
         //TODO proper zoom
         float zoom = 1f / this.zoom;
-        perspective.setOrtho(zoom * left, zoom * right, zoom * bottom, zoom * top, zoom * near, zoom * far);
+        projection.setOrtho(zoom * left, zoom * right, zoom * bottom, zoom * top, zoom * near, zoom * far);
     }
 
 }

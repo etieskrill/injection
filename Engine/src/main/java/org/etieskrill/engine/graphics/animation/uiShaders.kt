@@ -3,7 +3,6 @@ package org.etieskrill.engine.graphics.animation
 import io.github.etieskrill.injection.extension.shader.dsl.ColourRenderTarget
 import io.github.etieskrill.injection.extension.shader.dsl.PureShaderBuilder
 import io.github.etieskrill.injection.extension.shader.dsl.VertexData
-import io.github.etieskrill.injection.extension.shader.dsl.rt
 import io.github.etieskrill.injection.extension.shader.vec2
 import io.github.etieskrill.injection.extension.shader.vec4
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
@@ -38,7 +37,7 @@ class UiOutlineShader : PureShaderBuilder<VertexData, ColourRenderTarget>(
                 fragColour += borderColour
             }
 
-            ColourRenderTarget(fragColour.rt)
+            ColourRenderTarget(fragColour)
         }
     }
 }

@@ -1,5 +1,6 @@
 package org.etieskrill.engine.entity.system;
 
+import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.entity.Entity;
 import org.etieskrill.engine.entity.component.Enabled;
 import org.etieskrill.engine.entity.service.Service;
@@ -17,7 +18,7 @@ import java.util.function.Function;
 import static java.util.Collections.unmodifiableList;
 import static java.util.Comparator.comparing;
 
-public class EntitySystem {
+public class EntitySystem implements Disposable {
 
     private final ArrayList<Entity> entities;
 
@@ -29,6 +30,8 @@ public class EntitySystem {
     private final List<Integer> freeIndices;
     private final List<Entity> addedEntities;
     private final List<Entity> markedForRemoval;
+
+    private boolean disposed = false;
 
     private static final Logger logger = LoggerFactory.getLogger(EntitySystem.class);
 
@@ -176,9 +179,18 @@ public class EntitySystem {
             for (Service service : services) {
                 service.entityRemoved(removedEntity);
             }
+            removedEntity.dispose();
         }
         entities.sort(comparing(Entity::getId));
         markedForRemoval.clear();
+    }
+
+    @Override
+    public void dispose() {
+        if (disposed) return;
+        entities.forEach(Entity::dispose);
+        services.forEach(Service::dispose);
+        disposed = true;
     }
 
 }

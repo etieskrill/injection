@@ -3,7 +3,6 @@ package org.etieskrill.engine.scene.plot
 import io.github.etieskrill.injection.extension.shader.dsl.ColourRenderTarget
 import io.github.etieskrill.injection.extension.shader.dsl.PureShaderBuilder
 import io.github.etieskrill.injection.extension.shader.dsl.ShaderVertexData
-import io.github.etieskrill.injection.extension.shader.dsl.rt
 import io.github.etieskrill.injection.extension.shader.float
 import io.github.etieskrill.injection.extension.shader.int
 import io.github.etieskrill.injection.extension.shader.mat4
@@ -45,7 +44,7 @@ class Histogram(
     private lateinit var pipeline: PostPassPipeline<HistogramShader>
 
     override fun render(batch: Batch) {
-        if (::pipeline.isInitialized) { //TODO something like an init stage would be useful
+        if (!::pipeline.isInitialized) { //TODO something like an init stage would be useful
             pipeline = PostPassPipeline(HistogramShader(), batch.frameBuffer, depthTest = false)
         }
 
@@ -118,7 +117,7 @@ class HistogramShader/*(columns: Int)*/ : PureShaderBuilder<HistogramShader.Vert
             ) {
                 discard()
             }
-            ColourRenderTarget(barColour.rt)
+            ColourRenderTarget(barColour)
         }
     }
 }

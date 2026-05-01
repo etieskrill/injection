@@ -1,7 +1,6 @@
 package io.github.etieskrill.injection.extension.shader.dsl
 
 import io.github.etieskrill.injection.extension.shader.AbstractShader
-import io.github.etieskrill.injection.extension.shader.BufferAccessor
 import io.github.etieskrill.injection.extension.shader.StorageBuffer
 import io.github.etieskrill.injection.extension.shader.Texture
 import io.github.etieskrill.injection.extension.shader.float
@@ -18,7 +17,6 @@ import io.github.etieskrill.injection.extension.shader.vec4
 import org.joml.Vector2f
 import org.joml.Vector2i
 import org.joml.Vector3f
-import org.joml.Vector4f
 import kotlin.properties.ReadOnlyProperty
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
@@ -36,20 +34,8 @@ interface FrameBuffer {
     fun bind()
 }
 
-class RenderTarget(
-    vector: vec4,
-    var frameBuffer: FrameBuffer? = null,
-) : Vector4f(vector) {
-    infix fun set(frameBuffer: FrameBuffer) {
-        this.frameBuffer = frameBuffer
-    }
-}
-
-data class ColourRenderTarget(val colour: RenderTarget)
-data class ColourBloomRenderTarget(val colour: RenderTarget, val bloom: RenderTarget)
-
-val vec4.rt: RenderTarget //FIXME kinda ugly, maybe just turn em into delegates like with uniforms
-    get() = RenderTarget(this)
+data class ColourRenderTarget(val colour: vec4)
+data class ColourBloomRenderTarget(val colour: vec4, val bloom: vec4)
 
 /**
  * @param VA the vertex attributes
@@ -148,6 +134,11 @@ open class GlslReceiver {
     fun vec4(v: vec2, z: Number, w: Number): vec4 = error()
 
     fun mat2(m00: Number, m01: Number, m10: Number, m11: Number): mat2 = error()
+    fun mat3(
+        m00: Number, m01: Number, m02: Number,
+        m10: Number, m11: Number, m12: Number,
+        m20: Number, m21: Number, m22: Number
+    ): mat3 = error()
 
     var vec2.x: Number by swizzle()
     var vec2.y: Number by swizzle()
@@ -172,6 +163,7 @@ open class GlslReceiver {
     var vec4.r: Number by swizzle()
     var vec4.gb: vec2 by swizzle()
     var vec4.a: float by swizzle()
+    var vec4.aaa: vec3 by swizzle()
 
     operator fun vec2.plus(s: Number): vec2 = error()
     operator fun vec2.plus(v: vec2): vec2 = error()
@@ -226,7 +218,7 @@ open class GlslReceiver {
     fun length(v: vec3): float = error()
 
     fun dot(v1: vec2, v2: vec2): float = error()
-    fun dot(v1: vec3, v2: vec3): float = error() //TODO do with receivers
+    fun dot(v1: vec3, v2: vec3): float = error() //TODO do with receivers, if even possible
 
     fun sqrt(s: Number): float = error()
 
@@ -270,6 +262,8 @@ open class GlslReceiver {
 
     fun mix(a: Number, b: Number, t: Number): float = error()
     fun mix(a: vec4, b: vec4, t: Number): vec4 = error()
+
+    fun reflect(incident: vec3, normal: vec3): vec3 = error()
 
     fun texture(sampler: sampler2D, coordinates: vec2): vec4 = error()
     fun texture(sampler: samplerCube, coordinates: vec3): vec4 = error()

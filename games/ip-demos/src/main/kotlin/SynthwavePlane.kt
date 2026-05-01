@@ -3,11 +3,11 @@
 package io.github.etieskrill.games.ip.demos.synthwave
 
 import io.github.etieskrill.injection.extension.shader.Texture2D
+import io.github.etieskrill.injection.extension.shader.dsl.ColourBloomRenderTarget
+import io.github.etieskrill.injection.extension.shader.dsl.ColourRenderTarget
 import io.github.etieskrill.injection.extension.shader.dsl.PureShaderBuilder
-import io.github.etieskrill.injection.extension.shader.dsl.RenderTarget
 import io.github.etieskrill.injection.extension.shader.dsl.ShaderBuilder
 import io.github.etieskrill.injection.extension.shader.dsl.ShaderVertexData
-import io.github.etieskrill.injection.extension.shader.dsl.rt
 import io.github.etieskrill.injection.extension.shader.dsl.std.rgb2vec3
 import io.github.etieskrill.injection.extension.shader.float
 import io.github.etieskrill.injection.extension.shader.mat4
@@ -194,7 +194,7 @@ class SynthwavePlane() : App(window {
             drawSeparators = false
         ).apply { size = Vector2f(600f, 200f) }
         window.scene = Scene(
-            Batch(screenBuffer, renderer, window.currentSize),
+            Batch(screenBuffer, renderer),
             Stack(
                 VBox(
                     fpsLabel, //FIXME how in gods name is the fps graph right-side up, and the fft is not??
@@ -238,7 +238,7 @@ class SynthwavePlane() : App(window {
     suspend fun setCurrentSound(sound: String) {
         val newAudioSource = withContext(Dispatchers.IO) {
             if (sound == "synthesised") generatedSource
-            else Audio.read(sound, retainBuffer = true)
+            else Audio.read(sound, retainBuffer = true) as StereoAudioSource
         }
 
         audioSource?.stop()
@@ -353,15 +353,11 @@ fun doFFT(audioSource: AudioSource): List<Float> {
     return magnitudes
 }
 
-class GridShader : ShaderBuilder<GridShader.InputVertex, GridShader.Vertex, GridShader.RenderTargets>(
+class GridShader : ShaderBuilder<GridShader.InputVertex, GridShader.Vertex, ColourBloomRenderTarget>(
     object : ShaderProgram(listOf("Grid.glsl")) {} //FIXME this is stoopid too
 ) {
     data class InputVertex(val position: vec3) //FIXME org.etieskrill.engine.graphics.model.Vertex does not work?
     data class Vertex(override val position: vec4, val fragPosition: vec4) : ShaderVertexData
-    data class RenderTargets(
-        val fragColour: RenderTarget,
-        val bloomColour: RenderTarget
-    ) //FIXME prohibit name clashes with data structs where structs are unwound (e.g. here bloomColour "bloom" in fragment shader)
 
     var viewPosition by uniform<vec3>()
     var offset by uniform<vec2>()
@@ -397,26 +393,25 @@ class GridShader : ShaderBuilder<GridShader.InputVertex, GridShader.Vertex, Grid
             grid += horizon
 
             val brightness = dot(grid, vec3(0.2126, 0.7152, 0.0722))
-            val bloom: vec4
+            val bloomColour: vec4
             @Suppress("LiftReturnOrAssignment") //TODO any if unwraps after first target first helper var ¯\_(ツ)_/¯
             if (brightness > 1) {
-                bloom = vec4(grid, 1)
+                bloomColour = vec4(grid, 1)
             } else {
-                bloom = vec4(0, 0, 0, 1)
+                bloomColour = vec4(0, 0, 0, 1)
             }
 
-            bloom.xz += lines //TODO while this is technically not the way bloom is supposed to work, it does give a lot more control
+            bloomColour.xz += lines //TODO while this is technically not the way bloom is supposed to work, it does give a lot more control
 
-            RenderTargets(vec4(grid, 1).rt, bloom.rt)
+            ColourBloomRenderTarget(vec4(grid, 1), bloomColour)
         }
     }
 }
 
-class SunPostPass : PureShaderBuilder<SunPostPass.Vertex, SunPostPass.RenderTargets>(
+class SunPostPass : PureShaderBuilder<SunPostPass.Vertex, ColourRenderTarget>(
     object : ShaderProgram(listOf("SunPostPass.glsl"), false) {}
 ) {
     class Vertex(override val position: vec4, val fragPosition: vec2) : ShaderVertexData
-    class RenderTargets(val colour: RenderTarget)
 
     private val vertices by const(arrayOf(vec2(-1, -1), vec2(1, -1), vec2(-1, 1), vec2(1, 1)))
     private val sunDirection by const(vec3(0, 0.33, 1))
@@ -527,7 +522,7 @@ class SunPostPass : PureShaderBuilder<SunPostPass.Vertex, SunPostPass.RenderTarg
             if (sunColour.a == 1f) fragColour = sunColour
             else fragColour += sunColour
 
-            RenderTargets(fragColour.rt)
+            ColourRenderTarget(fragColour)
         }
     }
 }

@@ -38,7 +38,7 @@ abstract class App(
     protected val pacer = SystemNanoTimePacer(1.0 / window.refreshRate)
 
     protected val renderer = GLRenderer()
-    protected val screenBuffer: FrameBuffer = ScreenBuffer(window.currentSize)
+    protected val screenBuffer: FrameBuffer = ScreenBuffer(window.currentSize) //TODO move to Window
 
     protected val entitySystem = EntitySystem()
 

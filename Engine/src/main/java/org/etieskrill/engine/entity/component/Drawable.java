@@ -1,11 +1,12 @@
 package org.etieskrill.engine.entity.component;
 
+import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.etieskrill.engine.graphics.model.Model;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2f;
 
-public class Drawable {
+public class Drawable implements Disposable {
 
     private final Model model;
     private boolean visible;
@@ -81,6 +82,12 @@ public class Drawable {
 
     public void setOutlineWidth(float outlineWidth) {
         this.outlineWidth = outlineWidth;
+    }
+
+    @Override
+    public void dispose() {
+        model.dispose(); //TODO somehow mark owning and non-owning members
+        if (shader != null) shader.dispose();
     }
 
 }

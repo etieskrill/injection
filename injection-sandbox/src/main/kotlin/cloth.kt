@@ -107,7 +107,7 @@ object Cloth : App(window {
         }
 
         entitySystem.addServices(
-            RenderService(renderer, camera, window.currentSize).apply {
+            RenderService(screenBuffer, renderer, camera, window.currentSize).apply {
                 frameBuffer.clearColour.set(0.05f, 0.05f, 0.05f, 1f)
                 blur(false)
             }

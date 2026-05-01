@@ -14,7 +14,6 @@ import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.Collection;
-import java.util.Collections;
 
 import static java.util.Objects.requireNonNullElse;
 import static org.etieskrill.engine.graphics.gl.BufferObject.AccessType.DRAW;
@@ -25,8 +24,6 @@ import static org.etieskrill.engine.graphics.gl.GLUtils.clearError;
 import static org.etieskrill.engine.util.ClassUtils.getSimpleName;
 import static org.lwjgl.opengl.GL15C.*;
 import static org.lwjgl.opengl.GL30C.GL_R8I;
-import static org.lwjgl.opengl.GL30C.glBindBufferBase;
-import static org.lwjgl.opengl.GL43C.GL_SHADER_STORAGE_BUFFER;
 import static org.lwjgl.opengl.GL43C.glClearBufferSubData;
 
 public class BufferObject<T> implements io.github.etieskrill.injection.extension.shader.Buffer<T>, Disposable {
@@ -206,7 +203,7 @@ public class BufferObject<T> implements io.github.etieskrill.injection.extension
      */
     public ByteBuffer getData() {
         bind();
-        glGetBufferSubData(target.gl(), 0, getBuffer().rewind());
+        glGetBufferSubData(target.gl(), 0, getBuffer().clear());
         return buffer; //TODO asReadOnlyBuffer?
     }
 

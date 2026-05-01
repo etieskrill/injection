@@ -139,7 +139,7 @@ object FireSim : App() {
             setRotation(-45f, 45f, 0f)
         }
 
-        entitySystem.addService(RenderService(renderer, camera, window.currentSize).apply { blur(false) })
+        entitySystem.addService(RenderService(screenBuffer, renderer, camera, window.currentSize).apply { blur(false) })
 
         entitySystem.createEntity()
             .withComponent(Transform())

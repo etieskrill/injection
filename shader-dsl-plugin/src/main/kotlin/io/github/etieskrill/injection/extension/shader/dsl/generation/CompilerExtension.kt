@@ -3,7 +3,6 @@ package io.github.etieskrill.injection.extension.shader.dsl.generation
 import io.github.etieskrill.injection.extension.shader.ShaderStage
 import io.github.etieskrill.injection.extension.shader.ShaderStage.*
 import io.github.etieskrill.injection.extension.shader.dsl.ConstDelegate
-import io.github.etieskrill.injection.extension.shader.dsl.RenderTarget
 import io.github.etieskrill.injection.extension.shader.dsl.ShaderBuilder
 import io.github.etieskrill.injection.extension.shader.dsl.StorageBufferDelegate
 import io.github.etieskrill.injection.extension.shader.dsl.UniformArrayDelegate
@@ -12,7 +11,15 @@ import io.github.etieskrill.injection.extension.shader.dsl.gradle.ShaderDslCompi
 import io.github.etieskrill.injection.extension.shader.dsl.std.ConstEval
 import io.github.etieskrill.injection.extension.shader.dsl.std.Template
 import io.github.etieskrill.injection.extension.shader.dsl.std.stdMethods
+import io.github.etieskrill.injection.extension.shader.float
 import io.github.etieskrill.injection.extension.shader.glslType
+import io.github.etieskrill.injection.extension.shader.int
+import io.github.etieskrill.injection.extension.shader.ivec2
+import io.github.etieskrill.injection.extension.shader.ivec3
+import io.github.etieskrill.injection.extension.shader.ivec4
+import io.github.etieskrill.injection.extension.shader.vec2
+import io.github.etieskrill.injection.extension.shader.vec3
+import io.github.etieskrill.injection.extension.shader.vec4
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.getCompilerMessageLocation
@@ -290,15 +297,17 @@ internal class IrShaderGenerationExtension(
             }.toMutableMap(),
             renderTargets = types.renderTargetsType.properties.onEach {
                 requireToCompile(
-                    it,
-                    { !isVar },
-                    "Render target struct may only have val members: ${it.name.asString()} is var",
-                    file
+                    it, { !isVar },
+                    "Render target struct may only have val members: ${it.name.asString()} is var", file
                 )
-                requireToCompile(
-                    it,
-                    { backingField!!.type.equals<RenderTarget>() },
-                    "Render target struct may only have members of type RenderTarget: ${it.name.asString()} is ${it.backingField!!.type.simpleName}",
+                requireToCompile( //TODO arrays of the below are valid render targets too https://wikis.khronos.org/opengl/Type_Qualifier_(GLSL)#Fragment_shader_outputs
+                    it, {
+                        backingField!!.type.fullName in listOf(
+                            float::class, vec2::class, vec3::class, vec4::class,
+                            int::class, ivec2::class, ivec3::class, ivec4::class
+                        ).map { it.qualifiedName!! }
+                    },
+                    "Render target struct may only have members of vector or scalar float or integer types: ${it.name.asString()} is ${it.backingField!!.type.simpleName}",
                     file
                 )
             }.map {
@@ -316,7 +325,7 @@ internal class IrShaderGenerationExtension(
                     name
                 }
 
-                name to finalName
+                name to (finalName to it.backingField!!.type.glslType!!)
             }.toMap(),
             constants = constDeclarations,
             uniforms = uniforms,
@@ -434,9 +443,11 @@ private fun checkStorageBufferAlignment(
 
             if (offset % type.byteOffset + type.byteSize != type.byteOffset) { //FIXME dunno if this is complete
                 messageCollector.compilerError(
-                    "Field '$field: $type' of storage buffer struct ${structType.getClass()!!.name.asString()
+                    "Field '$field: $type' of storage buffer struct ${
+                        structType.getClass()!!.name.asString()
                     } must align to ${type.byteOffset} bytes, but current alignment is ${type.byteSize} + ${
-                        (offset + type.byteSize) % type.byteOffset} (${offset + type.byteSize} total)",
+                        (offset + type.byteSize) % type.byteOffset
+                    } (${offset + type.byteSize} total)",
                     property,
                     file
                 )
@@ -446,33 +457,41 @@ private fun checkStorageBufferAlignment(
         }
 }
 
-private val GlslType.byteSize: Int get() = when (type) { //see primitiveTypes list of shader interface
-    "int", "float", "bool" -> 4
-    "double", "vec2", "ivec2" -> 8
-    "vec3", "ivec3" -> 12
-    "vec4", "ivec4", "mat2" -> 16
-    "mat3" -> 36
-    "mat4" -> 64
-    else -> error("Unknown buffer field type: $type")
-}
+private val GlslType.byteSize: Int
+    get() = when (type) { //see primitiveTypes list of shader interface
+        "int", "float", "bool" -> 4
+        "double", "vec2", "ivec2" -> 8
+        "vec3", "ivec3" -> 12
+        "vec4", "ivec4", "mat2" -> 16
+        "mat3" -> 36
+        "mat4" -> 64
+        else -> error("Unknown buffer field type: $type")
+    }
 
-private val GlslType.byteOffset: Int get() = when (type) { //see https://ktstephano.github.io/rendering/opengl/ssbos
-    "int", "float", "bool" -> 4
-    "double", "vec2", "ivec2" -> 8
-    "vec3", "ivec3", "vec4", "ivec4", "mat2" -> 16
-    "mat3" -> 48
-    "mat4" -> 64
-    else -> error("Unknown buffer field type: $type")
-}
+private val GlslType.byteOffset: Int
+    get() = when (type) { //see https://ktstephano.github.io/rendering/opengl/ssbos
+        "int", "float", "bool" -> 4
+        "double", "vec2", "ivec2" -> 8
+        "vec3", "ivec3", "vec4", "ivec4", "mat2" -> 16
+        "mat3" -> 48
+        "mat4" -> 64
+        else -> error("Unknown buffer field type: $type")
+    }
 
 private fun postProcess(data: VisitorData, messageCollector: MessageCollector, file: IrFile, shader: IrClass) {
     data.definedFunctions.values.forEach { (_, function) ->
-        unwrapInlineConditions(function.body!!.findElement<IrBlockBody>()!!, messageCollector, file, shader) }
+        unwrapInlineConditions(function.body!!.findElement<IrBlockBody>()!!, messageCollector, file, shader)
+    }
     data.stageBodies.values.forEach { unwrapInlineConditions(it, messageCollector, file, shader) }
     data.programParent.patchDeclarationParents()
 }
 
-private fun unwrapInlineConditions(body: IrBlockBody, messageCollector: MessageCollector, file: IrFile, shader: IrClass) {
+private fun unwrapInlineConditions(
+    body: IrBlockBody,
+    messageCollector: MessageCollector,
+    file: IrFile,
+    shader: IrClass
+) {
     val transformer = InlineConditionalTransformer()
     var transformerData: InlineConditionalTransformerData
     var transformerIteration = 0
@@ -575,7 +594,7 @@ internal data class VisitorData(
     val vertexDataStructName: String,
     val vertexDataStruct: MutableMap<String, GlslType>,
 
-    val renderTargets: Map<String, String>, //may be alias on collision as class is unwrapped
+    val renderTargets: Map<String, Pair<String, GlslType>>, //may be alias on collision as class is unwrapped
 
     val constants: Map<String, GlslTypeInitialiser>,
 
@@ -634,7 +653,6 @@ private val glslTypes = mutableMapOf<String, GlslType>()
 
 internal val IrType.glslType: GlslType?
     get() = glslTypes.getOrPutNullable(fullName) {
-        if (equals<RenderTarget>()) return GlslType("vec4")
         if (equals<Number>()) return GlslType("float")
         val name = this.fullName.glslType ?: return null
 

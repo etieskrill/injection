@@ -1,7 +1,6 @@
 package org.etieskrill.engine.scene.element
 
 import org.etieskrill.engine.graphics.Batch
-import org.etieskrill.engine.graphics.gl.framebuffer.FrameBuffer
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
 import org.etieskrill.engine.graphics.model.Model
 import org.etieskrill.engine.graphics.pipeline.CullingMode
@@ -27,7 +26,7 @@ class TranslateGizmo(
 //    }
 
     override fun render(batch: Batch) {
-        if (::pipeline.isInitialized) {
+        if (!::pipeline.isInitialized) {
             pipeline = Pipeline<TranslateGizmoShader>(
                 arrowModel.nodes.first().meshes.first().vao,
                 PipelineConfig(

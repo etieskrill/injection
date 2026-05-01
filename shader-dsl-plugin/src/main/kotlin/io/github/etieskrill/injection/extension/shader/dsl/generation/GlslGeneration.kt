@@ -6,14 +6,11 @@ import io.github.etieskrill.injection.extension.shader.ShaderStage
 import io.github.etieskrill.injection.extension.shader.ShaderStage.*
 import io.github.etieskrill.injection.extension.shader.dsl.FragmentReceiver
 import io.github.etieskrill.injection.extension.shader.dsl.GlslReceiver
-import io.github.etieskrill.injection.extension.shader.dsl.RenderTarget
 import io.github.etieskrill.injection.extension.shader.dsl.ShaderVertexData
 import io.github.etieskrill.injection.extension.shader.dsl.VertexReceiver
 import io.github.etieskrill.injection.extension.shader.dsl.generation.GlslStorageQualifier.CONST
 import io.github.etieskrill.injection.extension.shader.vec3
-import org.gradle.kotlin.dsl.support.uppercaseFirstChar
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
-import org.jetbrains.kotlin.backend.jvm.codegen.anyTypeArgument
 import org.jetbrains.kotlin.cli.common.messages.MessageCollector
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.IrStatement
@@ -23,7 +20,6 @@ import org.jetbrains.kotlin.ir.declarations.IrDeclarationParent
 import org.jetbrains.kotlin.ir.declarations.IrFile
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrVariable
-import org.jetbrains.kotlin.ir.declarations.name
 import org.jetbrains.kotlin.ir.expressions.IrBlock
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.expressions.IrCall
@@ -49,10 +45,8 @@ import org.jetbrains.kotlin.ir.expressions.IrVararg
 import org.jetbrains.kotlin.ir.expressions.IrWhen
 import org.jetbrains.kotlin.ir.expressions.IrWhileLoop
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
-import org.jetbrains.kotlin.ir.types.IrSimpleType
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.isArray
-import org.jetbrains.kotlin.ir.types.typeOrFail
 import org.jetbrains.kotlin.ir.util.dump
 import org.jetbrains.kotlin.ir.util.getAllArgumentsWithIr
 import org.jetbrains.kotlin.ir.util.getArgumentsWithIr
@@ -149,7 +143,7 @@ private data class TranspilerData(
     val templateFunctions: Map<String, Map<List<String>, String>>,
     val vertexDataStructName: String,
     val vertexDataStruct: Map<String, GlslType>,
-    val renderTargetNames: Map<String, String>,
+    val renderTargetNames: Map<String, Pair<String, GlslType>>,
     val uniforms: Set<String>,
     var stage: ShaderStage = NONE,
     var operatorStack: MutableList<OperatorType> = mutableListOf(), //TODO remove brackets where neighboring operators are same or less binding
@@ -291,8 +285,8 @@ internal fun generateGlsl(
         newline()
     }
 
-    programData.renderTargets.forEach {
-        appendLine(generateStatement(GlslStorageQualifier.OUT, "vec4", it.value))
+    programData.renderTargets.forEach { _, (name, type) ->
+        appendLine(generateStatement(GlslStorageQualifier.OUT, type, name))
     }
     newline()
 
@@ -432,20 +426,27 @@ private open class GlslTranspiler(
             .joinToString(";\n") { it.accept(this, data) }
 
     override fun visitVariable(declaration: IrVariable, data: TranspilerData): String {
-        val initialiser = declaration.initializer
-            ?.let { " = ${it.accept(this, data)}" }
-            .orEmpty()
         if (declaration.type.glslType == null) data.messageCollector.compilerError(
             "Variable may not have an erased upper bound; change e.g. conditional branches with different return types",
             declaration, data.file
         )
+        if (declaration.name.asString() in data.uniforms) data.messageCollector.compilerError(
+            "Local variable '${declaration.name}' clashes with uniform of same name, rename either",
+            declaration, data.file
+        )
+        //FIXME can we reasonable retroactively rename a render target when such a clash would be detected?
+        if (declaration.name.asString() in data.renderTargetNames.values.map { it.first }) data.messageCollector.compilerError(
+            "Local variable '${declaration.name}' clashes with render target of same name, rename either",
+            declaration, data.file
+        )
+
+        val initialiser = declaration.initializer
+            ?.let { " = ${it.accept(this, data)}" }
+            .orEmpty()
         return "${declaration.type.glslType!!} ${declaration.name}${initialiser}"
     }
 
     override fun visitCall(expression: IrCall, data: TranspilerData): String {
-        if (data.stage == FRAGMENT && expression.returns<RenderTarget>()
-        ) return expression.evalChildren(this, data)!!
-
         val functionName = expression.symbol.owner.name.asString()
         val functionPropertyName = functionName
             .removePrefix("<get-").removeSuffix(">")
@@ -839,7 +840,7 @@ private class GlslReturnTranspiler(val root: GlslTranspiler) : IrVisitor<String,
                         }
                     }
 
-                    FRAGMENT -> "${data.renderTargetNames[param]} = $expression;"
+                    FRAGMENT -> "${data.renderTargetNames[param]!!.first} = $expression;"
                     else -> TODO("Constructor return call not implemented for stage ${data.stage}")
                 }
             }
@@ -905,15 +906,19 @@ private class GlslForLoopTranspiler(
                     indent { appendMultiLine(loopBody) }
                     append("}")
                 }
+
                 "objectIterator" -> {
                     val iterableName = iterable.split(",")[1].split("|")[0]
 
-                    appendLine("for (int i = 0; i < num${iterableName.capitaliseFirst().appendIfNotEndsIn("s")}; i++) {")
+                    appendLine(
+                        "for (int i = 0; i < num${iterableName.capitaliseFirst().appendIfNotEndsIn("s")}; i++) {"
+                    )
                     indent { append("$loopVariableType $loopVariableName = $iterableName[i];") }
                     newline()
                     indent { appendMultiLine(loopBody) }
                     append("}")
                 }
+
                 else -> error("Nope")
             }
         }

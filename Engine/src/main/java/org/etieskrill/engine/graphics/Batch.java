@@ -37,10 +37,20 @@ public class Batch {
 
     private final PostPassPipeline<UiOutlineShader> uiOutlinePipeline;
 
+    public Batch(@NotNull FrameBuffer frameBuffer, @NotNull GLRenderer renderer) {
+        this(frameBuffer, renderer, frameBuffer.getSize());
+    }
+
+    public Batch(@NotNull FrameBuffer frameBuffer, @NotNull Renderer renderer, @NotNull TextRenderer textRenderer) {
+        this(frameBuffer, renderer, textRenderer, frameBuffer.getSize());
+    }
+
+    @Deprecated
     public Batch(@NotNull FrameBuffer frameBuffer, @NotNull GLRenderer renderer, @NotNull Vector2ic viewportSize) {
         this(frameBuffer, renderer, renderer, viewportSize);
     }
 
+    @Deprecated
     public Batch(FrameBuffer frameBuffer, @NotNull Renderer renderer, @NotNull TextRenderer textRenderer, @NotNull Vector2ic viewportSize) {
         this.frameBuffer = frameBuffer;
         this.renderer = renderer;

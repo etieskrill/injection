@@ -36,7 +36,7 @@ const vec2 corners[4] = vec2[](vec2(-1, -1), vec2(1, -1), vec2(-1, 1), vec2(1, 1
 
 void main()
 {
-    vec4 quadOffset = camera.perspective * vec4(billBoard.size, 1, 1);
+    vec4 quadOffset = camera.projection * vec4(billBoard.size, 1, 1);
     quadOffset.xyz /= quadOffset.w;
     quadOffset.x = -quadOffset.x;
 
@@ -51,7 +51,7 @@ void main()
     mat2 rotation = mat2(rotCos, rotSin, -rotSin, rotCos);
 
     for (int i = 0; i < 4; i++) {
-        vec4 cornerOffset = camera.perspective * vec4(rotation * (billBoard.size * corners[i]), 1, 1);
+        vec4 cornerOffset = camera.projection * vec4(rotation * (billBoard.size * corners[i]), 1, 1);
         cornerOffset.xyz /= cornerOffset.w;
         cornerOffset.x = -cornerOffset.x;
         cornerOffset.zw = vec2(0);

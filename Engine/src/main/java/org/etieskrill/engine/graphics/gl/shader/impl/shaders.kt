@@ -3,11 +3,9 @@ package org.etieskrill.engine.graphics.gl.shader.impl
 import io.github.etieskrill.injection.extension.shader.bool
 import io.github.etieskrill.injection.extension.shader.dsl.ColourRenderTarget
 import io.github.etieskrill.injection.extension.shader.dsl.PureShaderBuilder
-import io.github.etieskrill.injection.extension.shader.dsl.RenderTarget
 import io.github.etieskrill.injection.extension.shader.dsl.ShaderBuilder
 import io.github.etieskrill.injection.extension.shader.dsl.ShaderVertexData
 import io.github.etieskrill.injection.extension.shader.dsl.VertexData
-import io.github.etieskrill.injection.extension.shader.dsl.rt
 import io.github.etieskrill.injection.extension.shader.dsl.std.rotationMat2
 import io.github.etieskrill.injection.extension.shader.float
 import io.github.etieskrill.injection.extension.shader.mat3
@@ -21,11 +19,60 @@ import org.joml.Matrix4f
 import org.joml.Vector2f
 import org.joml.Vector4f
 
-class BlitShader : PureShaderBuilder<BlitShader.Vertex, BlitShader.RenderTargets>(
+class FlatShader : ShaderBuilder<FlatShader.InputVertex, VertexData, ColourRenderTarget>(
+    object : ShaderProgram(listOf("Flat.glsl")) {}
+) {
+    data class InputVertex(val position: vec3, val normal: vec3)
+
+    var model by uniform<mat4>()
+    var combined by uniform<mat4>()
+
+    var colour by uniform<vec4>()
+
+    init {
+        colour = Vector4f(0.6f, 0.6f, 0.6f, 1f)
+    }
+
+    override fun program() {
+        vertex { VertexData(combined * (model * vec4(it.position, 1))) }
+        fragment { ColourRenderTarget(colour) }
+    }
+}
+
+class SolidShader : ShaderBuilder<SolidShader.InputVertex, SolidShader.Vertex, ColourRenderTarget>(
+    object : ShaderProgram(listOf("Solid.glsl"), false) {}
+) {
+    data class InputVertex(val position: vec3, val normalVec: vec3)
+    data class Vertex(override val position: vec4, val normal: vec3) : ShaderVertexData
+
+    private val lightPos by const(vec3(0, 0, 0))
+
+    var mesh by uniform<mat4>()
+    var model by uniform<mat4>()
+    var normal by uniform<mat3>()
+    var combined by uniform<mat4>()
+    var viewPosition by uniform<vec3>()
+
+    var colour by uniform<vec4>()
+
+    init {
+        colour = Vector4f(0.6f, 0.6f, 0.6f, 1f)
+    }
+
+    override fun program() {
+        vertex { Vertex(combined * (model * (mesh * vec4(it.position, 1))), normal * it.normalVec) }
+        fragment {
+            val diffuse = max(0, dot(it.normal, normalize(viewPosition - it.position.xyz)))
+            val light = min(1, diffuse + 0.1)
+            ColourRenderTarget(vec4(colour.rgb * light, colour.a))
+        }
+    }
+}
+
+class BlitShader : PureShaderBuilder<BlitShader.Vertex, ColourRenderTarget>(
     object : ShaderProgram(listOf("Blit.glsl")) {}
 ) {
     data class Vertex(override val position: vec4, val textureCoords: vec2) : ShaderVertexData
-    data class RenderTargets(val colour: RenderTarget)
 
     val vertices by const(arrayOf(vec2(-1, -1), vec2(1, -1), vec2(-1, 1), vec2(1, 1)))
 
@@ -63,7 +110,7 @@ class BlitShader : PureShaderBuilder<BlitShader.Vertex, BlitShader.RenderTargets
             } else {
                 vec4(colour.rgb, texture(sprite, it.textureCoords).a * colour.a)
             }
-            RenderTargets(texel.rt)
+            ColourRenderTarget(texel)
         }
     }
 }
@@ -109,17 +156,16 @@ class ScreenSpaceBlitShader : PureShaderBuilder<ScreenSpaceBlitShader.Vertex, Co
             } else {
                 vec4(colour.rgb, texture(sprite, it.textureCoords).a * colour.a)
             }
-            ColourRenderTarget(texel.rt)
+            ColourRenderTarget(texel)
         }
     }
 }
 
 //TODO compile constants - e.g. colour blend mode to merge this with above
-class BlitDepthShader : PureShaderBuilder<BlitDepthShader.Vertex, BlitDepthShader.RenderTargets>(
+class BlitDepthShader : PureShaderBuilder<BlitDepthShader.Vertex, ColourRenderTarget>(
     object : ShaderProgram(listOf("BlitDepth.glsl")) {}
 ) {
     data class Vertex(override val position: vec4, val textureCoords: vec2) : ShaderVertexData
-    data class RenderTargets(val colour: RenderTarget)
 
     val vertices by const(arrayOf(vec2(-1, -1), vec2(1, -1), vec2(-1, 1), vec2(1, 1)))
 
@@ -151,7 +197,7 @@ class BlitDepthShader : PureShaderBuilder<BlitDepthShader.Vertex, BlitDepthShade
         }
         fragment {
             val texel = texture(sprite, it.textureCoords)
-            RenderTargets((texel * colour).rt)
+            ColourRenderTarget(texel * colour)
         }
     }
 }
@@ -177,9 +223,7 @@ class OutlineShader : ShaderBuilder<OutlineShader.Vertex, VertexData, ColourRend
         vertex {
             VertexData(combined * (model * vec4(it.position + it.normalVec * outlineFactor, 1)))
         }
-        fragment {
-            ColourRenderTarget(colour.rt)
-        }
+        fragment { ColourRenderTarget(colour) }
     }
 }
 
@@ -192,7 +236,7 @@ class FullScreenColourShader : PureShaderBuilder<VertexData, ColourRenderTarget>
 
     override fun program() {
         vertex { VertexData(vec4(vertices[vertexID], 0, 1)) }
-        fragment { ColourRenderTarget(colour.rt) }
+        fragment { ColourRenderTarget(colour) }
     }
 }
 
@@ -221,7 +265,7 @@ class DilationOutlineShader : PureShaderBuilder<VertexData, ColourRenderTarget>(
             }
 //            fragColour /= maskSize*maskSize
 
-            ColourRenderTarget(fragColour.rt)
+            ColourRenderTarget(fragColour)
         }
     }
 }
@@ -242,7 +286,7 @@ class ScreenSpacePointShader : PureShaderBuilder<VertexData, ColourRenderTarget>
             val distance = it.position.xy - ndcPosition
             distance.x *= aspectRatio
             val fragColour = if (length(distance) < size) colour else vec4(0)
-            ColourRenderTarget(fragColour.rt)
+            ColourRenderTarget(fragColour)
         }
     }
 }
@@ -267,6 +311,6 @@ class LineShader : PureShaderBuilder<VertexData, ColourRenderTarget>(
             val point = if (vertexID == 0) pointA else pointB
             VertexData(combined * vec4(point, 1))
         }
-        fragment { ColourRenderTarget(colour.rt) }
+        fragment { ColourRenderTarget(colour) }
     }
 }

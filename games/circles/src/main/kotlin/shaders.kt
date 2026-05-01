@@ -3,7 +3,6 @@ package io.github.etieskrill.games.circles
 import io.github.etieskrill.injection.extension.shader.dsl.ColourRenderTarget
 import io.github.etieskrill.injection.extension.shader.dsl.PureShaderBuilder
 import io.github.etieskrill.injection.extension.shader.dsl.VertexData
-import io.github.etieskrill.injection.extension.shader.dsl.rt
 import io.github.etieskrill.injection.extension.shader.float
 import io.github.etieskrill.injection.extension.shader.int
 import io.github.etieskrill.injection.extension.shader.mat4
@@ -143,7 +142,7 @@ class SDFShader : PureShaderBuilder<VertexData, ColourRenderTarget>(
 //                fragColour = ((1.0 - alpha) * fragColour) + (alpha * sdf.colour)
             }
 
-            ColourRenderTarget(fragColour.rt)
+            ColourRenderTarget(fragColour)
         }
     }
 }

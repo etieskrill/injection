@@ -1,17 +1,19 @@
 package org.etieskrill.engine.entity.service.impl
 
-import io.github.etieskrill.injection.extension.shader.*
-import io.github.etieskrill.injection.extension.shader.dsl.RenderTarget
+import io.github.etieskrill.injection.extension.shader.bool
+import io.github.etieskrill.injection.extension.shader.dsl.ColourRenderTarget
 import io.github.etieskrill.injection.extension.shader.dsl.ShaderBuilder
 import io.github.etieskrill.injection.extension.shader.dsl.ShaderVertexData
-import io.github.etieskrill.injection.extension.shader.dsl.rt
+import io.github.etieskrill.injection.extension.shader.sampler2D
+import io.github.etieskrill.injection.extension.shader.vec2
+import io.github.etieskrill.injection.extension.shader.vec3
+import io.github.etieskrill.injection.extension.shader.vec4
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
 
-class GaussBlurShader : ShaderBuilder<Any, GaussBlurShader.Vertex, GaussBlurShader.RenderTargets>(
+class GaussBlurShader : ShaderBuilder<Any, GaussBlurShader.Vertex, ColourRenderTarget>(
     object : ShaderProgram(listOf("GaussBlur.glsl"), false) {}
 ) {
     data class Vertex(override val position: vec4, val texCoords: vec2) : ShaderVertexData
-    data class RenderTargets(val colour: RenderTarget)
 
     val vertices by const(arrayOf(vec2(-1, -1), vec2(1, -1), vec2(-1, 1), vec2(1, 1)))
 
@@ -51,9 +53,7 @@ class GaussBlurShader : ShaderBuilder<Any, GaussBlurShader.Vertex, GaussBlurShad
 
             result += sampleWithOffset(offset)
 
-            RenderTargets(
-                colour = vec4(result, 1.0).rt
-            )
+            ColourRenderTarget(colour = vec4(result, 1.0))
         }
     }
 }

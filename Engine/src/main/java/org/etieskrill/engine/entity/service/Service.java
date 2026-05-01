@@ -1,5 +1,6 @@
 package org.etieskrill.engine.entity.service;
 
+import org.etieskrill.engine.Disposable;
 import org.etieskrill.engine.entity.Entity;
 import org.etieskrill.engine.entity.system.EntitySystem;
 import org.jetbrains.annotations.NotNull;
@@ -14,7 +15,7 @@ import static java.util.Collections.emptySet;
 /**
  * Processes all entities which possess a specific set of components.
  */
-public interface Service {
+public interface Service extends Disposable {
 
     /**
      * Asks this service whether a set of components belonging to a single {@code entity} qualifies the entity for
@@ -50,7 +51,7 @@ public interface Service {
      *
      * @param entities all entities
      */
-    default void preProcess(Double delta, @NotNull List<@NotNull Entity> entities) {
+    default void preProcess(@NotNull Double delta, @NotNull List<@NotNull Entity> entities) {
     }
 
     /**
@@ -58,7 +59,7 @@ public interface Service {
      *
      * @param entities all entities
      */
-    default void postProcess(List<Entity> entities) {
+    default void postProcess(@NotNull List<@NotNull Entity> entities) {
     }
 
     /**
@@ -98,6 +99,10 @@ public interface Service {
      */
     default int priority() {
         return 0;
+    }
+
+    @Override
+    default void dispose() {
     }
 
 }

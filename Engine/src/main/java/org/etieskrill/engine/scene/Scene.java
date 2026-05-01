@@ -73,6 +73,7 @@ public class Scene extends MouseGestureHandler implements KeyInputHandler {
     public void render() {
         if (!root.isVisible()) return;
         batch.setCombined(camera.getCombined());
+        batch.getFrameBuffer().bind();
 
         glDisable(GL_DEPTH_TEST); //TODO either this or implement with depth testing
         glDepthMask(false);

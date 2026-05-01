@@ -1,17 +1,19 @@
 package org.etieskrill.engine.entity.service.impl
 
-import io.github.etieskrill.injection.extension.shader.*
-import io.github.etieskrill.injection.extension.shader.dsl.RenderTarget
-import io.github.etieskrill.injection.extension.shader.dsl.ShaderBuilder
+import io.github.etieskrill.injection.extension.shader.bool
+import io.github.etieskrill.injection.extension.shader.dsl.ColourRenderTarget
+import io.github.etieskrill.injection.extension.shader.dsl.PureShaderBuilder
 import io.github.etieskrill.injection.extension.shader.dsl.ShaderVertexData
-import io.github.etieskrill.injection.extension.shader.dsl.rt
+import io.github.etieskrill.injection.extension.shader.float
+import io.github.etieskrill.injection.extension.shader.sampler2D
+import io.github.etieskrill.injection.extension.shader.vec2
+import io.github.etieskrill.injection.extension.shader.vec4
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
 
-class HDRShader : ShaderBuilder<Any, HDRShader.Vertex, HDRShader.RenderTargets>(
+class HDRShader : PureShaderBuilder<HDRShader.Vertex, ColourRenderTarget>(
     object : ShaderProgram(listOf("HDR.glsl")) {}
 ) {
     data class Vertex(override val position: vec4, val texCoords: vec2) : ShaderVertexData
-    data class RenderTargets(val colour: RenderTarget)
 
     private val vertices by const(arrayOf(vec2(-1, -1), vec2(1, -1), vec2(-1, 1), vec2(1, 1)))
 
@@ -45,9 +47,7 @@ class HDRShader : ShaderBuilder<Any, HDRShader.Vertex, HDRShader.RenderTargets>(
 
             val gammaCorrected = pow(mapped, vec3(1 / 2.2))
 
-            RenderTargets(
-                colour = vec4(gammaCorrected, 1).rt
-            )
+            ColourRenderTarget(colour = vec4(gammaCorrected, 1))
         }
     }
 }

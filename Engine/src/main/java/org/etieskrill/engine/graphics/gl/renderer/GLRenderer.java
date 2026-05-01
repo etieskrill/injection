@@ -9,7 +9,6 @@ import org.etieskrill.engine.entity.component.TransformC;
 import org.etieskrill.engine.graphics.Renderer;
 import org.etieskrill.engine.graphics.TextRenderer;
 import org.etieskrill.engine.graphics.camera.Camera;
-import org.etieskrill.engine.graphics.gl.framebuffer.FrameBuffer;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.etieskrill.engine.graphics.gl.shader.Shaders;
 import org.etieskrill.engine.graphics.gl.shader.Shaders_OutlineShaderKt;
@@ -287,6 +286,8 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
     private void _render(TransformC transform, Model model, ShaderProgram shader, Camera camera, boolean instanced, int numInstances) {
         shader.setUniform("combined", camera.getCombined(), false); //TODO leave be?
         shader.setUniform("invCombined", camera.getInvCombined(), false);
+        shader.setUniform("view", camera.getView(), false);
+        shader.setUniform("projection", camera.getProjection(), false);
         shader.setUniform("camera", camera, false);
         _render(transform, model, shader, instanced, numInstances);
     }
@@ -348,6 +349,9 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
             throw new UnsupportedOperationException(
                     "No more than " + MAX_USABLE_TEXTURE_UNIT + " textures may be used for now");
         }
+
+        //FIXME bind all unused samplers to unused slots to avoid sampler type conflict
+        //FIXME if proper: bind default 1x1 texture to type if not set
 
         //TODO requires some more investigation:
         //binding seemingly any texture object to slot 0 causes the context to throw a fit

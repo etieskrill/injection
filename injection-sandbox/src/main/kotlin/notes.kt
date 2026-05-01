@@ -91,7 +91,7 @@ object Noteify : App(window {
         )
 
         window.scene = Scene(
-            Batch(renderer, window.currentSize),
+            Batch(screenBuffer, renderer),
             root,
             OrthographicCamera(window.currentSize)
         )

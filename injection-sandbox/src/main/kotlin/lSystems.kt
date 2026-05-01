@@ -103,7 +103,7 @@ class LSystemDemo(lines: List<Pair<Vector2fc, Vector2fc>>) : App() {
             colour = Vector4f(1f, 0f, 0f, 1f)
             combined = OrthographicCamera(window.currentSize).combined
         },
-        null //buffer
+        screenBuffer //buffer
     )
 
     val points = lines.flatMap { listOf(it.first, it.second) }

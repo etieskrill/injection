@@ -9,17 +9,17 @@ flat out vec4 colour;
 uniform float size;
 
 uniform mat4 view;
-uniform mat4 perspective;
+uniform mat4 projection;
 
 uniform ivec2 screenSize;
 
 void main()
 {
     vec4 eyePosition = view * vec4(a_Position, 1.0);
-    vec4 perspectiveVoxel = perspective * vec4(1, 1, eyePosition.z, eyePosition.w);
-    vec2 perspectiveSize = screenSize * (perspectiveVoxel.xy / perspectiveVoxel.w);
-    gl_PointSize = 0.25 * (perspectiveSize.x + perspectiveSize.y);
-    gl_Position = perspective * eyePosition;
+    vec4 projectionVoxel = projection * vec4(1, 1, eyePosition.z, eyePosition.w);
+    vec2 projectionSize = screenSize * (projectionVoxel.xy / projectionVoxel.w);
+    gl_PointSize = 0.25 * (projectionSize.x + projectionSize.y);
+    gl_Position = projection * eyePosition;
     colour = a_Colour;
 }
 #endif
