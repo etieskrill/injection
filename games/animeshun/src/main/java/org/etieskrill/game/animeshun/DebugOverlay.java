@@ -14,8 +14,6 @@ import org.etieskrill.engine.time.LoopPacer;
 import org.joml.Vector2ic;
 import org.joml.Vector4f;
 
-import java.util.List;
-
 public class DebugOverlay extends Scene {
 
     private final GLDebuggableRenderer renderer;
@@ -25,6 +23,7 @@ public class DebugOverlay extends Scene {
     private double cpuTime;
 
     public DebugOverlay(FrameBuffer frameBuffer, GLRenderer renderer, LoopPacer pacer, Vector2ic windowSize) {
+        super();
         this.renderer = renderer;
         this.pacer = pacer;
 
@@ -35,10 +34,10 @@ public class DebugOverlay extends Scene {
         setCamera(new OrthographicCamera(windowSize));
     }
 
-    private Node getRootNode() {
+    private Node<?> getRootNode() {
         renderStatistics.setAlignment(Node.Alignment.TOP_LEFT);
         renderStatistics.setMargin(new Vector4f(10));
-        return new Stack(List.of(renderStatistics));
+        return new Stack(renderStatistics);
     }
 
     public void setCpuTime(double cpuTime) {

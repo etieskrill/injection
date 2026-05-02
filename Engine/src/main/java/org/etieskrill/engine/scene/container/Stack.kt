@@ -1,195 +1,174 @@
-package org.etieskrill.engine.scene.container;
+package org.etieskrill.engine.scene.container
 
-import org.etieskrill.engine.graphics.Batch;
-import org.etieskrill.engine.input.Key;
-import org.etieskrill.engine.input.Keys;
-import org.etieskrill.engine.scene.Node;
-import org.jetbrains.annotations.NotNull;
-import org.joml.Vector2f;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.etieskrill.engine.scene.LayoutUtilsKt.getPreferredNodePosition;
+import org.etieskrill.engine.graphics.Batch
+import org.etieskrill.engine.input.Key
+import org.etieskrill.engine.input.Keys
+import org.etieskrill.engine.scene.Node
+import org.etieskrill.engine.scene.Node.Alignment.FIXED_POSITION
+import org.etieskrill.engine.scene.Node.ScaleMode.*
+import org.etieskrill.engine.scene.getPreferredNodePosition
+import org.joml.Vector2f
+import org.joml.minus
+import org.joml.plus
 
 /**
  * A node with any number of children, whose layouts are respected independently of each other.
  */
-public class Stack extends Node<Stack> {
+open class Stack(
+    protected val children: MutableList<Node<*>>
+) : Node<Stack>() {
 
-    private final List<Node<?>> children = new ArrayList<>();
+    constructor(vararg children: Node<*>) : this(children.toMutableList())
+    constructor() : this(mutableListOf())
 
-    public Stack() {
-        this(new ArrayList<>());
+    override fun update(delta: Double) {
+        children.forEach { it.update(delta) }
     }
 
-    public Stack(@NotNull List<Node<?>> children) {
-        addChildren(children.toArray(new Node<?>[0]));
-    }
+    override fun computeFixedSizes() {
+        if (!shouldFormat) return
 
-    public Stack(@NotNull Node<?>... children) {
-        addChildren(children);
-    }
+        children.forEach { it.computeFixedSizes() }
 
-    @Override
-    public void update(double delta) {
-        children.forEach(child -> child.update(delta));
-    }
-
-    @Override
-    public void computeFixedSizes() {
-        if (!getShouldFormat()) return;
-
-        for (Node<?> child : children) {
-            child.computeFixedSizes();
-        }
-
-        switch (getScaleMode()) {
-            case FIXED -> {
-                setComputedFixedSize(true);
-                getFormattedSize().set(getSize());
-                layout();
+        when (scaleMode) {
+            FIXED -> {
+                computedFixedSize = true
+                formattedSize = size
+                layout()
             }
-            case CONTENT -> {
-                if (children.stream().anyMatch(child ->
-                        child.getScaleMode() == ScaleMode.GROW
-                        || !child.getComputedFixedSize()
-                )) {
-                    setComputedFixedSize(false);
-                    return;
+
+            CONTENT -> {
+                if (children.any { it.scaleMode == GROW || !it.computedFixedSize }) {
+                    computedFixedSize = false
+                    return
                 }
 
-                computeBoundingBox();
-                setComputedFixedSize(true);
-                layout();
+                computeBoundingBox()
+                computedFixedSize = true
+                layout()
             }
-            case GROW -> setComputedFixedSize(false);
+
+            GROW -> computedFixedSize = false
         }
     }
 
     /**
      * Guaranteed to be called only when all children have either fixed or computed size.
      */
-    protected void computeBoundingBox() {
-        Vector2f min = null;
-        Vector2f max = null;
+    protected open fun computeBoundingBox() {
+        if (children.isEmpty()) {
+            formattedSize.set(0f)
+            return
+        }
 
-        for (Node<?> child : children) {
-            if (min == null) {
-                min = new Vector2f(child.getPosition());
-                max = new Vector2f(child.getPosition()).add(child.getSize());
-                continue;
+        val min = Vector2f()
+        val max = Vector2f()
+
+        children.forEachIndexed { i, child ->
+            if (i == 0) {
+                min.set(child.position)
+                max.set(child.position + child.size)
+                return@forEachIndexed
             }
 
-            min.min(child.getPosition());
-            max.max(new Vector2f(child.getPosition()).add(child.getSize()));
+            min.min(child.position)
+            max.max(child.position + child.size)
         }
 
-        if (min != null) {
-            getFormattedSize().set(max.sub(min));
-        } else {
-            getFormattedSize().set(0f);
-        }
+        formattedSize = max - min
     }
 
-    @Override
-    public void layout() {
-        if (!shouldFormat()) return;
+    override fun layout() {
+        if (!shouldFormat()) return
 
-        if (getParent() == null && getScaleMode() != ScaleMode.FIXED)
-            throw new IllegalStateException("Scale mode for root node must be FIXED");
+        if (parent == null && scaleMode != FIXED) {
+            throw IllegalStateException("Scale mode for root node must be FIXED")
+        }
 
-        for (Node<?> child : children) {
-            child.layout();
-            switch (child.getScaleMode()) {
-                case FIXED -> {
-                }
-                case CONTENT -> {
-                    if (!child.getComputedFixedSize()) { //growing child inside
-                        child.getFormattedSize().set(getFormattedSize());
+        children.forEach { child ->
+            child.layout()
+            when (child.scaleMode) {
+                FIXED -> {}
+                CONTENT -> {
+                    if (!child.computedFixedSize) { //growing child inside
+                        child.formattedSize = formattedSize
                     }
                 }
-                case GROW -> child.getFormattedSize().set(getFormattedSize());
+
+                GROW -> child.formattedSize = formattedSize
             }
 
-            if (child.getAlignment() != Alignment.FIXED_POSITION)
-                child.setPosition(getPreferredNodePosition(getFormattedSize(), child));
+            if (child.alignment != FIXED_POSITION) {
+                child.position = getPreferredNodePosition(formattedSize, child)
+            }
         }
     }
 
-    @Override
-    public void render(@NotNull Batch batch) {
-        children.forEach(child -> child.render(batch));
+    override fun render(batch: Batch) {
+        children.forEach { it.render(batch) }
     }
 
-    public List<Node<?>> getChildren() {
-        return children;
+    fun addChildren(vararg children: Node<*>) {
+        for (child in children) {
+            child.parent = this
+            this.children += child
+        }
     }
 
-    public Stack addChildren(@NotNull Node<?>... children) {
-        List.of(children).forEach(child -> {
-            child.setParent(this);
-            this.children.add(child);
-        });
-        return this;
+    fun setChild(index: Int, child: Node<*>) {
+        child.parent = this
+        children[index] = child
     }
 
-    public Stack setChild(int index, @NotNull Node<?> child) {
-        child.setParent(this);
-        this.children.set(index, child);
-        return this;
+    fun removeChildren(vararg children: Node<*>) {
+        for (child in children) {
+            child.parent = null
+            this.children -= child
+        }
     }
 
-    public Stack removeChildren(@NotNull Node<?>... children) {
-        List.of(children).forEach(child -> {
-            child.setParent(null);
-            this.children.remove(child);
-        });
-        return this;
+    fun clearChildren() {
+        children.forEach { it.parent = null }
+        children.clear()
     }
 
-    public Stack clearChildren() {
-        children.forEach(child -> child.setParent(null));
-        children.clear();
-        return this;
-    }
-
-    @Override
-    public boolean handleHit(@NotNull Key button, Keys.@NotNull Action action, double posX, double posY) {
-        if (!doesHit(posX, posY)) return false;
-        for (Node<?> child : children) {
+    override fun handleHit(button: Key, action: Keys.Action, posX: Double, posY: Double): Boolean {
+        if (!doesHit(posX, posY)) return false
+        children.forEach { child ->
             if (child.handleHit(button, action, posX, posY)) {
-                return true;
+                return true
             }
         }
-        return false;
+        return false
     }
 
-    @Override
-    public boolean handleKey(@NotNull Key key, Keys.@NotNull Action action) {
-        for (Node<?> child : children) {
-            if (child.handleKey(key, action)) return true;
+    override fun handleKey(key: Key, action: Keys.Action): Boolean {
+        children.forEach { child ->
+            if (child.handleKey(key, action)) {
+                return true
+            }
         }
-        return false;
+        return false
     }
 
-    @Override
-    public boolean handleHover(double posX, double posY) {
-        if (!doesHit(posX, posY)) return false;
-        for (Node<?> child : children) {
+    override fun handleHover(posX: Double, posY: Double): Boolean {
+        if (!doesHit(posX, posY)) return false
+        children.forEach { child ->
             if (child.handleHover(posX, posY)) {
-                return true;
+                return true
             }
         }
-        return false;
+        return false
     }
 
-    @Override
-    public boolean handleDrag(double deltaX, double deltaY, double posX, double posY) {
-        if (!doesHit(posX, posY)) return false;
-        for (Node<?> child : children)
-            if (child.handleDrag(deltaX, deltaY, posX, posY)) return true;
-        return false;
+    override fun handleDrag(deltaX: Double, deltaY: Double, posX: Double, posY: Double): Boolean {
+        if (!doesHit(posX, posY)) return false
+        children.forEach { child ->
+            if (child.handleDrag(deltaX, deltaY, posX, posY)) {
+                return true
+            }
+        }
+        return false
     }
 
 }

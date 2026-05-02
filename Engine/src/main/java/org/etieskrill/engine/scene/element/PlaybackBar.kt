@@ -92,7 +92,7 @@ class PlaybackBar(
         size = Vector2f(50f, Fonts.DEFAULT_FONT_SIZE.toFloat())
     }
 
-    var time: Duration = Duration.Companion.ZERO
+    var time: Duration = Duration.ZERO
         set(value) {
             progressBar.value = time.inWholeMilliseconds.toFloat() / totalDuration.inWholeMilliseconds
             val seconds = value.inWholeSeconds % 60

@@ -1,17 +1,7 @@
 package org.etieskrill.engine.common;
 
-public class ResourceLoadException extends RuntimeException {
-
-    public ResourceLoadException(String message) {
-        super(message);
-    }
-
-    public ResourceLoadException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
-    public ResourceLoadException(Throwable cause) {
-        super(cause);
-    }
-
+//FIXME dunno if this works cuz docs not downloaded and too lazy to look at web
+class ResourceLoadException(message: String? = null, cause: Throwable? = null) : RuntimeException(message, cause) {
+    constructor(message: String) : this(message, null)
+    constructor(cause: Throwable) : this(null, cause)
 }

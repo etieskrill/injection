@@ -15,7 +15,7 @@ open class Container(child: Node<*>? = null) : Node<Container>() {
     var child: Node<*>? = child
         set(value) {
             invalidate()
-            child?.parent = this
+            value?.parent = this
             field = value
         }
 
@@ -36,12 +36,12 @@ open class Container(child: Node<*>? = null) : Node<Container>() {
             when (scaleMode) {
                 ScaleMode.FIXED -> {
                     computedFixedSize = true
-                    formattedSize.set(size)
+                    formattedSize = size
                 }
 
                 ScaleMode.CONTENT -> {
                     if (child.scaleMode == ScaleMode.GROW
-                        || child.computedFixedSize == false
+                        || !child.computedFixedSize
                     ) {
                         computedFixedSize = false
                         return

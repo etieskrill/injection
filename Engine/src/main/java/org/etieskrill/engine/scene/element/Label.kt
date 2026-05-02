@@ -1,78 +1,71 @@
-package org.etieskrill.engine.scene.element;
+package org.etieskrill.engine.scene.element
 
-import kotlin.NotImplementedError;
-import org.etieskrill.engine.graphics.Batch;
-import org.etieskrill.engine.graphics.text.Font;
-import org.etieskrill.engine.graphics.text.Fonts;
-import org.etieskrill.engine.graphics.text.Glyph;
-import org.etieskrill.engine.scene.Node;
-import org.jetbrains.annotations.NotNull;
+import org.etieskrill.engine.graphics.Batch
+import org.etieskrill.engine.graphics.text.Font
+import org.etieskrill.engine.graphics.text.Fonts
+import org.etieskrill.engine.scene.Node
+import org.etieskrill.engine.scene.Node.ScaleMode.*
+import kotlin.math.max
 
-import java.util.Objects;
+open class Label(
+    text: String? = null,
+    val font: Font = Fonts.getDefault()
+) : Node<Label>() {
 
-import static java.util.Objects.requireNonNullElse;
+    var text: String? = text
+        set(value) {
+            if (field != value) invalidate()
+            field = value
+        }
 
-public class Label extends Node<Label> {
-
-    private final Font font;
-    private String text;
-
-    public Label() {
-        this("", Fonts.getDefault());
+    init {
+        this.text = text
     }
 
-    public Label(String text) {
-        this(text, Fonts.getDefault());
-    }
+    override fun computeFixedSizes() {
+        if (!shouldFormat()) return
 
-    public Label(String text, Font font) {
-        this.text = text;
-        this.font = Objects.requireNonNull(font);
-    }
-
-    @Override
-    public void computeFixedSizes() {
-        if (!shouldFormat()) return;
-
-        switch (getScaleMode()) {
-            case FIXED -> {
-                getFormattedSize().set(getSize());
-                setComputedFixedSize(true);
+        when (scaleMode) {
+            FIXED -> {
+                formattedSize = size
+                computedFixedSize = true
             }
-            case CONTENT -> {
-                int maxWidth = 0, width = 0, height = font.getMinLineHeight();
-                for (Glyph glyph : font.getGlyphs(text)) {
-                    width += glyph.getAdvance().x();
-                    switch (requireNonNullElse(glyph.getCharacter(), (char) 0)) {
-                        case '\n' -> {
-                            height += font.getLineHeight();
-                            maxWidth = Math.max(maxWidth, width);
-                            width = 0;
+
+            CONTENT -> {
+                if (text == null) {
+                    formattedSize.set(0f)
+                    computedFixedSize = true
+                }
+
+                var maxWidth = 0
+                var width = 0
+                var height = font.minLineHeight
+
+                font.getGlyphs(text).forEach { glyph ->
+                    width += glyph.advance.x().toInt()
+                    when (glyph.character) {
+                        '\n' -> {
+                            height += font.getLineHeight()
+                            maxWidth = max(maxWidth, width)
+                            width = 0
                         }
                     }
                 }
-                maxWidth = Math.max(maxWidth, width);
+                maxWidth = max(maxWidth, width)
 
-                getFormattedSize().set(maxWidth, height); //TODO figure out or compute actual font line height and add toggle here
-                setComputedFixedSize(true);
+                formattedSize.set(
+                    maxWidth.toFloat(),
+                    height.toFloat()
+                )  //TODO figure out or compute actual font line height and add toggle here
+                computedFixedSize = true
             }
-            case GROW -> throw new NotImplementedError("ScaleMode.GROW for Label");
+
+            GROW -> TODO("ScaleMode.GROW for Label")
         }
     }
 
-    @Override
-    public void render(@NotNull Batch batch) {
-        if (text != null) batch.renderText(text, font, getAbsolutePosition());
-    }
-
-    public String getText() {
-        return text;
-    }
-
-    public Label setText(String text) {
-        if (!this.text.equals(text)) invalidate();
-        this.text = text;
-        return this;
+    override fun render(batch: Batch) {
+        text?.let { batch.renderText(it, font, absolutePosition) }
     }
 
 }

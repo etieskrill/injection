@@ -1,171 +1,114 @@
 package org.etieskrill.engine.scene;
 
-import kotlin.jvm.functions.Function1;
-import kotlinx.coroutines.CoroutineScope;
-import org.etieskrill.engine.graphics.Batch;
-import org.etieskrill.engine.graphics.camera.Camera;
-import org.etieskrill.engine.input.Key;
-import org.etieskrill.engine.input.KeyInputHandler;
-import org.etieskrill.engine.input.Keys;
-import org.etieskrill.engine.input.MouseGestureHandler;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.joml.Vector2f;
-import org.joml.Vector2ic;
-import org.joml.Vector3f;
+import kotlinx.coroutines.CoroutineScope
+import org.etieskrill.engine.graphics.Batch
+import org.etieskrill.engine.graphics.camera.Camera
+import org.etieskrill.engine.graphics.camera.OrthographicCamera
+import org.etieskrill.engine.input.Key
+import org.etieskrill.engine.input.KeyInputHandler
+import org.etieskrill.engine.input.Keys
+import org.etieskrill.engine.input.MouseGestureHandler
+import org.etieskrill.engine.scene.Node.ScaleMode
+import org.joml.Vector2f
+import org.joml.Vector3f
+import org.lwjgl.opengl.GL11C.*;
 
-import static java.util.Objects.requireNonNull;
-import static java.util.Objects.requireNonNullElse;
-import static org.lwjgl.opengl.GL11C.*;
+open class Scene(
+    var batch: Batch,
+    root: Node<*>, //TODO direct root (e.g. label) is not formatted -> add transparent parent container?
+    camera: Camera
+) : MouseGestureHandler(), KeyInputHandler {
 
-public class Scene extends MouseGestureHandler implements KeyInputHandler {
+    var root: Node<*> = root
+        set(value) {
+            field.focusRequestCallback = null
+            field.focused = false
 
-    private @NotNull Batch batch;
-    private @NotNull Node<?> root; //TODO direct root (e.g. label) is not formatted -> add transparent parent container?
-    private @NotNull Camera camera;
-
-    private final Vector2f size;
-
-    private @Nullable Node<?> focusedNode;
-
-    private final Function1<Node<?>, Boolean> focusCallback = node -> {
-        focusedNode = requireNonNull(node);
-        node.setFocused$engine(true);
-        return true;
-    };
-
-    /**
-     * Available for more convenient construction in subclasses. Take care to <b>set {@link Scene#batch},
-     * {@link Scene#root} and {@link Scene#camera} using the setters</b> while still in the constructor.
-     * Use at your own peril.
-     */
-    @SuppressWarnings("DataFlowIssue")
-    protected Scene() {
-        this.batch = null;
-        this.root = null;
-        this.camera = null;
-
-        this.size = new Vector2f(0);
-    }
-
-    public Scene(@NotNull Batch batch, @NotNull Node<?> root, @NotNull Camera camera) {
-        this.batch = batch;
-        this.root = root; //shut up, data flow analysis
-        setRoot(root);
-        this.camera = camera;
-        setCamera(camera);
-
-        this.size = new Vector2f(0);
-
-        this.focusedNode = root;
-    }
-
-    public void update(double delta) {
-        root.getPosition().set(0);
-        root.getSize().set(size);
-        root.setScaleMode(Node.ScaleMode.FIXED);
-        root.update(delta);
-
-        root.computeFixedSizes();
-        root.layout();
-    }
-
-    public void render() {
-        if (!root.isVisible()) return;
-        batch.setCombined(camera.getCombined());
-        batch.getFrameBuffer().bind();
-
-        glDisable(GL_DEPTH_TEST); //TODO either this or implement with depth testing
-        glDepthMask(false);
-        root.render(batch);
-        glEnable(GL_DEPTH_TEST);
-        glDepthMask(true);
-    }
-
-    public @NotNull Batch getBatch() {
-        return batch;
-    }
-
-    public void setBatch(@NotNull Batch batch) {
-        this.batch = batch;
-    }
-
-    public @NotNull Node<?> getRoot() {
-        return root;
-    }
-
-    public void setRoot(@NotNull Node<?> root) {
-        if (this.root != null && this.root == focusedNode) {
-            focusedNode = root;
-            this.root.setFocusRequestCallback(null);
-            this.root.setFocused$engine(false);
+            value.focusRequestCallback = focusCallback
+            value.focused = true
+            focusedNode = value
+            field = value
         }
 
-        this.root = root;
-        this.root.setFocusRequestCallback(focusCallback);
-        this.root.setFocused$engine(true);
-    }
-
-    public @NotNull Camera getCamera() {
-        return camera;
-    }
-
     /**
-     * Sets the camera used to view the scene.
-     * <p>
-     * This method resets the camera's transform to the standard ui viewport, with the origin in the top-left corner,
-     * and the window size as the bottom-right corner.
+     * The [Camera] used to render the scene. Should be an [OrthographicCamera] for non-diegetic UI.
      *
-     * @param camera the camera to set this scene to
+     * Setting the camera resets its transform to the standard ui viewport, with the origin in the top-left corner, and
+     * the window size as the bottom-right corner.
      */
-    public void setCamera(@NotNull Camera camera) {
-        this.camera = camera;
-        this.camera.setRotation(0, 180, 0);
-        this.camera.setPosition(new Vector3f(camera.getViewportSize(), 0).div(2));
+    var camera: Camera = camera
+        set(value) {
+            field = value
+            field.setRotation(0f, 180f, 0f)
+            field.position = Vector3f(camera.viewportSize, 0f) / 2f
+        }
+
+    init {
+        this.root = root
+        this.camera = camera
     }
 
-    public void show() {
-        this.root.show();
+    var size = Vector2f(0f)
+        set(value) {
+            field.set(value)
+            root.invalidate()
+        }
+
+    private var focusedNode: Node<*>? = root
+
+    private val focusCallback = { node: Node<*> ->
+        focusedNode = node
+        node.focused = true
+        true
     }
 
-    public void hide() {
-        this.root.hide();
+    open fun update(delta: Double) {
+        root.apply {
+            position.set(0f)
+            size.set(this@Scene.size)
+            scaleMode = ScaleMode.FIXED
+            update(delta)
+
+            computeFixedSizes()
+            layout()
+        }
     }
 
-    public void setSize(Vector2ic size) {
-        this.size.set(size);
-        root.invalidate();
+    open fun render() {
+        if (!root.isVisible) return
+        batch.combined = camera.combined
+        batch.frameBuffer.bind()
+
+        glDisable(GL_DEPTH_TEST) //TODO either this or implement with depth testing
+        glDepthMask(false)
+        root.render(batch)
+        glEnable(GL_DEPTH_TEST)
+        glDepthMask(true)
     }
 
-    public void setCoroutineScope(CoroutineScope coroutineScope) {
-        root.setRootUiScope$engine(coroutineScope);
+    fun show() = root.show()
+    fun hide() = root.hide()
+
+    fun setCoroutineScope(coroutineScope: CoroutineScope) {
+        root.rootUiScope = coroutineScope
     }
 
-    @Override
-    public boolean invokeClick(Key button, @NotNull Keys.Action action, double posX, double posY) {
-        super.invokeClick(button, action, posX, posY);
-        return root.handleHit(button, action, posX, posY);
+    override fun invokeClick(button: Key, action: Keys.Action, posX: Double, posY: Double): Boolean {
+        super.invokeClick(button, action, posX, posY)
+        return root.handleHit(button, action, posX, posY)
     }
 
-    @Override
-    public boolean invokeMove(double posX, double posY) {
-        super.invokeMove(posX, posY);
-        return root.handleHover(posX, posY);
+    override fun invokeMove(posX: Double, posY: Double): Boolean {
+        super.invokeMove(posX, posY)
+        return root.handleHover(posX, posY)
     }
 
-    @Override
-    public boolean invokeDrag(double deltaX, double deltaY, double posX, double posY) {
-        return root.handleDrag(deltaX, deltaY, posX, posY);
-    }
+    override fun invokeDrag(deltaX: Double, deltaY: Double, posX: Double, posY: Double) =
+        root.handleDrag(deltaX, deltaY, posX, posY)
 
-    @Override
-    public boolean invoke(Key.Type type, int key, int action, int modifiers) {
-        return root.handleKey(new Key(type, key, modifiers), requireNonNull(Keys.Action.fromGLFW(action)));
-    }
+    override fun invoke(type: Key.Type, key: Int, action: Int, modifiers: Int) =
+        root.handleKey(Key(type, key, modifiers), Keys.Action.fromGLFW(action)!!)
 
-    @Override
-    public boolean invokeCharacter(char character) {
-        return requireNonNullElse(focusedNode, root).handleCharacter(character);
-    }
+    override fun invokeCharacter(character: Char) = (focusedNode ?: root).handleCharacter(character)
 
 }

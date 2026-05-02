@@ -1,25 +1,17 @@
-package org.etieskrill.engine.common;
+package org.etieskrill.engine.common
 
-import java.util.function.Function;
+import kotlin.math.max
+import kotlin.math.min
 
-import static java.lang.Math.clamp;
+fun interface Interpolator {
+    fun interpolate(t: Float): Float
 
-@FunctionalInterface
-public interface Interpolator extends Function<Float, Float> {
+    companion object {
+        fun of(block: (Float) -> Float) = Interpolator { t -> min(max(t, 0f), 1f) }
 
-    //should get condition and return interpolated value on get
-    // -> is boolean condition sensible for elementary state?
-    //should be able to mix several channels (optionally based on weights)
-    //should only use delta time -> requires length of transition in order to get linear factor
-    //should map linear factor using a supplied transition function
-
-    Interpolator LINEAR = t -> t;
-    Interpolator QUADRATIC = t -> t * t;
-    Interpolator INV_QUADRATIC = t -> 1 - ((t - 1) * (t - 1));
-    Interpolator SMOOTHSTEP = t -> -2 * t * t * t + 3 * t * t;
-
-    default Float interpolate(Float t) {
-        return apply(clamp(t, 0, 1));
+        val LINEAR = of { t -> t }
+        val QUADRATIC = of { t -> t * t }
+        val INV_QUADRATIC = of { t -> 1 - ((t - 1) * (t - 1)) }
+        val SMOOTHSTEP = of { t -> -2 * t * t * t + 3 * t * t }
     }
-
 }

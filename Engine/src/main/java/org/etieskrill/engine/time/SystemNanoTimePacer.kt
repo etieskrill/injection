@@ -53,7 +53,7 @@ class SystemNanoTimePacer(
         frameTime = now - timeLast
 
         val timeout = max((targetDelta - frameTime - SPINLOCK_WINDOW).toLong(NANOSECONDS), 0).nanoseconds
-        //TODO
+        //TODO probably create mpp blocking thingamajig
         LockSupport.parkNanos(timeout);
         while ((getNanoTime() - timeLast) < targetDelta) {
         }

@@ -1,188 +1,200 @@
-package org.etieskrill.engine.scene.container;
+package org.etieskrill.engine.scene.container
 
-import lombok.Getter;
-import lombok.Setter;
-import org.etieskrill.engine.graphics.Batch;
-import org.etieskrill.engine.graphics.text.Font;
-import org.etieskrill.engine.graphics.text.Fonts;
-import org.etieskrill.engine.graphics.texture.Texture2D;
-import org.etieskrill.engine.graphics.texture.Textures;
-import org.etieskrill.engine.input.Key;
-import org.etieskrill.engine.input.Keys;
-import org.etieskrill.engine.scene.Node;
-import org.jetbrains.annotations.NotNull;
-import org.joml.Vector2f;
-import org.joml.Vector3f;
-import org.joml.Vector4f;
-import org.joml.Vector4fc;
-
-import static java.util.Objects.requireNonNull;
-import static org.etieskrill.engine.scene.LayoutUtilsKt.getPreferredNodePosition;
+import org.etieskrill.engine.graphics.Batch
+import org.etieskrill.engine.graphics.text.Fonts
+import org.etieskrill.engine.graphics.texture.Textures
+import org.etieskrill.engine.input.Key
+import org.etieskrill.engine.input.Keys
+import org.etieskrill.engine.scene.Node
+import org.etieskrill.engine.scene.Node.ScaleMode.*
+import org.etieskrill.engine.scene.getPreferredNodePosition
+import org.joml.Math.toRadians
+import org.joml.Vector2f
+import org.joml.Vector3f
+import org.joml.Vector4f
+import org.joml.minusAssign
 
 /**
  * A collapsible node with a draggable widget bar containing a single child.
  */
-public class WidgetContainer extends Node<WidgetContainer> {
+open class WidgetContainer(
+    child: Node<*>? = null
+) : Node<WidgetContainer>() {
 
-    private static final Vector4fc WIDGET_BAR_COLOUR = new Vector4f(128 / 255f, 0, 0, 1); //#800000
-    private static final float WIDGET_BAR_HEIGHT = 20;
-    private static final Vector4fc WIDGET_CHEVRON_COLOUR = new Vector4f(1);
-    private static final float WIDGET_CHEVRON_MARGIN = 2;
-
-    private Node<?> child;
-
-    private @Getter boolean collapsed = false;
-
-    private final Vector2f actualSize = new Vector2f(-1);
-
-    private final Texture2D chevronIcon;
-
-    private final Font titleFont;
-    private @Getter
-    @Setter String text;
-
-    public @Getter
-    final float barHeight = WIDGET_BAR_HEIGHT;
-
-    public WidgetContainer(@NotNull Node<?> child) {
-        setChild(child);
-        this.chevronIcon = Textures.ofFile("textures/icons/chevron-down-solid-black.png");
-        this.titleFont = Fonts.getDefault(((int) getBarHeight()) - 4);
+    companion object {
+        private val WIDGET_BAR_COLOUR = Vector4f(128 / 255f, 0f, 0f, 1f) //#800000
+        private const val WIDGET_BAR_HEIGHT = 20
+        private val WIDGET_CHEVRON_COLOUR = Vector4f(1f)
+        private const val WIDGET_CHEVRON_MARGIN = 2
     }
 
-    @Override
-    public void update(double delta) {
-        if (child != null) child.update(delta);
+    var child: Node<*>? = child
+        set(value) {
+            invalidate()
+            value?.parent = this
+            field = value
+        }
+
+    init {
+        this.child = child //to call property getter
     }
 
-    @Override
-    public void computeFixedSizes() { //FIXME bar height is still ignored somehow
-        if (!getShouldFormat()) return;
+    var collapsed = false
+        set(value) {
+            invalidate()
+            field = value
+        }
 
-        child.computeFixedSizes();
+    var text: String? = null
 
-        setComputedFixedSize(false);
+    private val actualSize = Vector2f(-1f)
+    private val barHeight = WIDGET_BAR_HEIGHT
+    private val chevronIcon = Textures.ofFile("textures/icons/chevron-down-solid-black.png")
+    private val titleFont = Fonts.getDefault((barHeight) - 4)
+
+    override fun update(delta: Double) {
+        child?.update(delta)
+    }
+
+    override fun computeFixedSizes() { //FIXME bar height is still ignored somehow
+        if (!shouldFormat()) return
+
+        child?.computeFixedSizes()
+
+        computedFixedSize = false
 
         if (collapsed) {
-            switch (getScaleMode()) {
-                case FIXED -> {
-                    getFormattedSize().set(getSize().x, getBarHeight());
-                    setComputedFixedSize(true);
+            when (scaleMode) {
+                FIXED -> {
+                    formattedSize.set(size.x, barHeight.toFloat())
+                    computedFixedSize = true
                 }
-                case CONTENT -> {
-                    if (child.getScaleMode() != ScaleMode.GROW && child.getComputedFixedSize()) {
-                        getFormattedSize().set(child.getFormattedSize().x, getBarHeight());
-                        setComputedFixedSize(true);
-                    } else {
-                        throw new UnsupportedOperationException("TODO: ScaleMode.GROW for WidgetContainer");
+
+                CONTENT -> {
+                    when {
+                        child == null -> {
+                            formattedSize.set(100f, barHeight.toFloat())
+                            computedFixedSize = true
+                        }
+
+                        child!!.scaleMode == GROW -> TODO("ScaleMode.GROW for WidgetContainer")
+
+                        child!!.scaleMode != GROW -> {
+                            if (!child!!.computedFixedSize) throw IllegalStateException("Child size was not computed")
+
+                            formattedSize.set(child!!.formattedSize.x, barHeight.toFloat())
+                            computedFixedSize = true
+                        }
                     }
                 }
-                case GROW -> throw new UnsupportedOperationException("TODO: ScaleMode.GROW for WidgetContainer");
+
+                GROW -> TODO("ScaleMode.GROW for WidgetContainer")
             }
-            return;
+            return
         }
 
-        switch (getScaleMode()) {
-            case FIXED -> {
-                getFormattedSize().set(getSize().x, getSize().y + getBarHeight());
-                setComputedFixedSize(true);
+        when (scaleMode) {
+            FIXED -> {
+                formattedSize.set(size.x, size.y + barHeight)
+                computedFixedSize = true
             }
-            case CONTENT -> {
-                if (child.getScaleMode() != ScaleMode.GROW && child.getComputedFixedSize()) {
-                    getFormattedSize().set(child.getFormattedSize()).add(0f, getBarHeight());
-                    setComputedFixedSize(true);
-                } else {
-                    throw new UnsupportedOperationException("TODO: ScaleMode.GROW for WidgetContainer");
+
+            CONTENT -> {
+                when {
+                    child == null -> {
+                        formattedSize.set(100f, barHeight.toFloat() + 5f)
+                        computedFixedSize = true
+                    }
+
+                    child!!.scaleMode == GROW -> TODO("ScaleMode.GROW for WidgetContainer")
+
+                    child!!.scaleMode != GROW -> {
+                        if (!child!!.computedFixedSize) throw IllegalStateException("Child size was not computed")
+
+                        formattedSize.set(child!!.formattedSize.x, child!!.formattedSize.y + barHeight)
+                        computedFixedSize = true
+                    }
                 }
             }
-            case GROW -> throw new UnsupportedOperationException("TODO: ScaleMode.GROW for WidgetContainer");
+
+            GROW -> TODO("ScaleMode.GROW for WidgetContainer")
         }
     }
 
-    @Override
-    public void layout() {
-        if (!shouldFormat()) return;
+    override fun layout() {
+        if (!shouldFormat()) return
 
-        child.layout();
-        child.setPosition(getPreferredNodePosition(getFormattedSize(), child).add(0, getBarHeight()));
+        child?.let {
+            it.layout()
+            it.position = getPreferredNodePosition(formattedSize, it).apply { y += barHeight.toFloat() }
+        }
     }
 
-    @Override
-    public void render(@NotNull Batch batch) {
-        var position = getAbsolutePosition();
+    override fun render(batch: Batch) {
+        val position = absolutePosition
 
-        batch.renderBox(new Vector3f(position, 0), new Vector3f(getFormattedSize().x, getBarHeight(), 0), WIDGET_BAR_COLOUR);
-        batch.blit(chevronIcon,
-                new Vector2f(position).add(WIDGET_CHEVRON_MARGIN, WIDGET_CHEVRON_MARGIN),
-                new Vector2f(getBarHeight() - 2 * WIDGET_CHEVRON_MARGIN),
-                collapsed ? (float) Math.toRadians(90) : (float) Math.toRadians(-180),
-                WIDGET_CHEVRON_COLOUR
-        );
-        if (text != null && !text.isBlank()) {
+        batch.renderBox(
+            Vector3f(position, 0f),
+            Vector3f(formattedSize.x, barHeight.toFloat(), 0f),
+            WIDGET_BAR_COLOUR
+        )
+        batch.blit(
+            chevronIcon,
+            Vector2f(position).add(WIDGET_CHEVRON_MARGIN.toFloat(), WIDGET_CHEVRON_MARGIN.toFloat()),
+            Vector2f(barHeight - 2f * WIDGET_CHEVRON_MARGIN),
+            if (collapsed) toRadians(90f) else toRadians(-180f),
+            WIDGET_CHEVRON_COLOUR
+        )
+        text?.takeIf { it.isNotBlank() }?.let {
             //TODO use label with autoscaling font instead of hardcoding - scale bar height too actually
-            batch.renderText(text, titleFont, new Vector2f(position).add(getBarHeight() + 2, -3));
+            batch.renderText(text, titleFont, Vector2f(position).add(barHeight + 2f, -3f))
         }
 
         if (!collapsed) {
-            if (getRenderedColour().w != 0) batch.renderBox(
-                    new Vector3f(getAbsolutePosition(), 0).add(0f, getBarHeight(), 0f),
-                    new Vector3f(getFormattedSize(), 0).sub(0f, getBarHeight(), 0f),
-                    getRenderedColour()
-            );
-            if (child != null) child.render(batch);
+            if (renderedColour.w != 0f) {
+                batch.renderBox(
+                    Vector3f(absolutePosition, 0f).apply { y += barHeight.toFloat() },
+                    Vector3f(formattedSize, 0f).apply { y -= barHeight.toFloat() },
+                    renderedColour
+                )
+            }
+            child?.render(batch)
         }
     }
 
-    public Node<?> getChild() {
-        return child;
-    }
+    override fun handleHit(button: Key, action: Keys.Action, posX: Double, posY: Double): Boolean {
+        if (!doesHit(posX, posY)) return false
 
-    public void setChild(@NotNull Node<?> child) {
-        invalidate();
-        requireNonNull(child).setParent(this);
-        this.child = child;
-    }
-
-    @Override
-    public boolean handleHit(@NotNull Key button, Keys.@NotNull Action action, double posX, double posY) {
-        if (!doesHit(posX, posY)) return false;
-
-        var position = getAbsolutePosition();
+        val position = absolutePosition
         if (action == Keys.Action.PRESS
-            && posX > position.x && posX <= position.x + getBarHeight()
-            && posY > position.y && posY <= position.y + getBarHeight()) {
-            setCollapsed(!collapsed);
-            requestFocus(); //any reason for a resetFocus instead?
-            return true;
+            && posX > position.x && posX <= position.x + barHeight
+            && posY > position.y && posY <= position.y + barHeight
+        ) {
+            collapsed = !collapsed
+            requestFocus() //any reason for a resetFocus instead?
+            return true
         }
 
-        return child.handleHit(button, action, posX, posY); //container itself is not hittable
+        return child?.handleHit(button, action, posX, posY) ?: false //container itself is not hittable
     }
 
-    @Override
-    public boolean handleKey(@NotNull Key key, Keys.@NotNull Action action) {
-        return child.handleKey(key, action);
-    }
+    override fun handleKey(key: Key, action: Keys.Action): Boolean =
+        child?.handleKey(key, action) ?: false
 
-    public void setCollapsed(boolean collapsed) {
-        invalidate();
-        this.collapsed = collapsed;
-    }
+    override fun handleDrag(deltaX: Double, deltaY: Double, posX: Double, posY: Double): Boolean {
+        if (alignment != Alignment.FIXED_POSITION) return false
 
-    @Override
-    public boolean handleDrag(double deltaX, double deltaY, double posX, double posY) {
-        if (getAlignment() != Alignment.FIXED_POSITION) return false;
+        if (!doesHit(posX, posY)) return false
 
-        if (!doesHit(posX, posY)) return false;
+        if (posX !in (position.x + barHeight)..(position.x + formattedSize.x)
+            || posY !in position.y..(position.y + barHeight)
+        ) {
+            return false
+        }
 
-        var position = getAbsolutePosition();
-        if (!(posX > position.x + getBarHeight() && posX <= position.x + getFormattedSize().x
-              && posY > position.y && posY <= position.y + getBarHeight()
-        )) return false;
+        position -= Vector2f(deltaX.toFloat(), deltaY.toFloat())
 
-        setPosition(getPosition().sub((float) deltaX, (float) deltaY));
-
-        return true;
+        return true
     }
 
 }

@@ -1,127 +1,115 @@
-package org.etieskrill.engine.scene.container;
+package org.etieskrill.engine.scene.container
 
-import org.etieskrill.engine.scene.Node;
-import org.jetbrains.annotations.NotNull;
-import org.joml.Vector2f;
+import org.etieskrill.engine.scene.Node
+import org.etieskrill.engine.scene.Node.Alignment.*
+import org.etieskrill.engine.scene.Node.ScaleMode.GROW
+import org.etieskrill.engine.scene.getPreferredNodePosition
+import org.etieskrill.engine.scene.minNodeSize
+import kotlin.math.max
 
-import java.util.List;
+open class VBox(
+    vararg children: Node<*>
+) : Stack(*children) {
 
-import static org.etieskrill.engine.scene.LayoutUtilsKt.getMinNodeSize;
-import static org.etieskrill.engine.scene.LayoutUtilsKt.getPreferredNodePosition;
+    override fun computeBoundingBox() {
+        var width = 0f
+        var height = 0f
 
-public class VBox extends Stack {
-
-    public VBox() {
-    }
-
-    public VBox(@NotNull Node<?>... children) {
-        super(List.of(children));
-    }
-
-    public VBox(@NotNull List<Node<?>> children) {
-        super(children);
-    }
-
-    @Override
-    protected void computeBoundingBox() {
-        float width = 0, height = 0;
-
-        for (Node<?> child : getChildren()) {
-            var nodeSize = getMinNodeSize(child);
-            height += nodeSize.y;
-            width = Math.max(width, nodeSize.x);
+        for (child in children) {
+            val nodeSize = child.minNodeSize
+            height += nodeSize.y
+            width = max(width, nodeSize.x)
         }
 
-        getFormattedSize().set(width, height);
+        formattedSize.apply { x = width; y = height }
     }
 
-    @Override
-    public void layout() {
-        if (!shouldFormat()) return;
+    override fun layout() {
+        if (!shouldFormat()) return
 
         //Pre-calculate the size of the smallest fitting box around the children and position cursors accordingly
-        float topPointer = 0, centerPointer = getFormattedSize().y() / 2, bottomPointer = getFormattedSize().y();
-        float numTopGrow = 0, numCenterGrow = 0, numBottomGrow = 0;
-        for (int i = 0; i < getChildren().size(); i++) {
-            Node<?> child = getChildren().get(i);
-
-            if (child.getScaleMode() == ScaleMode.GROW) {
-                switch (child.getAlignment()) {
-                    case TOP_LEFT, TOP, TOP_RIGHT -> numTopGrow++;
-                    case CENTER, CENTER_LEFT, CENTER_RIGHT -> numCenterGrow++;
-                    case BOTTOM, BOTTOM_LEFT, BOTTOM_RIGHT -> numBottomGrow++;
+        var topPointer = 0f
+        var centerPointer = formattedSize.y / 2f
+        var bottomPointer = formattedSize.y
+        var numTopGrow = 0
+        var numCenterGrow = 0
+        var numBottomGrow = 0
+        children.forEachIndexed { i, child ->
+            if (child.scaleMode == GROW) {
+                when (child.alignment) {
+                    TOP_LEFT, TOP, TOP_RIGHT -> numTopGrow++
+                    CENTER, CENTER_LEFT, CENTER_RIGHT -> numCenterGrow++
+                    BOTTOM, BOTTOM_LEFT, BOTTOM_RIGHT -> numBottomGrow++
+                    FIXED_POSITION -> {}
                 }
-                continue;
+                return@forEachIndexed
             }
 
-            child.computeFixedSizes();
+            child.computeFixedSizes()
 
-            if (child.getAlignment() == Alignment.FIXED_POSITION) continue;
+            if (child.alignment == FIXED_POSITION) return@forEachIndexed
 
-            float margin = 0;
-            Node<?> nextChild;
-            if (getChildren().size() - 1 > i && (nextChild = getChildren().get(i + 1)) != null) {
-                margin = Math.max(nextChild.getMargin().y(), child.getMargin().x());
-            }
+            val margin = children.getOrNull(i + 1)
+                ?.let { max(it.margin.y, it.margin.x) }
+                ?: 0f
 
-            switch (child.getAlignment()) {
-                case TOP_LEFT, TOP, TOP_RIGHT -> topPointer += getMinNodeSize(child).y - margin;
-                case CENTER, CENTER_LEFT, CENTER_RIGHT -> centerPointer -= child.getFormattedSize().y() / 2;
-                case BOTTOM, BOTTOM_LEFT, BOTTOM_RIGHT -> bottomPointer -= getMinNodeSize(child).y() - margin;
+            when (child.alignment) {
+                TOP_LEFT, TOP, TOP_RIGHT -> topPointer += child.minNodeSize.y - margin
+                CENTER, CENTER_LEFT, CENTER_RIGHT -> centerPointer -= child.formattedSize.y / 2f
+                BOTTOM, BOTTOM_LEFT, BOTTOM_RIGHT -> bottomPointer -= child.minNodeSize.y - margin
+                FIXED_POSITION -> {}
             }
         }
 
-        float topGrowCapacity = numTopGrow > 0 ? (getFormattedSize().y - topPointer) / numTopGrow : 0;
-        float centerGrowCapacity = numCenterGrow > 0 ? (getFormattedSize().y - centerPointer) * 2 / numCenterGrow : 0;
-        float bottomGrowCapacity = numBottomGrow > 0 ? (getFormattedSize().y - (getFormattedSize().y - bottomPointer)) / numBottomGrow : 0;
+        val topGrowCapacity = if (numTopGrow > 0) (formattedSize.y - topPointer) / numTopGrow else 0f
+        val centerGrowCapacity = if (numCenterGrow > 0) (formattedSize.y - centerPointer) * 2 / numCenterGrow else 0f
+        val bottomGrowCapacity =
+            if (numBottomGrow > 0) (formattedSize.y - (formattedSize.y - bottomPointer)) / numBottomGrow else 0f
 
-        topPointer = 0;
+        topPointer = 0f
 
         //Place children ignoring vertical preference and adjust cursors
-        for (int i = 0; i < getChildren().size(); i++) {
-            Node<?> child = getChildren().get(i);
-
-            if (child.getScaleMode() == ScaleMode.GROW) {
-                child.getFormattedSize().set(
-                        getFormattedSize().x,
-                        switch (child.getAlignment()) {
-                            case TOP_LEFT, TOP, TOP_RIGHT -> topGrowCapacity;
-                            case CENTER_LEFT, CENTER, CENTER_RIGHT -> centerGrowCapacity;
-                            case BOTTOM_LEFT, BOTTOM, BOTTOM_RIGHT -> bottomGrowCapacity;
-                            case FIXED_POSITION -> child.getFormattedSize().y;
-                        }
-                );
-                child.setComputedFixedSize(true);
+        children.forEachIndexed { i, child ->
+            if (child.scaleMode == GROW) {
+                child.formattedSize.apply {
+                    x = formattedSize.x
+                    y = when (child.alignment) {
+                        TOP_LEFT, TOP, TOP_RIGHT -> topGrowCapacity
+                        CENTER_LEFT, CENTER, CENTER_RIGHT -> centerGrowCapacity
+                        BOTTOM_LEFT, BOTTOM, BOTTOM_RIGHT -> bottomGrowCapacity
+                        FIXED_POSITION -> child.formattedSize.y
+                    }
+                }
+                child.computedFixedSize = true
             }
-            child.layout();
+            child.layout()
 
-            if (child.getAlignment() == Alignment.FIXED_POSITION) continue;
-            Vector2f newPos = getPreferredNodePosition(getFormattedSize(), child).mul(1, 0);
-
-            child.setPosition(newPos.add(0,
-                    switch (child.getAlignment()) {
-                        case FIXED_POSITION -> 0;
-                        case TOP, TOP_LEFT, TOP_RIGHT -> topPointer;
-                        case CENTER, CENTER_LEFT, CENTER_RIGHT -> centerPointer;
-                        case BOTTOM, BOTTOM_LEFT, BOTTOM_RIGHT -> bottomPointer;
-                    }));
-
-            float margin = 0;
-            Node<?> nextChild;
-            if (getChildren().size() - 1 > i && (nextChild = getChildren().get(i + 1)) != null) {
-                margin = Math.max(nextChild.getMargin().y(), child.getMargin().x());
+            if (child.alignment == FIXED_POSITION) return@forEachIndexed
+            child.position = getPreferredNodePosition(formattedSize, child).apply {
+                y = when (child.alignment) {
+                    FIXED_POSITION -> 0f
+                    TOP, TOP_LEFT, TOP_RIGHT -> topPointer
+                    CENTER, CENTER_LEFT, CENTER_RIGHT -> centerPointer
+                    BOTTOM, BOTTOM_LEFT, BOTTOM_RIGHT -> bottomPointer
+                }
             }
 
-            float childHeight = child.getFormattedSize().y();
-            switch (child.getAlignment()) {
-                case TOP, TOP_LEFT, TOP_RIGHT -> topPointer += childHeight + margin;
-                case CENTER, CENTER_LEFT, CENTER_RIGHT -> centerPointer += childHeight + margin;
-                case BOTTOM, BOTTOM_LEFT, BOTTOM_RIGHT -> bottomPointer += childHeight + margin;
+            val margin = children.getOrNull(i + 1)
+                ?.let { max(it.margin.y, it.margin.x) }
+                ?: 0f
+
+            val childHeight = child.formattedSize.y
+            when (child.alignment) {
+                TOP, TOP_LEFT, TOP_RIGHT -> topPointer += childHeight + margin
+                CENTER, CENTER_LEFT, CENTER_RIGHT -> centerPointer += childHeight + margin
+                BOTTOM, BOTTOM_LEFT, BOTTOM_RIGHT -> bottomPointer += childHeight + margin
+                FIXED_POSITION -> {}
             }
         }
 
-        if (getChildren().stream().anyMatch(child -> !child.getComputedFixedSize()))
-            throw new IllegalStateException("Absolute size could not be computed for all children");
+        if (children.any { !it.computedFixedSize }) {
+            throw IllegalStateException("Absolute size could not be computed for all children")
+        }
     }
 
 }

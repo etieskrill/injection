@@ -8,7 +8,7 @@ abstract class MouseGestureHandler(val primaryMouseKey: Keys = Keys.LEFT_MOUSE) 
     private var prevY: Double = 0.0
 
     override fun invokeClick(
-        button: Key?,
+        button: Key,
         action: Keys.Action,
         posX: Double,
         posY: Double
