@@ -1,5 +1,7 @@
 package org.etieskrill.engine.graphics.model.loader;
 
+import io.github.oshai.kotlinlogging.KLogger;
+import io.github.oshai.kotlinlogging.KotlinLogging;
 import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.graphics.animation.Animation;
 import org.etieskrill.engine.graphics.animation.BoneMatcher;
@@ -14,8 +16,6 @@ import org.joml.primitives.AABBf;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.assimp.AINode;
 import org.lwjgl.assimp.AIScene;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.IntBuffer;
@@ -39,7 +39,7 @@ public class Loader {
                 .equals(animBone.replace("_", "").replace(":", ""));
     };
 
-    private static final Logger logger = LoggerFactory.getLogger(Loader.class);
+    private static final KLogger logger = KotlinLogging.INSTANCE.logger("Loader");
 
     private static final StepTimer timer = new StepTimer(logger);
 

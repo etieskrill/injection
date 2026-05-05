@@ -1,10 +1,8 @@
 package io.github.etieskrill.games.circles
 
 import org.etieskrill.engine.application.App
-import org.etieskrill.engine.entity.Entity
 import org.etieskrill.engine.entity.component.Drawable
 import org.etieskrill.engine.entity.component.Transform
-import org.etieskrill.engine.entity.getComponent
 import org.etieskrill.engine.entity.service.impl.DeferredRenderService
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera
 import org.etieskrill.engine.graphics.gl.StorageBufferObject
@@ -21,7 +19,6 @@ import org.etieskrill.engine.graphics.pipeline.PostPassPipeline
 import org.etieskrill.engine.graphics.texture.Texture2D
 import org.etieskrill.engine.input.controller.CursorCameraController
 import org.etieskrill.engine.window.Window
-import org.etieskrill.engine.window.window
 import org.joml.Vector2f
 import org.joml.Vector2i
 import org.joml.Vector3f
@@ -35,18 +32,18 @@ fun main() {
 }
 
 class Main : App(
-    window {
-        title = "Circles"
-        size = Window.WindowSize.FHD
+    Window(
+        title = "Circles",
+        size = Window.WindowSize.FHD,
         mode = Window.WindowMode.BORDERLESS
-    }
+    )
 ) {
 
     val sdfBuffer = StorageBufferObject(100, SDFShader.SDFVertexAccessor)
     val sdfFrameBuffer = FrameBuffer.getColour(Vector2i(800))!!
     val pipeline = PostPassPipeline(SDFShader(), sdfFrameBuffer)
 
-    val screenPipeline = PostPassPipeline(BlitShader(), screenBuffer, opaque = false)
+    val screenPipeline = PostPassPipeline(BlitShader(), window.screenBuffer, opaque = false)
 
     val primRuneFire = EmitterRune(
         "fire", 10f, mapOf(VisType("fire", Vector4f(1f, 0.5f, 0f, 1f)) to 1f)
@@ -65,23 +62,25 @@ class Main : App(
     val auxRuneGebo = AuxiliaryRune("gebo")
     val auxRuneNauthiz = AuxiliaryRune("nauthiz")
     val heatingCircle = Circle(
-        placedOn = Entity(0), visCapacity = 100f, streamUpkeepAbsolute = 1f, streamUpkeepRelative = 0.2f,
+        placedOn = entitySystem.createEntity {}, visCapacity = 100f,
+        streamUpkeepAbsolute = 1f, streamUpkeepRelative = 0.2f,
         focalRune = primRuneFire, runes = listOf(), numRings = 1,
         auxRunes = listOf(
             listOf(listOf(auxRuneGebo, auxRuneNauthiz, auxRuneGebo, auxRuneNauthiz, auxRuneGebo, auxRuneNauthiz))
         )
     )
 
-    val camera = PerspectiveCamera(window.currentSize)
+    val camera = PerspectiveCamera(window.size)
         .apply { setOrbit(true); setOrbitDistance(5f); setRotation(-45f, 45f, 0f) }
 //               orbit = true, orbitDistance = 5f, rotation = Vec3(-45f, 45f, 0f).eulerDeg
 
     val shader = SolidShader()
 
     init {
-        entitySystem.createEntity()
-            .withComponent(Transform())
-            .withComponent(heatingCircle)
+        entitySystem.createEntity {
+            +Transform()
+            +heatingCircle
+        }
 
         entitySystem.addServices(
             CircleService(object : VisEnvironment {
@@ -94,20 +93,21 @@ class Main : App(
                 override fun addHeatEnergy(position: Vector3fc, energy: Float) = Unit
                 override fun update(delta: Float) = Unit
             }),
-            DeferredRenderService(renderer, screenBuffer, camera)
+            DeferredRenderService(renderer, window.screenBuffer, camera)
         )
 
-        entitySystem.createEntity()
-            .withComponent(Transform())
-            .withComponent(Drawable(model("environment") {
+        entitySystem.createEntity {
+            +Transform()
+            +Drawable(model("environment") {
                 val d = sqrt(2f) / 2f
                 sphere(radius = 1f, numPoints = 100, transform = Transform().setPosition(Vector3f(d, 0f, d)))
                 box(Vector3f(0f), Vector3f(1f), Transform().setPosition(Vector3f(-1f, 0f, -1f)))
                 plane(a = Vector2f(-3f), b = Vector2f(3f))
                 //FIXME culling's fucked methinks
-            }, shader.shader as ShaderProgram))
+            }, shader.shader as ShaderProgram)
+        }
 
-        window.addCursorInputs(CursorCameraController(camera))
+        window.cursorInputs += CursorCameraController(camera)
         window.cursor.disable()
     }
 
@@ -122,9 +122,9 @@ class Main : App(
         screenPipeline.shader.apply {
             sprite = sdfFrameBuffer.attachments[FrameBufferAttachment.BufferAttachmentType.COLOUR0] as Texture2D
             useSpriteColour = true
-            position = Vector2f(window.currentSize) - Vector2f(200f)
+            position = Vector2f(window.size) - Vector2f(200f)
             size = Vector2f(200f)
-            windowSize = Vector2f(window.currentSize)
+            windowSize = Vector2f(window.size)
         }
         renderer.render(screenPipeline)
     }

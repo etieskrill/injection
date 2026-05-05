@@ -75,7 +75,7 @@ public interface Service extends Disposable {
      *
      * @return set of (semi-) dependent services
      */
-    default Set<Class<? extends Service>> runBefore() {
+    default @NotNull Set<@NotNull Class<? extends @NotNull Service>> runBefore() {
         return emptySet();
     }
 
@@ -84,7 +84,7 @@ public interface Service extends Disposable {
      *
      * @return set of prerequisite services
      */
-    default Set<Class<? extends Service>> runAfter() {
+    default @NotNull Set<@NotNull Class<? extends @NotNull Service>> runAfter() {
         return emptySet();
     }
 

@@ -171,7 +171,7 @@ public class GLTextRenderer extends GLDebuggableRenderer implements TextRenderer
         glBlendFunc(GL_ONE, GL_ZERO);
         glEnable(GL_CULL_FACE);
 
-        renderCalls++;
+        setRenderCalls(getRenderCalls() + 1);
     }
 
     @Override

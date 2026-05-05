@@ -1,4 +1,4 @@
-package org.etieskrill.engine.window
+package org.etieskrill.game.horde3d
 
 import org.etieskrill.engine.input.CursorInputHandler
 import org.etieskrill.engine.input.Input
@@ -7,21 +7,23 @@ import org.etieskrill.engine.input.InputBinding.Trigger
 import org.etieskrill.engine.input.KeyInputHandler
 import org.etieskrill.engine.input.Keys
 import org.etieskrill.engine.input.OverruleGroup
+import org.etieskrill.engine.window.Cursor
+import org.etieskrill.engine.window.Window
 import org.etieskrill.engine.window.Window.WindowMode
 import org.etieskrill.engine.window.Window.WindowSize
 import org.joml.Vector2fc
-import org.lwjgl.glfw.GLFW.GLFW_DONT_CARE
+import org.joml.Vector2ic
 
 class WindowBuilder(
     var mode: WindowMode = WindowMode.WINDOWED,
-    var size: WindowSize = WindowSize.DEFAULT,
+    var size: Vector2ic = WindowSize.DEFAULT,
     var position: Vector2fc? = null,
-    var refreshRate: Int = GLFW_DONT_CARE,
+    var refreshRate: Int = -1,
     var vSync: Boolean = false,
     var samples: Int = 0,
     var resizeable: Boolean = true,
     var title: String = "Injection Window",
-    var cursor: Cursor? = Cursor.getDefault(),
+    var cursor: Cursor? = Cursor(),
     var createHidden: Boolean = false,
     var transparency: Boolean = false
 ) {

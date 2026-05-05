@@ -178,7 +178,7 @@ public abstract class ShaderProgram implements Disposable,
         this.uniforms = new HashMap<>();
         this.arrayUniforms = new HashMap<>();
 
-        this.MAX_TEXTURE_UNITS = GLContextConfig.getMaxTextureUnits();
+        this.MAX_TEXTURE_UNITS = GLContextConfig.Companion.getMAX_TEXTURE_UNITS();
         this.currentTextureUnit = 0;
         this.boundTextures = new HashMap<>(MAX_TEXTURE_UNITS);
 

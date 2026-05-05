@@ -15,11 +15,17 @@ import org.joml.plus
  * A node with any number of children, whose layouts are respected independently of each other.
  */
 open class Stack(
-    protected val children: MutableList<Node<*>>
+    children: List<Node<*>>
 ) : Node<Stack>() {
 
-    constructor(vararg children: Node<*>) : this(children.toMutableList())
+    protected val children: MutableList<Node<*>> = children.toMutableList()
+
+    constructor(vararg children: Node<*>) : this(children.toList())
     constructor() : this(mutableListOf())
+
+    init {
+        this.children.forEach { it.parent = this }
+    }
 
     override fun update(delta: Double) {
         children.forEach { it.update(delta) }

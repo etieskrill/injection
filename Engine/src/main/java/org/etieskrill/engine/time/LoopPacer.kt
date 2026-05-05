@@ -1,5 +1,8 @@
 package org.etieskrill.engine.time
 
+import kotlin.time.Duration
+import kotlin.time.DurationUnit.SECONDS
+
 //TODO rework interface and document
 interface LoopPacer {
 
@@ -10,22 +13,25 @@ interface LoopPacer {
      */
     fun nextFrame()
 
-    fun getDeltaTimeSeconds(): Double
-    fun getSecondsElapsedTotal(): Double
+    val deltaTime: Duration
+    val deltaTimeSeconds: Double get() = deltaTime.toDouble(SECONDS)
+
+    var targetDeltaTime: Duration
 
     fun pauseTimer()
     fun resumeTimer()
-    fun isPaused(): Boolean
+    var isTimerPaused: Boolean
     fun resetTimer()
-    fun getTime(): Double
+    val timerTime: Duration
+    val timerTimeSeconds: Double get() = timerTime.toDouble(SECONDS)
 
-    fun getAverageFPS(): Double
+    val averageFPS: Double
 
-    fun getTotalFramesElapsed(): Long
-    fun getFramesElapsed(): Long
+    val totalFramesElapsed: Long
+    val framesElapsed: Long
     fun resetFrameCounter()
 
-    fun getTargetDeltaTime(): Double
-    fun setTargetDeltaTime(deltaSeconds: Double)
+    val timeElapsedTotal: Duration
+    val timeElapsedTotalSeconds: Double get() = timeElapsedTotal.toDouble(SECONDS)
 
 }

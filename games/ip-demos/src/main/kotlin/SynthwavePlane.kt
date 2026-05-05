@@ -53,9 +53,9 @@ import org.etieskrill.engine.scene.plot.Histogram
 import org.etieskrill.engine.scene.plot.HistogramScaleMode
 import org.etieskrill.engine.util.FixedArrayDeque
 import org.etieskrill.engine.util.ResourceReader
+import org.etieskrill.engine.util.average
 import org.etieskrill.engine.window.Cursor
 import org.etieskrill.engine.window.Window
-import org.etieskrill.engine.window.window
 import org.joml.Matrix4f
 import org.joml.Vector2f
 import org.joml.Vector3f
@@ -75,22 +75,24 @@ import kotlin.time.Duration.Companion.seconds
 fun main() = SynthwavePlane().run() //TODO replace and test with immediate when fixed
 
 @Suppress("MemberVisibilityCanBePrivate")
-class SynthwavePlane() : App(window {
-    title = "Synthwave Plane"
-    mode = Window.WindowMode.BORDERLESS
-    size = Window.WindowSize.LARGEST_FIT
+class SynthwavePlane() : App(
+    Window(
+        title = "Synthwave Plane",
+        mode = Window.WindowMode.BORDERLESS,
+        size = Window.WindowSize.LARGEST_FIT,
     vSync = true
-}) {
+    )
+) {
 
     val transform = Transform()
     val plane = model("plane") { plane(Vector2f(-100f, -100f), Vector2f(100f, 100f)) }
     val shader = GridShader()
-    val camera = PerspectiveCamera(window.currentSize)
+    val camera = PerspectiveCamera(window.size)
     val offset = Vector2f()
 
     val frameBuffer: FrameBuffer
     val frameTexture: Texture2D
-    val sunPipeline = PostPassPipeline(SunPostPass(), screenBuffer, false)
+    val sunPipeline = PostPassPipeline(SunPostPass(), window.screenBuffer, false)
 
     var audioSource: AudioSource? = null
     val audioListener: AudioListener
@@ -120,8 +122,8 @@ class SynthwavePlane() : App(window {
 
     init {
         val controller = CursorCameraController(camera)
-        window.addCursorInputs(controller)
-        window.addKeyInputs(Input.of(Input.bind(Keys.CTRL).to { ->
+        window.cursorInputs += controller
+        window.keyInputs += Input.of(Input.bind(Keys.CTRL).to { ->
             if (window.cursor.mode == Cursor.CursorMode.DISABLED) {
                 window.cursor.mode = Cursor.CursorMode.CAPTURED
                 controller.disable()
@@ -129,20 +131,21 @@ class SynthwavePlane() : App(window {
                 window.cursor.mode = Cursor.CursorMode.DISABLED
                 controller.enable()
             }
-        }))
+        })
         window.cursor.disable()
 
         camera.setPosition(Vector3f(0f, 1f, 0f))
 
-        val renderService = RenderService(screenBuffer, renderer, camera, window.currentSize)
+        val renderService = RenderService(window.screenBuffer, renderer, camera, window.size)
         entitySystem.addService(renderService)
         frameBuffer = renderService.frameBuffer
         frameTexture = renderService.frameBuffer.attachments[BufferAttachmentType.COLOUR0] as Texture2D
         frameBuffer.setClearColour(Vector4f(0.01f, 0f, 0.02f, 1f))
 
-        entitySystem.createEntity()
-            .withComponent(transform)
-            .withComponent(Drawable(plane, shader.shader as ShaderProgram))
+        entitySystem.createEntity {
+            +transform
+            +Drawable(plane, shader.shader as ShaderProgram)
+        }
 
         val buf = BufferUtils.createShortBuffer(10 * 44100)
         while (buf.position() < buf.limit()) {
@@ -184,7 +187,11 @@ class SynthwavePlane() : App(window {
 
         fpsLabel = Label()
         fpsGraph =
-            Histogram(100, histogramScaleMode = HistogramScaleMode.FIXED, maxValue = 1.1f * window.refreshRate).apply {
+            Histogram(
+                100,
+                histogramScaleMode = HistogramScaleMode.FIXED,
+                maxValue = 1.1f * window.refreshRate.toInt()
+            ).apply {
             size = Vector2f(400f, 150f)
         }
         fftGraph = Histogram(
@@ -194,7 +201,7 @@ class SynthwavePlane() : App(window {
             drawSeparators = false
         ).apply { size = Vector2f(600f, 200f) }
         window.scene = Scene(
-            Batch(screenBuffer, renderer),
+            Batch(window.screenBuffer, renderer),
             Stack(
                 VBox(
                     fpsLabel, //FIXME how in gods name is the fps graph right-side up, and the fft is not??
@@ -213,11 +220,11 @@ class SynthwavePlane() : App(window {
                 WidgetContainer(fpsGraph).apply {
                     text = "GPU"
                     alignment = Node.Alignment.FIXED_POSITION
-                    position = Vector2f(window.currentSize.x() - fpsGraph.size.x, 0f)
-                    isCollapsed = true
+                    position = Vector2f(window.size.x() - fpsGraph.size.x, 0f)
+                    collapsed = true
                 }
             ),
-            OrthographicCamera(window.currentSize)
+            OrthographicCamera(window.size)
         )
     }
 
@@ -253,7 +260,7 @@ class SynthwavePlane() : App(window {
     }
 
     var frameSample = 0
-    var samples = FixedArrayDeque<Int>((window.refreshRate / 8).toInt())
+    var samples = FixedArrayDeque<Int>((window.refreshRate.toInt() / 8).toInt())
     var averageSample = 0
 
     val fftAverageMagnitudes = MutableList(FFT_BINS.toInt()) { 0f }
@@ -291,21 +298,21 @@ class SynthwavePlane() : App(window {
                 sampleValue /= windowSize
 
                 frameSample = sampleValue
-                samples.push(((fftMagnitudes[2] + fftMagnitudes[3] + fftMagnitudes[4]) / 3).toInt())
+                samples.add(((fftMagnitudes[2] + fftMagnitudes[3] + fftMagnitudes[4]) / 3).toInt())
                 averageSample = samples.average().toInt()
             }
 
         playbackBar.time = audioSource?.offsetSeconds?.toDouble()?.seconds ?: 0.seconds
 
         fpsLabel.text = pacer.averageFPS.toInt().toString()
-        if (pacer.totalFramesElapsed % 5L == 0L) fpsGraph.values.push(1 / pacer.deltaTimeSeconds.toFloat())
+        if (pacer.totalFramesElapsed % 5L == 0L) fpsGraph.values.add(1f / pacer.deltaTimeSeconds.toFloat())
 
         if (screenShake) {
-            val cameraShake = Vector2f(sin(100 * pacer.time).toFloat(), sin(150 * pacer.time).toFloat())
-                .times(
-                    0.2f * max(0f, (averageSample / 1000000f) - 0.1f)
-                            * if (playbackBar.state == PlaybackBar.State.PLAYING) 1 else 0
-                )
+            val cameraShake = Vector2f(
+                sin(100 * pacer.timerTimeSeconds).toFloat(),
+                sin(150 * pacer.timerTimeSeconds).toFloat()
+            ) * (0.2f * max(0f, (averageSample / 1000000f) - 0.1f)
+                    * if (playbackBar.state == PlaybackBar.State.PLAYING) 1 else 0)
 
             camera.rotate(cameraShake.x, cameraShake.y, 0f)
         }
@@ -314,7 +321,7 @@ class SynthwavePlane() : App(window {
     override fun render() {
         sunPipeline.shader.apply {
             invCombined = camera.combined.invert(Matrix4f())
-            time = pacer.time.toFloat()
+            time = pacer.timerTimeSeconds.toFloat()
             intensity = averageSample / 1000000f + 0.5f
         }
 

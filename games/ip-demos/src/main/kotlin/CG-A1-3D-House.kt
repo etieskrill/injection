@@ -77,7 +77,7 @@ class `CG-03-A` : App() {
 
     val shader = BasicShader()
 
-    val camera = OrthographicCamera(window.currentSize)
+    val camera = OrthographicCamera(window.size)
         .apply {
             setOrbit(true)
             setOrbitDistance(200f)
@@ -87,7 +87,7 @@ class `CG-03-A` : App() {
         }
 
     init {
-        window.addCursorInputs(CursorCameraController(camera))
+        window.cursorInputs += CursorCameraController(camera)
         window.cursor.disable()
     }
 

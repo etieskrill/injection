@@ -27,7 +27,6 @@ import org.etieskrill.engine.graphics.pipeline.PrimitiveType
 import org.etieskrill.engine.input.controller.CursorCameraController
 import org.etieskrill.engine.util.FixedArrayDeque
 import org.etieskrill.engine.window.Window
-import org.etieskrill.engine.window.window
 import org.joml.Vector2ic
 import org.joml.Vector3f
 import org.joml.Vector3fc
@@ -40,9 +39,11 @@ fun main() {
     `CG-A2-Solar-System`().run()
 }
 
-class `CG-A2-Solar-System` : App(window {
+class `CG-A2-Solar-System` : App(
+    Window(
     size = Window.WindowSize.SVGA
-}) {
+    )
+) {
     init {
         val shader = SingleColourShader()
         shader.colour = Vector4f(1f, 1f, 0f, 1f)
@@ -83,24 +84,25 @@ class `CG-A2-Solar-System` : App(window {
         val planets = listOf(sun, vole, io, callisto)
 
         for (planet in planets) {
-            entitySystem.createEntity()
-                .withComponent(Transform())
-                .withComponent(Drawable(sphereModel, shader).apply { isDrawWireframe = true })
-                .withComponent(planet)
+            entitySystem.createEntity {
+                +Transform()
+                +Drawable(sphereModel, shader).apply { isDrawWireframe = true }
+                +planet
+            }
         }
 
-        val camera = PerspectiveCamera(window.currentSize).apply {
+        val camera = PerspectiveCamera(window.size).apply {
             setOrbit(true)
             setOrbitDistance(15f)
             setRotation(-30f, 0f, 0f)
         }
 
-        entitySystem.addService(PlanetService(screenBuffer, renderer, camera, window.currentSize).apply {
+        entitySystem.addService(PlanetService(window.screenBuffer, renderer, camera, window.size).apply {
             skybox = CubeMapModel("textures/cubemaps/space")
             blur(false)
         })
 
-        window.addCursorInputs(CursorCameraController(camera))
+        window.cursorInputs += CursorCameraController(camera)
 
         window.cursor.disable()
     }

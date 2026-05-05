@@ -50,7 +50,7 @@ public class DirectionalShadowMappingService implements Service {
 
     @Override
     public boolean canProcess(Entity entity) {
-        return entity.hasComponents(DirectionalLightComponent.class);
+        return entity.getComponents().containsKey(DirectionalLightComponent.class);
     }
 
     @Override

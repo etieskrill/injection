@@ -1,5 +1,7 @@
 package org.etieskrill.engine.graphics.model.loader;
 
+import io.github.oshai.kotlinlogging.KLogger;
+import io.github.oshai.kotlinlogging.KotlinLogging;
 import org.etieskrill.engine.graphics.model.Material;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
@@ -15,8 +17,6 @@ import org.joml.Vector4fc;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.assimp.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.Map;
@@ -34,7 +34,7 @@ import static org.lwjgl.stb.STBImage.stbi_load_from_memory;
 
 class MaterialLoader {
 
-    private static final Logger logger = LoggerFactory.getLogger(MaterialLoader.class);
+    private static final KLogger logger = KotlinLogging.INSTANCE.logger("MaterialLoader");
 
     private static final StepTimer timer = new StepTimer(logger);
 

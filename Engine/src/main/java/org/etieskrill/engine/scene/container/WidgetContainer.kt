@@ -57,7 +57,7 @@ open class WidgetContainer(
     }
 
     override fun computeFixedSizes() { //FIXME bar height is still ignored somehow
-        if (!shouldFormat()) return
+        if (!shouldFormat) return
 
         child?.computeFixedSizes()
 

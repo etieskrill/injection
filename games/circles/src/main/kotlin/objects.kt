@@ -2,7 +2,6 @@ package io.github.etieskrill.games.circles
 
 import org.etieskrill.engine.entity.Entity
 import org.etieskrill.engine.entity.component.Transform
-import org.etieskrill.engine.entity.getComponent
 import org.etieskrill.engine.entity.service.Service
 import org.joml.Math.clamp
 

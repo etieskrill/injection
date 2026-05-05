@@ -8,7 +8,7 @@ import org.lwjgl.system.Platform.WINDOWS
 import org.lwjgl.system.windows.WindowsLibrary
 import kotlin.time.Duration
 
-val logger = KotlinLogging.logger {}
+private val logger = KotlinLogging.logger {}
 
 fun setSystemTimeResolution(resolution: Duration) = when (val platform = Platform.get()) {
     WINDOWS -> {

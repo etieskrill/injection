@@ -61,7 +61,7 @@ class TextField(
             formattedSize
         )
 
-        if (focused && pacer.time % 1 < 0.5) {
+        if (focused && pacer.timerTimeSeconds % 1 < 0.5) {
             batch.renderBox(
                 Vector3f(absolutePosition + absoluteCursorPosition!!.add(0f, 0.2f * font.lineHeight), 0f),
                 Vector3f(font.lineHeight / 12f, font.lineHeight.toFloat(), 0f),

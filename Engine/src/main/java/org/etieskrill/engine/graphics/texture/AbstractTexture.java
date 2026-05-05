@@ -301,6 +301,7 @@ public abstract class AbstractTexture implements Texture, Disposable {
         public final T build() {
             GLUtils.clearError();
             T texture = bufferTextureData();
+            GLUtils.checkErrorThrowing("Error while buffering texture data:\n" + this);
 
             //Wack solution for post-creation method calls
             if (mipMaps && !List.of(DEPTH, STENCIL, DEPTH_STENCIL).contains(format)) {

@@ -173,7 +173,7 @@ public class VertexArrayObject<T> implements Disposable {
         logger.debug("Configured vertex attribute pointers:\n{}", configLog);
     }
 
-    public void setVertices(Collection<T> vertices) {
+    public void setVertices(@NotNull Collection<@NotNull T> vertices) {
         vertexBuffer.setData(vertices);
     }
 

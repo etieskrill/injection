@@ -6,7 +6,6 @@ import org.etieskrill.engine.entity.Entity
 import org.etieskrill.engine.entity.component.DirectionalLightComponent
 import org.etieskrill.engine.entity.component.Drawable
 import org.etieskrill.engine.entity.component.Transform
-import org.etieskrill.engine.entity.getComponent
 import org.etieskrill.engine.entity.service.impl.RenderService
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera
 import org.etieskrill.engine.graphics.data.DirectionalLight
@@ -18,7 +17,6 @@ import org.etieskrill.engine.graphics.model.sphere
 import org.etieskrill.engine.input.controller.CursorCameraController
 import org.etieskrill.engine.input.controller.KeyCameraController
 import org.etieskrill.engine.window.Window
-import org.etieskrill.engine.window.window
 import org.joml.Vector3f
 import org.joml.minus
 import org.joml.minusAssign
@@ -34,13 +32,15 @@ import kotlin.math.exp
 
 fun main() = Cloth.run()
 
-object Cloth : App(window {
-    title = "Cloth"
-    size = Window.WindowSize.LARGEST_FIT
+object Cloth : App(
+    Window(
+        title = "Cloth",
+        size = Window.WindowSize.LARGEST_FIT,
     mode = Window.WindowMode.BORDERLESS
-}) {
+    )
+) {
 
-    val camera = PerspectiveCamera(window.currentSize).apply {
+    val camera = PerspectiveCamera(window.size).apply {
         setOrbit(true)
         setOrbitDistance(4f)
         setRotation(-20f, 0f, 0f)
@@ -107,14 +107,14 @@ object Cloth : App(window {
         }
 
         entitySystem.addServices(
-            RenderService(screenBuffer, renderer, camera, window.currentSize).apply {
+            RenderService(screenBuffer, renderer, camera, window.size).apply {
                 frameBuffer.clearColour.set(0.05f, 0.05f, 0.05f, 1f)
                 blur(false)
             }
         )
 
-        window.addKeyInputs(KeyCameraController(camera))
-        window.addCursorInputs(CursorCameraController(camera))
+        window.keyInputs += KeyCameraController(camera)
+        window.cursorInputs += CursorCameraController(camera)
 
         window.cursor.disable()
     }

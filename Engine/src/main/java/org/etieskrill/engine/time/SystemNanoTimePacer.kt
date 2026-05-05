@@ -1,154 +1,104 @@
 package org.etieskrill.engine.time
 
 import org.etieskrill.engine.util.FixedArrayDeque
-import kotlin.concurrent.atomics.AtomicReference
-import kotlin.concurrent.atomics.ExperimentalAtomicApi
+import java.util.concurrent.locks.LockSupport
 import kotlin.math.max
 import kotlin.time.ComparableTimeMark
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.nanoseconds
 import kotlin.time.DurationUnit
 import kotlin.time.DurationUnit.NANOSECONDS
-import kotlin.time.TimeSource
+import kotlin.time.TimeSource.Monotonic.markNow
 
 class SystemNanoTimePacer(
-    private val targetDelta: Duration
+    override var targetDeltaTime: Duration
 ) : LoopPacer {
 
-    companion object {
+    private companion object {
         val SPINLOCK_WINDOW = 100_000.nanoseconds
-        val AVERAGE_FRAMERATE_SPAN_SECONDS = 2
+        const val AVERAGE_FRAMERATE_SPAN_SECONDS = 2
     }
 
+    override var deltaTime = Duration.ZERO
+
+    override val timeElapsedTotal: Duration get() = timeStart.elapsedNow()
+
+    override var timerTime = Duration.ZERO; private set
+    override var isTimerPaused = false
+
+    override var averageFPS = 0.0; private set
+
+    override var totalFramesElapsed = 0L; private set
+    override var framesElapsed = 0L; private set
+
     private val deltaBuffer = FixedArrayDeque<Duration>(
-        (AVERAGE_FRAMERATE_SPAN_SECONDS / targetDelta.toDouble(DurationUnit.SECONDS)).toInt()
+        (AVERAGE_FRAMERATE_SPAN_SECONDS / targetDeltaTime.toDouble(DurationUnit.SECONDS)).toInt()
     )
 
     private lateinit var timeStart: ComparableTimeMark
-    private var timeLast = Duration.ZERO
+    private lateinit var timeLast: ComparableTimeMark
     private var frameTime = Duration.ZERO
-    private var delta = Duration.ZERO
-
-    @OptIn(ExperimentalAtomicApi::class)
-    private val timerTime = AtomicReference<Duration>(Duration.ZERO)
-    private var timerPaused = false
-    private var averageFPS = 0.0
-
-    private var totalFrames = 0L
-    private var localFrames = 0L
 
     private var isStarted = false
 
     override fun start() {
         if (isStarted) throw IllegalStateException("Pacer was already started")
 
-        timeStart = TimeSource.Monotonic.markNow()
+        timeStart = markNow()
+        timeLast = markNow()
         isStarted = true
     }
 
     override fun nextFrame() {
         if (!isStarted) throw IllegalStateException("Pacer must be started before call to nextFrame")
 
-        val now = timeStart.elapsedNow()
-        frameTime = now - timeLast
+        frameTime = timeLast.elapsedNow()
 
-        val timeout = max((targetDelta - frameTime - SPINLOCK_WINDOW).toLong(NANOSECONDS), 0).nanoseconds
+        val timeout = max((targetDeltaTime - frameTime - SPINLOCK_WINDOW).toLong(NANOSECONDS), 0).nanoseconds
         //TODO probably create mpp blocking thingamajig
-        LockSupport.parkNanos(timeout);
-        while ((getNanoTime() - timeLast) < targetDelta) {
+        LockSupport.parkNanos(timeout.inWholeNanoseconds)
+        @Suppress("ControlFlowWithEmptyBody")
+        while (timeLast.elapsedNow() < targetDeltaTime) {
         }
 
-        long now = getNanoTime();
-        delta = (now - timeLast);
-        if (!timerPaused) timerTime.addAndGet(delta);
+        deltaTime = timeLast.elapsedNow()
+        if (!isTimerPaused) timerTime += deltaTime
 
-        updateAverageFPS(delta);
-        timeLast = now;
+        updateAverageFPS(deltaTime)
+        timeLast = markNow()
 
-        incrementFrameCounters();
+        incrementFrameCounters()
     }
 
-    private void updateAverageFPS(long newDelta) {
-        deltaBuffer.push(newDelta);
+    private fun updateAverageFPS(newDelta: Duration) {
+        deltaBuffer.add(newDelta)
 
-        averageFPS = NANO_FACTOR / deltaBuffer.stream()
-                .mapToLong(value -> value)
-                .average()
-                .orElse(0);
+        averageFPS = deltaBuffer
+            .map { it.toDouble(DurationUnit.SECONDS) }
+            .average()
     }
 
-    @Override
-    public double getDeltaTimeSeconds() {
-        return (double) delta / NANO_FACTOR;
+    override fun pauseTimer() {
+        isTimerPaused = true
     }
 
-    @Override
-    public double getSecondsElapsedTotal() {
-        return (double) getNanoTime() / NANO_FACTOR;
+    override fun resumeTimer() {
+        isTimerPaused = false
     }
 
-    @Override
-    public void pauseTimer() {
-        this.timerPaused = true;
+    override fun resetTimer() {
+        timerTime = Duration.ZERO
     }
 
-    @Override
-    public void resumeTimer() {
-        this.timerPaused = false;
+    override fun resetFrameCounter() {
+        framesElapsed = 0
     }
 
-    @Override
-    public boolean isPaused() {
-        return this.timerPaused;
-    }
+    private fun getNanoTime(): Duration = System.nanoTime().nanoseconds
 
-    @Override
-    public void resetTimer() {
-        this.timerTime.set(0L);
-    }
-
-    @Override
-    public double getTime() {
-        return (double) this.timerTime.get() / NANO_FACTOR;
-    }
-
-    @Override
-    public double getAverageFPS() {
-        return averageFPS;
-    }
-
-    @Override
-    public long getTotalFramesElapsed() {
-        return totalFrames;
-    }
-
-    @Override
-    public long getFramesElapsed() {
-        return localFrames;
-    }
-
-    @Override
-    public void resetFrameCounter() {
-        localFrames = 0;
-    }
-
-    @Override
-    public double getTargetDeltaTime() {
-        return (double) targetDelta / NANO_FACTOR;
-    }
-
-    @Override
-    public synchronized void setTargetDeltaTime(double targetDeltaSeconds) {
-        this.targetDelta = (long) (targetDeltaSeconds * NANO_FACTOR);
-    }
-
-    private fun getNanoTime() {
-        return System.nanoTime();
-    }
-
-    private synchronized void incrementFrameCounters() {
-        totalFrames++;
-        localFrames++;
+    private /*synchronized*/ fun incrementFrameCounters() {
+        framesElapsed++
+        totalFramesElapsed++
     }
 
 }

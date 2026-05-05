@@ -13,7 +13,6 @@ import io.github.etieskrill.injection.extension.shader.vec4
 import org.etieskrill.engine.entity.Entity
 import org.etieskrill.engine.entity.component.Drawable
 import org.etieskrill.engine.entity.component.Transform
-import org.etieskrill.engine.entity.getComponent
 import org.etieskrill.engine.entity.service.Service
 import org.etieskrill.engine.graphics.Renderer
 import org.etieskrill.engine.graphics.camera.Camera
@@ -61,7 +60,7 @@ class DeferredRenderService(
     private val deferredShader = DeferredShader()
     private val deferredPipeline = PostPassPipeline(deferredShader, screenBuffer)
 
-    override fun canProcess(entity: Entity) = entity.hasComponents2<Transform, Drawable>()
+    override fun canProcess(entity: Entity) = entity.hasComponents<Transform, Drawable>()
 
     override fun preProcess(delta: Double, entities: List<Entity>) {
         gBuffer.clear()
@@ -172,9 +171,6 @@ class DeferredShader : PureShaderBuilder<VertexData, ColourRenderTarget>(
         }
     }
 }
-
-private inline fun <reified T1> Entity.hasComponents() = hasComponents(T1::class.java)
-private inline fun <reified T1, reified T2> Entity.hasComponents2() = hasComponents(T1::class.java, T2::class.java)
 
 private fun bufferTexture(size: Vector2ic, block: Texture2D.BlankBuilder.() -> Unit) =
     (Texture2D.BlankBuilder(size)

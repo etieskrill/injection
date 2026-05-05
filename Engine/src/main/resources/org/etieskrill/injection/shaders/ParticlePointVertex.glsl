@@ -2,7 +2,7 @@
 
 uniform struct Camera {
     mat4 view;
-    mat4 perspective;
+    mat4 projection;
     mat4 combined;
 } camera;
 

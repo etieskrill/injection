@@ -10,6 +10,7 @@ import org.etieskrill.engine.graphics.camera.OrthographicCamera
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
 import org.etieskrill.engine.graphics.texture.AbstractTexture.Wrapping
 import org.etieskrill.engine.graphics.texture.Texture2D
+import org.etieskrill.engine.input.KeyInputHandler
 import org.etieskrill.engine.input.Keys
 import org.etieskrill.engine.input.MouseGestureHandler
 import org.etieskrill.engine.scene.Node.Alignment
@@ -18,7 +19,7 @@ import org.etieskrill.engine.scene.container.VBox
 import org.etieskrill.engine.scene.element.Button
 import org.etieskrill.engine.scene.element.Label
 import org.etieskrill.engine.window.Cursor
-import org.etieskrill.engine.window.window
+import org.etieskrill.engine.window.Window
 import org.joml.Vector2d
 import org.joml.Vector2f
 import org.joml.Vector2i
@@ -33,12 +34,14 @@ fun main() {
     App().run()
 }
 
-class App : org.etieskrill.engine.application.App(window {
-    resizeable = true
-    cursor = Cursor.getDefault(Cursor.CursorShape.RESIZE_ALL)
-    refreshRate = 10000
+class App : org.etieskrill.engine.application.App(
+    Window(
+        resizeable = true,
+        cursor = Cursor(Cursor.CursorShape.RESIZE_ALL),
+        refreshRate = 10000u,
     transparency = true
-}) {
+    )
+) {
     var wrapping: TextureWrapping = TextureWrapping.NONE
         set(value) {
             field = value
@@ -56,7 +59,7 @@ class App : org.etieskrill.engine.application.App(window {
     val shader: TextureWrappingShader = TextureWrappingShader()
     val dummyVAO: Int = glGenVertexArrays()
 
-    val textureOffset: Vector2d = Vector2d(-Vector2i(window.currentSize) / 2 + Vector2i(100))
+    val textureOffset: Vector2d = Vector2d(-Vector2i(window.size) / 2 + Vector2i(100))
     val textureSize = Vector2f(200f)
 
     val fpsLabel = Label()
@@ -65,14 +68,14 @@ class App : org.etieskrill.engine.application.App(window {
     init {
         wrapping = TextureWrapping.NONE
 
-        window.addKeyInputs { type, key, action, modifiers ->
+        window.keyInputs += KeyInputHandler { type, key, action, modifiers ->
             if (key == Keys.E.input.value && action == 1) nextMode()
             else if (key == Keys.Q.input.value && action == 1) previousMode()
-            else return@addKeyInputs true
+            else return@KeyInputHandler true
             false
         }
 
-        window.addCursorInputs(object : MouseGestureHandler() {
+        window.cursorInputs += object : MouseGestureHandler() {
             override fun invokeDrag(deltaX: Double, deltaY: Double, posX: Double, posY: Double): Boolean {
                 textureOffset.x += deltaX
                 textureOffset.y += deltaY
@@ -83,10 +86,10 @@ class App : org.etieskrill.engine.application.App(window {
                 textureSize.add((deltaY.toFloat() / 20) * textureSize.x, (deltaY.toFloat() / 20) * textureSize.y)
                 return true
             }
-        })
+        }
 
         window.scene = Scene(
-            Batch(screenBuffer, renderer, window.currentSize),
+            Batch(window.screenBuffer, renderer),
             VBox(
                 fpsLabel,
                 modeLabel,
@@ -114,7 +117,7 @@ class App : org.etieskrill.engine.application.App(window {
 //                    }.apply { alignment = Alignment.BOTTOM_RIGHT }
 //                ).apply { alignment = Node.Alignment.BOTTOM }
             ),
-            OrthographicCamera(window.size.vec),
+            OrthographicCamera(window.size),
         )
     }
 
@@ -132,7 +135,7 @@ class App : org.etieskrill.engine.application.App(window {
         glBindVertexArray(dummyVAO)
         shader.start()
         shader.targetTexture = texture
-        shader.windowSize = window.currentSize
+        shader.windowSize = window.size
         shader.offset = Vector2f(textureOffset)
         shader.targetTextureSize = textureSize
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)

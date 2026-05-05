@@ -11,7 +11,6 @@ import org.etieskrill.engine.scene.element.Checkbox
 import org.etieskrill.engine.scene.element.Label
 import org.etieskrill.engine.scene.element.TextField
 import org.etieskrill.engine.util.ResourceReader
-import org.etieskrill.engine.window.window
 import org.joml.Vector4f
 import org.lwjgl.BufferUtils
 import org.lwjgl.system.MemoryUtil.*
@@ -26,9 +25,7 @@ fun main() {
     Noteify.run()
 }
 
-object Noteify : App(window {
-    resizeable = true
-}) {
+object Noteify : App() {
 
     private var openFile: String? = null
     private var changed = false
@@ -52,6 +49,8 @@ object Noteify : App(window {
     }
 
     init {
+        window.resizeable = true
+
         val textField = TextField(pacer).apply {
             changeCallback = { changed = true }
             scaleMode = ScaleMode.GROW
@@ -93,7 +92,7 @@ object Noteify : App(window {
         window.scene = Scene(
             Batch(screenBuffer, renderer),
             root,
-            OrthographicCamera(window.currentSize)
+            OrthographicCamera(window.size)
         )
     }
 

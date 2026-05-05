@@ -8,8 +8,11 @@ import org.etieskrill.engine.scene.minNodeSize
 import kotlin.math.max
 
 open class VBox(
-    vararg children: Node<*>
-) : Stack(*children) {
+    children: List<Node<*>>
+) : Stack(children) {
+
+    constructor(vararg children: Node<*>) : this(children.toList())
+    constructor() : this(mutableListOf())
 
     override fun computeBoundingBox() {
         var width = 0f

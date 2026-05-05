@@ -1,14 +1,18 @@
 package org.etieskrill.game.horde3d
 
 import org.etieskrill.engine.graphics.model.Model
-import org.etieskrill.engine.input.*
+import org.etieskrill.engine.input.CursorInputAdapter
+import org.etieskrill.engine.input.CursorInputHandler
+import org.etieskrill.engine.input.KeyInputHandler
+import org.etieskrill.engine.input.Keys
+import org.etieskrill.engine.input.OverruleGroup
 import org.etieskrill.engine.time.SystemNanoTimePacer
 import org.etieskrill.engine.window.Window
-import org.etieskrill.engine.window.window
+import kotlin.time.Duration.Companion.seconds
 
-private operator fun Window.plusAssign(cursorInput: CursorInputHandler) = addCursorInputs(cursorInput)
+private operator fun Window.plusAssign(cursorInput: CursorInputHandler) = cursorInputs.plusAssign(cursorInput)
 private infix fun Window.addCursorInput(cursorInput: CursorInputHandler) = plusAssign(cursorInput)
-private operator fun Window.plusAssign(keyInput: KeyInputHandler) = addKeyInputs(keyInput)
+private operator fun Window.plusAssign(keyInput: KeyInputHandler) = keyInputs.plusAssign(keyInput)
 
 fun main() {
     val window = window {
@@ -32,9 +36,9 @@ fun main() {
 
     Model.ofFile("vampire.glb", true)
 
-    val pacer = SystemNanoTimePacer((1 / 60).toDouble())
+    val pacer = SystemNanoTimePacer((1 / 60).toDouble().seconds)
     pacer.start()
-    while (!window.shouldClose()) {
+    while (!window.isClosing) {
         window.update(pacer.deltaTimeSeconds)
         pacer.nextFrame()
     }

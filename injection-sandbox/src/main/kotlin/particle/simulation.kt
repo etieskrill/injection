@@ -146,15 +146,15 @@ object FireSim : App() {
             .withComponent(ParticleNode(listOf(emitter)))
     }
 
-    private var lastTime = pacer.time
+    private var lastTime = pacer.timerTime
     override fun loop(delta: Double) {
         for (particle in container.particles) {
             println(particle.position)
         }
 
-        if (pacer.time - lastTime - 0.1f > 0) {
+        if (pacer.timerTime - lastTime - 0.1f > 0) {
             container.spawn()
-            lastTime = pacer.time
+            lastTime = pacer.timerTime
         }
 
         container.update(delta)

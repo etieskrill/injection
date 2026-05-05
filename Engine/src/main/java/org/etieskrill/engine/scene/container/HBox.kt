@@ -8,10 +8,13 @@ import org.etieskrill.engine.scene.minNodeSize
 import kotlin.math.max
 
 open class HBox(
-    vararg children: Node<*>
-) : Stack(*children) {
+    children: List<Node<*>>
+) : Stack(children) {
 
-    protected override fun computeBoundingBox() {
+    constructor(vararg children: Node<*>) : this(children.toList())
+    constructor() : this(mutableListOf())
+
+    override fun computeBoundingBox() {
         var width = 0f
         var height = 0f
 

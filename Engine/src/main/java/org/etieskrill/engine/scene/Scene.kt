@@ -9,9 +9,10 @@ import org.etieskrill.engine.input.KeyInputHandler
 import org.etieskrill.engine.input.Keys
 import org.etieskrill.engine.input.MouseGestureHandler
 import org.etieskrill.engine.scene.Node.ScaleMode
-import org.joml.Vector2f
+import org.joml.Vector2i
+import org.joml.Vector2ic
 import org.joml.Vector3f
-import org.lwjgl.opengl.GL11C.*;
+import org.lwjgl.opengl.GL11C.*
 
 open class Scene(
     var batch: Batch,
@@ -48,9 +49,9 @@ open class Scene(
         this.camera = camera
     }
 
-    var size = Vector2f(0f)
+    var size: Vector2ic = Vector2i(0)
         set(value) {
-            field.set(value)
+            (field as Vector2i).set(value)
             root.invalidate()
         }
 

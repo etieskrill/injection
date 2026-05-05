@@ -2,11 +2,9 @@ package io.github.etieskrill.games.sails
 
 import org.etieskrill.engine.application.App
 import org.etieskrill.engine.entity.Entity
-import org.etieskrill.engine.entity.getComponent
 import org.etieskrill.engine.entity.system.EntitySystem
 import org.etieskrill.engine.graphics.camera.OrthographicCamera
 import org.etieskrill.engine.window.Window
-import org.etieskrill.engine.window.window
 import org.joml.Math
 import org.joml.Math.toRadians
 import org.joml.Vector2f
@@ -18,12 +16,14 @@ fun main() {
     Game.run()
 }
 
-object Game : App(window {
-    mode = Window.WindowMode.BORDERLESS
-    size = Window.WindowSize.FHD
-    samples = 4
-}) {
-    val camera = OrthographicCamera(window.currentSize * 2)
+object Game : App(
+    Window(
+        mode = Window.WindowMode.BORDERLESS,
+        size = Window.WindowSize.FHD,
+        samples = 4u
+    )
+) {
+    val camera = OrthographicCamera(window.size * 2)
     val player: Entity
 
     init {

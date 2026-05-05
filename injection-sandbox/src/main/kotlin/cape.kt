@@ -1,7 +1,6 @@
 import org.etieskrill.engine.application.App
 import org.etieskrill.engine.entity.Entity
 import org.etieskrill.engine.entity.component.Transform
-import org.etieskrill.engine.entity.getComponent
 import org.etieskrill.engine.entity.service.Service
 import org.etieskrill.engine.graphics.Renderer
 import org.etieskrill.engine.graphics.camera.Camera
@@ -15,7 +14,6 @@ import org.etieskrill.engine.input.controller.CursorCameraController
 import org.etieskrill.engine.input.controller.KeyCameraController
 import org.etieskrill.engine.time.LoopPacer
 import org.etieskrill.engine.window.Window
-import org.etieskrill.engine.window.window
 import org.joml.Vector3f
 import org.joml.minus
 import org.joml.minusAssign
@@ -55,13 +53,13 @@ class ClothPhysicsService(val pacer: LoopPacer) : Service {
             val gravity = Vector3f(0f, -10f, 0f)
 
             val noise = stb_perlin_noise3(
-                pacer.time.toFloat() + point.position.x,
-                pacer.time.toFloat() + point.position.y,
+                pacer.timerTimeSeconds.toFloat() + point.position.x,
+                pacer.timerTimeSeconds.toFloat() + point.position.y,
                 0f, 0, 0, 0
             )
             val windAmp = 2 * (stb_perlin_noise3(
-                5f * pacer.time.toFloat() + point.position.x,
-                5f * pacer.time.toFloat() + point.position.y,
+                5f * pacer.timerTimeSeconds.toFloat() + point.position.x,
+                5f * pacer.timerTimeSeconds.toFloat() + point.position.y,
                 0f, 0, 0, 0
             ) + 1f)
             val windStr = (noise + 1f) / 2f
@@ -133,10 +131,12 @@ class ClothRenderService(val renderer: Renderer, val camera: Camera) : Service {
     }
 }
 
-object Cape : App(window {
-    size = Window.WindowSize.LARGEST_FIT
+object Cape : App(
+    Window(
+        size = Window.WindowSize.LARGEST_FIT,
     mode = Window.WindowMode.BORDERLESS
-}) {
+    )
+) {
     init {
         val points = mutableListOf<MutableList<ClothPoint>>()
         for (y in 0..height) {
@@ -162,7 +162,7 @@ object Cape : App(window {
             .withComponent(Transform())
             .withComponent(ClothCollider(points.flatten()))
 
-        val camera = PerspectiveCamera(window.currentSize).apply {
+        val camera = PerspectiveCamera(window.size).apply {
             setOrbit(true)
             setOrbitDistance(3f)
         }
@@ -174,8 +174,8 @@ object Cape : App(window {
         // - profit
         // - find out about standards for cloak rigs, if any
 
-        window.addKeyInputs(KeyCameraController(camera))
-        window.addCursorInputs(CursorCameraController(camera))
+        window.keyInputs += KeyCameraController(camera)
+        window.cursorInputs += CursorCameraController(camera)
         window.cursor.disable()
     }
 

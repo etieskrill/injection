@@ -4,7 +4,6 @@ import org.etieskrill.engine.entity.Entity
 import org.etieskrill.engine.entity.component.DirectionalLightComponent
 import org.etieskrill.engine.entity.component.Drawable
 import org.etieskrill.engine.entity.component.Transform
-import org.etieskrill.engine.entity.getComponent
 import org.etieskrill.engine.entity.service.impl.DirectionalShadowMappingService
 import org.etieskrill.engine.entity.service.impl.PointShadowMappingService
 import org.etieskrill.engine.entity.service.impl.RenderService
@@ -36,6 +35,7 @@ import org.etieskrill.engine.graphics.texture.Texture2D
 import org.etieskrill.engine.input.CursorInputAdapter
 import org.etieskrill.engine.input.Input
 import org.etieskrill.engine.input.Key
+import org.etieskrill.engine.input.KeyInputHandler
 import org.etieskrill.engine.input.Keys
 import org.etieskrill.engine.input.controller.CursorCameraController
 import org.etieskrill.engine.input.controller.KeyCameraController
@@ -44,7 +44,6 @@ import org.etieskrill.engine.scene.container.Container
 import org.etieskrill.engine.scene.element.Label
 import org.etieskrill.engine.util.Loaders
 import org.etieskrill.engine.window.Window
-import org.etieskrill.engine.window.window
 import org.joml.AxisAngle4f
 import org.joml.Quaternionf
 import org.joml.Vector2d
@@ -73,14 +72,16 @@ fun main() {
     Leverage().run()
 }
 
-class Leverage : org.etieskrill.engine.application.App(window {
-    size = Window.WindowSize.LARGEST_FIT
-    mode = Window.WindowMode.BORDERLESS
-    samples = 4
+class Leverage : org.etieskrill.engine.application.App(
+    Window(
+        size = Window.WindowSize.LARGEST_FIT,
+        mode = Window.WindowMode.BORDERLESS,
+        samples = 4u,
     vSync = true
-}) {
+    )
+) {
 
-    val camera = PerspectiveCamera(window.currentSize).apply {
+    val camera = PerspectiveCamera(window.size).apply {
         setOrbit(true)
         setOrbitDistance(10f)
         setFar(50f)
@@ -95,17 +96,17 @@ class Leverage : org.etieskrill.engine.application.App(window {
         2,
         PipelineConfig(alphaMode = AlphaMode.SOURCE_ALPHA, primitiveType = PrimitiveType.LINES),
         LineShader(),
-        null
+        window.screenBuffer
     )
 
     var lastRay: Rayf? = null
     var selectedEntity: Entity? = null
 
-    val comPipeline = PostPassPipeline(ScreenSpacePointShader(), null, false, false)
+    val comPipeline = PostPassPipeline(ScreenSpacePointShader(), window.screenBuffer, false, false)
 
     val statusLabel: Label
 
-    val cursorPipeline = PostPassPipeline(BlitShader(), null, opaque = false, depthTest = false)
+    val cursorPipeline = PostPassPipeline(BlitShader(), window.screenBuffer, opaque = false, depthTest = false)
     val translateCursorImage = Texture2D.FileBuilder("textures/cursors/Hyper_Arrows_Move.png")
         .setMipMapping(MinFilter.NEAREST, MagFilter.NEAREST)
         .build()
@@ -127,7 +128,7 @@ class Leverage : org.etieskrill.engine.application.App(window {
             cullingMode = CullingMode.NONE,
             depthTest = false,
             writeDepth = false,
-        ), GridShader(), null
+        ), GridShader(), window.screenBuffer
     )
 
     init {
@@ -188,21 +189,21 @@ class Leverage : org.etieskrill.engine.application.App(window {
 
         entitySystem.addService(DirectionalShadowMappingService(renderer))
         entitySystem.addService(PointShadowMappingService(renderer, DepthCubeMapArrayShader()))
-        entitySystem.addService(RenderService(renderer, camera, window.currentSize).apply {
+        entitySystem.addService(RenderService(window.screenBuffer, renderer, camera, window.size).apply {
             skybox = CubeMapModel("textures/cubemaps/space")
         })
 
-        window.addKeyInputs(KeyCameraController(camera))
+        window.keyInputs += KeyCameraController(camera)
         cursorCameraController = CursorCameraController(camera).apply { disable() }
-        window.addCursorInputs(cursorCameraController)
+        window.cursorInputs += cursorCameraController
 
         cursorCameraTranslationController = CursorCameraTranslationController(camera).apply { enabled = false }
-        window.addCursorInputs(cursorCameraTranslationController)
+        window.cursorInputs += cursorCameraTranslationController
 
-        window.addCursorInputs(object : CursorInputAdapter {
-            override fun invokeClick(button: Key?, action: Keys.Action?, posX: Double, posY: Double): Boolean {
-                if (button!!.value == Keys.MIDDLE_MOUSE.input.value) {
-                    when (action!!) {
+        window.cursorInputs += object : CursorInputAdapter {
+            override fun invokeClick(button: Key, action: Keys.Action, posX: Double, posY: Double): Boolean {
+                if (button.value == Keys.MIDDLE_MOUSE.input.value) {
+                    when (action) {
                         Keys.Action.PRESS -> cursorCameraController.enable()
                         Keys.Action.RELEASE -> cursorCameraController.disable()
                         Keys.Action.REPEAT -> {}
@@ -234,9 +235,9 @@ class Leverage : org.etieskrill.engine.application.App(window {
 
                 return false
             }
-        })
+        }
 
-        window.addKeyInputs(
+        window.keyInputs +=
             Input.of(
                 Input.bind(Keys.G).to { delta -> transform(TransformMode.TRANSLATE, translateController) },
                 Input.bind(Keys.R).to { delta -> transform(TransformMode.ROTATE, rotateController) },
@@ -247,14 +248,14 @@ class Leverage : org.etieskrill.engine.application.App(window {
                     )
                 }, //FIXME not needed for simple animation
                 Input.bind(Keys.ESC).to { delta -> cancel() }
-            ))
+            )
 
-        window.addCursorInputs(translateController)
-        window.addCursorInputs(rotateController)
-        window.addCursorInputs(scaleController)
+        window.cursorInputs += translateController
+        window.cursorInputs += rotateController
+        window.cursorInputs += scaleController
 
-        window.addKeyInputs { type, key, action, modifiers ->
-            if (transformMode != TransformMode.NONE) return@addKeyInputs false
+        window.keyInputs += KeyInputHandler { type, key, action, modifiers ->
+            if (transformMode != TransformMode.NONE) return@KeyInputHandler false
             when (key) {
                 Keys.CTRL.glfwKey -> {
                     if (action != Keys.Action.RELEASE.glfwAction) {
@@ -275,9 +276,9 @@ class Leverage : org.etieskrill.engine.application.App(window {
 
         statusLabel = Label()
         window.scene = Scene(
-            Batch(renderer, window.currentSize),
+            Batch(window.screenBuffer, renderer),
             Container(statusLabel),
-            OrthographicCamera(window.currentSize)
+            OrthographicCamera(window.size)
         )
 
 //        window.scene = Scene(
@@ -301,8 +302,8 @@ class Leverage : org.etieskrill.engine.application.App(window {
             val cursorPosition = window.cursor.position
             window.cursor.enable()
             window.cursor.position = Vector2d(
-                cursorPosition.x mod window.currentSize.x().toDouble(),
-                cursorPosition.y mod window.currentSize.y().toDouble()
+                cursorPosition.x mod window.size.x().toDouble(),
+                cursorPosition.y mod window.size.y().toDouble()
             )
             transformMode = TransformMode.NONE
             return
@@ -401,7 +402,7 @@ class Leverage : org.etieskrill.engine.application.App(window {
                     position = it.cursorPosition - cursorSize.div(2f, Vector2f())
                     size = cursorSize
 
-                    windowSize = Vector2f(window.currentSize)
+                    windowSize = Vector2f(window.size)
                 }
                 renderer.render(cursorPipeline)
             }

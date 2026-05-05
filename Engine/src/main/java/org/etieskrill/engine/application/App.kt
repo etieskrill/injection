@@ -9,11 +9,10 @@ import org.etieskrill.engine.audio.Audio
 import org.etieskrill.engine.common.Disposable
 import org.etieskrill.engine.config.InjectionConfig
 import org.etieskrill.engine.entity.system.EntitySystem
-import org.etieskrill.engine.graphics.gl.framebuffer.FrameBuffer
-import org.etieskrill.engine.graphics.gl.framebuffer.ScreenBuffer
 import org.etieskrill.engine.graphics.gl.renderer.GLRenderer
 import org.etieskrill.engine.graphics.text.TrueTypeFont
 import org.etieskrill.engine.input.Key
+import org.etieskrill.engine.input.KeyInputHandler
 import org.etieskrill.engine.input.Keys
 import org.etieskrill.engine.time.StepTimer
 import org.etieskrill.engine.time.SystemNanoTimePacer
@@ -22,24 +21,23 @@ import org.etieskrill.engine.time.setSystemTimeResolution
 import org.etieskrill.engine.util.FixedArrayDeque
 import org.etieskrill.engine.util.Loaders
 import org.etieskrill.engine.window.Window
-import org.etieskrill.engine.window.window
 import org.lwjgl.glfw.GLFW.glfwTerminate
 import org.lwjgl.opengl.GL.destroy
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
 import kotlin.time.measureTime
 
 private val logger = KotlinLogging.logger {}
 
 abstract class App(
-    protected val window: Window
+    protected val window: Window = Window()
 ) : Disposable {
 
-    protected val pacer = SystemNanoTimePacer(1.0 / window.refreshRate)
+    protected val pacer = SystemNanoTimePacer((1.0 / window.refreshRate.toDouble()).seconds)
 
     protected val renderer = GLRenderer()
-    protected val screenBuffer: FrameBuffer = ScreenBuffer(window.currentSize) //TODO move to Window
 
     protected val entitySystem = EntitySystem()
 
@@ -64,24 +62,22 @@ abstract class App(
         }
     }
 
-    constructor() : this(window())
-
     init {
         timer.start()
 
-        window.addKeyInputs { type, key, _, modifiers ->
-            if (type != Key.Type.KEYBOARD) return@addKeyInputs false
+        window.keyInputs += KeyInputHandler { type, key, _, modifiers ->
+            if (type != Key.Type.KEYBOARD) return@KeyInputHandler false
             if (key == Keys.ESC.glfwKey && modifiers == Keys.Mod.SHIFT.glfwKey
                 || key == Keys.W.glfwKey && modifiers == Keys.Mod.CONTROL.glfwKey
             ) {
-                window.close()
-                return@addKeyInputs true
+                window.isClosing = true
+                return@KeyInputHandler true
             }
 
             false
         }
 
-        window.setUiScope(uiScope)
+        window.uiScope = uiScope
 
         timer.info("Initialised window configuration")
     }
@@ -104,15 +100,15 @@ abstract class App(
     protected open fun internalLoop() {
         setSystemTimeResolution(SYSTEM_TIME_RESOLUTION_MILLIS.milliseconds)
         pacer.start()
-        while (!window.shouldClose()) {
+        while (!window.isClosing) {
             update()
             pacer.nextFrame()
         }
     }
 
     protected fun update() {
-        screenBuffer.clear()
-        screenBuffer.bind()
+        window.screenBuffer.clear()
+        window.screenBuffer.bind()
         renderer.nextFrame()
 
         val cpuTime = measureTime {
@@ -123,7 +119,7 @@ abstract class App(
             window.update(delta)
         }
 
-        cpuTimes.push(cpuTime.toDouble(DurationUnit.SECONDS))
+        cpuTimes.add(cpuTime.toDouble(DurationUnit.SECONDS))
         avgCpuTime = cpuTimes.average()
     }
 
@@ -134,7 +130,7 @@ abstract class App(
     protected fun terminate() {
         dispose()
         resetSystemTimeResolution(SYSTEM_TIME_RESOLUTION_MILLIS.milliseconds)
-        window.close()
+        window.isClosing = true
         window.dispose()
         Loaders.disposeDefaultLoaders()
         TrueTypeFont.disposeLibrary()

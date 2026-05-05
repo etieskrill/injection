@@ -227,6 +227,8 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
             glDisable(GL_LINE_SMOOTH);
         }
 
+        glEnable(GL_BLEND); //it's fucking crazy that blending is disabled by default
+
         int vertexCount;
 
         if (indexed) {
@@ -244,12 +246,12 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
             glDrawArrays(primitiveType, 0, vertexCount);
         }
 
-        renderCalls++;
-        trianglesDrawn += switch (pipeline.getConfig().getPrimitiveType()) {
+        setRenderCalls(getRenderCalls() + 1);
+        setTrianglesDrawn(getTrianglesDrawn() + switch (pipeline.getConfig().getPrimitiveType()) {
             case POINTS, LINES, LINE_STRIP -> 0;
             case TRIANGLES -> vertexCount / 3;
             case TRIANGLE_STRIP -> vertexCount - 2;
-        };
+        });
     }
 
     private static int toGLPolygonMode(DrawMode mode) {
@@ -325,6 +327,8 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
         bindMaterial(mesh.getMaterial(), shader);
         mesh.getVao().bind();
 
+        glEnable(GL_BLEND);
+
         int mode = shader instanceof Shaders.ShowNormalsShader ? GL_POINTS : mesh.getDrawMode().gl();
         if (!instanced) glDrawElements(mode, mesh.getNumIndices(), GL_UNSIGNED_INT, 0);
         else glDrawElementsInstanced(mode, mesh.getNumIndices(), GL_UNSIGNED_INT, 0, numInstances);
@@ -334,9 +338,10 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
 
         resetMaterial(mesh.getMaterial());
 
-        if (mesh.getDrawMode() == Mesh.DrawMode.TRIANGLES)
-            trianglesDrawn += mesh.getNumIndices() / 3;
-        renderCalls++;
+        if (mesh.getDrawMode() == Mesh.DrawMode.TRIANGLES) {
+            setTrianglesDrawn(getTrianglesDrawn() + mesh.getNumIndices() / 3);
+        }
+        setRenderCalls(getRenderCalls() + 1);
     }
 
     private void bindMaterial(Material material, ShaderProgram shader) {

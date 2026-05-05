@@ -2,16 +2,11 @@ package io.github.etieskrill.games.circles
 
 import org.etieskrill.engine.entity.Entity
 import org.etieskrill.engine.entity.component.Transform
-import org.etieskrill.engine.entity.getComponent
 import org.etieskrill.engine.entity.service.Service
 import org.etieskrill.engine.entity.system.EntitySystem
-import org.etieskrill.engine.time.SystemNanoTimePacer
 import org.joml.Vector3f
 import org.joml.Vector3fc
 import org.joml.Vector4f
-import kotlin.collections.component1
-import kotlin.collections.component2
-import kotlin.collections.set
 import kotlin.math.max
 import kotlin.math.min
 
@@ -171,36 +166,36 @@ fun main() {
     }
     entitySystem.addServices(CircleService(visEnvironment), HeatService(environment))
 
-    val cauldron = entitySystem.createEntity()
-        .withComponent(Transform())
-        .withComponent(Heatable(mass = 10f))
+    val cauldron = entitySystem.createEntity {
+        +Transform()
+        +Heatable(mass = 10f)
+    }
 
-    entitySystem.createEntity()
-        .withComponent(Transform())
-        .withComponent(
-            Circle(
-                placedOn = cauldron, visCapacity = 100f, streamUpkeepAbsolute = 1f, streamUpkeepRelative = 0.2f,
-                focalRune = EmitterRune(
-                    "fire", 10f, mapOf(VisType("fire", Vector4f(1f, 0f, 0f, 1f)) to 1f)
-                ) { pos, dir, placedOn ->
-                    placedOn.getComponent<Heatable>()?.apply {
-                        energy += 100
+    entitySystem.createEntity {
+        +Transform()
+        +Circle(
+            placedOn = cauldron, visCapacity = 100f, streamUpkeepAbsolute = 1f, streamUpkeepRelative = 0.2f,
+            focalRune = EmitterRune(
+                "fire", 10f, mapOf(VisType("fire", Vector4f(1f, 0f, 0f, 1f)) to 1f)
+            ) { pos, dir, placedOn ->
+                placedOn.getComponent<Heatable>()?.apply {
+                    energy += 100
+                    return@EmitterRune
+                }
+
+                placedOn.getComponent<Environment>()
+                    ?.apply { //FIXME no idea if this is agreeable with env entity/entities
+                        addHeatEnergy(pos, 100f)
                         return@EmitterRune
                     }
-
-                    placedOn.getComponent<Environment>()
-                        ?.apply { //FIXME no idea if this is agreeable with env entity/entities
-                            addHeatEnergy(pos, 100f)
-                            return@EmitterRune
-                        }
-                },
-                runes = listOf(), numRings = 1, auxRunes = listOf(
-                    listOf(
-                        listOf(auxRuneGebo, auxRuneNauthiz, auxRuneGebo, auxRuneNauthiz, auxRuneGebo, auxRuneNauthiz)
-                    )
+            },
+            runes = listOf(), numRings = 1, auxRunes = listOf(
+                listOf(
+                    listOf(auxRuneGebo, auxRuneNauthiz, auxRuneGebo, auxRuneNauthiz, auxRuneGebo, auxRuneNauthiz)
                 )
             )
         )
+    }
 
 //    val pacer = SystemNanoTimePacer(1.0 / 60.0)
 //    pacer.start()

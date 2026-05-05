@@ -41,7 +41,7 @@ abstract class SuspendApp(window: Window) : App(window) {
     override fun run() = throw UnsupportedOperationException("Call 'runSuspend' instead")
 
     init {
-        window.setUiScope(uiScope) //juuust a little bit disgusting
+        window.uiScope = uiScope
     }
 
     suspend fun runSuspend() {
@@ -50,7 +50,7 @@ abstract class SuspendApp(window: Window) : App(window) {
             withContext(uiDispatcher) { init() }
             timer.info("Initialised application")
             internalLoop()
-            while (!window.shouldClose()) delay(100) //TODO expand to multiwindow etc.
+            while (!window.isClosing) delay(100) //TODO expand to multiwindow etc.
         } catch (e: Exception) {
             logger.error(e) { "Caught application exception" } //TODO better handling and scopes
         } finally {
@@ -64,7 +64,7 @@ abstract class SuspendApp(window: Window) : App(window) {
             setSystemTimeResolution(1.milliseconds)
             pacer.start()
 
-            while (!window.shouldClose()) {
+            while (!window.isClosing) {
                 update()
                 yield()
                 pacer.nextFrame()
