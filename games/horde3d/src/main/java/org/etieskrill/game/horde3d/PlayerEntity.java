@@ -1,12 +1,15 @@
 package org.etieskrill.game.horde3d;
 
+import kotlin.Unit;
 import org.etieskrill.engine.entity.Entity;
 import org.etieskrill.engine.entity.component.*;
 import org.etieskrill.engine.graphics.animation.Animator;
 import org.etieskrill.engine.graphics.animation.NodeFilter;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.util.Loaders;
+import org.jetbrains.annotations.NotNull;
 import org.joml.Math;
+import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 import org.joml.primitives.AABBf;
@@ -37,18 +40,18 @@ public class PlayerEntity extends Entity {
         this.transform = new Transform();
         this.moveForce = new Acceleration(new Vector3f(), 20);
 
-        addComponentNoCheck(transform);
+        addComponent(transform);
 
         boundingBox = new AABBf(-.5f, 0, -.5f, .5f, 2, .5f);
-        addComponentNoCheck(boundingBox);
-        addComponentNoCheck(new WorldSpaceAABB());
+        addComponent(boundingBox);
+        addComponent(new WorldSpaceAABB());
 
         collider = new DynamicCollider();
-        addComponentNoCheck(collider);
-        addComponentNoCheck(new DirectionalForceComponent(new Vector3f(0, -15, 0)));
+        addComponent(collider);
+        addComponent(new DirectionalForceComponent(new Vector3f(0, -15, 0)));
 
-        addComponentNoCheck(moveForce);
-        addComponentNoCheck(new Friction(8f));
+        addComponent(moveForce);
+        addComponent(new Friction(8f));
 
         Model model = Loaders.ModelLoader.get().load("player", () ->
                 new Model.Builder("vampire.glb")
@@ -56,8 +59,8 @@ public class PlayerEntity extends Entity {
                         .optimiseMeshes(10000, 0.01f)
                         .build());
         shader = new VampireShader();
-        Drawable drawable = new Drawable(model, shader);
-        addComponentNoCheck(drawable);
+        Drawable drawable = new Drawable(model, shader, true, false, false, 0.05f, new Vector2f(1f));
+        addComponent(drawable);
 
         animator = new Animator(model);
         animator.add(loadModelAnimations("vampire_idle.glb", model).getFirst());
@@ -70,23 +73,23 @@ public class PlayerEntity extends Entity {
                 .playbackSpeed(1.5)
                 .enabled(false));
         animator.play();
-        addComponentNoCheck(animator);
+        addComponent(animator);
 
         dashState = new DashState(.6f, 5, 20, 100);
-        addComponentNoCheck(dashState);
+        addComponent(dashState);
 
         dashParticles = new DashParticles();
-        addComponentNoCheck(dashParticles.getParticles());
+        addComponent(dashParticles.getParticles());
 
-        addComponentNoCheck(new Scripts(List.of(
+        addComponent(new Scripts(List.of(
                 this::rotatePlayerToHeading,
                 this::updateWalkingTransition,
                 this::updateDashAction
         )));
     }
 
-    private void rotatePlayerToHeading(double delta) {
-        if (moveForce.getForce().x() == 0 && moveForce.getForce().z() == 0) return;
+    private @NotNull Unit rotatePlayerToHeading(double delta) {
+        if (moveForce.getForce().x() == 0 && moveForce.getForce().z() == 0) return Unit.INSTANCE;
 
         float playerRotation = atan2(moveForce.getForce().x(), moveForce.getForce().z());
         playerRotation = normalise(playerRotation);
@@ -96,7 +99,9 @@ public class PlayerEntity extends Entity {
         rotationSmooth -= 5f * (float) delta * diff;
         rotationSmooth = normalise(rotationSmooth);
 
-        transform.applyRotation(quat -> quat.rotationY(rotationSmooth));
+        transform.getRotation().rotationY(rotationSmooth);
+
+        return Unit.INSTANCE;
     }
 
     private float normalise(float angle) {
@@ -105,18 +110,20 @@ public class PlayerEntity extends Entity {
         else return angle;
     }
 
-    private void updateWalkingTransition(double delta) {
+    private @NotNull Unit updateWalkingTransition(double delta) {
         float walkingTransitionDelta = walkingTransition - (moveForce.getForce().equals(0, 0, 0) ? 0 : 1);
         walkingTransition -= 5 * (float) delta * walkingTransitionDelta;
 
         animator.getAnimationMixer().setWeight(0, 1 - walkingTransition);
         animator.getAnimationMixer().setWeight(1, walkingTransition);
+
+        return Unit.INSTANCE;
     }
 
     private final Vector3fc ONE = new Vector3f(1);
     private final Vector3fc DASH_COLOUR = new Vector3f(.005f, 0, .01f);
 
-    private void updateDashAction(double delta) {
+    private @NotNull Unit updateDashAction(double delta) {
         dashState.update((float) delta);
 
         shader.setUniform("material._colour", ONE.lerp(DASH_COLOUR, dashState.getActiveFactor(), new Vector3f()));
@@ -127,6 +134,8 @@ public class PlayerEntity extends Entity {
         dashParticles.getParticles().setSpawnParticles(dashState.isActive());
         boundingBox.center(dashParticles.getParticles().getTransform().getPosition())
                 .add(transform.getPosition());
+
+        return Unit.INSTANCE;
     }
 
     private void updateJumpAction(double delta) {

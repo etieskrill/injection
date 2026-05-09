@@ -2,6 +2,7 @@ package org.etieskrill.engine.graphics.texture;
 
 import io.github.etieskrill.injection.extension.shader.TextureCubeMapArray;
 import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment;
+import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachmentType;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector2ic;
 import org.slf4j.Logger;
@@ -64,8 +65,8 @@ public class CubeMapArrayTexture extends AbstractTexture implements FrameBufferA
     }
 
     @Override
-    public void attach(BufferAttachmentType type) {
-        glFramebufferTexture(GL_FRAMEBUFFER, type.toGLAttachment(), getID(), 0);
+    public void attach(FrameBufferAttachmentType type) {
+        glFramebufferTexture(GL_FRAMEBUFFER, type.getGlAttachmentType(), getID(), 0);
     }
 
     public Integer getLength() {

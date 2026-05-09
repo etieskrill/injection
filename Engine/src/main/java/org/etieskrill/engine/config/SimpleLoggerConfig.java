@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Properties;
 
-import static org.etieskrill.engine.config.ResourcePaths.ENGINE_RESOURCE_PATH;
+import static org.etieskrill.engine.config.ResourcePathsKt.ENGINE_RESOURCE_PATH;
 
 /**
  * A pretty disgusting workaround to the way SLF4J's SimpleLogger resolves properties:

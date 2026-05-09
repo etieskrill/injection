@@ -1,5 +1,6 @@
 package org.etieskrill.game.horde3d;
 
+import kotlin.Unit;
 import org.etieskrill.engine.entity.Entity;
 import org.etieskrill.engine.entity.component.*;
 import org.etieskrill.engine.graphics.animation.Animation;
@@ -9,6 +10,7 @@ import org.etieskrill.engine.graphics.model.loader.Loader;
 import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.util.Loaders.AnimationLoader;
 import org.joml.Math;
+import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.joml.primitives.AABBf;
 
@@ -29,17 +31,17 @@ public class Zombie extends Entity {
         super(id);
 
         transform = new Transform();
-        addComponentNoCheck(transform);
-        addComponentNoCheck(new AABBf(new Vector3f(-.5f, 0, -.5f), new Vector3f(.5f, 2, .5f)));
-        addComponentNoCheck(new WorldSpaceAABB());
+        addComponent(transform);
+        addComponent(new AABBf(new Vector3f(-.5f, 0, -.5f), new Vector3f(.5f, 2, .5f)));
+        addComponent(new WorldSpaceAABB());
 
         Model model = Loaders.ModelLoader.get().load("zombie", () ->
                 new Model.Builder("mixamo_zombie_skinned_walking.glb")
                         .setName("zombie")
                         .optimiseMeshes(5000, 0.01f)
                         .build());
-//        addComponentNoCheck(new Drawable(model, ShaderLoader.get().load("animation_shader", AnimationShader::new))); //FIXME
-        addComponentNoCheck(new Drawable(model, new ZombieShader()));
+//        addComponent(new Drawable(model, ShaderLoader.get().load("animation_shader", AnimationShader::new))); //FIXME
+        addComponent(new Drawable(model, new ZombieShader(), true, false, false, 0.05f, new Vector2f((1f))));
 
         Animator animator = new Animator(model);
         Animation walkingAnimation = AnimationLoader.get().load("zombie_walking", () ->
@@ -48,24 +50,24 @@ public class Zombie extends Entity {
 
         double offset = new Random().nextDouble(0, walkingAnimation.getDurationSeconds());
         animator.play(offset);
-        addComponentNoCheck(animator);
+        addComponent(animator);
 
-        addComponentNoCheck(new DirectionalForceComponent(new Vector3f(0, -15, 0)));
-        addComponentNoCheck(new Friction(8));
+        addComponent(new DirectionalForceComponent(new Vector3f(0, -15, 0)));
+        addComponent(new Friction(8));
         collider = new DynamicCollider();
         collider.setPreviousPosition(transform.getPosition());
-        addComponentNoCheck(collider);
+        addComponent(collider);
 
         acceleration = new Acceleration(new Vector3f(), 20);
-        addComponentNoCheck(acceleration);
+        addComponent(acceleration);
 
-        addComponentNoCheck(new Scripts(List.of(
+        addComponent(new Scripts(List.of(
                 this::rotateToHeading
         )));
     }
 
-    private void rotateToHeading(double delta) {
-        if (acceleration.getForce().x() == 0 && acceleration.getForce().z() == 0) return;
+    private Unit rotateToHeading(double delta) {
+        if (acceleration.getForce().x() == 0 && acceleration.getForce().z() == 0) return Unit.INSTANCE;
 
         float playerRotation = atan2(acceleration.getForce().x(), acceleration.getForce().z());
         playerRotation = normalise(playerRotation);
@@ -75,7 +77,9 @@ public class Zombie extends Entity {
         rotationSmooth -= 5f * (float) delta * diff;
         rotationSmooth = normalise(rotationSmooth);
 
-        transform.applyRotation(quat -> quat.rotationY(rotationSmooth));
+        transform.getRotation().rotationY(rotationSmooth);
+
+        return Unit.INSTANCE;
     }
 
     private float normalise(float angle) {

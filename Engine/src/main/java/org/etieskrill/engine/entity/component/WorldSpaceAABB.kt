@@ -1,6 +1,5 @@
-package org.etieskrill.engine.entity.component;
+package org.etieskrill.engine.entity.component
 
-import org.joml.primitives.AABBf;
+import org.joml.primitives.AABBf
 
-public class WorldSpaceAABB extends AABBf {
-}
+class WorldSpaceAABB : AABBf()

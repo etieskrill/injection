@@ -1,145 +1,155 @@
-package org.etieskrill.game.horde3d;
+package org.etieskrill.game.horde3d
 
-import org.etieskrill.engine.entity.Entity;
-import org.etieskrill.engine.entity.component.*;
-import org.etieskrill.engine.entity.system.EntitySystem;
-import org.etieskrill.engine.graphics.camera.Camera;
-import org.etieskrill.engine.graphics.camera.OrthographicCamera;
-import org.etieskrill.engine.graphics.data.DirectionalLight;
-import org.etieskrill.engine.graphics.data.PointLight;
-import org.etieskrill.engine.graphics.gl.framebuffer.DirectionalShadowMap;
-import org.etieskrill.engine.graphics.gl.framebuffer.PointShadowMapArray;
-import org.etieskrill.engine.graphics.model.Material;
-import org.etieskrill.engine.graphics.model.Model;
-import org.etieskrill.engine.graphics.model.ModelFactory;
-import org.etieskrill.engine.graphics.texture.AbstractTexture;
-import org.etieskrill.engine.graphics.texture.Texture2D;
-import org.etieskrill.engine.graphics.texture.Textures;
-import org.joml.Matrix4fc;
-import org.joml.Vector2f;
-import org.joml.Vector2i;
-import org.joml.Vector3f;
+import org.etieskrill.engine.entity.component.DirectionalLightComponent
+import org.etieskrill.engine.entity.component.Drawable
+import org.etieskrill.engine.entity.component.DynamicCollider
+import org.etieskrill.engine.entity.component.PointLightComponent
+import org.etieskrill.engine.entity.component.StaticCollider
+import org.etieskrill.engine.entity.component.Transform
+import org.etieskrill.engine.entity.component.WorldSpaceAABB
+import org.etieskrill.engine.entity.system.EntitySystem
+import org.etieskrill.engine.graphics.camera.OrthographicCamera
+import org.etieskrill.engine.graphics.data.DirectionalLight
+import org.etieskrill.engine.graphics.data.PointLight
+import org.etieskrill.engine.graphics.gl.framebuffer.DirectionalShadowMap
+import org.etieskrill.engine.graphics.gl.framebuffer.PointShadowMapArray
+import org.etieskrill.engine.graphics.model.Material
+import org.etieskrill.engine.graphics.model.Model
+import org.etieskrill.engine.graphics.model.ModelFactory
+import org.etieskrill.engine.graphics.texture.AbstractTexture
+import org.etieskrill.engine.graphics.texture.AbstractTexture.Type.*
+import org.etieskrill.engine.graphics.texture.Texture2D
+import org.etieskrill.engine.graphics.texture.Textures
+import org.joml.Quaternionf
+import org.joml.Vector2f
+import org.joml.Vector2i
+import org.joml.Vector3f
+import org.joml.timesAssign
+import kotlin.random.Random
 
-import java.util.Random;
+class World(
+    entitySystem: EntitySystem
+) {
 
-import static org.etieskrill.engine.graphics.texture.AbstractTexture.Type.*;
-import static org.etieskrill.game.horde3d.EntityApplication.MODELS;
+    internal val sunLight: DirectionalLight
+    internal val sunTransform: Transform
+    internal lateinit var cubeTransform: Transform
 
-public class World {
+    init {
+        val floorModel = ModelFactory.box(Vector3f(100f, .1f, 100f))
 
-    private DirectionalLight sunLight;
-    private Transform sunTransform;
-    private Transform cubeTransform;
-
-    public World(EntitySystem entitySystem) {
-        init(entitySystem);
-    }
-
-    private void init(EntitySystem entitySystem) {
-        Model floorModel = ModelFactory.box(new Vector3f(100, .1f, 100));
-        Material floorMaterial = floorModel.getNodes().get(2).getMeshes().getFirst().getMaterial();
-        floorMaterial.setProperty(Material.Property.SHININESS, 256f);
-        floorMaterial.getTextures().clear();
-        floorMaterial.getTextures().add(Textures.ofFile("textures/TilesSlateSquare001_COL_2K_METALNESS.png", DIFFUSE));
-        floorMaterial.getTextures().add(Textures.ofFile("textures/TilesSlateSquare001_ROUGHNESS_2K_METALNESS.png", SPECULAR));
-        floorMaterial.getTextures().add(
-                new Texture2D.FileBuilder("textures/TilesSlateSquare001_NRM_2K_METALNESS.png", NORMAL)
+        floorModel.nodes[2].meshes[0].material.apply {
+            setProperty(Material.Property.SHININESS, 256f)
+            textures.apply {
+                clear()
+                add(Textures.ofFile("textures/TilesSlateSquare001_COL_2K_METALNESS.png", DIFFUSE));
+                add(Textures.ofFile("textures/TilesSlateSquare001_ROUGHNESS_2K_METALNESS.png", SPECULAR))
+                add(
+                    Texture2D.FileBuilder("textures/TilesSlateSquare001_NRM_2K_METALNESS.png", NORMAL)
                         .setFormat(AbstractTexture.Format.RGB) //TODO MMMMMMHHHHH select correct format automatically
                         .build()
-        );
-
-        Entity floor = entitySystem.createEntity();
-        Drawable floorDrawable = new Drawable(floorModel);
-        floorDrawable.setTextureScale(new Vector2f(15));
-        floor.withComponent(floorDrawable);
-
-        floor
-                .withComponent(new Transform().setPosition(new Vector3f(0, -1, 0)))
-                .withComponent(floorModel.getBoundingBox())
-                .withComponent(new WorldSpaceAABB())
-                .withComponent(new StaticCollider());
-
-        Model sphere = MODELS.load("sphere", () ->
-                new Model.Builder("Sphere.obj")
-                        .optimiseMeshes(2000, .05f)
-                        .build());
-
-        Entity sun = entitySystem.createEntity();
-        sunLight = new DirectionalLight(new Vector3f(-1), new Vector3f(1f), new Vector3f(5), new Vector3f(5));
-        sun.withComponent(sunLight);
-        sun.withComponent(new Drawable(new Model(sphere)));
-        sunTransform = new Transform().setPosition(new Vector3f(50)).setScale(new Vector3f(.35f));
-        sun.withComponent(sunTransform);
-
-        PointLight light1 = new PointLight(new Vector3f(10, 0, 10),
-                new Vector3f(2, .3f, .25f), new Vector3f(5, 1.5f, 1), new Vector3f(5, 1.5f, 1),
-                1, .14f, .07f);
-        Model lightModel1 = new Model(sphere);
-
-        PointLight light2 = new PointLight(new Vector3f(-10, 0, -10),
-                new Vector3f(2, .3f, .25f), new Vector3f(5, 1.5f, 1), new Vector3f(5, 1.5f, 1),
-                1, .14f, .07f);
-        Model lightModel2 = new Model(sphere);
-
-        MODELS.load("brick-cube", () -> Model.ofFile("brick-cube.obj"));
-        Random random = new Random(69420);
-        for (int i = 0; i < 10; i++) {
-            Model cubeModel = MODELS.get("brick-cube");
-            Entity cube = entitySystem.createEntity();
-            Transform transform = cube.addComponent(new Transform()
-                    .setPosition(new Vector3f(random.nextFloat() * 30 - 15, random.nextFloat() * 3, random.nextFloat() * 30 - 15))
-                    .applyRotation(quat -> quat.rotationAxis((float) (random.nextFloat() * 2 * Math.PI - Math.PI),
-                            new Vector3f(random.nextFloat(), random.nextFloat(), random.nextFloat())
-                                    .mul(2).sub(1, 1, 1)
-                                    .normalize()))
-                    .setScale(3));
-            cube.withComponent(new Drawable(cubeModel))
-                    .withComponent(cubeModel.getBoundingBox())
-                    .withComponent(new WorldSpaceAABB());
-            if (i == 1) {
-                cube.withComponent(new DynamicCollider(new Vector3f(transform.getPosition())));
-            } else {
-                cube.withComponent(new StaticCollider());
+                )
             }
-
-            if (i == 0) cubeTransform = transform;
         }
 
-        DirectionalShadowMap directionalShadowMap = DirectionalShadowMap.generate(new Vector2i(2048));
-        PointShadowMapArray pointShadowMaps = PointShadowMapArray.generate(new Vector2i(1024), 2);
+        entitySystem.createEntity {
+            +Transform(Vector3f(0f, -1f, 0f))
+            +floorModel.boundingBox
+            +WorldSpaceAABB()
+            +StaticCollider()
+            +Drawable(floorModel, textureScale = Vector2f(15f))
+        }
 
-        Camera sunLightCamera = new OrthographicCamera(directionalShadowMap.getSize(), 30, -30, -30, 30)
-                .setFar(40)
-                .setPosition(new Vector3f(10, 20, 10))
-                .setRotation(-45, 135, 0);
-        sun.withComponent(new DirectionalLightComponent(sunLight, directionalShadowMap, sunLightCamera));
+        val sphere = MODELS.load("sphere") {
+            Model.Builder("Sphere.obj")
+                .optimiseMeshes(2000, .05f)
+                .build()
+        }
 
-        final float pointShadowNearPlane = .1f;
-        final float pointShadowFarPlane = 40;
+        sunTransform = Transform(position = Vector3f(50f), scale = Vector3f(.35f))
+        sunLight = DirectionalLight(Vector3f(-1f), Vector3f(1f), Vector3f(5f), Vector3f(5f))
+        val sun = entitySystem.createEntity {
+            +sunTransform
+            +sunLight
+            +Drawable(Model(sphere))
+        }
 
-        Entity pointLight1 = entitySystem.createEntity();
-        pointLight1.withComponent(new Transform().setPosition(light1.getPosition()).setScale(.01f));
-        pointLight1.withComponent(new Drawable(lightModel1));
-        Matrix4fc[] pointLightCombined1 = pointShadowMaps.getCombinedMatrices(pointShadowNearPlane, pointShadowFarPlane, light1);
-        pointLight1.withComponent(new PointLightComponent(light1, pointShadowMaps, 0, pointLightCombined1, pointShadowFarPlane));
+        val light1 = PointLight(
+            Vector3f(10f, 0f, 10f),
+            Vector3f(2f, .3f, .25f), Vector3f(5f, 1.5f, 1f), Vector3f(5f, 1.5f, 1f),
+            1f, .14f, .07f
+        )
+        val lightModel1 = Model(sphere)
 
-        Entity pointLight2 = entitySystem.createEntity();
-        pointLight2.withComponent(new Transform().setPosition(light2.getPosition()).setScale(.01f));
-        pointLight2.withComponent(new Drawable(lightModel2));
-        Matrix4fc[] pointLightCombined2 = pointShadowMaps.getCombinedMatrices(pointShadowNearPlane, pointShadowFarPlane, light2);
-        pointLight2.withComponent(new PointLightComponent(light2, pointShadowMaps, 1, pointLightCombined2, pointShadowFarPlane));
-    }
+        val light2 = PointLight(
+            Vector3f(-10f, 0f, -10f),
+            Vector3f(2f, .3f, .25f), Vector3f(5f, 1.5f, 1f), Vector3f(5f, 1.5f, 1f),
+            1f, .14f, .07f
+        )
+        val lightModel2 = Model(sphere)
 
-    public DirectionalLight getSunLight() {
-        return sunLight;
-    }
+        MODELS.load("brick-cube") { Model.ofFile("brick-cube.obj") }
+        val random = Random(69420)
+        for (i in 0..10) {
+            val transform = Transform(
+                position = Vector3f(
+                    random.nextFloat() * 30f - 15f,
+                    random.nextFloat() * 3f,
+                    random.nextFloat() * 30f - 15f
+                ),
+                rotation = Quaternionf().rotationAxis(
+                    (random.nextFloat() * 2f * Math.PI - Math.PI).toFloat(),
+                    Vector3f(random.nextFloat(), random.nextFloat(), random.nextFloat())
+                        .mul(2f).sub(1f, 1f, 1f)
+                        .normalize()
+                ),
+                scale = Vector3f(3f)
+            )
+            val cubeModel = MODELS.get("brick-cube")!!
+            entitySystem.createEntity {
+                +transform
+                +Drawable(cubeModel)
+                +cubeModel.boundingBox
+                +WorldSpaceAABB()
 
-    public Transform getSunTransform() {
-        return sunTransform;
-    }
+                if (i == 1) {
+                    +DynamicCollider(Vector3f(transform.position))
+                } else {
+                    +StaticCollider()
+                }
+            }
 
-    public Transform getCubeTransform() {
-        return cubeTransform;
+            if (i == 0) cubeTransform = transform
+        }
+
+        val directionalShadowMap = DirectionalShadowMap(Vector2i(2048))
+        val pointShadowMaps = PointShadowMapArray(Vector2i(1024), 2)
+
+        val sunLightCamera = OrthographicCamera(directionalShadowMap.size, 30f, -30f, -30f, 30f).apply {
+            far = 40f
+            position = Vector3f(10f, 20f, 10f)
+            setRotation(-45f, 135f, 0f)
+        }
+        sun.withComponent(DirectionalLightComponent(sunLight, directionalShadowMap, sunLightCamera))
+
+        val pointShadowNearPlane = .1f
+        val pointShadowFarPlane = 40f
+
+        entitySystem.createEntity {
+            +Transform(Vector3f(light1.position)).apply { scale *= 0.01f }
+            +Drawable(lightModel1)
+            val pointLightCombined1 =
+                pointShadowMaps.calculateCombinedMatrices(pointShadowNearPlane, pointShadowFarPlane, light1)
+            +PointLightComponent.withShadowMaps(light1, pointShadowMaps, 0, pointLightCombined1, pointShadowFarPlane)
+        }
+
+        entitySystem.createEntity {
+            +Transform(Vector3f(light2.position)).apply { scale *= 0.01f }
+            +Drawable(lightModel2)
+            val pointLightCombined2 =
+                pointShadowMaps.calculateCombinedMatrices(pointShadowNearPlane, pointShadowFarPlane, light2)
+            +PointLightComponent.withShadowMaps(light2, pointShadowMaps, 1, pointLightCombined2, pointShadowFarPlane)
+        }
     }
 
 }

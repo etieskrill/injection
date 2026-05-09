@@ -12,6 +12,7 @@ import org.etieskrill.engine.window.Window
 import org.etieskrill.engine.window.Window.WindowMode
 import org.etieskrill.engine.window.Window.WindowSize
 import org.joml.Vector2fc
+import org.joml.Vector2i
 import org.joml.Vector2ic
 
 class WindowBuilder(
@@ -88,21 +89,21 @@ fun window(
     val builder = WindowBuilder()
     init(builder)
 
-    val window = Window.builder()
-        .setMode(builder.mode)
-        .setSize(builder.size)
-        .setPosition(builder.position)
-        .setRefreshRate(builder.refreshRate.toFloat())
-        .setVSyncEnabled(builder.vSync)
-        .setSamples(builder.samples)
-        .setResizeable(builder.resizeable)
-        .setTitle(builder.title)
-        .setCursor(builder.cursor)
-        .setKeyInputs(builder.inputs.flatMap { keyInputBuilders -> keyInputBuilders.keyInputs })
-        .setCursorInputs(builder.inputs.flatMap { cursorInputBuilders -> cursorInputBuilders.cursorInputs })
-        .setCreateHidden(builder.createHidden)
-        .setTransparency(builder.transparency)
-        .build()
+    val window = Window(
+        mode = builder.mode,
+        size = builder.size,
+        position = builder.position?.let { Vector2i(it.x().toInt(), it.y().toInt()) },
+        refreshRate = builder.refreshRate.toUInt(),
+        vSync = builder.vSync,
+        samples = builder.samples.toUInt(),
+        resizeable = builder.resizeable,
+        title = builder.title,
+        cursor = builder.cursor ?: Cursor(),
+        createHidden = builder.createHidden,
+        transparency = builder.transparency
+    )
+    builder.inputs.flatMap { it.keyInputs }.forEach { window.keyInputs += it }
+    builder.inputs.flatMap { it.cursorInputs }.forEach { window.cursorInputs += it }
 
     builder.window = window
     return window

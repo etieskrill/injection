@@ -113,7 +113,7 @@ public class Loader {
         String nodeName = aiNode.mName().dataString();
 
         Matrix4fc transformationMatrix = AssimpUtils.fromAI(aiNode.mTransformation());
-        Transform transform = Transform.fromMatrix4f(transformationMatrix);
+        Transform transform = new Transform(transformationMatrix);
 //        if (aiNode.mParent() == null && builder.getInitialTransform() != null) { //FIXME see Model#Model()
 //            transform = new Transform(builder.getInitialTransform()).compose(transform);
 //        }

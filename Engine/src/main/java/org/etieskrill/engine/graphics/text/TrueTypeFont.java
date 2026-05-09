@@ -18,7 +18,6 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.etieskrill.engine.config.ResourcePaths.FONT_PATH;
 import static org.lwjgl.opengl.GL11C.GL_UNPACK_ALIGNMENT;
 import static org.lwjgl.opengl.GL11C.glPixelStorei;
 import static org.lwjgl.util.freetype.FreeType.*;
@@ -42,7 +41,7 @@ public class TrueTypeFont implements Font {
         if (library == 0) initLibrary();
 
         PointerBuffer faceBuffer = BufferUtils.createPointerBuffer(1);
-        ByteBuffer fontFile = ResourceReader.getRawResource(FONT_PATH + file);
+        ByteBuffer fontFile = ResourceReader.getRawResource(file);
         check(FT_New_Memory_Face(library, fontFile, 0, faceBuffer),
                 "Font could not be loaded from file \"" + file + "\"");
 

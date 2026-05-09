@@ -4,6 +4,7 @@ import org.etieskrill.engine.entity.Entity
 import org.etieskrill.engine.entity.component.Drawable
 import org.etieskrill.engine.entity.service.Service
 import org.etieskrill.engine.graphics.animation.Animator
+import kotlin.reflect.KClass
 
 class AnimationService : Service {
 
@@ -18,6 +19,7 @@ class AnimationService : Service {
         drawable.shader?.setUniformArray("boneMatrices", animator.transformMatricesArray)
     }
 
-    override fun runBefore() = setOf(RenderService::class.java)
+    override val runBefore: Set<KClass<out Service>>
+        get() = setOf(RenderService::class)
 
 }

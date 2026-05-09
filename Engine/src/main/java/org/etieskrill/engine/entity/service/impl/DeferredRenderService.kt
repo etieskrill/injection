@@ -17,7 +17,7 @@ import org.etieskrill.engine.entity.service.Service
 import org.etieskrill.engine.graphics.Renderer
 import org.etieskrill.engine.graphics.camera.Camera
 import org.etieskrill.engine.graphics.gl.framebuffer.FrameBuffer
-import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment.BufferAttachmentType
+import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachmentType
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
 import org.etieskrill.engine.graphics.pipeline.PostPassPipeline
 import org.etieskrill.engine.graphics.texture.AbstractTexture
@@ -49,12 +49,14 @@ class DeferredRenderService(
         setType(AbstractTexture.Type.G_DEPTH)
     }
 
-    private val gBuffer = FrameBuffer.Builder(screenBuffer.size)
-        .attach(gPosition, BufferAttachmentType.COLOUR0)
-        .attach(gColour, BufferAttachmentType.COLOUR1)
-        .attach(gNormal, BufferAttachmentType.COLOUR2)
-        .attach(gDepth, BufferAttachmentType.DEPTH)
-        .build()
+    private val gBuffer = FrameBuffer(
+        screenBuffer.size, mapOf(
+            FrameBufferAttachmentType.COLOUR0 to gPosition,
+            FrameBufferAttachmentType.COLOUR1 to gColour,
+            FrameBufferAttachmentType.COLOUR2 to gNormal,
+            FrameBufferAttachmentType.DEPTH to gDepth
+        )
+    )
 
     private val gBufferShader = GBufferShader()
     private val deferredShader = DeferredShader()

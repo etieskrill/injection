@@ -1,13 +1,17 @@
 package org.etieskrill.engine.entity.service.impl;
 
+import kotlin.reflect.KClass;
 import org.etieskrill.engine.entity.Entity;
 import org.etieskrill.engine.entity.component.*;
 import org.etieskrill.engine.entity.service.Service;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 import org.joml.primitives.AABBf;
 
+import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 
 public class PhysicsService implements Service {
 
@@ -25,7 +29,7 @@ public class PhysicsService implements Service {
     }
 
     @Override
-    public void process(Entity targetEntity, List<Entity> entities, double delta) {
+    public void process(@NotNull Entity targetEntity, @NotNull List<? extends @NotNull Entity> entities, double delta) {
         if (firstCall) {
             lastDelta = delta;
             firstCall = false;
@@ -79,7 +83,7 @@ public class PhysicsService implements Service {
         transform.setPosition(newPosition);
     }
 
-    private void solveCollisions(List<Entity> entities,
+    private void solveCollisions(List<? extends Entity> entities,
                                  Entity targetEntity,
                                  Transform transform,
                                  DynamicCollider collider,
@@ -190,6 +194,42 @@ public class PhysicsService implements Service {
             }
         };
 
+    }
+
+    @Override
+    public void preProcess(double delta, @NotNull List<? extends @NotNull Entity> entities) {
+    }
+
+    @Override
+    public void postProcess(@NotNull List<? extends @NotNull Entity> entities) {
+    }
+
+    @Override
+    public @Nullable Comparator<@NotNull Entity> getComparator() {
+        return null;
+    }
+
+    @Override
+    public void entityRemoved(@NotNull Entity entity) {
+    }
+
+    @Override
+    public @NotNull Set<@NotNull KClass<? extends @NotNull Service>> getRunBefore() {
+        return Set.of();
+    }
+
+    @Override
+    public @NotNull Set<@NotNull KClass<? extends @NotNull Service>> getRunAfter() {
+        return Set.of();
+    }
+
+    @Override
+    public int getPriority() {
+        return 0;
+    }
+
+    @Override
+    public void dispose() {
     }
 
 }

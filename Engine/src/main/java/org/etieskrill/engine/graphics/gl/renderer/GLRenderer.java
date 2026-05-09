@@ -17,7 +17,7 @@ import org.etieskrill.engine.graphics.model.*;
 import org.etieskrill.engine.graphics.pipeline.DrawMode;
 import org.etieskrill.engine.graphics.pipeline.Pipeline;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
-import org.etieskrill.engine.util.Loaders;
+import org.etieskrill.engine.util.EngineShaderLoader;
 import org.jetbrains.annotations.Nullable;
 import org.joml.*;
 import org.lwjgl.system.MemoryStack;
@@ -104,13 +104,14 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
 
     @Override
     public void renderBox(Vector3fc position, Vector3fc size, ShaderProgram shader, Matrix4fc combined) {
-        getBoxTransform().setPosition(position).setScale(size);
+        getBoxTransform().getPosition().set(position);
+        getBoxTransform().getScale().set(size);
         _render(getBoxTransform(), getBox(), shader, combined);
     }
 
     //TODO update spec: all factory methods use loaders by default, constructors/builders do not
     @Getter(lazy = true)
-    private static final Shaders.OutlineShader outlineShader = (Shaders.OutlineShader) Loaders.ShaderLoader.get().load("outline", Shaders::getOutlineShader);
+    private static final Shaders.OutlineShader outlineShader = (Shaders.OutlineShader) EngineShaderLoader.INSTANCE.load("outline", Shaders::getOutlineShader);
 
     //TODO add outline & wireframe as flag in render
     public void renderOutline(Model model, ShaderProgram shader, Camera camera) {

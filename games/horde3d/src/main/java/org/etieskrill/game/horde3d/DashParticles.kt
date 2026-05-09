@@ -67,7 +67,7 @@ class DashParticles {
                 riftSparkEmitter,
                 riftShineEmitter
             ),
-            transform = Transform().setPosition(Vector3f(0f, 5f, 0f)),
+            transform = Transform(position = Vector3f(0f, 5f, 0f)),
         )
     }
 

@@ -55,9 +55,17 @@ public class Input {
         public InputBinding to(SimpleAction action) {
             return new InputBinding(binding, trigger, action, group);
         }
+
+        public InputBinding toSimpleAction(SimpleAction action) { //kotlin
+            return to(action);
+        }
     
         public InputBinding to(DeltaAction action) {
             return new InputBinding(binding, trigger, action, group);
+        }
+
+        public InputBinding toDeltaAction(DeltaAction action) { //kotlin
+            return to(action);
         }
     }
     

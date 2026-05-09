@@ -6,6 +6,7 @@ import org.etieskrill.engine.entity.service.Service
 import org.etieskrill.engine.graphics.camera.Camera
 import org.etieskrill.engine.graphics.particle.ParticleNode
 import org.etieskrill.engine.graphics.particle.ParticleRenderer
+import kotlin.reflect.KClass
 
 class ParticleUpdateService : Service {
 
@@ -36,6 +37,7 @@ class ParticleRenderService(
         renderer.renderParticles(node, camera)
     }
 
-    override fun runAfter() = setOf(RenderService::class.java)
+    override val runAfter: Set<KClass<out Service>>
+        get() = setOf(RenderService::class)
 
 }

@@ -13,7 +13,6 @@ import static java.util.Objects.requireNonNull;
 import static org.etieskrill.engine.graphics.gl.GLUtils.DebugSeverity.toDebugSeverity;
 import static org.etieskrill.engine.graphics.gl.GLUtils.DebugSource.toDebugSource;
 import static org.etieskrill.engine.graphics.gl.GLUtils.DebugType.toDebugType;
-import static org.etieskrill.engine.graphics.gl.exception.GLError.toError;
 import static org.lwjgl.opengl.GL11C.glEnable;
 import static org.lwjgl.opengl.GL11C.glGetError;
 import static org.lwjgl.opengl.GL43C.*;
@@ -41,9 +40,9 @@ public final class GLUtils {
         GLCapabilities.initialize();
 
         int error = getError();
-        if (error == GLError.NO_ERROR.gl()) return true;
+        if (error == GLError.NO_ERROR.getGlErrorCode()) return true;
 
-        GLError glError = toError(error);
+        GLError glError = GLError.Companion.fromGL(error);
         logger.warn("{}: {}", header, requireNonNull(glError).getMessage());
         return false;
     }
@@ -75,9 +74,9 @@ public final class GLUtils {
         GLCapabilities.initialize();
 
         int error = getError();
-        if (error == GLError.NO_ERROR.gl()) return true;
+        if (error == GLError.NO_ERROR.getGlErrorCode()) return true;
 
-        GLError glError = toError(error);
+        GLError glError = GLError.Companion.fromGL(error);
         throw exception.apply(header + ": " + requireNonNull(glError).getMessage());
     }
 
@@ -108,7 +107,8 @@ public final class GLUtils {
                         toDebugSource(source),
                         toDebugType(type),
                         memUTF8(message, length));
-                case null -> throw new GLException("Unexpected severity", severity);
+                case null ->
+                        throw new GLException("Unexpected severity", null, null, GLError.Companion.fromGL(severity));
             }
         }, 0L);
 

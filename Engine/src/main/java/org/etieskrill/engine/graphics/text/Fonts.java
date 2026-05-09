@@ -1,14 +1,16 @@
 package org.etieskrill.engine.graphics.text;
 
+import org.etieskrill.engine.util.EngineFontLoader;
 import org.etieskrill.engine.util.FileUtils;
-import org.etieskrill.engine.util.Loaders;
 
 import java.io.IOException;
+
+import static org.etieskrill.engine.config.ResourcePathsKt.FONT_PATH;
 
 public final class Fonts {
 
     public static final int DEFAULT_FONT_SIZE = 24;
-    public static final String DEFAULT_FONT = "AGENCYB.TTF";
+    public static final String DEFAULT_FONT = FONT_PATH + "AGENCYB.TTF";
 
     public static Font getDefault() {
         return getFontOrDefault(DEFAULT_FONT, DEFAULT_FONT_SIZE);
@@ -24,7 +26,7 @@ public final class Fonts {
         if (!"ttf".equalsIgnoreCase(file.getExtension()))
             throw new IllegalArgumentException("Must be TrueType file, but was " + file.getExtension());
 
-        TrueTypeFont generatorFont = (TrueTypeFont) Loaders.FontLoader.get().load(
+        TrueTypeFont generatorFont = (TrueTypeFont) EngineFontLoader.INSTANCE.load(
                 "ttf:%s:%d".formatted(file.getPath().toLowerCase(), pixelHeight), () -> {
                     try {
                         return new TrueTypeFont(file.getFullPath());
@@ -37,7 +39,7 @@ public final class Fonts {
                     }
                 });
 
-        return Loaders.FontLoader.get().load(
+        return EngineFontLoader.INSTANCE.load(
                 "bmp:%s:%d".formatted(file.getPath().toLowerCase(), pixelHeight), () -> {
                     try {
                         return generatorFont.generateBitmapFont(pixelHeight);

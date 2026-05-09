@@ -12,8 +12,8 @@ import org.etieskrill.engine.config.GLContextConfig;
 import org.etieskrill.engine.graphics.gl.shader.impl.MissingShader;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.etieskrill.engine.util.ClassUtils;
+import org.etieskrill.engine.util.EngineShaderLoader;
 import org.etieskrill.engine.util.FileUtils;
-import org.etieskrill.engine.util.Loaders;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.*;
@@ -28,7 +28,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.etieskrill.engine.config.ResourcePaths.SHADER_PATH;
+import static org.etieskrill.engine.config.ResourcePathsKt.SHADER_PATH;
 import static org.etieskrill.engine.graphics.gl.GLUtils.*;
 import static org.etieskrill.engine.graphics.gl.shader.ShaderProgram.ShaderType.*;
 import static org.etieskrill.engine.graphics.gl.shader.ShaderProgram.Uniform.INVALID_UNIFORM_LOCATION;
@@ -48,7 +48,7 @@ public abstract class ShaderProgram implements Disposable,
     public static boolean AUTO_START_ON_VARIABLE_SET = true;
     public static boolean CLEAR_ERROR_BEFORE_SHADER_CREATION = true;
 
-    private static final @Getter(lazy = true) ShaderProgram missingShader = Loaders.ShaderLoader.get()
+    private static final @Getter(lazy = true) ShaderProgram missingShader = EngineShaderLoader.INSTANCE
             .load("missing_shader", () -> new MissingShader()); //FIXME potential class load deadlock
 
     private boolean STRICT_UNIFORM_DETECTION = true;

@@ -1,85 +1,74 @@
-package org.etieskrill.engine.entity.service.impl;
+package org.etieskrill.engine.entity.service.impl
 
-import org.etieskrill.engine.entity.Entity;
-import org.etieskrill.engine.entity.component.Drawable;
-import org.etieskrill.engine.entity.component.PointLightComponent;
-import org.etieskrill.engine.entity.component.Transform;
-import org.etieskrill.engine.entity.service.Service;
-import org.etieskrill.engine.graphics.Renderer;
-import org.etieskrill.engine.graphics.animation.Animator;
-import org.etieskrill.engine.graphics.gl.framebuffer.FrameBuffer;
-import org.etieskrill.engine.graphics.gl.shader.impl.DepthCubeMapArrayShader;
-import org.etieskrill.engine.graphics.gl.shader.impl.DepthCubeMapArrayShaderKt;
-import org.joml.Matrix4f;
-import org.joml.Matrix4fc;
+import org.etieskrill.engine.entity.Entity
+import org.etieskrill.engine.entity.component.Drawable
+import org.etieskrill.engine.entity.component.PointLightComponent
+import org.etieskrill.engine.entity.component.Transform
+import org.etieskrill.engine.entity.service.Service
+import org.etieskrill.engine.graphics.Renderer
+import org.etieskrill.engine.graphics.animation.Animator
+import org.etieskrill.engine.graphics.gl.shader.impl.DepthCubeMapArrayShader
+import org.etieskrill.engine.graphics.gl.shader.impl.farPlane
+import org.etieskrill.engine.graphics.gl.shader.impl.index
+import org.etieskrill.engine.graphics.gl.shader.impl.light
+import org.etieskrill.engine.graphics.gl.shader.impl.shadowCombined
+import org.joml.Matrix4f
+import org.joml.Matrix4fc
 
-import java.util.List;
-import java.util.Objects;
+class PointShadowMappingService(
+    private val renderer: Renderer,
+    private val shader: DepthCubeMapArrayShader
+) : Service {
 
-public class PointShadowMappingService implements Service {
+    private val DUMMY_MATRIX: Matrix4fc = Matrix4f()
 
-    private final Renderer renderer;
-    private final DepthCubeMapArrayShader shader;
+    private val updateFrequency = 2
+    private var cycle = 0
 
-    private static final Matrix4fc DUMMY_MATRIX = new Matrix4f();
+    override fun canProcess(entity: Entity) =
+        entity.hasComponents<PointLightComponent>()
+                && entity.getComponent<PointLightComponent>()!!.shadowMap != null
 
-    private final int updateFrequency = 2;
-    private int cycle = 0;
-
-    public PointShadowMappingService(Renderer renderer, DepthCubeMapArrayShader shader) {
-        this.renderer = renderer;
-        this.shader = shader;
-    }
-
-    @Override
-    public boolean canProcess(Entity entity) {
-        return entity.hasComponents(PointLightComponent.class);
-    }
-
-    @Override
-    public void preProcess(Double delta, List<Entity> entities) {
+    override fun preProcess(delta: Double, entities: List<Entity>) {
         if (++cycle >= updateFrequency) {
-            cycle = 0;
-        } else return;
+            cycle = 0
+        } else return
 
-        entities.stream()
-                .map(entity -> entity.getComponent(PointLightComponent.class))
-                .filter(Objects::nonNull)
-                .map(PointLightComponent::getShadowMap)
-                .filter(Objects::nonNull)
-                .distinct()
-                .forEach(FrameBuffer::clear);
+        entities.mapNotNull { it.getComponent<PointLightComponent>() }
+            .mapNotNull { it.shadowMap }
+            .distinct()
+            .forEach { it.clear() }
     }
 
-    @Override
-    public void process(Entity targetEntity, List<Entity> entities, double delta) {
-        if (cycle != 0) return;
+    override fun process(targetEntity: Entity, entities: List<Entity>, delta: Double) {
+        if (cycle++ != 0) return
 
-        PointLightComponent component = targetEntity.getComponent(PointLightComponent.class);
-        if (component.getShadowMap() == null) return; //TODO resolve by using separate component for shadow maps
+        val component = targetEntity.getComponent<PointLightComponent>()!!
 
-        DepthCubeMapArrayShaderKt.setLight(shader, component.getLight());
-        DepthCubeMapArrayShaderKt.setIndex(shader, component.getShadowMapIndex() != null ? component.getShadowMapIndex() : 0);
-        DepthCubeMapArrayShaderKt.setShadowCombined(shader, (Matrix4f[]) component.getCombinedMatrices());
-        DepthCubeMapArrayShaderKt.setFarPlane(shader, component.getFarPlane() != null ? component.getFarPlane() : 0);
+        shader.apply {
+            light = component.light
+            index = component.shadowMapIndex!!
+            shadowCombined = component.shadowCombinedMatrices!! as Array<Matrix4fc>
+            farPlane = component.shadowFarPlane!!
+        }
 
-        component.getShadowMap().bind();
-        for (Entity entity : entities) {
-            if (entity.getId() == targetEntity.getId()) continue;
+        component.shadowMap!!.bind()
 
-            Transform transform = entity.getComponent(Transform.class);
-            Drawable drawable = entity.getComponent(Drawable.class);
-            if (transform == null || drawable == null) continue;
+        entities.filterNot { it.id == targetEntity.id }
+            .forEach { entity ->
+                val transform = entity.getComponent<Transform>() ?: return@forEach
+                val drawable = entity.getComponent<Drawable>() ?: return@forEach
 
-            Animator animator = entity.getComponent(Animator.class);
-            if (animator != null) {
-                //FIXME actually use animated shader
-                shader.setUniformArrayNonStrict("boneMatrices", animator.getTransformMatricesArray());
+                entity.getComponent<Animator>()?.let { //TODO animated shader
+                    shader.setUniformArrayNonStrict("boneMatrices", it.transformMatricesArray)
+                }
+
+                renderer.render(transform, drawable.model, shader, DUMMY_MATRIX)
             }
 
-            renderer.render(transform, drawable.getModel(), shader, DUMMY_MATRIX);
-        }
-        component.getShadowMap().unbind();
+        component.shadowMap.unbind()
     }
+
+    override fun dispose() = shader.dispose()
 
 }

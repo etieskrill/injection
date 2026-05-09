@@ -31,7 +31,7 @@ import org.etieskrill.engine.graphics.Batch
 import org.etieskrill.engine.graphics.camera.OrthographicCamera
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera
 import org.etieskrill.engine.graphics.gl.framebuffer.FrameBuffer
-import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment.BufferAttachmentType
+import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachmentType
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
 import org.etieskrill.engine.graphics.model.model
 import org.etieskrill.engine.graphics.model.plane
@@ -139,8 +139,8 @@ class SynthwavePlane() : App(
         val renderService = RenderService(window.screenBuffer, renderer, camera, window.size)
         entitySystem.addService(renderService)
         frameBuffer = renderService.frameBuffer
-        frameTexture = renderService.frameBuffer.attachments[BufferAttachmentType.COLOUR0] as Texture2D
-        frameBuffer.setClearColour(Vector4f(0.01f, 0f, 0.02f, 1f))
+        frameTexture = renderService.frameBuffer.attachments[FrameBufferAttachmentType.COLOUR0] as Texture2D
+        frameBuffer.clearColour = Vector4f(0.01f, 0f, 0.02f, 1f)
 
         entitySystem.createEntity {
             +transform

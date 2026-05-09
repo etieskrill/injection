@@ -2,6 +2,7 @@ package org.etieskrill.engine.graphics.texture;
 
 import lombok.Getter;
 import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment;
+import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachmentType;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2i;
 import org.joml.Vector2ic;
@@ -147,8 +148,8 @@ public class Texture2D extends AbstractTexture implements FrameBufferAttachment,
     }
 
     @Override
-    public void attach(BufferAttachmentType type) {
-        glFramebufferTexture2D(GL_FRAMEBUFFER, type.toGLAttachment(), GL_TEXTURE_2D, getID(), 0);
+    public void attach(FrameBufferAttachmentType type) {
+        glFramebufferTexture2D(GL_FRAMEBUFFER, type.getGlAttachmentType(), GL_TEXTURE_2D, getID(), 0);
     }
 
 }

@@ -1,4 +1,4 @@
-package org.etieskrill.engine.entity.service.impl;
+package org.etieskrill.engine.entity.service.impl
 
 import org.etieskrill.engine.entity.Entity
 import org.etieskrill.engine.entity.component.Transform
@@ -9,6 +9,7 @@ import org.etieskrill.engine.graphics.camera.Camera
 import org.etieskrill.engine.graphics.gl.shader.Shaders
 import org.etieskrill.engine.graphics.model.ModelFactory
 import org.joml.Vector3f
+import kotlin.reflect.KClass
 
 class BoundingBoxRenderService(
     val renderer: Renderer,
@@ -37,6 +38,7 @@ class BoundingBoxRenderService(
         renderBoundingBoxes = !renderBoundingBoxes;
     }
 
-    override fun runAfter() = setOf(BoundingBoxService::class.java)
+    override val runAfter: Set<KClass<out Service>>
+        get() = setOf(BoundingBoxService::class)
 
 }

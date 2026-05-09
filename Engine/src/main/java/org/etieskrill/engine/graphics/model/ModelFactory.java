@@ -3,7 +3,7 @@ package org.etieskrill.engine.graphics.model;
 import org.etieskrill.engine.common.ApplicationDisposed;
 import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.graphics.model.loader.MeshLoader;
-import org.etieskrill.engine.util.Loaders;
+import org.etieskrill.engine.util.EngineModelLoader;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.lwjgl.BufferUtils;
@@ -133,9 +133,11 @@ public class ModelFactory {
 
     @ApplicationDisposed
     public static Model box(Vector3f size) {
-        Model baseBox = Loaders.ModelLoader.get().load("internal-model-factory:box", () ->
+        var transform = new Transform();
+        transform.setScale(size);
+        Model baseBox = EngineModelLoader.INSTANCE.load("internal-model-factory:box", () ->
                 new Model.Builder("box.obj")
-                        .setInitialTransform(new Transform().setScale(size)) //FIXME there is no way this works as intended
+                        .setInitialTransform(transform) //FIXME there is no way this works as intended
                         .setCulling(false)
                         .build());
         return new Model(baseBox);
@@ -143,9 +145,11 @@ public class ModelFactory {
 
     @ApplicationDisposed
     public static Model quadBox(Vector3f size) {
-        return Loaders.ModelLoader.get().load("internal-model-loader:quad-box", () ->
+        var transform = new Transform();
+        transform.setScale(size);
+        return EngineModelLoader.INSTANCE.load("internal-model-loader:quad-box", () ->
                 new Model.Builder("quad-box.obj")
-                        .setInitialTransform(new Transform().setScale(size)) //FIXME neither does this
+                        .setInitialTransform(transform) //FIXME neither does this
                         .build());
     }
 

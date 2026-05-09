@@ -23,7 +23,25 @@ class EntitySystem : Disposable {
 
     private var disposed = false
 
+    fun <T : Entity> constructEntity(block: (Int) -> T): T {
+        val entity = block(getNextId())
+        logger.debug { "New entity with id '${entity.id}'" }
+
+        addedEntities += entity
+
+        return entity
+    }
+
     fun createEntity(block: Entity.() -> Unit): Entity {
+        val entity = Entity(getNextId()).apply(block)
+        logger.debug { "New entity with id '${entity.id}'" }
+
+        addedEntities += entity
+
+        return entity
+    }
+
+    private fun getNextId(): Int {
         val nextId = when {
             freeIndices.isNotEmpty() -> freeIndices.removeFirst()
             entities.size + addedEntities.size == nextEntityIndex -> nextEntityIndex++
@@ -32,14 +50,7 @@ class EntitySystem : Disposable {
 
         check(entities.none { it.id == nextId }) { "Tried to create entity with id of an existing entity" }
 
-        val entity = Entity(nextId)
-        logger.debug { "New entity with id '${entity.id}'" }
-
-        entity.apply(block)
-
-        addedEntities += entity
-
-        return entity
+        return nextId
     }
 
     fun entityExists(entity: Entity?): Boolean = entities.contains(entity)
@@ -54,7 +65,7 @@ class EntitySystem : Disposable {
 
     fun addService(service: Service) {
         services += service
-        service.comparator()?.let {
+        service.comparator?.let {
             orderedEntities[service] = mutableListOf()
         }
         createServiceExecutionPlan()
@@ -77,7 +88,7 @@ class EntitySystem : Disposable {
         //TODO processable caching
         serviceExecutionPlan.forEach { service ->
             val entities =
-                (service.comparator()?.let { orderedEntities[service]!!.sortedWith(it) }
+                (service.comparator?.let { orderedEntities[service]!!.sortedWith(it) }
                     ?: this.entities.toList())
 
             service.preProcess(delta, entities)

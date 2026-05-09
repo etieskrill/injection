@@ -12,7 +12,6 @@ import org.etieskrill.engine.input.KeyInputHandler
 import org.etieskrill.engine.input.KeyInputManager
 import org.etieskrill.engine.input.Keys
 import org.etieskrill.engine.scene.Scene
-import org.etieskrill.engine.window.Window.GLFWError.entries
 import org.etieskrill.engine.window.Window.WindowMode.*
 import org.etieskrill.engine.window.Window.WindowSize.DEFAULT
 import org.etieskrill.engine.window.Window.WindowSize.LARGEST_FIT
@@ -158,7 +157,7 @@ class Window(
     val keyInputs: MutableList<KeyInputHandler> = mutableListOf()
     val cursorInputs: MutableList<CursorInputHandler> = mutableListOf()
 
-    private val internalScreenBuffer = ScreenBuffer(Vector2i(size))
+    private lateinit var internalScreenBuffer: ScreenBuffer
     val screenBuffer: FrameBuffer get() = internalScreenBuffer
 
     lateinit var uiScope: CoroutineScope //*extremely loud alarm sound*
@@ -288,7 +287,7 @@ class Window(
         position?.let { this.position = it }
         cursor.window = this
 
-        internalScreenBuffer.size = this.size
+        internalScreenBuffer = ScreenBuffer(Vector2i(this.size))
 
 //        glfwSetErrorCallback(null);
     }

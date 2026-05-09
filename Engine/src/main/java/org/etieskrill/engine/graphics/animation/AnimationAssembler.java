@@ -37,11 +37,14 @@ public final class AnimationAssembler {
         if (bone != null)
             localTransform = boneLocalTransforms.get(bone.id());
 
-        TransformC nodeTransform = transform.apply(localTransform, transformPool.get(currentTransform++));
+        var nodeTransform = transformPool.get(currentTransform++);
+        nodeTransform.set(transform);
+        nodeTransform.apply(localTransform);
+
         if (bone != null) {
-            boneLocalTransforms.get(bone.id())
-                    .set(nodeTransform)
-                    .apply(bone.offset());
+            var boneLocalTransform = boneLocalTransforms.get(bone.id());
+            boneLocalTransform.set(nodeTransform);
+            boneLocalTransform.apply(bone.offset());
         }
 
         for (Node child : node.getChildren())

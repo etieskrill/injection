@@ -1,217 +1,147 @@
-package org.etieskrill.engine.graphics.gl.framebuffer;
+package org.etieskrill.engine.graphics.gl.framebuffer
 
-import kotlin.Deprecated;
-import lombok.Getter;
-import org.etieskrill.engine.common.Disposable;
-import org.etieskrill.engine.graphics.gl.GLUtils;
-import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment.BufferAttachmentType;
-import org.etieskrill.engine.graphics.texture.Texture2D;
-import org.etieskrill.engine.graphics.texture.Textures;
-import org.jetbrains.annotations.Nullable;
-import org.joml.Vector2ic;
-import org.joml.Vector4f;
-import org.joml.Vector4fc;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.etieskrill.engine.common.Disposable
+import org.etieskrill.engine.graphics.gl.GLUtils
+import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachmentType.*
+import org.joml.Vector2ic
+import org.joml.Vector4f
+import org.lwjgl.opengl.GL20C.glDrawBuffers
+import org.lwjgl.opengl.GL30C.glDeleteFramebuffers
+import org.lwjgl.opengl.GL33C.*
+import kotlin.properties.Delegates.notNull
+import io.github.etieskrill.injection.extension.shader.dsl.FrameBuffer as DslFrameBuffer
 
-import java.util.HashMap;
-import java.util.Map;
+@OptIn(ExperimentalStdlibApi::class)
+open class FrameBuffer internal constructor(
+    override val size: Vector2ic,
+    val attachments: Map<FrameBufferAttachmentType, FrameBufferAttachment>,
+    id: Int
+) : DslFrameBuffer, Disposable {
 
-import static java.util.Objects.requireNonNull;
-import static org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment.BufferAttachmentType.*;
-import static org.lwjgl.opengl.GL33C.*;
+    var clearColour: Vector4f = Vector4f(0f)
+        set(value) {
+            field.set(value)
+        }
 
-public class FrameBuffer implements io.github.etieskrill.injection.extension.shader.dsl.FrameBuffer, Disposable {
+    protected val id = id
 
-    private final int fbo;
-    private final @Getter Vector2ic size;
-    private final @Getter Map<BufferAttachmentType, FrameBufferAttachment> attachments;
-    private final int glBufferClearMask;
-    private final int @Nullable [] glColourDrawBuffers;
-    private final @Getter Vector4f clearColour;
+    protected var glBufferClearMask: Int by notNull()
+    protected var glColourDrawBuffers: IntArray by notNull()
 
-    private static final Logger logger = LoggerFactory.getLogger(FrameBuffer.class);
+    constructor(size: Vector2ic, attachments: Map<FrameBufferAttachmentType, FrameBufferAttachment>)
+            : this(size, attachments, glGenFramebuffers())
 
-    public static FrameBuffer getStandard(Vector2ic size) {
-        // Colour buffer as a texture attachment
-        Texture2D colourBufferTexture = Textures.genBlank(size, Texture2D.Format.RGB);
-
-        // Depth and stencil buffer as a renderbuffer attachment
-        RenderBuffer depthStencilBuffer = new RenderBuffer(size, RenderBuffer.Type.DEPTH_STENCIL);
-
-        return new Builder(size)
-                .attach(colourBufferTexture, COLOUR0)
-                .attach(depthStencilBuffer, DEPTH_STENCIL)
-                .build();
+    init {
+        init()
     }
 
-    public static FrameBuffer getColour(Vector2ic size) {
-        Texture2D colourBufferTexture = Textures.genBlank(size, Texture2D.Format.RGBA);
-        return new Builder(size).attach(colourBufferTexture, COLOUR0).build();
-    }
+    internal open fun init() {
+        GLUtils.clearError()
 
-    public static class Builder {
-        protected Vector2ic size;
-        private final Map<BufferAttachmentType, FrameBufferAttachment> attachments = new HashMap<>();
-
-        public Builder(Vector2ic size) {
-            this.size = size;
-        }
-
-        public Builder attach(FrameBufferAttachment attachment, BufferAttachmentType type) {
-            attachments.put(type, attachment);
-            return this;
-        }
-
-        public FrameBuffer build() {
-            GLUtils.clearError();
-            int glBufferClearMask =
-                    getBufferBit(GL_COLOR_BUFFER_BIT, COLOUR0, COLOUR1, COLOUR2, COLOUR3, COLOUR31)
-                    | getBufferBit(GL_DEPTH_BUFFER_BIT, DEPTH, DEPTH_STENCIL)
-                    | getBufferBit(GL_STENCIL_BUFFER_BIT, STENCIL, DEPTH_STENCIL);
-            int[] glColourDrawBuffers = attachments.keySet().stream()
-                    .filter(attachment -> attachment.toGLAttachment() >= COLOUR0.toGLAttachment()
-                                          && attachment.toGLAttachment() <= COLOUR31.toGLAttachment())
-                    .mapToInt(BufferAttachmentType::toGLAttachment)
-                    .sorted()
-                    .toArray();
-            FrameBuffer frameBuffer = new FrameBuffer(requireNonNull(size), glBufferClearMask, glColourDrawBuffers);
-            addAttachments(frameBuffer);
-            return frameBuffer;
-        }
-
-        private int getBufferBit(int bitFlag, BufferAttachmentType... attachmentTypes) {
-            for (BufferAttachmentType attachmentType : attachmentTypes) {
-                if (attachments.containsKey(attachmentType)) {
-                    return bitFlag;
-                }
-            }
-            return 0;
-        }
-
-        /**
-         * This method may only be called after a framebuffer object has been generated.
-         */
-        protected void addAttachments(FrameBuffer frameBuffer) {
-            frameBuffer.bind();
-            for (BufferAttachmentType type : attachments.keySet()) {
-                FrameBufferAttachment attachment = attachments.get(type);
-                if (attachment == null) continue;
-                if (!attachment.getSize().equals(this.size)) {
-                    logger.warn("Skipping attachment because sizes do not match; buffer size: {}, attachment size: {}",
-                            this.size, attachment.getSize());
-                    continue;
-                }
-
-                attachment.attach(type);
-
-                //FIXME this could be anything from improperly sized attachments to any other attribute not matching
-                // exactly, so either exercise VERY strict validation before/during/after attaching, or find a way to
-                // get any sort of logs
-                if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT) {
-                    throw new FrameBufferCreationException("Incomplete framebuffer attachment for " +
-                                                           type.name() + ": " + attachment);
-                }
+        glBindFramebuffer(GL_FRAMEBUFFER, id)
+        attachments.forEach { (type, attachment) ->
+            require(attachment.size == size) {
+                "Framebuffer attachment size for ${attachment::class.simpleName} bound to slot $type (${
+                    attachment.size
+                }) does not match framebuffer size ($size)"
             }
 
-            int ret;
-            if ((ret = glCheckFramebufferStatus(GL_FRAMEBUFFER)) != GL_FRAMEBUFFER_COMPLETE) {
-                var message = switch (ret) {
-                    case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT -> "Incomplete attachment";
-                    case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT -> "Missing attachment";
-                    case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER -> "Incomplete draw buffer";
-                    case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER -> "Incomplete read buffer";
-                    case GL_FRAMEBUFFER_UNSUPPORTED -> "Unsupported framebuffer";
-                    case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE -> "Incomplete multisample buffer";
-                    case GL_FRAMEBUFFER_UNDEFINED -> "Undefined framebuffer";
-                    default -> "Unknown framebuffer error: " + ret;
-                };
-                throw new FrameBufferCreationException("Framebuffer was not successfully completed: " + message);
+            attachment.attach(type)
+
+            //FIXME this could be anything from improperly sized attachments to any other attribute not matching
+            // exactly, so either exercise VERY strict validation before/during/after attaching, or find a way to
+            // get any sort of logs
+            if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT) {
+                error("Incomplete framebuffer attachment for $type: $attachment")
             }
-
-            GLUtils.checkErrorThrowing("Error during framebuffer creation");
-
-            frameBuffer.getAttachments().putAll(attachments);
         }
-    }
 
-    protected FrameBuffer(Vector2ic size, int glBufferClearMask) {
-        this(size, glBufferClearMask, null);
-    }
+        when (val ret = glCheckFramebufferStatus(GL_FRAMEBUFFER)) {
+            GL_FRAMEBUFFER_COMPLETE -> null
+            GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT -> "an incomplete attachment"
+            GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT -> "a missing attachment"
+            GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER -> "an incomplete draw buffer"
+            GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER -> "an incomplete read buffer"
+            GL_FRAMEBUFFER_UNSUPPORTED -> "an unsupported framebuffer"
+            GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE -> "an incomplete multisample buffer"
+            GL_FRAMEBUFFER_UNDEFINED -> "an undefined framebuffer"
+            else -> "an unknown framebuffer error: 0x${ret.toHexString()}"
+        }?.let { throw FrameBufferCreationException("Framebuffer was not successfully completed due to $it") }
 
-    protected FrameBuffer(Vector2ic size, int glBufferClearMask, int @Nullable [] glColourDrawBuffers) {
-        this.fbo = glGenFramebuffers();
-        this.size = size;
-        this.glBufferClearMask = glBufferClearMask;
-        this.glColourDrawBuffers = glColourDrawBuffers;
-        this.clearColour = new Vector4f(0f);
-        this.attachments = new HashMap<>(3);
-    }
+        GLUtils.checkErrorThrowing("Error during framebuffer creation")
 
-    @Deprecated(message = "Only for screen buffer proxy, do not use")
-    protected FrameBuffer(Vector2ic size, boolean dummy) {
-        this.fbo = 0;
-        this.size = size;
-        this.glBufferClearMask = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT;
-        this.glColourDrawBuffers = new int[]{GL_COLOR_ATTACHMENT0};
-        this.clearColour = new Vector4f(0f);
-        this.attachments = new HashMap<>(3);
-    }
-
-    public enum Binding {
-        READ,
-        WRITE,
-        BOTH
-    }
-
-    @Override
-    public void bind() {
-        bind(Binding.BOTH);
-    }
-
-    public void bind(Binding binding) {
-        glBindFramebuffer(switch (binding) {
-            case READ -> GL_READ_FRAMEBUFFER;
-            case WRITE -> GL_DRAW_FRAMEBUFFER;
-            case BOTH -> GL_FRAMEBUFFER;
-        }, fbo);
-        if (glColourDrawBuffers != null) {
-            glDrawBuffers(glColourDrawBuffers);
+        var glBufferClearMask = 0
+        if (attachments.keys.any { it in listOf(COLOUR0, COLOUR1, COLOUR2, COLOUR3, COLOUR31) }) {
+            glBufferClearMask = glBufferClearMask or GL_COLOR_BUFFER_BIT
         }
-        glViewport(0, 0, size.x(), size.y());
+        if (attachments.keys.any { it in listOf(DEPTH, DEPTH_STENCIL) }) {
+            glBufferClearMask = glBufferClearMask or GL_DEPTH_BUFFER_BIT
+        }
+        if (attachments.keys.any { it in listOf(STENCIL, DEPTH_STENCIL) }) {
+            glBufferClearMask = glBufferClearMask or GL_STENCIL_BUFFER_BIT
+        }
+        this.glBufferClearMask = glBufferClearMask
+
+        glColourDrawBuffers = attachments.keys.map { it.glAttachmentType }
+            .filter { it in COLOUR0.glAttachmentType..COLOUR31.glAttachmentType }
+            .sorted()
+            .toIntArray()
+    }
+
+    companion object {
+        fun getStandard(size: Vector2ic) = FrameBuffer(
+            size, mapOf(
+                COLOUR0 to RenderBuffer(size, RenderBuffer.Type.COLOUR),
+                DEPTH_STENCIL to RenderBuffer(size, RenderBuffer.Type.DEPTH_STENCIL),
+            )
+        )
+
+        fun getColour(size: Vector2ic) = FrameBuffer(
+            size, mapOf(
+                COLOUR0 to RenderBuffer(size, RenderBuffer.Type.COLOUR)
+            )
+        )
+    }
+
+    enum class Binding { READ, WRITE, BOTH }
+
+    override fun bind() {
+        bind(Binding.BOTH)
+    }
+
+    fun bind(binding: Binding) {
+        glBindFramebuffer(
+            when (binding) {
+                Binding.READ -> GL_READ_FRAMEBUFFER
+                Binding.WRITE -> GL_DRAW_FRAMEBUFFER
+                Binding.BOTH -> GL_FRAMEBUFFER
+            }, id
+        )
+        glDrawBuffers(glColourDrawBuffers)
+        glViewport(0, 0, size.x(), size.y())
     }
 
     /**
      * Unbinds the currently bound framebuffer, which is identical to binding the
-     * {@link org.etieskrill.engine.window.Window}'s back buffer, except that it does <b>NOT</b> reset the viewport size
-     * to the back buffer's size.
+     * [window's screen buffer](org.etieskrill.engine.window.Window.screenBuffer), except that it does <b>NOT</b>
+     * reset the viewport size to the screen buffer's size.
      */
-    public void unbind() {
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    fun unbind() {
+        glBindFramebuffer(GL_FRAMEBUFFER, 0)
     }
 
-    public void clear() {
-        bind();
-        glClearColor(clearColour.x, clearColour.y, clearColour.z, clearColour.w);
-        if ((glBufferClearMask & GL_DEPTH_BUFFER_BIT) != 0) glDepthMask(true);
-        if ((glBufferClearMask & GL_STENCIL_BUFFER_BIT) != 0)
-            glStencilMask(0xFF); //TODO can stencil buffer be anything other than one byte in size?
-        glClear(glBufferClearMask);
-        unbind();
+    fun clear() {
+        bind()
+        glClearColor(clearColour.x, clearColour.y, clearColour.z, clearColour.w)
+        if ((glBufferClearMask and GL_DEPTH_BUFFER_BIT) != 0) glDepthMask(true)
+        if ((glBufferClearMask and GL_STENCIL_BUFFER_BIT) != 0) glStencilMask(0xFF) //TODO can stencil buffer be anything other than one byte in size?
+        glClear(glBufferClearMask)
+        unbind()
     }
 
-    public void setClearColour(Vector4fc clearColour) {
-        this.clearColour.set(clearColour);
-    }
-
-    public FrameBufferAttachment getAttachment(BufferAttachmentType type) {
-        return attachments.get(type);
-    }
-
-    @Override
-    public void dispose() {
-        glDeleteFramebuffers(fbo);
-        attachments.values().forEach(Disposable::dispose);
+    override fun dispose() {
+        glDeleteFramebuffers(id)
+        attachments.values.forEach(Disposable::dispose)
     }
 
 }

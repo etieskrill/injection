@@ -1,44 +1,27 @@
-package org.etieskrill.engine.entity.component;
+package org.etieskrill.engine.entity.component
 
-import org.etieskrill.engine.graphics.data.PointLight;
-import org.etieskrill.engine.graphics.gl.framebuffer.PointShadowMapArray;
-import org.jetbrains.annotations.Nullable;
-import org.joml.Matrix4fc;
+import org.etieskrill.engine.graphics.data.PointLight
+import org.etieskrill.engine.graphics.gl.framebuffer.PointShadowMapArray
+import org.joml.Matrix4fc
 
-public class PointLightComponent {
+@ConsistentCopyVisibility
+data class PointLightComponent private constructor(
+    val light: PointLight,
+    val shadowMap: PointShadowMapArray?,
+    val shadowMapIndex: Int?,
+    val shadowCombinedMatrices: Array<out Matrix4fc>?,
+    val shadowFarPlane: Float?,
+) {
 
-    private final PointLight light;
-    private final @Nullable PointShadowMapArray shadowMap;
-    private final @Nullable Integer shadowMapIndex;
-    private final @Nullable Matrix4fc[] combinedMatrices;
-    private final @Nullable Float farPlane;
-
-    public PointLightComponent(PointLight light, @Nullable PointShadowMapArray shadowMap, int shadowMapIndex, Matrix4fc[] combinedMatrices, float farPlane) {
-        this.light = light;
-        this.shadowMap = shadowMap;
-        this.shadowMapIndex = shadowMapIndex;
-        this.combinedMatrices = combinedMatrices;
-        this.farPlane = farPlane;
-    }
-
-    public PointLight getLight() {
-        return light;
-    }
-
-    public @Nullable PointShadowMapArray getShadowMap() {
-        return shadowMap;
-    }
-
-    public @Nullable Integer getShadowMapIndex() {
-        return shadowMapIndex;
-    }
-
-    public Matrix4fc[] getCombinedMatrices() {
-        return combinedMatrices;
-    }
-
-    public @Nullable Float getFarPlane() {
-        return farPlane;
+    companion object {
+        fun withoutShadowMaps(light: PointLight) = PointLightComponent(light, null, null, null, null)
+        fun withShadowMaps(
+            light: PointLight,
+            shadowMap: PointShadowMapArray,
+            shadowMapIndex: Int,
+            shadowCombinedMatrices: Array<out Matrix4fc>,
+            shadowFarPlane: Float
+        ) = PointLightComponent(light, shadowMap, shadowMapIndex, shadowCombinedMatrices, shadowFarPlane)
     }
 
 }

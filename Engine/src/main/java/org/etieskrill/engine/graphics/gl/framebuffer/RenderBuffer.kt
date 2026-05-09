@@ -1,20 +1,31 @@
-package org.etieskrill.engine.graphics.gl.framebuffer;
+package org.etieskrill.engine.graphics.gl.framebuffer
 
-import org.etieskrill.engine.common.Disposable;
-import org.etieskrill.engine.graphics.gl.GLUtils;
-import org.joml.Vector2ic;
+import org.etieskrill.engine.common.Disposable
+import org.etieskrill.engine.graphics.gl.GLUtils
+import org.joml.Vector2ic
+import org.lwjgl.opengl.GL11C.GL_DEPTH_COMPONENT
+import org.lwjgl.opengl.GL11C.GL_RGBA8
+import org.lwjgl.opengl.GL30C.*
 
-import static org.lwjgl.opengl.GL11C.GL_DEPTH_COMPONENT;
-import static org.lwjgl.opengl.GL11C.GL_RGBA8;
-import static org.lwjgl.opengl.GL30C.*;
+class RenderBuffer(
+    override val size: Vector2ic,
+    val type: Type
+) : Disposable, FrameBufferAttachment {
 
-public class RenderBuffer implements Disposable, FrameBufferAttachment {
+    private val id: Int
 
-    private final Vector2ic size;
-    private final int rbo;
-    private final Type type;
+    init {
+        GLUtils.clearError()
 
-    public enum Type {
+        id = glGenRenderbuffers()
+        bind()
+
+        glRenderbufferStorage(GL_RENDERBUFFER, type.glType, size.x(), size.y())
+
+        GLUtils.checkErrorThrowing("Error during renderbuffer creation")
+    }
+
+    enum class Type {
         COLOUR,
         DEPTH,
         DEPTH_HIGHP,
@@ -22,57 +33,23 @@ public class RenderBuffer implements Disposable, FrameBufferAttachment {
         DEPTH_STENCIL,
         DEPTH_HIGHP_STENCIL;
 
-        public int toGLType() {
-            return switch (this) {
-                case COLOUR -> GL_RGBA8;
-                case DEPTH -> GL_DEPTH_COMPONENT;
-                case DEPTH_HIGHP -> GL_DEPTH_COMPONENT32F;
-                case STENCIL -> GL_STENCIL_ATTACHMENT;
-                case DEPTH_STENCIL -> GL_DEPTH24_STENCIL8;
-                case DEPTH_HIGHP_STENCIL -> GL_DEPTH32F_STENCIL8;
-            };
-        }
+        val glType
+            get() = when (this) {
+                COLOUR -> GL_RGBA8
+                DEPTH -> GL_DEPTH_COMPONENT
+                DEPTH_HIGHP -> GL_DEPTH_COMPONENT32F
+                STENCIL -> GL_STENCIL_ATTACHMENT
+                DEPTH_STENCIL -> GL_DEPTH24_STENCIL8
+                DEPTH_HIGHP_STENCIL -> GL_DEPTH32F_STENCIL8
+            }
     }
 
-    public RenderBuffer(Vector2ic size, Type type) {
-        this.size = size;
+    fun bind() = glBindRenderbuffer(GL_RENDERBUFFER, id)
+    fun unbind() = glBindRenderbuffer(GL_RENDERBUFFER, 0)
 
-        GLUtils.clearError();
+    override fun attach(type: FrameBufferAttachmentType) =
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, type.glAttachmentType, GL_RENDERBUFFER, id)
 
-        this.rbo = glGenRenderbuffers();
-        bind();
-
-        this.type = type;
-        glRenderbufferStorage(GL_RENDERBUFFER, type.toGLType(), size.x(), size.y());
-
-        GLUtils.checkErrorThrowing("Error during renderbuffer creation");
-    }
-
-    public void bind() {
-        glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-    }
-
-    public void unbind() {
-        glBindRenderbuffer(GL_RENDERBUFFER, 0);
-    }
-
-    @Override
-    public Vector2ic getSize() {
-        return size;
-    }
-
-    @Override
-    public void attach(BufferAttachmentType type) {
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, type.toGLAttachment(), GL_RENDERBUFFER, rbo);
-    }
-
-    public Type getType() {
-        return type;
-    }
-
-    @Override
-    public void dispose() {
-        glDeleteRenderbuffers(rbo);
-    }
+    override fun dispose() = glDeleteRenderbuffers(id)
 
 }

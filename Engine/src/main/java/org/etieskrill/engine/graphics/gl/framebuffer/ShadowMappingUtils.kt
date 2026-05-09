@@ -1,33 +1,37 @@
-package org.etieskrill.engine.graphics.gl.framebuffer;
+package org.etieskrill.engine.graphics.gl.framebuffer
 
-import org.etieskrill.engine.graphics.data.PointLight;
-import org.etieskrill.engine.graphics.texture.CubeMapTexture;
-import org.jetbrains.annotations.NotNull;
-import org.joml.Matrix4f;
-import org.joml.Vector2ic;
-import org.joml.Vector3f;
+import org.etieskrill.engine.graphics.data.PointLight
+import org.etieskrill.engine.graphics.texture.CubeMapTexture
+import org.joml.Math.toRadians
+import org.joml.Matrix4f
+import org.joml.Vector2ic
+import org.joml.Vector3f
+import org.joml.plus
 
-import static java.lang.Math.toRadians;
+private val CUBE_FACE_NORMALS = arrayOf(
+    Vector3f(1f, 0f, 0f), Vector3f(-1f, 0f, 0f), Vector3f(0f, 1f, 0f),
+    Vector3f(0f, -1f, 0f), Vector3f(0f, 0f, 1f), Vector3f(0f, 0f, -1f)
+)
 
-class ShadowMappingUtils {
+private val CUBE_FACE_UPS = arrayOf(
+    Vector3f(0f, -1f, 0f), Vector3f(0f, -1f, 0f), Vector3f(0f, 0f, 1f),
+    Vector3f(0f, 0f, -1f), Vector3f(0f, -1f, 0f), Vector3f(0f, -1f, 0f)
+)
 
-    //TODO better local caching strategy - or just stack allocated matrices, but fucking how
-    private static final Matrix4f projectionCached = new Matrix4f();
-    private static final Vector3f lightPositionCached = new Vector3f();
-
-    static synchronized Matrix4f[] getCombinedMatrices(Vector2ic size, float near, float far, @NotNull PointLight light, @NotNull Matrix4f[] targets) {
-        projectionCached.setPerspective((float) toRadians(90), (float) size.x() / size.y(), near, far);
-        for (int i = 0; i < CubeMapTexture.NUM_SIDES; i++) {
-            targets[i].lookAt(light.getPosition(),
-                    lightPositionCached.set(light.getPosition()).add(CubeMapTexture.FACE_NORMALS[i]),
-                    CubeMapTexture.FACE_UPS[i]);
-            projectionCached.mul(targets[i], targets[i]);
-        }
-        return targets;
+fun getCombinedMatrices(
+    size: Vector2ic,
+    near: Float,
+    far: Float,
+    light: PointLight,
+    targets: Array<Matrix4f>
+): Array<Matrix4f> {
+    val projection = Matrix4f().setPerspective(
+        toRadians(90f), size.x().toFloat() / size.y().toFloat(), near, far
+    )
+    for (i in 0..CubeMapTexture.NUM_SIDES) {
+        targets[i].lookAt(light.position, light.position + CUBE_FACE_NORMALS[i], CUBE_FACE_UPS[i])
+        projection.mul(targets[i], targets[i])
     }
 
-    private ShadowMappingUtils() {
-        //Not intended for instantiation
-    }
-
+    return targets
 }

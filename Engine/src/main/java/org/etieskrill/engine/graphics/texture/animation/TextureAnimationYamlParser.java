@@ -1,7 +1,6 @@
 package org.etieskrill.engine.graphics.texture.animation;
 
 import lombok.NoArgsConstructor;
-import org.etieskrill.engine.config.ResourcePaths;
 import org.joml.Vector2i;
 import org.joml.primitives.Rectanglei;
 import org.yaml.snakeyaml.Yaml;
@@ -13,6 +12,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static java.lang.Math.max;
+import static org.etieskrill.engine.config.ResourcePathsKt.TEXTURE_PATH;
 import static org.etieskrill.engine.util.ResourceReader.getResourceAsStream;
 
 public class TextureAnimationYamlParser {
@@ -22,7 +22,7 @@ public class TextureAnimationYamlParser {
     static TextureAnimationMetadata loadAnimationMetadata(String metaFile) {
         Yaml yaml = new Yaml();
         YamlTextureAnimationMetadata yamlMetaData = yaml.loadAs(
-                getResourceAsStream(ResourcePaths.TEXTURE_PATH + metaFile),
+                getResourceAsStream(TEXTURE_PATH + metaFile),
                 YamlTextureAnimationMetadata.class
         );
         if (yamlMetaData.resources == null || yamlMetaData.resources.get("texture") == null) {

@@ -7,7 +7,7 @@ import org.etieskrill.engine.graphics.gl.shader.impl.ParticleShader;
 import org.etieskrill.engine.graphics.particle.*;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.etieskrill.engine.graphics.texture.Texture2D;
-import org.etieskrill.engine.util.Loaders;
+import org.etieskrill.engine.util.EngineShaderLoader;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
@@ -42,7 +42,7 @@ public class GLParticleRenderer implements ParticleRenderer {
                 .builder(ParticleVertexAccessor.getInstance())
                 .numVertexElements((long) MAX_PARTICLES)
                 .build();
-        this.particleShader = Loaders.ShaderLoader.get()
+        this.particleShader = EngineShaderLoader.INSTANCE
                 .load("particle_shader", ParticleShader::new);
 
         this.defaultParticleTexture = new Texture2D.FileBuilder("textures/particles/circle.png")

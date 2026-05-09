@@ -77,7 +77,8 @@ public class AnimationProvider {
 
     private void updateBoneTransforms(List<Transform> localBoneTransforms, double currentTicks, Node node) {
         Bone bone = node.getBone();
-        Transform localTransform = transformPool.get(currentTransform++).set(node.getTransform()); //Set node transform as default
+        Transform localTransform = transformPool.get(currentTransform++); //Set node transform as default
+        localTransform.set(node.getTransform());
 
         if (bone != null) { //If node has bone, try to find animation
             BoneAnimation boneAnim = animation.getBoneAnimation(bone);

@@ -1,6 +1,4 @@
-package org.etieskrill.engine.entity;
-
-import java.util.function.Consumer;
+package org.etieskrill.engine.entity
 
 /**
  * A snippet of code local to an entity, which is queried with the delta time once every frame.
@@ -9,6 +7,4 @@ import java.util.function.Consumer;
  */
 //Unconventional in terms of ECSs, but meh. If it works, it works. And if it works while being intuitive to use,
 //it really works.
-@FunctionalInterface
-public interface Script extends Consumer<Double> {
-}
+fun interface Script : (Double) -> Unit

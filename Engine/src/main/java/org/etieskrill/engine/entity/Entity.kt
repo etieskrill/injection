@@ -3,7 +3,7 @@ package org.etieskrill.engine.entity
 import org.etieskrill.engine.common.Disposable
 import kotlin.reflect.KClass
 
-class Entity(
+open class Entity(
     val id: Int
 ) : Disposable {
 

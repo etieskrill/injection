@@ -23,12 +23,11 @@ public class DebugInterface extends Scene {
     private final Label fpsLabel;
 
     public DebugInterface(Window window, FrameBuffer frameBuffer, GLRenderer renderer) {
-        this(frameBuffer, window.getSize().getVec(), renderer, null);
+        this(frameBuffer, window.getSize(), renderer, null);
     }
 
     public DebugInterface(FrameBuffer frameBuffer, Vector2ic windowSize, GLRenderer renderer, @Nullable LoopPacer pacer) {
-        setBatch(new Batch(frameBuffer, renderer, windowSize));
-        setCamera(new OrthographicCamera(windowSize));
+        super(new Batch(frameBuffer, renderer, windowSize), new Container(), new OrthographicCamera(windowSize));
 
         this.renderer = renderer;
         this.pacer = pacer;

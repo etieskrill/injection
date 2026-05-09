@@ -1,17 +1,15 @@
-package org.etieskrill.engine.util;
+package org.etieskrill.engine.util
 
-import org.etieskrill.engine.common.Disposable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.github.oshai.kotlinlogging.KotlinLogging
+import org.etieskrill.engine.common.Disposable
 
-public abstract class DisposableLoader<T extends Disposable> extends Loader<T> implements Disposable {
+private val logger = KotlinLogging.logger {}
 
-    private static final Logger logger = LoggerFactory.getLogger(DisposableLoader.class);
+abstract class DisposableLoader<T : Disposable> : Loader<T>(), Disposable {
 
-    @Override
-    public void dispose() {
-        logger.debug("Disposing loader '{}'", getLoaderName());
-        map.values().forEach(T::dispose);
+    override fun dispose() {
+        logger.debug { "Disposing loader $loaderName" }
+        map.values.forEach { it.dispose() }
     }
 
 }

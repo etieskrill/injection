@@ -134,7 +134,7 @@ class ParticleEmitter(
         if (spawnParticles) secondsSinceLastParticle += delta.toFloat()
         else return
 
-        val localTransform = transform.apply(this.transform, Transform())
+        val localTransform = transform * this.transform
 
         val nextParticleDelay =
             particleSpawnDelay.toSeconds() + (random() * 2 - 1) * particleSpawnDelaySpread.toSeconds()
@@ -210,7 +210,7 @@ class ParticleNode(
     }
 
     private fun update(delta: Double, transform: TransformC) {
-        val transform = transform.apply(this.transform, Transform())
+        val transform = transform * this.transform
         emitters.forEach { it.update(delta, transform) }
         children.forEach { it.update(delta, Transform(transform)) }
     }

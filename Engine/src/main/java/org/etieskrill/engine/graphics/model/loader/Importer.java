@@ -11,7 +11,7 @@ import org.lwjgl.system.MemoryUtil;
 import java.nio.ByteBuffer;
 import java.util.function.Supplier;
 
-import static org.etieskrill.engine.config.ResourcePaths.MODEL_PATH;
+import static org.etieskrill.engine.config.ResourcePathsKt.MODEL_PATH;
 import static org.lwjgl.assimp.Assimp.*;
 import static org.lwjgl.system.MemoryUtil.memAddress;
 import static org.lwjgl.system.MemoryUtil.memCopy;

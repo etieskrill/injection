@@ -1,4 +1,3 @@
-package org.etieskrill.engine.entity.component;
+package org.etieskrill.engine.entity.component
 
-public class StaticCollider {
-}
+class StaticCollider

@@ -19,7 +19,7 @@ import org.etieskrill.engine.time.SystemNanoTimePacer
 import org.etieskrill.engine.time.resetSystemTimeResolution
 import org.etieskrill.engine.time.setSystemTimeResolution
 import org.etieskrill.engine.util.FixedArrayDeque
-import org.etieskrill.engine.util.Loaders
+import org.etieskrill.engine.util.disposeDefaultLoaders
 import org.etieskrill.engine.window.Window
 import org.lwjgl.glfw.GLFW.glfwTerminate
 import org.lwjgl.opengl.GL.destroy
@@ -132,7 +132,7 @@ abstract class App(
         resetSystemTimeResolution(SYSTEM_TIME_RESOLUTION_MILLIS.milliseconds)
         window.isClosing = true
         window.dispose()
-        Loaders.disposeDefaultLoaders()
+        disposeDefaultLoaders()
         TrueTypeFont.disposeLibrary()
         destroy()
         glfwTerminate()

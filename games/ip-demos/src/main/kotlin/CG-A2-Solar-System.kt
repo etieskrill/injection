@@ -86,7 +86,7 @@ class `CG-A2-Solar-System` : App(
         for (planet in planets) {
             entitySystem.createEntity {
                 +Transform()
-                +Drawable(sphereModel, shader).apply { isDrawWireframe = true }
+                +Drawable(sphereModel, shader).apply { isWireframeEnabled = true }
                 +planet
             }
         }
@@ -143,23 +143,22 @@ open class PlanetService(screenBuffer: FrameBuffer, renderer: GLRenderer, camera
     private val trailShader = TrailShader()
 
     override fun canProcess(entity: Entity): Boolean {
-        return super.canProcess(entity) && entity.hasComponents(Planet::class.java)
+        return super.canProcess(entity) && entity.hasComponents<Planet>()
     }
 
     override fun process(targetEntity: Entity, entities: List<Entity>, delta: Double) {
-        val enabled = targetEntity.getComponent(Boolean::class.java)
-        if (enabled != null && !enabled) return // flag not present -> default to enabled - hence explicit null check
+        if (targetEntity.getComponent<Boolean>() == false) return
 
-        val drawable = targetEntity.getComponent(Drawable::class.java)!!
+        val drawable = targetEntity.getComponent<Drawable>()!!
         if (!drawable.isVisible) return
 
-        val transform = targetEntity.getComponent(Transform::class.java)!!
+        val transform = targetEntity.getComponent<Transform>()!!
 
-        val planet = targetEntity.getComponent(Planet::class.java)!!
+        val planet = targetEntity.getComponent<Planet>()!!
         planet.rotation += planet.rotationSpeed * delta.toFloat()
 
         transform.scale.set(planet.size)
-        transform.applyRotation { it.fromAxisAngleDeg(Vector3f(0f, 1f, 0f), planet.rotation) }
+        transform.rotation.fromAxisAngleDeg(Vector3f(0f, 1f, 0f), planet.rotation)
 
         planet.orbitAngle += planet.orbitSpeed * delta.toFloat()
         val orbitPosition = Vector3f(cos(planet.orbitAngle), 0f, sin(planet.orbitAngle)).mul(planet.orbitDistance)
@@ -173,7 +172,7 @@ open class PlanetService(screenBuffer: FrameBuffer, renderer: GLRenderer, camera
             )
             parent = parent.parent
         }
-        transform.setPosition(orbitPosition)
+        transform.position = orbitPosition
 
         if (!planet.previousPositions.isFull) planet.previousPositions.fill(orbitPosition)
         planet.previousPositions += orbitPosition
@@ -200,7 +199,7 @@ open class PlanetService(screenBuffer: FrameBuffer, renderer: GLRenderer, camera
         val shader = getConfiguredShader(targetEntity, drawable)
         shader.setUniform("colour", planet.colour, false)
         glLineWidth(1f)
-        if (!drawable.isDrawWireframe) {
+        if (!drawable.isWireframeEnabled) {
             renderer.render(transform, drawable.model, shader, camera)
         } else {
             renderer.renderWireframe(transform, drawable.model, shader, camera)

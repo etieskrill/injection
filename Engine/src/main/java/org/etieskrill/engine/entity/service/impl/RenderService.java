@@ -1,5 +1,6 @@
 package org.etieskrill.engine.entity.service.impl;
 
+import kotlin.reflect.KClass;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -10,7 +11,7 @@ import org.etieskrill.engine.entity.service.Service;
 import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.data.PointLight;
 import org.etieskrill.engine.graphics.gl.framebuffer.FrameBuffer;
-import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment.BufferAttachmentType;
+import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachmentType;
 import org.etieskrill.engine.graphics.gl.framebuffer.RenderBuffer;
 import org.etieskrill.engine.graphics.gl.renderer.GLParticleRenderer;
 import org.etieskrill.engine.graphics.gl.renderer.GLRenderer;
@@ -21,6 +22,7 @@ import org.etieskrill.engine.graphics.pipeline.PostPassPipeline;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.texture.Textures;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.*;
 
@@ -30,11 +32,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.lang.Math.abs;
 import static java.lang.Math.max;
-import static org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment.BufferAttachmentType.COLOUR0;
-import static org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment.BufferAttachmentType.COLOUR1;
+import static org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachmentType.COLOUR0;
+import static org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachmentType.COLOUR1;
 import static org.etieskrill.engine.graphics.gl.framebuffer.RenderBuffer.Type.DEPTH_STENCIL;
 import static org.etieskrill.engine.graphics.texture.AbstractTexture.Format.RGBA_F16;
 import static org.lwjgl.opengl.GL11C.*;
+import static org.lwjgl.opengl.GL30C.*;
 import static org.lwjgl.opengl.GL30C.GL_CULL_FACE;
 import static org.lwjgl.opengl.GL30C.GL_DEPTH_TEST;
 import static org.lwjgl.opengl.GL30C.GL_ONE;
@@ -45,7 +48,6 @@ import static org.lwjgl.opengl.GL30C.GL_ZERO;
 import static org.lwjgl.opengl.GL30C.glBlendFunc;
 import static org.lwjgl.opengl.GL30C.glDisable;
 import static org.lwjgl.opengl.GL30C.glEnable;
-import static org.lwjgl.opengl.GL30C.*;
 
 public class RenderService implements Service, Disposable {
 
@@ -115,10 +117,11 @@ public class RenderService implements Service, Disposable {
         this.outlineStencilTexture = new Texture2D.BlankBuilder(windowSize)
                 .setFormat(AbstractTexture.Format.DEPTH_STENCIL)
                 .build();
-        this.outlineFrameBuffer = new FrameBuffer.Builder(windowSize)
-                .attach(outlineTexture, COLOUR0)
-                .attach(outlineStencilTexture, BufferAttachmentType.DEPTH_STENCIL)
-                .build();
+        this.outlineFrameBuffer = new FrameBuffer(windowSize, Map.of(
+                COLOUR0, outlineTexture,
+                FrameBufferAttachmentType.DEPTH_STENCIL,
+                outlineStencilTexture)
+        );
 
         this.fullScreenPipeline = new PostPassPipeline<>(new FullScreenColourShader(), outlineFrameBuffer, false, false);
         this.outlinePipeline = new PostPassPipeline<>(new DilationOutlineShader(), frameBuffer, false, false);
@@ -160,7 +163,7 @@ public class RenderService implements Service, Disposable {
     }
 
     @Override
-    public void preProcess(Double delta, List<Entity> entities) {
+    public void preProcess(double delta, @NotNull List<? extends @NotNull Entity> entities) {
         outlineFrameBuffer.clear();
 
         //TODO either revert to previously bound framebuffer, or use dsa
@@ -223,7 +226,7 @@ public class RenderService implements Service, Disposable {
     }
 
     @Override
-    public void process(Entity targetEntity, List<Entity> entities, double delta) {
+    public void process(@NotNull Entity targetEntity, @NotNull List<? extends @NotNull Entity> entities, double delta) {
         Boolean enabled = targetEntity.getComponent(Boolean.class);
         if (enabled != null && !enabled) return;
 
@@ -239,7 +242,7 @@ public class RenderService implements Service, Disposable {
 
         glEnable(GL_DEPTH_TEST);
 
-        if (drawable.isDrawOutline()) {
+        if (drawable.isOutlineEnabled()) {
             glEnable(GL_STENCIL_TEST);
             glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
             glStencilFunc(GL_ALWAYS, 0xFF, 0xFF);
@@ -250,7 +253,7 @@ public class RenderService implements Service, Disposable {
         }
 
         ShaderProgram shader = getConfiguredShader(targetEntity, drawable);
-        if (!drawable.isDrawWireframe()) {
+        if (!drawable.isWireframeEnabled()) {
             renderer.render(transform, drawable.getModel(), shader, camera);
         } else {
             renderer.renderWireframe(transform, drawable.getModel(), shader, camera);
@@ -272,8 +275,8 @@ public class RenderService implements Service, Disposable {
             return lightSourceShader;
         } else if (pointLightComponent != null) {
             LightSourceShaderKt.setLight(lightSourceShader, pointLightComponent.getLight());
-            if (pointLightComponent.getFarPlane() != null)
-                StaticShaderKt.setPointShadowFarPlane(shader, pointLightComponent.getFarPlane()); //TODO make per-light?
+            if (pointLightComponent.getShadowFarPlane() != null)
+                StaticShaderKt.setPointShadowFarPlane(shader, pointLightComponent.getShadowFarPlane()); //TODO make per-light?
             return lightSourceShader;
         } else {
             configureShader(shader, shaderParams);
@@ -295,7 +298,7 @@ public class RenderService implements Service, Disposable {
     }
 
     @Override
-    public void postProcess(List<Entity> entities) {
+    public void postProcess(@NotNull List<? extends @NotNull Entity> entities) {
         for (Entity entity : entities) { //FIXME particle rendering is suddenly really fucking slow for some reason
             if (particleRenderService.canProcess(entity)) {
                 particleRenderService.process(entity, entities, lastDelta);
@@ -327,8 +330,28 @@ public class RenderService implements Service, Disposable {
     }
 
     @Override
-    public Set<Class<? extends Service>> runAfter() {
-        return Set.of(DirectionalShadowMappingService.class, PointShadowMappingService.class);
+    public @Nullable Comparator<@NotNull Entity> getComparator() {
+        return null;
+    }
+
+    @Override
+    public void entityRemoved(@NotNull Entity entity) {
+    }
+
+    @Override
+    public @NotNull Set<@NotNull KClass<? extends @NotNull Service>> getRunBefore() {
+        return Set.of();
+    }
+
+    @Override
+    public @NotNull Set<@NotNull KClass<? extends @NotNull Service>> getRunAfter() {
+//        return Set.of(DirectionalShadowMappingService.class, PointShadowMappingService.class);
+        return Set.of();
+    }
+
+    @Override
+    public int getPriority() {
+        return 0;
     }
 
     @Override
@@ -362,22 +385,18 @@ class GaussBlurPostBuffers implements Disposable {
         this.hdrBuffer = Textures.genBlank(windowSize, RGBA_F16);
         this.bloomBuffer = Textures.genBlank(windowSize, RGBA_F16);
         RenderBuffer depthStencilBuffer = new RenderBuffer(windowSize, DEPTH_STENCIL);
-        this.frameBuffer = new FrameBuffer.Builder(windowSize)
-                .attach(hdrBuffer, COLOUR0)
-                .attach(bloomBuffer, COLOUR1)
-                .attach(depthStencilBuffer, BufferAttachmentType.DEPTH_STENCIL)
-                .build();
+        this.frameBuffer = new FrameBuffer(windowSize, Map.of(
+                COLOUR0, hdrBuffer,
+                COLOUR1, bloomBuffer,
+                FrameBufferAttachmentType.DEPTH_STENCIL, depthStencilBuffer
+        ));
 
         this.hdrShader = new HDRShader();
 
         this.blurTextureBuffer1 = Textures.genBlank(windowSize, RGBA_F16);
-        this.blurFrameBuffer1 = new FrameBuffer.Builder(windowSize)
-                .attach(blurTextureBuffer1, COLOUR0)
-                .build();
+        this.blurFrameBuffer1 = new FrameBuffer(windowSize, Map.of(COLOUR0, blurTextureBuffer1));
         this.blurTextureBuffer2 = Textures.genBlank(windowSize, RGBA_F16);
-        this.blurFrameBuffer2 = new FrameBuffer.Builder(windowSize)
-                .attach(blurTextureBuffer2, COLOUR0)
-                .build();
+        this.blurFrameBuffer2 = new FrameBuffer(windowSize, Map.of(COLOUR0, blurTextureBuffer2));
 
         this.gaussBlurShader = new GaussBlurShader();
 

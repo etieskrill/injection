@@ -1,131 +1,66 @@
-package org.etieskrill.engine.util;
+package org.etieskrill.engine.util
 
-import org.etieskrill.engine.graphics.animation.Animation;
-import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
-import org.etieskrill.engine.graphics.model.Mesh;
-import org.etieskrill.engine.graphics.model.Model;
-import org.etieskrill.engine.graphics.text.Font;
-import org.etieskrill.engine.graphics.texture.AbstractTexture;
-import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.github.oshai.kotlinlogging.KotlinLogging
+import org.etieskrill.engine.graphics.animation.Animation
+import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
+import org.etieskrill.engine.graphics.model.Mesh
+import org.etieskrill.engine.graphics.model.Model
+import org.etieskrill.engine.graphics.text.Font
+import org.etieskrill.engine.graphics.texture.AbstractTexture
 
-public final class Loaders {
+private val logger = KotlinLogging.logger {}
 
-    public static final class TextureLoader extends DisposableLoader<AbstractTexture> {
-        private static TextureLoader instance;
+open class TextureLoader : DisposableLoader<AbstractTexture>() {
+    override val loaderName: String get() = "Texture"
+}
 
-        //TODO kinda-not-very-singleton-at-all, is this valid?
-        public static TextureLoader get() {
-            if (instance == null)
-                instance = new TextureLoader();
-            return instance;
-        }
+object EngineTextureLoader : TextureLoader()
 
-        @Override
-        protected String getLoaderName() {
-            return "Texture";
-        }
+open class MeshLoader : DisposableLoader<Mesh>() {
+    override val loaderName: String get() = "Mesh"
+}
+
+object EngineMeshLoader : MeshLoader()
+
+/**
+ * Creates a new instance for every call to [get], where data in graphics memory - such as model
+ * and material data - are shared between models, but not instance fields such as transform.
+ */
+//TODO clean up model
+open class ModelLoader : DisposableLoader<Model>() {
+    override val loaderName: String get() = "Model"
+
+    override operator fun get(name: String): Model? {
+        val model = map[name] ?: return null
+        logger.debug { "Creating new instance of model $name" }
+        return Model(model)
     }
+}
 
-    public static final class MeshLoader extends DisposableLoader<Mesh> {
-        private static MeshLoader instance;
+object EngineModelLoader : ModelLoader()
 
-        public static MeshLoader get() {
-            if (instance == null)
-                instance = new MeshLoader();
-            return instance;
-        }
+open class ShaderLoader : DisposableLoader<ShaderProgram>() {
+    override val loaderName: String get() = "Shader"
+}
 
-        @Override
-        protected String getLoaderName() {
-            return "Mesh";
-        }
-    }
+object EngineShaderLoader : ShaderLoader()
 
-    /**
-     * Creates a new instance for every call to {@link #get(String name)}, where data in graphics memory - such as model
-     * and material data - are shared between models, but not instance fields such as transform.
-     */
-    public static final class ModelLoader extends DisposableLoader<Model> {
-        private static ModelLoader instance;
-        private static final Logger logger = LoggerFactory.getLogger(ModelLoader.class);
+open class FontLoader : DisposableLoader<Font>() {
+    override val loaderName: String get() = "Font"
+}
 
-        public static ModelLoader get() {
-            if (instance == null)
-                instance = new ModelLoader();
-            return instance;
-        }
+object EngineFontLoader : FontLoader()
 
-        @Override
-        public @Nullable Model get(String name) {
-            Model model = super.get(name);
-            if (model == null) return null;
-            logger.debug("Creating new instance of model {}", name);
-            return new Model(model);
-        }
+open class AnimationLoader : Loader<Animation>() {
+    override val loaderName: String get() = "Animation"
+}
 
-        @Override
-        protected String getLoaderName() {
-            return "Model";
-        }
-    }
+object EngineAnimationLoader : AnimationLoader()
 
-    /**
-     * Always returns the same instance for a given resource identifier.
-     */
-    public static final class ShaderLoader extends DisposableLoader<ShaderProgram> {
-        private static ShaderLoader instance;
-
-        public static ShaderLoader get() {
-            if (instance == null)
-                instance = new ShaderLoader();
-            return instance;
-        }
-
-        @Override
-        protected String getLoaderName() {
-            return "Shader";
-        }
-    }
-
-    public static final class FontLoader extends DisposableLoader<Font> {
-        private static FontLoader instance;
-
-        public static FontLoader get() {
-            if (instance == null)
-                instance = new FontLoader();
-            return instance;
-        }
-
-        @Override
-        protected String getLoaderName() {
-            return "Font";
-        }
-    }
-
-    public static final class AnimationLoader extends Loader<Animation> {
-        private static AnimationLoader instance;
-
-        public static AnimationLoader get() {
-            if (instance == null) {
-                instance = new AnimationLoader();
-            }
-            return instance;
-        }
-
-        @Override
-        protected String getLoaderName() {
-            return "Animation";
-        }
-    }
-
-    public static void disposeDefaultLoaders() {
-        TextureLoader.get().dispose();
-        MeshLoader.get().dispose();
-        ModelLoader.get().dispose();
-        ShaderLoader.get().dispose();
-        FontLoader.get().dispose();
-    }
-
+fun disposeDefaultLoaders() {
+    EngineTextureLoader.dispose()
+    EngineMeshLoader.dispose()
+    EngineModelLoader.dispose()
+    EngineShaderLoader.dispose()
+    EngineFontLoader.dispose()
 }

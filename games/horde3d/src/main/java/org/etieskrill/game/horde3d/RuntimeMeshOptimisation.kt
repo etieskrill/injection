@@ -1,154 +1,148 @@
-package org.etieskrill.game.horde3d;
+package org.etieskrill.game.horde3d
 
-import org.etieskrill.engine.application.App;
-import org.etieskrill.engine.entity.Entity;
-import org.etieskrill.engine.entity.component.DirectionalLightComponent;
-import org.etieskrill.engine.entity.component.Drawable;
-import org.etieskrill.engine.entity.component.Transform;
-import org.etieskrill.engine.entity.service.impl.AnimationService;
-import org.etieskrill.engine.entity.service.impl.DirectionalShadowMappingService;
-import org.etieskrill.engine.entity.service.impl.RenderService;
-import org.etieskrill.engine.graphics.animation.Animator;
-import org.etieskrill.engine.graphics.camera.OrthographicCamera;
-import org.etieskrill.engine.graphics.camera.PerspectiveCamera;
-import org.etieskrill.engine.graphics.data.DirectionalLight;
-import org.etieskrill.engine.graphics.gl.framebuffer.DirectionalShadowMap;
-import org.etieskrill.engine.graphics.gl.shader.impl.AnimationShader;
-import org.etieskrill.engine.graphics.gl.shader.impl.PhongNoMaterialShader;
-import org.etieskrill.engine.graphics.model.Model;
-import org.etieskrill.engine.graphics.model.ModelFactory;
-import org.etieskrill.engine.graphics.model.loader.Loader;
-import org.etieskrill.engine.input.controller.CursorCameraController;
-import org.etieskrill.engine.input.controller.KeyCameraController;
-import org.etieskrill.engine.util.Loaders;
-import org.etieskrill.engine.util.Loaders.ModelLoader;
-import org.etieskrill.engine.window.Window;
-import org.joml.Random;
-import org.joml.Vector2i;
-import org.joml.Vector3f;
+import org.etieskrill.engine.application.App
+import org.etieskrill.engine.entity.component.DirectionalLightComponent
+import org.etieskrill.engine.entity.component.Drawable
+import org.etieskrill.engine.entity.component.Transform
+import org.etieskrill.engine.entity.service.impl.AnimationService
+import org.etieskrill.engine.entity.service.impl.DirectionalShadowMappingService
+import org.etieskrill.engine.entity.service.impl.RenderService
+import org.etieskrill.engine.graphics.animation.Animator
+import org.etieskrill.engine.graphics.camera.OrthographicCamera
+import org.etieskrill.engine.graphics.camera.PerspectiveCamera
+import org.etieskrill.engine.graphics.data.DirectionalLight
+import org.etieskrill.engine.graphics.gl.framebuffer.DirectionalShadowMap
+import org.etieskrill.engine.graphics.gl.shader.impl.AnimationShader
+import org.etieskrill.engine.graphics.gl.shader.impl.PhongNoMaterialShader
+import org.etieskrill.engine.graphics.model.Model
+import org.etieskrill.engine.graphics.model.ModelFactory
+import org.etieskrill.engine.graphics.model.loader.Loader
+import org.etieskrill.engine.input.controller.CursorCameraController
+import org.etieskrill.engine.input.controller.KeyCameraController
+import org.etieskrill.engine.util.Loaders
+import org.etieskrill.engine.window.Window
+import org.joml.Math.toRadians
+import org.joml.Vector2i
+import org.joml.Vector3f
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.random.Random
 
-import java.util.ArrayList;
-import java.util.List;
+fun main() = RuntimeMeshOptimisation.run()
 
-import static org.joml.Math.*;
+object RuntimeMeshOptimisation : App(
+    Window(
+        size = Window.WindowSize.LARGEST_FIT,
+        mode = Window.WindowMode.BORDERLESS,
+        vSync = true
+    )
+) {
 
-public class RuntimeMeshOptimisation extends App {
+    val zombieTransforms = mutableListOf<Transform>()
 
-    List<Transform> zombieTransforms;
+    init {
+        val camera = PerspectiveCamera(window.size).setRotation(0f, -90f, 0f)
 
-    @Override
-    protected void init() {
-        getWindow().setSize(Window.WindowSize.LARGEST_FIT);
+        entitySystem.addServices(
+            AnimationService(),
+            DirectionalShadowMappingService(renderer),
+            RenderService(window.screenBuffer, renderer, camera, window.size)
+        )
 
-        PerspectiveCamera camera = new PerspectiveCamera(getWindow().getCurrentSize());
-        camera.setRotation(0, -90, 0);
+        entitySystem.createEntity {
+            +Transform(position = Vector3f(0f, -1.5f, 0f))
+            +Drawable(ModelFactory.box(Vector3f(30f, 1f, 30f)), PhongNoMaterialShader())
+        }
 
-        getEntitySystem().addService(new AnimationService());
-        getEntitySystem().addService(new DirectionalShadowMappingService(getRenderer()));
-        getEntitySystem().addService(new RenderService(getScreenBuffer(), getRenderer(), camera, getWindow().getCurrentSize()));
+        entitySystem.createEntity {
+            +DirectionalLightComponent(
+                DirectionalLight(Vector3f(1f, -1f, -1f)),
+                DirectionalShadowMap(Vector2i(4096)),
+                OrthographicCamera(Vector2i(4096), 20f, -20f, -20f, 20f).apply {
+                    position = Vector3f(10f)
+                    setRotation(-45f, 215f, 0f)
+                    far = 40f
+                }
+            )
+        }
 
-        getEntitySystem().createEntity(id -> new Entity(id)
-                .withComponent(new Transform().setPosition(new Vector3f(0, -1.5f, 0)))
-                .withComponent(new Drawable(ModelFactory.box(new Vector3f(30, 1, 30)), new PhongNoMaterialShader()))
-        );
+        spawnZombies()
+        spawnSkeletonZombies()
 
-        getEntitySystem().createEntity(id -> new Entity(id)
-                .withComponent(new DirectionalLightComponent(new DirectionalLight(
-                        new Vector3f(1, -1, -1), new Vector3f(1), new Vector3f(1), new Vector3f(1)),
-                        DirectionalShadowMap.generate(new Vector2i(4096)),
-                        new OrthographicCamera(new Vector2i(4096), 20, -20, -20, 20)
-                                .setPosition(new Vector3f(10))
-                                .setRotation(-45, 215, 0)
-                                .setFar(40)
-                )));
+        window.keyInputs += KeyCameraController(camera)
+        window.cursorInputs += CursorCameraController(camera)
+        window.cursor.disable()
 
-        zombieTransforms = new ArrayList<>();
-
-        spawnZombies();
-        spawnSkeletonZombies();
-
-        getWindow().addCursorInputs(new CursorCameraController(camera));
-        getWindow().getCursor().disable();
-        getWindow().addKeyInputs(new KeyCameraController(camera));
-
-        getWindow().setScene(new DebugInterface(getScreenBuffer(), getWindow().getCurrentSize(), getRenderer(), getPacer()));
+        window.scene = DebugInterface(window.screenBuffer, window.size, renderer, pacer)
     }
 
-    private void spawnZombies() {
-        final float numZombies = 100;
-        Random random = new Random();
-        for (int i = 0; i < numZombies; i++) {
-            float angle = toRadians(((float) i / numZombies) * 360);
+    private fun spawnZombies() {
+        val numZombies = 100
+        val random = Random(69420)
 
-            Model model = ModelLoader.get().load("zombie", () ->
-                    new Model.Builder("mixamo_zombie_skinned_walking.glb")
-                            .optimiseMeshes()
-                            .build());
+        for (i in 0..numZombies) {
+            val angle = toRadians(360f * i / numZombies)
 
-            Animator animator = new Animator(model);
-            animator.add(Loaders.AnimationLoader.get().load("mixamo_zombie_walking", () ->
-                    Loader.loadModelAnimations("mixamo_zombie_walking.glb", model).getFirst()));
-            animator.play(random.nextFloat() * .25f);
+            val model = Loaders.ModelLoader.get().load("zombie") {
+                Model.Builder("mixamo_zombie_skinned_walking.glb")
+                    .optimiseMeshes()
+                    .build()
+            }
 
-            var zombie = getEntitySystem().createEntity(id -> new Entity(id)
-                    .withComponent(new Transform()
-                            .setPosition(new Vector3f(8 * cos(angle), -1, 8 * sin(angle))))
-                    .withComponent(new Drawable(model, new ZombieShader()))
-                    .withComponent(animator));
-            zombieTransforms.add(zombie.getComponent(Transform.class));
+            val animator = Animator(model).add(Loaders.AnimationLoader.get().load("mixamo_zombie_walking") {
+                Loader.loadModelAnimations("mixamo_zombie_walking.glb", model)[0]
+            })
+            animator.play(random.nextDouble() * 0.25)
+
+            val transform = Transform(position = Vector3f(8f * cos(angle), -1f, 8f * sin(angle)))
+            zombieTransforms += transform
+
+            entitySystem.createEntity {
+                +transform
+                +Drawable(model, ZombieShader())
+                +animator
+            }
         }
     }
 
-    private void spawnSkeletonZombies() {
-        final float numSkellyZombies = 25;
-        Random random = new Random();
-        for (int i = 0; i < numSkellyZombies; i++) {
-            float angle = toRadians(360 * i / numSkellyZombies);
+    private fun spawnSkeletonZombies() {
+        val numSkellyZombies = 25
+        val random = Random(69420)
+
+        for (i in 0..numSkellyZombies) {
+            val angle = toRadians(360f * i / numSkellyZombies)
 
             //FIXME why the skellington rig borked?
-            Model model = ModelLoader.get().load("skeleton_zombie", () ->
-                    new Model.Builder("mixamo_skeletonzombie_skin.glb")
-                            .optimiseMeshes()
-                            .build());
+            val model = Loaders.ModelLoader.get().load("skeleton_zombie") {
+                Model.Builder("mixamo_skeletonzombie_skin.glb")
+                    .optimiseMeshes()
+                    .build()
+            }
 
-            Animator animator = new Animator(model);
-            animator.add(Loaders.AnimationLoader.get().load("silly_dancing",
-                            Loader.loadModelAnimations("mixamo_bboy_hip_hop.fbx", model, (modelBone, animBone) ->
-                                    animBone.contains(modelBone.substring(modelBone.lastIndexOf(':'))))::getFirst),
-                    layer -> layer.setPlaybackSpeed(.8f));
-            animator.play(random.nextFloat() * .175f);
+            val animator = Animator(model).add(Loaders.AnimationLoader.get().load("silly_dancing") {
+                Loader.loadModelAnimations("mixamo_bboy_hip_hop.fbx", model) { modelBone, animBone ->
+                    modelBone.substring(modelBone.lastIndexOf(':')) in animBone
+                }[0]
+            }) { layer -> layer.playbackSpeed = 0.8 }
+            animator.play(random.nextDouble() * 0.175)
 
-            getEntitySystem().createEntity(id -> new Entity(id)
-                    .withComponent(new Transform()
-                            .setPosition(new Vector3f(8 * cos(angle), 1, 8 * sin(angle)))
-                            .applyRotation(quat -> quat.rotateY(-angle - toRadians(90))))
-                    .withComponent(new Drawable(model, new AnimationShader()))
-                    .withComponent(animator)
-            );
-        }
-
-        getRenderer().setQueryGpuTime(false);
-    }
-
-    @Override
-    protected void loop(double delta) {
-        for (int i = 0; i < zombieTransforms.size(); i++) {
-            float angle = toRadians(360 * i / (float) zombieTransforms.size());
-            float anglePosition = angle + (float) ((.05 * getPacer().getTime()) % (2 * Math.PI));
-            zombieTransforms.get(i)
-                    .setPosition(new Vector3f(8 * cos(anglePosition), -1, 8 * sin(anglePosition)))
-                    .applyRotation(quat -> quat.rotationY(-anglePosition));
+            entitySystem.createEntity {
+                +Transform(position = Vector3f(8f * cos(angle), 1f, 8f * sin(angle)))
+                +Drawable(model, AnimationShader())
+                +animator
+            }
         }
     }
 
-    public RuntimeMeshOptimisation() {
-        super(Window.builder()
-                .setVSyncEnabled(true)
-                .setMode(Window.WindowMode.BORDERLESS)
-                .build());
+    override fun loop(delta: Double) {
+        zombieTransforms.forEachIndexed { i, transform ->
+            val angle = toRadians(360f * i / zombieTransforms.size)
+            val anglePosition = angle + ((0.05f * pacer.timerTimeSeconds) % (2f * PI)).toFloat()
+
+            transform.position = Vector3f(9f * cos(anglePosition), -1f, 8f * sin(anglePosition))
+            transform.rotation.rotationY(-anglePosition)
+        }
     }
 
-    public static void main(String[] args) {
-        new RuntimeMeshOptimisation().run();
-    }
 }

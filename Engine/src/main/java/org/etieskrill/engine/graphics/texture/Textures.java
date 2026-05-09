@@ -1,7 +1,7 @@
 package org.etieskrill.engine.graphics.texture;
 
 import org.etieskrill.engine.common.ResourceLoadException;
-import org.etieskrill.engine.util.Loaders;
+import org.etieskrill.engine.util.EngineTextureLoader;
 import org.etieskrill.engine.util.ResourceReader;
 import org.joml.Vector2i;
 import org.joml.Vector2ic;
@@ -13,7 +13,7 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.MissingResourceException;
 
-import static org.etieskrill.engine.config.ResourcePaths.TEXTURE_PATH;
+import static org.etieskrill.engine.config.ResourcePathsKt.TEXTURE_PATH;
 import static org.etieskrill.engine.graphics.texture.AbstractTexture.Type.DIFFUSE;
 import static org.etieskrill.engine.graphics.texture.AbstractTexture.Type.UNKNOWN;
 import static org.lwjgl.stb.STBImage.stbi_failure_reason;
@@ -88,7 +88,7 @@ public class Textures {
     }
 
     public static CubeMapTexture getSkybox(String name) {
-        return (CubeMapTexture) Loaders.TextureLoader.get().load("cubemap/" + name, () ->
+        return (CubeMapTexture) EngineTextureLoader.INSTANCE.load("cubemap/" + name, () ->
                 CubeMapTexture.CubemapTextureBuilder.get(name)
                         .setMipMapping(AbstractTexture.MinFilter.LINEAR, AbstractTexture.MagFilter.LINEAR)
                         .setWrapping(AbstractTexture.Wrapping.CLAMP_TO_EDGE)

@@ -2,10 +2,9 @@ package org.etieskrill.engine.graphics.texture;
 
 import io.github.etieskrill.injection.extension.shader.TextureCubeMap;
 import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment;
+import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachmentType;
 import org.etieskrill.engine.util.ResourceReader;
 import org.joml.Vector2ic;
-import org.joml.Vector3f;
-import org.joml.Vector3fc;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,15 +21,6 @@ import static org.lwjgl.stb.STBImage.stbi_image_free;
 public class CubeMapTexture extends AbstractTexture implements FrameBufferAttachment, TextureCubeMap {
 
     public static final int NUM_SIDES = 6;
-
-    public static final Vector3fc[] FACE_NORMALS = {
-            new Vector3f(1, 0, 0), new Vector3f(-1, 0, 0), new Vector3f(0, 1, 0),
-            new Vector3f(0, -1, 0), new Vector3f(0, 0, 1), new Vector3f(0, 0, -1)};
-
-    public static final Vector3fc[] FACE_UPS = {
-            new Vector3f(0, -1, 0), new Vector3f(0, -1, 0), new Vector3f(0, 0, 1),
-            new Vector3f(0, 0, -1), new Vector3f(0, -1, 0), new Vector3f(0, -1, 0)
-    };
 
     private static final Logger logger = LoggerFactory.getLogger(CubeMapTexture.class);
 
@@ -158,11 +148,11 @@ public class CubeMapTexture extends AbstractTexture implements FrameBufferAttach
     }
 
     @Override
-    public void attach(BufferAttachmentType type) {
+    public void attach(FrameBufferAttachmentType type) {
         //This call binds the whole cubemap as a single shader object, where the faces are then
         //addressed using gl_Layer. The built-in variable does NOT work if we bound every face of the
         //cubemap using glFramebufferTexture2D, as the texture object's id would then refer to only the
         //last texture specified this way, which, when iterating over the faces, is the negative z one.
-        glFramebufferTexture(GL_FRAMEBUFFER, type.toGLAttachment(), getID(), 0);
+        glFramebufferTexture(GL_FRAMEBUFFER, type.getGlAttachmentType(), getID(), 0);
     }
 }

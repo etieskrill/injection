@@ -9,8 +9,8 @@ import org.etieskrill.engine.graphics.texture.AbstractTexture.Format;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.texture.Textures;
 import org.etieskrill.engine.time.StepTimer;
+import org.etieskrill.engine.util.EngineTextureLoader;
 import org.etieskrill.engine.util.FileUtils.TypedFile;
-import org.etieskrill.engine.util.Loaders;
 import org.joml.Vector2i;
 import org.joml.Vector4f;
 import org.joml.Vector4fc;
@@ -22,9 +22,9 @@ import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import static org.etieskrill.engine.config.ResourcePaths.TEXTURE_PATH;
-import static org.etieskrill.engine.graphics.model.Material.Property.SHININESS;
+import static org.etieskrill.engine.config.ResourcePathsKt.TEXTURE_PATH;
 import static org.etieskrill.engine.graphics.model.Material.Property.*;
+import static org.etieskrill.engine.graphics.model.Material.Property.SHININESS;
 import static org.etieskrill.engine.graphics.texture.AbstractTexture.Type.*;
 import static org.etieskrill.engine.util.FileUtils.splitTypeFromPath;
 import static org.etieskrill.engine.util.ResourceReader.classpathResourceExists;
@@ -186,7 +186,7 @@ class MaterialLoader {
                 continue;
             }
 
-            Texture2D texture = (Texture2D) Loaders.TextureLoader.get().load(textureName, supplier);
+            Texture2D texture = (Texture2D) EngineTextureLoader.INSTANCE.load(textureName, supplier);
             material.addTextures(texture);
             validTextures++;
         }

@@ -32,7 +32,7 @@ dependencies {
 }
 
 application {
-    mainClass = 'org.etieskrill.game.horde3d.EntityApplication'
+    mainClass = 'org.etieskrill.game.horde3d.EntityApplicationKt'
 }
 
 test {
@@ -40,6 +40,6 @@ test {
 }
 
 launch4j {
-    mainClassName = 'org.etieskrill.game.horde3d.EntityApplication'
+    mainClassName = 'org.etieskrill.game.horde3d.EntityApplicationKt'
     jarTask = project.tasks.shadowJar
 }

@@ -17,7 +17,7 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 
-import static org.etieskrill.engine.config.ResourcePaths.ENGINE_RESOURCE_PATH;
+import static org.etieskrill.engine.config.ResourcePathsKt.ENGINE_RESOURCE_PATH;
 
 //TODO remove "prefixes", add scene base path local resources
 public class ResourceReader {

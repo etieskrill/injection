@@ -94,8 +94,6 @@ class SystemNanoTimePacer(
         framesElapsed = 0
     }
 
-    private fun getNanoTime(): Duration = System.nanoTime().nanoseconds
-
     private /*synchronized*/ fun incrementFrameCounters() {
         framesElapsed++
         totalFramesElapsed++
