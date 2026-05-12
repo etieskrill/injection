@@ -42,7 +42,7 @@ import org.etieskrill.engine.input.controller.KeyCameraController
 import org.etieskrill.engine.scene.Scene
 import org.etieskrill.engine.scene.container.Container
 import org.etieskrill.engine.scene.element.Label
-import org.etieskrill.engine.util.Loaders
+import org.etieskrill.engine.util.EngineModelLoader
 import org.etieskrill.engine.window.Window
 import org.joml.AxisAngle4f
 import org.joml.Quaternionf
@@ -77,7 +77,7 @@ class Leverage : org.etieskrill.engine.application.App(
         size = Window.WindowSize.LARGEST_FIT,
         mode = Window.WindowMode.BORDERLESS,
         samples = 4u,
-    vSync = true
+        vSync = true
     )
 ) {
 
@@ -132,28 +132,29 @@ class Leverage : org.etieskrill.engine.application.App(
     )
 
     init {
-        val shipModel = Loaders.ModelLoader.get().load("human-bb") { Model.ofFile("hooman-bb.glb") }
+        val shipModel = EngineModelLoader.load("human-bb") { Model.ofFile("hooman-bb.glb") }
 
-        entitySystem.createEntity()
-            .withComponent(Transform())
-            .addComponent(Drawable(shipModel))
+        entitySystem.createEntity {
+            +Transform()
+            +Drawable(shipModel)
+        }
 
-        entitySystem.createEntity()
-            .withComponent(Transform())
-            .withComponent(
-                DirectionalLightComponent(
-                    DirectionalLight(Vector3f(-1f), Vector3f(0f), Vector3f(1f), Vector3f(1f)),
-                    DirectionalShadowMap.generate(Vector2i(2048)),
-                    OrthographicCamera(Vector2i(2048), 20f, -20f, -20f, 20f).apply {
-                        // FIXME i hate myself
-                        setOrbit(true)
-                        setOrbitDistance(10f)
-                        setRotation(-45f, 90f + 45f, 0f)
+        entitySystem.createEntity {
+            +Transform()
+            +DirectionalLightComponent(
+                DirectionalLight(Vector3f(-1f), Vector3f(0f), Vector3f(1f), Vector3f(1f)),
+                DirectionalShadowMap(Vector2i(2048)),
+                OrthographicCamera(Vector2i(2048), 20f, -20f, -20f, 20f).apply {
+                    // FIXME i hate myself
+                    setOrbit(true)
+                    setOrbitDistance(10f)
+                    setRotation(-45f, 90f + 45f, 0f)
 
-                        near = -1f
-                        far = 20f
-                    }
-                ))
+                    near = -1f
+                    far = 20f
+                }
+            )
+        }
 
         val engineNodes = arrayOf(
             "engine-plume-far-left",
@@ -163,7 +164,7 @@ class Leverage : org.etieskrill.engine.application.App(
             "engine-plume-far-right"
         )
 
-        val pointShadowMaps = PointShadowMapArray.generate(Vector2i(256), engineNodes.size)
+        val pointShadowMaps = PointShadowMapArray(Vector2i(256), engineNodes.size)
 
 //        engineNodes.map { nodeName ->
 //            PointLight(
@@ -223,10 +224,10 @@ class Leverage : org.etieskrill.engine.application.App(
 
                         if (intersectRayAab(lastRay, worldSpaceAABB, Vector2f())) {
                             selectedEntity = it
-                            drawable.isDrawOutline = true
+                            drawable.isOutlineEnabled = true
                         } else {
                             selectedEntity = null
-                            drawable.isDrawOutline = false
+                            drawable.isOutlineEnabled = false
                         }
 
                         return true
@@ -335,7 +336,7 @@ class Leverage : org.etieskrill.engine.application.App(
         }
 
         if (selectedEntity != null) {
-            selectedEntity!!.getComponent<Drawable>()!!.isDrawOutline = false
+            selectedEntity!!.getComponent<Drawable>()!!.isOutlineEnabled = false
             selectedEntity = null
         }
     }
@@ -476,7 +477,7 @@ class TranslateController(val camera: Camera) : CursorInputAdapter, TransformCon
             first = false
         }
 
-        transform!!.setPosition(originalPosition + pos - originalCastPosition)
+        transform!!.position = originalPosition + pos - originalCastPosition
 
         cursorPosition.set(
             posX mod camera.viewportSize.x().toDouble(),
@@ -576,7 +577,7 @@ class RotateController(val camera: Camera) : CursorInputAdapter, TransformContro
             )
         ) //why would the new transform be applied first?
         val deltaPos = transform.matrix.transformPosition(centreOfMass, Vector3f()) - originalCOM
-        transform.translate(-deltaPos)
+        transform.position -= deltaPos
 
         cursorPosition = position mod camera.viewportSize
 
@@ -628,7 +629,7 @@ class ScaleController(val camera: Camera) : CursorInputAdapter, TransformControl
 
         var newScale = position.length() - originalDistance
         newScale = sign(newScale) * sqrt(abs(newScale / 1000f))
-        transform.setScale(originalScale + Vector3f(newScale))
+        transform.scale = originalScale + Vector3f(newScale)
 
         cursorPosition = position mod camera.viewportSize
 

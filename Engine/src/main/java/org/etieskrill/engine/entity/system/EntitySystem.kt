@@ -10,7 +10,8 @@ private val logger = KotlinLogging.logger {}
 
 class EntitySystem : Disposable {
 
-    private val entities = mutableListOf<Entity>()
+    private val internalEntities = mutableListOf<Entity>()
+    val entities: List<Entity> get() = internalEntities
 
     private val services = mutableListOf<Service>() //TODO replace with set when execution plan is established
     private val serviceExecutionPlan = mutableListOf<Service>()
@@ -44,21 +45,21 @@ class EntitySystem : Disposable {
     private fun getNextId(): Int {
         val nextId = when {
             freeIndices.isNotEmpty() -> freeIndices.removeFirst()
-            entities.size + addedEntities.size == nextEntityIndex -> nextEntityIndex++
+            internalEntities.size + addedEntities.size == nextEntityIndex -> nextEntityIndex++
             else -> error("Failed to create id for new entity")
         }
 
-        check(entities.none { it.id == nextId }) { "Tried to create entity with id of an existing entity" }
+        check(internalEntities.none { it.id == nextId }) { "Tried to create entity with id of an existing entity" }
 
         return nextId
     }
 
-    fun entityExists(entity: Entity?): Boolean = entities.contains(entity)
+    fun entityExists(entity: Entity?): Boolean = internalEntities.contains(entity)
 
     fun removeEntity(entity: Entity) = markedForRemoval.add(entity)
 
     fun removeEntity(entityId: Int) = markedForRemoval.add(
-        entities.find { it.id == entityId } ?: error("Entity with id $entityId does not exist")
+        internalEntities.find { it.id == entityId } ?: error("Entity with id $entityId does not exist")
     )
 
     fun isMarkedForRemoval(entity: Entity) = entity in markedForRemoval
@@ -89,7 +90,7 @@ class EntitySystem : Disposable {
         serviceExecutionPlan.forEach { service ->
             val entities =
                 (service.comparator?.let { orderedEntities[service]!!.sortedWith(it) }
-                    ?: this.entities.toList())
+                    ?: this.internalEntities.toList())
 
             service.preProcess(delta, entities)
             entities.filterNot { it.getComponent<Enabled>()?.enabled == false }
@@ -98,13 +99,13 @@ class EntitySystem : Disposable {
             service.postProcess(entities)
         }
 
-        entities.addAll(addedEntities)
-        entities.sortBy(Entity::id)
+        internalEntities.addAll(addedEntities)
+        internalEntities.sortBy(Entity::id)
         orderedEntities.forEach { _, entities -> entities.addAll(addedEntities) }
         addedEntities.clear()
 
-        entities.removeAll(markedForRemoval)
-        entities.sortBy(Entity::id)
+        internalEntities.removeAll(markedForRemoval)
+        internalEntities.sortBy(Entity::id)
         orderedEntities.forEach { _, entities -> entities.removeAll(markedForRemoval) }
         freeIndices.addAll(markedForRemoval.map(Entity::id))
         markedForRemoval.forEach(Entity::dispose)
@@ -113,7 +114,7 @@ class EntitySystem : Disposable {
 
     override fun dispose() {
         if (disposed) return
-        entities.forEach(Entity::dispose)
+        internalEntities.forEach(Entity::dispose)
         services.forEach(Service::dispose)
         disposed = true
     }

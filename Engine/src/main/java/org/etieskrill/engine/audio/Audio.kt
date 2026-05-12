@@ -1,178 +1,59 @@
 package org.etieskrill.engine.audio
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.etieskrill.engine.common.Disposable
 import org.etieskrill.engine.util.ResourceReader
-import org.joml.Vector3f
-import org.joml.Vector3fc
-import org.lwjgl.BufferUtils.*
-import org.lwjgl.openal.AL
-import org.lwjgl.openal.AL10.alGetSourcei
-import org.lwjgl.openal.AL11.*
-import org.lwjgl.openal.ALC
-import org.lwjgl.openal.ALC10.*
-import org.lwjgl.openal.ALCCapabilities
-import org.lwjgl.openal.ALCapabilities
-import org.lwjgl.stb.STBVorbis.*
+import org.lwjgl.BufferUtils.createIntBuffer
+import org.lwjgl.BufferUtils.createPointerBuffer
+import org.lwjgl.BufferUtils.createShortBuffer
+import org.lwjgl.openal.AL10.AL_BUFFER
+import org.lwjgl.openal.AL10.AL_FORMAT_MONO16
+import org.lwjgl.openal.AL10.AL_FORMAT_STEREO16
+import org.lwjgl.openal.AL10.AL_INVALID_ENUM
+import org.lwjgl.openal.AL10.AL_INVALID_NAME
+import org.lwjgl.openal.AL10.AL_INVALID_OPERATION
+import org.lwjgl.openal.AL10.AL_INVALID_VALUE
+import org.lwjgl.openal.AL10.AL_NO_ERROR
+import org.lwjgl.openal.AL10.AL_OUT_OF_MEMORY
+import org.lwjgl.openal.AL10.alBufferData
+import org.lwjgl.openal.AL10.alDeleteBuffersDirect
+import org.lwjgl.openal.AL10.alDeleteSourcesDirect
+import org.lwjgl.openal.AL10.alGenBuffers
+import org.lwjgl.openal.AL10.alGenSources
+import org.lwjgl.openal.AL10.alGetError
+import org.lwjgl.openal.AL10.alSourcei
+import org.lwjgl.openal.ALC10.ALC_DEFAULT_DEVICE_SPECIFIER
+import org.lwjgl.openal.ALC10.ALC_DEVICE_SPECIFIER
+import org.lwjgl.openal.ALC10.ALC_INVALID_CONTEXT
+import org.lwjgl.openal.ALC10.ALC_INVALID_DEVICE
+import org.lwjgl.openal.ALC10.ALC_INVALID_ENUM
+import org.lwjgl.openal.ALC10.ALC_INVALID_VALUE
+import org.lwjgl.openal.ALC10.ALC_NO_ERROR
+import org.lwjgl.openal.ALC10.ALC_OUT_OF_MEMORY
+import org.lwjgl.openal.ALC10.alcGetError
+import org.lwjgl.openal.ALC10.alcGetString
+import org.lwjgl.openal.ALC10.alcIsExtensionPresent
+import org.lwjgl.openal.ALC10.alcMakeContextCurrent
+import org.lwjgl.stb.STBVorbis.stb_vorbis_close
+import org.lwjgl.stb.STBVorbis.stb_vorbis_get_info
+import org.lwjgl.stb.STBVorbis.stb_vorbis_get_samples_short
+import org.lwjgl.stb.STBVorbis.stb_vorbis_get_samples_short_interleaved
+import org.lwjgl.stb.STBVorbis.stb_vorbis_open_memory
+import org.lwjgl.stb.STBVorbis.stb_vorbis_stream_length_in_samples
 import org.lwjgl.stb.STBVorbisInfo
-import org.slf4j.LoggerFactory
 import java.nio.ByteBuffer
 import java.nio.ShortBuffer
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.seconds
+import kotlin.use
 import kotlin.Char.Companion.MIN_VALUE as nullChar
 
-private val logger = LoggerFactory.getLogger(Audio::class.java)
-
-class AudioDevice private constructor(val name: String, internal val handle: Long, internal val caps: ALCCapabilities) :
-    Disposable {
-    companion object {
-        fun create(name: String? = null): AudioDevice {
-            val handle = alcOpenDevice(name)
-            checkContextError(handle, "Failed to open audio device")
-            val deviceName = name ?: alcGetString(handle, ALC_DEVICE_SPECIFIER)!!
-
-            val caps = ALC.createCapabilities(handle)
-            return AudioDevice(deviceName, handle, caps)
-        }
-    }
-
-    override fun dispose() {
-        check(alcCloseDevice(handle))
-        { "Failed to dispose OpenAL device $name: there may still be contexts and/or buffers present" }
-    }
-}
-
-internal class AudioContext(val handle: Long, val caps: ALCapabilities, val listener: AudioListener) : Disposable {
-    companion object {
-        fun create(device: AudioDevice): AudioContext {
-            val alContext = alcCreateContext(device.handle, null as IntArray?)
-            alcMakeContextCurrent(alContext)
-
-            val context = AudioContext(
-                alContext,
-                AL.createCapabilities(device.caps), //TODO tdl contexts
-                AudioListener()
-            )
-            checkContextError(context.handle, "Failed to create audio context")
-            return context
-        }
-    }
-
-    override fun dispose() = alcDestroyContext(handle)
-}
+private val logger = KotlinLogging.logger {}
 
 private typealias AudioBuffer = Int
-
-abstract class AudioSource internal constructor(
-    internal val handle: Int,
-    val sampleRate: Int,
-    val numSamples: Int,
-    val buffer: ShortBuffer?,
-    val duration: Duration = (numSamples / sampleRate).seconds,
-    private var disposed: Boolean = false
-) : Disposable {
-
-    val isPlaying: Boolean = checkNotDisposed { alGetSourcei(handle, AL_SOURCE_STATE) == AL_PLAYING }
-
-    fun play() = checkNotDisposed { alSourcePlay(handle) }
-
-    fun pause() = checkNotDisposed { alSourcePause(handle) }
-
-    fun stop() = checkNotDisposed { alSourceStop(handle) }
-
-    /**
-     * The current offset into the bound buffer in samples.
-     */
-    var offsetSamples: Int
-        get() = checkNotDisposed { alGetSourcei(handle, AL_SAMPLE_OFFSET) }
-        set(value) {
-            checkNotDisposed {}
-            require(value >= 0) { "Offset must not be negative" }
-            require(value < numSamples) { "Offset must be smaller than the number of samples" }
-
-            alSourcei(handle, AL_SAMPLE_OFFSET, value)
-        }
-
-    /**
-     * The current offset into the bound buffer in seconds.
-     */
-    var offsetSeconds: Float
-        get() = checkNotDisposed { alGetSourcef(handle, AL_SEC_OFFSET) }
-        set(value) {
-            checkNotDisposed {}
-            require(value >= 0) { "Offset must not be negative" }
-            require(value * sampleRate < numSamples) { "Offset must be smaller than the duration" }
-
-            alSourcef(handle, AL_SEC_OFFSET, value)
-        }
-
-    var gain: Float
-        get() = checkNotDisposed { alGetSourcef(handle, AL_GAIN) }
-        set(value) {
-            checkNotDisposed {}
-            require(value >= 0) { "Gain must be positive" }
-            alSourcef(handle, AL_GAIN, value)
-        }
-
-    override fun dispose() {
-        alDeleteSources(handle)
-        //FIXME the buffers are in the goddamn walls (even the heap buffer copies are not cleaned up grrrr)
-        disposed = true
-    }
-
-    private fun <T> checkNotDisposed(block: () -> T): T {
-        check(!disposed) { "Audio source was already disposed" }
-        return block()
-    }
-
-}
-
-class MonoAudioSource internal constructor(handle: Int, sampleRate: Int, numSamples: Int, buffer: ShortBuffer?) :
-    AudioSource(handle, sampleRate, numSamples, buffer) {
-
-    var position: Vector3fc = Vector3f(0f)
-        set(value) {
-            field = value
-            alSource3f(handle, AL_POSITION, value.x(), value.y(), value.z())
-        }
-
-}
-
-class StereoAudioSource internal constructor(handle: Int, sampleRate: Int, numSamples: Int, buffer: ShortBuffer?) :
-    AudioSource(handle, sampleRate, numSamples, buffer)
-
-class AudioListener {
-    var position: Vector3fc = Vector3f(0f)
-        set(value) {
-            field = value
-            alListener3f(AL_POSITION, value.x(), value.y(), value.z())
-        }
-
-    var direction: Vector3fc = Vector3f(0f)
-        set(value) {
-            field = value
-            setOrientation(field, up)
-        }
-
-    var up: Vector3fc = Vector3f(0f, 1f, 0f)
-        set(value) {
-            field = value
-            setOrientation(direction, field)
-        }
-
-    private val orientationBuffer = createFloatBuffer(6)
-    private fun setOrientation(direction: Vector3fc, up: Vector3fc) {
-        orientationBuffer.position(0)
-        direction.get(orientationBuffer).position(3)
-        up.get(orientationBuffer)
-        alListenerfv(AL_ORIENTATION, orientationBuffer.rewind())
-    }
-}
 
 object Audio : Disposable {
     fun getAudioDevices(): List<String> {
         if (!alcIsExtensionPresent(0, "ALC_ENUMERATION_EXTENSION")) {
-            logger.info("Audio devices could not be enumerated: returning default")
+            logger.info { "Audio devices could not be enumerated: returning default" }
             return listOf(alcGetString(0, ALC_DEFAULT_DEVICE_SPECIFIER)!!)
         }
 
@@ -306,7 +187,7 @@ object Audio : Disposable {
 
 enum class AudioMode(internal val al: Int = 0) { DONT_CARE, MONO(AL_FORMAT_MONO16), STEREO(AL_FORMAT_STEREO16) }
 
-data class PCMAudio(
+private data class PCMAudio(
     val sampleRate: Int,
     val numSamples: Int,
     val mode: AudioMode,
@@ -380,7 +261,7 @@ private fun vorbisLoadStereo(decoder: Long, channels: Int, numSamples: Int): Sho
     return buffer
 }
 
-private fun checkError(message: String = "OpenAL error occurred") {
+internal fun checkError(message: String = "OpenAL error occurred") {
     val error = alGetError()
     val cause = when (error) {
         AL_INVALID_NAME -> "invalid name"
@@ -394,7 +275,7 @@ private fun checkError(message: String = "OpenAL error occurred") {
     check(error == AL_NO_ERROR) { "$message: $cause" }
 }
 
-private fun checkContextError(device: Long, message: String = "OpenALC error occurred") {
+internal fun checkContextError(device: Long, message: String = "OpenALC error occurred") {
     val error = alcGetError(device)
     val cause = when (error) {
         ALC_INVALID_DEVICE -> "invalid device"

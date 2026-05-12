@@ -198,7 +198,7 @@ public abstract class AbstractTexture implements Texture, Disposable {
         UNKNOWN(aiTextureType_UNKNOWN), DIFFUSE(aiTextureType_DIFFUSE), SPECULAR(aiTextureType_SPECULAR),
         SHININESS(aiTextureType_SHININESS), HEIGHT(aiTextureType_HEIGHT), EMISSIVE(aiTextureType_EMISSIVE),
         NORMAL(aiTextureType_NORMALS), METALNESS(aiTextureType_METALNESS),
-        DIFFUSE_ROUGHNESS(aiTextureType_DIFFUSE_ROUGHNESS),
+        ROUGHNESS(aiTextureType_DIFFUSE_ROUGHNESS), AMBIENT_OCCLUSION(aiTextureType_AMBIENT_OCCLUSION),
 
         SHADOW, //engine texture type for shadow maps
 

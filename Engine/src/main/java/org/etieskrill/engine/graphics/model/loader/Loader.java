@@ -26,8 +26,8 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toCollection;
 import static org.etieskrill.engine.graphics.model.loader.AnimationLoader.loadAnimations;
 import static org.etieskrill.engine.graphics.model.loader.Importer.importScene;
-import static org.etieskrill.engine.graphics.model.loader.MaterialLoader.loadEmbeddedTextures;
-import static org.etieskrill.engine.graphics.model.loader.MaterialLoader.loadMaterials;
+import static org.etieskrill.engine.graphics.model.loader.MaterialLoadingKt.loadEmbeddedTextures;
+import static org.etieskrill.engine.graphics.model.loader.MaterialLoadingKt.loadMaterials;
 import static org.etieskrill.engine.graphics.model.loader.MeshProcessor.loadMeshes;
 import static org.lwjgl.assimp.Assimp.*;
 
@@ -78,7 +78,7 @@ public class Loader {
                 new Importer.Options(builder.isFlipUVs(), builder.isFlipWinding())
         );
 
-        timer.log("Import");
+        timer.log(() -> "Import");
 
         AINode rootNode = aiScene.mRootNode();
 
@@ -88,14 +88,14 @@ public class Loader {
         }
 
         loadEmbeddedTextures(aiScene, builder.getEmbeddedTextures());
-        timer.log("Embedded");
-        loadMaterials(aiScene, builder);
-        timer.log("Materials");
+        timer.log(() -> "Embedded");
+        loadMaterials(aiScene, builder.getMaterials(), builder.getEmbeddedTextures(), builder.getName());
+        timer.log(() -> "Materials");
         loadMeshes(aiScene, builder);
-        timer.log("Meshes");
+        timer.log(() -> "Meshes");
         processNode(null, rootNode, builder);
         loadAnimations(aiScene, builder.getBones(), builder.getAnimations(), DEFAULT_BONE_MATCHER); //animations reference bones, which need first be loaded from the meshes, and also require the nodes to resolve the back reference
-        timer.log("Animations");
+        timer.log(() -> "Animations");
         calculateModelBoundingBox(builder);
 
         aiReleaseImport(aiScene);
