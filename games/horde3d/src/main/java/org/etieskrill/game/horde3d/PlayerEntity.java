@@ -6,7 +6,7 @@ import org.etieskrill.engine.entity.component.*;
 import org.etieskrill.engine.graphics.animation.Animator;
 import org.etieskrill.engine.graphics.animation.NodeFilter;
 import org.etieskrill.engine.graphics.model.Model;
-import org.etieskrill.engine.util.Loaders;
+import org.etieskrill.engine.util.EngineModelLoader;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Math;
 import org.joml.Vector2f;
@@ -53,7 +53,7 @@ public class PlayerEntity extends Entity {
         addComponent(moveForce);
         addComponent(new Friction(8f));
 
-        Model model = Loaders.ModelLoader.get().load("player", () ->
+        Model model = EngineModelLoader.INSTANCE.load("player", () ->
                 new Model.Builder("vampire.glb")
                         .hasTransparency(true)
                         .optimiseMeshes(10000, 0.01f)

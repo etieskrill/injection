@@ -28,7 +28,7 @@ fun getCombinedMatrices(
     val projection = Matrix4f().setPerspective(
         toRadians(90f), size.x().toFloat() / size.y().toFloat(), near, far
     )
-    for (i in 0..CubeMapTexture.NUM_SIDES) {
+    for (i in 0..<CubeMapTexture.NUM_SIDES) {
         targets[i].lookAt(light.position, light.position + CUBE_FACE_NORMALS[i], CUBE_FACE_UPS[i])
         projection.mul(targets[i], targets[i])
     }

@@ -7,8 +7,8 @@ import org.etieskrill.engine.graphics.animation.Animation;
 import org.etieskrill.engine.graphics.animation.Animator;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.model.loader.Loader;
-import org.etieskrill.engine.util.Loaders;
-import org.etieskrill.engine.util.Loaders.AnimationLoader;
+import org.etieskrill.engine.util.EngineAnimationLoader;
+import org.etieskrill.engine.util.EngineModelLoader;
 import org.joml.Math;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
@@ -35,7 +35,7 @@ public class Zombie extends Entity {
         addComponent(new AABBf(new Vector3f(-.5f, 0, -.5f), new Vector3f(.5f, 2, .5f)));
         addComponent(new WorldSpaceAABB());
 
-        Model model = Loaders.ModelLoader.get().load("zombie", () ->
+        Model model = EngineModelLoader.INSTANCE.load("zombie", () ->
                 new Model.Builder("mixamo_zombie_skinned_walking.glb")
                         .setName("zombie")
                         .optimiseMeshes(5000, 0.01f)
@@ -44,7 +44,7 @@ public class Zombie extends Entity {
         addComponent(new Drawable(model, new ZombieShader(), true, false, false, 0.05f, new Vector2f((1f))));
 
         Animator animator = new Animator(model);
-        Animation walkingAnimation = AnimationLoader.get().load("zombie_walking", () ->
+        Animation walkingAnimation = EngineAnimationLoader.INSTANCE.load("zombie_walking", () ->
                 Loader.loadModelAnimations("mixamo_zombie_walking.glb", model).getFirst());
         animator.add(walkingAnimation, layer -> layer.setPlaybackSpeed(2));
 

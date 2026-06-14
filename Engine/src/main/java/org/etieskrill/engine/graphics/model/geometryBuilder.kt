@@ -186,7 +186,7 @@ private fun ModelBuilder.createModel(
     boundingBox: AABBf? = null,
     transform: Transform
 ) {
-    val mesh = MeshLoader.loadToVAO(vertices, indices, Material.Builder().build(), boundingBox)
+    val mesh = MeshLoader.loadToVAO(vertices, indices, PhongMaterial(), boundingBox)
 
     val node = Node(name, null, transform, listOf(mesh), null)
     model.nodes += node

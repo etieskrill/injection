@@ -16,6 +16,7 @@ import org.etieskrill.engine.graphics.gl.framebuffer.PointShadowMapArray
 import org.etieskrill.engine.graphics.model.Material
 import org.etieskrill.engine.graphics.model.Model
 import org.etieskrill.engine.graphics.model.ModelFactory
+import org.etieskrill.engine.graphics.model.PhongMaterial
 import org.etieskrill.engine.graphics.texture.AbstractTexture
 import org.etieskrill.engine.graphics.texture.AbstractTexture.Type.*
 import org.etieskrill.engine.graphics.texture.Texture2D
@@ -36,21 +37,14 @@ class World(
     internal lateinit var cubeTransform: Transform
 
     init {
-        val floorModel = ModelFactory.box(Vector3f(100f, .1f, 100f))
-
-        floorModel.nodes[2].meshes[0].material.apply {
-            setProperty(Material.Property.SHININESS, 256f)
-            textures.apply {
-                clear()
-                add(Textures.ofFile("textures/TilesSlateSquare001_COL_2K_METALNESS.png", DIFFUSE));
-                add(Textures.ofFile("textures/TilesSlateSquare001_ROUGHNESS_2K_METALNESS.png", SPECULAR))
-                add(
-                    Texture2D.FileBuilder("textures/TilesSlateSquare001_NRM_2K_METALNESS.png", NORMAL)
-                        .setFormat(AbstractTexture.Format.RGB) //TODO MMMMMMHHHHH select correct format automatically
-                        .build()
-                )
-            }
-        }
+        val floorModel = ModelFactory.box(Vector3f(100f, .1f, 100f), PhongMaterial(
+            shininess = 256f,
+            diffuseTexture = Textures.ofFile("textures/TilesSlateSquare001_COL_2K_METALNESS.png", DIFFUSE),
+            specularTexture = Textures.ofFile("textures/TilesSlateSquare001_ROUGHNESS_2K_METALNESS.png", SPECULAR),
+            normalTexture = Texture2D.FileBuilder("textures/TilesSlateSquare001_NRM_2K_METALNESS.png", NORMAL)
+                .setFormat(AbstractTexture.Format.RGB) //TODO MMMMMMHHHHH select correct format automatically
+                .build()
+        ))
 
         entitySystem.createEntity {
             +Transform(Vector3f(0f, -1f, 0f))

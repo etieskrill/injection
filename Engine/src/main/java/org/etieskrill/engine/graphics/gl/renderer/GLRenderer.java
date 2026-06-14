@@ -26,7 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.etieskrill.engine.graphics.model.Material.Property.*;
+import static org.etieskrill.engine.graphics.texture.AbstractTexture.Type.SHININESS;
 import static org.lwjgl.opengl.GL33C.*;
 
 //TODO assure thread safety/passing
@@ -346,93 +346,30 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
     }
 
     private void bindMaterial(Material material, ShaderProgram shader) {
-        //TODO here the renderer could decide what kind of shader to use, based on the material given
-        int diffuse = 0, specular = 0, normal = 0, emissive = 0, height = 0, shininess = 0, shadow = 0;
-        List<AbstractTexture> textures = material.getTextures();
-
-        var textureContext = getOrCreateShaderTextureContext(shader);
-        if (textures.size() + textureContext.manuallyBoundTextures + 1 > MAX_USABLE_TEXTURE_UNIT) {
-            throw new UnsupportedOperationException(
-                    "No more than " + MAX_USABLE_TEXTURE_UNIT + " textures may be used for now");
+        if (Boolean.TRUE.equals(material.isTwoSided())) {
+            glDisable(GL_CULL_FACE);
+        }
+        if (Boolean.TRUE.equals(material.isWireframeEnabled())) {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         }
 
         //FIXME bind all unused samplers to unused slots to avoid sampler type conflict
         //FIXME if proper: bind default 1x1 texture to type if not set
 
-        //TODO requires some more investigation:
-        //binding seemingly any texture object to slot 0 causes the context to throw a fit
-//        for (int i = 0; i < MAX_USABLE_TEXTURE_UNIT; i++) {
-//            if (i == 1) continue;
-//            glActiveTexture(GL_TEXTURE0 + i);
-//            glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, 0);
+//        AbstractTexture.clearBind(0); //TODO apparently sampler 0 is the default for unset uniform samplers, making some shaders sample into textures with arbitrary formats and values - potentially causing undefined behaviour render errors
+//        for (int i = textureContext.nextTexture; i < MAX_USABLE_TEXTURE_UNIT; i++) { //TODO this is a little inefficient, but you don't have to unbind textures all the time like this
+//            AbstractTexture.clearBind(i);
 //        }
-//        glActiveTexture(GL_TEXTURE0);
-//        glBindTexture(GL_TEXTURE_2D, 0);
 
-        for (AbstractTexture texture : textures) {
-            String uniform = "material.";
-            int number = -1;
-
-            switch (texture.getTarget()) {
-                case TWO_D -> {
-                    uniform += texture.getType().name().toLowerCase();
-                    number = switch (texture.getType()) {
-                        case DIFFUSE -> diffuse++;
-                        case SPECULAR ->
-                                specular++; //TODO could pass texture colour channels here, but it is probs best to just finally define a standard for this whole shebang
-                        case NORMAL -> normal++;
-                        case EMISSIVE -> emissive++;
-                        case HEIGHT -> height++;
-                        case SHININESS -> shininess++;
-                        case SHADOW -> shadow++;
-                        case UNKNOWN -> throw new IllegalStateException("Texture has invalid type");
-                        default -> 0; //FIXME
-                    };
-                }
-                case ARRAY -> uniform += "array";
-                case CUBEMAP -> uniform += "cubemap";
-            }
-
-            texture.bind(textureContext.nextTexture);
-            shader.setUniform(uniform + number, textureContext.nextTexture++, false);
-        }
-
-        AbstractTexture.clearBind(0); //TODO apparently sampler 0 is the default for unset uniform samplers, making some shaders sample into textures with arbitrary formats and values - potentially causing undefined behaviour render errors
-        for (int i = textureContext.nextTexture; i < MAX_USABLE_TEXTURE_UNIT; i++) { //TODO this is a little inefficient, but you don't have to unbind textures all the time like this
-            AbstractTexture.clearBind(i);
-        }
-
-        shader.setUniform("normalMapped", normal > 0, false);
-        shader.setUniform("material.hasNormalMap", normal > 0, false);
-
-        //TODO add a way to map all available material props automatically with sensible default values
-        //TODO add invalidation flag to uniform properties and update here only if invalid (do not forget about the first time)
-        shader.setUniform("material.colour", material.getColourProperty(COLOUR_BASE), false);
-        shader.setUniform("material.diffuseColour", material.getColourProperty(COLOUR_DIFFUSE), false);
-        shader.setUniform("material.emissiveColour", material.getColourProperty(COLOUR_EMISSIVE), false);
-        shader.setUniform("material.emissiveIntensity", material.getPropertyOrDefault(INTENSITY_EMISSIVE, 0), false);
-        shader.setUniform("material.opacity", material.getPropertyOrDefault(OPACITY, 1), false);
-
-        shader.setUniform("material.hasDiffuse", diffuse > 0, false);
-        shader.setUniform("material.specularTexture", specular > 0, false);
-        shader.setUniform("material.emissiveTexture", emissive > 0, false);
-        if (shininess == 0) //TODO this property thingies NEED type safety
-            shader.setUniform("material.shininess", (float) material.getPropertyOrDefault(SHININESS, 64f), false);
-        shader.setUniform("material.specularity", (float) material.getPropertyOrDefault(SHININESS_STRENGTH, 1f), false);
-
-        shader.setUniform("material.colourDiffuse", material.getColourProperty(COLOUR_DIFFUSE), false);
-
-        //Optional information
-        shader.setUniform("material.numTextures", textureContext.nextTexture, false); //TODO not accurate anymore if binding textures manually after this
-
-        if (material.getPropertyOrDefault(TWO_SIDED, false)) {
-            glDisable(GL_CULL_FACE);
-        }
+        shader.setUniform("material", material, false);
     }
 
     private void resetMaterial(Material material) {
-        if (material.getPropertyOrDefault(TWO_SIDED, false)) {
+        if (Boolean.TRUE.equals(material.isTwoSided())) {
             glEnable(GL_CULL_FACE);
+        }
+        if (Boolean.TRUE.equals(material.isWireframeEnabled())) {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         }
     }
 

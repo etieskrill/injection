@@ -8,6 +8,8 @@ import org.etieskrill.engine.graphics.camera.PerspectiveCamera
 import org.etieskrill.engine.graphics.gl.StorageBufferObject
 import org.etieskrill.engine.graphics.gl.framebuffer.FrameBuffer
 import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment
+import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachmentType
+import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachmentType.COLOUR0
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
 import org.etieskrill.engine.graphics.gl.shader.impl.BlitShader
 import org.etieskrill.engine.graphics.gl.shader.impl.SolidShader
@@ -16,7 +18,9 @@ import org.etieskrill.engine.graphics.model.model
 import org.etieskrill.engine.graphics.model.plane
 import org.etieskrill.engine.graphics.model.sphere
 import org.etieskrill.engine.graphics.pipeline.PostPassPipeline
+import org.etieskrill.engine.graphics.texture.AbstractTexture
 import org.etieskrill.engine.graphics.texture.Texture2D
+import org.etieskrill.engine.graphics.texture.Textures
 import org.etieskrill.engine.input.controller.CursorCameraController
 import org.etieskrill.engine.window.Window
 import org.joml.Vector2f
@@ -40,7 +44,12 @@ class Main : App(
 ) {
 
     val sdfBuffer = StorageBufferObject(100, SDFShader.SDFVertexAccessor)
-    val sdfFrameBuffer = FrameBuffer.getColour(Vector2i(800))!!
+    val sdfColourBuffer = Texture2D.BlankBuilder(Vector2i(800))
+        .setFormat(AbstractTexture.Format.RGBA)
+        //FIXME should mipmaps be rebuilt for every frame if enabled on a render target / any texture that changes dynamically?
+        .setMipMapping(AbstractTexture.MinFilter.LINEAR, AbstractTexture.MagFilter.LINEAR)
+        .build()!!
+    val sdfFrameBuffer = FrameBuffer(Vector2i(800), mapOf(COLOUR0 to sdfColourBuffer))
     val pipeline = PostPassPipeline(SDFShader(), sdfFrameBuffer)
 
     val screenPipeline = PostPassPipeline(BlitShader(), window.screenBuffer, opaque = false)
@@ -100,8 +109,8 @@ class Main : App(
             +Transform()
             +Drawable(model("environment") {
                 val d = sqrt(2f) / 2f
-                sphere(radius = 1f, numPoints = 100, transform = Transform().setPosition(Vector3f(d, 0f, d)))
-                box(Vector3f(0f), Vector3f(1f), Transform().setPosition(Vector3f(-1f, 0f, -1f)))
+                sphere(radius = 1f, numPoints = 100, transform = Transform(position = Vector3f(d, 0f, d)))
+                box(Vector3f(0f), Vector3f(1f), Transform(position = Vector3f(-1f, 0f, -1f)))
                 plane(a = Vector2f(-3f), b = Vector2f(3f))
                 //FIXME culling's fucked methinks
             }, shader.shader as ShaderProgram)
@@ -120,7 +129,7 @@ class Main : App(
         renderCircle(heatingCircle, Vector2f(0f), 0.5f, renderer)
 
         screenPipeline.shader.apply {
-            sprite = sdfFrameBuffer.attachments[FrameBufferAttachment.BufferAttachmentType.COLOUR0] as Texture2D
+            sprite = sdfColourBuffer
             useSpriteColour = true
             position = Vector2f(window.size) - Vector2f(200f)
             size = Vector2f(200f)

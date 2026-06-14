@@ -19,7 +19,8 @@ import org.etieskrill.engine.graphics.model.ModelFactory
 import org.etieskrill.engine.graphics.model.loader.Loader
 import org.etieskrill.engine.input.controller.CursorCameraController
 import org.etieskrill.engine.input.controller.KeyCameraController
-import org.etieskrill.engine.util.Loaders
+import org.etieskrill.engine.util.EngineAnimationLoader
+import org.etieskrill.engine.util.EngineModelLoader
 import org.etieskrill.engine.window.Window
 import org.joml.Math.toRadians
 import org.joml.Vector2i
@@ -84,13 +85,13 @@ object RuntimeMeshOptimisation : App(
         for (i in 0..numZombies) {
             val angle = toRadians(360f * i / numZombies)
 
-            val model = Loaders.ModelLoader.get().load("zombie") {
+            val model = EngineModelLoader.load("zombie") {
                 Model.Builder("mixamo_zombie_skinned_walking.glb")
                     .optimiseMeshes()
                     .build()
             }
 
-            val animator = Animator(model).add(Loaders.AnimationLoader.get().load("mixamo_zombie_walking") {
+            val animator = Animator(model).add(EngineAnimationLoader.load("mixamo_zombie_walking") {
                 Loader.loadModelAnimations("mixamo_zombie_walking.glb", model)[0]
             })
             animator.play(random.nextDouble() * 0.25)
@@ -114,13 +115,13 @@ object RuntimeMeshOptimisation : App(
             val angle = toRadians(360f * i / numSkellyZombies)
 
             //FIXME why the skellington rig borked?
-            val model = Loaders.ModelLoader.get().load("skeleton_zombie") {
+            val model = EngineModelLoader.load("skeleton_zombie") {
                 Model.Builder("mixamo_skeletonzombie_skin.glb")
                     .optimiseMeshes()
                     .build()
             }
 
-            val animator = Animator(model).add(Loaders.AnimationLoader.get().load("silly_dancing") {
+            val animator = Animator(model).add(EngineAnimationLoader.load("silly_dancing") {
                 Loader.loadModelAnimations("mixamo_bboy_hip_hop.fbx", model) { modelBone, animBone ->
                     modelBone.substring(modelBone.lastIndexOf(':')) in animBone
                 }[0]

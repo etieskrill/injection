@@ -17,7 +17,7 @@ import org.etieskrill.engine.input.Input
 import org.etieskrill.engine.input.Keys
 import org.etieskrill.engine.input.controller.CursorCameraController
 import org.etieskrill.engine.input.controller.KeyCharacterTranslationController
-import org.etieskrill.engine.util.Loaders
+import org.etieskrill.engine.util.EngineModelLoader
 import org.etieskrill.engine.window.Window
 import org.etieskrill.engine.window.Window.WindowSize
 import org.joml.Math.toRadians
@@ -33,7 +33,7 @@ import kotlin.math.sin
 
 fun main() = EntityApplication.run()
 
-val MODELS = Loaders.ModelLoader.get()!!
+val MODELS = EngineModelLoader
 
 private val logger = KotlinLogging.logger {}
 

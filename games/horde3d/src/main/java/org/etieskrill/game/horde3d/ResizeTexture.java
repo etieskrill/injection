@@ -6,7 +6,7 @@ import org.lwjgl.stb.STBImageResize;
 
 import java.nio.ByteBuffer;
 
-import static org.etieskrill.engine.config.ResourcePaths.TEXTURE_PATH;
+import static org.etieskrill.engine.config.ResourcePathsKt.TEXTURE_PATH;
 import static org.lwjgl.BufferUtils.createByteBuffer;
 import static org.lwjgl.stb.STBImage.stbi_load_from_memory;
 import static org.lwjgl.stb.STBImageResize.stbir_resize_uint8_srgb;

@@ -56,7 +56,7 @@ private fun renderCircleSlot(
             val colour = rune.storedVis.maxByOrNull { it.value }?.key?.colour?.let { Vector4f(it) } ?: Vector4f(1f)
             colour.w *= lerp(0.2f, 1f, (rune.storedVis.maxByOrNull { it.value }?.value ?: 0f) / rune.visCapacity)
 
-            for (i in 0..rune.auxRunes.size) {
+            for (i in rune.auxRunes.indices) {
                 drawCircle(position, size + (0.2f * size * i), 0.005f, colour, sdfs)
             }
 
@@ -71,10 +71,10 @@ private fun renderCircleSlot(
                     for ((auxRuneIndex, auxRuneAngle) in (0..<360 step auxRuneAngleStep).withIndex()) {
                         val angle = toRadians(runeAngle + auxRuneAngle.toFloat())
                         val auxPos =
-                            Vector2f(cos(angle), sin(angle)) * (size + 0.2f * size * ringIndex + 0.05f) + position
+                            Vector2f(cos(angle), sin(angle)) * (size - 0.075f) + position
 
                         //TODO draw rune with rotation
-                        drawCircle(auxPos, 0.075f * size, 0.005f, colour, sdfs, true)
+                        drawCircle(auxPos, 0.15f * size, 0.005f, colour, sdfs, true)
                     }
 
                     if (rune.runes.isNotEmpty()) {

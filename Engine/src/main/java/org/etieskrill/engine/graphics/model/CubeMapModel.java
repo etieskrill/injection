@@ -7,7 +7,7 @@ public class CubeMapModel extends Model {
     public CubeMapModel(String name) {
         super(new Model.Builder("cubemap.obj")
                 .setName("cubemap")
-                .setMaterials(new Material.Builder().addTextures(Textures.getSkybox(name)).build())
+                .setMaterials(new SkyboxMaterial(name, false, false, Textures.getSkybox(name)))
                 .setCulling(false)
                 .build());
     }

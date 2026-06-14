@@ -48,14 +48,14 @@ abstract class SuspendApp(window: Window) : App(window) {
         try {
             //TODO separation: which parts in main and which in window main?
             withContext(uiDispatcher) { init() }
-            timer.info("Initialised application")
+            timer.info { "Initialised application" }
             internalLoop()
-            while (!window.isClosing) delay(100) //TODO expand to multiwindow etc.
+            while (!window.isClosing) delay(100.milliseconds) //TODO expand to multiwindow etc.
         } catch (e: Exception) {
             logger.error(e) { "Caught application exception" } //TODO better handling and scopes
         } finally {
             withContext(uiDispatcher) { terminate() }
-            timer.info("Terminated application")
+            timer.info { "Terminated application" }
         }
     }
 

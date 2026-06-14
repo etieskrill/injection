@@ -9,9 +9,8 @@ import org.etieskrill.engine.graphics.texture.AbstractTexture
 import org.etieskrill.engine.graphics.texture.Texture2D
 import org.etieskrill.engine.graphics.texture.Textures
 import org.etieskrill.engine.time.StepTimer
-import org.etieskrill.engine.util.FileUtils
-import org.etieskrill.engine.util.FileUtils.splitTypeFromPath
 import org.etieskrill.engine.util.ResourceReader.classpathResourceExists
+import org.etieskrill.engine.util.name
 import org.joml.Vector2i
 import org.joml.Vector4f
 import org.joml.Vector4fc
@@ -29,8 +28,9 @@ private val logger = KotlinLogging.logger("MaterialLoader")
 private val timer = StepTimer(logger)
 
 internal fun loadEmbeddedTextures(scene: AIScene, embeddedTextures: MutableMap<String, Texture2D>) {
-    val textures = scene.mTextures()!!
-    for (i in 0..scene.mNumTextures()) {
+    val textures = scene.mTextures()
+        ?: if (scene.mNumTextures() == 0) return else error("Texture array is not available but number of textures is not zero")
+    for (i in 0..<scene.mNumTextures()) {
         val texture = AITexture.create(textures.get(i))
 
         timer.start()
@@ -60,15 +60,12 @@ internal fun loadEmbeddedTextures(scene: AIScene, embeddedTextures: MutableMap<S
     logger.debug { "${embeddedTextures.size / 2} of ${scene.mNumTextures()} embedded textures loaded" }
 }
 
-private fun determineType(filePath: String): AbstractTexture.Type {
-    val file = splitTypeFromPath(filePath)
-    return when {
-        "diffuse" in file.name -> AbstractTexture.Type.DIFFUSE
-        "specular" in file.name -> AbstractTexture.Type.SPECULAR
-        "normal" in file.name -> AbstractTexture.Type.NORMAL
-        "emissive" in file.name -> AbstractTexture.Type.EMISSIVE
-        else -> AbstractTexture.Type.UNKNOWN
-    }
+private fun determineType(filePath: String): AbstractTexture.Type = when {
+    "diffuse" in filePath.name -> AbstractTexture.Type.DIFFUSE
+    "specular" in filePath.name -> AbstractTexture.Type.SPECULAR
+    "normal" in filePath.name -> AbstractTexture.Type.NORMAL
+    "emissive" in filePath.name -> AbstractTexture.Type.EMISSIVE
+    else -> AbstractTexture.Type.UNKNOWN
 }
 
 internal fun loadMaterials(
@@ -79,8 +76,9 @@ internal fun loadMaterials(
 ) {
     timer.start()
     logger.debug { "${scene.mNumMaterials()} materials found" }
-    val aiMaterials = scene.mMaterials()!!
-    for (i in 0.. scene.mNumMaterials()) {
+    val aiMaterials = scene.mMaterials()
+        ?: if (scene.mNumMaterials() == 0) return else error("Material array is not available but number of materials is not zero")
+    for (i in 0..<scene.mNumMaterials()) {
         timer.trace { "Processing material $i" }
         materials += processMaterial(i, AIMaterial.create(aiMaterials.get()), embeddedTextures, modelName)
     }
@@ -127,7 +125,12 @@ private fun processPhongMaterial(
     normalTexture = aiMaterial.getTexture(AbstractTexture.Type.NORMAL, materialIndex, modelName, embeddedTextures),
     heightTexture = aiMaterial.getTexture(AbstractTexture.Type.HEIGHT, materialIndex, modelName, embeddedTextures),
     emissiveTexture = aiMaterial.getTexture(AbstractTexture.Type.EMISSIVE, materialIndex, modelName, embeddedTextures),
-    ambientOcclusionTexture = aiMaterial.getTexture(AbstractTexture.Type.AMBIENT_OCCLUSION, materialIndex, modelName, embeddedTextures)
+    ambientOcclusionTexture = aiMaterial.getTexture(
+        AbstractTexture.Type.AMBIENT_OCCLUSION,
+        materialIndex,
+        modelName,
+        embeddedTextures
+    )
 )
 
 private fun processPBRMaterial(
@@ -147,22 +150,35 @@ private fun processPBRMaterial(
 
     diffuseTexture = aiMaterial.getTexture(AbstractTexture.Type.DIFFUSE, materialIndex, modelName, embeddedTextures),
     metallicTexture = aiMaterial.getTexture(AbstractTexture.Type.METALNESS, materialIndex, modelName, embeddedTextures),
-    roughnessTexture = aiMaterial.getTexture(AbstractTexture.Type.ROUGHNESS, materialIndex, modelName, embeddedTextures),
-    ambientOcclusionTexture = aiMaterial.getTexture(AbstractTexture.Type.AMBIENT_OCCLUSION, materialIndex, modelName, embeddedTextures),
+    roughnessTexture = aiMaterial.getTexture(
+        AbstractTexture.Type.ROUGHNESS,
+        materialIndex,
+        modelName,
+        embeddedTextures
+    ),
+    ambientOcclusionTexture = aiMaterial.getTexture(
+        AbstractTexture.Type.AMBIENT_OCCLUSION,
+        materialIndex,
+        modelName,
+        embeddedTextures
+    ),
     normalTexture = aiMaterial.getTexture(AbstractTexture.Type.NORMAL, materialIndex, modelName, embeddedTextures),
     heightTexture = aiMaterial.getTexture(AbstractTexture.Type.HEIGHT, materialIndex, modelName, embeddedTextures),
     emissiveTexture = aiMaterial.getTexture(AbstractTexture.Type.EMISSIVE, materialIndex, modelName, embeddedTextures)
 )
 
-private fun AIMaterial.getIntProperty(property: String): Int? = getProperty(property, aiPTI_Integer, 1)?.mData()?.int
-private fun AIMaterial.getFloatProperty(property: String): Float? = getProperty(property, aiPTI_Float, 1)?.mData()?.float
+//FIXME assimp can apparently return an int, short, or char here, even though e.g. for the shading model an int is SPECIFICALLY specified in the specific fucking specification
+private fun AIMaterial.getIntProperty(property: String): Int? = getProperty(property, aiPTI_Integer, Int.SIZE_BYTES)?.mData()?.int
+private fun AIMaterial.getFloatProperty(property: String): Float? =
+    getProperty(property, aiPTI_Float, Float.SIZE_BYTES)?.mData()?.float
+
 private fun AIMaterial.getColourProperty(property: String): Vector4fc? {
-    val data = getProperty(property, aiPTI_Float, 4)?.mData() ?: return null
-    return Vector4f(data.float, data.float, data.float, data.float)
+    val data = getProperty(property, aiPTI_Float, 3 * Float.SIZE_BYTES)?.mData() ?: return null
+    return Vector4f(data.float, data.float, data.float, 1f)
 }
 
 private fun AIMaterial.getStringProperty(property: String): String? {
-    val property = getProperty(property, aiPTI_String, 1) ?: return null
+    val property = getProperty(property, aiPTI_String, 0) ?: return null
     val data = property.mData()
     return String(ByteArray(property.mDataLength()) { data.get() })
 }
@@ -175,11 +191,12 @@ private fun AIMaterial.getProperty(property: String, type: Int, length: Int): AI
         return null
     }
     val property = AIMaterialProperty.create(propertyBuffer.get())
-    check(property.mType() == type) {
-        "Property has type 0x${property.mType().toHexString()}, not ${type.toHexString()}"
+
+    check(property.mType() == type || property.mType() == aiPTI_Buffer) {
+        "Property has type 0x${property.mType().toHexString()}, not 0x${type.toHexString()}"
     }
-    check(property.mDataLength() == length) {
-        "Property ${property.mDataLength()} instead of the required $length elements"
+    check(property.mDataLength() == length || property.mType() == aiPTI_String) {
+        "Property has ${property.mDataLength()} instead of the required $length elements"
     }
     return property
 }
@@ -191,7 +208,11 @@ private fun AIMaterial.getTexture(
     embeddedTextures: Map<String, Texture2D>
 ): Texture2D? {
     val file = AIString.create()
-    check(1 == aiGetMaterialTextureCount(this, type.ai()))
+    val textureCount = aiGetMaterialTextureCount(this, type.ai())
+    if (1 != textureCount) {
+        logger.debug { "Texture of type '$type' is not loaded because material texture count was $textureCount" }
+        return null
+    }
 
     if (aiReturn_SUCCESS != aiGetMaterialTexture(this, type.ai(), 0, file, IntArray(1), null, null, null, null, null)) {
         logger.debug { "Error while loading material texture: ${aiGetErrorString()}" }
@@ -199,30 +220,34 @@ private fun AIMaterial.getTexture(
     }
 
     val textureName = "${modelName}_mat${materialIndex}_${type.name.lowercase()}"
-    val textureFile = splitTypeFromPath(file.dataString())
+    val textureFile = file.dataString()
 
     return when {
-        textureFile.fullPath in embeddedTextures -> {
+        textureFile in embeddedTextures -> {
             logger.trace { "Texture $textureName is loaded from embedded textures" }
-            embeddedTextures[textureFile.fullPath]!!.apply {
+            embeddedTextures[textureFile]!!.apply {
 //                format = AbstractTexture.Format.fromChannelsAndType(type) //FIXME
 //                this.type = type
             }
         }
-        classpathResourceExists(textureFile.fullPath) -> {
+
+        classpathResourceExists(textureFile) -> {
             logger.trace { "Texture $textureName is loaded from file $textureFile" }
-            Textures.ofFile(textureFile.fullPath, type)
+            Textures.ofFile(textureFile, type)
         }
+
         classpathResourceExists("$TEXTURE_PATH/${textureFile.name}") -> {
             logger.debug { "Texture $textureName is loaded as fallback based on file name from file $textureFile" }
             Textures.ofFile("$TEXTURE_PATH/${textureFile.name}", type)
         }
+
         embeddedTextures.any { it.value.type == type } -> {
             logger.debug { "Texture $textureName is loaded as fallback from embedded textures based on texture type" }
             embeddedTextures.values.single { it.type == type }
         }
+
         else -> {
-            logger.warn { "Failed to find any texture for '$textureName' at ${textureFile.fullPath}" }
+            logger.warn { "Failed to find any texture for '$textureName' at ${textureFile}" }
             null
         }
     }

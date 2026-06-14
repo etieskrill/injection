@@ -47,7 +47,7 @@ public class Model implements Disposable {
         protected final @Getter List<Animation> animations;
         protected final @Getter List<Bone> bones;
 
-        protected final @Getter Map<String, Texture2D.Builder> embeddedTextures;
+        protected final @Getter Map<String, Texture2D> embeddedTextures;
 
         protected @Getter @Setter @Accessors(chain = true) boolean flipUVs = true;
         protected @Getter @Setter @Accessors(chain = true) boolean flipWinding = false;

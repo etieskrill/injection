@@ -55,7 +55,7 @@ class Histogram(
         val maxValue = values.maxOrNull() ?: 0f
 
         values.forEachIndexed { index, value ->
-            arrayValues[arrayValues.size - 1 - index] = when (histogramScaleMode) {
+            arrayValues[index] = when (histogramScaleMode) {
                 HistogramScaleMode.FIXED -> value / this.maxValue
                 HistogramScaleMode.MAX_VALUE -> maxValue / maxValue
             }

@@ -44,7 +44,7 @@ public class ModelFactory {
 
         List<Integer> indices = new ArrayList<>(List.of(new Integer[]{0, 2, 1, 3, 1, 2}));
         
-        Material mat = material != null ? material : Material.getBlank();
+        Material mat = material != null ? material : new PhongMaterial();
     
         Model.MemoryBuilder builder = new Model.MemoryBuilder("internal_model_factory:quad");
         builder
@@ -139,6 +139,19 @@ public class ModelFactory {
                 new Model.Builder("box.obj")
                         .setInitialTransform(transform) //FIXME there is no way this works as intended
                         .setCulling(false)
+                        .build());
+        return new Model(baseBox);
+    }
+
+    @ApplicationDisposed
+    public static Model box(Vector3f size, Material material) {
+        var transform = new Transform();
+        transform.setScale(size);
+        Model baseBox = EngineModelLoader.INSTANCE.load("internal-model-factory:box", () ->
+                new Model.Builder("box.obj")
+                        .setInitialTransform(transform) //FIXME there is no way this works as intended
+                        .setCulling(false)
+                        .setMaterials(material)
                         .build());
         return new Model(baseBox);
     }

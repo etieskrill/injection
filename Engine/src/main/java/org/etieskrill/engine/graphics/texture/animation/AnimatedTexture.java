@@ -9,6 +9,7 @@ import org.etieskrill.engine.graphics.texture.AbstractTexture.MinFilter;
 import org.etieskrill.engine.graphics.texture.AbstractTexture.Wrapping;
 import org.etieskrill.engine.graphics.texture.ArrayTexture;
 import org.etieskrill.engine.graphics.texture.Texture2D;
+import org.etieskrill.engine.util.FileUtilsKt;
 import org.joml.Vector2ic;
 
 import java.nio.ByteBuffer;
@@ -16,7 +17,6 @@ import java.util.List;
 
 import static lombok.AccessLevel.NONE;
 import static org.etieskrill.engine.graphics.texture.animation.TextureAnimationYamlParser.loadAnimationMetadata;
-import static org.etieskrill.engine.util.FileUtils.splitTypeFromPath;
 import static org.lwjgl.BufferUtils.createByteBuffer;
 import static org.lwjgl.BufferUtils.zeroBuffer;
 
@@ -57,8 +57,7 @@ public class AnimatedTexture {
         public AnimatedTexture build() {
             if (file == null) throw new NullPointerException("Texture file may not be null");
             if (metaFile == null) {
-                var typedFile = splitTypeFromPath(file);
-                metaFile = typedFile.getFileName() + META_FILE_EXTENSION;
+                metaFile = FileUtilsKt.getFileName(file) + META_FILE_EXTENSION;
             }
 
             return new AnimatedTexture(this);

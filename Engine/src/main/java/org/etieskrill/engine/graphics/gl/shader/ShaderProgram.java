@@ -13,7 +13,7 @@ import org.etieskrill.engine.graphics.gl.shader.impl.MissingShader;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.etieskrill.engine.util.ClassUtils;
 import org.etieskrill.engine.util.EngineShaderLoader;
-import org.etieskrill.engine.util.FileUtils;
+import org.etieskrill.engine.util.FileUtilsKt;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.*;
@@ -150,8 +150,7 @@ public abstract class ShaderProgram implements Disposable,
      */
     protected ShaderProgram(List<String> shaderFiles, List<UniformEntry> uniforms, boolean strictUniformDetection) {
         Set<ShaderFile> files = shaderFiles.stream().map(fileName -> {
-            var typedFile = FileUtils.splitTypeFromPath(fileName);
-            ShaderType type = switch (typedFile.getExtension()) {
+            ShaderType type = switch (FileUtilsKt.getExtension(fileName)) {
                 case "vert" -> VERTEX;
                 case "geom" -> GEOMETRY;
                 case "frag" -> FRAGMENT;

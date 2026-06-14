@@ -273,7 +273,7 @@ public abstract class AbstractTexture implements Texture, Disposable {
         }
 
         public void setMinFilter(MinFilter minFilter) {
-            this.mipMaps = minFilter == MinFilter.NEAREST || minFilter == MinFilter.LINEAR;
+            this.mipMaps = minFilter != MinFilter.NEAREST && minFilter != MinFilter.LINEAR;
             this.minFilter = minFilter;
         }
 

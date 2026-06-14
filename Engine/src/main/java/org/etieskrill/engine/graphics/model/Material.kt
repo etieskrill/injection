@@ -1,6 +1,9 @@
 package org.etieskrill.engine.graphics.model
 
 import org.etieskrill.engine.common.Disposable
+import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
+import org.etieskrill.engine.graphics.gl.shader.UniformMappable
+import org.etieskrill.engine.graphics.texture.CubeMapTexture
 import org.etieskrill.engine.graphics.texture.Texture2D
 import org.joml.Vector4fc
 
@@ -26,6 +29,7 @@ private typealias Colour = Vector4fc
 // - ambient occlusion
 //
 // pbr:
+//
 // properties:
 // - diffuse/albedo/base colour: vec3 ]0,1[
 // - opacity: float ]0,1[
@@ -42,26 +46,54 @@ private typealias Colour = Vector4fc
 // - (sheen, transmission, aniso, aniso rotation, mask/alpha/opacity... it just does not end)
 
 data class PhongMaterial(
-    override val name: String?,
-    override val isTwoSided: Boolean?,
-    override val isWireframeEnabled: Boolean?,
+    override val name: String? = null,
+    override val isTwoSided: Boolean? = null,
+    override val isWireframeEnabled: Boolean? = null,
 
-    val diffuseColour: Colour?, //FIXME what the hell is AI_MATKEY_BASE_COLOR then?
-    val specularColour: Colour?,
-    val ambientColour: Colour?,
-    val shininess: Float?,
-    val shininessStrength: Float?,
-    val opacity: Float?,
-    val emissiveColour: Colour?,
-    val emissiveStrength: Float?,
+    val diffuseColour: Colour? = null, //FIXME what the hell is AI_MATKEY_BASE_COLOR then?
+    val specularColour: Colour? = null,
+    val ambientColour: Colour? = null,
+    val shininess: Float? = null,
+    val shininessStrength: Float? = null,
+    val opacity: Float? = null,
+    val emissiveColour: Colour? = null,
+    val emissiveStrength: Float? = null,
 
-    val diffuseTexture: Texture2D?,
-    val specularTexture: Texture2D?,
-    val normalTexture: Texture2D?,
-    val heightTexture: Texture2D?,
-    val emissiveTexture: Texture2D?,
-    val ambientOcclusionTexture: Texture2D?
+    val diffuseTexture: Texture2D? = null,
+    val specularTexture: Texture2D? = null,
+    val normalTexture: Texture2D? = null,
+    val heightTexture: Texture2D? = null,
+    val emissiveTexture: Texture2D? = null,
+    val ambientOcclusionTexture: Texture2D? = null
 ) : Material() {
+    @Suppress("KotlinConstantConditions")
+    override fun map(mapper: ShaderProgram.UniformMapper) = mapper.run {
+        map("colour", diffuseColour)
+        map("diffuseColour", diffuseColour)
+        map("specularColour", specularColour)
+        map("ambientColour", ambientColour)
+        map("shininess", shininess)
+        map("shininessStrength", shininessStrength)
+        map("opacity", opacity)
+        map("emissiveColour", emissiveColour)
+        map("emissiveStrength", emissiveStrength)
+
+        map("hasDiffuse", diffuseTexture != null)
+        map("diffuse", diffuseTexture)
+        map("hasSpecular", specularTexture != null)
+        map("specular", specularTexture)
+        map("hasNormal", normalTexture != null)
+        map("normal", normalTexture)
+        map("hasHeight", heightTexture != null)
+        map("height", heightTexture)
+        map("hasEmissive", emissiveTexture != null)
+        map("emissive", emissiveTexture)
+        map("hasAmbientOcclusion", ambientOcclusionTexture != null)
+        map("ambientOcclusion", ambientOcclusionTexture)
+
+        true
+    }
+
     private var isDisposed = false
 
     override fun dispose() {
@@ -79,23 +111,49 @@ data class PhongMaterial(
 }
 
 data class PBRMaterial(
-    override val name: String?,
-    override val isTwoSided: Boolean?,
-    override val isWireframeEnabled: Boolean?,
+    override val name: String? = null,
+    override val isTwoSided: Boolean? = null,
+    override val isWireframeEnabled: Boolean? = null,
 
-    val diffuseColour: Colour?,
-    val opacity: Float?,
-    val emissiveColour: Colour?,
-    val emissiveStrength: Float?,
+    val diffuseColour: Colour? = null,
+    val opacity: Float? = null,
+    val emissiveColour: Colour? = null,
+    val emissiveStrength: Float? = null,
 
-    val diffuseTexture: Texture2D?,
-    val metallicTexture: Texture2D?, //TODO orm support
-    val roughnessTexture: Texture2D?,
-    val ambientOcclusionTexture: Texture2D?,
-    val normalTexture: Texture2D?,
-    val heightTexture: Texture2D?,
-    val emissiveTexture: Texture2D?,
+    val diffuseTexture: Texture2D? = null,
+    val metallicTexture: Texture2D? = null, //TODO orm support
+    val roughnessTexture: Texture2D? = null,
+    val ambientOcclusionTexture: Texture2D? = null,
+    val normalTexture: Texture2D? = null,
+    val heightTexture: Texture2D? = null,
+    val emissiveTexture: Texture2D? = null,
 ) : Material() {
+    @Suppress("KotlinConstantConditions")
+    override fun map(mapper: ShaderProgram.UniformMapper) = mapper.run {
+        map("colour", diffuseColour)
+        map("diffuseColour", diffuseColour)
+        map("opacity", opacity)
+        map("emissiveColour", emissiveColour)
+        map("emissiveStrength", emissiveStrength)
+
+        map("hasDiffuse", diffuseTexture != null)
+        map("diffuse", diffuseTexture)
+        map("hasMetallic", metallicTexture != null)
+        map("metallic", metallicTexture)
+        map("hasNormal", normalTexture != null)
+        map("hasRoughness", roughnessTexture != null)
+        map("roughness", roughnessTexture)
+        map("hasAmbientOcclusion", ambientOcclusionTexture != null)
+        map("ambientOcclusion", ambientOcclusionTexture)
+        map("normal", normalTexture)
+        map("hasHeight", heightTexture != null)
+        map("height", heightTexture)
+        map("hasEmissive", emissiveTexture != null)
+        map("emissive", emissiveTexture)
+
+        true
+    }
+
     private var isDisposed = false
 
     override fun dispose() {
@@ -113,7 +171,29 @@ data class PBRMaterial(
     }
 }
 
-abstract class Material : Disposable {
+data class SkyboxMaterial(
+    override val name: String? = null,
+    override val isTwoSided: Boolean? = null,
+    override val isWireframeEnabled: Boolean? = null,
+
+    val skyboxTexture: CubeMapTexture? = null
+) : Material() {
+    override fun map(mapper: ShaderProgram.UniformMapper): Boolean {
+        mapper.map("skybox", skyboxTexture)
+        return true
+    }
+
+    private var isDisposed = false
+    override fun dispose() {
+        if (isDisposed) return
+
+        skyboxTexture?.dispose()
+
+        isDisposed = true
+    }
+}
+
+abstract class Material : UniformMappable, Disposable {
 
     abstract val name: String?
     abstract val isTwoSided: Boolean?

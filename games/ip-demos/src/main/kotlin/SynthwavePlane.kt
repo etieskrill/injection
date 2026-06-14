@@ -49,6 +49,8 @@ import org.etieskrill.engine.scene.element.Checkbox
 import org.etieskrill.engine.scene.element.Dropdown
 import org.etieskrill.engine.scene.element.Label
 import org.etieskrill.engine.scene.element.PlaybackBar
+import org.etieskrill.engine.scene.element.PlaybackBar.State.PAUSED
+import org.etieskrill.engine.scene.element.PlaybackBar.State.PLAYING
 import org.etieskrill.engine.scene.plot.Histogram
 import org.etieskrill.engine.scene.plot.HistogramScaleMode
 import org.etieskrill.engine.util.FixedArrayDeque
@@ -67,6 +69,7 @@ import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.floor
 import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.sin
 import kotlin.math.sqrt
 import kotlin.time.Duration.Companion.seconds
@@ -75,12 +78,12 @@ import kotlin.time.Duration.Companion.seconds
 fun main() = SynthwavePlane().run() //TODO replace and test with immediate when fixed
 
 @Suppress("MemberVisibilityCanBePrivate")
-class SynthwavePlane() : App(
+class SynthwavePlane : App(
     Window(
         title = "Synthwave Plane",
         mode = Window.WindowMode.BORDERLESS,
         size = Window.WindowSize.LARGEST_FIT,
-    vSync = true
+        vSync = true
     )
 ) {
 
@@ -123,15 +126,39 @@ class SynthwavePlane() : App(
     init {
         val controller = CursorCameraController(camera)
         window.cursorInputs += controller
-        window.keyInputs += Input.of(Input.bind(Keys.CTRL).to { ->
-            if (window.cursor.mode == Cursor.CursorMode.DISABLED) {
-                window.cursor.mode = Cursor.CursorMode.CAPTURED
-                controller.disable()
-            } else {
-                window.cursor.mode = Cursor.CursorMode.DISABLED
-                controller.enable()
+        window.keyInputs += Input.of(
+            Input.bind(Keys.CTRL).to { ->
+                if (window.cursor.mode == Cursor.CursorMode.DISABLED) {
+                    window.cursor.mode = Cursor.CursorMode.CAPTURED
+                    controller.disable()
+                } else {
+                    window.cursor.mode = Cursor.CursorMode.DISABLED
+                    controller.enable()
+                }
+            },
+            Input.bind(Keys.SPACE).to { ->
+                if (playbackBar.state == PLAYING) {
+                    playbackBar.state = PAUSED
+                } else {
+                    playbackBar.state = PLAYING
+                }
+            },
+            Input.bind(Keys.A).to { ->
+                audioSource?.apply {
+                    offsetSeconds = max(0f, min(duration.inWholeMilliseconds / 1000f, offsetSeconds - 5f))
+                }
+            },
+            Input.bind(Keys.D).to { ->
+                audioSource?.apply {
+                    if (duration.inWholeMilliseconds / 1000f < offsetSeconds + 5f) {
+                        playbackBar.state = PlaybackBar.State.STOPPED
+                        return@to
+                    }
+
+                    offsetSeconds = max(0f, min((duration.inWholeMilliseconds / 1000f) - 1f, offsetSeconds + 5f))
+                }
             }
-        })
+        )
         window.cursor.disable()
 
         camera.setPosition(Vector3f(0f, 1f, 0f))
@@ -192,8 +219,8 @@ class SynthwavePlane() : App(
                 histogramScaleMode = HistogramScaleMode.FIXED,
                 maxValue = 1.1f * window.refreshRate.toInt()
             ).apply {
-            size = Vector2f(400f, 150f)
-        }
+                size = Vector2f(400f, 150f)
+            }
         fftGraph = Histogram(
             FFT_BINS.toInt(),
             histogramScaleMode = HistogramScaleMode.FIXED,
@@ -311,8 +338,7 @@ class SynthwavePlane() : App(
             val cameraShake = Vector2f(
                 sin(100 * pacer.timerTimeSeconds).toFloat(),
                 sin(150 * pacer.timerTimeSeconds).toFloat()
-            ) * (0.2f * max(0f, (averageSample / 1000000f) - 0.1f)
-                    * if (playbackBar.state == PlaybackBar.State.PLAYING) 1 else 0)
+            ) * (0.2f * max(0f, (averageSample / 1000000f) - 0.1f) * if (playbackBar.state == PLAYING) 1 else 0)
 
             camera.rotate(cameraShake.x, cameraShake.y, 0f)
         }

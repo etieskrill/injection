@@ -79,19 +79,19 @@ abstract class App(
 
         window.uiScope = uiScope
 
-        timer.info("Initialised window configuration")
+        timer.info { "Initialised window configuration" }
     }
 
     open fun run() {
         try {
             init()
-            timer.info("Initialised application")
+            timer.info { "Initialised application" }
             internalLoop()
         } catch (e: Exception) {
             logger.error(e) { "Caught app exception" }
         } finally {
             terminate()
-            timer.info("Terminated application")
+            timer.info { "Terminated application" }
         }
     }
 
