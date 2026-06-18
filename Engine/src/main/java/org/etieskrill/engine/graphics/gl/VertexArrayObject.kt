@@ -5,13 +5,10 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import org.etieskrill.engine.common.Disposable
 import org.etieskrill.engine.graphics.gl.BufferObject.Target.ELEMENT_ARRAY
 import org.etieskrill.engine.graphics.gl.GLUtils.checkErrorThrowing
+import org.etieskrill.engine.graphics.gl.GLUtils.clearError
 import org.lwjgl.opengl.GL20C.glEnableVertexAttribArray
 import org.lwjgl.opengl.GL20C.glVertexAttribPointer
-import org.lwjgl.opengl.GL30C.glBindVertexArray
-import org.lwjgl.opengl.GL30C.glDeleteVertexArrays
-import org.lwjgl.opengl.GL30C.glGenVertexArrays
-import org.lwjgl.opengl.GL30C.glVertexAttribIPointer
-import java.nio.ByteBuffer
+import org.lwjgl.opengl.GL30C.*
 
 private val logger = KotlinLogging.logger {}
 
@@ -38,10 +35,6 @@ data class VertexArrayObject<T> private constructor(
         }
 
     private val id = glGenVertexArrays()
-
-    init {
-        bind()
-    }
 
     constructor(
         accessor: VertexArrayAccessor<T>, vertexBuffer: BufferObject<T>,
@@ -77,6 +70,13 @@ data class VertexArrayObject<T> private constructor(
         require(indexBuffer?.target?.equals(ELEMENT_ARRAY) ?: true) {
             "Index buffer must an element array buffer"
         }
+
+        clearError()
+
+        bind()
+
+        vertexBuffer.bind()
+        indexBuffer?.bind()
 
         configureAttributeArrays(accessor)
 

@@ -7,11 +7,7 @@ data class RenderedGlyph(
     val size: Vector2f = Vector2f(),
     val position: Vector2f = Vector2f(),
     var textureIndex: Int = -1
-) {
-    companion object {
-
-    }
-}
+)
 
 object RenderedGlyphAccessor : VertexArrayAccessor<RenderedGlyph>() {
     override fun registerFields() {
