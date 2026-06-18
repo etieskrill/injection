@@ -124,16 +124,13 @@ data class Planet(
     var orbitAngle: Float = 0f,
 
     internal val previousPositions: FixedArrayDeque<Vector3fc> = FixedArrayDeque(1000),
-    internal val trailVAO: VertexArrayObject<Vector3fc> = VertexArrayObject
-        .builder(Vector3fcAccessor)
-        .numVertexElements(1000)
-        .build(),
+    internal val trailVAO: VertexArrayObject<Vector3fc> = VertexArrayObject(Vector3fcAccessor, numVertexElements = 1000),
     internal var trailPipeline: Pipeline<TrailShader>? = null
 )
 
 private object Vector3fcAccessor : VertexArrayAccessor<Vector3fc>() {
     override fun registerFields() {
-        addField(Vector3fc::class.java) { vec3, buffer -> vec3.get(buffer) }
+        addField<Vector3fc> { vec3, buffer -> vec3.get(buffer) }
     }
 }
 
@@ -176,7 +173,7 @@ open class PlanetService(screenBuffer: FrameBuffer, renderer: GLRenderer, camera
 
         if (!planet.previousPositions.isFull) planet.previousPositions.fill(orbitPosition)
         planet.previousPositions += orbitPosition
-        planet.trailVAO.setVertices(planet.previousPositions)
+        planet.trailVAO.vertices = planet.previousPositions
 
         if (planet.trailPipeline == null) {
             planet.trailPipeline = Pipeline(

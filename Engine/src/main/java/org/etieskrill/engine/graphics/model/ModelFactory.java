@@ -2,10 +2,10 @@ package org.etieskrill.engine.graphics.model;
 
 import org.etieskrill.engine.common.ApplicationDisposed;
 import org.etieskrill.engine.entity.component.Transform;
-import org.etieskrill.engine.graphics.model.loader.MeshLoader;
 import org.etieskrill.engine.util.EngineModelLoader;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
+import org.joml.primitives.AABBf;
 import org.lwjgl.BufferUtils;
 
 import java.nio.FloatBuffer;
@@ -14,6 +14,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+
+import static org.etieskrill.engine.graphics.model.loader.MeshLoaderKt.loadToVAO;
 
 public class ModelFactory {
 
@@ -37,19 +39,19 @@ public class ModelFactory {
         }
 
         List<Vertex> vertices = new ArrayList<>();
-        vertices.add(Vertex.builder(new Vector3f(x, y, 0f)).textureCoords(new Vector2f(0f)).build());
-        vertices.add(Vertex.builder(new Vector3f(x, y + height, 0f)).textureCoords(new Vector2f(0f, 1f)).build());
-        vertices.add(Vertex.builder(new Vector3f(x + width, y, 0f)).textureCoords(new Vector2f(1f, 0f)).build());
-        vertices.add(Vertex.builder(new Vector3f(x + width, y + height, 0f)).textureCoords(new Vector2f(1f, 1f)).build());
+        vertices.add(new Vertex(new Vector3f(x, y, 0f), null, new Vector2f(0f), null, null, null, null));
+        vertices.add(new Vertex(new Vector3f(x, y + height, 0f), null, new Vector2f(0f, 1f), null, null, null, null));
+        vertices.add(new Vertex(new Vector3f(x + width, y, 0f), null, new Vector2f(1f, 0f), null, null, null, null));
+        vertices.add(new Vertex(new Vector3f(x + width, y + height, 0f), null, new Vector2f(1f, 1f), null, null, null, null));
 
         List<Integer> indices = new ArrayList<>(List.of(new Integer[]{0, 2, 1, 3, 1, 2}));
-        
+
         Material mat = material != null ? material : new PhongMaterial();
-    
+
         Model.MemoryBuilder builder = new Model.MemoryBuilder("internal_model_factory:quad");
         builder
                 .setMaterials(mat)
-                .addNodes(new Node("root", null, new Transform(), Collections.singletonList(MeshLoader.loadToVAO(vertices, indices, mat)), null));
+                .addNodes(new Node("root", null, new Transform(), Collections.singletonList(loadToVAO(vertices, indices, mat, null, new AABBf(), null)), null));
         return builder;
     }
 
@@ -65,7 +67,7 @@ public class ModelFactory {
      * @return an indexed memory model of the circle sector
      */
     public Model circleSect(float x, float y, float radius, float start, float end, int segments) {
-        
+
         if (radius < 0) throw new IllegalArgumentException("Radius should not be smaller than zero");
         if (segments < 3) throw new IllegalArgumentException("Circle sector must have more than two segments");
 
@@ -84,21 +86,21 @@ public class ModelFactory {
             vertices.put(subX).put(subY).put(0f);
             indices.put((short) (i + 1));
         }
-        
+
         vertices.flip();
         float[] vertices_a = new float[vertices.capacity()];
         vertices.get(vertices_a);
-    
+
         float[] colours = new float[(int) (vertices_a.length / 0.75)];
         Arrays.fill(colours, 1f);
 
         float[] textures = new float[(int) (vertices_a.length / 1.5)];
         Arrays.fill(textures, 0f);
-        
+
         indices.flip();
         short[] indices_a = new short[indices.capacity()];
         indices.get(indices_a);
-        
+
         //return loader.loadToVAO(vertices_a, colours, textures, indices_a, GL11C.GL_TRIANGLE_FAN);
         throw new UnsupportedOperationException("Currently under major reconstruction");
     }

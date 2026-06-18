@@ -9,6 +9,7 @@ import org.etieskrill.engine.graphics.model.Bone;
 import org.etieskrill.engine.graphics.model.Mesh;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.model.Node;
+import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.util.AssimpUtils;
 import org.etieskrill.engine.time.StepTimer;
 import org.joml.Matrix4fc;
@@ -21,14 +22,15 @@ import java.io.IOException;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toCollection;
-import static org.etieskrill.engine.graphics.model.loader.AnimationLoader.loadAnimations;
-import static org.etieskrill.engine.graphics.model.loader.Importer.importScene;
+import static org.etieskrill.engine.graphics.model.loader.AnimationLoaderKt.loadAnimations;
+import static org.etieskrill.engine.graphics.model.loader.ImporterKt.importScene;
 import static org.etieskrill.engine.graphics.model.loader.MaterialLoadingKt.loadEmbeddedTextures;
 import static org.etieskrill.engine.graphics.model.loader.MaterialLoadingKt.loadMaterials;
-import static org.etieskrill.engine.graphics.model.loader.MeshProcessor.loadMeshes;
+import static org.etieskrill.engine.graphics.model.loader.MeshProcessorKt.loadMeshes;
 import static org.lwjgl.assimp.Assimp.*;
 
 public class Loader {
@@ -49,7 +51,7 @@ public class Loader {
     public static List<Animation> loadModelAnimations(String file, Model model, BoneMatcher boneMatcher) {
         logger.info("Loading animations from '{}'", file);
 
-        AIScene aiScene = importScene(file, new Importer.Options(false, false));
+        AIScene aiScene = importScene(file, new SceneImporterOptions(false, false));
         List<Animation> animations = new ArrayList<>();
 
         loadAnimations(aiScene, model.getBones(), animations, boneMatcher);
@@ -75,7 +77,7 @@ public class Loader {
 
         AIScene aiScene = importScene(
                 builder.getFile(),
-                new Importer.Options(builder.isFlipUVs(), builder.isFlipWinding())
+                new SceneImporterOptions(builder.isFlipUVs(), builder.isFlipWinding())
         );
 
         timer.log(() -> "Import");
@@ -87,11 +89,11 @@ public class Loader {
             throw new IOException(aiGetErrorString());
         }
 
-        loadEmbeddedTextures(aiScene, builder.getEmbeddedTextures());
+        Map<String, Texture2D> embeddedTextures = loadEmbeddedTextures(aiScene);
         timer.log(() -> "Embedded");
-        loadMaterials(aiScene, builder.getMaterials(), builder.getEmbeddedTextures(), builder.getName());
+        loadMaterials(aiScene, builder.getMaterials(), embeddedTextures, builder.getName());
         timer.log(() -> "Materials");
-        loadMeshes(aiScene, builder);
+        loadMeshes(aiScene, builder.getMaterials(), builder.getMeshes(), builder.getBones());
         timer.log(() -> "Meshes");
         processNode(null, rootNode, builder);
         loadAnimations(aiScene, builder.getBones(), builder.getAnimations(), DEFAULT_BONE_MATCHER); //animations reference bones, which need first be loaded from the meshes, and also require the nodes to resolve the back reference

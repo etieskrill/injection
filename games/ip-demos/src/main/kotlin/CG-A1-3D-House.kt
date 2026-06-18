@@ -60,8 +60,8 @@ val houseIndices = intArrayOf(
 data class Vertex(val position: Vector3f, val colour: Vector3f)
 object VertexAccessor : VertexArrayAccessor<Vertex>() {
     override fun registerFields() {
-        addField(Vector3f::class.java) { vertex, buffer -> vertex.position.get(buffer) }
-        addField(Vector3f::class.java) { vertex, buffer -> vertex.colour.get(buffer) }
+        addField<Vector3f> { vertex, buffer -> vertex.position.get(buffer) }
+        addField<Vector3f> { vertex, buffer -> vertex.colour.get(buffer) }
     }
 }
 
@@ -70,10 +70,15 @@ fun main() {
 }
 
 class `CG-03-A` : App() {
-    val houseVAO = VertexArrayObject.builder(VertexAccessor)
-        .vertexBuffer(BufferObject.create(VertexAccessor, BufferUtils.createFloatBuffer(houseVertices.size).put(houseVertices)).build())
-        .indices(houseIndices.toMutableList())
-        .build()
+    val houseVAO = VertexArrayObject(
+        VertexAccessor,
+        BufferObject(VertexAccessor, houseVertices.size).also {
+            val buffer = BufferUtils.createByteBuffer(houseVertices.size * VertexAccessor.elementByteSize)
+            buffer.asFloatBuffer().put(houseVertices)
+            it.setData(buffer)
+        },
+        indices = houseIndices.toMutableList()
+    )
 
     val shader = BasicShader()
 

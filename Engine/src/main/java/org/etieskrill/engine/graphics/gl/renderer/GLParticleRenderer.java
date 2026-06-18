@@ -38,10 +38,10 @@ public class GLParticleRenderer implements ParticleRenderer {
 
     //TODO render stats
     public GLParticleRenderer() {
-        this.vao = VertexArrayObject
-                .builder(ParticleVertexAccessor.getInstance())
-                .numVertexElements((long) MAX_PARTICLES)
-                .build();
+        this.vao = new VertexArrayObject<>(
+                ParticleVertexAccessor.INSTANCE, MAX_PARTICLES, null, null, null,
+                null, null
+        );
         this.particleShader = EngineShaderLoader.INSTANCE
                 .load("particle_shader", ParticleShader::new);
 
@@ -91,7 +91,7 @@ public class GLParticleRenderer implements ParticleRenderer {
         glDepthMask(true);
         glEnable(GL_CULL_FACE);
 
-        VertexArrayObject.unbind();
+        vao.unbind();
     }
 
     @Override

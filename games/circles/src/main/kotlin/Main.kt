@@ -7,8 +7,6 @@ import org.etieskrill.engine.entity.service.impl.DeferredRenderService
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera
 import org.etieskrill.engine.graphics.gl.StorageBufferObject
 import org.etieskrill.engine.graphics.gl.framebuffer.FrameBuffer
-import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment
-import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachmentType
 import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachmentType.COLOUR0
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
 import org.etieskrill.engine.graphics.gl.shader.impl.BlitShader
@@ -20,7 +18,6 @@ import org.etieskrill.engine.graphics.model.sphere
 import org.etieskrill.engine.graphics.pipeline.PostPassPipeline
 import org.etieskrill.engine.graphics.texture.AbstractTexture
 import org.etieskrill.engine.graphics.texture.Texture2D
-import org.etieskrill.engine.graphics.texture.Textures
 import org.etieskrill.engine.input.controller.CursorCameraController
 import org.etieskrill.engine.window.Window
 import org.joml.Vector2f

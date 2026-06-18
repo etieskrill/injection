@@ -5,12 +5,12 @@ import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
 import org.etieskrill.engine.graphics.gl.shader.UniformMappable
 import org.etieskrill.engine.graphics.texture.CubeMapTexture
 import org.etieskrill.engine.graphics.texture.Texture2D
+import org.joml.Vector4f
 import org.joml.Vector4fc
 
 private typealias Colour = Vector4fc
 
 // phong:
-//
 // properties:
 // - diffuse/albedo/base colour: vec3 ]0,1[
 // - specular colour: vec3 ]0,1[
@@ -29,7 +29,6 @@ private typealias Colour = Vector4fc
 // - ambient occlusion
 //
 // pbr:
-//
 // properties:
 // - diffuse/albedo/base colour: vec3 ]0,1[
 // - opacity: float ]0,1[
@@ -47,10 +46,9 @@ private typealias Colour = Vector4fc
 
 data class PhongMaterial(
     override val name: String? = null,
-    override val isTwoSided: Boolean? = null,
-    override val isWireframeEnabled: Boolean? = null,
+    override val isTwoSided: Boolean = false,
 
-    val diffuseColour: Colour? = null, //FIXME what the hell is AI_MATKEY_BASE_COLOR then?
+    val diffuseColour: Colour = Vector4f(1f), //FIXME what the hell is AI_MATKEY_BASE_COLOR then?
     val specularColour: Colour? = null,
     val ambientColour: Colour? = null,
     val shininess: Float? = null,
@@ -110,12 +108,11 @@ data class PhongMaterial(
     }
 }
 
-data class PBRMaterial(
+data class PBRMaterial( //TODO defaults
     override val name: String? = null,
-    override val isTwoSided: Boolean? = null,
-    override val isWireframeEnabled: Boolean? = null,
+    override val isTwoSided: Boolean = false,
 
-    val diffuseColour: Colour? = null,
+    val diffuseColour: Colour = Vector4f(1f),
     val opacity: Float? = null,
     val emissiveColour: Colour? = null,
     val emissiveStrength: Float? = null,
@@ -173,13 +170,18 @@ data class PBRMaterial(
 
 data class SkyboxMaterial(
     override val name: String? = null,
-    override val isTwoSided: Boolean? = null,
-    override val isWireframeEnabled: Boolean? = null,
 
-    val skyboxTexture: CubeMapTexture? = null
+    val skyboxTexture: CubeMapTexture? = null,
+    val diffuseColour: Colour = Vector4f(0.25f),
+    val opacity: Float? = null
 ) : Material() {
+
+    override val isTwoSided: Boolean = false
+
     override fun map(mapper: ShaderProgram.UniformMapper): Boolean {
         mapper.map("skybox", skyboxTexture)
+            .map("diffuseColour", diffuseColour)
+            .map("opacity", opacity)
         return true
     }
 
@@ -196,7 +198,6 @@ data class SkyboxMaterial(
 abstract class Material : UniformMappable, Disposable {
 
     abstract val name: String?
-    abstract val isTwoSided: Boolean?
-    abstract val isWireframeEnabled: Boolean?
+    abstract val isTwoSided: Boolean
 
 }

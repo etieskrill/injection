@@ -46,8 +46,9 @@ private val lightOff = Vector3f(0f)
 object EntityApplication : App(
     Window(
         title = "Horde3D",
-        size = WindowSize.LARGEST_FIT,
-        mode = Window.WindowMode.BORDERLESS,
+//        size = WindowSize.LARGEST_FIT,
+        size = WindowSize.VGA,
+//        mode = Window.WindowMode.BORDERLESS,
         samples = 4u,
         vSync = true,
         refreshRate = 60u
@@ -102,15 +103,15 @@ object EntityApplication : App(
         entitySystem.addServices(
             BoundingBoxService(),
             DirectionalShadowMappingService(renderer),
-            PointShadowMappingService(renderer, DepthCubeMapArrayShader()), // DepthCubeMapArrayAnimatedShader()
+//            PointShadowMappingService(renderer, DepthCubeMapArrayShader()), // DepthCubeMapArrayAnimatedShader()
             AnimationService(),
             ParticleUpdateService(),
 
             PhysicsService(PhysicsService.NarrowCollisionSolver.AABB_SOLVER),
             SnippetsService(),
-
-            renderService,
-            secondaryRenderService,
+//
+//            renderService,
+//            secondaryRenderService,
         )
 
         player = entitySystem.constructEntity { id -> PlayerEntity(id) }

@@ -27,7 +27,7 @@ public class DebugInterface extends Scene {
     }
 
     public DebugInterface(FrameBuffer frameBuffer, Vector2ic windowSize, GLRenderer renderer, @Nullable LoopPacer pacer) {
-        super(new Batch(frameBuffer, renderer, windowSize), new Container(), new OrthographicCamera(windowSize));
+        super(new Batch(frameBuffer, renderer), new Container(), new OrthographicCamera(windowSize));
 
         this.renderer = renderer;
         this.pacer = pacer;

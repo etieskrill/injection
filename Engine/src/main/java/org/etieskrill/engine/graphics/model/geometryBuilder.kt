@@ -1,7 +1,7 @@
 package org.etieskrill.engine.graphics.model
 
 import org.etieskrill.engine.entity.component.Transform
-import org.etieskrill.engine.graphics.model.loader.MeshLoader
+import org.etieskrill.engine.graphics.model.loader.loadToVAO
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.primitives.AABBf
@@ -37,10 +37,10 @@ class ModelBuilder(
 fun ModelBuilder.plane(a: Vector2f, b: Vector2f, transform: Transform = Transform()) {
     val cross = Vector3f(0f, 1f, 0f)
     val vertices: List<Vertex> = listOf(
-        Vertex.builder(Vector3f(a.x, 0f, a.y)).normal(cross).build(),
-        Vertex.builder(Vector3f(a.x, 0f, b.y)).normal(cross).build(),
-        Vertex.builder(Vector3f(b.x, 0f, b.y)).normal(cross).build(),
-        Vertex.builder(Vector3f(b.x, 0f, a.y)).normal(cross).build()
+        Vertex(Vector3f(a.x, 0f, a.y), normal = cross),
+        Vertex(Vector3f(a.x, 0f, b.y), normal = cross),
+        Vertex(Vector3f(b.x, 0f, b.y), normal = cross),
+        Vertex(Vector3f(b.x, 0f, a.y), normal = cross)
     )
     val indices = listOf(0, 1, 2, 0, 2, 3)
 
@@ -55,35 +55,35 @@ fun ModelBuilder.box(a: Vector3f, b: Vector3f, transform: Transform = Transform(
 
     val vertices: List<Vertex> = listOf(
         // top
-        Vertex.builder(Vector3f(a.x, a.y, a.z)).normal(Vector3f(0f, -1f, 0f)).build(),
-        Vertex.builder(Vector3f(b.x, a.y, a.z)).normal(Vector3f(0f, -1f, 0f)).build(),
-        Vertex.builder(Vector3f(b.x, a.y, b.z)).normal(Vector3f(0f, -1f, 0f)).build(),
-        Vertex.builder(Vector3f(a.x, a.y, b.z)).normal(Vector3f(0f, -1f, 0f)).build(),
+        Vertex(Vector3f(a.x, a.y, a.z), normal = Vector3f(0f, -1f, 0f)),
+        Vertex(Vector3f(b.x, a.y, a.z), normal = Vector3f(0f, -1f, 0f)),
+        Vertex(Vector3f(b.x, a.y, b.z), normal = Vector3f(0f, -1f, 0f)),
+        Vertex(Vector3f(a.x, a.y, b.z), normal = Vector3f(0f, -1f, 0f)),
         // bottom
-        Vertex.builder(Vector3f(a.x, b.y, a.z)).normal(Vector3f(0f, 1f, 0f)).build(),
-        Vertex.builder(Vector3f(b.x, b.y, a.z)).normal(Vector3f(0f, 1f, 0f)).build(),
-        Vertex.builder(Vector3f(b.x, b.y, b.z)).normal(Vector3f(0f, 1f, 0f)).build(),
-        Vertex.builder(Vector3f(a.x, b.y, b.z)).normal(Vector3f(0f, 1f, 0f)).build(),
+        Vertex(Vector3f(a.x, b.y, a.z), normal = Vector3f(0f, 1f, 0f)),
+        Vertex(Vector3f(b.x, b.y, a.z), normal = Vector3f(0f, 1f, 0f)),
+        Vertex(Vector3f(b.x, b.y, b.z), normal = Vector3f(0f, 1f, 0f)),
+        Vertex(Vector3f(a.x, b.y, b.z), normal = Vector3f(0f, 1f, 0f)),
         // back
-        Vertex.builder(Vector3f(a.x, a.y, a.z)).normal(Vector3f(0f, 0f, -1f)).build(),
-        Vertex.builder(Vector3f(b.x, a.y, a.z)).normal(Vector3f(0f, 0f, -1f)).build(),
-        Vertex.builder(Vector3f(b.x, b.y, a.z)).normal(Vector3f(0f, 0f, -1f)).build(),
-        Vertex.builder(Vector3f(a.x, b.y, a.z)).normal(Vector3f(0f, 0f, -1f)).build(),
+        Vertex(Vector3f(a.x, a.y, a.z), normal = Vector3f(0f, 0f, -1f)),
+        Vertex(Vector3f(b.x, a.y, a.z), normal = Vector3f(0f, 0f, -1f)),
+        Vertex(Vector3f(b.x, b.y, a.z), normal = Vector3f(0f, 0f, -1f)),
+        Vertex(Vector3f(a.x, b.y, a.z), normal = Vector3f(0f, 0f, -1f)),
         // front
-        Vertex.builder(Vector3f(a.x, a.y, b.z)).normal(Vector3f(0f, 0f, 1f)).build(),
-        Vertex.builder(Vector3f(b.x, a.y, b.z)).normal(Vector3f(0f, 0f, 1f)).build(),
-        Vertex.builder(Vector3f(b.x, b.y, b.z)).normal(Vector3f(0f, 0f, 1f)).build(),
-        Vertex.builder(Vector3f(a.x, b.y, b.z)).normal(Vector3f(0f, 0f, 1f)).build(),
+        Vertex(Vector3f(a.x, a.y, b.z), normal = Vector3f(0f, 0f, 1f)),
+        Vertex(Vector3f(b.x, a.y, b.z), normal = Vector3f(0f, 0f, 1f)),
+        Vertex(Vector3f(b.x, b.y, b.z), normal = Vector3f(0f, 0f, 1f)),
+        Vertex(Vector3f(a.x, b.y, b.z), normal = Vector3f(0f, 0f, 1f)),
         // left
-        Vertex.builder(Vector3f(a.x, a.y, b.z)).normal(Vector3f(-1f, 0f, 0f)).build(),
-        Vertex.builder(Vector3f(a.x, a.y, a.z)).normal(Vector3f(-1f, 0f, 0f)).build(),
-        Vertex.builder(Vector3f(a.x, b.y, a.z)).normal(Vector3f(-1f, 0f, 0f)).build(),
-        Vertex.builder(Vector3f(a.x, b.y, b.z)).normal(Vector3f(-1f, 0f, 0f)).build(),
+        Vertex(Vector3f(a.x, a.y, b.z), normal = Vector3f(-1f, 0f, 0f)),
+        Vertex(Vector3f(a.x, a.y, a.z), normal = Vector3f(-1f, 0f, 0f)),
+        Vertex(Vector3f(a.x, b.y, a.z), normal = Vector3f(-1f, 0f, 0f)),
+        Vertex(Vector3f(a.x, b.y, b.z), normal = Vector3f(-1f, 0f, 0f)),
         // right
-        Vertex.builder(Vector3f(b.x, a.y, a.z)).normal(Vector3f(1f, 0f, 0f)).build(),
-        Vertex.builder(Vector3f(b.x, a.y, b.z)).normal(Vector3f(1f, 0f, 0f)).build(),
-        Vertex.builder(Vector3f(b.x, b.y, b.z)).normal(Vector3f(1f, 0f, 0f)).build(),
-        Vertex.builder(Vector3f(b.x, b.y, a.z)).normal(Vector3f(1f, 0f, 0f)).build(),
+        Vertex(Vector3f(b.x, a.y, a.z), normal = Vector3f(1f, 0f, 0f)),
+        Vertex(Vector3f(b.x, a.y, b.z), normal = Vector3f(1f, 0f, 0f)),
+        Vertex(Vector3f(b.x, b.y, b.z), normal = Vector3f(1f, 0f, 0f)),
+        Vertex(Vector3f(b.x, b.y, a.z), normal = Vector3f(1f, 0f, 0f))
     )
     val indices = listOf(
         0, 1, 2, 0, 2, 3, //top
@@ -126,9 +126,7 @@ fun ModelBuilder.primitiveSphere(
 
     //TODO could improve by using vertical triangle strips instead
 
-    vertices += Vertex.builder(Vector3f(0f, radius, 0f))
-        .normal(Vector3f(0f, 1f, 0f))
-        .build()
+    vertices += Vertex(Vector3f(0f, radius, 0f), normal = Vector3f(0f, 1f, 0f))
     for (xSegment in 0..<xSegments) {
         indices += 0
         indices += xSegment + 1
@@ -145,9 +143,7 @@ fun ModelBuilder.primitiveSphere(
             val z = radius * sin(theta) * cos(phi)
 
             val position = Vector3f(x, y, z)
-            vertices += Vertex.builder(position)
-                .normal(Vector3f(position).normalize())
-                .build()
+            vertices += Vertex(position, normal = Vector3f(position).normalize())
 
             if (ySegment == ySegments - 1 && xSegment > xSegments - 3) continue
 
@@ -161,9 +157,7 @@ fun ModelBuilder.primitiveSphere(
         }
     }
 
-    vertices += Vertex.builder(Vector3f(0f, -radius, 0f))
-        .normal(Vector3f(0f, -1f, 0f))
-        .build()
+    vertices += Vertex(Vector3f(0f, -radius, 0f), normal = Vector3f(0f, -1f, 0f))
     for (xSegment in -1..<xSegments - 1) {
         indices += vertices.lastIndex
         indices += vertices.lastIndex - ySegments + xSegment + 1
@@ -183,10 +177,10 @@ private fun ModelBuilder.createModel(
     name: String,
     vertices: List<Vertex>,
     indices: List<Int>,
-    boundingBox: AABBf? = null,
+    boundingBox: AABBf = AABBf(),
     transform: Transform
 ) {
-    val mesh = MeshLoader.loadToVAO(vertices, indices, PhongMaterial(), boundingBox)
+    val mesh = loadToVAO(vertices, indices, PhongMaterial(), boundingBox = boundingBox)
 
     val node = Node(name, null, transform, listOf(mesh), null)
     model.nodes += node

@@ -23,10 +23,8 @@ import org.joml.*;
 import org.lwjgl.system.MemoryStack;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-import static org.etieskrill.engine.graphics.texture.AbstractTexture.Type.SHININESS;
 import static org.lwjgl.opengl.GL33C.*;
 
 //TODO assure thread safety/passing
@@ -331,8 +329,8 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
         glEnable(GL_BLEND);
 
         int mode = shader instanceof Shaders.ShowNormalsShader ? GL_POINTS : mesh.getDrawMode().gl();
-        if (!instanced) glDrawElements(mode, mesh.getNumIndices(), GL_UNSIGNED_INT, 0);
-        else glDrawElementsInstanced(mode, mesh.getNumIndices(), GL_UNSIGNED_INT, 0, numInstances);
+        if (!instanced) glDrawElements(mode, mesh.getVao().getNumElements(), GL_UNSIGNED_INT, 0);
+        else glDrawElementsInstanced(mode, mesh.getVao().getNumElements(), GL_UNSIGNED_INT, 0, numInstances);
 
         var textureContext = getOrCreateShaderTextureContext(shader);
         textureContext.nextTexture = textureContext.manuallyBoundTextures + 1;
@@ -340,18 +338,13 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
         resetMaterial(mesh.getMaterial());
 
         if (mesh.getDrawMode() == Mesh.DrawMode.TRIANGLES) {
-            setTrianglesDrawn(getTrianglesDrawn() + mesh.getNumIndices() / 3);
+            setTrianglesDrawn(getTrianglesDrawn() + mesh.getVao().getNumElements() / 3);
         }
         setRenderCalls(getRenderCalls() + 1);
     }
 
     private void bindMaterial(Material material, ShaderProgram shader) {
-        if (Boolean.TRUE.equals(material.isTwoSided())) {
-            glDisable(GL_CULL_FACE);
-        }
-        if (Boolean.TRUE.equals(material.isWireframeEnabled())) {
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        }
+        if (material.isTwoSided()) glDisable(GL_CULL_FACE);
 
         //FIXME bind all unused samplers to unused slots to avoid sampler type conflict
         //FIXME if proper: bind default 1x1 texture to type if not set
@@ -365,12 +358,7 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
     }
 
     private void resetMaterial(Material material) {
-        if (Boolean.TRUE.equals(material.isTwoSided())) {
-            glEnable(GL_CULL_FACE);
-        }
-        if (Boolean.TRUE.equals(material.isWireframeEnabled())) {
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        }
+        if (material.isTwoSided()) glEnable(GL_CULL_FACE);
     }
 
 }

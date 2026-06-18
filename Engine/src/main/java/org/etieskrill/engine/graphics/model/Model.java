@@ -16,7 +16,7 @@ import java.io.IOException;
 import java.util.*;
 
 import static org.etieskrill.engine.graphics.model.loader.Loader.loadModel;
-import static org.etieskrill.engine.graphics.model.loader.MeshProcessor.optimiseMesh;
+import static org.etieskrill.engine.graphics.model.loader.MeshProcessorKt.optimiseMesh;
 
 //TODO refactor: reduce to data in anticipation of ces
 //               find most comprehensive solution for multi-entry-point builders
@@ -47,8 +47,6 @@ public class Model implements Disposable {
         protected final @Getter List<Animation> animations;
         protected final @Getter List<Bone> bones;
 
-        protected final @Getter Map<String, Texture2D> embeddedTextures;
-
         protected @Getter @Setter @Accessors(chain = true) boolean flipUVs = true;
         protected @Getter @Setter @Accessors(chain = true) boolean flipWinding = false;
         protected @Setter @Accessors(chain = true) boolean culling = true;
@@ -70,7 +68,6 @@ public class Model implements Disposable {
             this.materials = new LinkedList<>();
             this.animations = new LinkedList<>();
             this.bones = new ArrayList<>();
-            this.embeddedTextures = new HashMap<>();
 
             loadModelData();
         }

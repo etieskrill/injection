@@ -23,11 +23,10 @@ public class GLTextRenderer extends GLDebuggableRenderer implements TextRenderer
     public static final int MAX_BATCH_LENGTH = 1 << 10; //Max text length is 1024 characters per draw call
 
     private final List<RenderedGlyph> renderedGlyphs = new ArrayList<>(MAX_BATCH_LENGTH);
-    private final VertexArrayObject<RenderedGlyph> glyphVAO = VertexArrayObject
-            .builder(RenderedGlyphAccessor.getInstance())
-            .numVertexElements((long) MAX_BATCH_LENGTH)
-            .frequency(Frequency.STREAM)
-            .build();
+    private final VertexArrayObject<RenderedGlyph> glyphVAO = new VertexArrayObject<>(
+            RenderedGlyphAccessor.INSTANCE, MAX_BATCH_LENGTH, null, null, null,
+            Frequency.STREAM, null
+    );
 
     public GLTextRenderer() {
         for (int i = 0; i < MAX_BATCH_LENGTH; i++)

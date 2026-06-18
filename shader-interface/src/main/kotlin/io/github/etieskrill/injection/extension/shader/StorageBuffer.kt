@@ -19,6 +19,7 @@ interface Buffer<T> {
 
     val accessor: BufferAccessor<T>
 
+    //TODO should be property and differentiate type by name
     fun setData(elements: Collection<T>)
     fun setData(data: ByteBuffer)
 

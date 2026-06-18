@@ -58,7 +58,7 @@ object Audio : Disposable {
         }
 
         val devices = alcGetString(0, ALC_DEVICE_SPECIFIER)!!.split(nullChar)
-        logger.info("Available audio devices: $devices")
+        logger.info { "Available audio devices: $devices" }
         return devices
     }
 

@@ -27,9 +27,11 @@ import org.lwjgl.stb.STBImage.stbi_load_from_memory
 private val logger = KotlinLogging.logger("MaterialLoader")
 private val timer = StepTimer(logger)
 
-internal fun loadEmbeddedTextures(scene: AIScene, embeddedTextures: MutableMap<String, Texture2D>) {
+internal fun loadEmbeddedTextures(scene: AIScene): Map<String, Texture2D> {
+    val embeddedTextures = mutableMapOf<String, Texture2D>()
     val textures = scene.mTextures()
-        ?: if (scene.mNumTextures() == 0) return else error("Texture array is not available but number of textures is not zero")
+        ?: if (scene.mNumTextures() == 0) return embeddedTextures
+        else error("Texture array is not available but number of textures is not zero")
     for (i in 0..<scene.mNumTextures()) {
         val texture = AITexture.create(textures.get(i))
 
@@ -58,6 +60,7 @@ internal fun loadEmbeddedTextures(scene: AIScene, embeddedTextures: MutableMap<S
     }
 
     logger.debug { "${embeddedTextures.size / 2} of ${scene.mNumTextures()} embedded textures loaded" }
+    return embeddedTextures
 }
 
 private fun determineType(filePath: String): AbstractTexture.Type = when {
@@ -108,10 +111,9 @@ private fun processPhongMaterial(
     modelName: String
 ): PhongMaterial = PhongMaterial(
     name = aiMaterial.getStringProperty(AI_MATKEY_NAME),
-    isTwoSided = aiMaterial.getIntProperty(AI_MATKEY_TWOSIDED)?.let { it > 0 },
-    isWireframeEnabled = aiMaterial.getIntProperty(AI_MATKEY_ENABLE_WIREFRAME)?.let { it > 0 },
+    isTwoSided = aiMaterial.getBooleanProperty(AI_MATKEY_TWOSIDED) ?: false,
 
-    diffuseColour = aiMaterial.getColourProperty(AI_MATKEY_COLOR_DIFFUSE),
+    diffuseColour = aiMaterial.getColourProperty(AI_MATKEY_COLOR_DIFFUSE) ?: Vector4f(1f),
     specularColour = aiMaterial.getColourProperty(AI_MATKEY_COLOR_SPECULAR),
     ambientColour = aiMaterial.getColourProperty(AI_MATKEY_COLOR_AMBIENT),
     shininess = aiMaterial.getFloatProperty(AI_MATKEY_SHININESS),
@@ -140,10 +142,9 @@ private fun processPBRMaterial(
     modelName: String
 ): PBRMaterial = PBRMaterial(
     name = aiMaterial.getStringProperty(AI_MATKEY_NAME),
-    isTwoSided = aiMaterial.getIntProperty(AI_MATKEY_TWOSIDED)?.let { it > 0 },
-    isWireframeEnabled = aiMaterial.getIntProperty(AI_MATKEY_ENABLE_WIREFRAME)?.let { it > 0 },
+    isTwoSided = aiMaterial.getBooleanProperty(AI_MATKEY_TWOSIDED) ?: false,
 
-    diffuseColour = aiMaterial.getColourProperty(AI_MATKEY_COLOR_DIFFUSE),
+    diffuseColour = aiMaterial.getColourProperty(AI_MATKEY_COLOR_DIFFUSE) ?: Vector4f(1f),
     opacity = aiMaterial.getFloatProperty(AI_MATKEY_OPACITY),
     emissiveColour = aiMaterial.getColourProperty(AI_MATKEY_COLOR_EMISSIVE),
     emissiveStrength = aiMaterial.getFloatProperty(AI_MATKEY_EMISSIVE_INTENSITY),
@@ -167,24 +168,30 @@ private fun processPBRMaterial(
     emissiveTexture = aiMaterial.getTexture(AbstractTexture.Type.EMISSIVE, materialIndex, modelName, embeddedTextures)
 )
 
-//FIXME assimp can apparently return an int, short, or char here, even though e.g. for the shading model an int is SPECIFICALLY specified in the specific fucking specification
-private fun AIMaterial.getIntProperty(property: String): Int? = getProperty(property, aiPTI_Integer, Int.SIZE_BYTES)?.mData()?.int
+private fun AIMaterial.getBooleanProperty(property: String): Boolean? =
+    getProperty(property, aiPTI_Integer, 1)?.mData()?.get()?.let { it > 0 }
+
+private fun AIMaterial.getIntProperty(property: String): Int? =
+    getProperty(property, aiPTI_Integer, Int.SIZE_BYTES)?.mData()?.int
+
 private fun AIMaterial.getFloatProperty(property: String): Float? =
     getProperty(property, aiPTI_Float, Float.SIZE_BYTES)?.mData()?.float
 
 private fun AIMaterial.getColourProperty(property: String): Vector4fc? {
-    val data = getProperty(property, aiPTI_Float, 3 * Float.SIZE_BYTES)?.mData() ?: return null
-    return Vector4f(data.float, data.float, data.float, 1f)
+    val data = getProperty(property, aiPTI_Float)?.mData() ?: return null
+    return if (data.remaining() == 3 * Float.SIZE_BYTES) Vector4f(data.float, data.float, data.float, 1f)
+    else if (data.remaining() == 4 * Float.SIZE_BYTES) Vector4f(data.float, data.float, data.float, data.float)
+    else error("Colour property contained ${data.remaining() / Float.SIZE_BYTES} values where 3/4 are required")
 }
 
 private fun AIMaterial.getStringProperty(property: String): String? {
-    val property = getProperty(property, aiPTI_String, 0) ?: return null
+    val property = getProperty(property, aiPTI_String) ?: return null
     val data = property.mData()
     return String(ByteArray(property.mDataLength()) { data.get() })
 }
 
 @OptIn(ExperimentalStdlibApi::class)
-private fun AIMaterial.getProperty(property: String, type: Int, length: Int): AIMaterialProperty? {
+private fun AIMaterial.getProperty(property: String, type: Int, length: Int? = null): AIMaterialProperty? {
     val propertyBuffer = BufferUtils.createPointerBuffer(1)
     if (aiReturn_SUCCESS != aiGetMaterialProperty(this, property, propertyBuffer)) {
         logger.debug { "Failed to get property $property: ${aiGetErrorString()}" }
@@ -195,7 +202,7 @@ private fun AIMaterial.getProperty(property: String, type: Int, length: Int): AI
     check(property.mType() == type || property.mType() == aiPTI_Buffer) {
         "Property has type 0x${property.mType().toHexString()}, not 0x${type.toHexString()}"
     }
-    check(property.mDataLength() == length || property.mType() == aiPTI_String) {
+    check(length == null || property.mDataLength() == length) {
         "Property has ${property.mDataLength()} instead of the required $length elements"
     }
     return property
@@ -247,7 +254,7 @@ private fun AIMaterial.getTexture(
         }
 
         else -> {
-            logger.warn { "Failed to find any texture for '$textureName' at ${textureFile}" }
+            logger.warn { "Failed to find any texture for '$textureName' at $textureFile" }
             null
         }
     }
