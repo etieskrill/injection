@@ -51,8 +51,6 @@ data class PipelineConfig(
     val writeDepth: Boolean = true,
 
     val drawMode: DrawMode = DrawMode.FILL,
-    val frontFaceDrawMode: DrawMode = drawMode,
-    val backFaceDrawMode: DrawMode = drawMode,
 
     val pointSize: Float = 1f,
 

@@ -214,8 +214,7 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
 
         glDepthMask(pipeline.getConfig().getWriteDepth());
 
-        glPolygonMode(GL_FRONT, toGLPolygonMode(pipeline.getConfig().getFrontFaceDrawMode()));
-        glPolygonMode(GL_BACK, toGLPolygonMode(pipeline.getConfig().getBackFaceDrawMode()));
+        glPolygonMode(GL_FRONT_AND_BACK, toGLPolygonMode(pipeline.getConfig().getDrawMode()));
 
         glPointSize(pipeline.getConfig().getPointSize());
 

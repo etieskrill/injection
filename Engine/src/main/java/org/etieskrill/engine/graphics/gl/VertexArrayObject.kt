@@ -24,7 +24,7 @@ data class VertexArrayObject<T> private constructor(
 
     val isIndexed get() = indexBuffer != null
     val numElements get() = (indexBuffer ?: vertexBuffer).numElements
-    val elementByteSize get() = vertexBuffer.byteSize
+    val elementByteSize get() = accessor.elementByteSize
 
     var vertices: Collection<T> get() = TODO(); set(value) = vertexBuffer.setData(value)
     var indices: Collection<Int>
@@ -116,20 +116,22 @@ data class VertexArrayObject<T> private constructor(
                 for (matrixRow in 0 until field.numMatrixRows) {
                     glEnableVertexAttribArray(bindingIndex)
                     when (field.componentType) {
-                        Int::class.java, Byte::class.java, Short::class.java ->
+                        Int::class, Byte::class, Short::class ->
                             glVertexAttribIPointer(
                                 bindingIndex,
                                 field.numComponents, field.glComponentType,
                                 totalStrideBytes, currentStrideBytes
                             )
 
-                        else -> //TODO attrib divisors for instancing
+                        Float::class, Double::class -> //TODO attrib divisors for instancing
                             glVertexAttribPointer(
                                 bindingIndex,
                                 field.numComponents, field.glComponentType,
                                 field.isNormalised,
                                 totalStrideBytes, currentStrideBytes
                             )
+
+                        else -> error("Unsupported vertex array component type: ${field.componentType.simpleName}")
                     }
 
                     append("\tbinding index $bindingIndex to ${field.type.simpleName}")

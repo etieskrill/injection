@@ -6,7 +6,7 @@ import org.joml.primitives.AABBf
 import org.lwjgl.opengl.GL33C.*
 
 class Mesh(
-    val material: Material,
+    var material: Material,
     val bones: List<Bone>?,
     val vao: VertexArrayObject<Vertex>,
     val boundingBox: AABBf,

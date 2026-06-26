@@ -113,14 +113,15 @@ private fun processPhongMaterial(
     name = aiMaterial.getStringProperty(AI_MATKEY_NAME),
     isTwoSided = aiMaterial.getBooleanProperty(AI_MATKEY_TWOSIDED) ?: false,
 
-    diffuseColour = aiMaterial.getColourProperty(AI_MATKEY_COLOR_DIFFUSE) ?: Vector4f(1f),
-    specularColour = aiMaterial.getColourProperty(AI_MATKEY_COLOR_SPECULAR),
-    ambientColour = aiMaterial.getColourProperty(AI_MATKEY_COLOR_AMBIENT),
-    shininess = aiMaterial.getFloatProperty(AI_MATKEY_SHININESS),
-    shininessStrength = aiMaterial.getFloatProperty(AI_MATKEY_SHININESS_STRENGTH),
-    opacity = aiMaterial.getFloatProperty(AI_MATKEY_OPACITY),
-    emissiveColour = aiMaterial.getColourProperty(AI_MATKEY_COLOR_EMISSIVE),
-    emissiveStrength = aiMaterial.getFloatProperty(AI_MATKEY_EMISSIVE_INTENSITY),
+    diffuseColour = aiMaterial.getColourProperty(AI_MATKEY_COLOR_DIFFUSE)
+        ?: Vector4f(1f), //FIXME better way to do defaults?
+    specularColour = aiMaterial.getColourProperty(AI_MATKEY_COLOR_SPECULAR) ?: Vector4f(1f),
+    ambientColour = aiMaterial.getColourProperty(AI_MATKEY_COLOR_AMBIENT) ?: Vector4f(1f),
+    shininess = aiMaterial.getFloatProperty(AI_MATKEY_SHININESS) ?: 256f,
+    shininessStrength = aiMaterial.getFloatProperty(AI_MATKEY_SHININESS_STRENGTH) ?: 1f,
+    opacity = aiMaterial.getFloatProperty(AI_MATKEY_OPACITY) ?: 1f,
+    emissiveColour = aiMaterial.getColourProperty(AI_MATKEY_COLOR_EMISSIVE) ?: Vector4f(0f),
+    emissiveStrength = aiMaterial.getFloatProperty(AI_MATKEY_EMISSIVE_INTENSITY) ?: 0f,
 
     diffuseTexture = aiMaterial.getTexture(AbstractTexture.Type.DIFFUSE, materialIndex, modelName, embeddedTextures),
     specularTexture = aiMaterial.getTexture(AbstractTexture.Type.SPECULAR, materialIndex, modelName, embeddedTextures),

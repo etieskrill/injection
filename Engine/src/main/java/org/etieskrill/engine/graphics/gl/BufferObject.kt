@@ -2,34 +2,14 @@ package org.etieskrill.engine.graphics.gl
 
 import io.github.etieskrill.injection.extension.shader.BufferAccessor
 import org.etieskrill.engine.common.Disposable
-import org.etieskrill.engine.graphics.gl.BufferObject.AccessType.COPY
-import org.etieskrill.engine.graphics.gl.BufferObject.AccessType.DRAW
-import org.etieskrill.engine.graphics.gl.BufferObject.AccessType.READ
-import org.etieskrill.engine.graphics.gl.BufferObject.Frequency.DYNAMIC
-import org.etieskrill.engine.graphics.gl.BufferObject.Frequency.STATIC
-import org.etieskrill.engine.graphics.gl.BufferObject.Frequency.STREAM
+import org.etieskrill.engine.graphics.gl.BufferObject.AccessType.*
+import org.etieskrill.engine.graphics.gl.BufferObject.Frequency.*
 import org.etieskrill.engine.graphics.gl.GLUtils.checkErrorThrowing
 import org.etieskrill.engine.graphics.gl.GLUtils.clearError
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11C.GL_BYTE
 import org.lwjgl.opengl.GL11C.GL_RED
-import org.lwjgl.opengl.GL15C.GL_ARRAY_BUFFER
-import org.lwjgl.opengl.GL15C.GL_DYNAMIC_COPY
-import org.lwjgl.opengl.GL15C.GL_DYNAMIC_DRAW
-import org.lwjgl.opengl.GL15C.GL_DYNAMIC_READ
-import org.lwjgl.opengl.GL15C.GL_ELEMENT_ARRAY_BUFFER
-import org.lwjgl.opengl.GL15C.GL_STATIC_COPY
-import org.lwjgl.opengl.GL15C.GL_STATIC_DRAW
-import org.lwjgl.opengl.GL15C.GL_STATIC_READ
-import org.lwjgl.opengl.GL15C.GL_STREAM_COPY
-import org.lwjgl.opengl.GL15C.GL_STREAM_DRAW
-import org.lwjgl.opengl.GL15C.GL_STREAM_READ
-import org.lwjgl.opengl.GL15C.glBindBuffer
-import org.lwjgl.opengl.GL15C.glBufferData
-import org.lwjgl.opengl.GL15C.glBufferSubData
-import org.lwjgl.opengl.GL15C.glDeleteBuffers
-import org.lwjgl.opengl.GL15C.glGenBuffers
-import org.lwjgl.opengl.GL15C.glGetBufferSubData
+import org.lwjgl.opengl.GL15C.*
 import org.lwjgl.opengl.GL30C.GL_R8I
 import org.lwjgl.opengl.GL43C.GL_SHADER_STORAGE_BUFFER
 import org.lwjgl.opengl.GL43C.glClearBufferSubData
@@ -55,6 +35,7 @@ open class BufferObject<T>(
     override val buffer: ByteBuffer by lazy {
         bind()
         BufferUtils.createByteBuffer(byteSize)
+        //TODO should actually get data too, maybe based on flag set?
     }
 
     //TODO add vao slot to ensure in-use (bound) buffers are not accidentally used elsewhere

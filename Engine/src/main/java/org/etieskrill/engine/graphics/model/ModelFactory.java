@@ -153,8 +153,8 @@ public class ModelFactory {
                 new Model.Builder("box.obj")
                         .setInitialTransform(transform) //FIXME there is no way this works as intended
                         .setCulling(false)
-                        .setMaterials(material)
                         .build());
+        baseBox.getNodes().get(2).getMeshes().get(0).setMaterial(material);
         return new Model(baseBox);
     }
 

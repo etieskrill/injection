@@ -42,18 +42,18 @@ struct SpotLight {
 
 uniform struct Material {
     bool hasDiffuse;
-    sampler2D diffuse0;
-    bool specularTexture;
-    sampler2D specular0;
+    sampler2D diffuse;
+    bool hasSpecular;
+    sampler2D specular;
     float shininess;
-    float specularity;
-    bool hasNormalMap;
-    sampler2D normal0;
-    bool emissiveTexture;
-    sampler2D emissive0;
+    float shininessStrength;
+    bool hasNormal;
+    sampler2D normal;
+    bool hasEmissive;
+    sampler2D emissive;
     samplerCube cubemap0;
 
-    vec4 colourDiffuse;
+    vec4 diffuseColour;
 } material;
 
 in Data {
@@ -98,8 +98,8 @@ float getInPointShadow(int index, vec3 fragToLight);
 void main()
 {
     vec3 normalVec;
-    if (material.hasNormalMap) {
-        normalVec = texture(material.normal0, vert_out.texCoord).xyz * 2.0 - 1.0;
+    if (material.hasNormal) {
+        normalVec = texture(material.normal, vert_out.texCoord).xyz * 2.0 - 1.0;
         normalVec = normalize(normalVec);
         normalVec = normalize(vert_out.tbn * normalVec);
     } else {
@@ -108,7 +108,7 @@ void main()
 
     vec4 texel = vec4(0.0, 0.0, 0.0, 1.0);
     if (material.hasDiffuse) {
-        texel = texture(material.diffuse0, vert_out.texCoord); //so, using a sampler with a wrong texture bound to it is a panic case for... the driver? the gpu? _some_ gpus?
+        texel = texture(material.diffuse, vert_out.texCoord); //so, using a sampler with a wrong texture bound to it is a panic case for... the driver? the gpu? _some_ gpus?
         if (texel.a == 0.0) discard;
     }
 
@@ -124,8 +124,8 @@ void main()
         combinedLight += pointLight;
     }
 
-    if (material.emissiveTexture) {
-        combinedLight += texture(material.emissive0, vert_out.texCoord).rgb;
+    if (material.hasEmissive) {
+        combinedLight += texture(material.emissive, vert_out.texCoord).rgb;
     }
 
     //TODO pack reflection mix factor into material property. until reflection maps are a thing, anyway
@@ -135,11 +135,11 @@ void main()
     //        combinedLight = mix(combinedLight, getCubeRefraction(1 / 1.52, normalVec), 0.5);
     //    }
 
-    fragColour = material.colourDiffuse * vec4(combinedLight, texel.a);
+    fragColour = material.diffuseColour * vec4(combinedLight, texel.a);
 
     float brightness = dot(combinedLight.rgb, vec3(0.2126, 0.7152, 0.0722));
     if (brightness > 2.0) bloomColour = fragColour;
-    else bloomColour = material.colourDiffuse * vec4(0.0, 0.0, 0.0, texel.a);
+    else bloomColour = material.diffuseColour * vec4(0.0, 0.0, 0.0, texel.a);
 }
 
 vec3 getDirLight(DirectionalLight light, vec3 normal, vec3 fragPosition, vec3 viewPosition, float inShadow)
@@ -169,7 +169,7 @@ vec3 getPointLight(PointLight light, vec3 normal, vec3 fragPosition, vec3 viewPo
 vec3 getAmbient(vec3 lightAmbient)
 {
     vec3 ambient = lightAmbient;
-    if (material.hasDiffuse) ambient *= texture(material.diffuse0, vert_out.texCoord).rgb;
+    if (material.hasDiffuse) ambient *= texture(material.diffuse, vert_out.texCoord).rgb;
     return ambient;
 }
 
@@ -177,7 +177,7 @@ vec3 getDiffuse(vec3 lightDirection, vec3 normal, vec3 lightDiffuse)
 {
     float diff = max(dot(normal, lightDirection), 0.0);
     vec3 diffuse = lightDiffuse * diff;
-    if (material.hasDiffuse) diffuse *= texture(material.diffuse0, vert_out.texCoord).rgb;
+    if (material.hasDiffuse) diffuse *= texture(material.diffuse, vert_out.texCoord).rgb;
     return diffuse;
 }
 
@@ -195,9 +195,9 @@ vec3 getSpecular(vec3 lightDirection, vec3 lightPosition, vec3 normal, vec3 frag
     }
 
     float shininess = material.shininess > 0 ? material.shininess : 64;
-    float specularIntensity = material.specularity * pow(max(specularFactor, 0.0), shininess);
+    float specularIntensity = material.shininessStrength * pow(max(specularFactor, 0.0), shininess);
     vec3 specular = lightSpecular * specularIntensity;
-    if (material.specularTexture) specular *= texture(material.specular0, vert_out.texCoord).rgb;
+    if (material.hasSpecular) specular *= texture(material.specular, vert_out.texCoord).rgb;
     return specular;
 }
 

@@ -13,12 +13,12 @@ import org.etieskrill.engine.graphics.data.DirectionalLight
 import org.etieskrill.engine.graphics.data.PointLight
 import org.etieskrill.engine.graphics.gl.framebuffer.DirectionalShadowMap
 import org.etieskrill.engine.graphics.gl.framebuffer.PointShadowMapArray
-import org.etieskrill.engine.graphics.model.Material
 import org.etieskrill.engine.graphics.model.Model
 import org.etieskrill.engine.graphics.model.ModelFactory
 import org.etieskrill.engine.graphics.model.PhongMaterial
 import org.etieskrill.engine.graphics.texture.AbstractTexture
-import org.etieskrill.engine.graphics.texture.AbstractTexture.Type.*
+import org.etieskrill.engine.graphics.texture.AbstractTexture.Type.DIFFUSE
+import org.etieskrill.engine.graphics.texture.AbstractTexture.Type.NORMAL
 import org.etieskrill.engine.graphics.texture.Texture2D
 import org.etieskrill.engine.graphics.texture.Textures
 import org.joml.Quaternionf
@@ -38,9 +38,8 @@ class World(
 
     init {
         val floorModel = ModelFactory.box(Vector3f(100f, .1f, 100f), PhongMaterial(
-            shininess = 256f,
             diffuseTexture = Textures.ofFile("textures/TilesSlateSquare001_COL_2K_METALNESS.png", DIFFUSE),
-            specularTexture = Textures.ofFile("textures/TilesSlateSquare001_ROUGHNESS_2K_METALNESS.png", SPECULAR),
+//            specularTexture = Textures.ofFile("textures/TilesSlateSquare001_ROUGHNESS_2K_METALNESS.png", SPECULAR),
             normalTexture = Texture2D.FileBuilder("textures/TilesSlateSquare001_NRM_2K_METALNESS.png", NORMAL)
                 .setFormat(AbstractTexture.Format.RGB) //TODO MMMMMMHHHHH select correct format automatically
                 .build()

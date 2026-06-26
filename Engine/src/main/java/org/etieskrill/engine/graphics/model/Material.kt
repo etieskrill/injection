@@ -49,13 +49,13 @@ data class PhongMaterial(
     override val isTwoSided: Boolean = false,
 
     val diffuseColour: Colour = Vector4f(1f), //FIXME what the hell is AI_MATKEY_BASE_COLOR then?
-    val specularColour: Colour? = null,
-    val ambientColour: Colour? = null,
-    val shininess: Float? = null,
-    val shininessStrength: Float? = null,
-    val opacity: Float? = null,
-    val emissiveColour: Colour? = null,
-    val emissiveStrength: Float? = null,
+    val specularColour: Colour = Vector4f(1f),
+    val ambientColour: Colour = Vector4f(1f),
+    val shininess: Float = 256f,
+    val shininessStrength: Float = 1f,
+    val opacity: Float = 1f,
+    val emissiveColour: Colour = Vector4f(0f),
+    val emissiveStrength: Float = 0f,
 
     val diffuseTexture: Texture2D? = null,
     val specularTexture: Texture2D? = null,
