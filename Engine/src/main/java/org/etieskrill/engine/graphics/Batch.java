@@ -152,6 +152,8 @@ public class Batch {
     }
 
     public void blit(Texture2D texture, Vector2fc position, Vector2fc size, float rotation, @Nullable Vector4fc colour) {
+        renderer.getContext().checkThread$engine();
+
         blitShader.setSprite(texture);
         blitShader.setUseSpriteColour(true);
         blitShader.setPosition(position);

@@ -37,7 +37,7 @@ abstract class App(
 
     protected val pacer = SystemNanoTimePacer((1.0 / window.refreshRate.toDouble()).seconds)
 
-    protected val renderer = GLRenderer()
+    protected val renderer = GLRenderer(window.graphicsContext)
 
     protected val entitySystem = EntitySystem()
 

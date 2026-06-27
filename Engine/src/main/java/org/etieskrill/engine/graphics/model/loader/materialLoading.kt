@@ -203,7 +203,7 @@ private fun AIMaterial.getProperty(property: String, type: Int, length: Int? = n
     check(property.mType() == type || property.mType() == aiPTI_Buffer) {
         "Property has type 0x${property.mType().toHexString()}, not 0x${type.toHexString()}"
     }
-    check(length == null || property.mDataLength() == length) {
+    check(length == null || property.mDataLength() == length || (length == 1 && property.mType() == aiPTI_Integer)) {
         "Property has ${property.mDataLength()} instead of the required $length elements"
     }
     return property

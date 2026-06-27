@@ -8,6 +8,7 @@ import org.etieskrill.engine.graphics.gl.renderer.GLRenderer;
 import org.etieskrill.engine.graphics.gl.shader.Shaders;
 import org.etieskrill.engine.scene.Node;
 import org.etieskrill.engine.scene.Scene;
+import org.etieskrill.engine.scene.container.Container;
 import org.etieskrill.engine.scene.container.Stack;
 import org.etieskrill.engine.scene.element.Label;
 import org.etieskrill.engine.time.LoopPacer;
@@ -23,15 +24,17 @@ public class DebugOverlay extends Scene {
     private double cpuTime;
 
     public DebugOverlay(FrameBuffer frameBuffer, GLRenderer renderer, LoopPacer pacer, Vector2ic windowSize) {
-        super();
+        super(
+                new Batch(frameBuffer, renderer).setShader(Shaders.getTextShader()),
+                new Container(),
+                new OrthographicCamera(windowSize)
+        );
         this.renderer = renderer;
         this.pacer = pacer;
 
         this.renderStatistics = new Label();
 
-        setBatch(new Batch(frameBuffer, renderer, windowSize).setShader(Shaders.getTextShader()));
         setRoot(getRootNode());
-        setCamera(new OrthographicCamera(windowSize));
     }
 
     private Node<?> getRootNode() {

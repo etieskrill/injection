@@ -3,7 +3,7 @@ package org.etieskrill.engine.window;
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import org.etieskrill.engine.common.Disposable
-import org.etieskrill.engine.config.GLContextConfig
+import org.etieskrill.engine.config.GraphicsContext
 import org.etieskrill.engine.graphics.gl.framebuffer.FrameBuffer
 import org.etieskrill.engine.graphics.gl.framebuffer.ScreenBuffer
 import org.etieskrill.engine.input.CursorInputHandler
@@ -148,6 +148,17 @@ class Window(
             checkError("If you are not on Wayland, be concerned")
         }
 
+    @Deprecated("Only for Java interoperability", level = DeprecationLevel.ERROR)
+    constructor(
+        size: Vector2ic = DEFAULT, mode: WindowMode = WINDOWED,
+        title: String = "Injection Window", refreshRate: Int? = null, position: Vector2ic? = null,
+        cursor: Cursor = Cursor(), resizeable: Boolean = false, vSync: Boolean = false, samples: Int = 4,
+        createHidden: Boolean = false, transparency: Boolean = false, dummy: Boolean = false
+    ) : this(
+        size, mode, title, refreshRate?.toUInt(), position, cursor,
+        resizeable, vSync, samples.toUInt(), createHidden, transparency
+    )
+
     init {
         check(glfwInit()) { "Unable to initialize glfw library" }
 
@@ -172,6 +183,8 @@ class Window(
 
     //TODO provide methods to change primary monitor
     internal var monitor: GLFWId by notNull()
+
+    internal var graphicsContext: GraphicsContext by notNull()
 
     companion object {
         const val MIN_GL_CONTEXT_MAJOR_VERSION = 3
@@ -287,8 +300,6 @@ class Window(
         position?.let { this.position = it }
         cursor.window = this
 
-        internalScreenBuffer = ScreenBuffer(Vector2i(this.size))
-
 //        glfwSetErrorCallback(null);
     }
 
@@ -297,16 +308,19 @@ class Window(
 
         val caps = GL.createCapabilities()
 
-        GLContextConfig.CONFIG.set(
-            GLContextConfig(
-                glGetInteger(GL_MAX_TEXTURE_IMAGE_UNITS)
-            )
+        graphicsContext = GraphicsContext(
+            true,
+            glGetInteger(GL_MAX_TEXTURE_IMAGE_UNITS)
         )
+
+        graphicsContext.thread = Thread.currentThread()
+
+        GraphicsContext.CONTEXT.set(graphicsContext)
 
         val glExtensions = glGetString(GL_EXTENSIONS)
             ?.split(" ")
             ?.filter { it.isNotBlank() }
-            ?: listOf<String>()
+            ?: listOf()
         logger.debug {
             """
                 |   GL context:
@@ -320,6 +334,9 @@ class Window(
 
         if (samples > 0u) glEnable(GL_MULTISAMPLE)
         else glDisable(GL_MULTISAMPLE)
+
+        internalScreenBuffer = ScreenBuffer(Vector2i(this.size))
+        graphicsContext.activeFramebuffer = screenBuffer
     }
 
     fun configInput() {
@@ -448,12 +465,26 @@ class Window(
 
     @Deprecated(message = "Only call if you know what you are doing.")
     fun attachContext() {
+        check(graphicsContext.thread == null) {
+            "Current graphics context must first be detached using detachContext on the old thread"
+        }
+
         glfwMakeContextCurrent(id)
-        GL.createCapabilities()
+        GL.createCapabilities() //FIXME could these be reused?
+        GraphicsContext.CONTEXT.set(graphicsContext)
     }
 
     @Deprecated(message = "Only call if you know what you are doing.")
-    fun detachContext() = glfwMakeContextCurrent(0L)
+    fun detachContext() {
+        check(Thread.currentThread() == graphicsContext.thread) {
+            "Current graphics context can only be detached from the thread it is attached to"
+        }
+
+        glfwMakeContextCurrent(0L)
+        GL.setCapabilities(null)
+        graphicsContext.thread = null
+        GraphicsContext.CONTEXT.set(null)
+    }
 
     override fun dispose() {
         glfwDestroyWindow(id)

@@ -1,6 +1,7 @@
 package org.etieskrill.engine.graphics.gl.renderer;
 
 import org.etieskrill.engine.common.Disposable;
+import org.etieskrill.engine.config.GraphicsContext;
 import org.etieskrill.engine.graphics.TextRenderer;
 import org.etieskrill.engine.graphics.gl.BufferObject.Frequency;
 import org.etieskrill.engine.graphics.gl.GLUtils;
@@ -22,13 +23,17 @@ public class GLTextRenderer extends GLDebuggableRenderer implements TextRenderer
 
     public static final int MAX_BATCH_LENGTH = 1 << 10; //Max text length is 1024 characters per draw call
 
+    private final GraphicsContext context;
+
     private final List<RenderedGlyph> renderedGlyphs = new ArrayList<>(MAX_BATCH_LENGTH);
     private final VertexArrayObject<RenderedGlyph> glyphVAO = new VertexArrayObject<>(
             RenderedGlyphAccessor.INSTANCE, MAX_BATCH_LENGTH, null, null, null,
             Frequency.STREAM, null
     );
 
-    public GLTextRenderer() {
+    public GLTextRenderer(GraphicsContext context) {
+        this.context = context;
+
         for (int i = 0; i < MAX_BATCH_LENGTH; i++)
             renderedGlyphs.add(new RenderedGlyph());
     }
@@ -84,6 +89,8 @@ public class GLTextRenderer extends GLDebuggableRenderer implements TextRenderer
             Matrix4fc combined,
             @Nullable Vector2f cursorPosition
     ) {
+        context.checkThread$engine();
+
         GLUtils.clearError();
 
         //can also be started just before rendering... but without it, a previously used shader is bound sometimes,
@@ -171,6 +178,11 @@ public class GLTextRenderer extends GLDebuggableRenderer implements TextRenderer
         glEnable(GL_CULL_FACE);
 
         setRenderCalls(getRenderCalls() + 1);
+    }
+
+    @Override
+    public GraphicsContext getContext() {
+        return context;
     }
 
     @Override

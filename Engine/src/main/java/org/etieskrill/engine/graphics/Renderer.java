@@ -1,5 +1,6 @@
 package org.etieskrill.engine.graphics;
 
+import org.etieskrill.engine.config.GraphicsContext;
 import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.entity.component.TransformC;
 import org.etieskrill.engine.graphics.camera.Camera;
@@ -82,5 +83,10 @@ public interface Renderer {
     //TODO move to another interface with more "primitive" drawing calls with backing singleton/per-renderer instances
     //TODO screenspace wrappers
     void renderBox(Vector3fc position, Vector3fc size, ShaderProgram shader, Matrix4fc combined);
+
+    /**
+     * @return graphics context this renderer is bound to
+     */
+    GraphicsContext getContext();
 
 }

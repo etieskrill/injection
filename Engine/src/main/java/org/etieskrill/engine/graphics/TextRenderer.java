@@ -1,5 +1,6 @@
 package org.etieskrill.engine.graphics;
 
+import org.etieskrill.engine.config.GraphicsContext;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.etieskrill.engine.graphics.text.Font;
 import org.jetbrains.annotations.Nullable;
@@ -53,5 +54,10 @@ public interface TextRenderer {
             Matrix4fc combined,
             @Nullable Vector2f cursorPosition
     );
+
+    /**
+     * @return graphics context this text renderer is bound to
+     */
+    GraphicsContext getContext();
 
 }

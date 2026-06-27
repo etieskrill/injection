@@ -5,6 +5,7 @@ import java.util.concurrent.locks.LockSupport
 import kotlin.math.max
 import kotlin.time.ComparableTimeMark
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.nanoseconds
 import kotlin.time.DurationUnit
 import kotlin.time.DurationUnit.NANOSECONDS
@@ -13,6 +14,9 @@ import kotlin.time.TimeSource.Monotonic.markNow
 class SystemNanoTimePacer(
     override var targetDeltaTime: Duration
 ) : LoopPacer {
+
+    @Deprecated("Only for interoperability with Java", level = DeprecationLevel.ERROR)
+    constructor(deltaMillis: Int) : this(deltaMillis.milliseconds)
 
     private companion object {
         val SPINLOCK_WINDOW = 100_000.nanoseconds

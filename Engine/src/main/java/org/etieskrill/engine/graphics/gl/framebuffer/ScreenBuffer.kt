@@ -3,7 +3,6 @@ package org.etieskrill.engine.graphics.gl.framebuffer
 import org.joml.Vector2i
 import org.joml.Vector2ic
 import org.lwjgl.opengl.GL11C.*
-import org.lwjgl.opengl.GL30C.GL_COLOR_ATTACHMENT0
 
 internal class ScreenBuffer(size: Vector2ic) : FrameBuffer(size, mapOf(), 0) {
     override var size: Vector2ic =
@@ -14,6 +13,6 @@ internal class ScreenBuffer(size: Vector2ic) : FrameBuffer(size, mapOf(), 0) {
 
     override fun init() {
         glBufferClearMask = GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT
-        glColourDrawBuffers = intArrayOf(GL_COLOR_ATTACHMENT0)
+        glColourDrawBuffers = intArrayOf(GL_BACK)
     }
 }

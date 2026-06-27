@@ -273,6 +273,7 @@ class SynthwavePlane : App(
         val newAudioSource = withContext(Dispatchers.IO) {
             if (sound == "synthesised") generatedSource
             else Audio.read(sound, retainBuffer = true) as StereoAudioSource
+            //doing this here this way is only fine because OpenAL contexts are current for the entire process instead of just a thread
         }
 
         audioSource?.stop()

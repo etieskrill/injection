@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.etieskrill.engine.common.ApplicationDisposed;
 import org.etieskrill.engine.common.Disposable;
+import org.etieskrill.engine.config.GraphicsContext;
 import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.entity.component.TransformC;
 import org.etieskrill.engine.graphics.Renderer;
@@ -35,7 +36,14 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
     private @Setter Vector4f clearColour = new Vector4f(CLEAR_COLOUR, CLEAR_COLOUR, CLEAR_COLOUR, 1);
     private static final int MAX_USABLE_TEXTURE_UNIT = 8; //TODO make more configurable
 
+    private final GraphicsContext context;
+
     private final Map<ShaderProgram, ShaderTextureContext> textureContexts = new HashMap<>();
+
+    public GLRenderer(GraphicsContext context) {
+        super(context);
+        this.context = context;
+    }
 
     private static class ShaderTextureContext {
         int nextTexture = 1;
@@ -44,6 +52,8 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
 
     @Override
     public void prepare() {
+        context.checkThread$engine();
+
         textureContexts.forEach((shader, textureContext) -> {
             textureContext.nextTexture = 1;
             textureContext.manuallyBoundTextures = 0;
@@ -52,6 +62,8 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
 
     @Override
     public void nextFrame() {
+        context.checkThread$engine();
+
         prepare();
         queryGpuTime();
         resetCounters();
@@ -61,6 +73,8 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
     //TODO override existing bind if same name
     @Override
     public void bindNextFreeTexture(ShaderProgram shader, String name, AbstractTexture texture) {
+        context.checkThread$engine();
+
         var textureContext = getOrCreateShaderTextureContext(shader);
         texture.bind(textureContext.nextTexture);
         shader.setUniform(name, textureContext.nextTexture++, false);
@@ -164,7 +178,11 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
 
     @Override
     public void render(Pipeline<?> pipeline) {
-        pipeline.getFrameBuffer().bind(); //TODO at least cache current framebuffer somewhere and check - minimising context switches after that is task of higher abstraction
+        context.checkThread$engine();
+
+        if (context.activeFramebuffer != pipeline.getFrameBuffer()) {
+            pipeline.getFrameBuffer().bind();
+        }
 
         boolean indexed;
         if (pipeline.getVao() != null) {
@@ -293,6 +311,8 @@ public class GLRenderer extends GLTextRenderer implements Renderer, TextRenderer
     }
 
     private void _render(@Nullable TransformC transform, Model model, ShaderProgram shader, boolean instanced, int numInstances) {
+        context.checkThread$engine();
+
         if (transform != null) {
             try (MemoryStack stack = MemoryStack.stackPush()) { //FIXME this literally does jackshit
                 Matrix4f transformMatrix = new Matrix4f(transform.getMatrix());// = new Matrix4f(model.getFinalTransform().getMatrix().get(stack.callocFloat(16)));

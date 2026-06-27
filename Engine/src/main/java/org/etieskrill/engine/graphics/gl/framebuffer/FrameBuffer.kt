@@ -110,6 +110,7 @@ open class FrameBuffer internal constructor(
     }
 
     fun bind(binding: Binding) {
+        //TODO maybe move context check here?
         glBindFramebuffer(
             when (binding) {
                 Binding.READ -> GL_READ_FRAMEBUFFER

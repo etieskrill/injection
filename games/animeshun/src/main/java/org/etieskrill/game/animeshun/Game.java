@@ -10,7 +10,6 @@ import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera;
 import org.etieskrill.engine.graphics.data.DirectionalLight;
 import org.etieskrill.engine.graphics.gl.GLUtils;
-import org.etieskrill.engine.graphics.gl.framebuffer.ScreenBuffer;
 import org.etieskrill.engine.graphics.gl.renderer.GLRenderer;
 import org.etieskrill.engine.graphics.gl.shader.Shaders;
 import org.etieskrill.engine.graphics.gl.shader.impl.AnimationShader;
@@ -27,19 +26,20 @@ import org.etieskrill.engine.input.Keys;
 import org.etieskrill.engine.input.controller.CursorCameraController;
 import org.etieskrill.engine.time.LoopPacer;
 import org.etieskrill.engine.time.SystemNanoTimePacer;
+import org.etieskrill.engine.util.EngineModelLoader;
+import org.etieskrill.engine.util.EngineShaderLoader;
 import org.etieskrill.engine.util.FixedArrayDeque;
-import org.etieskrill.engine.util.Loaders;
+import org.etieskrill.engine.util.LoadersKt;
+import org.etieskrill.engine.window.Cursor;
 import org.etieskrill.engine.window.Window;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.joml.Matrix4f;
+import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
-import org.lwjgl.opengl.GL11C;
-import org.lwjgl.opengl.GL46C;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayDeque;
 import java.util.OptionalDouble;
 
 import static org.etieskrill.engine.graphics.animation.AnimationMixer.AnimationBlendMode.OVERRIDING;
@@ -58,7 +58,7 @@ public class Game {
     private static final Vector3fc WORLD_UP = new Vector3f(0, 1, 0);
 
     static {
-        InjectionConfig.init();
+        InjectionConfig.INSTANCE.init();
     }
 
     private static final Logger logger = LoggerFactory.getLogger(Game.class);
@@ -139,35 +139,49 @@ public class Game {
     }
 
     private void init() {
-        window = Window.builder()
-                .setTitle("Animeshun yeeees")
-                .setMode(Window.WindowMode.BORDERLESS)
-                .setSize(Window.WindowSize.LARGEST_FIT)
-                .setRefreshRate(FRAMERATE)
-                .setKeyInputHandlers(controls)
-                .setSamples(4)
-                .build();
+        window = new Window(
+                Window.WindowSize.INSTANCE.getLARGEST_FIT(),
+                Window.WindowMode.WINDOWED,
+                "Animeshun yeeees",
+                FRAMERATE,
+                null, new Cursor(),
+                false, false, 4, false, false, false
+        );
+
+//        window = Window.builder()
+//                .setTitle("Animeshun yeeees")
+//                .setMode(Window.WindowMode.BORDERLESS)
+//                .setSize(Window.WindowSize.LARGEST_FIT)
+//                .setRefreshRate(FRAMERATE)
+//                .setKeyInputHandlers(controls)
+//                .setSamples(4)
+//                .build();
 
         GLUtils.addDebugLogging();
 
         renderer = new GLRenderer();
 
-        camera = new PerspectiveCamera(window.getSize().getVec()).setRotation(0, 0, 0);
-        window.addCursorInputs(new CursorCameraController(camera));
+        camera = new PerspectiveCamera(window.getSize()).setRotation(0, 0, 0);
+        window.getCursorInputs().add(new CursorCameraController(camera));
 
         cubeMapShader = new Shaders.CubeMapShader();
         skybox = new CubeMapModel("textures/cubemaps/space");
 
-        vampy = Loaders.ModelLoader.get().load("vampy", () ->
+        vampy = EngineModelLoader.INSTANCE.load("vampy", () ->
                 new Model.Builder("mixamo_walk_forward_skinned_vampire.dae")
-                        .setInitialTransform(new Transform().setPosition(new Vector3f(0f, -1f, 0f)))
+                        .setInitialTransform(new Transform(
+                                new Vector3f(0f, -1f, 0f),
+                                new Quaternionf(),
+                                new Vector3f(1)
+                        ))
                         .setCulling(false)
                         .build());
-        vampyBB = Loaders.ModelLoader.get().load("vampyBB", () -> new Model.Builder("box.obj")
-                .setInitialTransform(new Transform()
-                        .setPosition(new Vector3f(2.5f, -1f, 0f))
-                        .setScale(vampy.getBoundingBox().getSize(new Vector3f()).mul(.01f)))
-                .build());
+        vampyBB = EngineModelLoader.INSTANCE.load("vampyBB", () -> new Model.Builder("box.obj")
+                .setInitialTransform(new Transform(
+                        new Vector3f(2.5f, -1f, 0f),
+                        new Quaternionf(),
+                        vampy.getBoundingBox().getSize(new Vector3f()).mul(.01f))
+                ).build());
         vampyTransform = new Transform();
 
         vampyPosDelta = new Vector3f();
@@ -190,21 +204,23 @@ public class Game {
                 .add(loadModelAnimations("mixamo_hip_hop_dancing.dae", vampy).getFirst(), layer -> layer.enabled(false))
         ;
 
-        vampyShader = (AnimationShader) Loaders.ShaderLoader.get().load("vampyShader", AnimationShader::new);
+        vampyShader = (AnimationShader) EngineShaderLoader.INSTANCE.load("vampyShader", AnimationShader::new);
         AnimationShaderKt.setShowBoneSelector(vampyShader, boneSelector);
         AnimationShaderKt.setShowBoneWeights(vampyShader, showBoneWeights);
 
-        cube = Loaders.ModelLoader.get().load("cube", () -> new Model.Builder("cube.obj").setCulling(false).build());
-        cubeTransform = new Transform().setScale(10).setPosition(new Vector3f(2, -6, 0));
+        cube = EngineModelLoader.INSTANCE.load("cube", () -> new Model.Builder("cube.obj").setCulling(false).build());
+        cubeTransform = new Transform(new Vector3f(2, -6, 0), new Quaternionf(), new Vector3f(10));
 
         shader = new StaticShader();
 
         globalLight = new DirectionalLight(new Vector3f(1, -1, 1), new Vector3f(2), new Vector3f(2), new Vector3f(2));
 
-        pacer = new SystemNanoTimePacer(1d / FRAMERATE);
+        pacer = new SystemNanoTimePacer(1000 / FRAMERATE);
 
         window.getCursor().disable();
-        window.setScene(new DebugOverlay((GLRenderer) renderer, pacer, window.getSize().getVec()));
+        window.setScene(new DebugOverlay(window.getScreenBuffer(), (GLRenderer) renderer, pacer, window.getSize()));
+
+        window.setUiScope();
 
         GLUtils.removeDebugLogging();
     }
@@ -213,7 +229,7 @@ public class Game {
         vampyAnimator.play();
 
         long cpuTime;
-        ArrayDeque<Double> cpuTimes = new FixedArrayDeque<>(FRAMERATE);
+        FixedArrayDeque<Double> cpuTimes = new FixedArrayDeque<>(FRAMERATE);
 
         float walkingFactor = 0, runningFactor = 0;
 
@@ -230,7 +246,7 @@ public class Game {
                 .getPosition();
 
         pacer.start();
-        while (!window.shouldClose()) {
+        while (!window.isClosing()) {
             double delta = pacer.getDeltaTimeSeconds();
 
             OptionalDouble avgCpuTime = cpuTimes.stream().mapToDouble(value -> value).average();
@@ -262,7 +278,7 @@ public class Game {
             lastPosition.set(currentPosition);
             vampyPosDelta.zero();
 
-            vampyTransform.applyRotation(quat -> quat.rotationY(toRadians(camera.getYaw())));
+            vampyTransform.getRotation().rotationY(toRadians(camera.getYaw()));
 
             float diff = (controls.isPressed(Keys.W)
                     || controls.isPressed(Keys.A)
@@ -367,7 +383,7 @@ public class Game {
             window.update(delta);
 
             cpuTime = System.nanoTime() - time;
-            cpuTimes.push(cpuTime / 1000000d);
+            cpuTimes.addLast(cpuTime / 1000000d);
 
             lastDelta = delta;
 
@@ -385,7 +401,7 @@ public class Game {
 
     private void terminate() {
         window.close();
-        Loaders.disposeDefaultLoaders();
+        LoadersKt.disposeDefaultLoaders();
         TrueTypeFont.disposeLibrary();
     }
 

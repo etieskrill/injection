@@ -8,7 +8,7 @@ import kotlin.text.RegexOption;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.etieskrill.engine.common.Disposable;
-import org.etieskrill.engine.config.GLContextConfig;
+import org.etieskrill.engine.config.GraphicsContext;
 import org.etieskrill.engine.graphics.gl.shader.impl.MissingShader;
 import org.etieskrill.engine.graphics.texture.AbstractTexture;
 import org.etieskrill.engine.util.ClassUtils;
@@ -177,7 +177,7 @@ public abstract class ShaderProgram implements Disposable,
         this.uniforms = new HashMap<>();
         this.arrayUniforms = new HashMap<>();
 
-        this.MAX_TEXTURE_UNITS = GLContextConfig.Companion.getMAX_TEXTURE_UNITS();
+        this.MAX_TEXTURE_UNITS = GraphicsContext.Companion.MAX_TEXTURE_UNITS();
         this.currentTextureUnit = 0;
         this.boundTextures = new HashMap<>(MAX_TEXTURE_UNITS);
 
