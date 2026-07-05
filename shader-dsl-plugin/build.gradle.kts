@@ -32,10 +32,11 @@ dependencies {
     implementation("org.joml:joml:1.10.8")
 
     compileOnly("org.jetbrains.kotlin:kotlin-compiler-embeddable:2.1.20")
-    compileOnly("org.jetbrains.kotlin:kotlin-gradle-plugin-api:2.1.20")
+    implementation("org.jetbrains.kotlin:kotlin-gradle-plugin-api:2.1.20")
+    implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.20")
 
-    compileOnly(gradleApi())
-    compileOnly(gradleKotlinDsl())
+    implementation(gradleApi())
+    implementation(gradleKotlinDsl())
 
 //    compileOnly("com.google.auto.service:auto-service:1.1.1")
 //    ksp("com.google.auto.service:auto-service:1.1.1")

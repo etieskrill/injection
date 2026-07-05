@@ -43,8 +43,6 @@ class SDFShader : PureShaderBuilder<VertexData, ColourRenderTarget>(
             addField<int> { vertex, buffer -> buffer.putInt(vertex.layerType) }
             addField<float> { vertex, buffer -> buffer.putFloat(vertex.blendStrength) }
         }
-
-        private inline fun <reified T> addField(mapper: FieldMapper<SDFVertex>) = addField(T::class.java, mapper)
     }
 
     val vertices by const(arrayOf(vec2(-1, -1), vec2(1, -1), vec2(-1, 1), vec2(1, 1)))

@@ -11,9 +11,9 @@ import org.etieskrill.engine.entity.component.Transform
 import org.etieskrill.engine.entity.service.impl.RenderService
 import org.etieskrill.engine.graphics.camera.Camera
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera
+import org.etieskrill.engine.graphics.framebuffer.FrameBuffer
 import org.etieskrill.engine.graphics.gl.VertexArrayAccessor
 import org.etieskrill.engine.graphics.gl.VertexArrayObject
-import org.etieskrill.engine.graphics.gl.framebuffer.FrameBuffer
 import org.etieskrill.engine.graphics.gl.renderer.GLRenderer
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
 import org.etieskrill.engine.graphics.gl.shader.impl.SingleColourShader
@@ -99,7 +99,7 @@ class `CG-A2-Solar-System` : App(
 
         entitySystem.addService(PlanetService(window.screenBuffer, renderer, camera, window.size).apply {
             skybox = CubeMapModel("textures/cubemaps/space")
-            blur(false)
+            setBlur(false)
         })
 
         window.cursorInputs += CursorCameraController(camera)

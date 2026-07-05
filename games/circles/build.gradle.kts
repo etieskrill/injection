@@ -1,6 +1,6 @@
 plugins {
     application
-    alias(libs.plugins.kotlin.jvm)
+    kotlin("jvm")
     id("io.github.etieskrill.injection.shader.dsl")
     kotlin("plugin.serialization") version libs.versions.kotlin
 }

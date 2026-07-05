@@ -1,7 +1,5 @@
 plugins {
-    `java-library`
-    kotlin("jvm") version "2.1.20"
-
+    kotlin("multiplatform") version "2.1.20"
     `maven-publish`
 }
 
@@ -13,8 +11,14 @@ repositories {
     mavenCentral()
 }
 
-dependencies {
-    implementation("io.github.etieskrill.injection.extension.shader:shader-interface:1.0.0-SNAPSHOT")
+kotlin {
+    jvm()
+
+    sourceSets {
+        jvmMain.dependencies {
+            implementation("io.github.etieskrill.injection.extension.shader:shader-interface:1.0.0-SNAPSHOT")
+        }
+    }
 }
 
 publishing {

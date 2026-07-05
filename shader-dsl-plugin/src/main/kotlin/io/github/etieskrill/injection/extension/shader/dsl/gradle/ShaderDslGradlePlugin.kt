@@ -1,9 +1,12 @@
 package io.github.etieskrill.injection.extension.shader.dsl.gradle
 
 import org.gradle.api.Project
-import org.gradle.api.plugins.JavaLibraryPlugin
-import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.provider.Provider
+import org.gradle.kotlin.dsl.dependencies
+import org.gradle.kotlin.dsl.findByType
+import org.gradle.kotlin.dsl.get
+import org.jetbrains.kotlin.gradle.dsl.KotlinJvmExtension
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.FilesSubpluginOption
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilerPluginSupportPlugin
@@ -39,31 +42,43 @@ internal class ShaderDslGradlePlugin : KotlinCompilerPluginSupportPlugin {
     }
 
     override fun apply(target: Project): Unit = target.run {
-        val dependencyConfig = if (plugins.hasPlugin(JavaLibraryPlugin::class.java)) "api" else "implementation"
-        dependencies.apply {
-            add(dependencyConfig, "$EXTENSION_GROUP_ID:shader-interface:1.0.0-SNAPSHOT")
-            add(dependencyConfig, "$GROUP_ID:shader-dsl-lib:1.0.0-SNAPSHOT")
-            add(dependencyConfig, "$GROUP_ID.std:shader-dsl-std-lib:1.0.0-SNAPSHOT")
-        }
+        extensions.findByType<KotlinMultiplatformExtension>()?.apply {
+            sourceSets.configureEach {
+                it.dependencies {
+                    implementation("$EXTENSION_GROUP_ID:shader-interface:1.0.0-SNAPSHOT")
+                    implementation("$GROUP_ID:shader-dsl-lib:1.0.0-SNAPSHOT")
+                    implementation("$GROUP_ID.std:shader-dsl-std-lib:1.0.0-SNAPSHOT")
+                }
+            }
 
-        extensions.configure<JavaPluginExtension>("java") { javaExtension ->
-            javaExtension.sourceSets.getByName("main").apply {
+            sourceSets.commonMain.get().apply {
                 resources.srcDir(GEN_RESOURCE_DIR)
             }
         }
 
-        tasks.named("compileKotlin") {
-            it.outputs.dir(GEN_RESOURCE_DIR)
-                .withPropertyName("shaderDslResources")
+        //TODO configure if only JavaPluginExtension present?
+
+        extensions.findByType<KotlinJvmExtension>()?.apply {
+            dependencies {
+                add("implementation", "$EXTENSION_GROUP_ID:shader-interface:1.0.0-SNAPSHOT")
+                add("implementation", "$GROUP_ID:shader-dsl-lib:1.0.0-SNAPSHOT")
+                add("implementation", "$GROUP_ID.std:shader-dsl-std-lib:1.0.0-SNAPSHOT")
+            }
+
+            sourceSets["main"].resources.srcDir(GEN_RESOURCE_DIR)
+
+            tasks.named("compileKotlin") {
+                it.outputs.dir(GEN_RESOURCE_DIR).withPropertyName("generatedSourcesDir")
+            }
+
+//            tasks.named("processResources") {
+//                it.inputs.dir(GEN_RESOURCE_DIR)
+//                    .withPropertyName("shaderDslResources")
+//            }
+
+            //FIXME this isn't great for caching, but the above does not work??? also change below
+            tasks.named("processResources") { it.mustRunAfter("compileKotlin") }
         }
-
-//        tasks.named("processResources") {
-//            it.inputs.dir(GEN_RESOURCE_DIR)
-//                .withPropertyName("shaderDslResources")
-//        }
-
-        //FIXME this isn't great for caching, but the above does not work???
-        tasks.named("processResources") { it.mustRunAfter("compileKotlin") }
     }
 
     override fun getCompilerPluginId(): String = PLUGIN_ID

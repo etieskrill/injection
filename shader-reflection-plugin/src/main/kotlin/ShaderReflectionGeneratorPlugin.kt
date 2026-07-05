@@ -9,6 +9,7 @@ import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import java.io.File
 
 const val GENERATED_MODULE_DIR = "build/generated/shader-reflection/main"
@@ -22,28 +23,41 @@ class ShaderReflectionGeneratorPlugin : Plugin<Project> {
             description = "Generates attribute accessors for shaders annotated with @ReflectShader"
         }
 
-        extensions.configure<JavaPluginExtension>("java") { javaExtension ->
-            javaExtension.sourceSets.getByName("main").apply {
-                java.srcDir(GENERATED_SOURCE_DIR) //FIXME currently detected as source, not generated source ¯\_(ツ)_/¯
+        extensions.findByType(KotlinMultiplatformExtension::class.java)?.apply {
+            sourceSets.commonMain.get().apply {
+                kotlin.srcDir(GENERATED_SOURCE_DIR)
                 resources.srcDir(GENERATED_RESOURCE_DIR)
+            }
+
+            tasks.getByName("build").dependsOn("generateShaderReflection")
+
+            dependencies.apply {
+                add("commonMainApi", "io.github.etieskrill.injection.extension.shader:shader-interface:1.0.0-SNAPSHOT")
+                add(
+                    "commonMainApi",
+                    "io.github.etieskrill.injection.extension.shader.reflection:shader-reflection-lib:1.0.0-SNAPSHOT"
+                )
             }
         }
 
-        plugins.apply("org.jetbrains.kotlin.jvm")
+        (extensions.findByName("java") as? JavaPluginExtension)?.sourceSets?.findByName("main")?.apply {
+            java.srcDir(GENERATED_SOURCE_DIR) //FIXME currently detected as source, not generated source ¯\_(ツ)_/¯
+            resources.srcDir(GENERATED_RESOURCE_DIR)
 
-        tasks.apply {
-            getByName("compileJava").apply { dependsOn("generateShaderReflection") }
-            getByName("compileKotlin").apply { dependsOn("generateShaderReflection") }
-            getByName("processResources").apply { dependsOn("generateShaderReflection") }
-        }
+            tasks.apply {
+                getByName("compileJava").apply { dependsOn("generateShaderReflection") }
+                findByName("compileKotlin")?.apply { dependsOn("generateShaderReflection") }
+                getByName("processResources").apply { dependsOn("generateShaderReflection") }
+            }
 
-        val dependencyConfig = if (plugins.hasPlugin(JavaLibraryPlugin::class.java)) "api" else "implementation"
-        dependencies.apply {
-            add(dependencyConfig, "io.github.etieskrill.injection.extension.shader:shader-interface:1.0.0-SNAPSHOT")
-            add(
-                dependencyConfig,
-                "io.github.etieskrill.injection.extension.shader.reflection:shader-reflection-lib:1.0.0-SNAPSHOT"
-            )
+            val dependencyConfig = if (plugins.hasPlugin(JavaLibraryPlugin::class.java)) "api" else "implementation"
+            dependencies.apply {
+                add(dependencyConfig, "io.github.etieskrill.injection.extension.shader:shader-interface:1.0.0-SNAPSHOT")
+                add(
+                    dependencyConfig,
+                    "io.github.etieskrill.injection.extension.shader.reflection:shader-reflection-lib:1.0.0-SNAPSHOT"
+                )
+            }
         }
     }
 }

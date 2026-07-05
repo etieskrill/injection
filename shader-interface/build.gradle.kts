@@ -1,7 +1,5 @@
 plugins {
-    `java-library`
-    kotlin("jvm") version "2.1.20"
-
+    kotlin("multiplatform") version "2.1.20"
     `maven-publish`
 }
 
@@ -13,11 +11,17 @@ repositories { //TODO FINALLY do convention plugins, also FIXME in the settings.
 group = "io.github.etieskrill.injection.extension.shader"
 version = "1.0.0-SNAPSHOT"
 
-dependencies {
-    api("org.joml:joml:1.10.8")
-}
+kotlin {
+//    jvmToolchain(23) //TODO in "jvm" clause below?
 
-kotlin { jvmToolchain(23) }
+    jvm()
+
+    sourceSets {
+        jvmMain.dependencies {
+            api("org.joml:joml:1.10.8")
+        }
+    }
+}
 
 publishing {
     publications {

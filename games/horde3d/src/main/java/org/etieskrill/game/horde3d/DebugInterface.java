@@ -2,7 +2,7 @@ package org.etieskrill.game.horde3d;
 
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.camera.OrthographicCamera;
-import org.etieskrill.engine.graphics.gl.framebuffer.FrameBuffer;
+import org.etieskrill.engine.graphics.framebuffer.FrameBuffer;
 import org.etieskrill.engine.graphics.gl.renderer.GLRenderer;
 import org.etieskrill.engine.graphics.text.Fonts;
 import org.etieskrill.engine.scene.Node;
@@ -27,7 +27,7 @@ public class DebugInterface extends Scene {
     }
 
     public DebugInterface(FrameBuffer frameBuffer, Vector2ic windowSize, GLRenderer renderer, @Nullable LoopPacer pacer) {
-        super(new Batch(frameBuffer, renderer), new Container(), new OrthographicCamera(windowSize));
+        super(new Batch(frameBuffer, renderer, renderer), new Container(), new OrthographicCamera(windowSize));
 
         this.renderer = renderer;
         this.pacer = pacer;

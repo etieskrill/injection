@@ -77,7 +77,7 @@ object EntityApplication : App(
 
         renderer.queryGpuTime = false
 
-        world = World(entitySystem)
+        world = World(entitySystem, window.graphicsContext)
 
         renderService = RenderService(window.screenBuffer, renderer, camera, window.size)
         secondaryRenderService = RenderService(
@@ -89,9 +89,9 @@ object EntityApplication : App(
             },
             window.size / 4f
         ).apply {
-            cullingCamera(camera)
-            blur(false)
-            customViewport(
+            cullingCamera = camera
+            setBlur(false)
+            setCustomViewport(
                 Vector4i(
                     (window.size.x() * 0.75f).toInt(), (window.size.y() * 0.75f).toInt(),
                     (window.size.x() * 0.25f).toInt(), (window.size.y() * 0.25f).toInt()

@@ -53,11 +53,12 @@ public class PlayerEntity extends Entity {
         addComponent(moveForce);
         addComponent(new Friction(8f));
 
-        Model model = EngineModelLoader.INSTANCE.load("player", () ->
-                new Model.Builder("vampire.glb")
-                        .hasTransparency(true)
-                        .optimiseMeshes(10000, 0.01f)
-                        .build());
+        Model model = EngineModelLoader.INSTANCE.load("player", () -> {
+            var builder = new Model.Builder("vampire.glb");
+            builder.setHasTransparency(true);
+            builder.optimiseMeshes(10000, 0.01f);
+            return builder.build();
+        });
         shader = new VampireShader();
         Drawable drawable = new Drawable(model, shader, true, false, false, 0.05f, new Vector2f(1f));
         addComponent(drawable);

@@ -59,7 +59,7 @@ object RuntimeMeshOptimisation : App(
         entitySystem.createEntity {
             +DirectionalLightComponent(
                 DirectionalLight(Vector3f(1f, -1f, -1f)),
-                DirectionalShadowMap(Vector2i(4096)),
+                DirectionalShadowMap(window.graphicsContext, Vector2i(4096)),
                 OrthographicCamera(Vector2i(4096), 20f, -20f, -20f, 20f).apply {
                     position = Vector3f(10f)
                     setRotation(-45f, 215f, 0f)

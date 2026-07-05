@@ -5,7 +5,7 @@ import org.etieskrill.engine.graphics.Renderer;
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera;
 import org.etieskrill.engine.graphics.data.DirectionalLight;
 import org.etieskrill.engine.graphics.data.PointLight;
-import org.etieskrill.engine.graphics.gl.framebuffer.FrameBuffer;
+import org.etieskrill.engine.graphics.framebuffer.FrameBuffer;
 import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment;
 import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment.BufferAttachmentType;
 import org.etieskrill.engine.graphics.gl.renderer.GLRenderer;

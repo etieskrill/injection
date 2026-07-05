@@ -5,8 +5,8 @@ import org.etieskrill.engine.entity.component.Drawable
 import org.etieskrill.engine.entity.component.Transform
 import org.etieskrill.engine.entity.service.impl.DeferredRenderService
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera
+import org.etieskrill.engine.graphics.framebuffer.FrameBuffer
 import org.etieskrill.engine.graphics.gl.StorageBufferObject
-import org.etieskrill.engine.graphics.gl.framebuffer.FrameBuffer
 import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachmentType.COLOUR0
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
 import org.etieskrill.engine.graphics.gl.shader.impl.BlitShader
@@ -46,7 +46,7 @@ class Main : App(
         //FIXME should mipmaps be rebuilt for every frame if enabled on a render target / any texture that changes dynamically?
         .setMipMapping(AbstractTexture.MinFilter.LINEAR, AbstractTexture.MagFilter.LINEAR)
         .build()!!
-    val sdfFrameBuffer = FrameBuffer(Vector2i(800), mapOf(COLOUR0 to sdfColourBuffer))
+    val sdfFrameBuffer = FrameBuffer(window.graphicsContext, Vector2i(800), mapOf(COLOUR0 to sdfColourBuffer))
     val pipeline = PostPassPipeline(SDFShader(), sdfFrameBuffer)
 
     val screenPipeline = PostPassPipeline(BlitShader(), window.screenBuffer, opaque = false)

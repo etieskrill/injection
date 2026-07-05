@@ -1,5 +1,6 @@
 package org.etieskrill.game.horde.entity;
 
+import kotlin.Unit;
 import org.etieskrill.engine.entity.Entity;
 import org.etieskrill.engine.entity.component.Scripts;
 import org.etieskrill.engine.entity.component.Transform;
@@ -11,6 +12,7 @@ import org.etieskrill.engine.graphics.texture.animation.AnimatedTexture;
 import org.etieskrill.engine.graphics.texture.animation.AnimatedTexturePlayer;
 import org.etieskrill.game.horde.component.AnimatedBillBoard;
 import org.etieskrill.game.horde.component.Collider;
+import org.joml.Quaternionf;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
@@ -28,19 +30,14 @@ public class Enemy extends Entity {
     public Enemy(int id, Vector3f playerPosition, Camera camera) {
         super(id);
 
-        transform = addComponent(new Transform().setPosition(new Vector3f(10, 0, 10)));
+        transform = addComponent(new Transform(new Vector3f(10, 0, 10), new Quaternionf(), new Vector3f()));
         deltaPosition = new Vector3f();
 
-        billBoard = addComponent(new AnimatedBillBoard(
-                new AnimatedTexturePlayer(
-                        AnimatedTexture.builder()
-                                .file("textures/zombie.png")
-                                .setMipMapping(MinFilter.NEAREST, MagFilter.NEAREST)
-                                .setWrapping(Wrapping.CLAMP_TO_EDGE)
-                                .build()
-                ),
-                new Vector2f(.5f)
-        ));
+        var builder = AnimatedTexture.builder();
+        builder.setFile("textures/zombie.png");
+        builder.setMipMapping(MinFilter.NEAREST, MagFilter.NEAREST);
+        builder.setWrapping(Wrapping.CLAMP_TO_EDGE);
+        billBoard = addComponent(new AnimatedBillBoard(new AnimatedTexturePlayer(builder.build()), new Vector2f(.5f)));
         billBoard.getSpritePlayer().play();
 
         addComponent(new Collider(.2f));
@@ -51,12 +48,17 @@ public class Enemy extends Entity {
                             .sub(transform.getPosition())
                             .normalize()
                             .mul(0.5f * delta.floatValue()));
-                    transform.translate(deltaPosition);
+                    transform.getPosition().add(deltaPosition);
+                    return Unit.INSTANCE;
                 },
-                delta -> billBoard.getSpritePlayer().update(delta),
+                delta -> {
+                    billBoard.getSpritePlayer().update(delta);
+                    return Unit.INSTANCE;
+                },
                 delta -> {
                     boolean lookingRight = deltaPosition.rotateY(toRadians(camera.getYaw())).x() >= 0;
                     billBoard.getSize().set(lookingRight ? -.5f : .5f, .5f);
+                    return Unit.INSTANCE;
                 }
         )));
     }

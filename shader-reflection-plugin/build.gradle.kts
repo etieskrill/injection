@@ -27,6 +27,8 @@ kotlin {
 val kspVersion: String by project
 
 dependencies {
+    implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.20")
+
     implementation("io.github.etieskrill.injection.extension.shader:shader-interface:1.0.0-SNAPSHOT")
     implementation("io.github.etieskrill.injection.extension.shader.reflection:shader-reflection-lib:1.0.0-SNAPSHOT")
 

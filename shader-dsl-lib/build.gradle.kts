@@ -1,7 +1,5 @@
 plugins {
-    `java-library`
-    kotlin("jvm") version "2.2.20" //TODO VERSION CATALÖÖÖÖÖÖÖG
-
+    kotlin("multiplatform") version "2.1.20"
     `maven-publish`
 }
 
@@ -13,17 +11,19 @@ repositories {
     mavenCentral()
 }
 
-dependencies {
-    implementation("io.github.etieskrill.injection.extension.shader:shader-interface:1.0.0-SNAPSHOT")
-
-    implementation("org.joml:joml:1.10.8")
-
-    runtimeOnly("org.jetbrains.kotlin:kotlin-reflect:2.2.20")
-}
-
 kotlin {
     compilerOptions {
         freeCompilerArgs.add("-Xcontext-parameters")
+    }
+
+    jvm()
+
+    sourceSets {
+        jvmMain.dependencies {
+            implementation("io.github.etieskrill.injection.extension.shader:shader-interface:1.0.0-SNAPSHOT")
+            implementation("org.joml:joml:1.10.8")
+            runtimeOnly("org.jetbrains.kotlin:kotlin-reflect:2.2.20")
+        }
     }
 }
 

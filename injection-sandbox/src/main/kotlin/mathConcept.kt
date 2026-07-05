@@ -2,6 +2,9 @@ package injection.sandbox
 
 import injection.sandbox.math.BVec2
 import injection.sandbox.math.IVec2
+import injection.sandbox.math.Mat2
+import injection.sandbox.math.Mat3
+import injection.sandbox.math.Mat4
 import injection.sandbox.math.Vec2
 import injection.sandbox.math.Vec3
 import injection.sandbox.math.Vec4
@@ -42,8 +45,8 @@ fun vector() {
 
     val colour = Vec4(1, 0, 1, 1)
     colour.r
-    colour.b
     colour.g
+    colour.b
     colour.a
 
     val textureCoords = Vec2(0.5, 0.75)
@@ -84,40 +87,40 @@ fun vector() {
 }
 
 fun matrix() {
-//    val mat2 = Mat2()
-//    val mat3 = Mat3(
-//        0f, 0f, 1f,
-//        0f, 1f, 0f,
-//        1f, 0f, 0f
-//    )
-//
-//    assert(Mat3().transposed == mat3)
-//
-//    val position = Vec3(1, 2, 3)
-//    val newPosition = Mat3().translation(-3, -2) * position
-//
-//    val mat32 = mat3.transpose() * mat3
-//    -mat3
-//    mat3 + mat3
-//
-//    val vec1 = Vec4(1, 1, 0, 0)
-//    val vec2 = Vec4(0, 0, 1, 1)
-//
-//    val mat4 = Mat4(vec1, vec2, vec1, vec2)
-//    mat4 / 8
-//    mat4 += 3
-//    mat4 * mat4
-//
-//    mat4 * vec1
-//
-//    val m10: Float = mat4[1, 0]
-//    val m2: Vec4 = mat4[2]
-//
-//    val m21: Float= mat4.m21
-//
-//    val mat42 = mat4.translated(1, 2, 3)
-//    mat4.rotationXY(15.deg)
-//    mat4.scaling(10)
+    val mat2 = Mat2()
+    val mat3 = Mat3(
+        0f, 0f, 1f,
+        0f, 1f, 0f,
+        1f, 0f, 0f
+    )
+
+    assert(Mat3().transposed == mat3)
+
+    val position = Vec3(1, 2, 3)
+    val newPosition = Mat3().translation(-3, -2) * position
+
+    val mat32 = mat3.transpose() * mat3
+    -mat3
+    mat3 + mat3
+
+    val vec1 = Vec4(1, 1, 0, 0)
+    val vec2 = Vec4(0, 0, 1, 1)
+
+    val mat4 = Mat4(vec1, vec2, vec1, vec2)
+    mat4 / 8
+    mat4 += 3
+    mat4 * mat4
+
+    mat4 * vec1
+
+    val m10: Float = mat4[1, 0]
+    val m2: Vec4 = mat4[2]
+
+    val m21: Float = mat4.m21
+
+    val mat42 = mat4.translated(1, 2, 3)
+    mat4.rotationXY(15.deg)
+    mat4.scaling(10)
 }
 
 //fun quaternion() {

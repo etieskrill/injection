@@ -5,7 +5,7 @@ import org.etieskrill.engine.entity.component.DirectionalLightComponent;
 import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.entity.service.Service;
 import org.etieskrill.engine.graphics.camera.Camera;
-import org.etieskrill.engine.graphics.gl.framebuffer.FrameBuffer;
+import org.etieskrill.engine.graphics.framebuffer.FrameBuffer;
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
 import org.etieskrill.game.horde.component.AnimatedBillBoard;
 import org.etieskrill.game.horde.component.BillBoard;

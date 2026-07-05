@@ -2,7 +2,7 @@ package org.etieskrill.game.animeshun;
 
 import org.etieskrill.engine.graphics.Batch;
 import org.etieskrill.engine.graphics.camera.OrthographicCamera;
-import org.etieskrill.engine.graphics.gl.framebuffer.FrameBuffer;
+import org.etieskrill.engine.graphics.framebuffer.FrameBuffer;
 import org.etieskrill.engine.graphics.gl.renderer.GLDebuggableRenderer;
 import org.etieskrill.engine.graphics.gl.renderer.GLRenderer;
 import org.etieskrill.engine.graphics.gl.shader.Shaders;

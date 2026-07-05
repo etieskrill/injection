@@ -30,7 +30,7 @@ import org.etieskrill.engine.entity.service.impl.RenderService
 import org.etieskrill.engine.graphics.Batch
 import org.etieskrill.engine.graphics.camera.OrthographicCamera
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera
-import org.etieskrill.engine.graphics.gl.framebuffer.FrameBuffer
+import org.etieskrill.engine.graphics.framebuffer.FrameBuffer
 import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachmentType
 import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
 import org.etieskrill.engine.graphics.model.model

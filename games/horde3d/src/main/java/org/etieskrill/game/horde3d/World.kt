@@ -8,6 +8,7 @@ import org.etieskrill.engine.entity.component.StaticCollider
 import org.etieskrill.engine.entity.component.Transform
 import org.etieskrill.engine.entity.component.WorldSpaceAABB
 import org.etieskrill.engine.entity.system.EntitySystem
+import org.etieskrill.engine.graphics.GraphicsContext
 import org.etieskrill.engine.graphics.camera.OrthographicCamera
 import org.etieskrill.engine.graphics.data.DirectionalLight
 import org.etieskrill.engine.graphics.data.PointLight
@@ -29,7 +30,8 @@ import org.joml.timesAssign
 import kotlin.random.Random
 
 class World(
-    entitySystem: EntitySystem
+    entitySystem: EntitySystem,
+    graphicsContext: GraphicsContext
 ) {
 
     internal val sunLight: DirectionalLight
@@ -115,8 +117,8 @@ class World(
             if (i == 0) cubeTransform = transform
         }
 
-        val directionalShadowMap = DirectionalShadowMap(Vector2i(2048))
-        val pointShadowMaps = PointShadowMapArray(Vector2i(1024), 2)
+        val directionalShadowMap = DirectionalShadowMap(graphicsContext, Vector2i(2048))
+        val pointShadowMaps = PointShadowMapArray(graphicsContext, Vector2i(1024), 2)
 
         val sunLightCamera = OrthographicCamera(directionalShadowMap.size, 30f, -30f, -30f, 30f).apply {
             far = 40f

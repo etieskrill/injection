@@ -1,26 +1,40 @@
+@file:Suppress("unused")
+
 package injection.sandbox.math
+
+//TODO get these domains - make all but primary one a "gotcha" page for not checking the url, and offer redirect
+//package com.bifreus.kml
+//package net.bifreus.kml
+//package org.bifreus.kml
 
 import kotlin.math.PI
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sqrt
 
-val Number.radians get() = toFloat()
-val Number.rad get() = radians
+typealias Rotation = Number
 
-val Number.degrees get() = toFloat() / (PI / 180)
-val Number.deg get() = degrees
+val Rotation.radians get() = toFloat()
+val Rotation.rad get() = radians
 
-val Number.turn get() = toFloat() / (2 * PI)
-val Number.tr get() = turn
+val Rotation.degrees get() = toFloat() / (PI / 180)
+val Rotation.deg get() = degrees
 
-val Number.tau get() = 2 * toFloat()
+val Rotation.turn get() = toFloat() / (2 * PI)
+val Rotation.tr get() = turn
+
+val Rotation.tau get() = 2 * toFloat()
+
+interface Vec2c {
+    val x: Float
+    val y: Float
+}
 
 // @formatter:off
-data class Vec2(var x: Float, var y: Float) : Iterable<Float> {
+data class Vec2(override var x: Float, override var y: Float) : Vec2c, Iterable<Float> {
     var xy: Vec2 get() = Vec2(this); set(value) { this(value) }
     var yx: Vec2 get() = Vec2(y, x); set(value) { this(y = value.x, x = value.y) }
-    val xx: Vec2 get() = Vec2(x, x)//; set(value) = this(x = value.x) //TODO i don't think setters make sense here, like, which value to take?
+    val xx: Vec2 get() = Vec2(x, x)
     val yy: Vec2 get() = Vec2(y, y) //this is gonna suck for Vec4
 
     var u = x
