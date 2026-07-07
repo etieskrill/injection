@@ -14,8 +14,8 @@ import org.etieskrill.engine.graphics.text.TrueTypeFont
 import org.etieskrill.engine.input.Key
 import org.etieskrill.engine.input.KeyInputHandler
 import org.etieskrill.engine.input.Keys
+import org.etieskrill.engine.time.LoopPacer
 import org.etieskrill.engine.time.StepTimer
-import org.etieskrill.engine.time.SystemNanoTimePacer
 import org.etieskrill.engine.time.resetSystemTimeResolution
 import org.etieskrill.engine.time.setSystemTimeResolution
 import org.etieskrill.engine.util.FixedArrayDeque
@@ -35,7 +35,7 @@ abstract class App(
     protected val window: Window = Window()
 ) : Disposable {
 
-    protected val pacer = SystemNanoTimePacer((1.0 / window.refreshRate.toDouble()).seconds)
+    protected val pacer = LoopPacer((1.0 / window.refreshRate.toDouble()).seconds)
 
     protected val renderer = GLRenderer(window.graphicsContext)
 
@@ -65,7 +65,7 @@ abstract class App(
     init {
         timer.start()
 
-        window.keyInputs += KeyInputHandler { type, key, _, modifiers ->
+        window.keyInputs plusAssign KeyInputHandler { type, key, _, modifiers ->
             if (type != Key.Type.KEYBOARD) return@KeyInputHandler false
             if (key == Keys.ESC.glfwKey && modifiers == Keys.Mod.SHIFT.glfwKey
                 || key == Keys.W.glfwKey && modifiers == Keys.Mod.CONTROL.glfwKey

@@ -20,7 +20,6 @@ import org.etieskrill.engine.scene.component.Label;
 import org.etieskrill.engine.scene.component.Node;
 import org.etieskrill.engine.scene.component.VBox;
 import org.etieskrill.engine.time.LoopPacer;
-import org.etieskrill.engine.time.SystemNanoTimePacer;
 import org.etieskrill.engine.window.Window;
 import org.joml.*;
 
@@ -46,7 +45,7 @@ public class Game {
     private final ShaderProgram shader = new HallwayShader();
     private final ShaderProgram sunShader = Shaders.getLightSourceShader();
 
-    private LoopPacer pacer = new SystemNanoTimePacer(1 / 60f);
+    private LoopPacer pacer = new LoopPacer(1 / 60f);
 
     private Label fpsLabel, verticesDrawnLabel, primitivesDrawnLabel; //TODO use these for performance evaluation
 

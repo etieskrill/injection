@@ -1,5 +1,6 @@
 package io.github.etieskrill.games.leverage
 
+import org.etieskrill.engine.application.App
 import org.etieskrill.engine.entity.Entity
 import org.etieskrill.engine.entity.component.DirectionalLightComponent
 import org.etieskrill.engine.entity.component.Drawable
@@ -72,7 +73,7 @@ fun main() {
     Leverage().run()
 }
 
-class Leverage : org.etieskrill.engine.application.App(
+class Leverage : App(
     Window(
         size = Window.WindowSize.LARGEST_FIT,
         mode = Window.WindowMode.BORDERLESS,

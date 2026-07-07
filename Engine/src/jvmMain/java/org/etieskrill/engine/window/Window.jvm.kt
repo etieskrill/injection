@@ -12,9 +12,9 @@ import org.etieskrill.engine.input.KeyInputHandler
 import org.etieskrill.engine.input.KeyInputManager
 import org.etieskrill.engine.input.Keys
 import org.etieskrill.engine.scene.Scene
-import org.etieskrill.engine.window.Window.WindowMode.*
-import org.etieskrill.engine.window.Window.WindowSize.DEFAULT
-import org.etieskrill.engine.window.Window.WindowSize.LARGEST_FIT
+import org.etieskrill.engine.window.WindowMode.*
+import org.etieskrill.engine.window.WindowSize.DEFAULT
+import org.etieskrill.engine.window.WindowSize.LARGEST_FIT
 import org.joml.Vector2i
 import org.joml.Vector2ic
 import org.joml.Vector3f
@@ -35,21 +35,21 @@ private typealias GLFWId = Long
 
 private val logger = KotlinLogging.logger {}
 
-class Window(
-    size: Vector2ic = DEFAULT,
-    mode: WindowMode = WINDOWED,
-    title: String = "Injection Window",
-    refreshRate: UInt? = null,
-    position: Vector2ic? = null,
-    cursor: Cursor = Cursor(),
-    resizeable: Boolean = false,
-    private val vSync: Boolean = false,
-    private val samples: UInt = 4u,
-    private val createHidden: Boolean = false,
-    private val transparency: Boolean = false
+actual class Window actual constructor(
+    size: Vector2ic,
+    mode: WindowMode,
+    title: String,
+    refreshRate: UInt?,
+    position: Vector2ic?,
+    cursor: Cursor,
+    resizeable: Boolean,
+    private val vSync: Boolean,
+    private val samples: UInt,
+    private val createHidden: Boolean,
+    private val transparency: Boolean
 ) : Disposable {
 
-    var size: Vector2ic by object : ReadWriteProperty<Window, Vector2ic> {
+    actual var size: Vector2ic by object : ReadWriteProperty<Window, Vector2ic> {
         private var field: Vector2ic? = null
 
         override fun getValue(thisRef: Window, property: KProperty<*>) = checkNotNull(field)
@@ -67,15 +67,15 @@ class Window(
         }
     }
 
-    val aspectRatio: Float get() = size.x().toFloat() / size.y().toFloat()
+    actual val aspectRatio: Float get() = size.x().toFloat() / size.y().toFloat()
 
-    var resizeable: Boolean = resizeable
+    actual var resizeable: Boolean = resizeable
         set(value) {
             glfwSetWindowAttrib(id, GLFW_RESIZABLE, if (value) GLFW_TRUE else GLFW_FALSE)
             field = value
         }
 
-    var mode: WindowMode = mode
+    actual var mode: WindowMode = mode
         set(value) {
             //TODO glfwSetWindowMonitor
             glfwSetWindowAttrib(
@@ -87,22 +87,22 @@ class Window(
             field = value
         }
 
-    var visible: Boolean = true
+    actual var visible: Boolean = true
         set(value) {
             if (value) glfwShowWindow(id)
             else glfwHideWindow(id)
             field = value
         }
 
-    var isClosing: Boolean
+    actual var isClosing: Boolean
         get() = glfwWindowShouldClose(id)
         set(value) = glfwSetWindowShouldClose(id, value)
 
-    fun close() {
+    actual fun close() {
         isClosing = true
     }
 
-    var refreshRate: UInt by object : ReadWriteProperty<Window, UInt> {
+    actual var refreshRate: UInt by object : ReadWriteProperty<Window, UInt> {
         private var field: UInt? = null
 
         override fun getValue(thisRef: Window, property: KProperty<*>) = checkNotNull(field)
@@ -120,13 +120,13 @@ class Window(
         }
     }
 
-    var title: String = title
+    actual var title: String = title
         set(value) {
             glfwSetWindowTitle(id, value)
             field = value
         }
 
-    var cursor: Cursor = cursor
+    actual var cursor: Cursor = cursor
         set(value) {
             field.window = null
             value.window = this
@@ -137,7 +137,7 @@ class Window(
     private val yPosBuffer = IntArray(1)
     private val posBuffer = Vector2i()
 
-    var position: Vector2ic
+    actual var position: Vector2ic
         get() {
             glfwGetWindowPos(id, xPosBuffer, yPosBuffer)
             return posBuffer.apply { x = xPosBuffer[0]; y = yPosBuffer[0] }
@@ -165,15 +165,15 @@ class Window(
         refreshRate?.let { check(it > 0u) { "Refresh rate must be greater than zero" } }
     }
 
-    val keyInputs: MutableList<KeyInputHandler> = mutableListOf()
-    val cursorInputs: MutableList<CursorInputHandler> = mutableListOf()
+    actual val keyInputs: MutableList<KeyInputHandler> = mutableListOf()
+    actual val cursorInputs: MutableList<CursorInputHandler> = mutableListOf()
 
     private lateinit var internalScreenBuffer: ScreenBuffer
-    val screenBuffer: FrameBuffer get() = internalScreenBuffer
+    actual val screenBuffer: FrameBuffer get() = internalScreenBuffer
 
-    lateinit var uiScope: CoroutineScope //*extremely loud alarm sound*
+    actual lateinit var uiScope: CoroutineScope //*extremely loud alarm sound*
 
-    var scene: Scene? = null
+    actual var scene: Scene? = null
         set(value) {
             value?.size = size
             field = value
@@ -184,7 +184,7 @@ class Window(
     //TODO provide methods to change primary monitor
     internal var monitor: GLFWId by notNull()
 
-    var graphicsContext: GraphicsContext by notNull()
+    actual var graphicsContext: GraphicsContext by notNull()
 
     companion object {
         const val MIN_GL_CONTEXT_MAJOR_VERSION = 3
@@ -192,43 +192,6 @@ class Window(
 
         var USE_RAW_MOUSE_MOTION_IF_AVAILABLE = true
     }
-
-    object WindowSize {
-        val HD: Vector2ic = Vector2i(1280, 720)
-        val FHD: Vector2ic = Vector2i(1920, 1080)
-        val WUXGA: Vector2ic = Vector2i(1920, 1200)
-        val WQHD: Vector2ic = Vector2i(2560, 1440)
-        val UHD: Vector2ic = Vector2i(3840, 2160)
-        val VGA: Vector2ic = Vector2i(640, 480)
-        val SVGA: Vector2ic = Vector2i(800, 600)
-        val XGA: Vector2ic = Vector2i(1024, 768)
-        val UWHD: Vector2ic = Vector2i(2560, 1080)
-        val UWQHD: Vector2ic = Vector2i(3440, 1440)
-        val UHD_4K: Vector2ic = Vector2i(3840, 2160)
-        val THICC: Vector2ic = Vector2i(4000, 100)
-
-        val LARGEST_FIT: Vector2ic = Vector2i(-1, -1) //not in values on purpose (sentinel value)
-        val DEFAULT: Vector2ic = Vector2i(-2, -2) //not in values on purpose (sentinel value)
-
-        /**
-         * Finds the largest standard resolution that fits into ([width], [height]). Maximises width over height.
-         *
-         * @param width the maximum width
-         * @param height the maximum height
-         * @return the largest resolution <= ([width], [height]), or `null` if no format is small enough
-         */
-        fun getLargestFit(width: Int, height: Int): Vector2ic? = values
-            .filter { width >= it.x() && height >= it.y() }
-            .fold(DEFAULT) { current, new ->
-                new.takeIf { current.x() < new.x() || (current.x() <= new.x() && current.y() < new.y()) } ?: current
-            }
-
-        private val values = arrayOf(
-            HD, FHD, WUXGA, WQHD, UHD, VGA, SVGA, XGA, UWHD, UWQHD, UHD_4K, THICC
-        )
-    }
-
-    enum class WindowMode { FULLSCREEN, BORDERLESS, WINDOWED }
 
     init {
         clearError()
@@ -339,7 +302,7 @@ class Window(
         graphicsContext.activeFramebuffer = screenBuffer
     }
 
-    fun configInput() {
+    private fun configInput() {
         glfwSetFramebufferSizeCallback(id) { _, width, height ->
             (size as Vector2i).set(width, height)
 
@@ -394,7 +357,7 @@ class Window(
         }
     }
 
-    fun update(delta: Double) {
+    actual fun update(delta: Double) {
         scene?.run {
             setCoroutineScope(uiScope)
             size = this@Window.size

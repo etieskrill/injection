@@ -20,6 +20,8 @@ import org.etieskrill.engine.graphics.texture.AbstractTexture
 import org.etieskrill.engine.graphics.texture.Texture2D
 import org.etieskrill.engine.input.controller.CursorCameraController
 import org.etieskrill.engine.window.Window
+import org.etieskrill.engine.window.WindowMode
+import org.etieskrill.engine.window.WindowSize
 import org.joml.Vector2f
 import org.joml.Vector2i
 import org.joml.Vector3f
@@ -35,8 +37,8 @@ fun main() {
 class Main : App(
     Window(
         title = "Circles",
-        size = Window.WindowSize.FHD,
-        mode = Window.WindowMode.BORDERLESS
+        size = WindowSize.FHD,
+        mode = WindowMode.BORDERLESS
     )
 ) {
 

@@ -25,7 +25,6 @@ import org.etieskrill.engine.input.KeyInputManager;
 import org.etieskrill.engine.input.Keys;
 import org.etieskrill.engine.input.controller.CursorCameraController;
 import org.etieskrill.engine.time.LoopPacer;
-import org.etieskrill.engine.time.SystemNanoTimePacer;
 import org.etieskrill.engine.util.EngineModelLoader;
 import org.etieskrill.engine.util.EngineShaderLoader;
 import org.etieskrill.engine.util.FixedArrayDeque;
@@ -215,7 +214,7 @@ public class Game {
 
         globalLight = new DirectionalLight(new Vector3f(1, -1, 1), new Vector3f(2), new Vector3f(2), new Vector3f(2));
 
-        pacer = new SystemNanoTimePacer(1000 / FRAMERATE);
+        pacer = new LoopPacer(1000 / FRAMERATE);
 
         window.getCursor().disable();
         window.setScene(new DebugOverlay(window.getScreenBuffer(), (GLRenderer) renderer, pacer, window.getSize()));

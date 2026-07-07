@@ -1,12 +1,6 @@
 package org.etieskrill.engine.util
 
-import org.lwjgl.system.Platform
-
-val separatorChar: Char = when (val platform = Platform.get()) {
-    Platform.WINDOWS -> '\\'
-    Platform.LINUX, Platform.MACOSX -> '/'
-    else -> error("Unsupported architecture: $platform")
-}
+expect val separatorChar: Char
 
 /**
  * File path without file name and extension.

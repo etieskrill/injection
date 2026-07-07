@@ -19,7 +19,6 @@ import org.etieskrill.engine.graphics.model.ModelFactory;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.input.CursorInputAdapter;
 import org.etieskrill.engine.time.LoopPacer;
-import org.etieskrill.engine.time.SystemNanoTimePacer;
 import org.etieskrill.engine.util.Loaders.ModelLoader;
 import org.etieskrill.engine.window.Cursor.CursorMode;
 import org.etieskrill.engine.window.Window;
@@ -195,7 +194,7 @@ public class DemCubez {
     }
 
     private void loop() {
-        pacer = new SystemNanoTimePacer(1d / TARGET_FPS);
+        pacer = new LoopPacer(1d / TARGET_FPS);
         pacer.start();
 
         FrameBuffer frameBuffer = FrameBuffer.getStandard(

@@ -10,7 +10,7 @@ import kotlin.time.Duration
 
 private val logger = KotlinLogging.logger {}
 
-fun setSystemTimeResolution(resolution: Duration) = when (val platform = Platform.get()) {
+actual fun setSystemTimeResolution(resolution: Duration) = when (val platform = Platform.get()) {
     WINDOWS -> {
         val ret = WindowsLibrary("winmm.dll").use {
             val beginFunctionPointer = it.getFunctionAddress("timeBeginPeriod")
@@ -31,7 +31,7 @@ fun setSystemTimeResolution(resolution: Duration) = when (val platform = Platfor
     else -> throw UnsupportedOperationException("Unsupported platform: $platform")
 }
 
-fun resetSystemTimeResolution(resolution: Duration) = when (val platform = Platform.get()) {
+actual fun resetSystemTimeResolution(resolution: Duration) = when (val platform = Platform.get()) {
     WINDOWS -> {
         val ret = WindowsLibrary("winmm.dll").use {
             val endFunctionPointer = it.getFunctionAddress("timeEndPeriod")

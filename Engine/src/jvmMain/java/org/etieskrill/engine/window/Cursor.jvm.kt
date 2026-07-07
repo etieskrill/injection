@@ -2,7 +2,8 @@ package org.etieskrill.engine.window
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.etieskrill.engine.common.Disposable
-import org.etieskrill.engine.window.Cursor.CursorShape.ARROW
+import org.etieskrill.engine.window.CursorMode.entries
+import org.etieskrill.engine.window.CursorShape.ARROW
 import org.joml.Vector2d
 import org.lwjgl.BufferUtils
 import org.lwjgl.glfw.GLFW.*
@@ -23,7 +24,7 @@ private val logger = KotlinLogging.logger {}
 //TODO constructor which loads some cursor files, may require list of images for cursor modes
 //TODO cursor loader
 //TODO update disposable once custom cursors are implemented
-class Cursor(shape: CursorShape = ARROW) : Disposable {
+actual class Cursor actual constructor(shape: CursorShape) : Disposable {
 
     init {
         check(glfwInit()) { "Unable to initialize glfw library" }
@@ -37,17 +38,17 @@ class Cursor(shape: CursorShape = ARROW) : Disposable {
             field = value
         }
 
-    var mode: CursorMode
+    actual var mode: CursorMode
         get() {
             check(window != null) { "Cursor is not assigned to window" }
-            return CursorMode.fromGLFW(glfwGetInputMode(window!!.id, GLFW_CURSOR))!!
+            return glfwGetInputMode(window!!.id, GLFW_CURSOR).toGlfwCursorMode()!!
         }
         set(value) {
             check(window != null) { "Cursor is not assigned to window" }
             glfwSetInputMode(window!!.id, GLFW_CURSOR, value.glfwMode)
         }
 
-    var shape: CursorShape = shape
+    actual var shape: CursorShape = shape
         set(value) {
             check(window != null) { "Cursor is not assigned to window" }
             glfwSetCursor(window!!.id, defaultCursors[value] ?: defaultCursors[ARROW]!!)
@@ -57,7 +58,7 @@ class Cursor(shape: CursorShape = ARROW) : Disposable {
     private val posx = DoubleArray(1)
     private val posy = DoubleArray(1)
 
-    var position: Vector2d
+    actual var position: Vector2d
         get() {
             check(window != null) { "Cursor is not assigned to window" }
             glfwGetCursorPos(window!!.id, posx, posy)
@@ -104,59 +105,19 @@ class Cursor(shape: CursorShape = ARROW) : Disposable {
         }
     }
 
-    enum class CursorShape(val glfwShape: Int) {
-        ARROW(GLFW_ARROW_CURSOR),
-        IBEAM(GLFW_IBEAM_CURSOR),
-        CROSSHAIR(GLFW_CROSSHAIR_CURSOR),
-        POINTING_HAND(GLFW_POINTING_HAND_CURSOR),
-        RESIZE_EW(GLFW_RESIZE_EW_CURSOR),
-        RESIZE_NS(GLFW_RESIZE_NS_CURSOR),
-        RESIZE_NWSE(GLFW_RESIZE_NWSE_CURSOR),
-        RESIZE_NESW(GLFW_RESIZE_NESW_CURSOR),
-        RESIZE_ALL(GLFW_RESIZE_ALL_CURSOR),
-        NOT_ALLOWED(GLFW_NOT_ALLOWED_CURSOR);
-    }
-
-    enum class CursorMode(val glfwMode: Int) {
-        /**
-         * Movement is not restricted and normal cursor is shown.
-         */
-        NORMAL(GLFW_CURSOR_NORMAL),
-
-        /**
-         * Movement is not restricted, but the cursor is not visible while hovering over the window.
-         */
-        HIDDEN(GLFW_CURSOR_HIDDEN),
-
-        /**
-         * Cursor movement is locked to the window, and movement is fed into a virtual unlimited cursor space. Use
-         * for mouse motion based camera control and the likes.
-         */
-        DISABLED(GLFW_CURSOR_DISABLED),
-
-        /**
-         * Restricts cursor movement to the window, but otherwise behaves normally.
-         */
-        CAPTURED(GLFW_CURSOR_CAPTURED);
-
-        companion object {
-            fun fromGLFW(glfwCursorMode: Int): CursorMode? = entries.find { it.glfwMode == glfwCursorMode }
-        }
-    }
-
-    fun enable() {
+    actual fun enable() {
         mode = CursorMode.NORMAL
     }
 
-    fun hide() {
+    actual fun hide() {
         mode = CursorMode.HIDDEN
     }
 
-    fun disable() {
+    actual fun disable() {
         mode = CursorMode.DISABLED
     }
 
-    fun capture() {
+    actual fun capture() {
         mode = CursorMode.CAPTURED
     }
 
@@ -166,3 +127,27 @@ class Cursor(shape: CursorShape = ARROW) : Disposable {
     }
 
 }
+
+private val CursorShape.glfwShape
+    get() = when (this) {
+        ARROW -> GLFW_ARROW_CURSOR
+        CursorShape.IBEAM -> GLFW_IBEAM_CURSOR
+        CursorShape.CROSSHAIR -> GLFW_CROSSHAIR_CURSOR
+        CursorShape.POINTING_HAND -> GLFW_POINTING_HAND_CURSOR
+        CursorShape.RESIZE_EW -> GLFW_RESIZE_EW_CURSOR
+        CursorShape.RESIZE_NS -> GLFW_RESIZE_NS_CURSOR
+        CursorShape.RESIZE_NWSE -> GLFW_RESIZE_NWSE_CURSOR
+        CursorShape.RESIZE_NESW -> GLFW_RESIZE_NESW_CURSOR
+        CursorShape.RESIZE_ALL -> GLFW_RESIZE_ALL_CURSOR
+        CursorShape.NOT_ALLOWED -> GLFW_NOT_ALLOWED_CURSOR
+    }
+
+private val CursorMode.glfwMode
+    get() = when (this) {
+        CursorMode.NORMAL -> GLFW_CURSOR_NORMAL
+        CursorMode.HIDDEN -> GLFW_CURSOR_HIDDEN
+        CursorMode.DISABLED -> GLFW_CURSOR_DISABLED
+        CursorMode.CAPTURED -> GLFW_CURSOR_CAPTURED
+    }
+
+fun Int.toGlfwCursorMode(): CursorMode? = entries.find { it.glfwMode == this }

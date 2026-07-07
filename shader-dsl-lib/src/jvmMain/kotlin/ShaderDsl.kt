@@ -74,6 +74,26 @@ abstract class ShaderBuilder<VA : Any, V : ShaderVertexData, RT : Any>(val shade
 
     protected abstract fun program()
 
+    //TODO is this a candidate for context(_: VertexReceiver)?
+//    abstract fun VertexReceiver.vertex()
+
+    /* love this because certain stages can be forced at compile time
+    // (tho i can and do check for it in the compiler extension)
+    override fun VertexReceiver.vertex(vertex: VA): V {
+        val v = vec4(...)
+    }
+
+    // but this does not require explicitly specifying the receiver... it is autocompleted when generating the
+    // overloaded function, but it's still kind of ugly
+    override fun program() {
+        vertex {
+            ...
+        }
+    }
+
+    // i just want my context receivers back :(
+     */
+
     //TODO use block with GlslReceiver context in const and remove these
     protected fun vec2(s: Number): vec2 = Vector2f()
     protected fun vec2(x: Number, y: Number): vec2 = Vector2f()

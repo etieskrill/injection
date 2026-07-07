@@ -8,6 +8,7 @@ package injection.sandbox.math
 //package org.bifreus.kml
 
 import kotlin.math.PI
+import kotlin.math.atan2
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sqrt
@@ -25,25 +26,129 @@ val Rotation.tr get() = turn
 
 val Rotation.tau get() = 2 * toFloat()
 
-interface Vec2c {
+interface Vec2c : Iterable<Float> {
     val x: Float
     val y: Float
+
+    val xy: Vec2
+    val yx: Vec2
+    val xx: Vec2
+    val yy: Vec2
+
+    val u: Float
+    val v: Float
+
+    val uv: Vec2
+    val vu: Vec2
+    val uu: Vec2
+    val vv: Vec2
+
+    val length: Float
+
+    /**
+     * Returns a normalised copy of this vector. Returns the zero vector instead of `NaN` if this vector is zero.
+     */
+    val normal: Vec2
+
+    /**
+     * Returns a normalised copy of this vector.
+     */
+    val normalUnsafe: Vec2
+
+    /**
+     * Normalises this vector. Sets this to the zero vector instead of `NaN` if this vector was zero.
+     */
+    fun normalise(): Vec2
+
+    /**
+     * Normalises this vector.
+     */
+    fun normaliseUnsafe(): Vec2
+
+    /**
+     * Returns the dot product between [this][Vec2c] and [v].
+     */
+    infix fun dot(v: Vec2): Float
+
+    /**
+     * Returns the counterclockwise perp (-endicular) of [this][Vec2c].
+     */
+    val perp: Vec2
+
+    /**
+     * Returns the perp (-endicular) product between [this][Vec2c] and [v].
+     */
+    infix fun perp(v: Vec2): Float
+
+    /**
+     * Returns the angle in radians between [this][Vec2c] and [v].
+     */
+    infix fun angleTo(v: Vec2): Float
+
+    /**
+     * Returns the distance between the points defined by [this][Vec2c] and [v].
+     */
+    infix fun distanceTo(v: Vec2): Float
+
+    /**
+     * Linearly interpolates between the vectors [this][Vec2c] and [other] based on 0 <= [t] <= 1.
+     */
+    fun lerp(other: Vec2, t: Float): Vec2
+
+    /**
+     * Returns the component with the smallest value.
+     */
+    fun minComponent(): Float
+
+    /**
+     * Returns the component with the greatest value.
+     */
+    fun maxComponent(): Float
+
+    operator fun plus(v: Vec2): Vec2
+    operator fun plus(s: Number): Vec2
+    operator fun plusAssign(v: Vec2)
+    operator fun plusAssign(s: Number)
+    operator fun minus(v: Vec2): Vec2
+    operator fun minus(s: Number): Vec2
+    operator fun minusAssign(v: Vec2)
+    operator fun minusAssign(s: Number)
+    operator fun unaryMinus(): Vec2
+    operator fun times(v: Vec2): Vec2
+    operator fun times(s: Number): Vec2
+    operator fun timesAssign(v: Vec2)
+    operator fun timesAssign(s: Number)
+    operator fun div(v: Vec2): Vec2
+    operator fun div(s: Number): Vec2
+    operator fun divAssign(v: Vec2)
+    operator fun divAssign(s: Number)
+
+    operator fun get(i: Int): Float
+    operator fun set(i: Int, s: Number)
+
+    fun toDouble(): DVec2
+    fun toInt(): IVec2
+    fun toLong(): LVec2
 }
 
 // @formatter:off
-data class Vec2(override var x: Float, override var y: Float) : Vec2c, Iterable<Float> {
-    var xy: Vec2 get() = Vec2(this); set(value) { this(value) }
-    var yx: Vec2 get() = Vec2(y, x); set(value) { this(y = value.x, x = value.y) }
-    val xx: Vec2 get() = Vec2(x, x)
-    val yy: Vec2 get() = Vec2(y, y) //this is gonna suck for Vec4
+data class Vec2(override var x: Float, override var y: Float) : Vec2c {
+    override var xy: Vec2 get() = Vec2(this); set(value) { this(value) }
+    override var yx: Vec2 get() = Vec2(y, x); set(value) { this(y = value.x, x = value.y) }
+    override val xx: Vec2 get() = Vec2(x, x)
+    override val yy: Vec2 get() = Vec2(y, y) //this is gonna suck for Vec4
 
-    var u = x
-    var v = y
-    var vu: Vec2 get() = yx; set(value) = run { yx = value }
+    override var u = x
+    override var v = y
+    override var uv: Vec2 get() = xy; set(value) = run { xy = value }
+    override var vu: Vec2 get() = yx; set(value) = run { yx = value }
+    override val uu: Vec2 get() = xx
+    override val vv: Vec2 get() = yy
 
-    val length get() = sqrt(x * x + y * y)
-    val normal get() = length.let { if (it > 0) this / it else Vec2(0) }
-    val normalUnsafe get() = this / length
+    override val length get() = sqrt(x * x + y * y)
+
+    override val normal get() = length.let { if (it > 0) this / it else Vec2(0) }
+    override val normalUnsafe get() = this / length
 
     constructor() : this(0)
     constructor(s: Number) : this(s, s)
@@ -51,7 +156,7 @@ data class Vec2(override var x: Float, override var y: Float) : Vec2c, Iterable<
     constructor(v: Vec2) : this(v.x, v.y)
     constructor(v: Vec3) : this(v.x, v.y)
 
-    fun normalize(): Vec2 {
+    override fun normalise(): Vec2 {
         val length = length
         if (length == 0f) return apply { this(0f) }
         x /= length
@@ -59,41 +164,53 @@ data class Vec2(override var x: Float, override var y: Float) : Vec2c, Iterable<
         return this
     }
 
-    fun normalizeUnsafe(): Vec2 {
+    override fun normaliseUnsafe(): Vec2 {
         val length = length
         x /= length
         y /= length
         return this
     }
 
-    infix fun dot(v: Vec2) = x * v.x + y * v.y
+    override infix fun dot(v: Vec2) = x * v.x + y * v.y
 
-    fun minComponent() = min(x, y)
-    fun maxComponent() = max(x, y)
+    override val perp: Vec2 get() = Vec2(-y, x)
+    override fun perp(v: Vec2) = x * v.y - y * v.x
 
-    operator fun plus(v: Vec2) = Vec2(x + v.x, y + v.y)
-    operator fun plus(s: Number) = Vec2(x + s.toFloat(), y + s.toFloat())
-    operator fun plusAssign(v: Vec2) { this(x + v.x, y + v.y) }
-    operator fun plusAssign(s: Number) { this(x + s.toFloat(), y + s.toFloat()) }
-    operator fun minus(v: Vec2) = Vec2(x - v.x, y - v.y)
-    operator fun minus(s: Number) = Vec2(x - s.toFloat(), y - s.toFloat())
-    operator fun minusAssign(v: Vec2) { this(x - v.x, y - v.y) }
-    operator fun minusAssign(s: Number) { this(x - s.toFloat(), y - s.toFloat()) }
-    operator fun unaryMinus() = Vec2(-x, -y)
-    operator fun times(v: Vec2) = Vec2(x * v.x, y * v.y)
-    operator fun times(s: Number) = Vec2(x * s.toFloat(), y * s.toFloat())
-    operator fun timesAssign(v: Vec2) { this(x * v.x, y * v.y) }
-    operator fun timesAssign(s: Number) { this(x * s.toFloat(), y * s.toFloat()) }
-    operator fun div(v: Vec2) = Vec2(x / v.x, y / v.y)
-    operator fun div(s: Number) = Vec2(x / s.toFloat(), y / s.toFloat())
-    operator fun divAssign(v: Vec2) { this(x / v.x, y / v.y) }
-    operator fun divAssign(s: Number) { this(x / s.toFloat(), y / s.toFloat()) }
+    override fun angleTo(v: Vec2) = atan2(x * v.y - y * v.x, dot(v))
+    override fun distanceTo(v: Vec2): Float {
+        val dx = x - v.x
+        val dy = y - v.y
+        return sqrt(dx * dx + dy * dy)
+    }
 
-    operator fun get(i: Int): Float = when (i) {
+    override fun lerp(other: Vec2, t: Float) = this + (other - this) * t
+
+    override fun minComponent() = min(x, y)
+    override fun maxComponent() = max(x, y)
+
+    override operator fun plus(v: Vec2) = Vec2(x + v.x, y + v.y)
+    override operator fun plus(s: Number) = Vec2(x + s.toFloat(), y + s.toFloat())
+    override operator fun plusAssign(v: Vec2) { this(x + v.x, y + v.y) }
+    override operator fun plusAssign(s: Number) { this(x + s.toFloat(), y + s.toFloat()) }
+    override operator fun minus(v: Vec2) = Vec2(x - v.x, y - v.y)
+    override operator fun minus(s: Number) = Vec2(x - s.toFloat(), y - s.toFloat())
+    override operator fun minusAssign(v: Vec2) { this(x - v.x, y - v.y) }
+    override operator fun minusAssign(s: Number) { this(x - s.toFloat(), y - s.toFloat()) }
+    override operator fun unaryMinus() = Vec2(-x, -y)
+    override operator fun times(v: Vec2) = Vec2(x * v.x, y * v.y)
+    override operator fun times(s: Number) = Vec2(x * s.toFloat(), y * s.toFloat())
+    override operator fun timesAssign(v: Vec2) { this(x * v.x, y * v.y) }
+    override operator fun timesAssign(s: Number) { this(x * s.toFloat(), y * s.toFloat()) }
+    override operator fun div(v: Vec2) = Vec2(x / v.x, y / v.y)
+    override operator fun div(s: Number) = Vec2(x / s.toFloat(), y / s.toFloat())
+    override operator fun divAssign(v: Vec2) { this(x / v.x, y / v.y) }
+    override operator fun divAssign(s: Number) { this(x / s.toFloat(), y / s.toFloat()) }
+
+    override operator fun get(i: Int): Float = when (i) {
         0 -> x; 1 -> y; else -> error("Number $i is not a valid component for Vec2")
     }
 
-    operator fun set(i: Int, s: Number) = when (i) {
+    override operator fun set(i: Int, s: Number) = when (i) {
         0 -> x = s.toFloat(); 1 -> y = s.toFloat(); else -> error("Number $i is not a valid component for Vec2")
     }
 
@@ -112,7 +229,14 @@ data class Vec2(override var x: Float, override var y: Float) : Vec2c, Iterable<
         override fun next() = get(i++)
         override fun hasNext() = i < 2
     }
+
+    override fun toDouble() = DVec2(x.toDouble(), y.toDouble())
+    override fun toInt() = IVec2(x.toInt(), y.toInt())
+    override fun toLong() = LVec2(x.toLong(), y.toLong())
 }
+
+data class DVec2(val x: Double, val y: Double)
+data class LVec2(val x: Long, val y: Long)
 
 operator fun Number.plus(v: Vec2) = v + this
 operator fun Number.minus(v: Vec2) = Vec2(this.toFloat() - v.x, this.toFloat() - v.y)

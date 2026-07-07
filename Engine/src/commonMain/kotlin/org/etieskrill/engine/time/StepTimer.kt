@@ -3,6 +3,7 @@ package org.etieskrill.engine.time
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlin.time.DurationUnit
+import kotlin.time.TimeMark
 import kotlin.time.TimeSource
 
 private val logger = KotlinLogging.logger {}
@@ -11,7 +12,7 @@ class StepTimer(
     val targetLogger: KLogger = logger,
 ) {
 
-    private lateinit var time: kotlin.time.TimeMark
+    private lateinit var time: TimeMark
 
     fun start() {
         time = TimeSource.Monotonic.markNow()

@@ -6,7 +6,7 @@ import org.etieskrill.engine.input.CursorInputHandler
 import org.etieskrill.engine.input.KeyInputHandler
 import org.etieskrill.engine.input.Keys
 import org.etieskrill.engine.input.OverruleGroup
-import org.etieskrill.engine.time.SystemNanoTimePacer
+import org.etieskrill.engine.time.LoopPacer
 import org.etieskrill.engine.window.Window
 import kotlin.time.Duration.Companion.seconds
 
@@ -36,7 +36,7 @@ fun main() {
 
     Model.ofFile("vampire.glb", true)
 
-    val pacer = SystemNanoTimePacer((1 / 60).toDouble().seconds)
+    val pacer = LoopPacer((1 / 60).toDouble().seconds)
     pacer.start()
     while (!window.isClosing) {
         window.update(pacer.deltaTimeSeconds)

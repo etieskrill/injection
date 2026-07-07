@@ -30,7 +30,6 @@ import org.etieskrill.engine.scene.component.Label;
 import org.etieskrill.engine.scene.component.Node.Alignment;
 import org.etieskrill.engine.scene.component.Stack;
 import org.etieskrill.engine.time.LoopPacer;
-import org.etieskrill.engine.time.SystemNanoTimePacer;
 import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.util.Loaders.ModelLoader;
 import org.etieskrill.engine.util.Loaders.ShaderLoader;
@@ -160,7 +159,7 @@ public class Game {
     
     private void loop() {
         //TODO figure out a smart way to link the pacer and window refresh rates
-        pacer = new SystemNanoTimePacer(1 / 60f);
+        pacer = new LoopPacer(1 / 60f);
         
         ModelLoader models = ModelLoader.get();
         
