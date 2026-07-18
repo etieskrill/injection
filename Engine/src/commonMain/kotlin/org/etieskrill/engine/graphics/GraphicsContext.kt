@@ -5,9 +5,8 @@ import org.etieskrill.engine.graphics.framebuffer.FrameBuffer
 expect class GraphicsContext {
 
     var screenBuffer: FrameBuffer internal set
-    var activeFramebuffer: FrameBuffer internal set
 
-    fun withContext(block: GraphicsContext.() -> Unit)
+    fun <T> withContext(block: () -> T): T
 
 }
 

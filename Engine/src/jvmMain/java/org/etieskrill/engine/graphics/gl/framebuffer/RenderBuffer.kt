@@ -1,6 +1,8 @@
 package org.etieskrill.engine.graphics.gl.framebuffer
 
 import org.etieskrill.engine.common.Disposable
+import org.etieskrill.engine.graphics.framebuffer.FrameBufferAttachment
+import org.etieskrill.engine.graphics.framebuffer.FrameBufferAttachmentType
 import org.etieskrill.engine.graphics.gl.GLUtils
 import org.joml.Vector2ic
 import org.lwjgl.opengl.GL11C.GL_DEPTH_COMPONENT

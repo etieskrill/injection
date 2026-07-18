@@ -5,8 +5,7 @@ import org.etieskrill.engine.entity.component.DirectionalLightComponent;
 import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.entity.service.Service;
 import org.etieskrill.engine.graphics.camera.Camera;
-import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
-import org.etieskrill.engine.graphics.gl.shader.Shaders;
+import org.etieskrill.engine.graphics.shader.Shader;
 import org.etieskrill.game.horde.component.AnimatedBillBoard;
 import org.etieskrill.game.horde.component.BillBoard;
 import org.joml.Matrix3f;
@@ -22,17 +21,17 @@ import static org.lwjgl.opengl.GL45C.glCreateVertexArrays;
 public class DirectionalBillBoardShadowMappingService implements Service {
 
     private final Camera billBoardCamera;
-    private final ShaderProgram billboardDepthShader;
-    private final ShaderProgram animatedBillboardDepthShader;
+    private final Shader billboardDepthShader;
+    private final Shader animatedBillboardDepthShader;
 
     private final int dummyVao;
     private final List<Entity> orderedEntities = new ArrayList<>();
 
     public DirectionalBillBoardShadowMappingService(Camera billBoardCamera) {
         this.billBoardCamera = billBoardCamera;
-        this.billboardDepthShader = new ShaderProgram(List.of("DepthBillBoard.glsl"), false) {
+        this.billboardDepthShader = new Shader(List.of("DepthBillBoard.glsl"), false) {
         };
-        this.animatedBillboardDepthShader = new ShaderProgram(List.of("AnimatedDepthBillBoard.glsl"), false) {
+        this.animatedBillboardDepthShader = new Shader(List.of("AnimatedDepthBillBoard.glsl"), false) {
         };
         this.dummyVao = glCreateVertexArrays();
     }

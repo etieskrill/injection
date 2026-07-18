@@ -12,13 +12,13 @@ import org.etieskrill.engine.graphics.gl.GLUtils;
 import org.etieskrill.engine.graphics.gl.framebuffer.DirectionalShadowMap;
 import org.etieskrill.engine.graphics.gl.shader.impl.GridShader;
 import org.etieskrill.engine.graphics.gl.shader.impl.GridShaderKt;
-import org.etieskrill.engine.graphics.texture.AbstractTexture;
-import org.etieskrill.engine.graphics.texture.AbstractTexture.MagFilter;
-import org.etieskrill.engine.graphics.texture.AbstractTexture.MinFilter;
+import org.etieskrill.engine.graphics.texture.Texture;
+import org.etieskrill.engine.graphics.texture.Texture.MagFilter;
+import org.etieskrill.engine.graphics.texture.Texture.MinFilter;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.input.Input;
 import org.etieskrill.engine.input.InputBinding;
-import org.etieskrill.engine.input.Keys;
+import org.etieskrill.engine.input.Key;
 import org.etieskrill.engine.input.controller.KeyCharacterController;
 import org.etieskrill.engine.util.Loaders;
 import org.etieskrill.engine.window.Window;
@@ -116,8 +116,8 @@ public class Application extends App {
         getWindow().addKeyInputs(playerController);
 
         getWindow().addKeyInputs(Input.of(
-                Input.bind(Keys.A).to(() -> dude.setLookingRight(false)),
-                Input.bind(Keys.D).to(() -> dude.setLookingRight(true))
+                Input.bind(Key.A).to(() -> dude.setLookingRight(false)),
+                Input.bind(Key.D).to(() -> dude.setLookingRight(true))
         ));
 
         getEntitySystem().createEntity(id -> new Enemy(id, dude.getTransform().getPosition(), camera));
@@ -165,7 +165,7 @@ public class Application extends App {
         stoopidShader = new BlitShader();
 
         getWindow().addKeyInputs(Input.of(
-                Input.bind(Keys.Q).on(InputBinding.Trigger.TOGGLED).to(delta -> daylightCycleRotation += 20 * delta)
+                Input.bind(Key.Q).on(InputBinding.Trigger.TOGGLED).to(delta -> daylightCycleRotation += 20 * delta)
         ));
 
         GLUtils.removeDebugLogging();
@@ -175,7 +175,7 @@ public class Application extends App {
         return (Texture2D) Loaders.TextureLoader.get().load(file, () ->
                 new Texture2D.FileBuilder(file)
                         .setMipMapping(MinFilter.NEAREST, MagFilter.NEAREST)
-                        .setWrapping(AbstractTexture.Wrapping.CLAMP_TO_EDGE)
+                        .setWrapping(Texture.Wrapping.CLAMP_TO_EDGE)
                         .build());
     }
 

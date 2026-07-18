@@ -3,7 +3,9 @@ package org.etieskrill.engine.graphics.gl.framebuffer
 import io.github.etieskrill.injection.extension.shader.TextureShadow
 import org.etieskrill.engine.graphics.GraphicsContext
 import org.etieskrill.engine.graphics.framebuffer.FrameBuffer
-import org.etieskrill.engine.graphics.texture.AbstractTexture
+import org.etieskrill.engine.graphics.framebuffer.FrameBufferAttachment
+import org.etieskrill.engine.graphics.framebuffer.FrameBufferAttachmentType
+import org.etieskrill.engine.graphics.texture.Texture
 import org.joml.Vector2ic
 import org.lwjgl.opengl.GL11C.GL_LEQUAL
 import org.lwjgl.opengl.GL11C.glTexParameteri
@@ -12,7 +14,7 @@ import org.lwjgl.opengl.GL14C.GL_TEXTURE_COMPARE_MODE
 import org.lwjgl.opengl.GL30C.GL_COMPARE_REF_TO_TEXTURE
 
 /**
- * It is possible to use a regular [texture][AbstractTexture] (with a `sampler{*D,Cube}}`) as a shadow map, but this
+ * It is possible to use a regular [texture][Texture] (with a `sampler{*D,Cube}}`) as a shadow map, but this
  * introduces unnecessary wrangling with colour vectors, among other inconveniences. Instead, leverage a shadow sampler
  * (`sampler{*D,Cube}Shadow`) by using this class.
  *
@@ -25,7 +27,7 @@ abstract class ShadowMap<T>(
     size: Vector2ic,
     val texture: T
 ) : FrameBuffer(context, size, mapOf(FrameBufferAttachmentType.DEPTH to texture)), TextureShadow
-        where T : AbstractTexture, T : FrameBufferAttachment {
+        where T : Texture, T : FrameBufferAttachment {
 
     init {
         texture.bind()

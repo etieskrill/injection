@@ -5,7 +5,7 @@ import org.etieskrill.engine.entity.component.Drawable
 import org.etieskrill.engine.entity.component.PointLightComponent
 import org.etieskrill.engine.entity.component.Transform
 import org.etieskrill.engine.entity.service.Service
-import org.etieskrill.engine.graphics.Renderer
+import org.etieskrill.engine.graphics.renderer.Renderer
 import org.etieskrill.engine.graphics.animation.Animator
 import org.etieskrill.engine.graphics.gl.shader.impl.DepthCubeMapArrayShader
 import org.etieskrill.engine.graphics.gl.shader.impl.farPlane

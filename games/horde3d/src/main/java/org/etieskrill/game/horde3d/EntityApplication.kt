@@ -14,7 +14,7 @@ import org.etieskrill.engine.graphics.camera.PerspectiveCamera
 import org.etieskrill.engine.graphics.gl.GLUtils
 import org.etieskrill.engine.graphics.gl.shader.impl.DepthCubeMapArrayShader
 import org.etieskrill.engine.input.Input
-import org.etieskrill.engine.input.Keys
+import org.etieskrill.engine.input.Key
 import org.etieskrill.engine.input.controller.CursorCameraController
 import org.etieskrill.engine.input.controller.KeyCharacterTranslationController
 import org.etieskrill.engine.util.EngineModelLoader
@@ -127,10 +127,10 @@ object EntityApplication : App(
 
         window.cursorInputs += CursorCameraController(camera)
         window.keyInputs += KeyCharacterTranslationController(player.moveForce.force, camera)
-            .removeBindings(Keys.SPACE.input, Keys.SHIFT.input)
-            .addBindings(Input.bind(Keys.SPACE).toSimpleAction { player.dashState.trigger() })
+            .removeBindings(Key.SPACE.input, Key.SHIFT.input)
+            .addBindings(Input.bind(Key.SPACE).toSimpleAction { player.dashState.trigger() })
         window.keyInputs += Input.of(
-            Input.bind(Keys.Q).toSimpleAction {
+            Input.bind(Key.Q).toSimpleAction {
                 light = !light
                 logger.info { "Turning sunlight ${if (light) "on" else "off"}" }
 
@@ -140,19 +140,19 @@ object EntityApplication : App(
                     setSpecular(if (light) lightOnSpecular else lightOff)
                 }
             },
-            Input.bind(Keys.E).toSimpleAction {
+            Input.bind(Key.E).toSimpleAction {
                 hdrReinhardMapping = !hdrReinhardMapping
                 renderService.hdrShader.reinhard = hdrReinhardMapping
             },
-            Input.bind(Keys.T).toSimpleAction {
+            Input.bind(Key.T).toSimpleAction {
                 hdrExposure += 0.25f
                 renderService.hdrShader.exposure = hdrExposure
             },
-            Input.bind(Keys.G).toSimpleAction {
+            Input.bind(Key.G).toSimpleAction {
                 hdrExposure -= 0.25f
                 renderService.hdrShader.exposure = hdrExposure
             },
-            Input.bind(Keys.F1).toSimpleAction {
+            Input.bind(Key.F1).toSimpleAction {
                 renderService.boundingBoxRenderService.toggleRenderBoundingBoxes()
             }
         )

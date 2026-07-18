@@ -22,19 +22,19 @@ public class KeyInputManager implements KeyInputHandler {
 
     //TODO add <name,action> map to allow for rebinding and structural streamlining
     //TODO allow for keys to overrule/bind each other with activation policies; latest, oldest, all, none
-    private final Map<Key, TriggerAction> bindings;
-    private final Map<Key, OverruleGroup> groups;
+    private final Map<KeyEvent, TriggerAction> bindings;
+    private final Map<KeyEvent, OverruleGroup> groups;
     private final Map<OverruleGroup, Integer> groupKeysActive;
 
-    private final Set<Key> pressed;
-    private final Set<Key> toggled;
-    private final Queue<Key> events;
+    private final Set<KeyEvent> pressed;
+    private final Set<KeyEvent> toggled;
+    private final Queue<KeyEvent> events;
 
     public KeyInputManager() {
         this(new HashMap<>(), new HashMap<>());
     }
 
-    public KeyInputManager(Map<Key, TriggerAction> bindings, Map<Key, OverruleGroup> groups) {
+    public KeyInputManager(Map<KeyEvent, TriggerAction> bindings, Map<KeyEvent, OverruleGroup> groups) {
         this.bindings = Objects.requireNonNull(bindings);
         this.groups = Objects.requireNonNull(groups);
         this.groupKeysActive = new HashMap<>();
@@ -57,18 +57,18 @@ public class KeyInputManager implements KeyInputHandler {
         return this;
     }
 
-    public KeyInputManager removeBindings(Key... keys) {
-        for (Key key : keys)
+    public KeyInputManager removeBindings(KeyEvent... keys) {
+        for (KeyEvent key : keys)
             this.bindings.remove(key);
         return this;
     }
 
     public KeyInputManager addGroups(OverruleGroup... groups) {
         for (OverruleGroup group : groups) {
-            for (Key input : group.getGroup()) {
+            for (KeyEvent input : group.getGroup()) {
                 if (this.groups.put(input, group) != null) {
                     logger.warn("The binding {} is present in multiple groups, only the last group registered will be respected.",
-                            Keys.fromKeyInput(input).name());
+                            Key.fromKeyInput(input).name());
                 }
             } //ik ik, this makes me puke too
         }
@@ -78,12 +78,12 @@ public class KeyInputManager implements KeyInputHandler {
 
     @EveryFrame
     public void update(double delta) {
-        for (Key key : pressed) {
+        for (KeyEvent key : pressed) {
             TriggerAction triggerAction = bindings.get(key);
             if (triggerAction != null && triggerAction.trigger() == PRESSED)
                 handleAction(triggerAction.action(), delta);
         }
-        for (Key key : toggled) {
+        for (KeyEvent key : toggled) {
             TriggerAction triggerAction = bindings.get(key);
             if (triggerAction != null && triggerAction.trigger() == TOGGLED)
                 handleAction(triggerAction.action(), delta);
@@ -100,15 +100,15 @@ public class KeyInputManager implements KeyInputHandler {
     }
 
     @Override
-    public boolean invoke(Key.Type type, int key, int action, int modifiers) {
+    public boolean invoke(KeyEvent.Type type, int key, int action, int modifiers) {
         if (action == GLFW_REPEAT) return false; //omitted for simplicity - for now
 
         //TODO introduce a mixed polling system for continuous binds and callbacks for triggers
-        Key keyInput = new Key(type, key, modifiers);
+        KeyEvent keyInput = new KeyEvent(type, key, modifiers);
         TriggerAction triggerAction = bindings.get(keyInput); //try lookup with exact modifiers
         if (triggerAction == null) {
-            triggerAction = bindings.get(new Key(type, key, 0)); //try lookup again without modifiers
-            keyInput = new Key(type, key, 0);
+            triggerAction = bindings.get(new KeyEvent(type, key, 0)); //try lookup again without modifiers
+            keyInput = new KeyEvent(type, key, 0);
         }
         boolean handled = false;
 
@@ -160,7 +160,7 @@ public class KeyInputManager implements KeyInputHandler {
         return handled;
     }
 
-    private void handleOverrule(OverruleGroup group, Key key) {
+    private void handleOverrule(OverruleGroup group, KeyEvent key) {
         switch (group.getMode()) {
             case YOUNGEST -> {
                 pressed.removeAll(group.getGroup());
@@ -178,15 +178,15 @@ public class KeyInputManager implements KeyInputHandler {
         }
     }
 
-    public boolean isPressed(Key input) {
+    public boolean isPressed(KeyEvent input) {
         return pressed.contains(input);
     }
 
-    public boolean isPressed(Keys input) {
+    public boolean isPressed(Key input) {
         return isPressed(input.getInput());
     }
 
-    public boolean isToggled(Key input) {
+    public boolean isToggled(KeyEvent input) {
         return toggled.contains(input);
     }
 

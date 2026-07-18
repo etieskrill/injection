@@ -4,10 +4,8 @@ import org.etieskrill.engine.common.Disposable
 import org.etieskrill.engine.graphics.GraphicsContext
 import org.etieskrill.engine.graphics.GraphicsContextBound
 import org.etieskrill.engine.graphics.gl.GLUtils
-import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment
-import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachmentType
-import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachmentType.COLOUR0
-import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachmentType.DEPTH_STENCIL
+import org.etieskrill.engine.graphics.framebuffer.FrameBufferAttachmentType.COLOUR0
+import org.etieskrill.engine.graphics.framebuffer.FrameBufferAttachmentType.DEPTH_STENCIL
 import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferCreationException
 import org.etieskrill.engine.graphics.gl.framebuffer.RenderBuffer
 import org.joml.Vector2ic
@@ -72,7 +70,7 @@ actual open class FrameBuffer internal constructor(
                 }) does not match framebuffer size ($size)"
             }
 
-            attachment.attach(type)
+            attachment.attach(this, type)
 
             //FIXME this could be anything from improperly sized attachments to any other attribute not matching
             // exactly, so either exercise VERY strict validation before/during/after attaching, or find a way to
@@ -126,12 +124,11 @@ actual open class FrameBuffer internal constructor(
         }
         this@FrameBuffer.glBufferClearMask = glBufferClearMask
 
-        glColourDrawBuffers = attachments.keys.map { it.glAttachmentType }
-            .filter { it in COLOUR0.glAttachmentType..FrameBufferAttachmentType.COLOUR31.glAttachmentType }
+        glColourDrawBuffers = attachments.keys.map { it.gl }
+            .filter { it in COLOUR0.gl..FrameBufferAttachmentType.COLOUR31.gl }
             .sorted()
             .toIntArray()
     }
-
 
     enum class Binding { READ, WRITE, BOTH }
 
@@ -152,11 +149,9 @@ actual open class FrameBuffer internal constructor(
     //of a potential command buffer. most apis apart from opengl already require a command buffer to be configured
     //beforehand anyway, and this would sort of streamline this process.
 
-    open fun bind() {
-        bind(Binding.BOTH)
-    }
+    open fun bind() = bind(Binding.BOTH)
 
-    fun bind(binding: Binding) {
+    fun bind(binding: Binding) = context.withContext {
         //TODO maybe move context check here?
         GL30C.glBindFramebuffer(
             when (binding) {
@@ -176,16 +171,15 @@ actual open class FrameBuffer internal constructor(
      */
     fun unbind() = context.screenBuffer.bind()
 
-    actual fun clear() {
+    actual fun clear() = context.withContext {
         bind()
         GL11C.glClearColor(clearColour.x, clearColour.y, clearColour.z, clearColour.w)
         if ((glBufferClearMask and GL11C.GL_DEPTH_BUFFER_BIT) != 0) GL11C.glDepthMask(true)
         if ((glBufferClearMask and GL11C.GL_STENCIL_BUFFER_BIT) != 0) GL11C.glStencilMask(0xFF) //TODO can stencil buffer be anything other than one byte in size?
         GL11C.glClear(glBufferClearMask)
-        unbind()
     }
 
-    override fun dispose() {
+    override fun dispose() = context.withContext {
         GL30C.glDeleteFramebuffers(id)
         attachments.values.forEach(Disposable::dispose)
     }

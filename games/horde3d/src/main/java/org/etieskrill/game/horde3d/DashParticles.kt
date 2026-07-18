@@ -4,7 +4,7 @@ import org.etieskrill.engine.common.Interpolator
 import org.etieskrill.engine.entity.component.Transform
 import org.etieskrill.engine.graphics.particle.ParticleEmitter
 import org.etieskrill.engine.graphics.particle.ParticleNode
-import org.etieskrill.engine.graphics.texture.AbstractTexture
+import org.etieskrill.engine.graphics.texture.Texture
 import org.etieskrill.engine.graphics.texture.Texture2D
 import org.joml.Vector3f
 import org.joml.Vector4f
@@ -18,7 +18,7 @@ class DashParticles {
         val riftSmokeEmitter = ParticleEmitter(
             lifetime = 1.seconds,
             sprite = Texture2D.FileBuilder("textures/particles/smoke_05.png")
-                .setWrapping(AbstractTexture.Wrapping.CLAMP_TO_BORDER).build(),
+                .setWrapping(Texture.Wrapping.CLAMP_TO_BORDER).build(),
             particlesPerSecond = 500f,
             randomVelocity = 2f,
             baseColour = Vector4f(0.005f, 0f, 0.043f, 1f),
@@ -29,7 +29,7 @@ class DashParticles {
         val riftSparkEmitter = ParticleEmitter(
             lifetime = 0.5.seconds,
             sprite = Texture2D.FileBuilder("textures/particles/spark_04.png")
-                .setWrapping(AbstractTexture.Wrapping.CLAMP_TO_BORDER).build(),
+                .setWrapping(Texture.Wrapping.CLAMP_TO_BORDER).build(),
             particlesPerSecond = 20f,
             particleSpawnDelaySpread = 0.25.seconds,
             baseColour = Vector4f(8f, 5f, 8f, 1f),
@@ -51,7 +51,7 @@ class DashParticles {
             lifetime = 1.seconds,
             numParticles = 1,
             sprite = Texture2D.FileBuilder("textures/particles/star_01.png")
-                .setWrapping(AbstractTexture.Wrapping.CLAMP_TO_BORDER).build(),
+                .setWrapping(Texture.Wrapping.CLAMP_TO_BORDER).build(),
             particlesMoveWithEmitter = true,
             baseColour = Vector4f(1f, 0.75f, 1f, 1f),
             colourUpdate = { lifetime, outColour ->

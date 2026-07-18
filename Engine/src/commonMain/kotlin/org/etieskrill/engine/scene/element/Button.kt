@@ -1,0 +1,46 @@
+package org.etieskrill.engine.scene.element
+
+import org.etieskrill.engine.input.KeyEvent
+import org.etieskrill.engine.input.Key
+import org.etieskrill.engine.input.KeyEventAction
+import org.etieskrill.engine.scene.Node
+import org.etieskrill.engine.scene.container.Container
+import org.joml.timesAssign
+
+typealias SimpleAction = suspend () -> Unit
+
+/**
+ * A node with a single child, which runs an action when hit.
+ * <p>
+ * This intercepts the event, i.e. the hit is not propagated to the child.
+ */
+class Button(
+    child: Node<*> = Label("<no content>"),
+    private var enabled: Boolean = true,
+    var action: SimpleAction = {}
+) : Container(child) {
+
+    override fun handleHit(event: KeyEvent, posX: Double, posY: Double): Boolean {
+        if (!enabled || !doesHit(posX, posY)) return false
+        if (event.action == KeyEventAction.RELEASE
+            && event.key == Key.LEFT_MOUSE
+        ) {
+            ui { action() }
+            return true
+        }
+        return false
+    }
+
+    fun enable() {
+        enabled = true
+        renderedColour.set(colour)
+        child?.let { renderedColour.set(colour) }
+    }
+
+    fun disable() {
+        enabled = false
+        renderedColour.set(colour) *= 0.75f //thats... pretty cursed
+        child?.let { renderedColour.set(colour) *= 0.75f }
+    }
+
+}

@@ -5,7 +5,7 @@ import org.etieskrill.engine.config.TEXTURE_PATH
 import org.etieskrill.engine.graphics.model.Material
 import org.etieskrill.engine.graphics.model.PBRMaterial
 import org.etieskrill.engine.graphics.model.PhongMaterial
-import org.etieskrill.engine.graphics.texture.AbstractTexture
+import org.etieskrill.engine.graphics.texture.Texture
 import org.etieskrill.engine.graphics.texture.Texture2D
 import org.etieskrill.engine.graphics.texture.Textures
 import org.etieskrill.engine.time.StepTimer
@@ -50,7 +50,7 @@ internal fun loadEmbeddedTextures(scene: AIScene): Map<String, Texture2D> {
 
         val filePath = texture.mFilename().dataString()
         val tex = Texture2D.BufferBuilder(
-            imageData, Vector2i(width[0], height[0]), AbstractTexture.Format.fromChannels(channels[0])
+            imageData, Vector2i(width[0], height[0]), Texture.Format.fromChannels(channels[0])
         ).setType(determineType(filePath)).build()
 
         embeddedTextures["*$i"] = tex
@@ -63,12 +63,12 @@ internal fun loadEmbeddedTextures(scene: AIScene): Map<String, Texture2D> {
     return embeddedTextures
 }
 
-private fun determineType(filePath: String): AbstractTexture.Type = when {
-    "diffuse" in filePath.name -> AbstractTexture.Type.DIFFUSE
-    "specular" in filePath.name -> AbstractTexture.Type.SPECULAR
-    "normal" in filePath.name -> AbstractTexture.Type.NORMAL
-    "emissive" in filePath.name -> AbstractTexture.Type.EMISSIVE
-    else -> AbstractTexture.Type.UNKNOWN
+private fun determineType(filePath: String): Texture.Type = when {
+    "diffuse" in filePath.name -> Texture.Type.DIFFUSE
+    "specular" in filePath.name -> Texture.Type.SPECULAR
+    "normal" in filePath.name -> Texture.Type.NORMAL
+    "emissive" in filePath.name -> Texture.Type.EMISSIVE
+    else -> Texture.Type.UNKNOWN
 }
 
 internal fun loadMaterials(
@@ -123,13 +123,13 @@ private fun processPhongMaterial(
     emissiveColour = aiMaterial.getColourProperty(AI_MATKEY_COLOR_EMISSIVE) ?: Vector4f(0f),
     emissiveStrength = aiMaterial.getFloatProperty(AI_MATKEY_EMISSIVE_INTENSITY) ?: 0f,
 
-    diffuseTexture = aiMaterial.getTexture(AbstractTexture.Type.DIFFUSE, materialIndex, modelName, embeddedTextures),
-    specularTexture = aiMaterial.getTexture(AbstractTexture.Type.SPECULAR, materialIndex, modelName, embeddedTextures),
-    normalTexture = aiMaterial.getTexture(AbstractTexture.Type.NORMAL, materialIndex, modelName, embeddedTextures),
-    heightTexture = aiMaterial.getTexture(AbstractTexture.Type.HEIGHT, materialIndex, modelName, embeddedTextures),
-    emissiveTexture = aiMaterial.getTexture(AbstractTexture.Type.EMISSIVE, materialIndex, modelName, embeddedTextures),
+    diffuseTexture = aiMaterial.getTexture(Texture.Type.DIFFUSE, materialIndex, modelName, embeddedTextures),
+    specularTexture = aiMaterial.getTexture(Texture.Type.SPECULAR, materialIndex, modelName, embeddedTextures),
+    normalTexture = aiMaterial.getTexture(Texture.Type.NORMAL, materialIndex, modelName, embeddedTextures),
+    heightTexture = aiMaterial.getTexture(Texture.Type.HEIGHT, materialIndex, modelName, embeddedTextures),
+    emissiveTexture = aiMaterial.getTexture(Texture.Type.EMISSIVE, materialIndex, modelName, embeddedTextures),
     ambientOcclusionTexture = aiMaterial.getTexture(
-        AbstractTexture.Type.AMBIENT_OCCLUSION,
+        Texture.Type.AMBIENT_OCCLUSION,
         materialIndex,
         modelName,
         embeddedTextures
@@ -150,23 +150,23 @@ private fun processPBRMaterial(
     emissiveColour = aiMaterial.getColourProperty(AI_MATKEY_COLOR_EMISSIVE),
     emissiveStrength = aiMaterial.getFloatProperty(AI_MATKEY_EMISSIVE_INTENSITY),
 
-    diffuseTexture = aiMaterial.getTexture(AbstractTexture.Type.DIFFUSE, materialIndex, modelName, embeddedTextures),
-    metallicTexture = aiMaterial.getTexture(AbstractTexture.Type.METALNESS, materialIndex, modelName, embeddedTextures),
+    diffuseTexture = aiMaterial.getTexture(Texture.Type.DIFFUSE, materialIndex, modelName, embeddedTextures),
+    metallicTexture = aiMaterial.getTexture(Texture.Type.METALNESS, materialIndex, modelName, embeddedTextures),
     roughnessTexture = aiMaterial.getTexture(
-        AbstractTexture.Type.ROUGHNESS,
+        Texture.Type.ROUGHNESS,
         materialIndex,
         modelName,
         embeddedTextures
     ),
     ambientOcclusionTexture = aiMaterial.getTexture(
-        AbstractTexture.Type.AMBIENT_OCCLUSION,
+        Texture.Type.AMBIENT_OCCLUSION,
         materialIndex,
         modelName,
         embeddedTextures
     ),
-    normalTexture = aiMaterial.getTexture(AbstractTexture.Type.NORMAL, materialIndex, modelName, embeddedTextures),
-    heightTexture = aiMaterial.getTexture(AbstractTexture.Type.HEIGHT, materialIndex, modelName, embeddedTextures),
-    emissiveTexture = aiMaterial.getTexture(AbstractTexture.Type.EMISSIVE, materialIndex, modelName, embeddedTextures)
+    normalTexture = aiMaterial.getTexture(Texture.Type.NORMAL, materialIndex, modelName, embeddedTextures),
+    heightTexture = aiMaterial.getTexture(Texture.Type.HEIGHT, materialIndex, modelName, embeddedTextures),
+    emissiveTexture = aiMaterial.getTexture(Texture.Type.EMISSIVE, materialIndex, modelName, embeddedTextures)
 )
 
 private fun AIMaterial.getBooleanProperty(property: String): Boolean? =
@@ -210,7 +210,7 @@ private fun AIMaterial.getProperty(property: String, type: Int, length: Int? = n
 }
 
 private fun AIMaterial.getTexture(
-    type: AbstractTexture.Type,
+    type: Texture.Type,
     materialIndex: Int,
     modelName: String,
     embeddedTextures: Map<String, Texture2D>

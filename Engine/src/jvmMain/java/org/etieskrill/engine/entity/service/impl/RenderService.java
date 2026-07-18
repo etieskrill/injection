@@ -9,15 +9,15 @@ import org.etieskrill.engine.graphics.GraphicsContext;
 import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.data.PointLight;
 import org.etieskrill.engine.graphics.framebuffer.FrameBuffer;
-import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachmentType;
+import org.etieskrill.engine.graphics.framebuffer.FrameBufferAttachmentType;
 import org.etieskrill.engine.graphics.gl.framebuffer.RenderBuffer;
 import org.etieskrill.engine.graphics.gl.renderer.GLParticleRenderer;
-import org.etieskrill.engine.graphics.gl.renderer.GLRenderer;
-import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
+import org.etieskrill.engine.graphics.renderer.GLRenderer;
+import org.etieskrill.engine.graphics.shader.Shader;
 import org.etieskrill.engine.graphics.gl.shader.impl.*;
 import org.etieskrill.engine.graphics.model.CubeMapModel;
 import org.etieskrill.engine.graphics.pipeline.PostPassPipeline;
-import org.etieskrill.engine.graphics.texture.AbstractTexture;
+import org.etieskrill.engine.graphics.texture.Texture;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.texture.Textures;
 import org.jetbrains.annotations.NotNull;
@@ -30,10 +30,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.lang.Math.abs;
 import static java.lang.Math.max;
-import static org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachmentType.COLOUR0;
-import static org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachmentType.COLOUR1;
+import static org.etieskrill.engine.graphics.framebuffer.FrameBufferAttachmentType.COLOUR0;
+import static org.etieskrill.engine.graphics.framebuffer.FrameBufferAttachmentType.COLOUR1;
 import static org.etieskrill.engine.graphics.gl.framebuffer.RenderBuffer.Type.DEPTH_STENCIL;
-import static org.etieskrill.engine.graphics.texture.AbstractTexture.Format.RGBA_F16;
+import static org.etieskrill.engine.graphics.texture.Texture.Format.RGBA_F16;
 import static org.lwjgl.opengl.GL11C.*;
 import static org.lwjgl.opengl.GL30C.*;
 import static org.lwjgl.opengl.GL30C.GL_CULL_FACE;
@@ -51,7 +51,7 @@ public class RenderService implements Service, Disposable {
 
     protected final GLRenderer renderer;
     private final GaussBlurPostBuffers gaussBlurPostBuffers;
-    protected final FrameBuffer frameBuffer;
+    protected final FrameBuffer postEffectsFrameBuffer;
     private final FrameBuffer screenBuffer;
     protected final Camera camera;
     private Camera cullingCamera;
@@ -84,7 +84,7 @@ public class RenderService implements Service, Disposable {
     public RenderService(FrameBuffer screenBuffer, GLRenderer renderer, Camera camera, Vector2ic windowSize) {
         this.renderer = renderer;
         this.gaussBlurPostBuffers = new GaussBlurPostBuffers(renderer.getContext(), windowSize);
-        this.frameBuffer = gaussBlurPostBuffers.getFrameBuffer();
+        this.postEffectsFrameBuffer = gaussBlurPostBuffers.getFrameBuffer();
         this.screenBuffer = screenBuffer;
         this.camera = camera;
         this.cullingCamera = camera;
@@ -100,11 +100,11 @@ public class RenderService implements Service, Disposable {
         this.skyboxShader = new SkyboxShader();
 
         this.outlineTexture = new Texture2D.BlankBuilder(windowSize)
-                .setFormat(AbstractTexture.Format.SRGBA)
-                .setWrapping(AbstractTexture.Wrapping.CLAMP_TO_BORDER)
+                .setFormat(Texture.Format.SRGBA)
+                .setWrapping(Texture.Wrapping.CLAMP_TO_BORDER)
                 .build();
         this.outlineStencilTexture = new Texture2D.BlankBuilder(windowSize)
-                .setFormat(AbstractTexture.Format.DEPTH_STENCIL)
+                .setFormat(Texture.Format.DEPTH_STENCIL)
                 .build();
         this.outlineFrameBuffer = new FrameBuffer(renderer.getContext(), windowSize, Map.of(
                 COLOUR0, outlineTexture,
@@ -113,14 +113,14 @@ public class RenderService implements Service, Disposable {
         );
 
         this.fullScreenPipeline = new PostPassPipeline<>(new FullScreenColourShader(), outlineFrameBuffer, false, false);
-        this.outlinePipeline = new PostPassPipeline<>(new DilationOutlineShader(), frameBuffer, false, false);
+        this.outlinePipeline = new PostPassPipeline<>(new DilationOutlineShader(), postEffectsFrameBuffer, false, false);
     }
 
     private record ShaderParams(
             Map<String, Object> uniformBindings,
             Map<String, Object[]> uniformArrayBindings,
-            Map<String, AbstractTexture> textureBindings,
-            Set<ShaderProgram> configuredShaders
+            Map<String, Texture> textureBindings,
+            Set<Shader> configuredShaders
     ) {
         void clear() {
             uniformBindings.clear();
@@ -137,11 +137,11 @@ public class RenderService implements Service, Disposable {
             uniformArrayBindings.put(name, values);
         }
 
-        void addTexture(String name, AbstractTexture texture) {
+        void addTexture(String name, Texture texture) {
             textureBindings.put(name, texture);
         }
 
-        boolean isConfigured(ShaderProgram shader) {
+        boolean isConfigured(Shader shader) {
             return !configuredShaders.add(shader);
         }
     }
@@ -157,14 +157,14 @@ public class RenderService implements Service, Disposable {
 
         //TODO either revert to previously bound framebuffer, or use dsa
 
-        frameBuffer.clear();
-        frameBuffer.bind();
-        renderer.prepare();
+        postEffectsFrameBuffer.clear();
+        postEffectsFrameBuffer.bind();
+        renderer.nextFrame();
 
         shaderParams.clear();
 
         if (skybox != null) {
-            renderer.render(skybox, (ShaderProgram) skyboxShader.getShader(), camera.getCombined());
+            renderer.render(skybox, (Shader) skyboxShader.getShader(), camera.getCombined());
         }
 
         for (Entity entity : entities) {
@@ -241,7 +241,7 @@ public class RenderService implements Service, Disposable {
             glStencilMask(0x00);
         }
 
-        ShaderProgram shader = getConfiguredShader(targetEntity, drawable);
+        Shader shader = getConfiguredShader(targetEntity, drawable);
         if (!drawable.isWireframeEnabled()) {
             renderer.render(transform, drawable.getModel(), shader, camera);
         } else {
@@ -251,7 +251,7 @@ public class RenderService implements Service, Disposable {
         lastDelta = delta;
     }
 
-    protected ShaderProgram getConfiguredShader(Entity entity, Drawable drawable) {
+    protected Shader getConfiguredShader(Entity entity, Drawable drawable) {
         if (drawable.getShader() != null) {
             configureShader(drawable.getShader(), shaderParams);
             return drawable.getShader();
@@ -274,12 +274,12 @@ public class RenderService implements Service, Disposable {
         }
     }
 
-    private void configureShader(ShaderProgram shader, ShaderParams params) {
+    private void configureShader(Shader shader, ShaderParams params) {
         if (params.isConfigured(shader)) return;
 
         params.uniformBindings.forEach(shader::setUniformNonStrict);
         params.uniformArrayBindings.forEach(shader::setUniformArrayNonStrict);
-        params.textureBindings.forEach((name, texture) -> renderer.bindNextFreeTexture(shader, name, texture));
+        params.textureBindings.forEach(shader::setTexture);
     }
 
     public HDRShader getHdrShader() {
@@ -351,8 +351,8 @@ public class RenderService implements Service, Disposable {
         lightSourceShader.dispose();
     }
 
-    public FrameBuffer getFrameBuffer() {
-        return frameBuffer;
+    public FrameBuffer getPostEffectsFrameBuffer() {
+        return postEffectsFrameBuffer;
     }
 
     public Camera getCullingCamera() {
@@ -499,11 +499,11 @@ class GaussBlurPostBuffers implements Disposable {
 //was only for debugging purposes, can maybe be reused for some visualisation
 class BoundingSphereRenderer implements Disposable {
 
-    private final ShaderProgram boundingSphereShader;
+    private final Shader boundingSphereShader;
     private final int dummyVao;
 
-    BoundingSphereRenderer(ShaderProgram boundingSphereShader) {
-        this.boundingSphereShader = new ShaderProgram(List.of("BoundingSphere.glsl"), false) {
+    BoundingSphereRenderer(Shader boundingSphereShader) {
+        this.boundingSphereShader = new Shader(List.of("BoundingSphere.glsl"), false) {
         };
 
         this.dummyVao = glGenVertexArrays();

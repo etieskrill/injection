@@ -9,14 +9,13 @@ import io.github.etieskrill.injection.extension.shader.float
 import io.github.etieskrill.injection.extension.shader.vec2
 import io.github.etieskrill.injection.extension.shader.vec4
 import org.etieskrill.engine.entity.Entity
-import org.etieskrill.engine.entity.getComponent
 import org.etieskrill.engine.entity.service.Service
-import org.etieskrill.engine.graphics.Batch
-import org.etieskrill.engine.graphics.Renderer
+import org.etieskrill.engine.scene.Batch
+import org.etieskrill.engine.graphics.renderer.Renderer
 import org.etieskrill.engine.graphics.TextRenderer
 import org.etieskrill.engine.graphics.camera.Camera
 import org.etieskrill.engine.graphics.camera.OrthographicCamera
-import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
+import org.etieskrill.engine.graphics.shader.Shader
 import org.etieskrill.engine.graphics.gl.shader.impl.LineShader
 import org.etieskrill.engine.graphics.gl.shader.impl.ScreenSpacePointShader
 import org.etieskrill.engine.graphics.pipeline.Pipeline
@@ -187,7 +186,7 @@ operator fun Vector2fc.minus(other: Vector2ic) = Vector2f(x() - other.x(), y() -
 operator fun Vector2fc.div(other: Vector2ic) = Vector2f(x() / other.x(), y() / other.y())
 
 class HardpointShader : PureShaderBuilder<VertexData, ColourRenderTarget>( //TODO object for transpiler
-    object : ShaderProgram(listOf("Hardpoint.glsl")) {}
+    object : Shader(listOf("Hardpoint.glsl")) {}
 ) {
     val vertices by const(arrayOf(vec2(-1, -1), vec2(1, -1), vec2(-1, 1), vec2(1, 1)))
 

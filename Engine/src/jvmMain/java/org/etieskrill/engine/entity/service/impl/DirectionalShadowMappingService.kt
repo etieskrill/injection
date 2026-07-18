@@ -5,19 +5,20 @@ import org.etieskrill.engine.entity.component.DirectionalLightComponent
 import org.etieskrill.engine.entity.component.Drawable
 import org.etieskrill.engine.entity.component.Transform
 import org.etieskrill.engine.entity.service.Service
-import org.etieskrill.engine.graphics.Renderer
+import org.etieskrill.engine.graphics.renderer.Renderer
 import org.etieskrill.engine.graphics.animation.Animator
-import org.etieskrill.engine.graphics.gl.shader.Shaders
-import org.etieskrill.engine.graphics.gl.shader.impl.DepthAnimatedShader
-import org.etieskrill.engine.graphics.gl.shader.impl.boneMatrices
+import org.etieskrill.engine.graphics.pipeline.Pipeline
+import org.etieskrill.engine.graphics.pipeline.PipelineConfig
+import org.etieskrill.engine.graphics.shader.impl.DepthAnimatedShader
+import org.etieskrill.engine.graphics.shader.impl.DepthShader
 
 const val DEFAULT_UPDATE_FREQUENCY = 2
 //const val DEFAULT_ENTITY_UPDATE_FREQUENCY = 4
 
 class DirectionalShadowMappingService(
     val renderer: Renderer,
-    val depthShader: Shaders.DepthShader = Shaders.DepthShader(),
-    val animatedDepthShader: DepthAnimatedShader = DepthAnimatedShader()
+    val depthShader: DepthShader = DepthShader(renderer.context),
+    val animatedDepthShader: DepthAnimatedShader = DepthAnimatedShader(renderer.context)
 ) : Service {
 
     //TODO make superclass for sparsely executed services and entity round robin services
@@ -28,6 +29,9 @@ class DirectionalShadowMappingService(
 //    private final Map<Entity, Map<Entity, Integer>> updateCycleMaps = new HashMap<>();
 //    private int newEntitySpread = 0;
 //    private int entityCycle = 0;
+
+    private val depthPipeline = Pipeline(null, PipelineConfig(), depthShader, shadowMap)
+    private val depthAnimatedPipeline = Pipeline(null, PipelineConfig(), animatedDepthShader, shadowMap)
 
     override fun canProcess(entity: Entity) = entity.hasComponents<DirectionalLightComponent>()
 
@@ -44,7 +48,6 @@ class DirectionalShadowMappingService(
 
         val shadowMap = shadowMapComponent.shadowMap ?: return
         shadowMap.clear()
-        shadowMap.bind()
 
 //        var updateCycles = updateCycleMaps.computeIfAbsent(targetEntity, entity -> new HashMap<>());
         for (entity in entities) {
@@ -55,18 +58,21 @@ class DirectionalShadowMappingService(
             if (entity.id == targetEntity.id) continue
             val transform = entity.getComponent<Transform>() ?: continue
             val drawable = entity.getComponent<Drawable>() ?: continue
+            TODO("use drawable / add to pipeline / dunno man")
 
-            val shader = when (val animator = entity.getComponent<Animator>()) {
-                null -> depthShader
-                else -> animatedDepthShader.apply { boneMatrices = animator.transformMatricesArray }
+            val pipeline = when (val animator = entity.getComponent<Animator>()) {
+                null -> (depthPipeline as Pipeline<DepthShader>).apply {
+                    shader.model = transform.matrix
+                    shader.combined = shadowMapComponent.camera!!.combined
+                }
+                else -> (depthAnimatedPipeline as Pipeline<DepthAnimatedShader>).apply {
+                    shader.model = transform.matrix
+                    shader.combined = shadowMapComponent.camera!!.combined
+                    shader.boneMatrices = animator.transformMatricesArray
+                }
             }
 
-            renderer.render(
-                transform,
-                drawable.model,
-                shader,
-                shadowMapComponent.camera
-            )
+            renderer.render(pipeline)
         }
 
         shadowMap.unbind()

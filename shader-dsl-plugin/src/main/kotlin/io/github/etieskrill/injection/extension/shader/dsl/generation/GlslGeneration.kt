@@ -16,12 +16,14 @@ import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.backend.js.utils.valueArguments
 import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin
+import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin.Companion.IR_TEMPORARY_VARIABLE
 import org.jetbrains.kotlin.ir.declarations.IrDeclarationParent
 import org.jetbrains.kotlin.ir.declarations.IrFile
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrVariable
 import org.jetbrains.kotlin.ir.expressions.IrBlock
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
+import org.jetbrains.kotlin.ir.expressions.IrBreak
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrConst
 import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
@@ -39,6 +41,10 @@ import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin.Companion.MINUSEQ
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin.Companion.MULTEQ
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin.Companion.PERCEQ
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin.Companion.PLUSEQ
+import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin.Companion.POSTFIX_DECR
+import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin.Companion.POSTFIX_INCR
+import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin.Companion.PREFIX_DECR
+import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin.Companion.PREFIX_INCR
 import org.jetbrains.kotlin.ir.expressions.IrTypeOperator
 import org.jetbrains.kotlin.ir.expressions.IrTypeOperatorCall
 import org.jetbrains.kotlin.ir.expressions.IrVararg
@@ -48,6 +54,7 @@ import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.isArray
 import org.jetbrains.kotlin.ir.util.dump
+import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 import org.jetbrains.kotlin.ir.util.getAllArgumentsWithIr
 import org.jetbrains.kotlin.ir.util.getArgumentsWithIr
 import org.jetbrains.kotlin.ir.util.render
@@ -381,6 +388,7 @@ private fun generateFunction(function: IrFunction, data: TranspilerData) = build
     append("}")
 }
 
+//TODO can format according to source using expression startOffset/endOffset and IrFileEntry for line/column
 private fun generateMain(body: IrBlockBody, data: TranspilerData) = buildIndentedString {
     appendLine("void main() {")
     indent {
@@ -409,7 +417,7 @@ private open class GlslTranspiler(
     val unwrapReturn: Boolean = false
 ) : IrVisitor<String, TranspilerData>() {
     override fun visitElement(element: IrElement, data: TranspilerData): String =
-        TODO("Element of type ${element::class.simpleName} cannot be processed yet:\n${element.dump()}")
+        TODO("Element of type ${element::class.simpleName} at ${element.getReadableFileLocation(data.file)} in source cannot be processed yet:\n${element.dump()}")
 
     override fun visitBlock(expression: IrBlock, data: TranspilerData): String = when (expression.origin) {
         IrStatementOrigin.FOR_LOOP -> expression.accept(GlslForLoopTranspiler(this), data)
@@ -426,6 +434,8 @@ private open class GlslTranspiler(
             .joinToString(";\n") { it.accept(this, data) }
 
     override fun visitVariable(declaration: IrVariable, data: TranspilerData): String {
+        if (declaration.origin == IR_TEMPORARY_VARIABLE) return ""
+
         if (declaration.type.glslType == null) data.messageCollector.compilerError(
             "Variable may not have an erased upper bound; change e.g. conditional branches with different return types",
             declaration, data.file
@@ -490,7 +500,10 @@ private open class GlslTranspiler(
                 val arguments = expression.getArgumentsWithIr().toMap().mapKeys { it.key.name.asString() }
 
                 val arrayName: String = arguments["<this>"]!!.accept(this, data)
-                val arrayIndex: String = arguments["index"]!!.accept(this, data)
+                val arrayIndex: String = (
+                        arguments["index"]
+                            ?: arguments["p0"] //FIXME temporary fix for joml, should be just the first argument, irrelevant of name if definitely operator fun?
+                        )!!.accept(this, data)
 
                 return "$arrayName[$arrayIndex]"
             }
@@ -605,27 +618,28 @@ private open class GlslTranspiler(
         else -> "return ${expression.value.accept(this, data)};"
     }
 
+    override fun visitBreak(jump: IrBreak, data: TranspilerData): String =
+        "break;"
+
     override fun visitConst(expression: IrConst, data: TranspilerData): String =
         expression.value.toString()
 
-    override fun visitGetValue(expression: IrGetValue, data: TranspilerData): String {
-        return expression.symbol.owner.name.asString()
-    }
+    override fun visitGetValue(expression: IrGetValue, data: TranspilerData): String =
+        if (expression.origin == null && expression.symbol.owner.name.isSpecial) ""
+        else expression.symbol.owner.name.asString()
 
     override fun visitSetValue(expression: IrSetValue, data: TranspilerData): String {
-        val leftSide: String
+        val leftSide: String = expression.symbol.owner.name.asString()
         val operator: String
         val rightSideExpression: IrExpression
 
         when (expression.origin) {
             EQ -> {
-                leftSide = expression.symbol.owner.name.asString()
                 operator = "="
                 rightSideExpression = expression.value
             }
 
             in assignmentOperators -> {
-                leftSide = expression.symbol.owner.name.asString()
                 operator = assignmentOperators[expression.origin]!!
                 val expressionValue: IrCall = when (val expressionValue = expression.value) {
                     is IrCall -> expressionValue //TODO wrapper funcs, especially for getting params //FIXME if assignment op is passed, this will be IrGetValue instead of IrCall
@@ -642,7 +656,12 @@ private open class GlslTranspiler(
                     .second
             }
 
-            else -> TODO()
+            PREFIX_INCR -> return "++$leftSide"
+            PREFIX_DECR -> return "--$leftSide"
+            POSTFIX_INCR -> return "$leftSide++"
+            POSTFIX_DECR -> return "$leftSide--"
+
+            else -> TODO("Setter of ${expression.origin} at ${expression.getReadableFileLocation(data.file)} is not implemented\n${expression.dump()}")
         }
 
         return "$leftSide $operator ${rightSideExpression.accept(this, data)}"
@@ -1000,3 +1019,15 @@ private fun TranspilerData.resolveGlslType(type: IrType): String = when {
 
 private val IrMemberAccessExpression<*>.receiver: IrExpression?
     get() = extensionReceiver ?: dispatchReceiver
+
+private fun IrElement.getReadableFileLocation(file: IrFile) = file.fileEntry.run {
+    buildString {
+        append(getLineNumber(startOffset) + 1)
+        append(":")
+        append(getColumnNumber(startOffset) + 1)
+        append("-")
+        append(getLineNumber(endOffset) + 1)
+        append(":")
+        append(getColumnNumber(endOffset) + 1)
+    }
+}

@@ -8,7 +8,7 @@ import org.etieskrill.engine.entity.component.Transform
 import org.etieskrill.engine.entity.service.impl.DirectionalShadowMappingService
 import org.etieskrill.engine.entity.service.impl.PointShadowMappingService
 import org.etieskrill.engine.entity.service.impl.RenderService
-import org.etieskrill.engine.graphics.Batch
+import org.etieskrill.engine.scene.Batch
 import org.etieskrill.engine.graphics.camera.Camera
 import org.etieskrill.engine.graphics.camera.OrthographicCamera
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera
@@ -30,14 +30,14 @@ import org.etieskrill.engine.graphics.pipeline.Pipeline
 import org.etieskrill.engine.graphics.pipeline.PipelineConfig
 import org.etieskrill.engine.graphics.pipeline.PostPassPipeline
 import org.etieskrill.engine.graphics.pipeline.PrimitiveType
-import org.etieskrill.engine.graphics.texture.AbstractTexture.MagFilter
-import org.etieskrill.engine.graphics.texture.AbstractTexture.MinFilter
+import org.etieskrill.engine.graphics.texture.Texture.MagFilter
+import org.etieskrill.engine.graphics.texture.Texture.MinFilter
 import org.etieskrill.engine.graphics.texture.Texture2D
 import org.etieskrill.engine.input.CursorInputAdapter
 import org.etieskrill.engine.input.Input
-import org.etieskrill.engine.input.Key
+import org.etieskrill.engine.input.KeyEvent
 import org.etieskrill.engine.input.KeyInputHandler
-import org.etieskrill.engine.input.Keys
+import org.etieskrill.engine.input.Key
 import org.etieskrill.engine.input.controller.CursorCameraController
 import org.etieskrill.engine.input.controller.KeyCameraController
 import org.etieskrill.engine.scene.Scene
@@ -203,18 +203,18 @@ class Leverage : App(
         window.cursorInputs += cursorCameraTranslationController
 
         window.cursorInputs += object : CursorInputAdapter {
-            override fun invokeClick(button: Key, action: Keys.Action, posX: Double, posY: Double): Boolean {
-                if (button.value == Keys.MIDDLE_MOUSE.input.value) {
+            override fun invokeClick(button: KeyEvent, action: Key.Action, posX: Double, posY: Double): Boolean {
+                if (button.value == Key.MIDDLE_MOUSE.input.value) {
                     when (action) {
-                        Keys.Action.PRESS -> cursorCameraController.enable()
-                        Keys.Action.RELEASE -> cursorCameraController.disable()
-                        Keys.Action.REPEAT -> {}
+                        Key.Action.PRESS -> cursorCameraController.enable()
+                        Key.Action.RELEASE -> cursorCameraController.disable()
+                        Key.Action.REPEAT -> {}
                     }
 
                     return true
                 }
 
-                if (button.value == Keys.LEFT_MOUSE.input.value && action!! == Keys.Action.RELEASE) {
+                if (button.value == Key.LEFT_MOUSE.input.value && action!! == Key.Action.RELEASE) {
                     lastRay = camera.castViewportRay(posX.toInt(), posY.toInt())
 
                     entitySystem.entities.forEach {
@@ -241,15 +241,15 @@ class Leverage : App(
 
         window.keyInputs +=
             Input.of(
-                Input.bind(Keys.G).to { delta -> transform(TransformMode.TRANSLATE, translateController) },
-                Input.bind(Keys.R).to { delta -> transform(TransformMode.ROTATE, rotateController) },
-                Input.bind(Keys.F).to { delta ->
+                Input.bind(Key.G).to { delta -> transform(TransformMode.TRANSLATE, translateController) },
+                Input.bind(Key.R).to { delta -> transform(TransformMode.ROTATE, rotateController) },
+                Input.bind(Key.F).to { delta ->
                     transform(
                         TransformMode.SCALE,
                         scaleController
                     )
                 }, //FIXME not needed for simple animation
-                Input.bind(Keys.ESC).to { delta -> cancel() }
+                Input.bind(Key.ESC).to { delta -> cancel() }
             )
 
         window.cursorInputs += translateController
@@ -259,8 +259,8 @@ class Leverage : App(
         window.keyInputs += KeyInputHandler { type, key, action, modifiers ->
             if (transformMode != TransformMode.NONE) return@KeyInputHandler false
             when (key) {
-                Keys.CTRL.glfwKey -> {
-                    if (action != Keys.Action.RELEASE.glfwAction) {
+                Key.CTRL.glfwKey -> {
+                    if (action != Key.Action.RELEASE.glfwAction) {
                         //TODO cursor wrapping
                         cursorCameraController.enable()
                     } else {
@@ -268,8 +268,8 @@ class Leverage : App(
                     }
                 }
 
-                Keys.ALT.glfwKey -> {
-                    cursorCameraTranslationController.enabled = action != Keys.Action.RELEASE.glfwAction
+                Key.ALT.glfwKey -> {
+                    cursorCameraTranslationController.enabled = action != Key.Action.RELEASE.glfwAction
                 }
             }
 

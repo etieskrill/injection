@@ -1,19 +1,19 @@
 package org.etieskrill.game.shaderz;
 
 import org.etieskrill.engine.entity.component.Transform;
-import org.etieskrill.engine.graphics.Batch;
+import org.etieskrill.engine.scene.Batch;
 import org.etieskrill.engine.graphics.Renderer;
 import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.camera.OrthographicCamera;
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera;
 import org.etieskrill.engine.graphics.data.DirectionalLight;
-import org.etieskrill.engine.graphics.gl.renderer.GLRenderer;
-import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
+import org.etieskrill.engine.graphics.renderer.GLRenderer;
+import org.etieskrill.engine.graphics.shader.Shader;
 import org.etieskrill.engine.graphics.gl.shader.Shaders;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.texture.font.Fonts;
 import org.etieskrill.engine.input.Input;
-import org.etieskrill.engine.input.Keys;
+import org.etieskrill.engine.input.Key;
 import org.etieskrill.engine.input.controller.CursorCameraController;
 import org.etieskrill.engine.scene.Scene;
 import org.etieskrill.engine.scene.component.Label;
@@ -42,8 +42,8 @@ public class Game {
     private DirectionalLight sunLight;
 
     private Renderer renderer = new GLRenderer();
-    private final ShaderProgram shader = new HallwayShader();
-    private final ShaderProgram sunShader = Shaders.getLightSourceShader();
+    private final Shader shader = new HallwayShader();
+    private final Shader sunShader = Shaders.getLightSourceShader();
 
     private LoopPacer pacer = new LoopPacer(1 / 60f);
 
@@ -51,7 +51,7 @@ public class Game {
 
     public Game() {
         window.addKeyInputs(Input.of(
-                Input.bind(Keys.ESC.withMods(Keys.Mod.SHIFT)).to(() -> window.close())
+                Input.bind(Key.ESC.withMods(Key.Mod.SHIFT)).to(() -> window.close())
         ));
         window.getCursor().disable();
 

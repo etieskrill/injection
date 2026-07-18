@@ -14,14 +14,19 @@ import org.etieskrill.engine.entity.Entity
 import org.etieskrill.engine.entity.component.Drawable
 import org.etieskrill.engine.entity.component.Transform
 import org.etieskrill.engine.entity.service.Service
-import org.etieskrill.engine.graphics.Renderer
+import org.etieskrill.engine.graphics.GraphicsContext
+import org.etieskrill.engine.graphics.renderer.Renderer
 import org.etieskrill.engine.graphics.camera.Camera
 import org.etieskrill.engine.graphics.framebuffer.FrameBuffer
-import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachmentType
-import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
+import org.etieskrill.engine.graphics.framebuffer.FrameBufferAttachmentType
+import org.etieskrill.engine.graphics.shader.Shader
 import org.etieskrill.engine.graphics.pipeline.PostPassPipeline
-import org.etieskrill.engine.graphics.texture.AbstractTexture
+import org.etieskrill.engine.graphics.texture.Texture
 import org.etieskrill.engine.graphics.texture.Texture2D
+import org.etieskrill.engine.graphics.texture.TextureFormat
+import org.etieskrill.engine.graphics.texture.TextureMagFilter
+import org.etieskrill.engine.graphics.texture.TextureMinFilter
+import org.etieskrill.engine.graphics.texture.TextureType
 import org.joml.Vector2ic
 import org.lwjgl.opengl.GL11C.*
 import kotlin.math.PI
@@ -32,22 +37,22 @@ class DeferredRenderService(
     private val camera: Camera
 ) : Service {
 
-    private val gPosition = bufferTexture(screenBuffer.size) {
-        setFormat(AbstractTexture.Format.RGB)
-        setType(AbstractTexture.Type.G_POSITION)
-    }
-    private val gColour = bufferTexture(screenBuffer.size) {
-        setFormat(AbstractTexture.Format.RGB)
-        setType(AbstractTexture.Type.G_COLOUR)
-    }
-    private val gNormal = bufferTexture(screenBuffer.size) {
-        setFormat(AbstractTexture.Format.RGB)
-        setType(AbstractTexture.Type.G_NORMAL)
-    }
-    private val gDepth = bufferTexture(screenBuffer.size) {
-        setFormat(AbstractTexture.Format.DEPTH)
-        setType(AbstractTexture.Type.G_DEPTH)
-    }
+    private val gPosition = Texture2D(
+        renderer.context, screenBuffer.size, format = TextureFormat.RGB, type = TextureType.G_POSITION,
+        minFilter = TextureMinFilter.NEAREST, magFilter = TextureMagFilter.NEAREST
+    )
+    private val gColour = Texture2D(
+        renderer.context, screenBuffer.size, format = TextureFormat.RGB, type = TextureType.G_COLOUR,
+        minFilter = TextureMinFilter.NEAREST, magFilter = TextureMagFilter.NEAREST
+    )
+    private val gNormal = Texture2D(
+        renderer.context, screenBuffer.size, format = TextureFormat.RGB, type = TextureType.G_NORMAL,
+        minFilter = TextureMinFilter.NEAREST, magFilter = TextureMagFilter.NEAREST
+    )
+    private val gDepth = Texture2D(
+        renderer.context, screenBuffer.size, format = TextureFormat.DEPTH, type = TextureType.G_DEPTH,
+        minFilter = TextureMinFilter.NEAREST, magFilter = TextureMagFilter.NEAREST
+    )
 
     private val gBuffer = FrameBuffer(
         renderer.context, screenBuffer.size, mapOf(
@@ -58,8 +63,8 @@ class DeferredRenderService(
         )
     )
 
-    private val gBufferShader = GBufferShader()
-    private val deferredShader = DeferredShader()
+    private val gBufferShader = GBufferShader(renderer.context)
+    private val deferredShader = DeferredShader(renderer.context)
     private val deferredPipeline = PostPassPipeline(deferredShader, screenBuffer)
 
     override fun canProcess(entity: Entity) = entity.hasComponents<Transform, Drawable>()
@@ -91,7 +96,7 @@ class DeferredRenderService(
 
         glBlendFunc(GL_ONE, GL_ZERO)
 
-        renderer.render(transform, drawable.model, gBufferShader.shader as ShaderProgram, camera)
+        renderer.render(transform, drawable.model, gBufferShader.shader as Shader, camera)
     }
 
     override fun postProcess(entities: List<Entity>) {
@@ -107,9 +112,10 @@ class DeferredRenderService(
 
 }
 
-class GBufferShader : ShaderBuilder<GBufferShader.Vertex, GBufferShader.VertexData, GBufferShader.RenderTargets>(
-    object : ShaderProgram(listOf("GBuffer.glsl")) {}
-) {
+class GBufferShader(context: GraphicsContext) :
+    ShaderBuilder<GBufferShader.Vertex, GBufferShader.VertexData, GBufferShader.RenderTargets>(
+        object : Shader(context, listOf("GBuffer.glsl")) {}
+    ) {
     data class Vertex(val position: vec3, val normalVec: vec3)
     data class VertexData(override val position: vec4, val worldPosition: vec4, val normal: vec3) : ShaderVertexData
     data class RenderTargets(val gPosition: vec3, val gColour: vec3, val gNormal: vec3)
@@ -132,8 +138,8 @@ class GBufferShader : ShaderBuilder<GBufferShader.Vertex, GBufferShader.VertexDa
     }
 }
 
-class DeferredShader : PureShaderBuilder<VertexData, ColourRenderTarget>(
-    object : ShaderProgram(listOf("Deferred.glsl"), false) {}
+class DeferredShader(context: GraphicsContext) : PureShaderBuilder<VertexData, ColourRenderTarget>(
+    object : Shader(context, listOf("Deferred.glsl"), false) {}
 ) {
     private val vertices by const(arrayOf(vec2(-1, -1), vec2(1, -1), vec2(-1, 1), vec2(1, 1)))
 
@@ -173,9 +179,3 @@ class DeferredShader : PureShaderBuilder<VertexData, ColourRenderTarget>(
         }
     }
 }
-
-private fun bufferTexture(size: Vector2ic, block: Texture2D.BlankBuilder.() -> Unit) =
-    (Texture2D.BlankBuilder(size)
-        .setMipMapping(AbstractTexture.MinFilter.NEAREST, AbstractTexture.MagFilter.NEAREST) as Texture2D.BlankBuilder)
-        .apply(block)
-        .build()

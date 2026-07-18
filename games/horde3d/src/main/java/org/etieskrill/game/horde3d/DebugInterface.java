@@ -1,9 +1,9 @@
 package org.etieskrill.game.horde3d;
 
-import org.etieskrill.engine.graphics.Batch;
+import org.etieskrill.engine.scene.Batch;
 import org.etieskrill.engine.graphics.camera.OrthographicCamera;
 import org.etieskrill.engine.graphics.framebuffer.FrameBuffer;
-import org.etieskrill.engine.graphics.gl.renderer.GLRenderer;
+import org.etieskrill.engine.graphics.renderer.GLRenderer;
 import org.etieskrill.engine.graphics.text.Fonts;
 import org.etieskrill.engine.scene.Node;
 import org.etieskrill.engine.scene.Scene;

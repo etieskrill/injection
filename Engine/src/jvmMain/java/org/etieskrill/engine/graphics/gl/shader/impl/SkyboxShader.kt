@@ -7,11 +7,11 @@ import io.github.etieskrill.injection.extension.shader.mat4
 import io.github.etieskrill.injection.extension.shader.samplerCube
 import io.github.etieskrill.injection.extension.shader.vec3
 import io.github.etieskrill.injection.extension.shader.vec4
-import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
+import org.etieskrill.engine.graphics.shader.Shader
 import org.joml.div
 
 class SkyboxShader : PureShaderBuilder<SkyboxShader.Vertex, ColourRenderTarget>(
-    object : ShaderProgram(listOf("Skybox.glsl")) {}
+    object : Shader(listOf("Skybox.glsl")) {}
 ) {
     data class Vertex(override val position: vec4, val texCoord: vec3) : ShaderVertexData
 

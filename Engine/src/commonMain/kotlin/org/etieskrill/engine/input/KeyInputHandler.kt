@@ -5,7 +5,7 @@ package org.etieskrill.engine.input
  */
 interface KeyInputHandler {
 
-    fun invoke(type: Key.Type, key: Int, action: Int, modifiers: Int): Boolean
+    fun invoke(key: KeyEvent): Boolean
 
     fun invokeCharacter(character: Char): Boolean = false
 

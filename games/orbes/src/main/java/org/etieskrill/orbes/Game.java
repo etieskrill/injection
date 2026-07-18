@@ -4,7 +4,7 @@ import org.etieskrill.engine.application.GameApplication;
 import org.etieskrill.engine.entity.service.impl.BoundingBoxRenderService;
 import org.etieskrill.engine.entity.service.impl.BoundingBoxService;
 import org.etieskrill.engine.entity.service.impl.RenderService;
-import org.etieskrill.engine.graphics.Batch;
+import org.etieskrill.engine.scene.Batch;
 import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.camera.OrthographicCamera;
 import org.etieskrill.engine.graphics.gl.GLUtils;

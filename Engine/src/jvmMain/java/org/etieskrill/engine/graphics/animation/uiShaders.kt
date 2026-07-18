@@ -5,10 +5,10 @@ import io.github.etieskrill.injection.extension.shader.dsl.PureShaderBuilder
 import io.github.etieskrill.injection.extension.shader.dsl.VertexData
 import io.github.etieskrill.injection.extension.shader.vec2
 import io.github.etieskrill.injection.extension.shader.vec4
-import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
+import org.etieskrill.engine.graphics.shader.Shader
 
 class UiOutlineShader : PureShaderBuilder<VertexData, ColourRenderTarget>(
-    object : ShaderProgram(listOf("UiOutline.glsl"), false) {}
+    object : Shader(listOf("UiOutline.glsl"), false) {}
 ) {
     val vertices by const(arrayOf(vec2(-1, -1), vec2(1, -1), vec2(-1, 1), vec2(1, 1)))
 

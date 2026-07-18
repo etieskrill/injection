@@ -7,23 +7,23 @@ import org.etieskrill.engine.entity.component.Drawable;
 import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.entity.service.impl.ParticleRenderService;
 import org.etieskrill.engine.entity.service.impl.RenderService;
-import org.etieskrill.engine.graphics.Batch;
+import org.etieskrill.engine.scene.Batch;
 import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.camera.OrthographicCamera;
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera;
 import org.etieskrill.engine.graphics.gl.renderer.GLParticleRenderer;
-import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
+import org.etieskrill.engine.graphics.shader.Shader;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.particle.ParticleEmitter;
 import org.etieskrill.engine.graphics.particle.ParticleNode;
-import org.etieskrill.engine.graphics.texture.AbstractTexture.MagFilter;
-import org.etieskrill.engine.graphics.texture.AbstractTexture.MinFilter;
-import org.etieskrill.engine.graphics.texture.AbstractTexture.Type;
-import org.etieskrill.engine.graphics.texture.AbstractTexture.Wrapping;
+import org.etieskrill.engine.graphics.texture.Texture.MagFilter;
+import org.etieskrill.engine.graphics.texture.Texture.MinFilter;
+import org.etieskrill.engine.graphics.texture.Texture.Type;
+import org.etieskrill.engine.graphics.texture.Texture.Wrapping;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.texture.font.Fonts;
 import org.etieskrill.engine.input.Input;
-import org.etieskrill.engine.input.Keys;
+import org.etieskrill.engine.input.Key;
 import org.etieskrill.engine.input.controller.CursorCameraController;
 import org.etieskrill.engine.input.controller.KeyCameraController;
 import org.etieskrill.engine.scene.Scene;
@@ -73,7 +73,7 @@ public class Application extends GameApplication {
         window.getCursor().disable();
 
         window.addKeyInputs(Input.of(
-                Input.bind(Keys.C).to(() -> {
+                Input.bind(Key.C).to(() -> {
                     camera.setRotation(-25, 45, 0);
                     viewCenter.zero();
                 })
@@ -97,7 +97,7 @@ public class Application extends GameApplication {
                 .setCulling(false)
                 .build();
         Drawable gridDrawable = new Drawable(grid);
-        var gridShader = new ShaderProgram() {
+        var gridShader = new Shader() {
             @Override
             protected String[] getShaderFileNames() {
                 return new String[]{"Grid.glsl"};

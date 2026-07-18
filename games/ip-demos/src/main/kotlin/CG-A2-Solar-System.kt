@@ -12,10 +12,10 @@ import org.etieskrill.engine.entity.service.impl.RenderService
 import org.etieskrill.engine.graphics.camera.Camera
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera
 import org.etieskrill.engine.graphics.framebuffer.FrameBuffer
-import org.etieskrill.engine.graphics.gl.VertexArrayAccessor
-import org.etieskrill.engine.graphics.gl.VertexArrayObject
-import org.etieskrill.engine.graphics.gl.renderer.GLRenderer
-import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
+import org.etieskrill.engine.graphics.VertexArrayAccessor
+import org.etieskrill.engine.graphics.VertexArrayObject
+import org.etieskrill.engine.graphics.renderer.GLRenderer
+import org.etieskrill.engine.graphics.shader.Shader
 import org.etieskrill.engine.graphics.gl.shader.impl.SingleColourShader
 import org.etieskrill.engine.graphics.gl.shader.impl.colour
 import org.etieskrill.engine.graphics.model.CubeMapModel
@@ -183,7 +183,7 @@ open class PlanetService(screenBuffer: FrameBuffer, renderer: GLRenderer, camera
                     lineWidth = planet.size.let { x -> -2 / (x + 1) + 3 }
                 ),
                 trailShader,
-                frameBuffer
+                postEffectsFrameBuffer
             )
         }
 
@@ -192,7 +192,7 @@ open class PlanetService(screenBuffer: FrameBuffer, renderer: GLRenderer, camera
 
         renderer.render(planet.trailPipeline)
 
-        frameBuffer.bind()
+        postEffectsFrameBuffer.bind()
         val shader = getConfiguredShader(targetEntity, drawable)
         shader.setUniform("colour", planet.colour, false)
         glLineWidth(1f)
@@ -206,7 +206,7 @@ open class PlanetService(screenBuffer: FrameBuffer, renderer: GLRenderer, camera
 }
 
 class TrailShader : ShaderBuilder<TrailShader.VertexAttributes, TrailShader.Vertex, ColourRenderTarget>(
-    object : ShaderProgram(listOf("Trail.glsl")) {}
+    object : Shader(listOf("Trail.glsl")) {}
 ) {
     data class VertexAttributes(val position: vec3)
     data class Vertex(override val position: vec4) : ShaderVertexData

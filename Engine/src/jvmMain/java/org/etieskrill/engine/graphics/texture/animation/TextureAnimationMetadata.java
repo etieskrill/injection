@@ -1,6 +1,6 @@
 package org.etieskrill.engine.graphics.texture.animation;
 
-import org.etieskrill.engine.graphics.texture.AbstractTexture;
+import org.etieskrill.engine.graphics.texture.Texture;
 import org.joml.Vector2ic;
 
 import java.util.List;
@@ -10,11 +10,11 @@ public class TextureAnimationMetadata {
 
     private final String textureFile;
     private final Vector2ic frameSize;
-    private final AbstractTexture.Format format;
+    private final Texture.Format format;
     private final List<TextureAnimationFrame> frames;
     private final float duration;
 
-    public TextureAnimationMetadata(String textureFile, Vector2ic frameSize, AbstractTexture.Format format, List<TextureAnimationFrame> frames, float duration) {
+    public TextureAnimationMetadata(String textureFile, Vector2ic frameSize, Texture.Format format, List<TextureAnimationFrame> frames, float duration) {
         this.textureFile = textureFile;
         this.frameSize = frameSize;
         this.format = format;
@@ -30,7 +30,7 @@ public class TextureAnimationMetadata {
         return frameSize;
     }
 
-    public AbstractTexture.Format getFormat() {
+    public Texture.Format getFormat() {
         return format;
     }
 

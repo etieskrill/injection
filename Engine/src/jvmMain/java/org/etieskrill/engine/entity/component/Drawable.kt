@@ -1,14 +1,14 @@
 package org.etieskrill.engine.entity.component
 
 import org.etieskrill.engine.common.Disposable
-import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
+import org.etieskrill.engine.graphics.shader.Shader
 import org.etieskrill.engine.graphics.model.Model
 import org.joml.Vector2f
 import org.joml.Vector2fc
 
 class Drawable(
     val model: Model,
-    var shader: ShaderProgram? = null,
+    var shader: Shader? = null,
     var isVisible: Boolean = true,
     var isWireframeEnabled: Boolean = false,
     var isOutlineEnabled: Boolean = false,

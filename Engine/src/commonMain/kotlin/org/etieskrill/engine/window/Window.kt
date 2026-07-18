@@ -4,6 +4,9 @@ import kotlinx.coroutines.CoroutineScope
 import org.etieskrill.engine.common.Disposable
 import org.etieskrill.engine.graphics.GraphicsContext
 import org.etieskrill.engine.graphics.framebuffer.FrameBuffer
+import org.etieskrill.engine.input.CursorInputHandler
+import org.etieskrill.engine.input.KeyInputHandler
+import org.etieskrill.engine.scene.Scene
 import org.etieskrill.engine.window.WindowMode.WINDOWED
 import org.etieskrill.engine.window.WindowSize.DEFAULT
 import org.joml.Vector2i
@@ -51,7 +54,7 @@ expect class Window : Disposable {
 
     var uiScope: CoroutineScope
 
-    var scene: Scene
+    var scene: Scene?
 
     var graphicsContext: GraphicsContext
 

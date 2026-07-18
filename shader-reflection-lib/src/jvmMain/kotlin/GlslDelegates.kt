@@ -15,7 +15,7 @@ class UniformDelegate<T : Any> : ReadWriteProperty<AbstractShader, T> {
 
     override operator fun setValue(thisRef: AbstractShader, property: KProperty<*>, value: T) {
         if (!initialised) {
-            thisRef.addUniform(property.name, value::class.java)
+            thisRef.addUniform(property.name, value::class)
             initialised = true
         }
         when (value) {
@@ -35,7 +35,7 @@ class ArrayUniformDelegate<T : Any>(private val size: Int) : ReadWriteProperty<A
     override fun setValue(thisRef: AbstractShader, property: KProperty<*>, value: Array<T>) {
         require(size == value.size)
         if (!initialised) {
-            thisRef.addUniformArray(property.name, size, value::class.java)
+            thisRef.addUniformArray(property.name, size, value::class)
             initialised = true
         }
         thisRef.setUniformArray(

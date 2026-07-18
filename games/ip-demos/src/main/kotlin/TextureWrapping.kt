@@ -5,13 +5,13 @@ import io.github.etieskrill.injection.extension.shader.ivec2
 import io.github.etieskrill.injection.extension.shader.sampler2D
 import io.github.etieskrill.injection.extension.shader.vec2
 import io.github.etieskrill.injection.extension.shader.vec4
-import org.etieskrill.engine.graphics.Batch
+import org.etieskrill.engine.scene.Batch
 import org.etieskrill.engine.graphics.camera.OrthographicCamera
-import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
-import org.etieskrill.engine.graphics.texture.AbstractTexture.Wrapping
+import org.etieskrill.engine.graphics.shader.Shader
+import org.etieskrill.engine.graphics.texture.Texture.Wrapping
 import org.etieskrill.engine.graphics.texture.Texture2D
 import org.etieskrill.engine.input.KeyInputHandler
-import org.etieskrill.engine.input.Keys
+import org.etieskrill.engine.input.Key
 import org.etieskrill.engine.input.MouseGestureHandler
 import org.etieskrill.engine.scene.Node.Alignment
 import org.etieskrill.engine.scene.Scene
@@ -69,8 +69,8 @@ class App : org.etieskrill.engine.application.App(
         wrapping = TextureWrapping.NONE
 
         window.keyInputs += KeyInputHandler { type, key, action, modifiers ->
-            if (key == Keys.E.input.value && action == 1) nextMode()
-            else if (key == Keys.Q.input.value && action == 1) previousMode()
+            if (key == Key.E.input.value && action == 1) nextMode()
+            else if (key == Key.Q.input.value && action == 1) previousMode()
             else return@KeyInputHandler true
             false
         }
@@ -93,7 +93,7 @@ class App : org.etieskrill.engine.application.App(
             VBox(
                 fpsLabel,
                 modeLabel,
-                Label("Press '${Keys.Q}' and '${Keys.E}' to cycle modes\nMouse drag to move\nScroll to zoom"),
+                Label("Press '${Key.Q}' and '${Key.E}' to cycle modes\nMouse drag to move\nScroll to zoom"),
                 Button(Label("Previous mode").apply { alignment = Alignment.CENTER }
                 ) { previousMode() }.apply {
                     alignment = Alignment.BOTTOM_LEFT
@@ -148,7 +148,7 @@ class App : org.etieskrill.engine.application.App(
 enum class TextureWrapping { NONE, CLAMP_TO_EDGE, REPEAT, MIRROR } //none is CLAMP_TO_BORDER - so long as border is black
 
 class TextureWrappingShader : PureShaderBuilder<TextureWrappingShader.Vertex, ColourRenderTarget>(
-    object : ShaderProgram(listOf("TextureWrapping.glsl")) {}
+    object : Shader(listOf("TextureWrapping.glsl")) {}
 ) {
     data class Vertex(override val position: vec4, val texCoords: vec2) : ShaderVertexData
 

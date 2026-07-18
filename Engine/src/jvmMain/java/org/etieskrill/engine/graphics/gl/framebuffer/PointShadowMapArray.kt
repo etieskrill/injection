@@ -3,7 +3,7 @@ package org.etieskrill.engine.graphics.gl.framebuffer
 import io.github.etieskrill.injection.extension.shader.Texture2DArrayShadow
 import org.etieskrill.engine.graphics.GraphicsContext
 import org.etieskrill.engine.graphics.data.PointLight
-import org.etieskrill.engine.graphics.texture.AbstractTexture
+import org.etieskrill.engine.graphics.texture.Texture
 import org.etieskrill.engine.graphics.texture.CubeMapArrayTexture
 import org.joml.Matrix4f
 import org.joml.Matrix4fc
@@ -18,10 +18,10 @@ class PointShadowMapArray(
     context,
     size,
     CubeMapArrayTexture.BlankBuilder(size, length)
-        .setFormat(AbstractTexture.Format.DEPTH)
-        .setType(AbstractTexture.Type.SHADOW)
-        .setMipMapping(AbstractTexture.MinFilter.LINEAR, AbstractTexture.MagFilter.LINEAR)
-        .setWrapping(AbstractTexture.Wrapping.CLAMP_TO_EDGE)
+        .setFormat(Texture.Format.DEPTH)
+        .setType(Texture.Type.SHADOW)
+        .setMipMapping(Texture.MinFilter.LINEAR, Texture.MagFilter.LINEAR)
+        .setWrapping(Texture.Wrapping.CLAMP_TO_EDGE)
         .setBorderColour(Vector4f(1f))
         .build()
 ), Texture2DArrayShadow {

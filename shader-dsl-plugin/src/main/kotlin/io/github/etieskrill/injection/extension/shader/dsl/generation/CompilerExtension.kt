@@ -84,6 +84,8 @@ private data class ShaderDataTypes(
 )
 
 //TODO could be an AnalysisHandlerExtension, perchance
+// FirDeclarationGenerationExtension, actually https://github.com/JetBrains/kotlin/blob/master/docs/fir/fir-plugins.md
+// detect supertype, in function generation: find relevant members/constructor properties and generate into map function
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 internal class IrShaderGenerationExtension(
     private val options: ShaderDslCompilerOptions,

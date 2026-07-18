@@ -6,7 +6,7 @@ import java.util.Objects;
 
 public class InputBinding {
 
-    private final Key key;
+    private final KeyEvent key;
     private final Trigger trigger;
     private final Action action;
     private final OverruleGroup group;
@@ -19,14 +19,14 @@ public class InputBinding {
         TOGGLED
     }
 
-    public InputBinding(Key input, Trigger trigger, Action action, OverruleGroup group) {
+    public InputBinding(KeyEvent input, Trigger trigger, Action action, OverruleGroup group) {
         this.key = Objects.requireNonNull(input);
         this.trigger = Objects.requireNonNull(trigger);
         this.action = Objects.requireNonNull(action);
         this.group = group;
     }
 
-    public Key getInput() {
+    public KeyEvent getInput() {
         return key;
     }
 

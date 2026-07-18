@@ -1,7 +1,7 @@
 package org.etieskrill.engine.graphics.gl.shader.impl;
 
 import io.github.etieskrill.injection.extension.shader.reflection.ReflectShader;
-import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
+import org.etieskrill.engine.graphics.shader.Shader;
 import org.joml.Vector2f;
 import org.joml.Vector4f;
 
@@ -10,7 +10,7 @@ import java.util.List;
 import static org.etieskrill.engine.graphics.gl.shader.impl.StaticShaderKt.*;
 
 @ReflectShader(files = {"Phong.vert", "Phong.frag"}) //TODO also extract superclass, supress with flag
-public class StaticShader extends ShaderProgram {
+public class StaticShader extends Shader {
     public StaticShader() {
         super(List.of("Phong.vert", "Phong.frag"));
 

@@ -2,7 +2,7 @@ package org.etieskrill.game.horde.component;
 
 import lombok.Getter;
 import lombok.Setter;
-import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
+import org.etieskrill.engine.graphics.shader.Shader;
 import org.etieskrill.engine.graphics.gl.shader.UniformMappable;
 import org.etieskrill.engine.graphics.texture.animation.AnimatedTexturePlayer;
 import org.joml.Vector2f;
@@ -28,7 +28,7 @@ public class AnimatedBillBoard implements UniformMappable {
     }
 
     @Override
-    public boolean map(ShaderProgram.UniformMapper mapper) {
+    public boolean map(Shader.UniformMapper mapper) {
         mapper
                 .map("sprite", spritePlayer.getTexture().getTexture())
                 .map("layer", spritePlayer.getFrame())

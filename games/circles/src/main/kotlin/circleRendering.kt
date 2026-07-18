@@ -1,6 +1,6 @@
 package io.github.etieskrill.games.circles
 
-import org.etieskrill.engine.graphics.Renderer
+import org.etieskrill.engine.graphics.renderer.Renderer
 import org.joml.Math.lerp
 import org.joml.Math.toRadians
 import org.joml.Vector2f

@@ -8,12 +8,12 @@ import io.github.etieskrill.injection.extension.shader.int
 import io.github.etieskrill.injection.extension.shader.mat4
 import io.github.etieskrill.injection.extension.shader.vec2
 import io.github.etieskrill.injection.extension.shader.vec4
-import org.etieskrill.engine.graphics.gl.VertexArrayAccessor
-import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
+import org.etieskrill.engine.graphics.VertexArrayAccessor
+import org.etieskrill.engine.graphics.shader.Shader
 import org.joml.Vector2f
 
 class SDFShader : PureShaderBuilder<VertexData, ColourRenderTarget>(
-    object : ShaderProgram(listOf("SDF.glsl"), false) {}
+    object : Shader(listOf("SDF.glsl"), false) {}
 ) {
     data class SDFVertex(//TODO const size array fields
         val position: vec2,

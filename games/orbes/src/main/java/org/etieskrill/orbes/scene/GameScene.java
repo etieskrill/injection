@@ -146,15 +146,15 @@ public class GameScene {
 
     private void setupInput(Game game) {
         keyInputManager = Input.of(
-                Input.bind(Keys.ESC).to(() -> {
+                Input.bind(Key.ESC).to(() -> {
                     if (game.getPacer().isPaused()) game.unpause();
                     else game.pause();
                 }),
-                Input.bind(Keys.ESC.withMods(Keys.SHIFT)).to(() -> game.getWindow().close()),
-                Input.bind(Keys.W).on(InputBinding.Trigger.PRESSED).group(OverruleGroup.Mode.YOUNGEST, Keys.S).to(() -> deltaPos.add(0, 0, 1)),
-                Input.bind(Keys.S).on(InputBinding.Trigger.PRESSED).to(() -> deltaPos.add(0, 0, -1)),
-                Input.bind(Keys.A).on(InputBinding.Trigger.PRESSED).group(OverruleGroup.Mode.YOUNGEST, Keys.D).to(() -> deltaPos.add(-1, 0, 0)),
-                Input.bind(Keys.D).on(InputBinding.Trigger.PRESSED).to(() -> deltaPos.add(1, 0, 0))
+                Input.bind(Key.ESC.withMods(Key.SHIFT)).to(() -> game.getWindow().close()),
+                Input.bind(Key.W).on(InputBinding.Trigger.PRESSED).group(OverruleGroup.Mode.YOUNGEST, Key.S).to(() -> deltaPos.add(0, 0, 1)),
+                Input.bind(Key.S).on(InputBinding.Trigger.PRESSED).to(() -> deltaPos.add(0, 0, -1)),
+                Input.bind(Key.A).on(InputBinding.Trigger.PRESSED).group(OverruleGroup.Mode.YOUNGEST, Key.D).to(() -> deltaPos.add(-1, 0, 0)),
+                Input.bind(Key.D).on(InputBinding.Trigger.PRESSED).to(() -> deltaPos.add(1, 0, 0))
         );
     }
 
@@ -176,7 +176,7 @@ public class GameScene {
         if (skellyTranslate.lengthSquared() > 0) skellyTranslate.normalize();
         skellyTranslate = skellyTranslate
                 .mul((float) delta)
-                .mul(5f * (keyInputManager.isPressed(Keys.CTRL) ? 1.5f : 1));
+                .mul(5f * (keyInputManager.isPressed(Key.CTRL) ? 1.5f : 1));
         skellyTransform.translate(skellyTranslate);
 
 
@@ -198,7 +198,7 @@ public class GameScene {
         skellyTransform.getPosition().x = max(-25, min(25, skellyTransform.getPosition().x())); //why not use Math#clamp? try it, smartass
         skellyTransform.getPosition().z = max(-25, min(25, skellyTransform.getPosition().z()));
 
-        if (keyInputManager.isPressed(Keys.SPACE) && jumpTime == 0)
+        if (keyInputManager.isPressed(Key.SPACE) && jumpTime == 0)
             jumpTime += 0.0001f;
         if (jumpTime != 0 && jumpTime < 1) {
             double jumpHeight = -4 * (jumpTime - 0.5) * (jumpTime - 0.5) + 1;
@@ -207,7 +207,7 @@ public class GameScene {
         } else jumpTime = 0;
 
         float skellyHeight;
-        if (keyInputManager.isPressed(Keys.LEFT_SHIFT)) skellyHeight = .6f;
+        if (keyInputManager.isPressed(Key.LEFT_SHIFT)) skellyHeight = .6f;
         else skellyHeight = 1;
 
         double falloff = -0.5 * (1 / (2 * Math.abs(skellyHeight - smoothSkellyHeight) + 0.5)) + 1;

@@ -1,6 +1,6 @@
 package org.etieskrill.engine.graphics.particle
 
-import org.etieskrill.engine.graphics.gl.VertexArrayAccessor
+import org.etieskrill.engine.graphics.VertexArrayAccessor
 import org.joml.Matrix2f
 import org.joml.Vector3f
 import org.joml.Vector4f

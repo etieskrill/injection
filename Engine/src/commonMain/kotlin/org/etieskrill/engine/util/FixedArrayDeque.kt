@@ -1,5 +1,7 @@
 package org.etieskrill.engine.util;
 
+import kotlin.time.Duration
+
 /**
  * An implementation of [ArrayDeque] with a fixed size. If any element is added while the maximum capacity is reached,
  * the first element that was added from the perspective of the writing direction will be overridden, which is the

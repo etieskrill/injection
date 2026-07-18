@@ -1,13 +1,13 @@
 package org.etieskrill.walk;
 
-import org.etieskrill.engine.graphics.Batch;
+import org.etieskrill.engine.scene.Batch;
 import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.camera.OrthographicCamera;
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera;
 import org.etieskrill.engine.graphics.data.PointLight;
 import org.etieskrill.engine.graphics.framebuffer.FrameBuffer;
-import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment.BufferAttachmentType;
-import org.etieskrill.engine.graphics.gl.renderer.GLRenderer;
+import org.etieskrill.engine.graphics.framebuffer.FrameBufferAttachment.BufferAttachmentType;
+import org.etieskrill.engine.graphics.renderer.GLRenderer;
 import org.etieskrill.engine.graphics.gl.shader.Shaders;
 import org.etieskrill.engine.graphics.gl.shader.impl.StaticShader;
 import org.etieskrill.engine.graphics.model.Material;
@@ -20,7 +20,7 @@ import org.etieskrill.engine.graphics.texture.font.TrueTypeFont;
 import org.etieskrill.engine.input.Input;
 import org.etieskrill.engine.input.InputBinding.Trigger;
 import org.etieskrill.engine.input.KeyInputManager;
-import org.etieskrill.engine.input.Keys;
+import org.etieskrill.engine.input.Key;
 import org.etieskrill.engine.input.OverruleGroup;
 import org.etieskrill.engine.input.controller.CursorCameraController;
 import org.etieskrill.engine.scene.Scene;
@@ -79,15 +79,15 @@ public class Game {
     private int orbsCollected;
 
     private final KeyInputManager keyInputManager = Input.of(
-            Input.bind(Keys.ESC).to(() -> {
+            Input.bind(Key.ESC).to(() -> {
                 if (pacer.isPaused()) unpause();
                 else pause();
             }),
-            Input.bind(Keys.ESC.withMods(Keys.SHIFT)).to(() -> window.close()),
-            Input.bind(Keys.W).on(Trigger.PRESSED).group(OverruleGroup.Mode.YOUNGEST, Keys.S).to(() -> deltaPos.add(0, 0, 1)),
-            Input.bind(Keys.S).on(Trigger.PRESSED).to(() -> deltaPos.add(0, 0, -1)),
-            Input.bind(Keys.A).on(Trigger.PRESSED).group(OverruleGroup.Mode.YOUNGEST, Keys.D).to(() -> deltaPos.add(-1, 0, 0)),
-            Input.bind(Keys.D).on(Trigger.PRESSED).to(() -> deltaPos.add(1, 0, 0))
+            Input.bind(Key.ESC.withMods(Key.SHIFT)).to(() -> window.close()),
+            Input.bind(Key.W).on(Trigger.PRESSED).group(OverruleGroup.Mode.YOUNGEST, Key.S).to(() -> deltaPos.add(0, 0, 1)),
+            Input.bind(Key.S).on(Trigger.PRESSED).to(() -> deltaPos.add(0, 0, -1)),
+            Input.bind(Key.A).on(Trigger.PRESSED).group(OverruleGroup.Mode.YOUNGEST, Key.D).to(() -> deltaPos.add(-1, 0, 0)),
+            Input.bind(Key.D).on(Trigger.PRESSED).to(() -> deltaPos.add(1, 0, 0))
     );
 
     StaticShader shader;
@@ -309,7 +309,7 @@ public class Game {
         if (skellyTranslate.lengthSquared() > 0) skellyTranslate.normalize();
         skellyTranslate
                 .mul((float) pacer.getDeltaTimeSeconds())
-                .mul(5f * (keyInputManager.isPressed(Keys.CTRL) ? 1.5f : 1f));
+                .mul(5f * (keyInputManager.isPressed(Key.CTRL) ? 1.5f : 1f));
         skelly.getTransform().translate(skellyTranslate);
 
         if (!deltaPos.equals(0, 0, 0)) {
@@ -330,7 +330,7 @@ public class Game {
         skelly.getTransform().getPosition().x = Math.max(-25, Math.min(25, skelly.getTransform().getPosition().x())); //why not use Math#clamp? try it, smartass
         skelly.getTransform().getPosition().z = Math.max(-25, Math.min(25, skelly.getTransform().getPosition().z()));
 
-        if (keyInputManager.isPressed(Keys.SPACE) && jumpTime == 0)
+        if (keyInputManager.isPressed(Key.SPACE) && jumpTime == 0)
             jumpTime += 0.0001;
         if (jumpTime != 0 && jumpTime < 1) {
             double jumpHeight = -4 * (jumpTime - 0.5) * (jumpTime - 0.5) + 1;
@@ -339,7 +339,7 @@ public class Game {
         } else jumpTime = 0;
     
         float skellyHeight;
-        if (keyInputManager.isPressed(Keys.LEFT_SHIFT)) skellyHeight = 9;
+        if (keyInputManager.isPressed(Key.LEFT_SHIFT)) skellyHeight = 9;
         else skellyHeight = 15;
     
         double falloff = -0.5 * (1 / (2 * Math.abs(skellyHeight - smoothSkellyHeight) + 0.5)) + 1;

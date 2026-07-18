@@ -1,6 +1,6 @@
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.etieskrill.engine.application.App
-import org.etieskrill.engine.graphics.Batch
+import org.etieskrill.engine.scene.Batch
 import org.etieskrill.engine.graphics.camera.OrthographicCamera
 import org.etieskrill.engine.scene.Node.ScaleMode
 import org.etieskrill.engine.scene.Scene

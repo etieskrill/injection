@@ -1,6 +1,6 @@
 package org.etieskrill.engine.graphics.model.loader
 
-import org.etieskrill.engine.graphics.gl.VertexArrayObject
+import org.etieskrill.engine.graphics.VertexArrayObject
 import org.etieskrill.engine.graphics.model.Bone
 import org.etieskrill.engine.graphics.model.Material
 import org.etieskrill.engine.graphics.model.Mesh

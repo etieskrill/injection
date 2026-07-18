@@ -14,13 +14,13 @@ import io.github.etieskrill.injection.extension.shader.sampler2D
 import io.github.etieskrill.injection.extension.shader.vec2
 import io.github.etieskrill.injection.extension.shader.vec3
 import io.github.etieskrill.injection.extension.shader.vec4
-import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
+import org.etieskrill.engine.graphics.shader.Shader
 import org.joml.Matrix4f
 import org.joml.Vector2f
 import org.joml.Vector4f
 
 class FlatShader : ShaderBuilder<FlatShader.InputVertex, VertexData, ColourRenderTarget>(
-    object : ShaderProgram(listOf("Flat.glsl")) {}
+    object : Shader(listOf("Flat.glsl")) {}
 ) {
     data class InputVertex(val position: vec3, val normal: vec3)
 
@@ -40,7 +40,7 @@ class FlatShader : ShaderBuilder<FlatShader.InputVertex, VertexData, ColourRende
 }
 
 class SolidShader : ShaderBuilder<SolidShader.InputVertex, SolidShader.Vertex, ColourRenderTarget>(
-    object : ShaderProgram(listOf("Solid.glsl"), false) {}
+    object : Shader(listOf("Solid.glsl"), false) {}
 ) {
     data class InputVertex(val position: vec3, val normalVec: vec3)
     data class Vertex(override val position: vec4, val normal: vec3) : ShaderVertexData
@@ -70,7 +70,7 @@ class SolidShader : ShaderBuilder<SolidShader.InputVertex, SolidShader.Vertex, C
 }
 
 class BlitShader : PureShaderBuilder<BlitShader.Vertex, ColourRenderTarget>(
-    object : ShaderProgram(listOf("Blit.glsl")) {}
+    object : Shader(listOf("Blit.glsl")) {}
 ) {
     data class Vertex(override val position: vec4, val textureCoords: vec2) : ShaderVertexData
 
@@ -116,7 +116,7 @@ class BlitShader : PureShaderBuilder<BlitShader.Vertex, ColourRenderTarget>(
 }
 
 class ScreenSpaceBlitShader : PureShaderBuilder<ScreenSpaceBlitShader.Vertex, ColourRenderTarget>(
-    object : ShaderProgram(listOf("ScreenSpaceBlit.glsl")) {}
+    object : Shader(listOf("ScreenSpaceBlit.glsl")) {}
 ) {
     data class Vertex(override val position: vec4, val textureCoords: vec2) : ShaderVertexData
 
@@ -163,7 +163,7 @@ class ScreenSpaceBlitShader : PureShaderBuilder<ScreenSpaceBlitShader.Vertex, Co
 
 //TODO compile constants - e.g. colour blend mode to merge this with above
 class BlitDepthShader : PureShaderBuilder<BlitDepthShader.Vertex, ColourRenderTarget>(
-    object : ShaderProgram(listOf("BlitDepth.glsl")) {}
+    object : Shader(listOf("BlitDepth.glsl")) {}
 ) {
     data class Vertex(override val position: vec4, val textureCoords: vec2) : ShaderVertexData
 
@@ -203,7 +203,7 @@ class BlitDepthShader : PureShaderBuilder<BlitDepthShader.Vertex, ColourRenderTa
 }
 
 class OutlineShader : ShaderBuilder<OutlineShader.Vertex, VertexData, ColourRenderTarget>(
-    object : ShaderProgram(listOf("Outline.glsl")) {}
+    object : Shader(listOf("Outline.glsl")) {}
 ) {
     data class Vertex(val position: vec3, val normalVec: vec3)
 
@@ -228,7 +228,7 @@ class OutlineShader : ShaderBuilder<OutlineShader.Vertex, VertexData, ColourRend
 }
 
 class FullScreenColourShader : PureShaderBuilder<VertexData, ColourRenderTarget>(
-    object : ShaderProgram(listOf("FullScreenColour.glsl")) {}
+    object : Shader(listOf("FullScreenColour.glsl")) {}
 ) {
     val vertices by const(arrayOf(vec2(-1, -1), vec2(1, -1), vec2(-1, 1), vec2(1, 1)))
 
@@ -241,7 +241,7 @@ class FullScreenColourShader : PureShaderBuilder<VertexData, ColourRenderTarget>
 }
 
 class DilationOutlineShader : PureShaderBuilder<VertexData, ColourRenderTarget>(
-    object : ShaderProgram(listOf("DilationOutline.glsl")) {}
+    object : Shader(listOf("DilationOutline.glsl")) {}
 ) {
     val vertices by const(arrayOf(vec2(-1, -1), vec2(1, -1), vec2(-1, 1), vec2(1, 1)))
 
@@ -271,7 +271,7 @@ class DilationOutlineShader : PureShaderBuilder<VertexData, ColourRenderTarget>(
 }
 
 class ScreenSpacePointShader : PureShaderBuilder<VertexData, ColourRenderTarget>(
-    object : ShaderProgram(listOf("ScreenSpacePoint.glsl"), false) {}
+    object : Shader(listOf("ScreenSpacePoint.glsl"), false) {}
 ) {
     val vertices by const(arrayOf(vec2(-1, -1), vec2(1, -1), vec2(-1, 1), vec2(1, 1)))
 
@@ -292,7 +292,7 @@ class ScreenSpacePointShader : PureShaderBuilder<VertexData, ColourRenderTarget>
 }
 
 class LineShader : PureShaderBuilder<VertexData, ColourRenderTarget>(
-    object : ShaderProgram(listOf("Line.glsl")) {}
+    object : Shader(listOf("Line.glsl")) {}
 ) {
     var pointA by uniform<vec3>()
     var pointB by uniform<vec3>()

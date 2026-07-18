@@ -1,12 +1,12 @@
 package org.etieskrill.engine.graphics.gl.shader.impl;
 
 import io.github.etieskrill.injection.extension.shader.reflection.ReflectShader;
-import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
+import org.etieskrill.engine.graphics.shader.Shader;
 
 import java.util.List;
 
 @ReflectShader
-public class GridShader extends ShaderProgram {
+public class GridShader extends Shader {
     public GridShader() {
         super(List.of("Grid.glsl"));
     }

@@ -1,6 +1,6 @@
 package org.etieskrill.orbes.scene;
 
-import org.etieskrill.engine.graphics.Batch;
+import org.etieskrill.engine.scene.Batch;
 import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.texture.font.Fonts;
 import org.etieskrill.engine.scene.Scene;

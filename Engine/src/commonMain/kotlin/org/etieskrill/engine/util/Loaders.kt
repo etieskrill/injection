@@ -2,15 +2,14 @@ package org.etieskrill.engine.util
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.etieskrill.engine.graphics.animation.Animation
-import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
-import org.etieskrill.engine.graphics.model.Mesh
 import org.etieskrill.engine.graphics.model.Model
+import org.etieskrill.engine.graphics.shader.Shader
 import org.etieskrill.engine.graphics.text.Font
-import org.etieskrill.engine.graphics.texture.AbstractTexture
+import org.etieskrill.engine.graphics.texture.Texture
 
 private val logger = KotlinLogging.logger {}
 
-open class TextureLoader : DisposableLoader<AbstractTexture>() {
+open class TextureLoader : DisposableLoader<Texture>() {
     override val loaderName: String get() = "Texture"
 }
 
@@ -39,7 +38,7 @@ open class ModelLoader : DisposableLoader<Model>() {
 
 object EngineModelLoader : ModelLoader()
 
-open class ShaderLoader : DisposableLoader<ShaderProgram>() {
+open class ShaderLoader : DisposableLoader<Shader>() {
     override val loaderName: String get() = "Shader"
 }
 

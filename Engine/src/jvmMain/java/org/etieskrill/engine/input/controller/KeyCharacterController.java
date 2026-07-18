@@ -3,7 +3,7 @@ package org.etieskrill.engine.input.controller;
 import org.etieskrill.engine.input.Input;
 import org.etieskrill.engine.input.InputBinding;
 import org.etieskrill.engine.input.KeyInputManager;
-import org.etieskrill.engine.input.Keys;
+import org.etieskrill.engine.input.Key;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
@@ -28,12 +28,12 @@ public class KeyCharacterController<T> extends KeyInputManager {
 
         this.deltaPosition = new Vector3f();
 
-        addBindings(Input.bind(Keys.W).on(InputBinding.Trigger.PRESSED).to(() -> deltaPosition.add(0, 0, 1)));
-        addBindings(Input.bind(Keys.S).on(InputBinding.Trigger.PRESSED).to(() -> deltaPosition.add(0, 0, -1)));
-        addBindings(Input.bind(Keys.A).on(InputBinding.Trigger.PRESSED).to(() -> deltaPosition.add(-1, 0, 0)));
-        addBindings(Input.bind(Keys.D).on(InputBinding.Trigger.PRESSED).to(() -> deltaPosition.add(1, 0, 0)));
-        addBindings(Input.bind(Keys.SPACE).on(InputBinding.Trigger.PRESSED).to(() -> deltaPosition.add(0, 1, 0)));
-        addBindings(Input.bind(Keys.SHIFT).on(InputBinding.Trigger.PRESSED).to(() -> deltaPosition.add(0, -1, 0)));
+        addBindings(Input.bind(Key.W).on(InputBinding.Trigger.PRESSED).to(() -> deltaPosition.add(0, 0, 1)));
+        addBindings(Input.bind(Key.S).on(InputBinding.Trigger.PRESSED).to(() -> deltaPosition.add(0, 0, -1)));
+        addBindings(Input.bind(Key.A).on(InputBinding.Trigger.PRESSED).to(() -> deltaPosition.add(-1, 0, 0)));
+        addBindings(Input.bind(Key.D).on(InputBinding.Trigger.PRESSED).to(() -> deltaPosition.add(1, 0, 0)));
+        addBindings(Input.bind(Key.SPACE).on(InputBinding.Trigger.PRESSED).to(() -> deltaPosition.add(0, 1, 0)));
+        addBindings(Input.bind(Key.SHIFT).on(InputBinding.Trigger.PRESSED).to(() -> deltaPosition.add(0, -1, 0)));
     }
 
     @Override

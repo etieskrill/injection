@@ -1,6 +1,6 @@
 package org.etieskrill.engine.graphics.data;
 
-import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
+import org.etieskrill.engine.graphics.shader.Shader;
 import org.etieskrill.engine.graphics.gl.shader.UniformMappable;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
@@ -57,7 +57,7 @@ public class DirectionalLight implements UniformMappable {
     }
 
     @Override
-    public boolean map(ShaderProgram.UniformMapper mapper) {
+    public boolean map(Shader.UniformMapper mapper) {
         mapper
                 .map("direction", direction)
                 .map("ambient", ambient)

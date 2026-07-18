@@ -7,9 +7,9 @@ import io.github.etieskrill.injection.extension.shader.vec4
 import org.etieskrill.engine.application.App
 import org.etieskrill.engine.graphics.camera.OrthographicCamera
 import org.etieskrill.engine.graphics.framebuffer.FrameBuffer
-import org.etieskrill.engine.graphics.gl.VertexArrayAccessor
-import org.etieskrill.engine.graphics.gl.VertexArrayObject
-import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
+import org.etieskrill.engine.graphics.VertexArrayAccessor
+import org.etieskrill.engine.graphics.VertexArrayObject
+import org.etieskrill.engine.graphics.shader.Shader
 import org.etieskrill.engine.graphics.pipeline.CullingMode
 import org.etieskrill.engine.graphics.pipeline.Pipeline
 import org.etieskrill.engine.graphics.pipeline.PipelineConfig
@@ -71,7 +71,7 @@ object VertexAccessor : VertexArrayAccessor<Vertex>() {
 }
 
 class DirectLineShader : ShaderBuilder<Vertex, VertexData, ColourRenderTarget>(
-    object : ShaderProgram(listOf("DirectLine.glsl"), false) {}
+    object : Shader(listOf("DirectLine.glsl"), false) {}
 ) {
     //TODO primitive mode should be bound to shader & maybe fallback of element count if no vao present
     var colour by uniform<vec4>()

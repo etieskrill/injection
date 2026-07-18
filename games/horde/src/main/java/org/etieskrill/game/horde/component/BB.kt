@@ -1,6 +1,6 @@
 package org.etieskrill.game.horde.component
 
-import org.etieskrill.engine.graphics.gl.shader.ShaderProgram.UniformMapper
+import org.etieskrill.engine.graphics.shader.Shader.UniformMapper
 import org.etieskrill.engine.graphics.gl.shader.UniformMappable
 import org.etieskrill.engine.graphics.texture.Texture2D
 import org.joml.Vector2f

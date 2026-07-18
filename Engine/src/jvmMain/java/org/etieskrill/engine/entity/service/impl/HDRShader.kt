@@ -8,10 +8,10 @@ import io.github.etieskrill.injection.extension.shader.float
 import io.github.etieskrill.injection.extension.shader.sampler2D
 import io.github.etieskrill.injection.extension.shader.vec2
 import io.github.etieskrill.injection.extension.shader.vec4
-import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
+import org.etieskrill.engine.graphics.shader.Shader
 
 class HDRShader : PureShaderBuilder<HDRShader.Vertex, ColourRenderTarget>(
-    object : ShaderProgram(listOf("HDR.glsl")) {}
+    object : Shader(listOf("HDR.glsl")) {}
 ) {
     data class Vertex(override val position: vec4, val texCoords: vec2) : ShaderVertexData
 

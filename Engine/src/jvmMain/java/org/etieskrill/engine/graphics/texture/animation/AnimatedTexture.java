@@ -1,8 +1,8 @@
 package org.etieskrill.engine.graphics.texture.animation;
 
-import org.etieskrill.engine.graphics.texture.AbstractTexture.MagFilter;
-import org.etieskrill.engine.graphics.texture.AbstractTexture.MinFilter;
-import org.etieskrill.engine.graphics.texture.AbstractTexture.Wrapping;
+import org.etieskrill.engine.graphics.texture.Texture.MagFilter;
+import org.etieskrill.engine.graphics.texture.Texture.MinFilter;
+import org.etieskrill.engine.graphics.texture.Texture.Wrapping;
 import org.etieskrill.engine.graphics.texture.ArrayTexture;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.util.FileUtilsKt;

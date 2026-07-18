@@ -5,7 +5,7 @@ import org.etieskrill.engine.input.Input
 import org.etieskrill.engine.input.InputBinding
 import org.etieskrill.engine.input.InputBinding.Trigger
 import org.etieskrill.engine.input.KeyInputHandler
-import org.etieskrill.engine.input.Keys
+import org.etieskrill.engine.input.Key
 import org.etieskrill.engine.input.OverruleGroup
 import org.etieskrill.engine.window.Cursor
 import org.etieskrill.engine.window.Window
@@ -62,20 +62,20 @@ class InputBuilder {
 class InputBuilderBlock {
     internal val inputs = mutableListOf<InputBinding>()
 
-    fun bind(init: InputBuilderBlock.() -> Pair<Keys, (Double) -> Unit>) {
+    fun bind(init: InputBuilderBlock.() -> Pair<Key, (Double) -> Unit>) {
         val (key, action) = init()
         inputs.add(Input.bind(key).to(action))
     }
 
-    infix fun Keys.bindTo(action: Keys.() -> (Double) -> Unit) {
+    infix fun Key.bindTo(action: Key.() -> (Double) -> Unit) {
         inputs.add(Input.bind(this).to { delta -> action.invoke(this).invoke(delta) })
     }
 
-    fun Keys.bindTo(
+    fun Key.bindTo(
         trigger: Trigger = Trigger.ON_PRESS,
         mode: OverruleGroup.Mode?,
-        keys: List<Keys>?,
-        action: Keys.() -> (Double) -> Unit
+        keys: List<Key>?,
+        action: Key.() -> (Double) -> Unit
     ) {
         inputs.add(
             Input.bind(this).on(trigger).group(mode, *keys?.toTypedArray()!!)

@@ -10,7 +10,7 @@ import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera;
 import org.etieskrill.engine.graphics.data.DirectionalLight;
 import org.etieskrill.engine.graphics.gl.GLUtils;
-import org.etieskrill.engine.graphics.gl.renderer.GLRenderer;
+import org.etieskrill.engine.graphics.renderer.GLRenderer;
 import org.etieskrill.engine.graphics.gl.shader.Shaders;
 import org.etieskrill.engine.graphics.gl.shader.impl.AnimationShader;
 import org.etieskrill.engine.graphics.gl.shader.impl.AnimationShaderKt;
@@ -22,7 +22,7 @@ import org.etieskrill.engine.graphics.model.Node;
 import org.etieskrill.engine.graphics.text.TrueTypeFont;
 import org.etieskrill.engine.input.Input;
 import org.etieskrill.engine.input.KeyInputManager;
-import org.etieskrill.engine.input.Keys;
+import org.etieskrill.engine.input.Key;
 import org.etieskrill.engine.input.controller.CursorCameraController;
 import org.etieskrill.engine.time.LoopPacer;
 import org.etieskrill.engine.util.EngineModelLoader;
@@ -106,26 +106,26 @@ public class Game {
     private boolean showBoneWeights = false;
 
     private final KeyInputManager controls = Input.of(
-            Input.bind(Keys.ESC.withMods(Keys.Mod.SHIFT)).to(this::terminate),
-            Input.bind(Keys.W).on(PRESSED).to(() -> vampyPosDelta.add(0, 0, 1)),
-            Input.bind(Keys.S).on(PRESSED).to(() -> vampyPosDelta.add(0, 0, -1)),
-            Input.bind(Keys.A).on(PRESSED).to(() -> vampyPosDelta.add(1, 0, 0)),
-            Input.bind(Keys.D).on(PRESSED).to(() -> vampyPosDelta.add(-1, 0, 0)),
+            Input.bind(Key.ESC.withMods(Key.Mod.SHIFT)).to(this::terminate),
+            Input.bind(Key.W).on(PRESSED).to(() -> vampyPosDelta.add(0, 0, 1)),
+            Input.bind(Key.S).on(PRESSED).to(() -> vampyPosDelta.add(0, 0, -1)),
+            Input.bind(Key.A).on(PRESSED).to(() -> vampyPosDelta.add(1, 0, 0)),
+            Input.bind(Key.D).on(PRESSED).to(() -> vampyPosDelta.add(-1, 0, 0)),
 //            Input.bind(Keys.SPACE).on(PRESSED).to(delta -> vampy.getTransform().translate(new Vector3f(0, -delta.floatValue(), 0))),
 //            Input.bind(Keys.SHIFT).on(PRESSED).to(delta -> vampy.getTransform().translate(new Vector3f(0, delta.floatValue(), 0))),
-            Input.bind(Keys.Q).on(ON_PRESS).to(() -> {
+            Input.bind(Key.Q).on(ON_PRESS).to(() -> {
                 logger.info(waving ? "Vampy stopped waving" : "Vampy started waving");
                 waving = !waving;
             }),
-            Input.bind(Keys.E).on(ON_PRESS).to(() -> {
+            Input.bind(Key.E).on(ON_PRESS).to(() -> {
                 thirdPerson = !thirdPerson;
                 logger.info("View set to {} person", thirdPerson ? "3rd" : "1st");
             }),
-            Input.bind(Keys.R).on(ON_PRESS).to(() -> {
+            Input.bind(Key.R).on(ON_PRESS).to(() -> {
                 boneSelector = ++boneSelector % 5;
                 AnimationShaderKt.setShowBoneSelector(vampyShader, boneSelector);
             }),
-            Input.bind(Keys.F).on(ON_PRESS).to(() -> {
+            Input.bind(Key.F).on(ON_PRESS).to(() -> {
                 showBoneWeights = !showBoneWeights;
                 AnimationShaderKt.setShowBoneWeights(vampyShader, showBoneWeights);
             })
@@ -257,9 +257,9 @@ public class Game {
                 acceleration.y = 0;
                 acceleration.rotateY(toRadians(camera.getYaw()));
                 acceleration.normalize();
-                acceleration.mul(controls.isPressed(Keys.W) && controls.isPressed(Keys.SHIFT)
-                        && !controls.isPressed(Keys.A) && !controls.isPressed(Keys.S)
-                        && !controls.isPressed(Keys.D) ? 18 : 9);
+                acceleration.mul(controls.isPressed(Key.W) && controls.isPressed(Key.SHIFT)
+                                 && !controls.isPressed(Key.A) && !controls.isPressed(Key.S)
+                                 && !controls.isPressed(Key.D) ? 18 : 9);
             } else {
                 acceleration.zero();
             }
@@ -279,32 +279,32 @@ public class Game {
 
             vampyTransform.getRotation().rotationY(toRadians(camera.getYaw()));
 
-            float diff = (controls.isPressed(Keys.W)
-                    || controls.isPressed(Keys.A)
-                    || controls.isPressed(Keys.D)
-                    || controls.isPressed(Keys.S)
-            ) && !controls.isPressed(Keys.SHIFT) ? 1 - walkingFactor : -walkingFactor;
+            float diff = (controls.isPressed(Key.W)
+                    || controls.isPressed(Key.A)
+                    || controls.isPressed(Key.D)
+                    || controls.isPressed(Key.S)
+            ) && !controls.isPressed(Key.SHIFT) ? 1 - walkingFactor : -walkingFactor;
             diff *= (float) delta * 5;
             walkingFactor += diff;
 
-            diff = (controls.isPressed(Keys.W)
-                    || controls.isPressed(Keys.A)
-                    || controls.isPressed(Keys.D)
-                    || controls.isPressed(Keys.S)
-            ) && controls.isPressed(Keys.SHIFT) ? 1 - runningFactor : -runningFactor;
+            diff = (controls.isPressed(Key.W)
+                    || controls.isPressed(Key.A)
+                    || controls.isPressed(Key.D)
+                    || controls.isPressed(Key.S)
+            ) && controls.isPressed(Key.SHIFT) ? 1 - runningFactor : -runningFactor;
             diff *= (float) delta * 5;
             runningFactor += diff;
 
-            diff = controls.isPressed(Keys.W) ? 1 - forwardFactor : -forwardFactor;
+            diff = controls.isPressed(Key.W) ? 1 - forwardFactor : -forwardFactor;
             diff *= (float) delta * 5;
             forwardFactor += diff;
-            diff = controls.isPressed(Keys.A) ? 1 - leftFactor : -leftFactor;
+            diff = controls.isPressed(Key.A) ? 1 - leftFactor : -leftFactor;
             diff *= (float) delta * 5;
             leftFactor += diff;
-            diff = controls.isPressed(Keys.D) ? 1 - rightFactor : -rightFactor;
+            diff = controls.isPressed(Key.D) ? 1 - rightFactor : -rightFactor;
             diff *= (float) delta * 5;
             rightFactor += diff;
-            diff = controls.isPressed(Keys.S) ? 1 - backFactor : -backFactor;
+            diff = controls.isPressed(Key.S) ? 1 - backFactor : -backFactor;
             diff *= (float) delta * 5;
             backFactor += diff;
 

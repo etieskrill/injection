@@ -1,8 +1,8 @@
 package org.etieskrill.game.shaderz;
 
-import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
+import org.etieskrill.engine.graphics.shader.Shader;
 
-public class HallwayShader extends ShaderProgram {
+public class HallwayShader extends Shader {
 
     @Override
     protected void init() {

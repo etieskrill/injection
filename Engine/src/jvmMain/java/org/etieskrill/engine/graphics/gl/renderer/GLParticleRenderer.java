@@ -1,11 +1,11 @@
 package org.etieskrill.engine.graphics.gl.renderer;
 
 import org.etieskrill.engine.graphics.camera.Camera;
-import org.etieskrill.engine.graphics.gl.VertexArrayObject;
-import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
+import org.etieskrill.engine.graphics.VertexArrayObject;
+import org.etieskrill.engine.graphics.shader.Shader;
 import org.etieskrill.engine.graphics.gl.shader.impl.ParticleShader;
 import org.etieskrill.engine.graphics.particle.*;
-import org.etieskrill.engine.graphics.texture.AbstractTexture;
+import org.etieskrill.engine.graphics.texture.Texture;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.util.EngineShaderLoader;
 import org.jetbrains.annotations.NotNull;
@@ -28,7 +28,7 @@ public class GLParticleRenderer implements ParticleRenderer {
     private static final Matrix4fc IDENTITY = new Matrix4f();
 
     private final VertexArrayObject<Particle> vao;
-    private final ShaderProgram particleShader;
+    private final Shader particleShader;
 
     private final Texture2D defaultParticleTexture;
 
@@ -46,17 +46,17 @@ public class GLParticleRenderer implements ParticleRenderer {
                 .load("particle_shader", ParticleShader::new);
 
         this.defaultParticleTexture = new Texture2D.FileBuilder("textures/particles/circle.png")
-                .setWrapping(AbstractTexture.Wrapping.CLAMP_TO_BORDER).build();
+                .setWrapping(Texture.Wrapping.CLAMP_TO_BORDER).build();
 
         this.invalidEmitters = new HashSet<>();
     }
 
     @Override
-    public void renderParticles(ParticleNode root, Camera camera, @Nullable ShaderProgram shader) {
+    public void renderParticles(ParticleNode root, Camera camera, @Nullable Shader shader) {
         renderNode(new Matrix4f(root.getTransform().getMatrix()), root, camera, requireNonNullElse(shader, particleShader));
     }
 
-    private void renderNode(Matrix4fc transform, ParticleNode node, Camera camera, ShaderProgram shader) {
+    private void renderNode(Matrix4fc transform, ParticleNode node, Camera camera, Shader shader) {
         for (@NotNull ParticleEmitter emitter : node.getEmitters()) {
             if (!invalidEmitters.contains(emitter)) {
                 if (emitter.getMaxNumParticles() <= MAX_PARTICLES) {
@@ -74,7 +74,7 @@ public class GLParticleRenderer implements ParticleRenderer {
         }
     }
 
-    private void renderEmitter(Matrix4fc transform, ParticleEmitter emitter, Camera camera, ShaderProgram shader) {
+    private void renderEmitter(Matrix4fc transform, ParticleEmitter emitter, Camera camera, Shader shader) {
         shader.setUniform("model", emitter.getParticlesMoveWithEmitter$engine() ? transform : IDENTITY);
         shader.setUniform("camera", camera);
         shader.setUniform("size", emitter.getSize$engine());

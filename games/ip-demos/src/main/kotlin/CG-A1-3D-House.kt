@@ -6,10 +6,10 @@ import io.github.etieskrill.injection.extension.shader.vec3
 import io.github.etieskrill.injection.extension.shader.vec4
 import org.etieskrill.engine.application.App
 import org.etieskrill.engine.graphics.camera.OrthographicCamera
-import org.etieskrill.engine.graphics.gl.BufferObject
-import org.etieskrill.engine.graphics.gl.VertexArrayAccessor
-import org.etieskrill.engine.graphics.gl.VertexArrayObject
-import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
+import org.etieskrill.engine.graphics.BufferObject
+import org.etieskrill.engine.graphics.VertexArrayAccessor
+import org.etieskrill.engine.graphics.VertexArrayObject
+import org.etieskrill.engine.graphics.shader.Shader
 import org.etieskrill.engine.input.controller.CursorCameraController
 import org.joml.Matrix4f
 import org.joml.Vector3f
@@ -114,7 +114,7 @@ class `CG-03-A` : App() {
 }
 
 class BasicShader : ShaderBuilder<Vertex, BasicShader.VertexData, ColourRenderTarget>(
-    object : ShaderProgram(listOf("Basic.glsl")) {}
+    object : Shader(listOf("Basic.glsl")) {}
 ) {
     data class VertexData(override val position: vec4, val colour: vec3) : ShaderVertexData
 

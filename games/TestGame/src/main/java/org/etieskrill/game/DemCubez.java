@@ -6,10 +6,10 @@ import org.etieskrill.engine.graphics.camera.PerspectiveCamera;
 import org.etieskrill.engine.graphics.data.DirectionalLight;
 import org.etieskrill.engine.graphics.data.PointLight;
 import org.etieskrill.engine.graphics.framebuffer.FrameBuffer;
-import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment;
-import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachment.BufferAttachmentType;
-import org.etieskrill.engine.graphics.gl.renderer.GLRenderer;
-import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
+import org.etieskrill.engine.graphics.framebuffer.FrameBufferAttachment;
+import org.etieskrill.engine.graphics.framebuffer.FrameBufferAttachment.BufferAttachmentType;
+import org.etieskrill.engine.graphics.renderer.GLRenderer;
+import org.etieskrill.engine.graphics.shader.Shader;
 import org.etieskrill.engine.graphics.gl.shader.Shaders;
 import org.etieskrill.engine.graphics.gl.shader.impl.StaticShader;
 import org.etieskrill.engine.graphics.model.CubeMapModel;
@@ -51,11 +51,11 @@ public class DemCubez {
     private PerspectiveCamera camera;
     private LoopPacer pacer;
 
-    ShaderProgram containerShader;
-    ShaderProgram lightShader;
-    ShaderProgram swordShader;
-    ShaderProgram backpackShader;
-    ShaderProgram skyboxShader;
+    Shader containerShader;
+    Shader lightShader;
+    Shader swordShader;
+    Shader backpackShader;
+    Shader skyboxShader;
 
     CubeMapModel skybox;
     Model[] models;
@@ -201,7 +201,7 @@ public class DemCubez {
                 new Vector2i(window.getSize().getVec()));
         frameBuffer.unbind();
 
-        ShaderProgram screenShader = Shaders.getPostprocessingShader();
+        Shader screenShader = Shaders.getPostprocessingShader();
 
         FrameBufferAttachment attachment = frameBuffer.getAttachments().get(BufferAttachmentType.COLOUR0);
         Texture2D textureBuffer = (Texture2D) attachment;
@@ -414,9 +414,9 @@ public class DemCubez {
     }
 
     private void setShaderUniforms() {
-        ShaderProgram[] doLighting = {containerShader, swordShader, backpackShader};
+        Shader[] doLighting = {containerShader, swordShader, backpackShader};
 
-        for (ShaderProgram shader : doLighting) {
+        for (Shader shader : doLighting) {
             shader.setUniformArray("globalLights[$]", 0, globalLight);
             shader.setUniformArray("lights[$]", lights);
         }

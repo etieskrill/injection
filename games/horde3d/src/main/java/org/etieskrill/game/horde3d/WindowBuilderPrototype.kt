@@ -4,7 +4,7 @@ import org.etieskrill.engine.graphics.model.Model
 import org.etieskrill.engine.input.CursorInputAdapter
 import org.etieskrill.engine.input.CursorInputHandler
 import org.etieskrill.engine.input.KeyInputHandler
-import org.etieskrill.engine.input.Keys
+import org.etieskrill.engine.input.Key
 import org.etieskrill.engine.input.OverruleGroup
 import org.etieskrill.engine.time.LoopPacer
 import org.etieskrill.engine.window.Window
@@ -18,13 +18,13 @@ fun main() {
     val window = window {
         inputs {
             keyInput {
-                bind { Keys.Q to { window.close() } }
-                bind { Keys.W to { delta -> println("Current delta: $delta"); window.close() } }
-                Keys.E bindTo { { window.close() } }
-                Keys.R bindTo { { delta -> println("Current delta: $delta"); window.close() } }
+                bind { Key.Q to { window.close() } }
+                bind { Key.W to { delta -> println("Current delta: $delta"); window.close() } }
+                Key.E bindTo { { window.close() } }
+                Key.R bindTo { { delta -> println("Current delta: $delta"); window.close() } }
 //                keyInput {} // <- does not compile due to dsl marker :) - so cool
-                Keys.E.bindTo(mode = OverruleGroup.Mode.ALL, keys = listOf(Keys.Q)) { { window.close() } }
-                Keys.MIDDLE_MOUSE bindTo { { window.close() } }
+                Key.E.bindTo(mode = OverruleGroup.Mode.ALL, keys = listOf(Key.Q)) { { window.close() } }
+                Key.MIDDLE_MOUSE bindTo { { window.close() } }
             }
         }
     }

@@ -1,12 +1,12 @@
 package org.etieskrill.engine.graphics.gl.shader.impl;
 
-import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
+import org.etieskrill.engine.graphics.shader.Shader;
 
 import java.util.List;
 
-import static org.etieskrill.engine.graphics.gl.shader.ShaderProgram.Uniform.Type.MAT4;
+import static org.etieskrill.engine.graphics.shader.Shader.Uniform.Type.MAT4;
 
-public class MissingShader extends ShaderProgram {
+public class MissingShader extends Shader {
     public MissingShader() {
         super(List.of("MissingShader.glsl"), List.of(
                 uniform("mesh", MAT4),

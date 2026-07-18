@@ -17,9 +17,9 @@ import org.etieskrill.engine.graphics.gl.framebuffer.PointShadowMapArray
 import org.etieskrill.engine.graphics.model.Model
 import org.etieskrill.engine.graphics.model.ModelFactory
 import org.etieskrill.engine.graphics.model.PhongMaterial
-import org.etieskrill.engine.graphics.texture.AbstractTexture
-import org.etieskrill.engine.graphics.texture.AbstractTexture.Type.DIFFUSE
-import org.etieskrill.engine.graphics.texture.AbstractTexture.Type.NORMAL
+import org.etieskrill.engine.graphics.texture.Texture
+import org.etieskrill.engine.graphics.texture.Texture.Type.DIFFUSE
+import org.etieskrill.engine.graphics.texture.Texture.Type.NORMAL
 import org.etieskrill.engine.graphics.texture.Texture2D
 import org.etieskrill.engine.graphics.texture.Textures
 import org.joml.Quaternionf
@@ -43,7 +43,7 @@ class World(
             diffuseTexture = Textures.ofFile("textures/TilesSlateSquare001_COL_2K_METALNESS.png", DIFFUSE),
 //            specularTexture = Textures.ofFile("textures/TilesSlateSquare001_ROUGHNESS_2K_METALNESS.png", SPECULAR),
             normalTexture = Texture2D.FileBuilder("textures/TilesSlateSquare001_NRM_2K_METALNESS.png", NORMAL)
-                .setFormat(AbstractTexture.Format.RGB) //TODO MMMMMMHHHHH select correct format automatically
+                .setFormat(Texture.Format.RGB) //TODO MMMMMMHHHHH select correct format automatically
                 .build()
         ))
 
@@ -120,7 +120,13 @@ class World(
         val directionalShadowMap = DirectionalShadowMap(graphicsContext, Vector2i(2048))
         val pointShadowMaps = PointShadowMapArray(graphicsContext, Vector2i(1024), 2)
 
-        val sunLightCamera = OrthographicCamera(directionalShadowMap.size, 30f, -30f, -30f, 30f).apply {
+        val sunLightCamera = OrthographicCamera(
+            directionalShadowMap.size,
+            30f,
+            -30f,
+            -30f,
+            30f
+        ).apply {
             far = 40f
             position = Vector3f(10f, 20f, 10f)
             setRotation(-45f, 135f, 0f)

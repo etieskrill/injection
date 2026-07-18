@@ -19,6 +19,7 @@ import org.joml.Vector2i
 import org.joml.Vector3f
 import kotlin.properties.ReadOnlyProperty
 import kotlin.properties.ReadWriteProperty
+import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
 import kotlin.reflect.javaType
 
@@ -333,7 +334,7 @@ class UniformDelegate<T : Any> :
         if (!initialised) { //TODO for getter also i guess?
             when (value) {
                 is Array<*>, is Collection<*> -> error("impossiburu")
-                else -> thisRef.addUniform(property.name, value::class.javaObjectType)
+                else -> thisRef.addUniform(property.name, value::class)
             }
             initialised = true
         }
@@ -357,7 +358,7 @@ class UniformArrayDelegate<T : Any>(private val size: Int) : ReadWriteProperty<S
             thisRef.addUniformArray(
                 property.name,
                 value.size,
-                (property.returnType.javaType as Class<*>).componentType!!
+                (property.returnType.arguments[0].type!!.classifier!! as KClass<T>) //FIXME surely this just works, right?
             )
             initialised = true
         }

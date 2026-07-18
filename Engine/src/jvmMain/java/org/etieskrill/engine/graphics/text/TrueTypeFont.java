@@ -1,6 +1,6 @@
 package org.etieskrill.engine.graphics.text;
 
-import org.etieskrill.engine.graphics.texture.AbstractTexture;
+import org.etieskrill.engine.graphics.texture.Texture;
 import org.etieskrill.engine.graphics.texture.ArrayTexture;
 import org.etieskrill.engine.util.ResourceReader;
 import org.jetbrains.annotations.NotNull;
@@ -92,11 +92,11 @@ public class TrueTypeFont implements Font {
         ArrayTexture.BufferBuilder textures = (ArrayTexture.BufferBuilder) new ArrayTexture.BufferBuilder(
                 new Vector2i(pixelWidth, pixelHeight),
                 NUM_CHARS_ASCII,
-                AbstractTexture.Format.ALPHA
+                Texture.Format.ALPHA
         )
-                .setType(AbstractTexture.Type.DIFFUSE)
-                .setMipMapping(AbstractTexture.MinFilter.NEAREST, AbstractTexture.MagFilter.LINEAR) //TODO min nearest is better for small text, but when rendering using pixel sizes this should never be used anyway
-                .setWrapping(AbstractTexture.Wrapping.CLAMP_TO_BORDER);
+                .setType(Texture.Type.DIFFUSE)
+                .setMipMapping(Texture.MinFilter.NEAREST, Texture.MagFilter.LINEAR) //TODO min nearest is better for small text, but when rendering using pixel sizes this should never be used anyway
+                .setWrapping(Texture.Wrapping.CLAMP_TO_BORDER);
 
         Map<Character, Glyph> glyphs = new HashMap<>();
         for (int i = 0; i < NUM_CHARS_ASCII; i++) {

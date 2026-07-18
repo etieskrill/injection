@@ -6,7 +6,7 @@ import org.etieskrill.engine.entity.component.Transform;
 import org.etieskrill.engine.entity.service.Service;
 import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.framebuffer.FrameBuffer;
-import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
+import org.etieskrill.engine.graphics.shader.Shader;
 import org.etieskrill.game.horde.component.AnimatedBillBoard;
 import org.etieskrill.game.horde.component.BillBoard;
 import org.jetbrains.annotations.Nullable;
@@ -61,7 +61,7 @@ public class BillBoardRenderService implements Service {
     }
 
     //TODO eww
-    private void configureShader(List<Entity> entities, ShaderProgram shader) {
+    private void configureShader(List<Entity> entities, Shader shader) {
         shader.start();
         for (Entity entity : entities) {
             var dirLight = entity.getComponent(DirectionalLightComponent.class);

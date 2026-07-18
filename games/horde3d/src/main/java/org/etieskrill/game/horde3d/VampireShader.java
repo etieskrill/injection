@@ -1,13 +1,13 @@
 package org.etieskrill.game.horde3d;
 
-import org.etieskrill.engine.graphics.gl.shader.ShaderProgram;
+import org.etieskrill.engine.graphics.shader.Shader;
 import org.joml.Vector3f;
 
 import java.util.List;
 
-import static org.etieskrill.engine.graphics.gl.shader.ShaderProgram.Uniform.Type.*;
+import static org.etieskrill.engine.graphics.shader.Shader.Uniform.Type.*;
 
-public class VampireShader extends ShaderProgram {
+public class VampireShader extends Shader {
 
     public static final int MAX_BONES = 100;
 

@@ -27,17 +27,17 @@ import org.etieskrill.engine.audio.StereoAudioSource
 import org.etieskrill.engine.entity.component.Drawable
 import org.etieskrill.engine.entity.component.Transform
 import org.etieskrill.engine.entity.service.impl.RenderService
-import org.etieskrill.engine.graphics.Batch
+import org.etieskrill.engine.scene.Batch
 import org.etieskrill.engine.graphics.camera.OrthographicCamera
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera
 import org.etieskrill.engine.graphics.framebuffer.FrameBuffer
-import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferAttachmentType
-import org.etieskrill.engine.graphics.gl.shader.ShaderProgram
+import org.etieskrill.engine.graphics.framebuffer.FrameBufferAttachmentType
+import org.etieskrill.engine.graphics.shader.Shader
 import org.etieskrill.engine.graphics.model.model
 import org.etieskrill.engine.graphics.model.plane
 import org.etieskrill.engine.graphics.pipeline.PostPassPipeline
 import org.etieskrill.engine.input.Input
-import org.etieskrill.engine.input.Keys
+import org.etieskrill.engine.input.Key
 import org.etieskrill.engine.input.controller.CursorCameraController
 import org.etieskrill.engine.scene.Node
 import org.etieskrill.engine.scene.Scene
@@ -127,7 +127,7 @@ class SynthwavePlane : App(
         val controller = CursorCameraController(camera)
         window.cursorInputs += controller
         window.keyInputs += Input.of(
-            Input.bind(Keys.CTRL).to { ->
+            Input.bind(Key.CTRL).to { ->
                 if (window.cursor.mode == Cursor.CursorMode.DISABLED) {
                     window.cursor.mode = Cursor.CursorMode.CAPTURED
                     controller.disable()
@@ -136,19 +136,19 @@ class SynthwavePlane : App(
                     controller.enable()
                 }
             },
-            Input.bind(Keys.SPACE).to { ->
+            Input.bind(Key.SPACE).to { ->
                 if (playbackBar.state == PLAYING) {
                     playbackBar.state = PAUSED
                 } else {
                     playbackBar.state = PLAYING
                 }
             },
-            Input.bind(Keys.A).to { ->
+            Input.bind(Key.A).to { ->
                 audioSource?.apply {
                     offsetSeconds = max(0f, min(duration.inWholeMilliseconds / 1000f, offsetSeconds - 5f))
                 }
             },
-            Input.bind(Keys.D).to { ->
+            Input.bind(Key.D).to { ->
                 audioSource?.apply {
                     if (duration.inWholeMilliseconds / 1000f < offsetSeconds + 5f) {
                         playbackBar.state = PlaybackBar.State.STOPPED
@@ -165,13 +165,13 @@ class SynthwavePlane : App(
 
         val renderService = RenderService(window.screenBuffer, renderer, camera, window.size)
         entitySystem.addService(renderService)
-        frameBuffer = renderService.frameBuffer
-        frameTexture = renderService.frameBuffer.attachments[FrameBufferAttachmentType.COLOUR0] as Texture2D
+        frameBuffer = renderService.postEffectsFrameBuffer
+        frameTexture = renderService.postEffectsFrameBuffer.attachments[FrameBufferAttachmentType.COLOUR0] as Texture2D
         frameBuffer.clearColour = Vector4f(0.01f, 0f, 0.02f, 1f)
 
         entitySystem.createEntity {
             +transform
-            +Drawable(plane, shader.shader as ShaderProgram)
+            +Drawable(plane, shader.shader as Shader)
         }
 
         val buf = BufferUtils.createShortBuffer(10 * 44100)
@@ -388,7 +388,7 @@ fun doFFT(audioSource: AudioSource): List<Float> {
 }
 
 class GridShader : ShaderBuilder<GridShader.InputVertex, GridShader.Vertex, ColourBloomRenderTarget>(
-    object : ShaderProgram(listOf("Grid.glsl")) {} //FIXME this is stoopid too
+    object : Shader(listOf("Grid.glsl")) {} //FIXME this is stoopid too
 ) {
     data class InputVertex(val position: vec3) //FIXME org.etieskrill.engine.graphics.model.Vertex does not work?
     data class Vertex(override val position: vec4, val fragPosition: vec4) : ShaderVertexData
@@ -443,7 +443,7 @@ class GridShader : ShaderBuilder<GridShader.InputVertex, GridShader.Vertex, Colo
 }
 
 class SunPostPass : PureShaderBuilder<SunPostPass.Vertex, ColourRenderTarget>(
-    object : ShaderProgram(listOf("SunPostPass.glsl"), false) {}
+    object : Shader(listOf("SunPostPass.glsl"), false) {}
 ) {
     class Vertex(override val position: vec4, val fragPosition: vec2) : ShaderVertexData
 
