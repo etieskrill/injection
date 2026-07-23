@@ -3,10 +3,12 @@ package org.etieskrill.engine.graphics.texture;
 import org.etieskrill.engine.common.Disposable
 import org.etieskrill.engine.graphics.GraphicsContext
 import org.etieskrill.engine.graphics.gl.GLUtils
+import org.etieskrill.engine.util.ResourceReader
 import org.joml.Vector2i
 import org.joml.Vector2ic
 import org.joml.Vector4fc
 import org.lwjgl.BufferUtils
+import org.lwjgl.BufferUtils.createIntBuffer
 import org.lwjgl.assimp.Assimp.aiTextureType_AMBIENT_OCCLUSION
 import org.lwjgl.assimp.Assimp.aiTextureType_DIFFUSE
 import org.lwjgl.assimp.Assimp.aiTextureType_DIFFUSE_ROUGHNESS
@@ -57,7 +59,10 @@ import org.lwjgl.opengl.GL30C.GL_RG
 import org.lwjgl.opengl.GL30C.GL_RGBA16F
 import org.lwjgl.opengl.GL30C.glGenerateMipmap
 import org.lwjgl.opengl.GL33C.GL_TEXTURE_SWIZZLE_RGBA
-import kotlin.properties.Delegates.notNull
+import org.lwjgl.stb.STBImage.stbi_failure_reason
+import org.lwjgl.stb.STBImage.stbi_image_free
+import org.lwjgl.stb.STBImage.stbi_load_from_memory
+import java.util.MissingResourceException
 import io.github.etieskrill.injection.extension.shader.Texture as DslTexture
 
 /**
@@ -66,15 +71,15 @@ import io.github.etieskrill.injection.extension.shader.Texture as DslTexture
  */
 actual abstract class Texture actual constructor(
     actual val context: GraphicsContext,
+    format: TextureFormat,
     actual val type: TextureType,
-    format: TextureFormat?,
     minFilter: TextureMinFilter,
     magFilter: TextureMagFilter,
     wrapping: TextureWrapping,
     borderColour: Vector4fc
 ) : DslTexture, Disposable {
 
-    internal var _format: TextureFormat by notNull()
+    internal var _format: TextureFormat = format
     actual val format: TextureFormat get() = _format
 
     var wrapping: TextureWrapping = wrapping
@@ -85,6 +90,7 @@ actual abstract class Texture actual constructor(
                 glTexParameteri(glTarget, GL_TEXTURE_WRAP_T, value.gl)
                 glTexParameteri(glTarget, GL_TEXTURE_WRAP_R, value.gl)
             }
+            field = value
         }
 
     protected abstract val glTarget: Int
@@ -120,7 +126,7 @@ actual abstract class Texture actual constructor(
             GLUtils.checkErrorThrowing("Error while buffering texture data: $this")
 
             if (minFilter in setOf(TextureMinFilter.NEAREST, TextureMinFilter.LINEAR)
-                && format !in setOf(TextureFormat.DEPTH, TextureFormat.STENCIL, TextureFormat.DEPTH_STENCIL)
+                && this.format !in setOf(TextureFormat.DEPTH, TextureFormat.STENCIL, TextureFormat.DEPTH_STENCIL)
             ) {
                 glGenerateMipmap(glTarget)
             }
@@ -254,4 +260,31 @@ internal val TextureType.ai get() = when (this) {
     TextureType.AMBIENT_OCCLUSION -> aiTextureType_AMBIENT_OCCLUSION
 
     TextureType.SHADOW, TextureType.G_POSITION, TextureType.G_DEPTH, TextureType.G_COLOUR, TextureType.G_NORMAL -> null
+}
+
+internal class TextureData(val size: Vector2ic, val format: TextureFormat, val buffer: ByteArray)
+
+internal fun loadTexture2DData(file: String, type: TextureType): TextureData {
+    val width = createIntBuffer(1)
+    val height = createIntBuffer(1)
+    val numChannels = createIntBuffer(1)
+
+    //stbi_set_flip_vertically_on_load(true) //uv coords are apparently already flipped while loading models?
+    val textureData = stbi_load_from_memory(
+        ResourceReader.getRawResource(file),
+        width, height, numChannels, 0
+    )
+    if (textureData == null || !textureData.hasRemaining()) {
+        throw MissingResourceException(
+            "Texture $file could not be loaded:\n${stbi_failure_reason()}",
+            Texture2D::class.simpleName, file
+        )
+    }
+
+    val format = textureFormatFromNumChannelsAndType(numChannels.get(), type)
+    val buffer = ByteArray(textureData.remaining()) { textureData[it] }
+
+    stbi_image_free(textureData)
+
+    return TextureData(Vector2i(width.get(), height.get()), format, buffer)
 }

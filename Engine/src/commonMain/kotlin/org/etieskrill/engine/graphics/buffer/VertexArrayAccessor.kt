@@ -1,4 +1,4 @@
-package org.etieskrill.engine.graphics
+package org.etieskrill.engine.graphics.buffer
 
 import io.github.etieskrill.injection.extension.shader.Buffer
 import io.github.etieskrill.injection.extension.shader.BufferAccessor

@@ -7,8 +7,8 @@ import io.github.etieskrill.injection.extension.shader.vec4
 import org.etieskrill.engine.application.App
 import org.etieskrill.engine.graphics.camera.OrthographicCamera
 import org.etieskrill.engine.graphics.framebuffer.FrameBuffer
-import org.etieskrill.engine.graphics.VertexArrayAccessor
-import org.etieskrill.engine.graphics.VertexArrayObject
+import org.etieskrill.engine.graphics.buffer.VertexArrayAccessor
+import org.etieskrill.engine.graphics.buffer.VertexArrayObject
 import org.etieskrill.engine.graphics.shader.Shader
 import org.etieskrill.engine.graphics.pipeline.CullingMode
 import org.etieskrill.engine.graphics.pipeline.Pipeline

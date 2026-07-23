@@ -1,5 +1,27 @@
 #version 330 core
 
+#pragma stage vert
+
+layout (location = 0) in vec2 aGlyphSize;
+layout (location = 1) in vec2 aGlyphPosition;
+layout (location = 2) in int aGlyphIndex;
+
+out vec2 tGlyphSize;
+flat out int tTexIndex;
+
+uniform mat4 combined;
+
+uniform vec2 glyphTextureSize;
+
+void main()
+{
+    gl_Position = vec4(aGlyphPosition, 0.0, 1.0);
+    tGlyphSize = aGlyphSize;
+    tTexIndex = aGlyphIndex;
+}
+
+#pragma stage geom
+
 layout (points) in;
 layout (triangle_strip, max_vertices = 4) out;
 
@@ -38,4 +60,20 @@ void main()
     gl_Position = combined * vec4(position.x + glyphSize.x, position.y + glyphSize.y, 0.0, 1.0);
     oTexCoords = vec2(glyphTexSize);
     EmitVertex();
+}
+
+#pragma stage frag
+
+out vec4 oColour;
+
+in vec2 oTexCoords;
+flat in int oTexIndex;
+
+uniform sampler2DArray glyphs;
+
+void main()
+{
+    vec4 texel = texture(glyphs, vec3(oTexCoords, oTexIndex));
+    if (texel.a == 0.0) discard;
+    oColour = texel;
 }

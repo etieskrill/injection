@@ -1,6 +1,6 @@
 package org.etieskrill.engine.graphics.renderer
 
-import org.etieskrill.engine.graphics.VertexArrayAccessor
+import org.etieskrill.engine.graphics.buffer.VertexArrayAccessor
 import org.joml.Vector2f
 
 data class RenderedGlyph(

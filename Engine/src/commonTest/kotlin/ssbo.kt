@@ -1,5 +1,5 @@
-import org.etieskrill.engine.graphics.StorageBufferObject
-import org.etieskrill.engine.graphics.VertexArrayAccessor
+import org.etieskrill.engine.graphics.buffer.StorageBufferObject
+import org.etieskrill.engine.graphics.buffer.VertexArrayAccessor
 import org.joml.Vector2f
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.opengl.GL

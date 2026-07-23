@@ -1,6 +1,5 @@
 package org.etieskrill.engine.scene
 
-import io.github.etieskrill.injection.extension.shader.AbstractShader
 import org.etieskrill.engine.graphics.GraphicsContext
 import org.etieskrill.engine.graphics.framebuffer.FrameBuffer
 import org.etieskrill.engine.graphics.pipeline.Pipeline
@@ -8,18 +7,20 @@ import org.etieskrill.engine.graphics.pipeline.PostPassPipeline
 import org.etieskrill.engine.graphics.renderer.Renderer
 import org.etieskrill.engine.graphics.renderer.TextRenderer
 import org.etieskrill.engine.graphics.shader.Shader
+import org.etieskrill.engine.graphics.shader.impl.BlitShader
+import org.etieskrill.engine.graphics.shader.impl.TextShader
+import org.etieskrill.engine.graphics.shader.impl.UiBoxShader
 import org.etieskrill.engine.graphics.text.Font
+import org.etieskrill.engine.graphics.texture.Texture2D
 import org.joml.Matrix4f
 import org.joml.Matrix4fc
 import org.joml.Vector2f
 import org.joml.Vector2fc
 import org.joml.Vector2ic
-import org.joml.Vector3fc
 import org.joml.Vector4f
 import org.joml.Vector4fc
 import org.joml.div
 import org.joml.plus
-import org.lwjgl.opengl.GL11C
 import org.lwjgl.opengl.GL30C
 
 //TODO since everything apart from like, chars in Strings is immediate-mode, this should be renamed
@@ -29,15 +30,21 @@ class Batch(
     private val textRenderer: TextRenderer
 ) {
 
-    var shader: Shader = Shaders.getTextureShader()
     internal val context: GraphicsContext get() = renderer.context
-    private val textShader: Shader = Shaders.getTextShader()
-    private val blitShader = BlitShader()
 
-    var combined: Matrix4fc = Matrix4f()
-        set(value) {
-            (field as Matrix4f).set(value)
-        }
+    private val uiBoxPipeline = PostPassPipeline(
+        UiBoxShader(context),
+        frameBuffer,
+        opaque = false,
+        depthTest = false
+    )
+
+    private val blitPipeline = PostPassPipeline(
+        BlitShader(context),
+        frameBuffer,
+        opaque = false,
+        depthTest = false
+    )
 
     private val uiOutlinePipeline = PostPassPipeline(
         UiOutlineShader(),
@@ -46,30 +53,40 @@ class Batch(
         depthTest = false
     )
 
-    companion object {
-        val resetColour = Vector4f(1f)
-    }
+    private val textShader = TextShader(context)
+
+    var combined: Matrix4fc = Matrix4f()
+        set(value) {
+            (field as Matrix4f).set(value)
+        }
 
     fun render(pipeline: Pipeline<*>) = renderer.render(pipeline)
 
     /**
      * @param position *CENTER* point of the box
      */
-    fun renderCenteredBox(position: Vector3fc, size: Vector3fc, colour: Vector4fc) {
-        shader.setUniform("colour", colour, false)
-        GL11C.glBlendFunc(GL11C.GL_SRC_ALPHA, GL11C.GL_ONE_MINUS_SRC_ALPHA)
-        renderer.renderBox(position, size, shader, combined)
-        GL11C.glBlendFunc(GL11C.GL_ONE, GL11C.GL_ZERO)
-        shader.setUniform("colour", resetColour, false)
+    fun renderCenteredBox(position: Vector2fc, size: Vector2fc, colour: Vector4fc) {
+        uiBoxPipeline.shader.let {
+            it.position = position
+            it.size = size
+            it.colour = colour
+            it.combined = combined
+            it.useSprite = false
+        }
+
+        renderer.render(uiBoxPipeline)
     }
 
-    fun renderBox(position: Vector3fc, size: Vector3fc, colour: Vector4fc) {
-        shader.setUniform("colour", colour, false)
-        val topLeftPosition = (size / 2f) + position
-        GL11C.glBlendFunc(GL11C.GL_SRC_ALPHA, GL11C.GL_ONE_MINUS_SRC_ALPHA)
-        renderer.renderBox(topLeftPosition, size, shader, combined)
-        GL11C.glBlendFunc(GL11C.GL_ONE, GL11C.GL_ZERO)
-        shader.setUniform("colour", resetColour, false)
+    fun renderBox(position: Vector2fc, size: Vector2fc, colour: Vector4fc) {
+        uiBoxPipeline.shader.let {
+            it.position = (size / 2f) + position
+            it.size = size
+            it.colour = colour
+            it.combined = combined
+            it.useSprite = false
+        }
+
+        renderer.render(uiBoxPipeline)
     }
 
     fun getAbsoluteCursorPosition(cursorPosition: Vector2ic, text: String, font: Font, size: Vector2fc) =
@@ -105,27 +122,22 @@ class Batch(
         cursorPosition: Vector2f? = null
     ) = textRenderer.render(text, font, position, size, textShader, combined, cursorPosition)
 
-    val dummyVAO by lazy { GL30C.glGenVertexArrays() }
+//    val dummyVAO by lazy { GL30C.glGenVertexArrays() } //TODO add to renderer?
 
     fun blit(texture: Texture2D, position: Vector2fc, size: Vector2fc, rotation: Float, colour: Vector4fc? = null) {
-        renderer.context.checkThread()
-
-        blitShader.apply {
-            sprite = texture
-            useSpriteColour = true
-            this.position = position
-            this.size = size
-            this.rotation = rotation
-            windowSize = Vector2f(frameBuffer.size)
-            colour?.let { this.colour = colour }
-            AbstractShader.start()
+        blitPipeline.shader.let {
+            it.sprite = texture
+            it.useSpriteColour = true
+            it.position = position
+            it.size = size
+            it.rotation = rotation
+            it.windowSize = Vector2f(frameBuffer.size)
+            colour?.let { colour -> it.colour = colour }
         }
 
-        GL30C.glBindVertexArray(dummyVAO)
-        GL11C.glDisable(GL11C.GL_DEPTH_TEST)
-        GL11C.glBlendFunc(GL11C.GL_SRC_ALPHA, GL11C.GL_ONE_MINUS_SRC_ALPHA)
-        GL11C.glDrawArrays(GL11C.GL_TRIANGLE_STRIP, 0, 4)
-        GL11C.glBlendFunc(GL11C.GL_ONE, GL11C.GL_ZERO)
+//        GL30C.glBindVertexArray(dummyVAO) //TODO add to renderer?
+
+        renderer.render(blitPipeline)
     }
 
     fun ndcToScreenSpace(ndc: Vector2f): Vector2f =

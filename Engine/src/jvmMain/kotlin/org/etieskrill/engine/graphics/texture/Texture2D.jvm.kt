@@ -6,17 +6,11 @@ import org.etieskrill.engine.graphics.framebuffer.FrameBuffer
 import org.etieskrill.engine.graphics.framebuffer.FrameBufferAttachment
 import org.etieskrill.engine.graphics.framebuffer.FrameBufferAttachmentType
 import org.etieskrill.engine.graphics.framebuffer.gl
-import org.etieskrill.engine.util.ResourceReader
-import org.joml.Vector2i
 import org.joml.Vector2ic
 import org.joml.Vector4fc
 import org.lwjgl.BufferUtils.createByteBuffer
-import org.lwjgl.BufferUtils.createIntBuffer
 import org.lwjgl.opengl.GL11C.*
 import org.lwjgl.opengl.GL30C.*
-import org.lwjgl.stb.STBImage.stbi_failure_reason
-import org.lwjgl.stb.STBImage.stbi_load_from_memory
-import java.util.*
 import io.github.etieskrill.injection.extension.shader.Texture2D as DslTexture2D
 
 private val logger = KotlinLogging.logger {}
@@ -25,13 +19,13 @@ actual class Texture2D actual constructor(
     context: GraphicsContext,
     actual override val size: Vector2ic,
     private var textureData: ByteArray?,
+    format: TextureFormat,
     type: TextureType,
-    format: TextureFormat?,
     minFilter: TextureMinFilter,
     magFilter: TextureMagFilter,
     wrapping: TextureWrapping,
     borderColour: Vector4fc,
-) : Texture(context, type, format, minFilter, magFilter, wrapping, borderColour), DslTexture2D, FrameBufferAttachment {
+) : Texture(context, format, type, minFilter, magFilter, wrapping, borderColour), DslTexture2D, FrameBufferAttachment {
 
     override val glTarget: Int get() = GL_TEXTURE_2D
 
@@ -43,33 +37,8 @@ actual class Texture2D actual constructor(
             Texture2D(context, size, buffer, format = format)
 
         actual fun createFromFile(file: String, context: GraphicsContext, type: TextureType): Texture2D {
-            val textureData = loadTextureData(file, type)
-            return Texture2D(context, textureData.size, textureData.buffer, type, textureData.format)
-        }
-
-        internal class TextureData(val size: Vector2ic, val format: TextureFormat, val buffer: ByteArray)
-
-        internal fun loadTextureData(file: String, type: TextureType): TextureData {
-            val width = createIntBuffer(1)
-            val height = createIntBuffer(1)
-            val numChannels = createIntBuffer(1)
-
-            //stbi_set_flip_vertically_on_load(true) //uv coords are apparently already flipped while loading models?
-            val textureData = stbi_load_from_memory(
-                ResourceReader.getRawResource(file),
-                width, height, numChannels, 0
-            )
-            if (textureData == null || !textureData.hasRemaining()) {
-                throw MissingResourceException(
-                    "Texture $file could not be loaded:\n${stbi_failure_reason()}",
-                    Texture2D::class.simpleName, file
-                )
-            }
-
-            val format = textureFormatFromNumChannelsAndType(numChannels.get(), type)
-            val buffer = ByteArray(textureData.remaining()) { textureData[it] }
-
-            return TextureData(Vector2i(width.get(), height.get()), format, buffer)
+            val textureData = loadTexture2DData(file, type)
+            return Texture2D(context, textureData.size, textureData.buffer, textureData.format, type)
         }
     }
 

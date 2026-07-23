@@ -1,6 +1,6 @@
 package org.etieskrill.engine.graphics.model
 
-import org.etieskrill.engine.graphics.VertexArrayAccessor
+import org.etieskrill.engine.graphics.buffer.VertexArrayAccessor
 import org.joml.Vector2fc
 import org.joml.Vector3fc
 import org.joml.Vector4fc

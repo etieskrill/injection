@@ -1,7 +1,7 @@
 package org.etieskrill.engine.graphics.model
 
 import org.etieskrill.engine.common.Disposable
-import org.etieskrill.engine.graphics.VertexArrayObject
+import org.etieskrill.engine.graphics.buffer.VertexArrayObject
 import org.joml.primitives.AABBf
 import org.lwjgl.opengl.GL33C.*
 

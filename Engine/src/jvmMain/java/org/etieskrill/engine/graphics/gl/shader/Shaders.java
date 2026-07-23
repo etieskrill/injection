@@ -84,13 +84,6 @@ public class Shaders {
     }
 
     @ReflectShader
-    public static class TextShader extends Shader {
-        public TextShader() {
-            super(List.of("Text.vert", "Text.geom", "Text.frag"));
-        }
-    }
-
-    @ReflectShader
     public static class ShowNormalsShader extends Shader {
         public ShowNormalsShader() {
             super(List.of("ShowNormals.vert", "ShowNormals.geom", "ShowNormals.frag"));

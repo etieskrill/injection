@@ -9,8 +9,8 @@ import io.github.etieskrill.injection.extension.shader.reflection.UNIFORM_RESOUR
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.etieskrill.engine.common.Disposable
 import org.etieskrill.engine.graphics.GraphicsContext
-import org.etieskrill.engine.graphics.StorageBufferObject
-import org.etieskrill.engine.graphics.gl
+import org.etieskrill.engine.graphics.buffer.StorageBufferObject
+import org.etieskrill.engine.graphics.buffer.gl
 import org.etieskrill.engine.graphics.gl.GLUtils
 import org.etieskrill.engine.graphics.gl.shader.ShaderCreationException
 import org.etieskrill.engine.graphics.gl.shader.ShaderUniformException
@@ -354,14 +354,14 @@ actual abstract class Shader protected actual constructor(
     fun bind() = context.withContext {
         if (context.activeShader != this) {
             glUseProgram(programId)
-            context._activeShader = this
+            context.activeShader = this
         }
     }
 
     fun unbind() = context.withContext {
         if (context.activeShader != null) {
             glUseProgram(0)
-            context._activeShader = null
+            context.activeShader = null
         }
     }
 

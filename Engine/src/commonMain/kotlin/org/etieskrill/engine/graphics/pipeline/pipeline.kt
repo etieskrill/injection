@@ -2,7 +2,7 @@ package org.etieskrill.engine.graphics.pipeline
 
 import io.github.etieskrill.injection.extension.shader.AbstractShader
 import io.github.etieskrill.injection.extension.shader.dsl.PureShaderBuilder
-import org.etieskrill.engine.graphics.VertexArrayObject
+import org.etieskrill.engine.graphics.buffer.VertexArrayObject
 import org.etieskrill.engine.graphics.framebuffer.FrameBuffer
 
 class PostPassPipeline<S : PureShaderBuilder<*, *>>(

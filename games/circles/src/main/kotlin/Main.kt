@@ -6,7 +6,7 @@ import org.etieskrill.engine.entity.component.Transform
 import org.etieskrill.engine.entity.service.impl.DeferredRenderService
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera
 import org.etieskrill.engine.graphics.framebuffer.FrameBuffer
-import org.etieskrill.engine.graphics.StorageBufferObject
+import org.etieskrill.engine.graphics.buffer.StorageBufferObject
 import org.etieskrill.engine.graphics.framebuffer.FrameBufferAttachmentType.COLOUR0
 import org.etieskrill.engine.graphics.shader.Shader
 import org.etieskrill.engine.graphics.gl.shader.impl.BlitShader

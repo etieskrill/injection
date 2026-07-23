@@ -8,7 +8,6 @@ import org.etieskrill.engine.graphics.renderer.Renderer
 import org.etieskrill.engine.graphics.camera.Camera
 import org.etieskrill.engine.graphics.framebuffer.FrameBuffer
 import org.etieskrill.engine.graphics.gl.shader.Shaders
-import org.etieskrill.engine.graphics.gl.shader.model
 import org.etieskrill.engine.graphics.model.ModelFactory
 import org.etieskrill.engine.graphics.pipeline.CullingMode
 import org.etieskrill.engine.graphics.pipeline.DrawMode

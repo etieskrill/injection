@@ -16,8 +16,8 @@ expect abstract class Texture : DslTexture, Disposable {
 
     constructor(
         context: GraphicsContext,
+        format: TextureFormat,
         type: TextureType = TextureType.UNKNOWN,
-        format: TextureFormat? = null,
         minFilter: TextureMinFilter = TextureMinFilter.TRILINEAR,
         magFilter: TextureMagFilter = TextureMagFilter.LINEAR,
         wrapping: TextureWrapping = TextureWrapping.REPEAT,

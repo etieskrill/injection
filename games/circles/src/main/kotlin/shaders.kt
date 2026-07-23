@@ -8,7 +8,7 @@ import io.github.etieskrill.injection.extension.shader.int
 import io.github.etieskrill.injection.extension.shader.mat4
 import io.github.etieskrill.injection.extension.shader.vec2
 import io.github.etieskrill.injection.extension.shader.vec4
-import org.etieskrill.engine.graphics.VertexArrayAccessor
+import org.etieskrill.engine.graphics.buffer.VertexArrayAccessor
 import org.etieskrill.engine.graphics.shader.Shader
 import org.joml.Vector2f
 

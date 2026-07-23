@@ -6,9 +6,9 @@ import io.github.etieskrill.injection.extension.shader.vec3
 import io.github.etieskrill.injection.extension.shader.vec4
 import org.etieskrill.engine.application.App
 import org.etieskrill.engine.graphics.camera.OrthographicCamera
-import org.etieskrill.engine.graphics.BufferObject
-import org.etieskrill.engine.graphics.VertexArrayAccessor
-import org.etieskrill.engine.graphics.VertexArrayObject
+import org.etieskrill.engine.graphics.buffer.BufferObject
+import org.etieskrill.engine.graphics.buffer.VertexArrayAccessor
+import org.etieskrill.engine.graphics.buffer.VertexArrayObject
 import org.etieskrill.engine.graphics.shader.Shader
 import org.etieskrill.engine.input.controller.CursorCameraController
 import org.joml.Matrix4f

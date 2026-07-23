@@ -1,7 +1,7 @@
 package org.etieskrill.engine.graphics.gl.renderer;
 
 import org.etieskrill.engine.graphics.camera.Camera;
-import org.etieskrill.engine.graphics.VertexArrayObject;
+import org.etieskrill.engine.graphics.buffer.VertexArrayObject;
 import org.etieskrill.engine.graphics.shader.Shader;
 import org.etieskrill.engine.graphics.gl.shader.impl.ParticleShader;
 import org.etieskrill.engine.graphics.particle.*;

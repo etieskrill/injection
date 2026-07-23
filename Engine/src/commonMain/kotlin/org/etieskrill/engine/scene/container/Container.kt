@@ -71,11 +71,7 @@ open class Container(child: org.etieskrill.engine.scene.Node<*>? = null) : org.e
 
     override fun render(batch: Batch) {
         if (renderedColour.w != 0f) {
-            batch.renderBox(
-                Vector3f(absolutePosition, 0f),
-                Vector3f(formattedSize, 0f),
-                renderedColour
-            )
+            batch.renderBox(absolutePosition, formattedSize, renderedColour)
         }
 
         child?.render(batch)

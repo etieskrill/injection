@@ -43,7 +43,7 @@ class Checkbox(
     //TODO handle hover
 
     override fun render(batch: Batch) {
-        if (colour.w != 0f) batch.renderBox(Vector3f(absolutePosition, 0f), Vector3f(formattedSize, 0f), colour)
+        if (colour.w != 0f) batch.renderBox(absolutePosition, formattedSize, colour)
         if (ticked) batch.blit(sprite, absolutePosition, formattedSize, 0f)
     }
 

@@ -14,6 +14,7 @@ import org.etieskrill.engine.graphics.shader.Shader
 import org.etieskrill.engine.scene.Batch
 import org.etieskrill.engine.scene.Node
 import org.etieskrill.engine.util.FixedArrayDeque
+import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector4f
 
@@ -51,7 +52,7 @@ class Histogram(
 
         val position = absolutePosition
 
-        batch.renderBox(Vector3f(position, 0f), Vector3f(size, 0f), backgroundColour)
+        batch.renderBox(position, size, backgroundColour)
 
         val maxValue = values.maxOrNull() ?: 0f
 
@@ -76,8 +77,8 @@ class Histogram(
 
             for (column in 0..columns) {
                 batch.renderBox(
-                    Vector3f(position.x + column * columnWidth, position.y, 0f),
-                    Vector3f(1f, size.y, 0f),
+                    Vector2f(position).apply { x += column * columnWidth },
+                    Vector2f(1f, size.y),
                     separatorColour
                 )
             }

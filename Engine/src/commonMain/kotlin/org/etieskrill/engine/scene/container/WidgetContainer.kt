@@ -171,11 +171,7 @@ open class WidgetContainer(
     override fun render(batch: Batch) {
         val position = absolutePosition
 
-        batch.renderBox(
-            Vector3f(position, 0f),
-            Vector3f(formattedSize.x, barHeight.toFloat(), 0f),
-            WIDGET_BAR_COLOUR
-        )
+        batch.renderBox(position, Vector2f(formattedSize.x, barHeight.toFloat()), WIDGET_BAR_COLOUR)
         batch.blit(
             chevronIcon,
             Vector2f(position).add(WIDGET_CHEVRON_MARGIN.toFloat(), WIDGET_CHEVRON_MARGIN.toFloat()),
@@ -191,8 +187,8 @@ open class WidgetContainer(
         if (!collapsed) {
             if (renderedColour.w != 0f) {
                 batch.renderBox(
-                    Vector3f(absolutePosition, 0f).apply { y += barHeight.toFloat() },
-                    Vector3f(formattedSize, 0f).apply { y -= barHeight.toFloat() },
+                    Vector2f(absolutePosition).apply { y += barHeight.toFloat() },
+                    Vector2f(formattedSize).apply { y -= barHeight.toFloat() },
                     renderedColour
                 )
             }

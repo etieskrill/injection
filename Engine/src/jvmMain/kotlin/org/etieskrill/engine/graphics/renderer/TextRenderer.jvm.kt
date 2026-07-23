@@ -1,9 +1,9 @@
 package org.etieskrill.engine.graphics.renderer
 
 import org.etieskrill.engine.common.Disposable
-import org.etieskrill.engine.graphics.BufferAccessFrequency
+import org.etieskrill.engine.graphics.buffer.BufferAccessFrequency
 import org.etieskrill.engine.graphics.GraphicsContext
-import org.etieskrill.engine.graphics.VertexArrayObject
+import org.etieskrill.engine.graphics.buffer.VertexArrayObject
 import org.etieskrill.engine.graphics.gl.GLUtils
 import org.etieskrill.engine.graphics.shader.Shader
 import org.etieskrill.engine.graphics.text.BitmapFont

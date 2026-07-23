@@ -1,6 +1,10 @@
 package org.etieskrill.engine.graphics
 
 import io.github.etieskrill.injection.extension.shader.Texture
+import org.etieskrill.engine.graphics.buffer.BufferObjectInstance
+import org.etieskrill.engine.graphics.buffer.BufferType
+import org.etieskrill.engine.graphics.buffer.StorageBufferObject
+import org.etieskrill.engine.graphics.buffer.VertexArrayObject
 import org.etieskrill.engine.graphics.framebuffer.FrameBuffer
 import org.etieskrill.engine.graphics.shader.Shader
 import kotlin.properties.Delegates.notNull
@@ -13,21 +17,11 @@ actual data class GraphicsContext(
 
     actual var screenBuffer: FrameBuffer by notNull(); internal set
     var activeFramebuffer: FrameBuffer by notNull(); internal set
-
-    internal val _textureBindings = Array<Texture?>(maxTextureUnits) { null }
-    val textureBindings: Array<Texture?> get() = _textureBindings
-
-    internal val _bufferBindings = mutableMapOf<BufferType, BufferObject<*>>()
-    val bufferBindings: Map<BufferType, BufferObject<*>> get() = _bufferBindings
-
-    internal val _storageBufferBindings = mutableMapOf<Int, StorageBufferObject<*>>()
-    val storageBufferBindings: Map<Int, StorageBufferObject<*>> get() = _storageBufferBindings
-
-    internal var _activeShader: Shader? = null
-    val activeShader: Shader? get() = _activeShader
-
-    internal var _activeVertexArray: VertexArrayObject<*>? = null
-    val activeVertexArray: VertexArrayObject<*>? get() = _activeVertexArray
+    internal val textureBindings = Array<Texture?>(maxTextureUnits) { null }
+    internal val bufferBindings = mutableMapOf<BufferType, BufferObjectInstance<*>>()
+    internal val storageBufferBindings = mutableMapOf<Int, StorageBufferObject<*>>()
+    internal var activeShader: Shader? = null
+    internal var activeVertexArray: VertexArrayObject<*>? = null
 
     actual fun <T> withContext(block: () -> T): T {
         checkThread() //TODO use rendering coroutine withContext instead

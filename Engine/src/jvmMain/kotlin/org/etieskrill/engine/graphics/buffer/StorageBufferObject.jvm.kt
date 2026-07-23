@@ -1,8 +1,9 @@
-package org.etieskrill.engine.graphics
+package org.etieskrill.engine.graphics.buffer
 
 import io.github.etieskrill.injection.extension.shader.BufferAccessor
 import io.github.etieskrill.injection.extension.shader.StorageBuffer
 import org.etieskrill.engine.common.Disposable
+import org.etieskrill.engine.graphics.GraphicsContext
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL15C
 import org.lwjgl.opengl.GL30C

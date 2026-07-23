@@ -5,8 +5,10 @@ import org.etieskrill.engine.input.Key
 import org.etieskrill.engine.input.KeyEventAction
 import org.etieskrill.engine.scene.Batch
 import org.etieskrill.engine.scene.Node
+import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector4f
+import org.joml.plus
 
 class Slider(
     var value: Float,
@@ -27,10 +29,10 @@ class Slider(
     }
 
     override fun render(batch: Batch) {
-        batch.renderBox(Vector3f(absolutePosition, 0f), Vector3f(size, 0f), renderedColour)
+        batch.renderBox(absolutePosition, size, renderedColour)
         batch.renderBox(
-            Vector3f(absolutePosition, 0f).add(BAR_MARGIN, BAR_MARGIN, 0f),
-            Vector3f(size, 0f).sub(2 * BAR_MARGIN, 2 * BAR_MARGIN, 0f).mul(value / (maxValue - minValue), 1f, 1f),
+            Vector2f(BAR_MARGIN) + absolutePosition,
+            (Vector2f(-2 * BAR_MARGIN) + size).apply { x *= value / (maxValue - minValue) },
             barColour
         )
     }

@@ -63,8 +63,8 @@ class TextField(
 
         if (focused && pacer.timerTimeSeconds % 1 < 0.5) {
             batch.renderBox(
-                Vector3f(absolutePosition + absoluteCursorPosition!!.add(0f, 0.2f * font.lineHeight), 0f),
-                Vector3f(font.lineHeight / 12f, font.lineHeight.toFloat(), 0f),
+                (Vector2f(absolutePosition) + absoluteCursorPosition!!).apply { y += 0.2f * font.lineHeight },
+                Vector2f(font.lineHeight / 12f, font.lineHeight.toFloat()),
                 Vector4f(1f)
             )
         }
@@ -95,8 +95,8 @@ class TextField(
     }
 
     private fun drawSelectionLine(batch: Batch, absStartPos: Vector2fc, absSize: Vector2fc) = batch.renderBox(
-        Vector3f(absolutePosition + absStartPos.add(0f, 0.2f * font.lineHeight, Vector2f()), 0f),
-        Vector3f(absSize.x(), font.lineHeight.toFloat() + absSize.y(), 0f),
+        (Vector2f(absolutePosition) + absStartPos).apply { y += 0.2f * font.lineHeight },
+        Vector2f(absSize).apply { y += font.lineHeight.toFloat() },
         highlightColour
     )
 

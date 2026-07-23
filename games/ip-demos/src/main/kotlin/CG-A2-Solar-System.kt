@@ -12,8 +12,8 @@ import org.etieskrill.engine.entity.service.impl.RenderService
 import org.etieskrill.engine.graphics.camera.Camera
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera
 import org.etieskrill.engine.graphics.framebuffer.FrameBuffer
-import org.etieskrill.engine.graphics.VertexArrayAccessor
-import org.etieskrill.engine.graphics.VertexArrayObject
+import org.etieskrill.engine.graphics.buffer.VertexArrayAccessor
+import org.etieskrill.engine.graphics.buffer.VertexArrayObject
 import org.etieskrill.engine.graphics.renderer.GLRenderer
 import org.etieskrill.engine.graphics.shader.Shader
 import org.etieskrill.engine.graphics.gl.shader.impl.SingleColourShader

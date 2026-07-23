@@ -1,10 +1,10 @@
-package org.etieskrill.engine.graphics
+package org.etieskrill.engine.graphics.buffer
 
 import io.github.etieskrill.injection.extension.shader.Buffer
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.etieskrill.engine.common.Disposable
 import org.etieskrill.engine.graphics.gl.BufferCreationException
-import org.etieskrill.engine.graphics.BufferType.ELEMENT_ARRAY
+import org.etieskrill.engine.graphics.buffer.BufferType.ELEMENT_ARRAY
 import org.etieskrill.engine.graphics.gl.GLUtils.checkErrorThrowing
 import org.etieskrill.engine.graphics.gl.GLUtils.clearError
 import org.lwjgl.opengl.GL20C.glEnableVertexAttribArray

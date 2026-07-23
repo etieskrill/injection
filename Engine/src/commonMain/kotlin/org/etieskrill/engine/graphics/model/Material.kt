@@ -3,8 +3,8 @@ package org.etieskrill.engine.graphics.model
 import org.etieskrill.engine.common.Disposable
 import org.etieskrill.engine.graphics.shader.UniformMappable
 import org.etieskrill.engine.graphics.shader.UniformMapper
-import org.etieskrill.engine.graphics.texture.CubeMapTexture
 import org.etieskrill.engine.graphics.texture.Texture2D
+import org.etieskrill.engine.graphics.texture.TextureCubeMap
 import org.joml.Vector4f
 import org.joml.Vector4fc
 
@@ -173,7 +173,7 @@ data class PBRMaterial(
 data class SkyboxMaterial(
     /* 2. @Uniform(exclude = true) */ override val name: String? = null,
 
-    /* 1. @Uniform */ val skyboxTexture: CubeMapTexture? = null,
+    /* 1. @Uniform */ val skyboxTexture: TextureCubeMap? = null,
     /* 1. @Uniform */ val diffuseColour: Colour = Vector4f(0.25f),
     /* 1. @Uniform */ val opacity: Float? = null
 ) : Material() {

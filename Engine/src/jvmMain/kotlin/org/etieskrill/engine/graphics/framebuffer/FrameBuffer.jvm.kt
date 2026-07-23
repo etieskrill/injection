@@ -2,7 +2,7 @@ package org.etieskrill.engine.graphics.framebuffer
 
 import org.etieskrill.engine.common.Disposable
 import org.etieskrill.engine.graphics.GraphicsContext
-import org.etieskrill.engine.graphics.GraphicsContextBound
+import org.etieskrill.engine.graphics.GraphicsContextDescriptor
 import org.etieskrill.engine.graphics.gl.GLUtils
 import org.etieskrill.engine.graphics.framebuffer.FrameBufferAttachmentType.COLOUR0
 import org.etieskrill.engine.graphics.framebuffer.FrameBufferAttachmentType.DEPTH_STENCIL
@@ -22,7 +22,7 @@ actual open class FrameBuffer internal constructor(
     override val size: Vector2ic,
     val attachments: Map<FrameBufferAttachmentType, FrameBufferAttachment>,
     id: Int
-) : DslFrameBuffer, GraphicsContextBound, Disposable {
+) : DslFrameBuffer, GraphicsContextDescriptor, Disposable {
 
     actual var clearColour: Vector4f = Vector4f(0f)
         set(value) {

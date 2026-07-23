@@ -2,12 +2,12 @@ package org.etieskrill.engine.graphics.framebuffer
 
 import org.etieskrill.engine.common.Disposable
 import org.etieskrill.engine.graphics.GraphicsContext
-import org.etieskrill.engine.graphics.GraphicsContextBound
+import org.etieskrill.engine.graphics.GraphicsContextDescriptor
 import org.joml.Vector2ic
 import org.joml.Vector4f
 import io.github.etieskrill.injection.extension.shader.dsl.FrameBuffer as DslFrameBuffer
 
-expect class FrameBuffer : DslFrameBuffer, GraphicsContextBound, Disposable {
+expect class FrameBuffer : DslFrameBuffer, GraphicsContextDescriptor, Disposable {
 
     var clearColour: Vector4f
 
