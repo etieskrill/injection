@@ -2,39 +2,37 @@ package org.etieskrill.engine.graphics.buffer
 
 import io.github.etieskrill.injection.extension.shader.Buffer
 import org.etieskrill.engine.common.Disposable
+import org.etieskrill.engine.graphics.GraphicsContext
 
-expect class VertexArrayObject<T> : Disposable {
-
-    var vertices: Collection<T>
-    var indices: Collection<Int>
-
-    val accessor: VertexArrayAccessor<T>
-    val vertexBuffer: BufferObject<T>
+data class VertexArrayObject<T>(
+    val accessor: VertexArrayAccessor<T>,
+    val vertexBuffer: BufferObject<T>,
     val indexBuffer: BufferObject<Int>?
+) {
+    init {
+        require(vertexBuffer.type == BufferType.ARRAY) { "Vertex buffer must have ARRAY buffer type" }
+        require(indexBuffer == null || indexBuffer.type == BufferType.ELEMENT_ARRAY) { "Index buffer must have ELEMENT_ARRAY buffer type" }
+    }
 
-    val isIndexed: Boolean
-    val numElements: Int
-    val elementByteSize: Int
+    val isIndexed get() = indexBuffer != null
+    val numElements get() = (indexBuffer ?: vertexBuffer).numElements
+    val elementByteSize get() = accessor.elementByteSize
 
-    //FIXME needed?
-    fun map(vertices: Collection<T>, buffer: Buffer<T>)
+    var vertices: Collection<T> get() = TODO(); set(value) = vertexBuffer.setData(value)
+    var indices: Collection<Int> get() = TODO(); set(value) {
+        check(isIndexed) { "Vertex array object is not indexed" }
+        indexBuffer?.setData(value)
+    }
 
-    constructor(
-        accessor: VertexArrayAccessor<T>, vertexBuffer: BufferObject<T>,
-        indexBuffer: BufferObject<Int>? = null, indices: Collection<Int>? = null, numIndices: Int? = null,
-        frequency: BufferAccessFrequency? = null, accessType: BufferAccessType? = null
-    )
+    object IndexArrayAccessor : VertexArrayAccessor<Int>() {
+        override val elementByteSize: Int get() = super.elementByteSize
+        override fun registerFields() = addField<Int> { index, buffer -> buffer.putInt(index) }
+    }
+}
 
-    constructor(
-        accessor: VertexArrayAccessor<T>, vertexElements: Collection<T>,
-        indexBuffer: BufferObject<Int>? = null, indices: Collection<Int>? = null, numIndices: Int? = null,
-        frequency: BufferAccessFrequency? = null, accessType: BufferAccessType? = null
-    )
+internal expect class VertexArrayObjectInstance<T> : Disposable {
+    val descriptor: VertexArrayObject<T>
+    val context: GraphicsContext
 
-    constructor(
-        accessor: VertexArrayAccessor<T>, numVertexElements: Int,
-        indexBuffer: BufferObject<Int>? = null, indices: Collection<Int>? = null, numIndices: Int? = null,
-        frequency: BufferAccessFrequency? = null, accessType: BufferAccessType? = null
-    )
-
+    override fun dispose()
 }

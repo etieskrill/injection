@@ -1,10 +1,9 @@
 package org.etieskrill.engine.graphics.buffer
 
-import io.github.etieskrill.injection.extension.shader.Buffer
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.etieskrill.engine.common.Disposable
+import org.etieskrill.engine.graphics.GraphicsContext
 import org.etieskrill.engine.graphics.gl.BufferCreationException
-import org.etieskrill.engine.graphics.buffer.BufferType.ELEMENT_ARRAY
 import org.etieskrill.engine.graphics.gl.GLUtils.checkErrorThrowing
 import org.etieskrill.engine.graphics.gl.GLUtils.clearError
 import org.lwjgl.opengl.GL20C.glEnableVertexAttribArray
@@ -16,110 +15,27 @@ private val logger = KotlinLogging.logger {}
 /**
  * @param T type of vertex data
  */
-@ConsistentCopyVisibility
-actual data class VertexArrayObject<T> private constructor(
-    actual val accessor: VertexArrayAccessor<T>,
-    actual val vertexBuffer: BufferObject<T>,
-    actual val indexBuffer: BufferObject<Int>?
+internal actual data class VertexArrayObjectInstance<T>(
+    actual val descriptor: VertexArrayObject<T>,
+    actual val context: GraphicsContext
 ) : Disposable {
-
-    actual val isIndexed get() = indexBuffer != null
-    actual val numElements get() = (indexBuffer ?: vertexBuffer).numElements
-    actual val elementByteSize get() = accessor.elementByteSize
-
-    actual var vertices: Collection<T> get() = TODO(); set(value) = vertexBuffer.setData(value)
-    actual var indices: Collection<Int>
-        get() = TODO()
-        set(value) {
-            require(isIndexed) { "Vertex array object is not indexed" }
-            indexBuffer!!.setData(value)
-        }
 
     private val id = glGenVertexArrays()
 
-    actual constructor(
-        accessor: VertexArrayAccessor<T>, vertexBuffer: BufferObject<T>,
-        indexBuffer: BufferObject<Int>?, indices: Collection<Int>?, numIndices: Int?,
-        frequency: BufferAccessFrequency?, accessType: BufferAccessType?
-    ) : this(accessor, vertexBuffer, createIndexBuffer(indexBuffer, indices, numIndices, frequency, accessType))
-
-    actual constructor(
-        accessor: VertexArrayAccessor<T>, vertexElements: Collection<T>,
-        indexBuffer: BufferObject<Int>?, indices: Collection<Int>?, numIndices: Int?,
-        frequency: BufferAccessFrequency?, accessType: BufferAccessType?
-    ) : this(
-        accessor,
-        createVertexBuffer(accessor, vertexElements.size, frequency, accessType)
-            .also { it.bind() }
-            .also { it.setData(vertexElements) },
-        createIndexBuffer(indexBuffer, indices, numIndices, frequency, accessType)
-    )
-
-    actual constructor(
-        accessor: VertexArrayAccessor<T>, numVertexElements: Int,
-        indexBuffer: BufferObject<Int>?, indices: Collection<Int>?, numIndices: Int?,
-        frequency: BufferAccessFrequency?, accessType: BufferAccessType?
-    ) : this(
-        accessor,
-        createVertexBuffer(accessor, numVertexElements, frequency, accessType)
-            .also { it.bind() },
-        createIndexBuffer(indexBuffer, indices, numIndices, frequency, accessType)
-    )
+    private val vertexBuffer get() = context.getBufferObject(descriptor.vertexBuffer)
+    private val indexBuffer get() = descriptor.indexBuffer?.let { context.getBufferObject(it) }
 
     init {
-        require(vertexBuffer.type == BufferType.ARRAY) { "Vertex buffer must an array buffer" }
-        require(indexBuffer == null || indexBuffer.type == ELEMENT_ARRAY) {
-            "Index buffer must an element array buffer"
-        }
+        context.withContext {
+            clearError()
 
-        clearError()
+            bind()
+            vertexBuffer.bind()
+            indexBuffer?.bind()
 
-        bind()
+            configureAttributeArrays(descriptor.accessor)
 
-        vertexBuffer.bind()
-        indexBuffer?.bind()
-
-        configureAttributeArrays(accessor)
-
-        checkErrorThrowing("Failed to create vertex array object") { BufferCreationException(it) }
-    }
-
-    companion object {
-        const val MAX_VERTEX_ATTRIB_BINDINGS = 16
-
-        private fun <T> createVertexBuffer(
-            accessor: VertexArrayAccessor<T>,
-            numElements: Int,
-            accessFrequency: BufferAccessFrequency?,
-            accessType: BufferAccessType?
-        ): BufferObject<T> = BufferObject(
-            accessor, numElements, BufferType.ARRAY,
-            accessFrequency ?: BufferAccessFrequency.STATIC,
-            accessType ?: BufferAccessType.DRAW
-        )
-
-        fun createIndexBuffer(
-            indexBuffer: BufferObject<Int>?,
-            indices: Collection<Int>?,
-            numIndices: Int?,
-            frequency: BufferAccessFrequency?,
-            accessType: BufferAccessType?
-        ): BufferObject<Int>? = when {
-            indexBuffer != null -> indexBuffer
-            indices != null -> BufferObject(
-                IndexArrayAccessor, indices.size, ELEMENT_ARRAY,
-                frequency ?: BufferAccessFrequency.STATIC, accessType ?: BufferAccessType.DRAW
-            )
-                .also { it.bind() }
-                .also { it.setData(indices) }
-
-            numIndices != null -> BufferObject(
-                IndexArrayAccessor, numIndices, ELEMENT_ARRAY,
-                frequency ?: BufferAccessFrequency.STATIC, accessType ?: BufferAccessType.DRAW
-            )
-                .also { it.bind() }
-
-            else -> null
+            checkErrorThrowing("Failed to create vertex array object") { BufferCreationException(it) }
         }
     }
 
@@ -164,7 +80,7 @@ actual data class VertexArrayObject<T> private constructor(
                 }
             }
 
-            if (bindingIndex >= MAX_VERTEX_ATTRIB_BINDINGS) {
+            if (bindingIndex >= context.maxVertexAttributes) {
                 throw BufferCreationException("Too many vertex attribute bindings at field $bindingIndex")
             }
 
@@ -174,17 +90,25 @@ actual data class VertexArrayObject<T> private constructor(
         logger.debug { "Configured vertex attribute pointers:\n$configLog" }
     }
 
-    private object IndexArrayAccessor : VertexArrayAccessor<Int>() {
-        override val elementByteSize: Int get() = super.elementByteSize
-        override fun registerFields() = addField<Int> { index, buffer -> buffer.putInt(index) }
+    fun bind() = context.withContext {
+        if (context.activeVertexArray != this) {
+            vertexBuffer.bind() //this is to update the buffer instance values
+            indexBuffer?.bind()
+
+            glBindVertexArray(id)
+            context.activeVertexArray = this
+        }
     }
 
-    actual fun map(vertices: Collection<T>, buffer: Buffer<T>) = accessor.map(vertices, buffer)
+    fun unbind() = context.withContext {
+        if (context.activeVertexArray != null) {
+            glBindVertexArray(0)
+            context.activeVertexArray = null
+        }
+    }
 
-    fun bind() = glBindVertexArray(id)
-    fun unbind() = glBindVertexArray(0)
-
-    override fun dispose() {
+    actual override fun dispose(): Unit = context.withContext {
+        unbind()
         glDeleteVertexArrays(id)
         vertexBuffer.dispose()
         indexBuffer?.dispose()

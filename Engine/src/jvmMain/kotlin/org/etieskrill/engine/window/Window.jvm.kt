@@ -25,6 +25,7 @@ import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11C.*
 import org.lwjgl.opengl.GL13C.GL_MULTISAMPLE
 import org.lwjgl.opengl.GL20C.GL_MAX_TEXTURE_IMAGE_UNITS
+import org.lwjgl.opengl.GL20C.GL_MAX_VERTEX_ATTRIBS
 import org.lwjgl.opengl.GL20C.GL_SHADING_LANGUAGE_VERSION
 import org.lwjgl.system.MemoryStack
 import org.lwjgl.system.MemoryUtil.memUTF8
@@ -270,7 +271,8 @@ actual class Window actual constructor(
         val caps = GL.createCapabilities()
 
         graphicsContext = GraphicsContext(
-            glGetInteger(GL_MAX_TEXTURE_IMAGE_UNITS)
+            glGetInteger(GL_MAX_TEXTURE_IMAGE_UNITS),
+            glGetInteger(GL_MAX_VERTEX_ATTRIBS)
         )
 
         graphicsContext.thread = Thread.currentThread()

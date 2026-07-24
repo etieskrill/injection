@@ -18,7 +18,7 @@ import kotlin.time.TimeSource
 
 //TODO assure thread safety/passing
 //TODO separate text renderer
-actual class Renderer(
+actual class Renderer actual constructor(
     actual val context: GraphicsContext
 ) {
 
@@ -54,16 +54,12 @@ actual class Renderer(
         resetCounters()
     }
 
-    actual fun render(pipeline: Pipeline<*>) {
-        context.checkThread()
-
-        if (context.activeFramebuffer != pipeline.frameBuffer) {
-            pipeline.frameBuffer.bind()
-        }
+    actual fun render(pipeline: Pipeline<*>) = context.withContext {
+        pipeline.frameBuffer.bind()
 
         val isIndexed: Boolean
         if (pipeline.vao != null) {
-            pipeline.vao.bind()
+            context.getVertexArray(pipeline.vao).bind()
             isIndexed = pipeline.vao.isIndexed
         } else {
             glBindVertexArray(dummyVAO)

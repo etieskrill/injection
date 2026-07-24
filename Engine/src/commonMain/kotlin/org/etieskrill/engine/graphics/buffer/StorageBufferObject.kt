@@ -2,23 +2,16 @@ package org.etieskrill.engine.graphics.buffer
 
 import io.github.etieskrill.injection.extension.shader.BufferAccessor
 import io.github.etieskrill.injection.extension.shader.StorageBuffer
-import org.etieskrill.engine.common.Disposable
-import org.etieskrill.engine.graphics.GraphicsContext
-import java.nio.ByteBuffer
 
-expect class StorageBufferObject<T> : BufferObject<T>, StorageBuffer<T>, Disposable {
+class StorageBufferObject<T>(
+    numElements: Int,
+    accessor: BufferAccessor<T>,
+    frequency: BufferAccessFrequency = BufferAccessFrequency.STREAM,
+    accessType: BufferAccessType = BufferAccessType.DRAW
+) : BufferObject<T>(accessor, numElements, BufferType.STORAGE, frequency, accessType), StorageBuffer<T>
 
-    constructor(
-        context: GraphicsContext,
-        numElements: Int,
-        accessor: BufferAccessor<T>,
-        frequency: BufferAccessFrequency = BufferAccessFrequency.STREAM,
-        accessType: BufferAccessType = BufferAccessType.DRAW
-    )
+internal expect class StorageBufferObjectInstance<T> : BufferObjectInstance<T> {
+    override val descriptor: StorageBufferObject<T>
 
-    override val byteSize: Int
-
-    override fun setData(data: ByteBuffer, clear: Boolean)
-    override fun setData(offset: Long, data: ByteBuffer, clear: Boolean)
-
+    override fun setData(buffer: ByteArray)
 }

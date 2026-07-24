@@ -17,4 +17,6 @@ internal class ScreenBuffer(context: GraphicsContext, size: Vector2ic) : FrameBu
         glBufferClearMask = GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT
         glColourDrawBuffers = intArrayOf(GL_BACK)
     }
+
+    override fun dispose() = error("Cannot dispose screen buffer")
 }

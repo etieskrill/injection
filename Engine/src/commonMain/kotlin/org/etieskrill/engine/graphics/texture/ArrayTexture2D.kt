@@ -17,7 +17,7 @@ expect class ArrayTexture2D : Texture, Texture2DArray {
         length: Int,
         textureData: ByteArray? = null,
         type: TextureType = TextureType.UNKNOWN,
-        format: TextureFormat? = null,
+        format: TextureFormat,
         minFilter: TextureMinFilter = TextureMinFilter.TRILINEAR,
         magFilter: TextureMagFilter = TextureMagFilter.LINEAR,
         wrapping: TextureWrapping = TextureWrapping.REPEAT,

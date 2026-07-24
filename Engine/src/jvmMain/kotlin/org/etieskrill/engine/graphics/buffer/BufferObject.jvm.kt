@@ -17,7 +17,7 @@ internal actual fun BufferObject<*>.checkBufferObject() {
 }
 
 internal actual open class BufferObjectInstance<T>(
-    actual val descriptor: BufferObject<T>,
+    actual open val descriptor: BufferObject<T>,
     actual val context: GraphicsContext,
 ) : Disposable {
 
@@ -51,10 +51,7 @@ internal actual open class BufferObjectInstance<T>(
             GL15C.glBindBuffer(descriptor.type.gl, id)
             context.bufferBindings[descriptor.type] = this
 
-            if (updateBuffer && version < descriptor.version) {
-                setData(descriptor.buffer)
-                version = descriptor.version
-            }
+            if (updateBuffer) syncBuffer()
         }
     }
 
@@ -74,14 +71,29 @@ internal actual open class BufferObjectInstance<T>(
     }
 
     actual open fun setData(buffer: ByteArray): Unit = context.withContext {
-        byteBuffer.rewind().put(descriptor.buffer).flip()
+        val numElements = buffer.size / descriptor.accessor.elementByteSize
+        check(numElements <= descriptor.numElements) {
+            "Buffer overflow: tried to insert $numElements into buffer of size ${descriptor.numElements}"
+        }
+        check(buffer.size % descriptor.accessor.elementByteSize == 0) {
+            "Buffer contents do not align with element byte boundaries"
+        }
 
-        bind()
+        byteBuffer.rewind().put(buffer).flip()
+
+        bind(false)
 //        GL43C.glClearBufferSubData(
 //            type.gl, GL30C.GL_R8I, 0.toLong(), byteSize.toLong(),
 //            GL11C.GL_RED, GL11C.GL_BYTE, null as ByteBuffer?
 //        )
         GL15C.glBufferSubData(descriptor.type.gl, 0, byteBuffer)
+    }
+
+    internal fun syncBuffer() {
+        if (version < descriptor.version) {
+            setData(descriptor.buffer)
+            version = descriptor.version
+        }
     }
 
     actual override fun dispose() = context.withContext {

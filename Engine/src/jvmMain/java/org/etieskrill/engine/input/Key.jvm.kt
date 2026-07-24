@@ -41,12 +41,12 @@ fun parseGlfwKey(keyCode: Int) = when (keyCode) {
 }
 
 private val glfwModKeys = mapOf(
-    GLFW_MOD_SHIFT to SHIFT,
-    GLFW_MOD_CONTROL to CONTROL,
-    GLFW_MOD_ALT to ALT,
-    GLFW_MOD_SUPER to SUPER,
-    GLFW_MOD_CAPS_LOCK to CAPSLOCK,
-    GLFW_MOD_NUM_LOCK to NUMLOCK
+    GLFW_MOD_SHIFT to ModifierKey.SHIFT,
+    GLFW_MOD_CONTROL to ModifierKey.CONTROL,
+    GLFW_MOD_ALT to ModifierKey.ALT,
+    GLFW_MOD_SUPER to ModifierKey.SUPER,
+    GLFW_MOD_CAPS_LOCK to ModifierKey.CAPSLOCK,
+    GLFW_MOD_NUM_LOCK to ModifierKey.NUMLOCK
 )
 
 fun parseGlfwModifierKeys(modsCode: Int) = glfwModKeys

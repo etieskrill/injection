@@ -2,7 +2,6 @@ package org.etieskrill.engine.graphics.framebuffer
 
 import org.etieskrill.engine.common.Disposable
 import org.etieskrill.engine.graphics.GraphicsContext
-import org.etieskrill.engine.graphics.GraphicsContextDescriptor
 import org.etieskrill.engine.graphics.gl.GLUtils
 import org.etieskrill.engine.graphics.framebuffer.FrameBufferAttachmentType.COLOUR0
 import org.etieskrill.engine.graphics.framebuffer.FrameBufferAttachmentType.DEPTH_STENCIL
@@ -16,13 +15,13 @@ import org.lwjgl.opengl.GL30C
 import kotlin.properties.Delegates
 import io.github.etieskrill.injection.extension.shader.dsl.FrameBuffer as DslFrameBuffer
 
+//TODO context-instance-ize
 @OptIn(ExperimentalStdlibApi::class)
 actual open class FrameBuffer internal constructor(
-    override val context: GraphicsContext,
     override val size: Vector2ic,
     val attachments: Map<FrameBufferAttachmentType, FrameBufferAttachment>,
     id: Int
-) : DslFrameBuffer, GraphicsContextDescriptor, Disposable {
+) : DslFrameBuffer, Disposable {
 
     actual var clearColour: Vector4f = Vector4f(0f)
         set(value) {
@@ -152,17 +151,19 @@ actual open class FrameBuffer internal constructor(
     open fun bind() = bind(Binding.BOTH)
 
     fun bind(binding: Binding) = context.withContext {
-        //TODO maybe move context check here?
-        GL30C.glBindFramebuffer(
-            when (binding) {
-                Binding.READ -> GL30C.GL_READ_FRAMEBUFFER
-                Binding.WRITE -> GL30C.GL_DRAW_FRAMEBUFFER
-                Binding.BOTH -> GL30C.GL_FRAMEBUFFER
-            }, id
-        )
-        GL20C.glDrawBuffers(glColourDrawBuffers)
-        GL11C.glViewport(0, 0, size.x(), size.y())
-        context.activeFramebuffer = this
+        if (context.activeFramebuffer != this) {
+            //TODO maybe move context check here?
+            GL30C.glBindFramebuffer(
+                when (binding) {
+                    Binding.READ -> GL30C.GL_READ_FRAMEBUFFER
+                    Binding.WRITE -> GL30C.GL_DRAW_FRAMEBUFFER
+                    Binding.BOTH -> GL30C.GL_FRAMEBUFFER
+                }, id
+            )
+            GL20C.glDrawBuffers(glColourDrawBuffers)
+            GL11C.glViewport(0, 0, size.x(), size.y())
+            context.activeFramebuffer = this
+        }
     }
 
     /**
@@ -180,6 +181,7 @@ actual open class FrameBuffer internal constructor(
     }
 
     override fun dispose() = context.withContext {
+        unbind()
         GL30C.glDeleteFramebuffers(id)
         attachments.values.forEach(Disposable::dispose)
     }

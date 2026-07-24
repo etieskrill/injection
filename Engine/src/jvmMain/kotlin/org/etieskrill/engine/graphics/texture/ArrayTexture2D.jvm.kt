@@ -19,12 +19,12 @@ actual class ArrayTexture2D actual constructor(
     actual val length: Int,
     private var textureData: ByteArray?,
     type: TextureType,
-    format: TextureFormat?,
+    format: TextureFormat,
     minFilter: TextureMinFilter,
     magFilter: TextureMagFilter,
     wrapping: TextureWrapping,
     borderColour: Vector4fc
-) : Texture(context, type, format, minFilter, magFilter, wrapping, borderColour), Texture2DArray {
+) : Texture(context, format, type, minFilter, magFilter, wrapping, borderColour), Texture2DArray {
 
     override val glTarget: Int get() = GL_TEXTURE_2D_ARRAY
 

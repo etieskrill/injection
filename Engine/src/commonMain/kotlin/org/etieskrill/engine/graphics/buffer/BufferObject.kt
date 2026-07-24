@@ -30,13 +30,19 @@ open class BufferObject<T>(
      * [BufferObjectInstance.getData] for that instead.
      */
     //TODO multiplatform buffer wrappers: ByteBuffer and MutableByteBuffer
+    //TODO add flag to retain buffer upon load, and use new buffer for each set by default
     override val buffer: ByteArray = ByteArray(byteSize)
 
     internal var version = 0L
 
-    override fun setData(elements: Collection<T>) = accessor.map(elements, this)
+    override fun setData(elements: Collection<T>) {
+        check(elements.size <= numElements) {
+            "Buffer overflow: tried to insert ${elements.size} elements into buffer of size $numElements"
+        }
+        accessor.map(elements, this)
+    }
 
-    override fun setData(data: ByteArray) = setData(data, offset = 0, clear = false)
+    override fun setData(data: ByteArray) = setData(data, offset = 0)
 
     /**
      * Sets the buffer's data at [offset] to the values provided in [data]. The buffer is cleared beforehand if the
@@ -46,7 +52,7 @@ open class BufferObject<T>(
      * @param data   the data to set in the buffer
      * @param clear  if `true`, buffer is cleared to all zeroes before data is set
      */
-    open fun setData(data: ByteArray, offset: Int = 0, clear: Boolean = false) {
+    fun setData(data: ByteArray, offset: Int = 0) {
         check(data.size <= byteSize - offset) { "Data buffer size exceeds capacity of BufferObject" }
 
         //TODO is contentEquals check too expensive?
@@ -62,7 +68,7 @@ open class BufferObject<T>(
 internal expect fun BufferObject<*>.checkBufferObject()
 
 internal expect open class BufferObjectInstance<T> : Disposable {
-    val descriptor: BufferObject<T>
+    open val descriptor: BufferObject<T>
     val context: GraphicsContext
 
     internal var version: Long
