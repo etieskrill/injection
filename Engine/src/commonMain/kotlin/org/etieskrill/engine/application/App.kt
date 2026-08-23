@@ -7,13 +7,13 @@ import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.launch
 import org.etieskrill.engine.audio.Audio
 import org.etieskrill.engine.common.Disposable
-import org.etieskrill.engine.graphics.renderer.Renderer
 import org.etieskrill.engine.config.InjectionConfig
 import org.etieskrill.engine.entity.system.EntitySystem
+import org.etieskrill.engine.graphics.renderer.Renderer
 import org.etieskrill.engine.graphics.text.TrueTypeFont
-import org.etieskrill.engine.input.KeyEvent
-import org.etieskrill.engine.input.KeyInputHandler
 import org.etieskrill.engine.input.Key
+import org.etieskrill.engine.input.KeyInputHandler
+import org.etieskrill.engine.input.ModifierKey
 import org.etieskrill.engine.time.LoopPacer
 import org.etieskrill.engine.time.StepTimer
 import org.etieskrill.engine.time.resetSystemTimeResolution
@@ -65,17 +65,16 @@ abstract class App(
     init {
         timer.start()
 
-        window.keyInputs plusAssign KeyInputHandler { type, key, _, modifiers ->
-            if (type != KeyEvent.Type.KEYBOARD) return@KeyInputHandler false
-            if (key == Key.ESC.glfwKey && modifiers == Key.Mod.SHIFT.glfwKey
-                || key == Key.W.glfwKey && modifiers == Key.Mod.CONTROL.glfwKey
+        window.keyInputs.add(KeyInputHandler { event ->
+            if (event.key == Key.ESC && ModifierKey.SHIFT in event.modifiers
+                || event.key == Key.W && ModifierKey.CONTROL in event.modifiers
             ) {
                 window.isClosing = true
                 return@KeyInputHandler true
             }
 
             false
-        }
+        })
 
         window.uiScope = uiScope
 
@@ -108,7 +107,6 @@ abstract class App(
 
     protected fun update() {
         window.screenBuffer.clear()
-        window.screenBuffer.bind()
         renderer.nextFrame()
 
         val cpuTime = measureTime {

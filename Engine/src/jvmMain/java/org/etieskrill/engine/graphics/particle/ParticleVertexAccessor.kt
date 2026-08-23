@@ -7,8 +7,8 @@ import org.joml.Vector4f
 
 object ParticleVertexAccessor : VertexArrayAccessor<Particle>() {
     override fun registerFields() {
-        addField<Vector3f> { particle, buffer -> particle.position[buffer] }
-        addField<Matrix2f> { particle, buffer -> particle.transform[buffer] }
-        addField<Vector4f> { particle, buffer -> particle.colour[buffer] }
+        addField<Vector3f> { particle, buffer -> buffer += particle.position }
+        addField<Matrix2f> { particle, buffer -> buffer += particle.transform }
+        addField<Vector4f> { particle, buffer -> buffer += particle.colour }
     }
 }

@@ -1,7 +1,6 @@
 package io.github.etieskrill.games.sails
 
 import org.etieskrill.engine.entity.Entity
-import org.etieskrill.engine.entity.getComponent
 import org.joml.Math.*
 import org.joml.Matrix2f
 import org.joml.Vector2f

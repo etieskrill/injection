@@ -1,21 +1,18 @@
 package org.etieskrill.engine.graphics.texture
 
-import org.etieskrill.engine.common.Disposable
-import org.etieskrill.engine.graphics.GraphicsContext
-import org.joml.Vector2ic
+import org.etieskrill.engine.graphics.texture.TextureMagFilter.LINEAR
+import org.etieskrill.engine.graphics.texture.TextureMagFilter.NEAREST
+import org.etieskrill.engine.graphics.texture.TextureMinFilter.*
 import org.joml.Vector4f
 import org.joml.Vector4fc
 import io.github.etieskrill.injection.extension.shader.Texture as DslTexture
 
-expect abstract class Texture : DslTexture, Disposable {
-
-    val context: GraphicsContext
+expect abstract class Texture : DslTexture {
 
     val type: TextureType
     val format: TextureFormat
 
     constructor(
-        context: GraphicsContext,
         format: TextureFormat,
         type: TextureType = TextureType.UNKNOWN,
         minFilter: TextureMinFilter = TextureMinFilter.TRILINEAR,
@@ -23,8 +20,6 @@ expect abstract class Texture : DslTexture, Disposable {
         wrapping: TextureWrapping = TextureWrapping.REPEAT,
         borderColour: Vector4fc = Vector4f(0f)
     )
-
-    override fun dispose()
 
 }
 

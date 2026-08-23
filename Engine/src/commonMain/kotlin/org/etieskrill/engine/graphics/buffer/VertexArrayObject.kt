@@ -1,6 +1,5 @@
 package org.etieskrill.engine.graphics.buffer
 
-import io.github.etieskrill.injection.extension.shader.Buffer
 import org.etieskrill.engine.common.Disposable
 import org.etieskrill.engine.graphics.GraphicsContext
 
@@ -26,7 +25,7 @@ data class VertexArrayObject<T>(
 
     object IndexArrayAccessor : VertexArrayAccessor<Int>() {
         override val elementByteSize: Int get() = super.elementByteSize
-        override fun registerFields() = addField<Int> { index, buffer -> buffer.putInt(index) }
+        override fun registerFields() = addField<Int> { index, buffer -> buffer += index }
     }
 }
 

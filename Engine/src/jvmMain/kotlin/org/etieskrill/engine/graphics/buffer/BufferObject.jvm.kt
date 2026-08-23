@@ -1,10 +1,10 @@
 package org.etieskrill.engine.graphics.buffer
 
+import org.etieskrill.engine.buffer.ByteBuffer
 import org.etieskrill.engine.common.Disposable
 import org.etieskrill.engine.graphics.GraphicsContext
 import org.etieskrill.engine.graphics.gl.BufferCreationException
 import org.etieskrill.engine.graphics.gl.GLUtils
-import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL15C
 import org.lwjgl.opengl.GL15C.GL_ARRAY_BUFFER
 import org.lwjgl.opengl.GL15C.GL_ELEMENT_ARRAY_BUFFER
@@ -28,8 +28,6 @@ internal actual open class BufferObjectInstance<T>(
     protected val id = context.withContext { GL15C.glGenBuffers() }
 
     internal actual var version = 0L
-
-    private val byteBuffer by lazy { BufferUtils.createByteBuffer(descriptor.byteSize) }
 
     //TODO add vao slot to ensure in-use (bound) buffers are not accidentally used elsewhere
 
@@ -62,31 +60,29 @@ internal actual open class BufferObjectInstance<T>(
         }
     }
 
-    actual fun getData(): ByteArray = context.withContext {
+    actual fun getData(): ByteBuffer = context.withContext {
         bind(false)
-        GL15C.glGetBufferSubData(descriptor.type.gl, 0, byteBuffer.rewind())
-        byteBuffer.get(descriptor.buffer)
+        GL15C.glGetBufferSubData(descriptor.type.gl, 0, descriptor.buffer.buffer.rewind())
         version = descriptor.version++
         descriptor.buffer //TODO asReadOnlyBuffer?
     }
 
-    actual open fun setData(buffer: ByteArray): Unit = context.withContext {
+    actual open fun setData(buffer: ByteBuffer): Unit = context.withContext {
         val numElements = buffer.size / descriptor.accessor.elementByteSize
+        //TODO move to non-instance
         check(numElements <= descriptor.numElements) {
             "Buffer overflow: tried to insert $numElements into buffer of size ${descriptor.numElements}"
         }
-        check(buffer.size % descriptor.accessor.elementByteSize == 0) {
+        check(buffer.size.toInt() % descriptor.accessor.elementByteSize == 0) {
             "Buffer contents do not align with element byte boundaries"
         }
-
-        byteBuffer.rewind().put(buffer).flip()
 
         bind(false)
 //        GL43C.glClearBufferSubData(
 //            type.gl, GL30C.GL_R8I, 0.toLong(), byteSize.toLong(),
 //            GL11C.GL_RED, GL11C.GL_BYTE, null as ByteBuffer?
 //        )
-        GL15C.glBufferSubData(descriptor.type.gl, 0, byteBuffer)
+        GL15C.glBufferSubData(descriptor.type.gl, 0, descriptor.buffer.buffer.flip())
     }
 
     internal fun syncBuffer() {

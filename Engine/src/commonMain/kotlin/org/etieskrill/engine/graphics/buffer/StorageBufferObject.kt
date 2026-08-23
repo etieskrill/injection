@@ -2,6 +2,7 @@ package org.etieskrill.engine.graphics.buffer
 
 import io.github.etieskrill.injection.extension.shader.BufferAccessor
 import io.github.etieskrill.injection.extension.shader.StorageBuffer
+import org.etieskrill.engine.buffer.ByteBuffer
 
 class StorageBufferObject<T>(
     numElements: Int,
@@ -13,5 +14,5 @@ class StorageBufferObject<T>(
 internal expect class StorageBufferObjectInstance<T> : BufferObjectInstance<T> {
     override val descriptor: StorageBufferObject<T>
 
-    override fun setData(buffer: ByteArray)
+    override fun setData(buffer: ByteBuffer)
 }

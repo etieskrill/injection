@@ -8,18 +8,20 @@ interface BufferAccessor<T> {
 
 }
 
+interface ByteBuffer
+
 interface Buffer<T> {
 
     /**
-     * The CPU-side [ByteArray] backing this buffer object. Used for getting and setting data.
+     * The CPU-side [ByteBuffer] backing this buffer object. Used for getting and setting data.
      */
-    val buffer: ByteArray
+    val buffer: ByteBuffer
 
     val accessor: BufferAccessor<T>
 
     //TODO should be property and differentiate type by name
     fun setData(elements: Collection<T>)
-    fun setData(data: ByteArray)
+    fun setData(data: ByteBuffer)
 
 }
 

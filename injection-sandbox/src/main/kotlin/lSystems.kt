@@ -5,15 +5,15 @@ import io.github.etieskrill.injection.extension.shader.dsl.rt
 import io.github.etieskrill.injection.extension.shader.mat4
 import io.github.etieskrill.injection.extension.shader.vec4
 import org.etieskrill.engine.application.App
-import org.etieskrill.engine.graphics.camera.OrthographicCamera
-import org.etieskrill.engine.graphics.framebuffer.FrameBuffer
 import org.etieskrill.engine.graphics.buffer.VertexArrayAccessor
 import org.etieskrill.engine.graphics.buffer.VertexArrayObject
-import org.etieskrill.engine.graphics.shader.Shader
+import org.etieskrill.engine.graphics.camera.OrthographicCamera
+import org.etieskrill.engine.graphics.framebuffer.FrameBuffer
 import org.etieskrill.engine.graphics.pipeline.CullingMode
 import org.etieskrill.engine.graphics.pipeline.Pipeline
 import org.etieskrill.engine.graphics.pipeline.PipelineConfig
 import org.etieskrill.engine.graphics.pipeline.PrimitiveType.*
+import org.etieskrill.engine.graphics.shader.Shader
 import org.joml.Math
 import org.joml.Vector2f
 import org.joml.Vector2fc
@@ -66,7 +66,7 @@ fun iterateLSystem(start: String, rules: Map<String, String>, numIterations: Int
 class Vertex(val position: Vector2fc)
 object VertexAccessor : VertexArrayAccessor<Vertex>() {
     override fun registerFields() {
-        addField(Vector2fc::class.java) { vertex, buffer -> vertex.position.get(buffer) }
+        addField<Vector2fc> { vertex, buffer -> vertex.position.get(buffer) }
     }
 }
 

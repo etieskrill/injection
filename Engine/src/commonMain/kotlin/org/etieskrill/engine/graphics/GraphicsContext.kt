@@ -1,10 +1,10 @@
 package org.etieskrill.engine.graphics
 
-import org.etieskrill.engine.graphics.framebuffer.FrameBuffer
+import org.etieskrill.engine.graphics.framebuffer.FrameBufferInstance
 
 expect class GraphicsContext {
 
-    var screenBuffer: FrameBuffer internal set
+    var screenBuffer: FrameBufferInstance internal set
 
     fun <T> withContext(block: () -> T): T
 

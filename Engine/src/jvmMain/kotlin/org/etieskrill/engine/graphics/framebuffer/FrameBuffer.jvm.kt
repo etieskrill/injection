@@ -2,57 +2,26 @@ package org.etieskrill.engine.graphics.framebuffer
 
 import org.etieskrill.engine.common.Disposable
 import org.etieskrill.engine.graphics.GraphicsContext
+import org.etieskrill.engine.graphics.framebuffer.FrameBufferAttachmentType.*
 import org.etieskrill.engine.graphics.gl.GLUtils
-import org.etieskrill.engine.graphics.framebuffer.FrameBufferAttachmentType.COLOUR0
-import org.etieskrill.engine.graphics.framebuffer.FrameBufferAttachmentType.DEPTH_STENCIL
 import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferCreationException
-import org.etieskrill.engine.graphics.gl.framebuffer.RenderBuffer
-import org.joml.Vector2ic
-import org.joml.Vector4f
 import org.lwjgl.opengl.GL11C
 import org.lwjgl.opengl.GL20C
 import org.lwjgl.opengl.GL30C
 import kotlin.properties.Delegates
-import io.github.etieskrill.injection.extension.shader.dsl.FrameBuffer as DslFrameBuffer
 
-//TODO context-instance-ize
 @OptIn(ExperimentalStdlibApi::class)
-actual open class FrameBuffer internal constructor(
-    override val size: Vector2ic,
-    val attachments: Map<FrameBufferAttachmentType, FrameBufferAttachment>,
-    id: Int
-) : DslFrameBuffer, Disposable {
+actual open class FrameBufferInstance internal constructor(
+    actual val descriptor: FrameBuffer,
+    actual val context: GraphicsContext,
+) : Disposable {
 
-    actual var clearColour: Vector4f = Vector4f(0f)
-        set(value) {
-            field.set(value)
-        }
+    internal actual var version: Long = 0L
 
-    protected val id = id
+    internal open val id = context.withContext { GL30C.glGenFramebuffers() }
 
     protected var glBufferClearMask: Int by Delegates.notNull()
     protected var glColourDrawBuffers: IntArray by Delegates.notNull()
-
-    constructor(
-        context: GraphicsContext,
-        size: Vector2ic,
-        attachments: Map<FrameBufferAttachmentType, FrameBufferAttachment>
-    ) : this(context, size, attachments, GL30C.glGenFramebuffers())
-
-    actual companion object {
-        actual fun getStandard(context: GraphicsContext, size: Vector2ic) = FrameBuffer(
-            context, size, mapOf(
-                COLOUR0 to RenderBuffer(size, RenderBuffer.Type.COLOUR),
-                DEPTH_STENCIL to RenderBuffer(size, RenderBuffer.Type.DEPTH_STENCIL),
-            )
-        )
-
-        actual fun getColour(context: GraphicsContext, size: Vector2ic) = FrameBuffer(
-            context, size, mapOf(
-                COLOUR0 to RenderBuffer(size, RenderBuffer.Type.COLOUR)
-            )
-        )
-    }
 
     init {
         init()
@@ -62,14 +31,9 @@ actual open class FrameBuffer internal constructor(
         GLUtils.clearError()
 
         GL30C.glBindFramebuffer(GL30C.GL_FRAMEBUFFER, id)
-        attachments.forEach { (type, attachment) ->
-            require(attachment.size == size) {
-                "Framebuffer attachment size for ${attachment::class.simpleName} bound to slot $type (${
-                    attachment.size
-                }) does not match framebuffer size ($size)"
-            }
-
-            attachment.attach(this, type)
+        descriptor.attachments.forEach { (type, attachment) ->
+            context.getFrameBufferAttachment(attachment)
+                .attach(this, type)
 
             //FIXME this could be anything from improperly sized attachments to any other attribute not matching
             // exactly, so either exercise VERY strict validation before/during/after attaching, or find a way to
@@ -94,65 +58,29 @@ actual open class FrameBuffer internal constructor(
         GLUtils.checkErrorThrowing("Error during framebuffer creation")
 
         var glBufferClearMask = 0
-        if (attachments.keys.any {
-                it in listOf(
-                    COLOUR0,
-                    FrameBufferAttachmentType.COLOUR1,
-                    FrameBufferAttachmentType.COLOUR2,
-                    FrameBufferAttachmentType.COLOUR3,
-                    FrameBufferAttachmentType.COLOUR31
-                )
-            }) {
+        if (descriptor.attachments.keys.any { it in listOf(COLOUR0, COLOUR1, COLOUR2, COLOUR3, COLOUR31) }) {
             glBufferClearMask = glBufferClearMask or GL11C.GL_COLOR_BUFFER_BIT
         }
-        if (attachments.keys.any {
-                it in listOf(
-                    FrameBufferAttachmentType.DEPTH,
-                    DEPTH_STENCIL
-                )
-            }) {
+        if (descriptor.attachments.keys.any { it in listOf(DEPTH, DEPTH_STENCIL) }) {
             glBufferClearMask = glBufferClearMask or GL11C.GL_DEPTH_BUFFER_BIT
         }
-        if (attachments.keys.any {
-                it in listOf(
-                    FrameBufferAttachmentType.STENCIL,
-                    DEPTH_STENCIL
-                )
-            }) {
+        if (descriptor.attachments.keys.any { it in listOf(STENCIL, DEPTH_STENCIL) }) {
             glBufferClearMask = glBufferClearMask or GL11C.GL_STENCIL_BUFFER_BIT
         }
-        this@FrameBuffer.glBufferClearMask = glBufferClearMask
+        this.glBufferClearMask = glBufferClearMask
 
-        glColourDrawBuffers = attachments.keys.map { it.gl }
-            .filter { it in COLOUR0.gl..FrameBufferAttachmentType.COLOUR31.gl }
+        glColourDrawBuffers = descriptor.attachments.keys.map { it.gl }
+            .filter { it in COLOUR0.gl..COLOUR31.gl }
             .sorted()
             .toIntArray()
     }
 
     enum class Binding { READ, WRITE, BOTH }
 
-    //so, and this is independent of the render backend: each component should get the context object injected into
-    //it somehow, in one of these ways:
-    // - directly as a constructor parameter (eww)
-    // - add a factory method to the context, and it passes itself (yuck)
-    // - have a thread local context variable, which the objects automatically grab (kinda nice, but requires
-    //   indirection when trying to create objects for multiple windows/contexts in the same scope)
-    //
-    //the second big choice is whether
-    // - graphics operations are basically immediate and we just try to validate that
-    //   the thread is correct for a given object's context,
-    // - or we have a frontend graphics object (which we will have anyway) which merely enqueues all commands,
-    //   and they are then worked off in the update cycle. this option also has the benefit of allowing optimisations
-    //   for operation clustering in the backend without additional user effort.
-    //constraint: i want to be able to call graphics objects as though in immediate mode even given the indirection
-    //of a potential command buffer. most apis apart from opengl already require a command buffer to be configured
-    //beforehand anyway, and this would sort of streamline this process.
-
     open fun bind() = bind(Binding.BOTH)
 
     fun bind(binding: Binding) = context.withContext {
         if (context.activeFramebuffer != this) {
-            //TODO maybe move context check here?
             GL30C.glBindFramebuffer(
                 when (binding) {
                     Binding.READ -> GL30C.GL_READ_FRAMEBUFFER
@@ -161,8 +89,17 @@ actual open class FrameBuffer internal constructor(
                 }, id
             )
             GL20C.glDrawBuffers(glColourDrawBuffers)
-            GL11C.glViewport(0, 0, size.x(), size.y())
+            GL11C.glViewport(0, 0, descriptor.size.x(), descriptor.size.y())
             context.activeFramebuffer = this
+        }
+
+        if (version < descriptor.version) {
+            descriptor.clearColour.apply { GL11C.glClearColor(x, y, z, w) }
+            if ((glBufferClearMask and GL11C.GL_DEPTH_BUFFER_BIT) != 0) GL11C.glDepthMask(true)
+            if ((glBufferClearMask and GL11C.GL_STENCIL_BUFFER_BIT) != 0) GL11C.glStencilMask(0xFF) //TODO can stencil buffer be anything other than one byte in size?
+            GL11C.glClear(glBufferClearMask)
+
+            version = descriptor.version
         }
     }
 
@@ -172,18 +109,10 @@ actual open class FrameBuffer internal constructor(
      */
     fun unbind() = context.screenBuffer.bind()
 
-    actual fun clear() = context.withContext {
-        bind()
-        GL11C.glClearColor(clearColour.x, clearColour.y, clearColour.z, clearColour.w)
-        if ((glBufferClearMask and GL11C.GL_DEPTH_BUFFER_BIT) != 0) GL11C.glDepthMask(true)
-        if ((glBufferClearMask and GL11C.GL_STENCIL_BUFFER_BIT) != 0) GL11C.glStencilMask(0xFF) //TODO can stencil buffer be anything other than one byte in size?
-        GL11C.glClear(glBufferClearMask)
-    }
-
     override fun dispose() = context.withContext {
         unbind()
         GL30C.glDeleteFramebuffers(id)
-        attachments.values.forEach(Disposable::dispose)
+        descriptor.attachments.values.forEach { context.getFrameBufferAttachment(it).dispose() }
     }
 
 }

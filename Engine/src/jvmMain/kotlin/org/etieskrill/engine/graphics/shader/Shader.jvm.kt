@@ -1,90 +1,37 @@
 package org.etieskrill.engine.graphics.shader
 
-import io.github.etieskrill.injection.extension.shader.AbstractShader
 import io.github.etieskrill.injection.extension.shader.BufferAccessor
 import io.github.etieskrill.injection.extension.shader.ShaderStage
 import io.github.etieskrill.injection.extension.shader.StorageBuffer
-import io.github.etieskrill.injection.extension.shader.Texture as DslTexture
 import io.github.etieskrill.injection.extension.shader.reflection.UNIFORM_RESOURCE_PREFIX
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.etieskrill.engine.common.Disposable
 import org.etieskrill.engine.graphics.GraphicsContext
-import org.etieskrill.engine.graphics.buffer.StorageBufferObject
-import org.etieskrill.engine.graphics.buffer.gl
 import org.etieskrill.engine.graphics.gl.GLUtils
 import org.etieskrill.engine.graphics.gl.shader.ShaderCreationException
-import org.etieskrill.engine.graphics.gl.shader.ShaderUniformException
-import org.etieskrill.engine.graphics.shader.Uniform.Companion.INVALID_UNIFORM_LOCATION
 import org.etieskrill.engine.graphics.shader.UniformType.*
 import org.etieskrill.engine.graphics.texture.Texture
 import org.etieskrill.engine.util.ClassUtils
 import org.etieskrill.engine.util.ResourceReader.classpathResourceExists
 import org.etieskrill.engine.util.ResourceReader.getResource
 import org.etieskrill.engine.util.extension
-import org.joml.Matrix2f
-import org.joml.Matrix3f
-import org.joml.Matrix4f
-import org.joml.Vector2f
-import org.joml.Vector2i
-import org.joml.Vector3f
-import org.joml.Vector4f
-import org.joml.putMatrix2f
-import org.joml.putMatrix3f
-import org.joml.putMatrix4f
-import org.joml.putVector2f
-import org.joml.putVector2i
-import org.joml.putVector3f
-import org.joml.putVector4f
 import org.lwjgl.opengl.GL11C.GL_TRUE
-import org.lwjgl.opengl.GL20C.GL_COMPILE_STATUS
-import org.lwjgl.opengl.GL20C.GL_FRAGMENT_SHADER
-import org.lwjgl.opengl.GL20C.GL_LINK_STATUS
-import org.lwjgl.opengl.GL20C.GL_VERTEX_SHADER
-import org.lwjgl.opengl.GL20C.glAttachShader
-import org.lwjgl.opengl.GL20C.glCompileShader
-import org.lwjgl.opengl.GL20C.glCreateProgram
-import org.lwjgl.opengl.GL20C.glCreateShader
-import org.lwjgl.opengl.GL20C.glDeleteProgram
-import org.lwjgl.opengl.GL20C.glDeleteShader
-import org.lwjgl.opengl.GL20C.glGetProgramInfoLog
-import org.lwjgl.opengl.GL20C.glGetProgrami
-import org.lwjgl.opengl.GL20C.glGetShaderInfoLog
-import org.lwjgl.opengl.GL20C.glGetShaderi
-import org.lwjgl.opengl.GL20C.glGetUniformLocation
-import org.lwjgl.opengl.GL20C.glLinkProgram
-import org.lwjgl.opengl.GL20C.glShaderSource
-import org.lwjgl.opengl.GL20C.glUniform1f
-import org.lwjgl.opengl.GL20C.glUniform1fv
-import org.lwjgl.opengl.GL20C.glUniform1i
-import org.lwjgl.opengl.GL20C.glUniform1iv
-import org.lwjgl.opengl.GL20C.glUniform2fv
-import org.lwjgl.opengl.GL20C.glUniform2iv
-import org.lwjgl.opengl.GL20C.glUniform3fv
-import org.lwjgl.opengl.GL20C.glUniform4fv
-import org.lwjgl.opengl.GL20C.glUniformMatrix2fv
-import org.lwjgl.opengl.GL20C.glUniformMatrix3fv
-import org.lwjgl.opengl.GL20C.glUniformMatrix4fv
-import org.lwjgl.opengl.GL20C.glUseProgram
-import org.lwjgl.opengl.GL31C.GL_INVALID_INDEX
+import org.lwjgl.opengl.GL20C.*
 import org.lwjgl.opengl.GL32C.GL_GEOMETRY_SHADER
-import org.lwjgl.opengl.GL40C.glUniform1d
-import org.lwjgl.opengl.GL40C.glUniform1dv
-import org.lwjgl.opengl.GL43C.GL_SHADER_STORAGE_BLOCK
-import org.lwjgl.opengl.GL43C.glGetProgramResourceIndex
-import org.lwjgl.system.MemoryStack
 import kotlin.reflect.KClass
+import io.github.etieskrill.injection.extension.shader.Texture as DslTexture
 
 private val logger = KotlinLogging.logger {}
 
+//TODO instance-ize needs to only synchronise uniforms and stuff when bound
 /**
  * A shader file with the _glsl_ extension is presumed to contain exactly a vertex shader, a fragment shader
  * and - if the rudimentary detection catches it - a geometry shader within the corresponding definition guards.
  */
-actual abstract class Shader protected actual constructor(
+actual class ShaderInstance internal constructor(
+    actual val descriptor: Shader,
     actual val context: GraphicsContext,
-    shaderFiles: List<String>,
-    private val strictUniformDetection: Boolean
-) : AbstractShader, Disposable {
+) : Disposable {
 
     private var programId: Int = -1
     private var vertId: Int = -1
@@ -104,7 +51,7 @@ actual abstract class Shader protected actual constructor(
     private val cachedUnstrictStorageBuffers = mutableMapOf<String, Int>()
 
     init {
-        val files = shaderFiles.map { fileName ->
+        val files = descriptor.shaderFiles.map { fileName ->
             val type = when (fileName.extension) {
                 "vert" -> ShaderType.VERTEX
                 "geom" -> ShaderType.GEOMETRY
@@ -275,7 +222,8 @@ actual abstract class Shader protected actual constructor(
             ShaderType.GEOMETRY -> GL_GEOMETRY_SHADER
             ShaderType.FRAGMENT -> GL_FRAGMENT_SHADER
             else -> error("Unexpected value: $type")
-        });
+        }
+        )
 
         //TODO use #line <nr> to improve debugging experience
 
@@ -411,209 +359,219 @@ actual abstract class Shader protected actual constructor(
      * @param name    the sampler name in the shader
      * @param texture the texture to be bound
      */
-    actual override fun setTexture(name: String, texture: DslTexture) = context.withContext {
-        texture as Texture //TODO is there a non-workaroundy way to do this?
-
-        if (boundTextures.size + 1 > context.maxTextureUnits) {
-            logger.error { "Could not bind texture to '$name' because there are already the platform maximum of ${boundTextures.size} textures bound" }
-        }
-
-        val unit = context.textureBindings.indexOfFirst { it == texture }.takeIf { it != -1 }
-            ?: context.textureBindings.indexOf(null).takeIf { it != -1 }
-            ?: context.textureBindings.indexOfFirst { it !in boundTextures }.takeIf { it != -1 }
-            ?: error("oopsie daisy")
-
-        //TODO validate texture type
-
-        setUniform(name, unit)
-        texture.bind(unit)
+    actual override fun setTexture(name: String, texture: DslTexture) {
+        TODO("set cpu and move to instance")
+//        texture as Texture //TODO is there a non-workaroundy way to do this?
+//
+////        if (boundTextures.size + 1 > context.maxTextureUnits) {
+////            logger.error { "Could not bind texture to '$name' because there are already the platform maximum of ${boundTextures.size} textures bound" }
+////        }
+////
+////        val unit = context.textureBindings.indexOfFirst { it == texture }.takeIf { it != -1 }
+////            ?: context.textureBindings.indexOf(null).takeIf { it != -1 }
+////            ?: context.textureBindings.indexOfFirst { it !in boundTextures }.takeIf { it != -1 }
+////            ?: error("oopsie daisy")
+////
+////        //TODO validate texture type
+////
+////        setUniform(name, unit)
+////        texture.bind(unit)
     }
 
     //FIXME these are nonlocal to the shader, and should thus probably be cached and activated in start
-    actual override fun setStorageBuffer(blockName: String, buffer: StorageBuffer<*>) = context.withContext {
-        buffer as StorageBufferObject
-
-        check(blockName.isNotBlank()) { "Name must not be empty" }
-
-        val bindingIndex = if (strictUniformDetection) {
-            storageBuffers[blockName] ?: error("Tried setting unregistered storage buffer '${blockName}' in strict mode")
-        } else {
-            cachedUnstrictStorageBuffers.computeIfAbsent(blockName) {
-                glGetProgramResourceIndex(programId, buffer.type.gl, blockName)
-            }
-        }
-
-        if (bindingIndex == GL_INVALID_INDEX && blockName !in missingStorageBuffers) {
-            logger.warn { "Storage buffer block '$blockName' does not exist" }
-            missingStorageBuffers += blockName
-        }
-        if (context.storageBufferBindings[bindingIndex] != buffer) {
-            buffer.bind(bindingIndex)
-        }
+    actual override fun setStorageBuffer(blockName: String, buffer: StorageBuffer<*>) {
+        TODO("set cpu and move to instance")
+//        buffer as StorageBufferObject
+//
+//        check(blockName.isNotBlank()) { "Name must not be empty" }
+//
+//        val bindingIndex = if (strictUniformDetection) {
+//            storageBuffers[blockName] ?: error("Tried setting unregistered storage buffer '${blockName}' in strict mode")
+//        } else {
+//            cachedUnstrictStorageBuffers.computeIfAbsent(blockName) {
+//                glGetProgramResourceIndex(programId, buffer.type.gl, blockName)
+//            }
+//        }
+//
+//        if (bindingIndex == GL_INVALID_INDEX && blockName !in missingStorageBuffers) {
+//            logger.warn { "Storage buffer block '$blockName' does not exist" }
+//            missingStorageBuffers += blockName
+//        }
+//
+//        //TODO move to instance
+////        val instance = context.getStorageBufferObject(buffer)
+////        if (context.storageBufferBindings[bindingIndex] != instance) {
+////            instance.bind(bindingIndex)
+////        }
     }
 
-    private fun setUniformValue(type: UniformType, location: Int, value: Any) = context.withContext {
-        //TODO check if cpu/gpu values in sync already
-        bind()
-        MemoryStack.stackPush().use { stack ->
-            when (type) {
-                INT, TEXTURE_2D, TEXTURE_2D_ARRAY, TEXTURE_2D_SHADOW, TEXTURE_2D_ARRAY_SHADOW, TEXTURE_CUBE_MAP,
-                    TEXTURE_CUBE_MAP_ARRAY, TEXTURE_CUBE_MAP_SHADOW, TEXTURE_CUBE_MAP_ARRAY_SHADOW ->
-                        glUniform1i(location, value as Int)
-                FLOAT -> glUniform1f(location, value as Float)
-                DOUBLE -> glUniform1d(location, value as Double)
-                BOOL -> glUniform1i(location, if (value as Boolean) 1 else 0) //FIXME or f?
-                VEC2 -> glUniform2fv(location, (value as Vector2f).get(stack.mallocFloat(2)))
-                VEC2I -> glUniform2iv(location, (value as Vector2i).get(stack.mallocInt(2)))
-                VEC3 -> glUniform3fv(location, (value as Vector3f).get(stack.mallocFloat(3)))
-                VEC4 -> glUniform4fv(location, (value as Vector4f).get(stack.mallocFloat(4)))
-                MAT2 -> glUniformMatrix2fv(location, false, (value as Matrix2f).get(stack.mallocFloat(4)))
-                MAT3 -> glUniformMatrix3fv(location, false, (value as Matrix3f).get(stack.mallocFloat(9)))
-                MAT4 -> glUniformMatrix4fv(location, false, (value as Matrix4f).get(stack.mallocFloat(16)))
-                STRUCT -> error("Struct types should have been resolved by here already")
-            }
-        }
+    private fun setUniformValue(type: UniformType, location: Int, value: Any) {
+        TODO("set cpu and move to instance")
+//        //TODO check if cpu/gpu values in sync already
+//        bind()
+//        MemoryStack.stackPush().use { stack ->
+//            when (type) {
+//                INT, TEXTURE_2D, TEXTURE_2D_ARRAY, TEXTURE_2D_SHADOW, TEXTURE_2D_ARRAY_SHADOW, TEXTURE_CUBE_MAP,
+//                    TEXTURE_CUBE_MAP_ARRAY, TEXTURE_CUBE_MAP_SHADOW, TEXTURE_CUBE_MAP_ARRAY_SHADOW ->
+//                        glUniform1i(location, value as Int)
+//                FLOAT -> glUniform1f(location, value as Float)
+//                DOUBLE -> glUniform1d(location, value as Double)
+//                BOOL -> glUniform1i(location, if (value as Boolean) 1 else 0) //FIXME or f?
+//                VEC2 -> glUniform2fv(location, (value as Vector2f).get(stack.mallocFloat(2)))
+//                VEC2I -> glUniform2iv(location, (value as Vector2i).get(stack.mallocInt(2)))
+//                VEC3 -> glUniform3fv(location, (value as Vector3f).get(stack.mallocFloat(3)))
+//                VEC4 -> glUniform4fv(location, (value as Vector4f).get(stack.mallocFloat(4)))
+//                MAT2 -> glUniformMatrix2fv(location, false, (value as Matrix2f).get(stack.mallocFloat(4)))
+//                MAT3 -> glUniformMatrix3fv(location, false, (value as Matrix3f).get(stack.mallocFloat(9)))
+//                MAT4 -> glUniformMatrix4fv(location, false, (value as Matrix4f).get(stack.mallocFloat(16)))
+//                STRUCT -> error("Struct types should have been resolved by here already")
+//            }
+//        }
     }
 
-    private fun setUniformArrayValue(type: UniformType, location: Int, value: Array<Any>) = context.withContext {
-        //TODO check if cpu/gpu values in sync already
-        bind()
-        MemoryStack.stackPush().use { stack ->
-            when (type) {
-                INT, TEXTURE_2D, TEXTURE_2D_ARRAY, TEXTURE_2D_SHADOW, TEXTURE_2D_ARRAY_SHADOW, TEXTURE_CUBE_MAP,
-                    TEXTURE_CUBE_MAP_ARRAY, TEXTURE_CUBE_MAP_SHADOW, TEXTURE_CUBE_MAP_ARRAY_SHADOW -> {
-                    val ints = stack.mallocInt(value.size)
-                    for (o in value) ints.put(o as Int)
-                    glUniform1iv(location, ints.rewind())
-                }
-                FLOAT -> {
-                    val floats = stack.mallocFloat(value.size)
-                    for (o in value) floats.put(o as Float)
-                    glUniform1fv(location, floats.rewind())
-                }
-                DOUBLE -> {
-                    val doubles = stack.mallocDouble(value.size)
-                    for (o in value) doubles.put(o as Double)
-                    glUniform1dv(location, doubles.rewind())
-                }
-                BOOL -> {
-                    val ints = stack.mallocInt(value.size)
-                    for (o in value) ints.put(if (o as Boolean) 1 else 0)
-                    glUniform1iv(location, ints.rewind())
-                }
-                VEC2 -> {
-                    val vector2s = stack.mallocFloat(2 * value.size)
-                    value.forEachIndexed { i, vec2 -> vector2s.putVector2f(2 * i, vec2 as Vector2f) }
-                    glUniform2fv(location, vector2s.rewind())
-                }
-                VEC2I -> {
-                    val vector2is = stack.mallocInt(2 * value.size)
-                    value.forEachIndexed { i, vec2i -> vector2is.putVector2i(2 * i, vec2i as Vector2i) }
-                    for (o in value) (o as Vector2i)[vector2is].position(vector2is.position() + 2)
-                    glUniform2iv(location, vector2is.rewind())
-                }
-                VEC3 -> {
-                    val vector3s = stack.mallocFloat(3 * value.size)
-                    value.forEachIndexed { i, vec3 -> vector3s.putVector3f(3 * i, vec3 as Vector3f) }
-                    glUniform3fv(location, vector3s.rewind())
-                }
-                VEC4 -> {
-                    val vector4s = stack.mallocFloat(4 * value.size)
-                    value.forEachIndexed { i, vec4 -> vector4s.putVector4f(4 * i, vec4 as Vector4f) }
-                    glUniform4fv(location, vector4s.rewind())
-                }
-                MAT2 -> {
-                    val mat2s = stack.mallocFloat(4 * value.size)
-                    value.forEachIndexed { i, mat2 -> mat2s.putMatrix2f(4 * i, mat2 as Matrix2f) }
-                    glUniformMatrix2fv(location, false, mat2s.rewind())
-                }
-                MAT3 -> {
-                    val mat3s = stack.mallocFloat(9 * value.size)
-                    value.forEachIndexed { i, mat3 -> mat3s.putMatrix3f(9 * i, mat3 as Matrix3f) }
-                    glUniformMatrix3fv(location, false, mat3s.rewind())
-                }
-                MAT4 -> {
-                    val mat4s = stack.mallocFloat(16 * value.size)
-                    value.forEachIndexed { i, mat4 -> mat4s.putMatrix4f(16 * i, mat4 as Matrix4f) }
-                    glUniformMatrix4fv(location, false, mat4s.rewind())
-                }
-
-                STRUCT -> error("Struct types should have been resolved by here already")
-            }
-        }
+    private fun setUniformArrayValue(type: UniformType, location: Int, value: Array<Any>) {
+        TODO("set cpu and move to instance")
+//        //TODO check if cpu/gpu values in sync already
+//        bind()
+//        MemoryStack.stackPush().use { stack ->
+//            when (type) {
+//                INT, TEXTURE_2D, TEXTURE_2D_ARRAY, TEXTURE_2D_SHADOW, TEXTURE_2D_ARRAY_SHADOW, TEXTURE_CUBE_MAP,
+//                    TEXTURE_CUBE_MAP_ARRAY, TEXTURE_CUBE_MAP_SHADOW, TEXTURE_CUBE_MAP_ARRAY_SHADOW -> {
+//                    val ints = stack.mallocInt(value.size)
+//                    for (o in value) ints.put(o as Int)
+//                    glUniform1iv(location, ints.rewind())
+//                }
+//                FLOAT -> {
+//                    val floats = stack.mallocFloat(value.size)
+//                    for (o in value) floats.put(o as Float)
+//                    glUniform1fv(location, floats.rewind())
+//                }
+//                DOUBLE -> {
+//                    val doubles = stack.mallocDouble(value.size)
+//                    for (o in value) doubles.put(o as Double)
+//                    glUniform1dv(location, doubles.rewind())
+//                }
+//                BOOL -> {
+//                    val ints = stack.mallocInt(value.size)
+//                    for (o in value) ints.put(if (o as Boolean) 1 else 0)
+//                    glUniform1iv(location, ints.rewind())
+//                }
+//                VEC2 -> {
+//                    val vector2s = stack.mallocFloat(2 * value.size)
+//                    value.forEachIndexed { i, vec2 -> vector2s.putVector2f(2 * i, vec2 as Vector2f) }
+//                    glUniform2fv(location, vector2s.rewind())
+//                }
+//                VEC2I -> {
+//                    val vector2is = stack.mallocInt(2 * value.size)
+//                    value.forEachIndexed { i, vec2i -> vector2is.putVector2i(2 * i, vec2i as Vector2i) }
+//                    for (o in value) (o as Vector2i)[vector2is].position(vector2is.position() + 2)
+//                    glUniform2iv(location, vector2is.rewind())
+//                }
+//                VEC3 -> {
+//                    val vector3s = stack.mallocFloat(3 * value.size)
+//                    value.forEachIndexed { i, vec3 -> vector3s.putVector3f(3 * i, vec3 as Vector3f) }
+//                    glUniform3fv(location, vector3s.rewind())
+//                }
+//                VEC4 -> {
+//                    val vector4s = stack.mallocFloat(4 * value.size)
+//                    value.forEachIndexed { i, vec4 -> vector4s.putVector4f(4 * i, vec4 as Vector4f) }
+//                    glUniform4fv(location, vector4s.rewind())
+//                }
+//                MAT2 -> {
+//                    val mat2s = stack.mallocFloat(4 * value.size)
+//                    value.forEachIndexed { i, mat2 -> mat2s.putMatrix2f(4 * i, mat2 as Matrix2f) }
+//                    glUniformMatrix2fv(location, false, mat2s.rewind())
+//                }
+//                MAT3 -> {
+//                    val mat3s = stack.mallocFloat(9 * value.size)
+//                    value.forEachIndexed { i, mat3 -> mat3s.putMatrix3f(9 * i, mat3 as Matrix3f) }
+//                    glUniformMatrix3fv(location, false, mat3s.rewind())
+//                }
+//                MAT4 -> {
+//                    val mat4s = stack.mallocFloat(16 * value.size)
+//                    value.forEachIndexed { i, mat4 -> mat4s.putMatrix4f(16 * i, mat4 as Matrix4f) }
+//                    glUniformMatrix4fv(location, false, mat4s.rewind())
+//                }
+//
+//                STRUCT -> error("Struct types should have been resolved by here already")
+//            }
+//        }
     }
 
     actual override fun addUniform(name: String, type: KClass<*>) {
-        if (uniforms.containsKey(name)) return //can only be registered if valid in actual shader, thus no redefinition
-
-        val uniformType = UniformType.entries.find { it.clazz == type || it.constClass == type }
-            ?: error("Could not recognise as GLSL type: ${type.simpleName}")
-
-        if (uniformType == STRUCT) {
-            uniforms[name] = Uniform(name, uniformType, Uniform.NESTED_UNIFORM_LOCATION)
-            logger.trace { "Registered uniform struct '$name'" }
-            return
-        }
-
-        val location = context.withContext { glGetUniformLocation(programId, name) }
-        if (location != INVALID_UNIFORM_LOCATION) {
-            uniforms[name] = Uniform(name, uniformType, location)
-            logger.trace { "Registered uniform '$name'" }
-            return
-        }
-
-        if (strictUniformDetection) {
-            throw ShaderUniformException("Cannot register nonexistent or unused uniform in strict mode", name)
-        }
-
-        logger.debug { "Could not find uniform '$name' of type $uniformType" }
+        TODO("set cpu and move to instance")
+//        if (uniforms.containsKey(name)) return //can only be registered if valid in actual shader, thus no redefinition
+//
+//        val uniformType = UniformType.entries.find { it.clazz == type || it.constClass == type }
+//            ?: error("Could not recognise as GLSL type: ${type.simpleName}")
+//
+//        if (uniformType == STRUCT) {
+//            uniforms[name] = Uniform(name, uniformType, Uniform.NESTED_UNIFORM_LOCATION)
+//            logger.trace { "Registered uniform struct '$name'" }
+//            return
+//        }
+//
+//        val location = context.withContext { glGetUniformLocation(programId, name) }
+//        if (location != INVALID_UNIFORM_LOCATION) {
+//            uniforms[name] = Uniform(name, uniformType, location)
+//            logger.trace { "Registered uniform '$name'" }
+//            return
+//        }
+//
+//        if (strictUniformDetection) {
+//            throw ShaderUniformException("Cannot register nonexistent or unused uniform in strict mode", name)
+//        }
+//
+//        logger.debug { "Could not find uniform '$name' of type $uniformType" }
     }
 
     actual override fun addUniformArray(name: String, size: Int, type: KClass<*>) {
-        if (arrayUniforms.containsKey(name)) return //can only be registered if valid in actual shader, thus no redefinition
-
-        val uniformType = UniformType.entries.find { it.clazz == type || it.constClass == type }
-            ?: error("Could not recognise as GLSL type: ${type.simpleName}")
-
-        //TODO validate size
-
-        if (uniformType == STRUCT) {
-            arrayUniforms[name] = ArrayUniform(name, uniformType, size, Uniform.NESTED_UNIFORM_LOCATION)
-            logger.trace { "Registered uniform struct array '$name'" }
-            return
-        }
-
-        val location = context.withContext { glGetUniformLocation(programId, name) }
-        if (location != INVALID_UNIFORM_LOCATION) {
-            arrayUniforms[name] = ArrayUniform(name, uniformType, size, location)
-            logger.trace { "Registered uniform array '$name'" }
-            return
-        }
-
-        if (strictUniformDetection) {
-            throw ShaderUniformException("Cannot register nonexistent or unused array uniform in strict mode", name)
-        }
-
-        logger.debug { "Could not find array uniform '$name' of type $uniformType" }
+        TODO("set cpu and move to instance")
+//        if (arrayUniforms.containsKey(name)) return //can only be registered if valid in actual shader, thus no redefinition
+//
+//        val uniformType = UniformType.entries.find { it.clazz == type || it.constClass == type }
+//            ?: error("Could not recognise as GLSL type: ${type.simpleName}")
+//
+//        //TODO validate size
+//
+//        if (uniformType == STRUCT) {
+//            arrayUniforms[name] = ArrayUniform(name, uniformType, size, Uniform.NESTED_UNIFORM_LOCATION)
+//            logger.trace { "Registered uniform struct array '$name'" }
+//            return
+//        }
+//
+//        val location = context.withContext { glGetUniformLocation(programId, name) }
+//        if (location != INVALID_UNIFORM_LOCATION) {
+//            arrayUniforms[name] = ArrayUniform(name, uniformType, size, location)
+//            logger.trace { "Registered uniform array '$name'" }
+//            return
+//        }
+//
+//        if (strictUniformDetection) {
+//            throw ShaderUniformException("Cannot register nonexistent or unused array uniform in strict mode", name)
+//        }
+//
+//        logger.debug { "Could not find array uniform '$name' of type $uniformType" }
     }
 
     actual override fun addStorageBuffer(blockName: String, layout: BufferAccessor<*>) {
-        if (blockName in storageBuffers) return
-
-        val bindingIndex = context.withContext {
-            glGetProgramResourceIndex(programId, GL_SHADER_STORAGE_BLOCK, blockName)
-        }
-        if (bindingIndex != GL_INVALID_INDEX) {
-            storageBuffers[blockName] = bindingIndex
-            logger.trace { "Registered storage buffer binding index $bindingIndex with name '$blockName'" }
-            return
-        }
-
-        if (strictUniformDetection) {
-            throw ShaderUniformException("Cannot register inexistent or unused storage block '$blockName' in strict mode")
-        }
-
-        logger.warn { "Storage buffer binding index with name '$blockName' not found" }
+        TODO("set cpu and move to instance")
+//        if (blockName in storageBuffers) return
+//
+//        val bindingIndex = context.withContext {
+//            glGetProgramResourceIndex(programId, GL_SHADER_STORAGE_BLOCK, blockName)
+//        }
+//        if (bindingIndex != GL_INVALID_INDEX) {
+//            storageBuffers[blockName] = bindingIndex
+//            logger.trace { "Registered storage buffer binding index $bindingIndex with name '$blockName'" }
+//            return
+//        }
+//
+//        if (strictUniformDetection) {
+//            throw ShaderUniformException("Cannot register inexistent or unused storage block '$blockName' in strict mode")
+//        }
+//
+//        logger.warn { "Storage buffer binding index with name '$blockName' not found" }
     }
 
     actual override fun dispose() {
@@ -640,6 +598,8 @@ internal actual open class Uniform(
         internal const val INVALID_UNIFORM_LOCATION = -1
         internal const val NESTED_UNIFORM_LOCATION = -2
     }
+
+    actual constructor(name: String, type: UniformType) : this(name, type, 0)
 
     //FIXME equals without location?
 }

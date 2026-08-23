@@ -2,7 +2,6 @@ package io.github.etieskrill.games.sails
 
 import io.github.etieskrill.games.sails.ShipStats.State
 import org.etieskrill.engine.entity.Entity
-import org.etieskrill.engine.entity.getComponent
 import org.etieskrill.engine.entity.service.Service
 import org.etieskrill.engine.entity.system.EntitySystem
 import org.joml.Math.PI_OVER_2_f

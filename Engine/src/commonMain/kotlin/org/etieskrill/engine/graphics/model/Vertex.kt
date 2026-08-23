@@ -20,27 +20,14 @@ data class Vertex(
 
     companion object {
         object Accessor : VertexArrayAccessor<Vertex>() {
-            //FIXME hwat?
-//            override val elementByteSize: Int get() = 88 //TODO brother fields.sumOf { it.fieldByteSize }
-
             override fun registerFields() {
-                addField<Vector3fc> { it, buffer -> it.position.get(buffer) }
-                addField<Vector3fc> { it, buffer ->
-                    it.normal?.get(buffer) ?: buffer.putFloat(0f).putFloat(0f).putFloat(0f)
-                }
-                addField<Vector2fc> { it, buffer -> it.textureCoords?.get(buffer) ?: buffer.putFloat(0f).putFloat(0f) }
-                addField<Vector3fc> { it, buffer ->
-                    it.tangent?.get(buffer) ?: buffer.putFloat(0f).putFloat(0f).putFloat(0f)
-                }
-                addField<Vector3fc> { it, buffer ->
-                    it.biTangent?.get(buffer) ?: buffer.putFloat(0f).putFloat(0f).putFloat(0f)
-                }
-                addField<Vector4ic> { it, buffer ->
-                    it.bones?.get(buffer) ?: buffer.putInt(0).putInt(0).putInt(0).putInt(0)
-                }
-                addField<Vector4fc> { it, buffer ->
-                    it.boneWeights?.get(buffer) ?: buffer.putFloat(0f).putFloat(0f).putFloat(0f).putFloat(0f)
-                }
+                addField<Vector3fc> { it, buffer -> buffer += it.position }
+                addField<Vector3fc> { it, buffer -> buffer += it.normal }
+                addField<Vector2fc> { it, buffer -> buffer += it.textureCoords }
+                addField<Vector3fc> { it, buffer -> buffer += it.tangent }
+                addField<Vector3fc> { it, buffer -> buffer += it.biTangent }
+                addField<Vector4ic> { it, buffer -> buffer += it.bones }
+                addField<Vector4fc> { it, buffer -> buffer += it.boneWeights }
             }
         }
     }

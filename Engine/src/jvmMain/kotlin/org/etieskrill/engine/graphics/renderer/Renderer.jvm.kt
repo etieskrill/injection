@@ -55,7 +55,7 @@ actual class Renderer actual constructor(
     }
 
     actual fun render(pipeline: Pipeline<*>) = context.withContext {
-        pipeline.frameBuffer.bind()
+        context.getFrameBuffer(pipeline.frameBuffer).bind()
 
         val isIndexed: Boolean
         if (pipeline.vao != null) {
@@ -66,11 +66,12 @@ actual class Renderer actual constructor(
             isIndexed = false
         }
 
-        when (pipeline.shader) {
-            is Shader -> pipeline.shader.bind()
-            is ShaderBuilder<*, *, *> -> (pipeline.shader.shader as Shader).bind()
+        val shader = when (pipeline.shader) {
+            is Shader -> pipeline.shader
+            is ShaderBuilder<*, *, *> -> pipeline.shader.shader as Shader
             else -> error("Unsupported shader type: ${pipeline.shader::class.simpleName}")
         }
+        context.getShader(shader).bind()
 
         when (pipeline.config.alphaMode) {
             AlphaMode.OPAQUE -> glBlendFunc(GL_ONE, GL_ZERO)
@@ -147,8 +148,6 @@ actual class Renderer actual constructor(
             PrimitiveType.TRIANGLE_STRIP -> vertexCount - 2
         }
     }
-
-//        shader.setUniform("normal", transformMatrix.invert().transpose().get3x3(new Matrix3f(stack.callocFloat(9))), false);
 
     internal actual fun queryGpuTime() {
         if (!isQueryGpuTime) {

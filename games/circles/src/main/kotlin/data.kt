@@ -3,7 +3,6 @@ package io.github.etieskrill.games.circles
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import org.etieskrill.engine.entity.Entity
-import org.joml.Vector3f
 import org.joml.Vector3fc
 import org.joml.Vector4fc
 

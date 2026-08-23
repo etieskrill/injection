@@ -1,7 +1,6 @@
 package org.etieskrill.game.horde.component
 
 import org.etieskrill.engine.entity.Entity
-import org.etieskrill.game.horde.util.getComponent
 
 class EffectContainer(private val effects: MutableList<Effect> = mutableListOf()) {
     fun add(effect: Effect, entity: Entity) {

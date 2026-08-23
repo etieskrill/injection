@@ -9,9 +9,18 @@ import org.etieskrill.engine.graphics.buffer.StorageBufferObjectInstance
 import org.etieskrill.engine.graphics.buffer.VertexArrayObject
 import org.etieskrill.engine.graphics.buffer.VertexArrayObjectInstance
 import org.etieskrill.engine.graphics.framebuffer.FrameBuffer
+import org.etieskrill.engine.graphics.framebuffer.FrameBufferAttachment
+import org.etieskrill.engine.graphics.framebuffer.FrameBufferAttachmentInstance
+import org.etieskrill.engine.graphics.framebuffer.FrameBufferInstance
+import org.etieskrill.engine.graphics.framebuffer.RenderBuffer
+import org.etieskrill.engine.graphics.framebuffer.RenderBufferInstance
 import org.etieskrill.engine.graphics.shader.Shader
+import org.etieskrill.engine.graphics.shader.ShaderInstance
 import kotlin.properties.Delegates.notNull
 
+//TODO put all withContext-esque wrappers here, including a wrapper for error functions
+//we guarantee the construction of an instance will happen while the respective context is active, but any calls outside
+//of that will still have to manually use a withContext function
 actual data class GraphicsContext(
     val maxTextureUnits: Int,
     val maxVertexAttributes: Int
@@ -19,8 +28,11 @@ actual data class GraphicsContext(
 
     internal var thread: Thread? = null
 
-    actual var screenBuffer: FrameBuffer by notNull(); internal set
-    var activeFramebuffer: FrameBuffer by notNull(); internal set
+    actual var screenBuffer: FrameBufferInstance by notNull(); internal set
+    var activeFramebuffer: FrameBufferInstance by notNull(); internal set
+    private val frameBuffers = mutableMapOf<FrameBuffer, FrameBufferInstance>()
+    internal fun getFrameBuffer(frameBuffer: FrameBuffer) =
+        frameBuffers.getOrPut(frameBuffer) { FrameBufferInstance(frameBuffer, this) }
 
     internal val textureBindings = Array<Texture?>(maxTextureUnits) { null }
 
@@ -30,15 +42,33 @@ actual data class GraphicsContext(
 
     internal val bufferBindings = mutableMapOf<BufferType, BufferObjectInstance<*>>()
 
+    private val storageBufferObjects = mutableMapOf<StorageBufferObject<*>, StorageBufferObjectInstance<*>>()
+    internal fun getStorageBufferObject(buffer: StorageBufferObject<*>) =
+        storageBufferObjects.getOrPut(buffer) { StorageBufferObjectInstance(buffer, this) }
+
     internal val storageBufferBindings = mutableMapOf<Int, StorageBufferObjectInstance<*>>()
 
-    internal var activeShader: Shader? = null
+    private val renderBuffers = mutableMapOf<RenderBuffer, RenderBufferInstance>()
+    internal fun getRenderBuffer(renderBuffer: RenderBuffer) =
+        renderBuffers.getOrPut(renderBuffer) { RenderBufferInstance(renderBuffer, this) }
+
+    private val shaders = mutableMapOf<Shader, ShaderInstance>()
+    internal fun getShader(shader: Shader) =
+        shaders.getOrPut(shader) { ShaderInstance(shader, this) }
+
+    internal var activeShader: ShaderInstance? = null
 
     private val vertexArrays = mutableMapOf<VertexArrayObject<*>, VertexArrayObjectInstance<*>>()
     internal fun <T> getVertexArray(vertexArray: VertexArrayObject<T>) =
         vertexArrays.getOrPut(vertexArray) { VertexArrayObjectInstance(vertexArray, this) }
 
     internal var activeVertexArray: VertexArrayObjectInstance<*>? = null
+
+    internal fun getFrameBufferAttachment(frameBufferAttachment: FrameBufferAttachment): FrameBufferAttachmentInstance =
+        when (frameBufferAttachment) {
+            is RenderBuffer -> getRenderBuffer(frameBufferAttachment)
+            else -> error("Unknown frame buffer attachment type: ${frameBufferAttachment::class.simpleName}")
+        }
 
     actual fun <T> withContext(block: () -> T): T {
         checkThread() //TODO use rendering coroutine withContext instead

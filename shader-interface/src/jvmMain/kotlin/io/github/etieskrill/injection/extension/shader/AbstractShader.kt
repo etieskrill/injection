@@ -15,8 +15,6 @@ interface AbstractShader {
     fun setStorageBuffer(blockName: String, buffer: StorageBuffer<*>)
     fun addStorageBuffer(blockName: String, layout: BufferAccessor<*>)
 
-    fun dispose()
-
 }
 
 enum class ShaderStage { NONE, VERTEX, GEOMETRY, FRAGMENT }

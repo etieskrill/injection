@@ -10,7 +10,6 @@ import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera;
 import org.etieskrill.engine.graphics.data.DirectionalLight;
 import org.etieskrill.engine.graphics.gl.GLUtils;
-import org.etieskrill.engine.graphics.renderer.GLRenderer;
 import org.etieskrill.engine.graphics.gl.shader.Shaders;
 import org.etieskrill.engine.graphics.gl.shader.impl.AnimationShader;
 import org.etieskrill.engine.graphics.gl.shader.impl.AnimationShaderKt;
@@ -19,10 +18,11 @@ import org.etieskrill.engine.graphics.gl.shader.impl.StaticShaderKt;
 import org.etieskrill.engine.graphics.model.CubeMapModel;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.model.Node;
+import org.etieskrill.engine.graphics.renderer.GLRenderer;
 import org.etieskrill.engine.graphics.text.TrueTypeFont;
 import org.etieskrill.engine.input.Input;
-import org.etieskrill.engine.input.KeyInputManager;
 import org.etieskrill.engine.input.Key;
+import org.etieskrill.engine.input.KeyInputManager;
 import org.etieskrill.engine.input.controller.CursorCameraController;
 import org.etieskrill.engine.time.LoopPacer;
 import org.etieskrill.engine.util.EngineModelLoader;
@@ -241,7 +241,7 @@ public class Game {
         //Vampy head bind position for first person camera snapping
         final Node vampyHeadNode = vampy.getNodes().stream().filter(node -> node.getName().equals("mixamorig_Head")).findAny().get();
         final Vector3fc vampyHeadBindPosition = vampyHeadNode
-                .getHierarchyTransform(1) //ignore scene root scaling
+                .getGlobalTransform(1) //ignore scene root scaling
                 .getPosition();
 
         pacer.start();

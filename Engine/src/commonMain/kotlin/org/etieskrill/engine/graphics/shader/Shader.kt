@@ -11,6 +11,7 @@ import io.github.etieskrill.injection.extension.shader.Texture2DShadow
 import io.github.etieskrill.injection.extension.shader.TextureCubeMap
 import io.github.etieskrill.injection.extension.shader.TextureCubeMapArrayShadow
 import io.github.etieskrill.injection.extension.shader.TextureCubeMapShadow
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.etieskrill.engine.common.Disposable
 import org.etieskrill.engine.graphics.GraphicsContext
 import org.joml.Matrix2f
@@ -29,21 +30,111 @@ import org.joml.Vector4f
 import org.joml.Vector4fc
 import kotlin.reflect.KClass
 
-expect abstract class Shader : AbstractShader, Disposable {
+private val logger = KotlinLogging.logger {}
+
+abstract class Shader protected constructor(
+    internal val shaderFiles: List<String>,
+    internal val strictUniformDetection: Boolean = true
+) : AbstractShader {
+
+    internal val uniforms = mutableMapOf<String, Uniform>()
+    internal val uniformArrays = mutableMapOf<String, ArrayUniform>()
+
+    override fun setUniform(name: String, value: Any) {
+        val uniform = uniforms[name]!! //TODO strict uniforms
+        if (value::class != uniform.type.clazz || value::class != uniform.type.constClass) {
+            logger.warn { "Tried setting uniform ${uniform.name} of type ${uniform.type} to incompatible value of type ${value::class.simpleName}" }
+            return
+        }
+
+        if (uniform.value == value) return
+
+        uniform.value = value
+        uniform.version++
+    }
+
+    override fun setTexture(name: String, texture: Texture) {
+        val uniform = uniforms[name]!! //TODO strict uniforms
+        if (uniform.value == texture) return
+        if (texture::class != uniform.type.clazz || texture::class != uniform.type.constClass) {
+            logger.warn { "Tried setting texture ${uniform.name} of type ${uniform.type} to incompatible value of type ${texture::class.simpleName}" }
+            return
+        }
+
+        uniform.value = texture
+        uniform.version++
+    }
+
+    override fun addUniform(name: String, type: KClass<*>) {
+        val uniformType = UniformType.from(type)
+        if (uniformType == null) {
+            logger.warn { "Failed to add uniform $name; type ${type.simpleName} is not a valid uniform type" }
+            return
+        }
+        uniforms[name] = Uniform(name, uniformType)
+    }
+
+    override fun setUniformArray(name: String, value: Array<Any>) {
+        val uniform = uniformArrays[name]!! //TODO strict uniforms
+        if (value.isEmpty() || value[0]::class != uniform.elementType.clazz || value[0]::class != uniform.elementType.constClass) {
+            logger.warn { "Tried setting uniform array ${uniform.name} with element type ${uniform.elementType} to incompatible value of type ${value[0]::class.simpleName}" }
+            return
+        }
+
+        if (uniform.value.contentEquals(value)) return
+
+        uniform.value = value
+        uniform.version++
+    }
+
+    override fun setUniformArray(name: String, index: Int, value: Any) {
+        val uniform = uniformArrays[name]!! //TODO strict uniforms
+        if (index + 1 > uniform.size) {
+            logger.warn { "Tried setting uniform array element at index $index when array only has ${uniform.size} elements" }
+            return
+        }
+        if (value::class != uniform.elementType.clazz || value::class != uniform.elementType.constClass) {
+            logger.warn { "Tried setting uniform array element ${uniform.name}[$index] with type ${uniform.elementType} to incompatible value of type ${value::class.simpleName}" }
+            return
+        }
+
+        if (uniform.value?.get(index) == value) return
+
+        uniform.value?.set(index, value)
+        uniform.version++
+    }
+
+    override fun addUniformArray(name: String, size: Int, type: KClass<*>) {
+        val uniformType = UniformType.from(type)
+        if (uniformType == null) {
+            logger.warn { "Failed to add uniform array $name; element type ${type.simpleName} is not a valid uniform type" }
+            return
+        }
+        uniformArrays[name] = ArrayUniform(name, uniformType, size)
+    }
+
+    override fun setStorageBuffer(blockName: String, buffer: StorageBuffer<*>) {
+        val uniform = uniforms[blockName]!! //TODO strict uniforms
+        if (uniform.type != UniformType.STORAGE_BUFFER) {
+            logger.warn { "Tried setting storage buffer $blockName when uniform type is ${uniform.type}" }
+            return
+        }
+
+        if (uniform.value == buffer) return
+
+        uniform.value = buffer
+        uniform.version++
+    }
+
+    override fun addStorageBuffer(blockName: String, layout: BufferAccessor<*>) {
+        uniforms[blockName] = Uniform(blockName, UniformType.STORAGE_BUFFER)
+    }
+
+}
+
+expect class ShaderInstance : Disposable {
+    val descriptor: Shader
     val context: GraphicsContext
-
-    protected constructor(context: GraphicsContext, shaderFiles: List<String>, strictUniformDetection: Boolean = true)
-
-    override fun setUniform(name: String, value: Any)
-    override fun setTexture(name: String, texture: Texture)
-    override fun addUniform(name: String, type: KClass<*>)
-
-    override fun setUniformArray(name: String, value: Array<Any>)
-    override fun setUniformArray(name: String, index: Int, value: Any)
-    override fun addUniformArray(name: String, size: Int, type: KClass<*>)
-
-    override fun setStorageBuffer(blockName: String, buffer: StorageBuffer<*>)
-    override fun addStorageBuffer(blockName: String, layout: BufferAccessor<*>)
 
     override fun dispose()
 }
@@ -76,14 +167,29 @@ enum class UniformType(val glslName: String?, val clazz: KClass<*>, val constCla
     TEXTURE_CUBE_MAP_ARRAY("samplerCubeArray", TextureCubeMap::class),
     TEXTURE_CUBE_MAP_SHADOW("samplerCubeShadow", TextureCubeMapShadow::class),
     TEXTURE_CUBE_MAP_ARRAY_SHADOW("samplerCubeArrayShadow", TextureCubeMapArrayShadow::class),
-    STRUCT(null, UniformMappable::class)
+    STORAGE_BUFFER(null, StorageBuffer::class),
+    STRUCT(null, UniformMappable::class);
+
+    companion object {
+        //TODO assignable instead of match?
+        fun from(value: KClass<*>): UniformType? =
+            entries.find { value::class == it.clazz || value::class == it.constClass }
+    }
 }
 
-internal expect open class Uniform {
-    val name: String
+internal data class Uniform(
+    val name: String,
     val type: UniformType
+) {
+    var value: Any? = null
+    var version: Long = 0L
 }
 
-internal expect class ArrayUniform : Uniform {
+internal data class ArrayUniform(
+    val name: String,
+    val elementType: UniformType,
     val size: Int
+) {
+    var value: Array<Any>? = null
+    var version: Long = 0L
 }

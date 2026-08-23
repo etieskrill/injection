@@ -2,6 +2,7 @@ package org.etieskrill.engine.graphics.buffer
 
 import io.github.etieskrill.injection.extension.shader.Buffer
 import io.github.etieskrill.injection.extension.shader.BufferAccessor
+import org.etieskrill.engine.buffer.ByteBuffer
 import org.joml.Matrix2d
 import org.joml.Matrix2dc
 import org.joml.Matrix2f
@@ -40,7 +41,6 @@ import org.joml.Vector4f
 import org.joml.Vector4fc
 import org.joml.Vector4i
 import org.joml.Vector4ic
-import java.nio.ByteBuffer
 import kotlin.reflect.KClass
 
 //TODO replace ByteBuffer with... wrapper? is there an equivalent for native?
@@ -60,22 +60,19 @@ abstract class VertexArrayAccessor<T>() : BufferAccessor<T> {
     override val elementByteSize: Int = fields.sumOf { it.fieldByteSize }
 
     override fun map(elements: Collection<T>, buffer: Buffer<T>) {
-        val byteBuffer = buffer.buffer
-            .rewind()
-            .limit(elementByteSize * elements.size)
+        val byteBuffer = (buffer.buffer as ByteBuffer)
+        byteBuffer.clear()
 
         var position = 0
         for (element in elements) {
             for (field in fields) {
-                byteBuffer.position(position)
+                byteBuffer.writeHead = position.toLong()
                 position += field.fieldByteSize
                 field.accessor(element, byteBuffer)
             }
         }
 
-        check(position == byteBuffer.limit()) { "Vertex buffer position does not align with data byte length" }
-
-        buffer.setData(byteBuffer.flip())
+        check(position == elementByteSize * elements.size) { "Vertex buffer position does not align with data byte length" }
     }
 
     internal inner class FieldAccessor<F : Any>(
