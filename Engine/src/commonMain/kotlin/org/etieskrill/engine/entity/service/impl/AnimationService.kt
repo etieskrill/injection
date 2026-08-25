@@ -16,7 +16,8 @@ class AnimationService : Service {
 
         animator.update(delta)
 
-        drawable.shader?.setUniformArray("boneMatrices", animator.transformMatricesArray)
+        @Suppress("UNCHECKED_CAST")
+        drawable.shader?.setUniformArray("boneMatrices", animator.transformMatricesArray as Array<Any>)
     }
 
     override val runBefore: Set<KClass<out Service>>

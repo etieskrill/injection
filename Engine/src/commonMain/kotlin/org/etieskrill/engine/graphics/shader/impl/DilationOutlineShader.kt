@@ -4,12 +4,10 @@ import io.github.etieskrill.injection.extension.shader.dsl.ColourRenderTarget
 import io.github.etieskrill.injection.extension.shader.dsl.PureShaderBuilder
 import io.github.etieskrill.injection.extension.shader.dsl.VertexData
 import io.github.etieskrill.injection.extension.shader.sampler2D
-import org.etieskrill.engine.graphics.GraphicsContext
 import org.etieskrill.engine.graphics.shader.Shader
-import org.joml.Vector4fc
 
-class DilationOutlineShader(context: GraphicsContext) : PureShaderBuilder<VertexData, ColourRenderTarget>(
-    object : Shader(context, listOf("DilationOutline.glsl")) {}
+class DilationOutlineShader : PureShaderBuilder<VertexData, ColourRenderTarget>(
+    object : Shader(listOf("DilationOutline.glsl")) {}
 ) {
     val vertices by const(arrayOf(vec2(-1, -1), vec2(1, -1), vec2(-1, 1), vec2(1, 1)))
 

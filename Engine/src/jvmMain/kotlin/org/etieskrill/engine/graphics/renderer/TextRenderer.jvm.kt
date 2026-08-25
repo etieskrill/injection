@@ -1,8 +1,8 @@
 package org.etieskrill.engine.graphics.renderer
 
-import org.etieskrill.engine.common.Disposable
-import org.etieskrill.engine.graphics.buffer.BufferAccessFrequency
 import org.etieskrill.engine.graphics.GraphicsContext
+import org.etieskrill.engine.graphics.buffer.BufferAccessFrequency
+import org.etieskrill.engine.graphics.buffer.BufferObject
 import org.etieskrill.engine.graphics.buffer.VertexArrayObject
 import org.etieskrill.engine.graphics.gl.GLUtils
 import org.etieskrill.engine.graphics.shader.Shader
@@ -13,20 +13,11 @@ import org.joml.Vector2f
 import org.joml.Vector2fc
 import org.joml.Vector2i
 import org.joml.Vector2ic
-import org.lwjgl.opengl.GL11C.GL_CULL_FACE
-import org.lwjgl.opengl.GL11C.GL_ONE
-import org.lwjgl.opengl.GL11C.GL_ONE_MINUS_SRC_ALPHA
-import org.lwjgl.opengl.GL11C.GL_POINTS
-import org.lwjgl.opengl.GL11C.GL_SRC_ALPHA
-import org.lwjgl.opengl.GL11C.GL_ZERO
-import org.lwjgl.opengl.GL11C.glBlendFunc
-import org.lwjgl.opengl.GL11C.glDisable
-import org.lwjgl.opengl.GL11C.glDrawArrays
-import org.lwjgl.opengl.GL11C.glEnable
+import org.lwjgl.opengl.GL11C.*
 
 actual class TextRenderer(
     actual val context: GraphicsContext
-) : Disposable {
+) {
 
     companion object {
         const val MAX_BATCH_LENGTH = 1 shl 10 //Max text length is 1024 characters per draw call
@@ -37,7 +28,13 @@ actual class TextRenderer(
 
     private val renderedGlyphs: List<RenderedGlyph> = MutableList(MAX_BATCH_LENGTH) { RenderedGlyph() }
     private val glyphVAO: VertexArrayObject<RenderedGlyph> = VertexArrayObject(
-        RenderedGlyphAccessor, numVertexElements = MAX_BATCH_LENGTH, frequency = BufferAccessFrequency.STREAM
+        RenderedGlyphAccessor,
+        BufferObject(
+            RenderedGlyphAccessor,
+            MAX_BATCH_LENGTH,
+            accessFrequency = BufferAccessFrequency.STREAM
+        ),
+        null
     )
 
     actual fun getAbsoluteCursorPosition(
@@ -92,10 +89,6 @@ actual class TextRenderer(
         context.checkThread()
 
         GLUtils.clearError()
-
-        //can also be started just before rendering... but without it, a previously used shader is bound sometimes,
-        //even though the uniform setters already bind the shader, so this shouldn't be necessary - literal heresy
-        shader.bind()
 
         shader.setUniform("combined", combined)
         shader.setUniform("glyphTextureSize", Vector2f(font.pixelSize))
@@ -159,9 +152,11 @@ actual class TextRenderer(
         font: BitmapFont,
         shader: Shader
     ) {
-        glyphVAO.bind()
         glyphVAO.vertices = renderedGlyphs //TODO replace with ssbo?
         shader.setTexture("glyphs", font.textures)
+
+        context.getVertexArray(glyphVAO).bind()
+        context.getShader(shader).bind()
 
 //        val glyphPipeline = new Pipeline(
 //                glyphVAO,
@@ -176,15 +171,15 @@ actual class TextRenderer(
 //
 //        renderer.render(glyphPipeline)
 
-        glDisable(GL_CULL_FACE)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        glDrawArrays(GL_POINTS, 0, numChars)
-        glBlendFunc(GL_ONE, GL_ZERO)
-        glEnable(GL_CULL_FACE)
+        context.withContext {
+            glDisable(GL_CULL_FACE)
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+            glDrawArrays(GL_POINTS, 0, numChars)
+            glBlendFunc(GL_ONE, GL_ZERO)
+            glEnable(GL_CULL_FACE)
+        }
 
         _renderCalls++
     }
-
-    override fun dispose() = glyphVAO.dispose()
 
 }

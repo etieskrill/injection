@@ -8,7 +8,7 @@ import org.joml.Vector2ic
 import org.joml.Vector4f
 import io.github.etieskrill.injection.extension.shader.dsl.FrameBuffer as DslFrameBuffer
 
-class FrameBuffer(
+open class FrameBuffer(
     override val size: Vector2ic,
     val attachments: Map<FrameBufferAttachmentType, FrameBufferAttachment>
 ) : DslFrameBuffer {
@@ -56,4 +56,6 @@ expect class FrameBufferInstance : Disposable {
     val context: GraphicsContext
 
     internal var version: Long
+
+    override fun dispose()
 }

@@ -8,14 +8,12 @@ import io.github.etieskrill.injection.extension.shader.int
 import io.github.etieskrill.injection.extension.shader.mat4
 import io.github.etieskrill.injection.extension.shader.vec2
 import io.github.etieskrill.injection.extension.shader.vec4
-import org.etieskrill.engine.graphics.GraphicsContext
 import org.etieskrill.engine.graphics.pipeline.PostPassPipeline
 import org.etieskrill.engine.graphics.shader.Shader
 import org.etieskrill.engine.scene.Batch
 import org.etieskrill.engine.scene.Node
 import org.etieskrill.engine.util.FixedArrayDeque
 import org.joml.Vector2f
-import org.joml.Vector3f
 import org.joml.Vector4f
 
 enum class HistogramScaleMode { FIXED, MAX_VALUE }
@@ -47,7 +45,7 @@ class Histogram(
 
     override fun render(batch: Batch) {
         if (!::pipeline.isInitialized) { //TODO something like an init stage would be useful
-            pipeline = PostPassPipeline(HistogramShader(batch.context), batch.frameBuffer, depthTest = false)
+            pipeline = PostPassPipeline(HistogramShader(), batch.frameBuffer, depthTest = false)
         }
 
         val position = absolutePosition
@@ -88,8 +86,8 @@ class Histogram(
 }
 
 //TODO specialisation parameters on construction
-class HistogramShader(context: GraphicsContext)/*(columns: Int)*/ : PureShaderBuilder<HistogramShader.VertexData, ColourRenderTarget>(
-    object : Shader(context, listOf("Histogram.glsl"), false) {}
+class HistogramShader/*(columns: Int)*/ : PureShaderBuilder<HistogramShader.VertexData, ColourRenderTarget>(
+    object : Shader(listOf("Histogram.glsl"), false) {}
 ) {
     data class VertexData(override val position: vec4, val worldPosition: vec4) : ShaderVertexData
 

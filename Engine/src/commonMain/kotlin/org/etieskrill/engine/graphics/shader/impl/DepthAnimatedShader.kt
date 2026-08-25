@@ -3,13 +3,12 @@ package org.etieskrill.engine.graphics.shader.impl;
 import io.github.etieskrill.injection.extension.shader.dsl.ShaderBuilder
 import io.github.etieskrill.injection.extension.shader.dsl.VertexData
 import io.github.etieskrill.injection.extension.shader.mat4
-import org.etieskrill.engine.graphics.GraphicsContext
 import org.etieskrill.engine.graphics.model.Vertex
 import org.etieskrill.engine.graphics.shader.Shader
 
-class DepthAnimatedShader(context: GraphicsContext) :
+class DepthAnimatedShader :
     ShaderBuilder<Vertex, VertexData, DepthAnimatedShader.RenderTargets>(
-        object : Shader(context, listOf("DepthAnimated.glsl")) {}
+        object : Shader(listOf("DepthAnimated.glsl")) {}
     ) {
 
     class RenderTargets()

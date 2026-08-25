@@ -51,7 +51,7 @@ data class PipelineConfig(
     val depthTest: Boolean = true,
     val writeDepth: Boolean = true,
 
-    val drawMode: DrawMode = DrawMode.FILL,
+    val fillMode: FillMode = FillMode.FILL,
 
     val pointSize: Float = 1f,
 
@@ -65,4 +65,4 @@ enum class PrimitiveType { POINTS, LINES, LINE_STRIP, TRIANGLES, TRIANGLE_STRIP 
 
 enum class CullingMode { NONE, BACK, FRONT, FRONT_AND_BACK }
 
-enum class DrawMode { POINT, LINE, FILL }
+enum class FillMode { POINT, LINE, FILL }

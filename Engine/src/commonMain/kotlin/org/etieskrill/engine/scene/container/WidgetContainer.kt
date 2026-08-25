@@ -10,7 +10,6 @@ import org.etieskrill.engine.scene.Node.ScaleMode.*
 import org.etieskrill.engine.scene.getPreferredNodePosition
 import org.joml.Math.toRadians
 import org.joml.Vector2f
-import org.joml.Vector3f
 import org.joml.Vector4f
 import org.joml.minusAssign
 
@@ -87,7 +86,8 @@ open class WidgetContainer(
     //        return contexts.getOrPut(GraphicsContext.current) { initialiser(GraphicsContext.current) }
     //    }
     //}
-    private val chevronIcon = Texture2D.createFromFile("textures/icons/chevron-down-solid-black.png", batch.context, TextureType.DIFFUSE)
+    private val chevronIcon =
+        Texture2D.createFromFile("textures/icons/chevron-down-solid-black.png", TextureType.DIFFUSE)
     private val titleFont = Fonts.getDefault((barHeight) - 4)
 
     override fun update(delta: Double) {

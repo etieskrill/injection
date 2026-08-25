@@ -1,9 +1,11 @@
 package org.etieskrill.engine.graphics.texture;
 
+import org.etieskrill.engine.common.Disposable
+import org.etieskrill.engine.graphics.GraphicsContext
+import org.etieskrill.engine.graphics.gl.GLUtils
 import org.etieskrill.engine.util.ResourceReader
 import org.joml.Vector2i
-import org.joml.Vector2ic
-import org.joml.Vector4fc
+import org.lwjgl.BufferUtils
 import org.lwjgl.BufferUtils.createIntBuffer
 import org.lwjgl.assimp.Assimp.*
 import org.lwjgl.opengl.GL11.GL_LINEAR
@@ -15,123 +17,101 @@ import org.lwjgl.opengl.GL14C.GL_MIRRORED_REPEAT
 import org.lwjgl.opengl.GL21C.GL_SRGB
 import org.lwjgl.opengl.GL21C.GL_SRGB_ALPHA
 import org.lwjgl.opengl.GL30C.*
+import org.lwjgl.opengl.GL33C.GL_TEXTURE_SWIZZLE_RGBA
 import org.lwjgl.stb.STBImage.*
 import java.util.*
-import io.github.etieskrill.injection.extension.shader.Texture as DslTexture
 
 /**
  * As this class makes use of the stb_image library, it can decode from all the image formats specified in the
  * official documentation: [stb_image](https://github.com/nothings/stb/blob/5736b15f7ea0ffb08dd38af21067c314d6a3aae9/stb_image.h#L23-L33).
  */
-actual abstract class Texture actual constructor(
-    format: TextureFormat,
-    actual val type: TextureType,
-    minFilter: TextureMinFilter,
-    magFilter: TextureMagFilter,
-    wrapping: TextureWrapping,
-    borderColour: Vector4fc
-) : DslTexture {
+internal actual abstract class TextureInstance<T : Texture>(
+    actual val descriptor: T,
+    actual val context: GraphicsContext
+) : Disposable {
 
-    internal var _format: TextureFormat = format
-    actual val format: TextureFormat get() = _format
-
-    var wrapping: TextureWrapping = wrapping
-        set(value) {
-            //TODO instance
-//            bind(0)
-//            context.withContext {
-//                glTexParameteri(glTarget, GL_TEXTURE_WRAP_S, value.gl)
-//                glTexParameteri(glTarget, GL_TEXTURE_WRAP_T, value.gl)
-//                glTexParameteri(glTarget, GL_TEXTURE_WRAP_R, value.gl)
-//            }
-            field = value
-        }
+    internal actual var version: Long = 0L
 
     protected abstract val glTarget: Int
 
-    //TODO instance
-//    protected val id: Int by lazy { context.withContext { GL11C.glGenTextures() } }
+    protected val id: Int = glGenTextures()
 
     protected abstract fun bufferTextureData()
 
     init {
-        //TODO instance
-//        context.withContext {
-//            bind(0)
-//
-//            glTexParameteri(glTarget, GL_TEXTURE_MIN_FILTER, minFilter.gl)
-//            glTexParameteri(glTarget, GL_TEXTURE_MAG_FILTER, magFilter.gl)
-//
-//            this.wrapping = wrapping
-//
-//            glTexParameterfv(glTarget, GL_TEXTURE_BORDER_COLOR, borderColour[BufferUtils.createFloatBuffer(4)])
-//
-//            val swizzleMask = when (this.format) {
-//                TextureFormat.GRAY, TextureFormat.DEPTH, TextureFormat.STENCIL, TextureFormat.DEPTH_STENCIL
-//                     -> intArrayOf(GL_RED, GL_RED, GL_RED, GL_ONE)
-//                TextureFormat.ALPHA -> intArrayOf(GL_ONE, GL_ONE, GL_ONE, GL_ALPHA, GL_RED)
-//                TextureFormat.GRAY_ALPHA -> intArrayOf(GL_RED, GL_RED, GL_RED, GL_GREEN)
-//                TextureFormat.RGB, TextureFormat.SRGB -> intArrayOf(GL_RED, GL_GREEN, GL_BLUE, GL_ONE)
-//                TextureFormat.RGBA, TextureFormat.SRGBA, TextureFormat.RGBA_HDR
-//                     -> intArrayOf(GL_RED, GL_GREEN, GL_BLUE, GL_ALPHA)
-//            }
-//
-//            glTexParameteriv(glTarget, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask)
-//
-//            bufferTextureData()
-//            GLUtils.checkErrorThrowing("Error while buffering texture data: $this")
-//
-//            if (minFilter in setOf(TextureMinFilter.NEAREST, TextureMinFilter.LINEAR)
-//                && this.format !in setOf(TextureFormat.DEPTH, TextureFormat.STENCIL, TextureFormat.DEPTH_STENCIL)
-//            ) {
-//                glGenerateMipmap(glTarget)
-//            }
-//
-//            GLUtils.checkErrorThrowing("Error while creating texture: $this")
-//        }
+        bind(0)
+
+        glTexParameteri(glTarget, GL_TEXTURE_MIN_FILTER, descriptor.minFilter.gl)
+        glTexParameteri(glTarget, GL_TEXTURE_MAG_FILTER, descriptor.magFilter.gl)
+
+        glTexParameterfv(glTarget, GL_TEXTURE_BORDER_COLOR, descriptor.borderColour[BufferUtils.createFloatBuffer(4)])
+
+        bufferTextureData()
+        GLUtils.checkErrorThrowing("Error while buffering texture data: $this")
+
+        val swizzleMask = when (descriptor.format) {
+            TextureFormat.GRAY, TextureFormat.DEPTH, TextureFormat.STENCIL, TextureFormat.DEPTH_STENCIL
+                -> intArrayOf(GL_RED, GL_RED, GL_RED, GL_ONE)
+
+            TextureFormat.ALPHA -> intArrayOf(GL_ONE, GL_ONE, GL_ONE, GL_ALPHA, GL_RED)
+            TextureFormat.GRAY_ALPHA -> intArrayOf(GL_RED, GL_RED, GL_RED, GL_GREEN)
+            TextureFormat.RGB, TextureFormat.SRGB -> intArrayOf(GL_RED, GL_GREEN, GL_BLUE, GL_ONE)
+            TextureFormat.RGBA, TextureFormat.SRGBA, TextureFormat.RGBA_HDR
+                -> intArrayOf(GL_RED, GL_GREEN, GL_BLUE, GL_ALPHA)
+        }
+
+        glTexParameteriv(glTarget, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask)
+
+        if (descriptor.minFilter in setOf(TextureMinFilter.NEAREST, TextureMinFilter.LINEAR)
+            && descriptor.format !in setOf(TextureFormat.DEPTH, TextureFormat.STENCIL, TextureFormat.DEPTH_STENCIL)
+        ) {
+            glGenerateMipmap(glTarget)
+        }
+
+        GLUtils.checkErrorThrowing("Error while creating texture: $this")
     }
 
-    //TODO move to instance
-//    fun bind(unit: Int) = context.withContext {
-//        check(unit < context.maxTextureUnits) { "Texture unit $unit is not supported" }
-//        glActiveTexture(GL_TEXTURE0 + unit)
-//        glBindTexture(glTarget, id)
-//    }
-//
-//    fun unbind(unit: Int) = context.withContext {
-//        glActiveTexture(GL_TEXTURE0 + unit)
-//        glBindTexture(glTarget, 0)
-//    }
+    fun bind(unit: Int) = context.withContext {
+        check(unit < context.maxTextureUnits) { "Texture unit $unit is not supported" }
+
+        if (context.textureBindings[unit] != this) {
+            glActiveTexture(GL_TEXTURE0 + unit)
+            glBindTexture(glTarget, id)
+            context.textureBindings[unit] = this
+        }
+
+        sync()
+    }
+
+    fun unbind(unit: Int) = context.withContext {
+        if (context.textureBindings[unit] == this) {
+            glActiveTexture(GL_TEXTURE0 + unit)
+            glBindTexture(glTarget, 0)
+            context.textureBindings[unit] = null
+        }
+    }
+
+    private fun sync() {
+        if (version >= descriptor.version) return
+
+        context.withContext {
+            glTexParameteri(glTarget, GL_TEXTURE_WRAP_S, descriptor.wrapping.gl)
+            glTexParameteri(glTarget, GL_TEXTURE_WRAP_T, descriptor.wrapping.gl)
+            glTexParameteri(glTarget, GL_TEXTURE_WRAP_R, descriptor.wrapping.gl)
+        }
+
+        version = descriptor.version
+    }
 
     private var wasAlreadyDisposed = false
 
-//    actual override fun dispose() {
-//        if (wasAlreadyDisposed) return
-//        context.withContext { glDeleteTextures(id) }
-//        wasAlreadyDisposed = true
-//    }
-
-    override fun toString(): String {
-        return "Texture(type=$type, format=$format)"
+    actual override fun dispose() {
+        if (wasAlreadyDisposed) return
+        context.withContext { glDeleteTextures(id) }
+        wasAlreadyDisposed = true
     }
 
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as Texture
-
-        if (context != other.context) return false
-        if (id != other.id) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = context.hashCode()
-        result = 31 * result + id
-        return result
-    }
+    override fun toString(): String = "Texture(type=${descriptor.type}, format=${descriptor.format})"
 
 }
 
@@ -161,25 +141,6 @@ internal val TextureFormat.glInternal get() = when (this) {
     TextureFormat.DEPTH -> GL_DEPTH_COMPONENT
     TextureFormat.STENCIL -> GL_STENCIL_INDEX
     TextureFormat.DEPTH_STENCIL -> GL_DEPTH_STENCIL
-}
-
-internal fun textureFormatFromNumChannels(numChannels: Int): TextureFormat = when (numChannels) {
-    1 -> TextureFormat.GRAY
-    2 -> TextureFormat.GRAY_ALPHA
-    3 -> TextureFormat.SRGB
-    4 -> TextureFormat.SRGBA
-    else -> error("Unexpected number of channels: $numChannels")
-}
-
-internal fun textureFormatFromNumChannelsAndType(
-    numChannels: Int,
-    type: TextureType
-): TextureFormat = when (numChannels) {
-    1 -> TextureFormat.GRAY
-    2 -> TextureFormat.GRAY_ALPHA
-    3 -> if (type == TextureType.DIFFUSE) TextureFormat.SRGB else TextureFormat.RGB
-    4 -> if (type == TextureType.DIFFUSE) TextureFormat.SRGBA else TextureFormat.RGBA
-    else -> error("Unexpected number of channels: $numChannels")
 }
 
 internal val TextureMinFilter.gl get() = when (this) {
@@ -219,9 +180,7 @@ internal val TextureType.ai get() = when (this) {
     TextureType.SHADOW, TextureType.G_POSITION, TextureType.G_DEPTH, TextureType.G_COLOUR, TextureType.G_NORMAL -> null
 }
 
-internal class TextureData(val size: Vector2ic, val format: TextureFormat, val buffer: ByteArray)
-
-internal fun loadTexture2DData(file: String, type: TextureType): TextureData {
+internal actual fun loadTexture2DData(file: String, type: TextureType): TextureData {
     val width = createIntBuffer(1)
     val height = createIntBuffer(1)
     val numChannels = createIntBuffer(1)

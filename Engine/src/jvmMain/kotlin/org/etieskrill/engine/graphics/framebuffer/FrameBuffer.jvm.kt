@@ -8,7 +8,7 @@ import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferCreationExceptio
 import org.lwjgl.opengl.GL11C
 import org.lwjgl.opengl.GL20C
 import org.lwjgl.opengl.GL30C
-import kotlin.properties.Delegates
+import kotlin.properties.Delegates.notNull
 
 @OptIn(ExperimentalStdlibApi::class)
 actual open class FrameBufferInstance internal constructor(
@@ -18,10 +18,10 @@ actual open class FrameBufferInstance internal constructor(
 
     internal actual var version: Long = 0L
 
-    internal open val id = context.withContext { GL30C.glGenFramebuffers() }
+    internal open var id: Int by notNull()
 
-    protected var glBufferClearMask: Int by Delegates.notNull()
-    protected var glColourDrawBuffers: IntArray by Delegates.notNull()
+    protected var glBufferClearMask: Int by notNull()
+    protected var glColourDrawBuffers: IntArray by notNull()
 
     init {
         init()
@@ -29,6 +29,8 @@ actual open class FrameBufferInstance internal constructor(
 
     internal open fun init() = context.withContext {
         GLUtils.clearError()
+
+        id = GL30C.glGenFramebuffers()
 
         GL30C.glBindFramebuffer(GL30C.GL_FRAMEBUFFER, id)
         descriptor.attachments.forEach { (type, attachment) ->
@@ -109,7 +111,7 @@ actual open class FrameBufferInstance internal constructor(
      */
     fun unbind() = context.screenBuffer.bind()
 
-    override fun dispose() = context.withContext {
+    actual override fun dispose() = context.withContext {
         unbind()
         GL30C.glDeleteFramebuffers(id)
         descriptor.attachments.values.forEach { context.getFrameBufferAttachment(it).dispose() }

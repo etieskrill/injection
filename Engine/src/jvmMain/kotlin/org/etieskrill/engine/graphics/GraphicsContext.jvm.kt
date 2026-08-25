@@ -16,6 +16,9 @@ import org.etieskrill.engine.graphics.framebuffer.RenderBuffer
 import org.etieskrill.engine.graphics.framebuffer.RenderBufferInstance
 import org.etieskrill.engine.graphics.shader.Shader
 import org.etieskrill.engine.graphics.shader.ShaderInstance
+import org.etieskrill.engine.graphics.texture.Texture2D
+import org.etieskrill.engine.graphics.texture.Texture2DInstance
+import org.etieskrill.engine.graphics.texture.TextureInstance
 import kotlin.properties.Delegates.notNull
 
 //TODO put all withContext-esque wrappers here, including a wrapper for error functions
@@ -28,13 +31,17 @@ actual data class GraphicsContext(
 
     internal var thread: Thread? = null
 
-    actual var screenBuffer: FrameBufferInstance by notNull(); internal set
     var activeFramebuffer: FrameBufferInstance by notNull(); internal set
+    actual var screenBuffer: FrameBufferInstance by notNull(); internal set
     private val frameBuffers = mutableMapOf<FrameBuffer, FrameBufferInstance>()
     internal fun getFrameBuffer(frameBuffer: FrameBuffer) =
         frameBuffers.getOrPut(frameBuffer) { FrameBufferInstance(frameBuffer, this) }
 
-    internal val textureBindings = Array<Texture?>(maxTextureUnits) { null }
+    private val textures = mutableMapOf<Texture, TextureInstance<*>>()
+    internal fun getTexture(texture: Texture2D) = textures.getOrPut(texture) { Texture2DInstance(texture, this) }
+
+    //TODO other texture types
+    internal val textureBindings = Array<TextureInstance<*>?>(maxTextureUnits) { null }
 
     private val bufferObjects = mutableMapOf<BufferObject<*>, BufferObjectInstance<*>>()
     internal fun getBufferObject(buffer: BufferObject<*>) =

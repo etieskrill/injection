@@ -8,7 +8,7 @@ import org.joml.Vector4f
 
 class Image(texturePath: String) : Node<Image>() {
 
-    private val texture = Texture2D.createFromFile(texturePath, batch.context, TextureType.DIFFUSE)
+    private val texture = Texture2D.createFromFile(texturePath, TextureType.DIFFUSE)
 
     init {
         colour = Vector4f(1f, 1f, 1f, 1f)

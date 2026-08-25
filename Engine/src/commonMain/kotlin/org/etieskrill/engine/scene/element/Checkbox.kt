@@ -2,13 +2,12 @@ package org.etieskrill.engine.scene.element
 
 import org.etieskrill.engine.graphics.texture.Texture2D
 import org.etieskrill.engine.graphics.texture.TextureType
-import org.etieskrill.engine.input.KeyEvent
 import org.etieskrill.engine.input.Key
+import org.etieskrill.engine.input.KeyEvent
 import org.etieskrill.engine.input.KeyEventAction
 import org.etieskrill.engine.scene.Batch
 import org.etieskrill.engine.scene.Node
 import org.joml.Vector2f
-import org.joml.Vector3f
 import org.joml.Vector4f
 
 class Checkbox(
@@ -19,7 +18,7 @@ class Checkbox(
 
     companion object {
         private val sprite =
-            Texture2D.createFromFile("textures/icons/tick-mark-flipped.png", batch.context, TextureType.DIFFUSE)
+            Texture2D.createFromFile("textures/icons/tick-mark-flipped.png", TextureType.DIFFUSE)
     }
 
     init {

@@ -7,11 +7,10 @@ import io.github.etieskrill.injection.extension.shader.dsl.ShaderVertexData
 import io.github.etieskrill.injection.extension.shader.mat4
 import io.github.etieskrill.injection.extension.shader.vec2
 import io.github.etieskrill.injection.extension.shader.vec4
-import org.etieskrill.engine.graphics.GraphicsContext
 import org.etieskrill.engine.graphics.shader.Shader
 
-class UiBoxShader(context: GraphicsContext) : PureShaderBuilder<UiBoxShader.VertexData, ColourRenderTarget>(
-    object : Shader(context, listOf("UiBox.glsl")) {}
+class UiBoxShader : PureShaderBuilder<UiBoxShader.VertexData, ColourRenderTarget>(
+    object : Shader(listOf("UiBox.glsl")) {}
 ) {
     data class VertexData(
         override val position: vec4,
@@ -40,7 +39,7 @@ class UiBoxShader(context: GraphicsContext) : PureShaderBuilder<UiBoxShader.Vert
             val texel = if (useSprite) {
                 texture(sprite, it.textureCoords)
             } else {
-                vec2(1)
+                vec4(1)
             }
 
             ColourRenderTarget(texel * colour)

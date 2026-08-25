@@ -6,6 +6,7 @@ import org.etieskrill.engine.graphics.buffer.VertexArrayObject
 import org.etieskrill.engine.graphics.model.Bone
 import org.etieskrill.engine.graphics.model.Material
 import org.etieskrill.engine.graphics.model.Mesh
+import org.etieskrill.engine.graphics.model.MeshDrawMode
 import org.etieskrill.engine.graphics.model.Vertex
 import org.joml.primitives.AABBf
 
@@ -15,7 +16,7 @@ fun loadToVAO(
     material: Material,
     bones: List<Bone>? = null,
     boundingBox: AABBf = AABBf(),
-    drawMode: Mesh.DrawMode? = null
+    drawMode: MeshDrawMode? = null
 ): Mesh = Mesh(
     material,
     bones,
@@ -29,5 +30,5 @@ fun loadToVAO(
         }
     ),
     boundingBox,
-    drawMode ?: Mesh.DrawMode.TRIANGLES
+    drawMode ?: MeshDrawMode.TRIANGLES
 )

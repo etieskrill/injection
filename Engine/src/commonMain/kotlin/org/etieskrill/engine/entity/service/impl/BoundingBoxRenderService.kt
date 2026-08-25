@@ -9,7 +9,7 @@ import org.etieskrill.engine.graphics.framebuffer.FrameBuffer
 import org.etieskrill.engine.graphics.gl.shader.Shaders
 import org.etieskrill.engine.graphics.model.ModelFactory
 import org.etieskrill.engine.graphics.pipeline.CullingMode
-import org.etieskrill.engine.graphics.pipeline.DrawMode
+import org.etieskrill.engine.graphics.pipeline.FillMode
 import org.etieskrill.engine.graphics.pipeline.Pipeline
 import org.etieskrill.engine.graphics.pipeline.PipelineConfig
 import org.etieskrill.engine.graphics.renderer.Renderer
@@ -34,7 +34,7 @@ class BoundingBoxRenderService(
         box.nodes.flatMap { it.meshes }[0].vao,
         PipelineConfig(
             cullingMode = CullingMode.NONE,
-            drawMode = DrawMode.LINE
+            fillMode = FillMode.LINE
         ),
         shader,
         frameBuffer

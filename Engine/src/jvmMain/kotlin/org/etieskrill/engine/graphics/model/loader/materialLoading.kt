@@ -53,10 +53,10 @@ internal fun loadEmbeddedTextures(scene: AIScene): Map<String, Texture2D> {
         val arrayData = ByteArray(imageData.remaining())
         imageData.get(arrayData)
         val tex = Texture2D(
-            Vector2i(width[0], height[0]),
-            arrayData,
+            size = Vector2i(width[0], height[0]),
+            type = determineType(filePath),
+            buffer = arrayData,
             format = textureFormatFromNumChannels(channels[0]),
-            type = determineType(filePath)
         )
 
         embeddedTextures["*$i"] = tex

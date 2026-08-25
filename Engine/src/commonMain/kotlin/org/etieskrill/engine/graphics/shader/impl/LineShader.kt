@@ -6,12 +6,11 @@ import io.github.etieskrill.injection.extension.shader.dsl.VertexData
 import io.github.etieskrill.injection.extension.shader.mat4
 import io.github.etieskrill.injection.extension.shader.vec3
 import io.github.etieskrill.injection.extension.shader.vec4
-import org.etieskrill.engine.graphics.GraphicsContext
 import org.etieskrill.engine.graphics.shader.Shader
 import org.joml.Matrix4f
 
-class LineShader(context: GraphicsContext) : PureShaderBuilder<VertexData, ColourRenderTarget>(
-    object : Shader(context, listOf("Line.glsl")) {}
+class LineShader : PureShaderBuilder<VertexData, ColourRenderTarget>(
+    object : Shader(listOf("Line.glsl")) {}
 ) {
     var pointA by uniform<vec3>()
     var pointB by uniform<vec3>()

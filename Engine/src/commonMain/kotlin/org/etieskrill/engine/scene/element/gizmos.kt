@@ -1,6 +1,6 @@
 package org.etieskrill.engine.scene.element
 
-import org.etieskrill.engine.graphics.GraphicsContext
+import org.etieskrill.engine.graphics.model.loader.loadModel
 import org.etieskrill.engine.graphics.pipeline.CullingMode
 import org.etieskrill.engine.graphics.pipeline.Pipeline
 import org.etieskrill.engine.graphics.pipeline.PipelineConfig
@@ -16,8 +16,8 @@ class TranslateGizmo(
     translationCallback: (Vector3fc) -> Unit,
 ) : Node<TranslateGizmo>() {
 
-    private val arrowModel = Model.ofFile("arrow.glb")
-    private val arrowTransform = arrowModel.nodes.first().hierarchyTransform
+    private val arrowModel = loadModel("arrow.glb")
+    private val arrowTransform = arrowModel.nodes[0].getGlobalTransform()
 
     private lateinit var pipeline: Pipeline<TranslateGizmoShader>
 
@@ -34,7 +34,7 @@ class TranslateGizmo(
                     depthTest = false,
                     writeDepth = false,
                 ),
-                TranslateGizmoShader(batch.context),
+                TranslateGizmoShader(),
                 batch.frameBuffer
             )
         }
@@ -49,7 +49,7 @@ class TranslateGizmo(
 
 }
 
-class TranslateGizmoShader(context: GraphicsContext) : Shader(context, listOf("TranslateGizmo.glsl"), false)
+class TranslateGizmoShader : Shader(listOf("TranslateGizmo.glsl"), false)
 
 class RotateGizmo(
     rotationCallback: (Quaternionfc) -> Unit

@@ -6,12 +6,11 @@ import io.github.etieskrill.injection.extension.shader.dsl.VertexData
 import io.github.etieskrill.injection.extension.shader.mat4
 import io.github.etieskrill.injection.extension.shader.vec3
 import io.github.etieskrill.injection.extension.shader.vec4
-import org.etieskrill.engine.graphics.GraphicsContext
 import org.etieskrill.engine.graphics.shader.Shader
 import org.joml.Vector4f
 
-class FlatShader(context: GraphicsContext) : ShaderBuilder<FlatShader.InputVertex, VertexData, ColourRenderTarget>(
-    object : Shader(context, listOf("Flat.glsl")) {}
+class FlatShader : ShaderBuilder<FlatShader.InputVertex, VertexData, ColourRenderTarget>(
+    object : Shader(listOf("Flat.glsl")) {}
 ) {
     data class InputVertex(val position: vec3, val normal: vec3)
 

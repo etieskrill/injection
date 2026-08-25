@@ -8,14 +8,13 @@ import io.github.etieskrill.injection.extension.shader.float
 import io.github.etieskrill.injection.extension.shader.sampler2D
 import io.github.etieskrill.injection.extension.shader.vec2
 import io.github.etieskrill.injection.extension.shader.vec4
-import org.etieskrill.engine.graphics.GraphicsContext
 import org.etieskrill.engine.graphics.shader.Shader
 import org.joml.Vector2f
 import org.joml.Vector4f
 
 //TODO compile constants - e.g. colour blend mode to merge this with above
-class BlitDepthShader(context: GraphicsContext) : PureShaderBuilder<BlitDepthShader.Vertex, ColourRenderTarget>(
-    object : Shader(context, listOf("BlitDepth.glsl")) {}
+class BlitDepthShader : PureShaderBuilder<BlitDepthShader.Vertex, ColourRenderTarget>(
+    object : Shader(listOf("BlitDepth.glsl")) {}
 ) {
     data class Vertex(override val position: vec4, val textureCoords: vec2) : ShaderVertexData
 

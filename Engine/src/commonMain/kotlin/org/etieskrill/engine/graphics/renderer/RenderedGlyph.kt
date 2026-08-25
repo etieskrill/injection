@@ -11,8 +11,8 @@ data class RenderedGlyph(
 
 object RenderedGlyphAccessor : VertexArrayAccessor<RenderedGlyph>() {
     override fun registerFields() {
-        addField<Vector2f> { it, buffer -> it.size[buffer] }
-        addField<Vector2f> { it, buffer -> it.position[buffer] }
-        addField<Int> { it, buffer -> buffer.putInt(it.textureIndex) }
+        addField<Vector2f> { it, buffer -> buffer += it.size }
+        addField<Vector2f> { it, buffer -> buffer += it.position }
+        addField<Int> { it, buffer -> buffer += it.textureIndex }
     }
 }

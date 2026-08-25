@@ -17,8 +17,8 @@ const val DEFAULT_UPDATE_FREQUENCY = 2
 
 class DirectionalShadowMappingService(
     val renderer: Renderer,
-    val depthShader: DepthShader = DepthShader(renderer.context),
-    val animatedDepthShader: DepthAnimatedShader = DepthAnimatedShader(renderer.context)
+    val depthShader: DepthShader = DepthShader(),
+    val animatedDepthShader: DepthAnimatedShader = DepthAnimatedShader()
 ) : Service {
 
     //TODO make superclass for sparsely executed services and entity round robin services

@@ -6,7 +6,6 @@ import org.etieskrill.engine.graphics.pipeline.Pipeline
 import org.etieskrill.engine.graphics.pipeline.PostPassPipeline
 import org.etieskrill.engine.graphics.renderer.Renderer
 import org.etieskrill.engine.graphics.renderer.TextRenderer
-import org.etieskrill.engine.graphics.shader.Shader
 import org.etieskrill.engine.graphics.shader.impl.BlitShader
 import org.etieskrill.engine.graphics.shader.impl.TextShader
 import org.etieskrill.engine.graphics.shader.impl.UiBoxShader
@@ -17,11 +16,9 @@ import org.joml.Matrix4fc
 import org.joml.Vector2f
 import org.joml.Vector2fc
 import org.joml.Vector2ic
-import org.joml.Vector4f
 import org.joml.Vector4fc
 import org.joml.div
 import org.joml.plus
-import org.lwjgl.opengl.GL30C
 
 //TODO since everything apart from like, chars in Strings is immediate-mode, this should be renamed
 class Batch(
@@ -33,14 +30,14 @@ class Batch(
     internal val context: GraphicsContext get() = renderer.context
 
     private val uiBoxPipeline = PostPassPipeline(
-        UiBoxShader(context),
+        UiBoxShader(),
         frameBuffer,
         opaque = false,
         depthTest = false
     )
 
     private val blitPipeline = PostPassPipeline(
-        BlitShader(context),
+        BlitShader(),
         frameBuffer,
         opaque = false,
         depthTest = false
@@ -53,7 +50,7 @@ class Batch(
         depthTest = false
     )
 
-    private val textShader = TextShader(context)
+    private val textShader = TextShader()
 
     var combined: Matrix4fc = Matrix4f()
         set(value) {

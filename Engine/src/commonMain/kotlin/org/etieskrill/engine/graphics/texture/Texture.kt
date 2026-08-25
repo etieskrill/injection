@@ -1,26 +1,30 @@
 package org.etieskrill.engine.graphics.texture
 
+import org.etieskrill.engine.common.Disposable
+import org.etieskrill.engine.graphics.GraphicsContext
 import org.etieskrill.engine.graphics.texture.TextureMagFilter.LINEAR
 import org.etieskrill.engine.graphics.texture.TextureMagFilter.NEAREST
 import org.etieskrill.engine.graphics.texture.TextureMinFilter.*
+import org.joml.Vector2ic
 import org.joml.Vector4f
 import org.joml.Vector4fc
 import io.github.etieskrill.injection.extension.shader.Texture as DslTexture
 
-expect abstract class Texture : DslTexture {
+abstract class Texture(
+    val type: TextureType,
+    val format: TextureFormat,
+    val minFilter: TextureMinFilter = TRILINEAR,
+    val magFilter: TextureMagFilter = LINEAR,
+    wrapping: TextureWrapping = TextureWrapping.REPEAT,
+    val borderColour: Vector4fc = Vector4f(0f)
+) : DslTexture {
+    var wrapping: TextureWrapping = wrapping
+        set(value) {
+            version++
+            field = value
+        }
 
-    val type: TextureType
-    val format: TextureFormat
-
-    constructor(
-        format: TextureFormat,
-        type: TextureType = TextureType.UNKNOWN,
-        minFilter: TextureMinFilter = TextureMinFilter.TRILINEAR,
-        magFilter: TextureMagFilter = TextureMagFilter.LINEAR,
-        wrapping: TextureWrapping = TextureWrapping.REPEAT,
-        borderColour: Vector4fc = Vector4f(0f)
-    )
-
+    internal var version: Long = 0L
 }
 
 enum class TextureFormat(val numChannels: Int) {
@@ -85,3 +89,35 @@ enum class TextureType {
 
     G_POSITION, G_DEPTH, G_COLOUR, G_NORMAL //deferred rendering buffers
 }
+
+internal expect abstract class TextureInstance<T : Texture> : Disposable {
+    val descriptor: T
+    val context: GraphicsContext
+
+    internal var version: Long
+
+    override fun dispose()
+}
+
+internal fun textureFormatFromNumChannels(numChannels: Int): TextureFormat = when (numChannels) {
+    1 -> TextureFormat.GRAY
+    2 -> TextureFormat.GRAY_ALPHA
+    3 -> TextureFormat.SRGB
+    4 -> TextureFormat.SRGBA
+    else -> error("Unexpected number of channels: $numChannels")
+}
+
+internal fun textureFormatFromNumChannelsAndType(
+    numChannels: Int,
+    type: TextureType
+): TextureFormat = when (numChannels) {
+    1 -> TextureFormat.GRAY
+    2 -> TextureFormat.GRAY_ALPHA
+    3 -> if (type == TextureType.DIFFUSE) TextureFormat.SRGB else TextureFormat.RGB
+    4 -> if (type == TextureType.DIFFUSE) TextureFormat.SRGBA else TextureFormat.RGBA
+    else -> error("Unexpected number of channels: $numChannels")
+}
+
+internal class TextureData(val size: Vector2ic, val format: TextureFormat, val buffer: ByteArray)
+
+internal expect fun loadTexture2DData(file: String, type: TextureType): TextureData

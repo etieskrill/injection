@@ -7,12 +7,11 @@ import io.github.etieskrill.injection.extension.shader.mat3
 import io.github.etieskrill.injection.extension.shader.mat4
 import io.github.etieskrill.injection.extension.shader.vec3
 import io.github.etieskrill.injection.extension.shader.vec4
-import org.etieskrill.engine.graphics.GraphicsContext
 import org.etieskrill.engine.graphics.shader.Shader
 import org.joml.Vector4f
 
-class SolidShader(context: GraphicsContext) : ShaderBuilder<SolidShader.InputVertex, SolidShader.Vertex, ColourRenderTarget>(
-    object : Shader(context, listOf("Solid.glsl"), false) {}
+class SolidShader : ShaderBuilder<SolidShader.InputVertex, SolidShader.Vertex, ColourRenderTarget>(
+    object : Shader(listOf("Solid.glsl"), false) {}
 ) {
     data class InputVertex(val position: vec3, val normalVec: vec3)
     data class Vertex(override val position: vec4, val normal: vec3) : ShaderVertexData

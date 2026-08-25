@@ -4,6 +4,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import org.etieskrill.engine.graphics.model.Bone
 import org.etieskrill.engine.graphics.model.Material
 import org.etieskrill.engine.graphics.model.Mesh
+import org.etieskrill.engine.graphics.model.MeshDrawMode
 import org.etieskrill.engine.graphics.model.Vertex
 import org.joml.Vector2f
 import org.joml.Vector3f
@@ -77,9 +78,9 @@ private fun processMesh(aiMesh: AIMesh, materials: List<Material>): Mesh {
         logger.info { "Mesh contains n-gon encoding, which is not explicitly supported; if a mesh looks weird, this may be the reason" } //FIXME i dunnot if this even has any impact
     }
     val drawMode = when (primitiveType and aiPrimitiveType_NGONEncodingFlag.inv()) {
-        aiPrimitiveType_POINT -> Mesh.DrawMode.POINTS
-        aiPrimitiveType_LINE -> Mesh.DrawMode.LINES
-        aiPrimitiveType_TRIANGLE -> Mesh.DrawMode.TRIANGLES
+        aiPrimitiveType_POINT -> MeshDrawMode.POINTS
+        aiPrimitiveType_LINE -> MeshDrawMode.LINES
+        aiPrimitiveType_TRIANGLE -> MeshDrawMode.TRIANGLES
         else -> error("Unsupported primitive type: 0x${primitiveType.toHexString()}")
     }
 

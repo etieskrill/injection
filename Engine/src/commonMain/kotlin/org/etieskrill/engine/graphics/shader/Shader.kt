@@ -39,6 +39,7 @@ abstract class Shader protected constructor(
 
     internal val uniforms = mutableMapOf<String, Uniform>()
     internal val uniformArrays = mutableMapOf<String, ArrayUniform>()
+    internal var version: Long = 0L
 
     override fun setUniform(name: String, value: Any) {
         val uniform = uniforms[name]!! //TODO strict uniforms
@@ -72,6 +73,7 @@ abstract class Shader protected constructor(
             return
         }
         uniforms[name] = Uniform(name, uniformType)
+        version++
     }
 
     override fun setUniformArray(name: String, value: Array<Any>) {
@@ -111,6 +113,7 @@ abstract class Shader protected constructor(
             return
         }
         uniformArrays[name] = ArrayUniform(name, uniformType, size)
+        version++
     }
 
     override fun setStorageBuffer(blockName: String, buffer: StorageBuffer<*>) {
@@ -128,6 +131,7 @@ abstract class Shader protected constructor(
 
     override fun addStorageBuffer(blockName: String, layout: BufferAccessor<*>) {
         uniforms[blockName] = Uniform(blockName, UniformType.STORAGE_BUFFER)
+        version++
     }
 
 }

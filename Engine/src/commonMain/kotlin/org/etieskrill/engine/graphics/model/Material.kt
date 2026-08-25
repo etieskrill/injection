@@ -1,6 +1,5 @@
 package org.etieskrill.engine.graphics.model
 
-import org.etieskrill.engine.common.Disposable
 import org.etieskrill.engine.graphics.shader.UniformMappable
 import org.etieskrill.engine.graphics.shader.UniformMapper
 import org.etieskrill.engine.graphics.texture.Texture2D
@@ -91,21 +90,6 @@ data class PhongMaterial(
 
         true
     }
-
-    private var isDisposed = false
-
-    override fun dispose() {
-        if (isDisposed) return
-
-        diffuseTexture?.dispose()
-        specularTexture?.dispose()
-        normalTexture?.dispose()
-        heightTexture?.dispose()
-        emissiveTexture?.dispose()
-        ambientOcclusionTexture?.dispose()
-
-        isDisposed = true
-    }
 }
 
 data class PBRMaterial(
@@ -151,22 +135,6 @@ data class PBRMaterial(
 
         true
     }
-
-    private var isDisposed = false
-
-    override fun dispose() {
-        if (isDisposed) return
-
-        diffuseTexture?.dispose()
-        metallicTexture?.dispose()
-        roughnessTexture?.dispose()
-        ambientOcclusionTexture?.dispose()
-        normalTexture?.dispose()
-        heightTexture?.dispose()
-        emissiveTexture?.dispose()
-
-        isDisposed = true
-    }
 }
 
 // -2. @UniformStruct- (actually redundant because it can be inferred based on supertype UniformMappable)
@@ -177,7 +145,6 @@ data class SkyboxMaterial(
     /* 1. @Uniform */ val diffuseColour: Colour = Vector4f(0.25f),
     /* 1. @Uniform */ val opacity: Float? = null
 ) : Material() {
-
     override val isTwoSided: Boolean = false
 
     override fun map(mapper: UniformMapper): Boolean {
@@ -186,18 +153,9 @@ data class SkyboxMaterial(
             .map("opacity", opacity)
         return true
     }
-
-    private var isDisposed = false
-    override fun dispose() {
-        if (isDisposed) return
-
-        skyboxTexture?.dispose()
-
-        isDisposed = true
-    }
 }
 
-abstract class Material : UniformMappable, Disposable {
+abstract class Material : UniformMappable {
 
     abstract val name: String?
     abstract val isTwoSided: Boolean

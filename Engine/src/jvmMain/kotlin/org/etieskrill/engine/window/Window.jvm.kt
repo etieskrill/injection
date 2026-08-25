@@ -6,6 +6,7 @@ import org.etieskrill.engine.common.Disposable
 import org.etieskrill.engine.graphics.GraphicsContext
 import org.etieskrill.engine.graphics.framebuffer.FrameBuffer
 import org.etieskrill.engine.graphics.gl.framebuffer.ScreenBuffer
+import org.etieskrill.engine.graphics.gl.framebuffer.ScreenBufferInstance
 import org.etieskrill.engine.input.CursorInputHandler
 import org.etieskrill.engine.input.KeyEvent
 import org.etieskrill.engine.input.KeyInputHandler
@@ -24,9 +25,7 @@ import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11C.*
 import org.lwjgl.opengl.GL13C.GL_MULTISAMPLE
-import org.lwjgl.opengl.GL20C.GL_MAX_TEXTURE_IMAGE_UNITS
-import org.lwjgl.opengl.GL20C.GL_MAX_VERTEX_ATTRIBS
-import org.lwjgl.opengl.GL20C.GL_SHADING_LANGUAGE_VERSION
+import org.lwjgl.opengl.GL20C.*
 import org.lwjgl.system.MemoryStack
 import org.lwjgl.system.MemoryUtil.memUTF8
 import org.lwjgl.system.Platform
@@ -297,9 +296,9 @@ actual class Window actual constructor(
         if (samples > 0u) glEnable(GL_MULTISAMPLE)
         else glDisable(GL_MULTISAMPLE)
 
-        internalScreenBuffer = ScreenBuffer(graphicsContext, Vector2i(this.size))
-        graphicsContext.screenBuffer = screenBuffer
-        graphicsContext.activeFramebuffer = screenBuffer
+        internalScreenBuffer = ScreenBuffer(Vector2i(this.size))
+        graphicsContext.screenBuffer = ScreenBufferInstance(internalScreenBuffer, graphicsContext)
+        graphicsContext.activeFramebuffer = graphicsContext.screenBuffer
     }
 
     private fun configInput() {

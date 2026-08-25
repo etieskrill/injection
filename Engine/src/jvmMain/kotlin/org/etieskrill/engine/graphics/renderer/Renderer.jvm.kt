@@ -4,7 +4,7 @@ import io.github.etieskrill.injection.extension.shader.dsl.ShaderBuilder
 import org.etieskrill.engine.graphics.GraphicsContext
 import org.etieskrill.engine.graphics.pipeline.AlphaMode
 import org.etieskrill.engine.graphics.pipeline.CullingMode
-import org.etieskrill.engine.graphics.pipeline.DrawMode
+import org.etieskrill.engine.graphics.pipeline.FillMode
 import org.etieskrill.engine.graphics.pipeline.Pipeline
 import org.etieskrill.engine.graphics.pipeline.PrimitiveType
 import org.etieskrill.engine.graphics.shader.Shader
@@ -110,10 +110,11 @@ actual class Renderer actual constructor(
 
         glDepthMask(pipeline.config.writeDepth)
 
-        glPolygonMode(GL_FRONT_AND_BACK, when (pipeline.config.drawMode) {
-            DrawMode.FILL -> GL_FILL
-            DrawMode.LINE -> GL_LINE
-            DrawMode.POINT -> GL_POINT
+        glPolygonMode(
+            GL_FRONT_AND_BACK, when (pipeline.config.fillMode) {
+                FillMode.FILL -> GL_FILL
+                FillMode.LINE -> GL_LINE
+                FillMode.POINT -> GL_POINT
         })
 
         glPointSize(pipeline.config.pointSize)

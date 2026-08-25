@@ -5,22 +5,12 @@ import org.etieskrill.engine.graphics.model.loader.loadToVAO
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.primitives.AABBf
-import kotlin.collections.plusAssign
 import kotlin.math.cos
 import kotlin.math.sin
 
 fun model(name: String, block: ModelBuilder.() -> Unit): Model {
-    val model = Model.MemoryBuilder(name).apply { boundingBox = AABBf() }
-    val builder = ModelBuilder(model = model).apply(block)
-
-    val rootNode = Node("root", null, Transform(), listOf(), null)
-    rootNode.children.addAll(model.nodes)
-    model.nodes.clear()
-    model.nodes.add(rootNode)
-
-    model.culling = builder.culling
-
-    return model.build()
+    val builder = ModelBuilder().apply(block)
+    return Model(name, builder.rootNode, emptyList(), emptyList(), builder.boundingBox)
 }
 
 data class GeometryCounters(
@@ -31,7 +21,8 @@ data class GeometryCounters(
 
 class ModelBuilder(
     var culling: Boolean = true,
-    internal val model: Model.Builder,
+    internal val rootNode: Node = Node("root"),
+    internal val boundingBox: AABBf = AABBf(),
     internal val counters: GeometryCounters = GeometryCounters()
 )
 
@@ -181,12 +172,10 @@ private fun ModelBuilder.createModel(
     boundingBox: AABBf = AABBf(),
     transform: Transform
 ) {
-    val mesh = loadToVAO(vertices, indices, PhongMaterial(), boundingBox = boundingBox)
+    val mesh = loadToVAO(vertices, indices, PhongMaterial(isTwoSided = !culling), boundingBox = boundingBox)
 
-    val node = Node(name, null, transform, listOf(mesh), null)
-    model.nodes plusAssign node
+    val node = Node(name, transform, rootNode, meshes = listOf(mesh))
+    rootNode.children += node
 
-    if (boundingBox != null) {
-        model.boundingBox = mesh.boundingBox.union(boundingBox.transform(transform.matrix))
-    }
+    this.boundingBox.union(boundingBox.transform(transform.matrix))
 }
