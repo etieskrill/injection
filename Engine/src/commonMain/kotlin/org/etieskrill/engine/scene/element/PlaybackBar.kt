@@ -1,6 +1,6 @@
 package org.etieskrill.engine.scene.element
 
-import org.etieskrill.engine.graphics.text.Fonts
+import org.etieskrill.engine.graphics.text.Font
 import org.etieskrill.engine.scene.container.HBox
 import org.joml.Vector2f
 import org.joml.Vector4f
@@ -89,7 +89,7 @@ class PlaybackBar(
     }
     private val progressLabel = Label("0:00").apply {
         scaleMode = ScaleMode.FIXED
-        size = Vector2f(50f, Fonts.DEFAULT_FONT_SIZE.toFloat())
+        size = Vector2f(50f, Font.DEFAULT_FONT_SIZE.toFloat())
     }
 
     var time: Duration = Duration.ZERO

@@ -46,8 +46,19 @@ internal actual abstract class TextureInstance<T : Texture>(
 
         glTexParameterfv(glTarget, GL_TEXTURE_BORDER_COLOR, descriptor.borderColour[BufferUtils.createFloatBuffer(4)])
 
+        glPixelStorei(
+            GL_UNPACK_ALIGNMENT, when (descriptor.rowAlignment) {
+                TextureRowAlignment.BYTE -> 1
+                TextureRowAlignment.EVEN_BYTE -> 2
+                TextureRowAlignment.WORD -> 4
+                TextureRowAlignment.DOUBLE_WORD -> 8
+            }
+        )
+
         bufferTextureData()
         GLUtils.checkErrorThrowing("Error while buffering texture data: $this")
+
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 4)
 
         val swizzleMask = when (descriptor.format) {
             TextureFormat.GRAY, TextureFormat.DEPTH, TextureFormat.STENCIL, TextureFormat.DEPTH_STENCIL

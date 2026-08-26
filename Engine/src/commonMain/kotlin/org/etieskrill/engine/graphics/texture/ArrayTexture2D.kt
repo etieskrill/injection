@@ -15,8 +15,9 @@ class ArrayTexture2D(
     minFilter: TextureMinFilter = TextureMinFilter.TRILINEAR,
     magFilter: TextureMagFilter = TextureMagFilter.LINEAR,
     wrapping: TextureWrapping = TextureWrapping.REPEAT,
-    borderColour: Vector4fc = Vector4f(0f)
-) : Texture(type, format, minFilter, magFilter, wrapping, borderColour), Texture2DArray {
+    borderColour: Vector4fc = Vector4f(0f),
+    rowAlignment: TextureRowAlignment = TextureRowAlignment.WORD
+) : Texture(type, format, minFilter, magFilter, wrapping, borderColour, rowAlignment), Texture2DArray {
     init {
         check(buffer == null || file == null) { "File and buffer cannot both be set" } //TODO add debug/release build check facilities
     }

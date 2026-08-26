@@ -18,8 +18,10 @@ class Texture2D(
     minFilter: TextureMinFilter = TRILINEAR,
     magFilter: TextureMagFilter = LINEAR,
     wrapping: TextureWrapping = TextureWrapping.REPEAT,
-    borderColour: Vector4fc = Vector4f(0f)
-) : Texture(type, format, minFilter, magFilter, wrapping, borderColour), DslTexture2D, FrameBufferAttachment {
+    borderColour: Vector4fc = Vector4f(0f),
+    rowAlignment: TextureRowAlignment = TextureRowAlignment.WORD
+) : Texture(type, format, minFilter, magFilter, wrapping, borderColour, rowAlignment), DslTexture2D,
+    FrameBufferAttachment {
 
     init {
         check(buffer == null || file == null) { "File and buffer cannot both be set" } //TODO add debug/release build check facilities

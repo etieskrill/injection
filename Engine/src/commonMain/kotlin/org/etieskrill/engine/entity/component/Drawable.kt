@@ -1,6 +1,5 @@
 package org.etieskrill.engine.entity.component
 
-import org.etieskrill.engine.common.Disposable
 import org.etieskrill.engine.graphics.model.Model
 import org.etieskrill.engine.graphics.shader.Shader
 import org.joml.Vector2f
@@ -14,10 +13,4 @@ class Drawable(
     var isOutlineEnabled: Boolean = false,
     var outlineWidth: Float = 0.05f,
     var textureScale: Vector2fc? = Vector2f(1f),
-) : Disposable {
-
-    override fun dispose() {
-        model.dispose() //TODO somehow mark owning and non-owning members
-    }
-
-}
+)

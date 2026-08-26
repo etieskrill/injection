@@ -8,7 +8,7 @@ import kotlin.math.max
 
 open class Label(
     text: String? = null,
-    val font: Font = Fonts.getDefault()
+    val font: Font = Font.getDefault()
 ) : Node<Label>() {
 
     var text: String? = text

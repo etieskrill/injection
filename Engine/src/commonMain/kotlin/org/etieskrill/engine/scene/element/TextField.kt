@@ -1,17 +1,18 @@
 package org.etieskrill.engine.scene.element
 
-import org.etieskrill.engine.input.KeyEvent
+import org.etieskrill.engine.graphics.text.Font
 import org.etieskrill.engine.input.Key
+import org.etieskrill.engine.input.KeyEvent
 import org.etieskrill.engine.input.KeyEventAction
 import org.etieskrill.engine.input.ModifierKey
 import org.etieskrill.engine.scene.Batch
 import org.etieskrill.engine.scene.Node
+import org.etieskrill.engine.text.TextEditor
 import org.etieskrill.engine.time.LoopPacer
 import org.joml.Vector2f
 import org.joml.Vector2fc
 import org.joml.Vector2i
 import org.joml.Vector2ic
-import org.joml.Vector3f
 import org.joml.Vector4f
 import org.joml.minus
 import org.joml.plus
@@ -20,7 +21,7 @@ class TextField(
     private val pacer: LoopPacer
 ) : Node<TextField>() {
 
-    private val font = Fonts.getDefault()
+    private val font = Font.getDefault()
 
     var textEditor = TextEditor(font)
     var changeCallback: () -> Unit = {}

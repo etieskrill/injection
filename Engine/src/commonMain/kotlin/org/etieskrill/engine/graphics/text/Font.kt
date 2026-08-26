@@ -1,14 +1,48 @@
 package org.etieskrill.engine.graphics.text
 
-import org.etieskrill.engine.common.Disposable
+import io.github.oshai.kotlinlogging.KotlinLogging
+import org.etieskrill.engine.common.ResourceLoadException
+import org.etieskrill.engine.util.EngineFontLoader
+import org.etieskrill.engine.util.extension
+import org.etieskrill.engine.util.path
 import org.joml.Vector2i
 import org.joml.Vector2ic
 
-interface Font : Disposable {
+private val logger = KotlinLogging.logger {}
+
+interface Font {
 
     companion object {
         const val NUM_CHARS_ASCII = 128
         val INVALID_PIXEL_SIZE: Vector2ic = Vector2i(-1)
+
+        const val DEFAULT_FONT_SIZE = 24
+        const val DEFAULT_FONT = "fonts/AGENCY.TTF"
+
+        fun getDefault(pixelHeight: Int = DEFAULT_FONT_SIZE, path: String = DEFAULT_FONT): Font {
+            require(path.extension.lowercase() == "ttf") { "Must be TrueType file, but was ${path.extension}" }
+
+            val generatorFont = EngineFontLoader.load("ttf:${path.path.lowercase()}:$pixelHeight") {
+                try {
+                    return@load TrueTypeFont(path)
+                } catch (ex: ResourceLoadException) {
+                    logger.warn(ex) { "Failed to load font" }
+                    try {
+                        return@load TrueTypeFont(DEFAULT_FONT)
+                    } catch (ex: ResourceLoadException) {
+                        throw ResourceLoadException("Internal exception: could not load default font", ex)
+                    }
+                }
+            } as TrueTypeFont
+
+            return EngineFontLoader.load("bmp:${path.path.lowercase()}:$pixelHeight") {
+                try {
+                    return@load generatorFont.generateBitmapFont(pixelHeight)
+                } catch (ex: RuntimeException) {
+                    throw RuntimeException("Unable to generate bitmap font", ex)
+                }
+            }
+        }
     }
 
     val pixelSize: Vector2ic

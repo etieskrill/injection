@@ -16,8 +16,9 @@ class TextureCubeMap(
     minFilter: TextureMinFilter = TextureMinFilter.TRILINEAR,
     magFilter: TextureMagFilter = TextureMagFilter.LINEAR,
     wrapping: TextureWrapping = TextureWrapping.REPEAT,
-    borderColour: Vector4fc = Vector4f(0f)
-) : Texture(type, format, minFilter, magFilter, wrapping, borderColour), DslTextureCubeMap,
+    borderColour: Vector4fc = Vector4f(0f),
+    rowAlignment: TextureRowAlignment = TextureRowAlignment.WORD
+) : Texture(type, format, minFilter, magFilter, wrapping, borderColour, rowAlignment), DslTextureCubeMap,
     FrameBufferAttachment { //TODO does FrameBufferAttachment really make sense?
 
     companion object {

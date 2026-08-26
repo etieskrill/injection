@@ -23,10 +23,9 @@ import org.lwjgl.opengl.GL30C.GL_COMPARE_REF_TO_TEXTURE
  * undefined behaviour according to the specification.
  */
 abstract class ShadowMap<T>(
-    context: GraphicsContext,
     size: Vector2ic,
     val texture: T
-) : FrameBuffer(context, size, mapOf(FrameBufferAttachmentType.DEPTH to texture)), TextureShadow
+) : FrameBuffer(size, mapOf(FrameBufferAttachmentType.DEPTH to texture)), TextureShadow
         where T : Texture, T : FrameBufferAttachment {
 
     init {
@@ -35,9 +34,14 @@ abstract class ShadowMap<T>(
         glTexParameteri(texture.target.gl(), GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL)
     }
 
-    override fun bind() = super<FrameBuffer>.bind()
+//    override fun bind() = super<FrameBuffer>.bind()
+//
+//    override fun bind(unit: Int) = texture.bind(unit)
+//    override fun unbind(unit: Int) = texture.unbind(unit)
 
-    override fun bind(unit: Int) = texture.bind(unit)
-    override fun unbind(unit: Int) = texture.unbind(unit)
+}
 
+expect abstract class ShadowMapInstance {
+    val descriptor: ShadowMap<*>
+    val context: GraphicsContext
 }

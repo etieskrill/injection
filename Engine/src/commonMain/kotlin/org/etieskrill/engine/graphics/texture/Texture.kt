@@ -16,7 +16,8 @@ abstract class Texture(
     val minFilter: TextureMinFilter = TRILINEAR,
     val magFilter: TextureMagFilter = LINEAR,
     wrapping: TextureWrapping = TextureWrapping.REPEAT,
-    val borderColour: Vector4fc = Vector4f(0f)
+    val borderColour: Vector4fc = Vector4f(0f),
+    val rowAlignment: TextureRowAlignment = TextureRowAlignment.WORD
 ) : DslTexture {
     var wrapping: TextureWrapping = wrapping
         set(value) {
@@ -25,6 +26,22 @@ abstract class Texture(
         }
 
     internal var version: Long = 0L
+}
+
+/**
+ * Broadly describes the purpose of a [Texture], and e.g. the exact [TextureFormat] may be derived from this when not
+ * explicitly specified. This type itself may be inferred based on texture file name or type.
+ *
+ * Primarily used for rendering pipeline validation.
+ */
+enum class TextureType {
+    UNKNOWN,
+
+    DIFFUSE, SPECULAR, SHININESS, HEIGHT, EMISSIVE, NORMAL, METALNESS, ROUGHNESS, AMBIENT_OCCLUSION, //"regular" material textures
+
+    SHADOW, //shadow maps
+
+    G_POSITION, G_DEPTH, G_COLOUR, G_NORMAL //deferred rendering buffers
 }
 
 enum class TextureFormat(val numChannels: Int) {
@@ -60,8 +77,8 @@ enum class TextureFormat(val numChannels: Int) {
  * - [TRILINEAR], which interpolates the nearby texels sampled from the closest mipmaps,
  *   and interpolates between the mipmap levels. This is the standard option for most use cases.
  */
-enum class TextureMinFilter { NEAREST, LINEAR, NEAREST_NEAREST, BILINEAR, NEAREST_LINEAR, TRILINEAR }
 
+enum class TextureMinFilter { NEAREST, LINEAR, NEAREST_NEAREST, BILINEAR, NEAREST_LINEAR, TRILINEAR }
 /**
  * The magnification filtering mode dictates how textures are sampled if one texel takes up more than one fragment.
  *
@@ -74,21 +91,7 @@ enum class TextureMagFilter { NEAREST, LINEAR }
 
 enum class TextureWrapping { REPEAT, MIRRORED_REPEAT, CLAMP_TO_EDGE, CLAMP_TO_BORDER }
 
-/**
- * Broadly describes the purpose of a [Texture], and e.g. the exact [TextureFormat] may be derived from this when not
- * explicitly specified. This type itself may be inferred based on texture file name or type.
- *
- * Primarily used for rendering pipeline validation.
- */
-enum class TextureType {
-    UNKNOWN,
-
-    DIFFUSE, SPECULAR, SHININESS, HEIGHT, EMISSIVE, NORMAL, METALNESS, ROUGHNESS, AMBIENT_OCCLUSION, //"regular" material textures
-
-    SHADOW, //shadow maps
-
-    G_POSITION, G_DEPTH, G_COLOUR, G_NORMAL //deferred rendering buffers
-}
+enum class TextureRowAlignment { BYTE, EVEN_BYTE, WORD, DOUBLE_WORD }
 
 internal expect abstract class TextureInstance<T : Texture> : Disposable {
     val descriptor: T

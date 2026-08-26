@@ -1,6 +1,7 @@
 package org.etieskrill.engine.scene.element
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import org.etieskrill.engine.graphics.text.Font
 import org.etieskrill.engine.input.KeyEvent
 import org.etieskrill.engine.scene.Batch
 import org.etieskrill.engine.scene.Node
@@ -35,7 +36,7 @@ class Dropdown(
             currentOption = options[value]
         }
 
-    private val font = Fonts.getDefault(16)
+    private val font = Font.getDefault(16)
     private val container = WidgetContainer(
         VBox(options.map { option ->
             Button(Label(option, font)) { currentOption = option }

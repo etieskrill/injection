@@ -1,5 +1,6 @@
 package org.etieskrill.engine.scene.container
 
+import org.etieskrill.engine.graphics.text.Font
 import org.etieskrill.engine.graphics.texture.Texture2D
 import org.etieskrill.engine.graphics.texture.TextureType
 import org.etieskrill.engine.input.KeyEvent
@@ -88,7 +89,7 @@ open class WidgetContainer(
     //}
     private val chevronIcon =
         Texture2D.createFromFile("textures/icons/chevron-down-solid-black.png", TextureType.DIFFUSE)
-    private val titleFont = Fonts.getDefault((barHeight) - 4)
+    private val titleFont = Font.getDefault((barHeight) - 4)
 
     override fun update(delta: Double) {
         child?.update(delta)

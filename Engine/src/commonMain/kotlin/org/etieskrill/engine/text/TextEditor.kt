@@ -1,11 +1,9 @@
-package org.etieskrill.engine.graphics.text
+package org.etieskrill.engine.text
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import org.etieskrill.engine.graphics.text.Font
 import org.joml.Vector2i
 import org.joml.Vector2ic
 import kotlin.math.abs
-
-private val logger = KotlinLogging.logger {}
 
 class TextEditor(font: Font) {
 
