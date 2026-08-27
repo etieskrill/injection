@@ -9,21 +9,21 @@ import org.etieskrill.engine.entity.Entity
 import org.etieskrill.engine.entity.component.Drawable
 import org.etieskrill.engine.entity.component.Transform
 import org.etieskrill.engine.entity.service.impl.RenderService
+import org.etieskrill.engine.graphics.buffer.VertexArrayAccessor
+import org.etieskrill.engine.graphics.buffer.VertexArrayObject
 import org.etieskrill.engine.graphics.camera.Camera
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera
 import org.etieskrill.engine.graphics.framebuffer.FrameBuffer
-import org.etieskrill.engine.graphics.buffer.VertexArrayAccessor
-import org.etieskrill.engine.graphics.buffer.VertexArrayObject
-import org.etieskrill.engine.graphics.renderer.GLRenderer
-import org.etieskrill.engine.graphics.shader.Shader
-import org.etieskrill.engine.graphics.gl.shader.impl.SingleColourShader
 import org.etieskrill.engine.graphics.gl.shader.impl.colour
-import org.etieskrill.engine.graphics.model.CubeMapModel
+import org.etieskrill.engine.graphics.model.Skybox
 import org.etieskrill.engine.graphics.model.model
 import org.etieskrill.engine.graphics.model.sphere
 import org.etieskrill.engine.graphics.pipeline.Pipeline
 import org.etieskrill.engine.graphics.pipeline.PipelineConfig
 import org.etieskrill.engine.graphics.pipeline.PrimitiveType
+import org.etieskrill.engine.graphics.renderer.GLRenderer
+import org.etieskrill.engine.graphics.shader.Shader
+import org.etieskrill.engine.graphics.shader.impl.SingleColourShader
 import org.etieskrill.engine.input.controller.CursorCameraController
 import org.etieskrill.engine.util.FixedArrayDeque
 import org.etieskrill.engine.window.Window
@@ -98,7 +98,7 @@ class `CG-A2-Solar-System` : App(
         }
 
         entitySystem.addService(PlanetService(window.screenBuffer, renderer, camera, window.size).apply {
-            skybox = CubeMapModel("textures/cubemaps/space")
+            skybox = Skybox("textures/cubemaps/space")
             setBlur(false)
         })
 

@@ -1,8 +1,6 @@
-package org.etieskrill.engine.graphics.gl.framebuffer
+package org.etieskrill.engine.graphics.framebuffer
 
 import org.etieskrill.engine.graphics.GraphicsContext
-import org.etieskrill.engine.graphics.framebuffer.FrameBuffer
-import org.etieskrill.engine.graphics.framebuffer.FrameBufferInstance
 import org.joml.Vector2i
 import org.joml.Vector2ic
 import org.lwjgl.opengl.GL11C.*

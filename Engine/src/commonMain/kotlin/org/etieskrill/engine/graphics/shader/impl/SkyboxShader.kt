@@ -1,4 +1,4 @@
-package org.etieskrill.engine.graphics.gl.shader.impl
+package org.etieskrill.engine.graphics.shader.impl
 
 import io.github.etieskrill.injection.extension.shader.dsl.ColourRenderTarget
 import io.github.etieskrill.injection.extension.shader.dsl.PureShaderBuilder

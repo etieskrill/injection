@@ -12,11 +12,13 @@ import org.etieskrill.engine.graphics.framebuffer.FrameBuffer;
 import org.etieskrill.engine.graphics.framebuffer.FrameBufferAttachmentType;
 import org.etieskrill.engine.graphics.gl.framebuffer.RenderBuffer;
 import org.etieskrill.engine.graphics.gl.renderer.GLParticleRenderer;
+import org.etieskrill.engine.graphics.model.Skybox;
+import org.etieskrill.engine.graphics.pipeline.PostPassPipeline;
 import org.etieskrill.engine.graphics.renderer.GLRenderer;
 import org.etieskrill.engine.graphics.shader.Shader;
-import org.etieskrill.engine.graphics.gl.shader.impl.*;
-import org.etieskrill.engine.graphics.model.CubeMapModel;
-import org.etieskrill.engine.graphics.pipeline.PostPassPipeline;
+import org.etieskrill.engine.graphics.shader.impl.LightSourceShader;
+import org.etieskrill.engine.graphics.shader.impl.SkyboxShader;
+import org.etieskrill.engine.graphics.shader.impl.StaticShader;
 import org.etieskrill.engine.graphics.texture.Texture;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.graphics.texture.Textures;
@@ -60,7 +62,7 @@ public class RenderService implements Service, Disposable {
     private final StaticShader shader;
     private final LightSourceShader lightSourceShader;
 
-    private @Nullable CubeMapModel skybox;
+    private @Nullable Skybox skybox;
     private final SkyboxShader skyboxShader;
 
     private final Texture2D outlineTexture;
@@ -367,11 +369,11 @@ public class RenderService implements Service, Disposable {
         this.customViewport = customViewport;
     }
 
-    public @Nullable CubeMapModel getSkybox() {
+    public @Nullable Skybox getSkybox() {
         return skybox;
     }
 
-    public void setSkybox(@Nullable CubeMapModel skybox) {
+    public void setSkybox(@Nullable Skybox skybox) {
         this.skybox = skybox;
     }
 

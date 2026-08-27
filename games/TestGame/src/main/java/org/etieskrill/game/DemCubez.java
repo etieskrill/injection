@@ -8,14 +8,14 @@ import org.etieskrill.engine.graphics.data.PointLight;
 import org.etieskrill.engine.graphics.framebuffer.FrameBuffer;
 import org.etieskrill.engine.graphics.framebuffer.FrameBufferAttachment;
 import org.etieskrill.engine.graphics.framebuffer.FrameBufferAttachment.BufferAttachmentType;
-import org.etieskrill.engine.graphics.renderer.GLRenderer;
-import org.etieskrill.engine.graphics.shader.Shader;
 import org.etieskrill.engine.graphics.gl.shader.Shaders;
-import org.etieskrill.engine.graphics.gl.shader.impl.StaticShader;
-import org.etieskrill.engine.graphics.model.CubeMapModel;
 import org.etieskrill.engine.graphics.model.Material;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.model.ModelFactory;
+import org.etieskrill.engine.graphics.model.Skybox;
+import org.etieskrill.engine.graphics.renderer.GLRenderer;
+import org.etieskrill.engine.graphics.shader.Shader;
+import org.etieskrill.engine.graphics.shader.impl.StaticShader;
 import org.etieskrill.engine.graphics.texture.Texture2D;
 import org.etieskrill.engine.input.CursorInputAdapter;
 import org.etieskrill.engine.time.LoopPacer;
@@ -57,7 +57,7 @@ public class DemCubez {
     Shader backpackShader;
     Shader skyboxShader;
 
-    CubeMapModel skybox;
+    Skybox skybox;
     Model[] models;
     List<Model> grassModels;
     Model[] lightSources;
@@ -289,7 +289,7 @@ public class DemCubez {
     }
 
     private void loadModels() {
-        skybox = new CubeMapModel("space");
+        skybox = new Skybox("space");
 
         Vector3f[] cubePositions = {
                 //new Vector3f( 0.0f,  0.0f,  0.0f),

@@ -1,7 +1,7 @@
-package org.etieskrill.engine.graphics.gl.framebuffer
+package org.etieskrill.engine.graphics.framebuffer
 
 import org.etieskrill.engine.graphics.data.PointLight
-import org.etieskrill.engine.graphics.texture.CubeMapTexture
+import org.etieskrill.engine.graphics.texture.TextureCubeMap
 import org.joml.Math.toRadians
 import org.joml.Matrix4f
 import org.joml.Vector2ic
@@ -28,7 +28,7 @@ fun getCombinedMatrices(
     val projection = Matrix4f().setPerspective(
         toRadians(90f), size.x().toFloat() / size.y().toFloat(), near, far
     )
-    for (i in 0..<CubeMapTexture.NUM_SIDES) {
+    for (i in 0..<TextureCubeMap.NUM_SIDES) {
         targets[i].lookAt(light.position, light.position + CUBE_FACE_NORMALS[i], CUBE_FACE_UPS[i])
         projection.mul(targets[i], targets[i])
     }

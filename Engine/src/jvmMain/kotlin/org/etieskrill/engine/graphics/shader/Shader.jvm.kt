@@ -1,7 +1,6 @@
 package org.etieskrill.engine.graphics.shader
 
 import io.github.etieskrill.injection.extension.shader.ShaderStage
-import io.github.etieskrill.injection.extension.shader.reflection.UNIFORM_RESOURCE_PREFIX
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.etieskrill.engine.common.Disposable
 import org.etieskrill.engine.graphics.GraphicsContext
@@ -11,8 +10,6 @@ import org.etieskrill.engine.graphics.gl.GLUtils
 import org.etieskrill.engine.graphics.gl.shader.ShaderCreationException
 import org.etieskrill.engine.graphics.shader.UniformType.*
 import org.etieskrill.engine.graphics.texture.Texture
-import org.etieskrill.engine.util.ClassUtils
-import org.etieskrill.engine.util.ResourceReader.classpathResourceExists
 import org.etieskrill.engine.util.ResourceReader.getResource
 import org.etieskrill.engine.util.extension
 import org.joml.Matrix2f
@@ -40,15 +37,12 @@ import org.lwjgl.system.MemoryStack
 
 private val logger = KotlinLogging.logger {}
 
-private data class UniformInstance(val uniform: Uniform, val location: Int, var version: Long = 0L)
-private data class UniformArrayInstance(val uniform: ArrayUniform, val location: Int, var version: Long = 0L)
-
 //TODO instance-ize needs to only synchronise uniforms and stuff when bound
 /**
  * A shader file with the _glsl_ extension is presumed to contain exactly a vertex shader, a fragment shader
  * and - if the rudimentary detection catches it - a geometry shader within the corresponding definition guards.
  */
-actual class ShaderInstance internal constructor(
+internal actual class ShaderInstance internal constructor(
     actual val descriptor: Shader,
     actual val context: GraphicsContext,
 ) : Disposable {
@@ -64,6 +58,9 @@ actual class ShaderInstance internal constructor(
 
     private val boundTextures = mutableSetOf<Texture>()
     private val cachedStorageBuffers = mutableMapOf<String, Int>()
+
+    private data class UniformInstance(val uniform: Uniform, val location: Int, var version: Long = 0L)
+    private data class UniformArrayInstance(val uniform: ArrayUniform, val location: Int, var version: Long = 0L)
 
     init {
         val files = descriptor.shaderFiles.map { fileName ->
@@ -103,36 +100,36 @@ actual class ShaderInstance internal constructor(
         if (files.size > 1) createProgram(files)
         else createSingleFileProgram(files.single())
 
-        bind()
+//        bind()
         //TODO move to front-end
         //TODO find and add uniforms from files
         //TODO filter and warn on duplicates, prefer config, then UniformEntries, then autodetected
-        val uniformFileName = UNIFORM_RESOURCE_PREFIX + ClassUtils.getFullName(this) + ".csv"
-        if (classpathResourceExists(uniformFileName)) {
-            getResource(uniformFileName)
-                .lines()
-                .filter { !it.isBlank() }
-                .map { it.split(",") }
-                .forEach { uniformTypeName ->
-                    val type = UniformType.entries.find { it.glslName == uniformTypeName[1] }
-                    if (type == null) {
-                        throw ShaderCreationException("Unsupported uniform type: ${uniformTypeName[1]}")
-                    }
-                    when (uniformTypeName[0]) {
-                        "uniform" -> addUniform(
-                            uniformTypeName[2],
-                            type.clazz
-                        ) //TODO parse structs in separate branch when generated types are introduced
-                        "arrayUniform" -> addUniformArray(
-                            uniformTypeName[3],
-                            Integer.parseInt(uniformTypeName[2]),
-                            type.clazz
-                        )
-                    }
-                }
-        }
+//        val uniformFileName = UNIFORM_RESOURCE_PREFIX + ClassUtils.getFullName(this) + ".csv"
+//        if (classpathResourceExists(uniformFileName)) {
+//            getResource(uniformFileName)
+//                .lines()
+//                .filter { !it.isBlank() }
+//                .map { it.split(",") }
+//                .forEach { uniformTypeName ->
+//                    val type = UniformType.entries.find { it.glslName == uniformTypeName[1] }
+//                    if (type == null) {
+//                        throw ShaderCreationException("Unsupported uniform type: ${uniformTypeName[1]}")
+//                    }
+//                    when (uniformTypeName[0]) {
+//                        "uniform" -> addUniform(
+//                            uniformTypeName[2],
+//                            type.clazz
+//                        ) //TODO parse structs in separate branch when generated types are introduced
+//                        "arrayUniform" -> addUniformArray(
+//                            uniformTypeName[3],
+//                            Integer.parseInt(uniformTypeName[2]),
+//                            type.clazz
+//                        )
+//                    }
+//                }
+//        }
 
-        unbind()
+//        unbind()
     }
 
     private fun createProgram(files: Set<ShaderFile>) {
@@ -386,12 +383,13 @@ actual class ShaderInstance internal constructor(
 
                             val unit = context.textureBindings.indexOfFirst { it == texture }.takeIf { it != -1 }
                                 ?: context.textureBindings.indexOf(null).takeIf { it != -1 }
-                                ?: context.textureBindings.indexOfFirst { it !in boundTextures }.takeIf { it != -1 }
+                                ?: context.textureBindings.indexOfFirst { it?.descriptor !in boundTextures }
+                                    .takeIf { it != -1 }
                                 ?: error("oopsie daisy")
 
                             boundTextures += texture
                             setUniformValue(descriptorUniform.type, uniform.location, unit)
-                            texture.bind(unit) //TODO instance
+                            context.getTexture(texture).bind(unit)
                         }
 
                         STORAGE_BUFFER -> {

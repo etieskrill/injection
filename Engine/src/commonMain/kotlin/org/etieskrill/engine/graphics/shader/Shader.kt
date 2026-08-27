@@ -136,7 +136,7 @@ abstract class Shader protected constructor(
 
 }
 
-expect class ShaderInstance : Disposable {
+internal expect class ShaderInstance : Disposable {
     val descriptor: Shader
     val context: GraphicsContext
 

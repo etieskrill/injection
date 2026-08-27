@@ -1,4 +1,4 @@
-package org.etieskrill.engine.graphics.model.loader;
+package org.etieskrill.engine.graphics.model.loader
 
 import org.etieskrill.engine.graphics.animation.Animation
 import org.etieskrill.engine.graphics.model.Model

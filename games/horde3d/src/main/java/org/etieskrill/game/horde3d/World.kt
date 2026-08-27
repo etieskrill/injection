@@ -12,8 +12,8 @@ import org.etieskrill.engine.graphics.GraphicsContext
 import org.etieskrill.engine.graphics.camera.OrthographicCamera
 import org.etieskrill.engine.graphics.data.DirectionalLight
 import org.etieskrill.engine.graphics.data.PointLight
-import org.etieskrill.engine.graphics.gl.framebuffer.DirectionalShadowMap
-import org.etieskrill.engine.graphics.gl.framebuffer.PointShadowMapArray
+import org.etieskrill.engine.graphics.framebuffer.DirectionalShadowMap
+import org.etieskrill.engine.graphics.framebuffer.PointShadowMapArray
 import org.etieskrill.engine.graphics.model.Model
 import org.etieskrill.engine.graphics.model.ModelFactory
 import org.etieskrill.engine.graphics.model.PhongMaterial

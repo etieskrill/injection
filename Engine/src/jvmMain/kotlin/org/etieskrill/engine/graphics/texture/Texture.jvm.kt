@@ -32,7 +32,7 @@ internal actual abstract class TextureInstance<T : Texture>(
 
     internal actual var version: Long = 0L
 
-    protected abstract val glTarget: Int
+    internal abstract val glTarget: Int
 
     protected val id: Int = glGenTextures()
 

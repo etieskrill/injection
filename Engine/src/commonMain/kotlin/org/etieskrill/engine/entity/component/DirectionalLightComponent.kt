@@ -2,7 +2,7 @@ package org.etieskrill.engine.entity.component
 
 import org.etieskrill.engine.graphics.camera.Camera
 import org.etieskrill.engine.graphics.data.DirectionalLight
-import org.etieskrill.engine.graphics.gl.framebuffer.DirectionalShadowMap
+import org.etieskrill.engine.graphics.framebuffer.DirectionalShadowMap
 
 data class DirectionalLightComponent(
     val directionalLight: DirectionalLight,

@@ -16,7 +16,7 @@ fun loadToVAO(
     material: Material,
     bones: List<Bone>? = null,
     boundingBox: AABBf = AABBf(),
-    drawMode: MeshDrawMode? = null
+    drawMode: MeshDrawMode = MeshDrawMode.TRIANGLES
 ): Mesh = Mesh(
     material,
     bones,
@@ -24,11 +24,9 @@ fun loadToVAO(
         Vertex.Companion.Accessor,
         BufferObject(Vertex.Companion.Accessor, vertices.size).apply { setData(vertices) },
         BufferObject(VertexArrayObject.IndexArrayAccessor, indices.size, BufferType.ELEMENT_ARRAY).apply {
-            setData(
-                indices
-            )
+            setData(indices)
         }
     ),
     boundingBox,
-    drawMode ?: MeshDrawMode.TRIANGLES
+    drawMode
 )

@@ -51,8 +51,8 @@ open class FrameBuffer(
 
 }
 
-expect class FrameBufferInstance : Disposable {
-    val descriptor: FrameBuffer
+expect open class FrameBufferInstance : Disposable {
+    open val descriptor: FrameBuffer
     val context: GraphicsContext
 
     internal var version: Long

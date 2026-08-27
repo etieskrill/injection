@@ -11,12 +11,12 @@ import org.etieskrill.engine.graphics.animation.Animator
 import org.etieskrill.engine.graphics.camera.OrthographicCamera
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera
 import org.etieskrill.engine.graphics.data.DirectionalLight
-import org.etieskrill.engine.graphics.gl.framebuffer.DirectionalShadowMap
-import org.etieskrill.engine.graphics.gl.shader.impl.AnimationShader
-import org.etieskrill.engine.graphics.gl.shader.impl.PhongNoMaterialShader
+import org.etieskrill.engine.graphics.framebuffer.DirectionalShadowMap
 import org.etieskrill.engine.graphics.model.Model
 import org.etieskrill.engine.graphics.model.ModelFactory
 import org.etieskrill.engine.graphics.model.loader.Loader
+import org.etieskrill.engine.graphics.shader.impl.AnimationShader
+import org.etieskrill.engine.graphics.shader.impl.PhongNoMaterialShader
 import org.etieskrill.engine.input.controller.CursorCameraController
 import org.etieskrill.engine.input.controller.KeyCameraController
 import org.etieskrill.engine.util.EngineAnimationLoader

@@ -2,14 +2,14 @@ import org.etieskrill.engine.application.App
 import org.etieskrill.engine.entity.Entity
 import org.etieskrill.engine.entity.component.Transform
 import org.etieskrill.engine.entity.service.Service
-import org.etieskrill.engine.graphics.renderer.Renderer
 import org.etieskrill.engine.graphics.camera.Camera
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera
 import org.etieskrill.engine.graphics.data.DirectionalLight
-import org.etieskrill.engine.graphics.gl.shader.impl.StaticShader
 import org.etieskrill.engine.graphics.gl.shader.impl.globalLights
 import org.etieskrill.engine.graphics.model.model
 import org.etieskrill.engine.graphics.model.sphere
+import org.etieskrill.engine.graphics.renderer.Renderer
+import org.etieskrill.engine.graphics.shader.impl.StaticShader
 import org.etieskrill.engine.input.controller.CursorCameraController
 import org.etieskrill.engine.input.controller.KeyCameraController
 import org.etieskrill.engine.time.LoopPacer

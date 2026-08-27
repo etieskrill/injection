@@ -3,12 +3,12 @@ package org.etieskrill.engine.graphics.model
 import org.etieskrill.engine.graphics.animation.Animation
 import org.joml.primitives.AABBf
 
-data class Model(
+open class Model(
     val name: String,
     val rootNode: Node,
-    val animations: List<Animation>,
-    val bones: List<Bone>,
-    val boundingBox: AABBf
+    val animations: List<Animation> = emptyList(),
+    val bones: List<Bone> = emptyList(),
+    val boundingBox: AABBf = AABBf()
 ) {
 
     /**

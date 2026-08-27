@@ -1,7 +1,7 @@
 package org.etieskrill.engine.entity.component
 
 import org.etieskrill.engine.graphics.data.PointLight
-import org.etieskrill.engine.graphics.gl.framebuffer.PointShadowMapArray
+import org.etieskrill.engine.graphics.framebuffer.PointShadowMapArray
 import org.joml.Matrix4fc
 
 @ConsistentCopyVisibility

@@ -1,102 +1,93 @@
-package org.etieskrill.engine.graphics.gl.renderer;
+package org.etieskrill.engine.graphics.gl.renderer
 
-import org.etieskrill.engine.graphics.camera.Camera;
-import org.etieskrill.engine.graphics.buffer.VertexArrayObject;
-import org.etieskrill.engine.graphics.shader.Shader;
-import org.etieskrill.engine.graphics.gl.shader.impl.ParticleShader;
-import org.etieskrill.engine.graphics.particle.*;
-import org.etieskrill.engine.graphics.texture.Texture;
-import org.etieskrill.engine.graphics.texture.Texture2D;
-import org.etieskrill.engine.util.EngineShaderLoader;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.joml.Matrix4f;
-import org.joml.Matrix4fc;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.github.oshai.kotlinlogging.KotlinLogging
+import org.etieskrill.engine.graphics.GraphicsContext
+import org.etieskrill.engine.graphics.buffer.BufferAccessFrequency
+import org.etieskrill.engine.graphics.buffer.BufferObject
+import org.etieskrill.engine.graphics.buffer.VertexArrayObject
+import org.etieskrill.engine.graphics.camera.Camera
+import org.etieskrill.engine.graphics.particle.ParticleEmitter
+import org.etieskrill.engine.graphics.particle.ParticleNode
+import org.etieskrill.engine.graphics.particle.ParticleRenderer
+import org.etieskrill.engine.graphics.particle.ParticleVertexAccessor
+import org.etieskrill.engine.graphics.shader.Shader
+import org.etieskrill.engine.graphics.shader.impl.ParticleShader
+import org.etieskrill.engine.graphics.texture.Texture2D
+import org.etieskrill.engine.graphics.texture.TextureType
+import org.etieskrill.engine.util.EngineShaderLoader
+import org.joml.Matrix4f
+import org.joml.Matrix4fc
+import org.joml.times
+import org.lwjgl.opengl.GL11C.*
 
-import java.util.HashSet;
-import java.util.Set;
+private val logger = KotlinLogging.logger {}
 
-import static java.util.Objects.requireNonNullElse;
-import static org.lwjgl.opengl.GL11C.*;
+class GLParticleRenderer(
+    override val context: GraphicsContext
+) : ParticleRenderer {
 
-public class GLParticleRenderer implements ParticleRenderer {
+    private val vao = VertexArrayObject(
+        ParticleVertexAccessor,
+        BufferObject(ParticleVertexAccessor, MAX_PARTICLES, accessFrequency = BufferAccessFrequency.STREAM),
+        null
+    )
 
-    public static final int MAX_PARTICLES = 10_000;
+    private val particleShader = EngineShaderLoader.load("particle_shader") { ParticleShader() }
 
-    private static final Matrix4fc IDENTITY = new Matrix4f();
+    val defaultParticleTexture =
+        Texture2D.createFromFile("textures/particles/circle.png", TextureType.DIFFUSE) //TODO wrapping = CLAMP_TO_BORDER
 
-    private final VertexArrayObject<Particle> vao;
-    private final Shader particleShader;
+    private val invalidEmitters = mutableSetOf<ParticleEmitter>()
 
-    private final Texture2D defaultParticleTexture;
+    companion object {
+        const val MAX_PARTICLES = 10_000
 
-    private final Set<ParticleEmitter> invalidEmitters;
-
-    private static final Logger logger = LoggerFactory.getLogger(GLParticleRenderer.class);
-
-    //TODO render stats
-    public GLParticleRenderer() {
-        this.vao = new VertexArrayObject<>(
-                ParticleVertexAccessor.INSTANCE, MAX_PARTICLES, null, null, null,
-                null, null
-        );
-        this.particleShader = EngineShaderLoader.INSTANCE
-                .load("particle_shader", ParticleShader::new);
-
-        this.defaultParticleTexture = new Texture2D.FileBuilder("textures/particles/circle.png")
-                .setWrapping(Texture.Wrapping.CLAMP_TO_BORDER).build();
-
-        this.invalidEmitters = new HashSet<>();
+        private val IDENTITY = Matrix4f()
     }
 
-    @Override
-    public void renderParticles(ParticleNode root, Camera camera, @Nullable Shader shader) {
-        renderNode(new Matrix4f(root.getTransform().getMatrix()), root, camera, requireNonNullElse(shader, particleShader));
+    override fun renderParticles(root: ParticleNode, camera: Camera, shader: Shader?) {
+        renderNode(Matrix4f(root.transform.matrix), root, camera, shader ?: particleShader)
     }
 
-    private void renderNode(Matrix4fc transform, ParticleNode node, Camera camera, Shader shader) {
-        for (@NotNull ParticleEmitter emitter : node.getEmitters()) {
-            if (!invalidEmitters.contains(emitter)) {
-                if (emitter.getMaxNumParticles() <= MAX_PARTICLES) {
-                    renderEmitter(new Matrix4f(transform).mul(emitter.getTransform$engine().getMatrix()), emitter, camera, shader);
+    private fun renderNode(transform: Matrix4fc, node: ParticleNode, camera: Camera, shader: Shader) {
+        node.emitters.forEach { emitter ->
+            if (emitter !in invalidEmitters) {
+                if (emitter.maxNumParticles <= MAX_PARTICLES) {
+                    renderEmitter(transform * emitter.transform.matrix, emitter, camera, shader)
                 } else {
-                    invalidEmitters.add(emitter);
-                    logger.warn("Emitter has max of {} particles, but renderer can only draw {}", emitter.getMaxNumParticles(), MAX_PARTICLES);
+                    invalidEmitters += emitter
+                    logger.warn { "Emitter has max of ${emitter.maxNumParticles} particles, but renderer can only draw $MAX_PARTICLES" }
                 }
             }
         }
 
-        for (@NotNull ParticleNode child : node.getChildren()) {
-            Matrix4f childTransform = new Matrix4f(transform).mul(child.getTransform().getMatrix());
-            renderNode(childTransform, child, camera, shader);
+        node.children.forEach { child ->
+            renderNode(transform * child.transform.matrix, child, camera, shader)
         }
     }
 
-    private void renderEmitter(Matrix4fc transform, ParticleEmitter emitter, Camera camera, Shader shader) {
-        shader.setUniform("model", emitter.getParticlesMoveWithEmitter$engine() ? transform : IDENTITY);
-        shader.setUniform("camera", camera);
-        shader.setUniform("size", emitter.getSize$engine());
-        shader.setTexture("sprite", requireNonNullElse(emitter.getSprite$engine(), defaultParticleTexture));
+    private fun renderEmitter(transform: Matrix4fc, emitter: ParticleEmitter, camera: Camera, shader: Shader) {
+        shader.setUniform("model", if (emitter.particlesMoveWithEmitter) transform else IDENTITY)
+        shader.setUniform("camera", camera)
+        shader.setUniform("size", emitter.size)
+        shader.setTexture("sprite", emitter.sprite ?: defaultParticleTexture)
 
-        vao.setVertices(emitter.getAliveParticles());
-        vao.bind();
+        vao.vertices = emitter.aliveParticles
 
-        glDisable(GL_CULL_FACE);
-        glDepthMask(false);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glDrawArrays(GL_POINTS, 0, emitter.getAliveParticles().size());
-        glBlendFunc(GL_ONE, GL_ZERO);
-        glDepthMask(true);
-        glEnable(GL_CULL_FACE);
+        context.withContext {
+            val vaoInstance = context.getVertexArray(vao)
+            vaoInstance.bind()
 
-        vao.unbind();
-    }
+            glDisable(GL_CULL_FACE)
+            glDepthMask(false)
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+            glDrawArrays(GL_POINTS, 0, emitter.aliveParticles.size)
+            glBlendFunc(GL_ONE, GL_ZERO)
+            glDepthMask(true)
+            glEnable(GL_CULL_FACE)
 
-    @Override
-    public void dispose() {
-        vao.dispose();
+            vaoInstance.unbind()
+        }
     }
 
 }

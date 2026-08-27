@@ -8,38 +8,38 @@ import org.etieskrill.engine.entity.component.Transform
 import org.etieskrill.engine.entity.service.impl.DirectionalShadowMappingService
 import org.etieskrill.engine.entity.service.impl.PointShadowMappingService
 import org.etieskrill.engine.entity.service.impl.RenderService
-import org.etieskrill.engine.scene.Batch
 import org.etieskrill.engine.graphics.camera.Camera
 import org.etieskrill.engine.graphics.camera.OrthographicCamera
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera
 import org.etieskrill.engine.graphics.data.DirectionalLight
-import org.etieskrill.engine.graphics.gl.framebuffer.DirectionalShadowMap
-import org.etieskrill.engine.graphics.gl.framebuffer.PointShadowMapArray
+import org.etieskrill.engine.graphics.framebuffer.DirectionalShadowMap
+import org.etieskrill.engine.graphics.framebuffer.PointShadowMapArray
 import org.etieskrill.engine.graphics.gl.shader.impl.BlitShader
-import org.etieskrill.engine.graphics.gl.shader.impl.DepthCubeMapArrayShader
-import org.etieskrill.engine.graphics.gl.shader.impl.GridShader
 import org.etieskrill.engine.graphics.gl.shader.impl.LineShader
 import org.etieskrill.engine.graphics.gl.shader.impl.ScreenSpacePointShader
 import org.etieskrill.engine.graphics.gl.shader.impl.camera
 import org.etieskrill.engine.graphics.gl.shader.impl.position
-import org.etieskrill.engine.graphics.model.CubeMapModel
 import org.etieskrill.engine.graphics.model.Model
+import org.etieskrill.engine.graphics.model.Skybox
 import org.etieskrill.engine.graphics.pipeline.AlphaMode
 import org.etieskrill.engine.graphics.pipeline.CullingMode
 import org.etieskrill.engine.graphics.pipeline.Pipeline
 import org.etieskrill.engine.graphics.pipeline.PipelineConfig
 import org.etieskrill.engine.graphics.pipeline.PostPassPipeline
 import org.etieskrill.engine.graphics.pipeline.PrimitiveType
+import org.etieskrill.engine.graphics.shader.impl.DepthCubeMapArrayShader
+import org.etieskrill.engine.graphics.shader.impl.GridShader
 import org.etieskrill.engine.graphics.texture.Texture.MagFilter
 import org.etieskrill.engine.graphics.texture.Texture.MinFilter
 import org.etieskrill.engine.graphics.texture.Texture2D
 import org.etieskrill.engine.input.CursorInputAdapter
 import org.etieskrill.engine.input.Input
+import org.etieskrill.engine.input.Key
 import org.etieskrill.engine.input.KeyEvent
 import org.etieskrill.engine.input.KeyInputHandler
-import org.etieskrill.engine.input.Key
 import org.etieskrill.engine.input.controller.CursorCameraController
 import org.etieskrill.engine.input.controller.KeyCameraController
+import org.etieskrill.engine.scene.Batch
 import org.etieskrill.engine.scene.Scene
 import org.etieskrill.engine.scene.container.Container
 import org.etieskrill.engine.scene.element.Label
@@ -192,7 +192,7 @@ class Leverage : App(
         entitySystem.addService(DirectionalShadowMappingService(renderer))
         entitySystem.addService(PointShadowMappingService(renderer, DepthCubeMapArrayShader()))
         entitySystem.addService(RenderService(window.screenBuffer, renderer, camera, window.size).apply {
-            skybox = CubeMapModel("textures/cubemaps/space")
+            skybox = Skybox("textures/cubemaps/space")
         })
 
         window.keyInputs += KeyCameraController(camera)

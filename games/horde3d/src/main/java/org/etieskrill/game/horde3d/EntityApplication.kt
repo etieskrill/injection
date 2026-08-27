@@ -12,7 +12,7 @@ import org.etieskrill.engine.entity.service.impl.RenderService
 import org.etieskrill.engine.entity.service.impl.SnippetsService
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera
 import org.etieskrill.engine.graphics.gl.GLUtils
-import org.etieskrill.engine.graphics.gl.shader.impl.DepthCubeMapArrayShader
+import org.etieskrill.engine.graphics.shader.impl.DepthCubeMapArrayShader
 import org.etieskrill.engine.input.Input
 import org.etieskrill.engine.input.Key
 import org.etieskrill.engine.input.controller.CursorCameraController

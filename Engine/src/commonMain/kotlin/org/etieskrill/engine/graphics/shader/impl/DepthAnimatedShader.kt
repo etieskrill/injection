@@ -20,7 +20,7 @@ class DepthAnimatedShader :
     var model by uniform<mat4>()
     var combined by uniform<mat4>()
 
-    var boneMatrices by uniformArray<mat4>(MAX_BONES)
+    var boneMatrices by uniformArray<mat4>(100) // TODO resolve these at compile time if defined as const MAX_BONES)
 
     override fun program() {
         vertex {

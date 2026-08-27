@@ -6,12 +6,10 @@ import org.etieskrill.engine.entity.component.PointLightComponent
 import org.etieskrill.engine.entity.component.Transform
 import org.etieskrill.engine.entity.service.Service
 import org.etieskrill.engine.graphics.animation.Animator
-import org.etieskrill.engine.graphics.gl.shader.impl.DepthCubeMapArrayShader
-import org.etieskrill.engine.graphics.gl.shader.impl.farPlane
-import org.etieskrill.engine.graphics.gl.shader.impl.index
-import org.etieskrill.engine.graphics.gl.shader.impl.light
-import org.etieskrill.engine.graphics.gl.shader.impl.shadowCombined
+import org.etieskrill.engine.graphics.pipeline.Pipeline
+import org.etieskrill.engine.graphics.pipeline.PipelineConfig
 import org.etieskrill.engine.graphics.renderer.Renderer
+import org.etieskrill.engine.graphics.shader.impl.DepthCubeMapArrayShader
 import org.joml.Matrix4f
 import org.joml.Matrix4fc
 
@@ -46,13 +44,12 @@ class PointShadowMappingService(
         val component = targetEntity.getComponent<PointLightComponent>()!!
 
         shader.apply {
-            light = component.light
-            index = component.shadowMapIndex!!
-            shadowCombined = component.shadowCombinedMatrices!! as Array<Matrix4fc>
-            farPlane = component.shadowFarPlane!!
+            TODO("fix")
+//            light = component.light
+//            index = component.shadowMapIndex!!
+//            shadowCombined = component.shadowCombinedMatrices!! as Array<Matrix4fc>
+//            farPlane = component.shadowFarPlane!!
         }
-
-        component.shadowMap!!.bind()
 
         entities.filterNot { it.id == targetEntity.id }
             .forEach { entity ->
@@ -60,15 +57,25 @@ class PointShadowMappingService(
                 val drawable = entity.getComponent<Drawable>() ?: return@forEach
 
                 entity.getComponent<Animator>()?.let { //TODO animated shader
-                    shader.setUniformArrayNonStrict("boneMatrices", it.transformMatricesArray)
+//                    shader.boneMatrices = it.transformMatricesArray
                 }
+//                shader.combined = DUMMY_MATRIX
 
-                renderer.render(transform, drawable.model, shader, DUMMY_MATRIX)
+                drawable.model.nodes.forEach { node ->
+//                    shader.model = (transform * node.getGlobalTransform()).matrix
+
+                    node.meshes.forEach { mesh ->
+                        val pipeline = Pipeline(
+                            mesh.vao,
+                            PipelineConfig(),
+                            shader,
+                            component.shadowMap!!
+                        )
+
+                        renderer.render(pipeline)
+                    }
+                }
             }
-
-        component.shadowMap.unbind()
     }
-
-    override fun dispose() = shader.dispose()
 
 }

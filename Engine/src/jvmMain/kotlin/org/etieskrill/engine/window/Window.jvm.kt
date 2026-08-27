@@ -5,8 +5,8 @@ import kotlinx.coroutines.CoroutineScope
 import org.etieskrill.engine.common.Disposable
 import org.etieskrill.engine.graphics.GraphicsContext
 import org.etieskrill.engine.graphics.framebuffer.FrameBuffer
-import org.etieskrill.engine.graphics.gl.framebuffer.ScreenBuffer
-import org.etieskrill.engine.graphics.gl.framebuffer.ScreenBufferInstance
+import org.etieskrill.engine.graphics.framebuffer.ScreenBuffer
+import org.etieskrill.engine.graphics.framebuffer.ScreenBufferInstance
 import org.etieskrill.engine.input.CursorInputHandler
 import org.etieskrill.engine.input.KeyEvent
 import org.etieskrill.engine.input.KeyInputHandler

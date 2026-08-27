@@ -1,6 +1,5 @@
 package org.etieskrill.engine.graphics
 
-import io.github.etieskrill.injection.extension.shader.Texture
 import org.etieskrill.engine.graphics.buffer.BufferObject
 import org.etieskrill.engine.graphics.buffer.BufferObjectInstance
 import org.etieskrill.engine.graphics.buffer.BufferType
@@ -16,6 +15,9 @@ import org.etieskrill.engine.graphics.framebuffer.RenderBuffer
 import org.etieskrill.engine.graphics.framebuffer.RenderBufferInstance
 import org.etieskrill.engine.graphics.shader.Shader
 import org.etieskrill.engine.graphics.shader.ShaderInstance
+import org.etieskrill.engine.graphics.texture.ArrayTexture2D
+import org.etieskrill.engine.graphics.texture.ArrayTexture2DInstance
+import org.etieskrill.engine.graphics.texture.Texture
 import org.etieskrill.engine.graphics.texture.Texture2D
 import org.etieskrill.engine.graphics.texture.Texture2DInstance
 import org.etieskrill.engine.graphics.texture.TextureInstance
@@ -38,7 +40,15 @@ actual data class GraphicsContext(
         frameBuffers.getOrPut(frameBuffer) { FrameBufferInstance(frameBuffer, this) }
 
     private val textures = mutableMapOf<Texture, TextureInstance<*>>()
-    internal fun getTexture(texture: Texture2D) = textures.getOrPut(texture) { Texture2DInstance(texture, this) }
+
+    @Suppress("UNCHECKED_CAST")
+    internal fun <T : Texture> getTexture(texture: T): TextureInstance<T> = textures.getOrPut(texture) {
+        when (texture) {
+            is Texture2D -> Texture2DInstance(texture, this)
+            is ArrayTexture2D -> ArrayTexture2DInstance(texture, this)
+            else -> error("Unknown texture type ${texture::class.simpleName}")
+        }
+    } as TextureInstance<T>
 
     //TODO other texture types
     internal val textureBindings = Array<TextureInstance<*>?>(maxTextureUnits) { null }

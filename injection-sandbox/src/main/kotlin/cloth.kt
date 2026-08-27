@@ -9,11 +9,11 @@ import org.etieskrill.engine.entity.component.Transform
 import org.etieskrill.engine.entity.service.impl.RenderService
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera
 import org.etieskrill.engine.graphics.data.DirectionalLight
-import org.etieskrill.engine.graphics.gl.shader.impl.GridShader
 import org.etieskrill.engine.graphics.gl.shader.impl.camera
 import org.etieskrill.engine.graphics.gl.shader.impl.position
 import org.etieskrill.engine.graphics.model.model
 import org.etieskrill.engine.graphics.model.sphere
+import org.etieskrill.engine.graphics.shader.impl.GridShader
 import org.etieskrill.engine.input.controller.CursorCameraController
 import org.etieskrill.engine.input.controller.KeyCameraController
 import org.etieskrill.engine.window.Window

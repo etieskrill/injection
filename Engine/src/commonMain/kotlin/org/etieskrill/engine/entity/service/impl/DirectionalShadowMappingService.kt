@@ -30,20 +30,17 @@ class DirectionalShadowMappingService(
 //    private int newEntitySpread = 0;
 //    private int entityCycle = 0;
 
-    private val depthPipeline = Pipeline(null, PipelineConfig(), depthShader, shadowMap)
-    private val depthAnimatedPipeline = Pipeline(null, PipelineConfig(), animatedDepthShader, shadowMap)
-
     override fun canProcess(entity: Entity) = entity.hasComponents<DirectionalLightComponent>()
 
     override fun process(targetEntity: Entity, entities: List<Entity>, delta: Double) {
         //TODO "rendered camera" component to derive view frustum
-//        DirectionalLight light = (DirectionalLight) target.get(DirectionalLight.class).getComponent();
+
         val shadowMapComponent = targetEntity.getComponent<DirectionalLightComponent>()!!
 
         if (++cycle >= updateFrequency) {
             cycle = 0;
         } else {
-            return;
+            return
         }
 
         val shadowMap = shadowMapComponent.shadowMap ?: return
@@ -58,24 +55,36 @@ class DirectionalShadowMappingService(
             if (entity.id == targetEntity.id) continue
             val transform = entity.getComponent<Transform>() ?: continue
             val drawable = entity.getComponent<Drawable>() ?: continue
-            TODO("use drawable / add to pipeline / dunno man")
+            val boneMatrices = entity.getComponent<Animator>()?.transformMatricesArray
 
-            val pipeline = when (val animator = entity.getComponent<Animator>()) {
-                null -> (depthPipeline as Pipeline<DepthShader>).apply {
-                    shader.model = transform.matrix
-                    shader.combined = shadowMapComponent.camera!!.combined
-                }
-                else -> (depthAnimatedPipeline as Pipeline<DepthAnimatedShader>).apply {
-                    shader.model = transform.matrix
-                    shader.combined = shadowMapComponent.camera!!.combined
-                    shader.boneMatrices = animator.transformMatricesArray
+            for (node in drawable.model.nodes) {
+                val modelTransform = transform * node.getGlobalTransform()
+
+                for (mesh in node.meshes) {
+
+                    //FIXME i dunno about this
+                    val pipeline = Pipeline(
+                        mesh.vao,
+                        PipelineConfig(),
+                        when (boneMatrices) {
+                            null -> depthShader.apply {
+                                model = modelTransform.matrix
+                                combined = shadowMapComponent.camera!!.combined
+                            }
+
+                            else -> animatedDepthShader.apply {
+                                model = modelTransform.matrix
+                                combined = shadowMapComponent.camera!!.combined
+                                this.boneMatrices = boneMatrices
+                            }
+                        },
+                        shadowMap
+                    )
+
+                    renderer.render(pipeline)
                 }
             }
-
-            renderer.render(pipeline)
         }
-
-        shadowMap.unbind()
     }
 
 //    private boolean isEntityUpdateCycle(Map<Entity, Integer> updateCycles, Entity entity) {

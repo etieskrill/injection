@@ -4,7 +4,6 @@ import org.etieskrill.engine.common.Disposable
 import org.etieskrill.engine.graphics.GraphicsContext
 import org.etieskrill.engine.graphics.framebuffer.FrameBufferAttachmentType.*
 import org.etieskrill.engine.graphics.gl.GLUtils
-import org.etieskrill.engine.graphics.gl.framebuffer.FrameBufferCreationException
 import org.lwjgl.opengl.GL11C
 import org.lwjgl.opengl.GL20C
 import org.lwjgl.opengl.GL30C
@@ -12,7 +11,7 @@ import kotlin.properties.Delegates.notNull
 
 @OptIn(ExperimentalStdlibApi::class)
 actual open class FrameBufferInstance internal constructor(
-    actual val descriptor: FrameBuffer,
+    actual open val descriptor: FrameBuffer,
     actual val context: GraphicsContext,
 ) : Disposable {
 
@@ -27,7 +26,7 @@ actual open class FrameBufferInstance internal constructor(
         init()
     }
 
-    internal open fun init() = context.withContext {
+    protected open fun init() = context.withContext {
         GLUtils.clearError()
 
         id = GL30C.glGenFramebuffers()

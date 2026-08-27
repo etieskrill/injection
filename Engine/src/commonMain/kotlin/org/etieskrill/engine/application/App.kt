@@ -5,12 +5,10 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.launch
-import org.etieskrill.engine.audio.Audio
 import org.etieskrill.engine.common.Disposable
-import org.etieskrill.engine.config.InjectionConfig
 import org.etieskrill.engine.entity.system.EntitySystem
 import org.etieskrill.engine.graphics.renderer.Renderer
-import org.etieskrill.engine.graphics.text.TrueTypeFont
+import org.etieskrill.engine.graphics.text.disposeLibrary
 import org.etieskrill.engine.input.Key
 import org.etieskrill.engine.input.KeyInputHandler
 import org.etieskrill.engine.input.ModifierKey
@@ -19,7 +17,6 @@ import org.etieskrill.engine.time.StepTimer
 import org.etieskrill.engine.time.resetSystemTimeResolution
 import org.etieskrill.engine.time.setSystemTimeResolution
 import org.etieskrill.engine.util.FixedArrayDeque
-import org.etieskrill.engine.util.disposeDefaultLoaders
 import org.etieskrill.engine.window.Window
 import org.lwjgl.glfw.GLFW.glfwTerminate
 import org.lwjgl.opengl.GL.destroy
@@ -57,7 +54,7 @@ abstract class App(
 
     companion object {
         init {
-            InjectionConfig.init()
+//            InjectionConfig.init() //TODO even fix?
             logger.info { "Loaded static application configuration" }
         }
     }
@@ -130,11 +127,10 @@ abstract class App(
         resetSystemTimeResolution(SYSTEM_TIME_RESOLUTION_MILLIS.milliseconds)
         window.isClosing = true
         window.dispose()
-        disposeDefaultLoaders()
-        TrueTypeFont.disposeLibrary()
+        /*(TrueTypeFont.)*/disposeLibrary()
         destroy()
         glfwTerminate()
-        Audio.dispose()
+//        Audio.dispose() //TODO fix
     }
 
     override fun dispose() = Unit

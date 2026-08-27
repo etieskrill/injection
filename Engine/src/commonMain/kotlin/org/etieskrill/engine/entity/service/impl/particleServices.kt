@@ -38,6 +38,6 @@ class ParticleRenderService(
     }
 
     override val runAfter: Set<KClass<out Service>>
-        get() = setOf(RenderService::class)
+        get() = emptySet() //setOf(RenderService::class) TODO readd
 
 }

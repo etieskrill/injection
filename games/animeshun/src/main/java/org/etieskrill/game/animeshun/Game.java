@@ -11,14 +11,14 @@ import org.etieskrill.engine.graphics.camera.PerspectiveCamera;
 import org.etieskrill.engine.graphics.data.DirectionalLight;
 import org.etieskrill.engine.graphics.gl.GLUtils;
 import org.etieskrill.engine.graphics.gl.shader.Shaders;
-import org.etieskrill.engine.graphics.gl.shader.impl.AnimationShader;
 import org.etieskrill.engine.graphics.gl.shader.impl.AnimationShaderKt;
-import org.etieskrill.engine.graphics.gl.shader.impl.StaticShader;
 import org.etieskrill.engine.graphics.gl.shader.impl.StaticShaderKt;
-import org.etieskrill.engine.graphics.model.CubeMapModel;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.model.Node;
+import org.etieskrill.engine.graphics.model.Skybox;
 import org.etieskrill.engine.graphics.renderer.GLRenderer;
+import org.etieskrill.engine.graphics.shader.impl.AnimationShader;
+import org.etieskrill.engine.graphics.shader.impl.StaticShader;
 import org.etieskrill.engine.graphics.text.TrueTypeFont;
 import org.etieskrill.engine.input.Input;
 import org.etieskrill.engine.input.Key;
@@ -69,7 +69,7 @@ public class Game {
 
     private Camera camera;
 
-    private CubeMapModel skybox;
+    private Skybox skybox;
     private Shaders.CubeMapShader cubeMapShader;
 
     private Model vampy;
@@ -164,7 +164,7 @@ public class Game {
         window.getCursorInputs().add(new CursorCameraController(camera));
 
         cubeMapShader = new Shaders.CubeMapShader();
-        skybox = new CubeMapModel("textures/cubemaps/space");
+        skybox = new Skybox("textures/cubemaps/space");
 
         vampy = EngineModelLoader.INSTANCE.load("vampy", () ->
                 new Model.Builder("mixamo_walk_forward_skinned_vampire.dae")
