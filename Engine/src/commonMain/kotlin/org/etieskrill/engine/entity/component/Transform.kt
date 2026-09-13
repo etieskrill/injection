@@ -163,7 +163,7 @@ internal fun fromMatrix4f(matrix: Matrix4fc, target: Transform = Transform()): T
 internal fun TransformC.applyInternal(other: TransformC, target: Transform): Transform {
     val targetMatrix = target.internalMatrix.set(matrix)
     targetMatrix *= other.matrix
-    return fromMatrix4f(targetMatrix)
+    return fromMatrix4f(targetMatrix, target)
 }
 
 internal fun TransformC.composeInternal(other: TransformC, target: Transform): Transform {

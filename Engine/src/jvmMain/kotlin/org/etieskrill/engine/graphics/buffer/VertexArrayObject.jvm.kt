@@ -29,13 +29,21 @@ internal actual data class VertexArrayObjectInstance<T>(
         context.withContext {
             clearError()
 
-            bind()
-            vertexBuffer.bind()
+            //i believe this is actually a bug (at least on nvidia):
+            //- having an ebo bound while binding a vao straight up crashes the driver (see injection-sandbox:NvidiaGLIndexedVAOBug.kt for details)
+            //- creating the ebo while a vao is bound somehow does not bind the ebo, even when explicitly unbinding and rebinding
+            //hence, this call here. vbos work as advertised, though.
+            indexBuffer?.unbind()
+
+            bind(false)
+            vertexBuffer.bind() //only glVertexAttrib?Pointer function calls will associate vbo with vao
             indexBuffer?.bind()
 
             configureAttributeArrays(descriptor.accessor)
 
             checkErrorThrowing("Failed to create vertex array object") { BufferCreationException(it) }
+
+            unbind()
         }
     }
 
@@ -90,10 +98,12 @@ internal actual data class VertexArrayObjectInstance<T>(
         logger.debug { "Configured vertex attribute pointers:\n$configLog" }
     }
 
-    fun bind() = context.withContext {
+    fun bind(sync: Boolean = true) = context.withContext {
         if (context.activeVertexArray != this) {
-            vertexBuffer.syncBuffer()
-            indexBuffer?.syncBuffer()
+            if (sync) {
+                vertexBuffer.syncBuffer()
+                indexBuffer?.syncBuffer()
+            }
 
             glBindVertexArray(id)
             context.activeVertexArray = this

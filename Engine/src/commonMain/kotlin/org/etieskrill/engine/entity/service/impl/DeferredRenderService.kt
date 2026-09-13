@@ -97,7 +97,7 @@ class DeferredRenderService(
 
         drawable.model.nodes.forEach { node ->
             val nodeTransform = (node.getGlobalTransform() * transform).matrix
-            val nodeNormalTransform = nodeTransform.invert(Matrix4f()).transpose().get3x3(Matrix3f())
+            val nodeNormalTransform = nodeTransform.normal(Matrix3f())
             gBufferShader.apply {
                 this.mesh = Matrix4f()
                 model = nodeTransform
@@ -123,11 +123,12 @@ class DeferredRenderService(
         renderer.render(deferredPipeline)
     }
 
+
 }
 
 class GBufferShader() :
     ShaderBuilder<GBufferShader.Vertex, GBufferShader.VertexData, GBufferShader.RenderTargets>(
-        object : Shader(listOf("GBuffer.glsl")) {}
+        object : Shader(listOf("shaders/GBuffer.glsl")) {}
     ) {
     data class Vertex(val position: vec3, val normalVec: vec3)
     data class VertexData(override val position: vec4, val worldPosition: vec4, val normal: vec3) : ShaderVertexData
@@ -152,7 +153,7 @@ class GBufferShader() :
 }
 
 class DeferredShader : PureShaderBuilder<VertexData, ColourRenderTarget>(
-    object : Shader(listOf("Deferred.glsl"), false) {}
+    object : Shader(listOf("shaders/Deferred.glsl"), false) {}
 ) {
     private val vertices by const(arrayOf(vec2(-1, -1), vec2(1, -1), vec2(-1, 1), vec2(1, 1)))
 

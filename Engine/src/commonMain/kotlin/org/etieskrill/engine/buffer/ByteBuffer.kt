@@ -46,6 +46,7 @@ expect class ByteBuffer : DslByteBuffer {
     fun put(buffer: ByteBuffer, offset: Long = 0L)
 
     operator fun plusAssign(i: Int?)
+    operator fun plusAssign(f: Float?)
     operator fun plusAssign(v: Vector2fc?)
     operator fun plusAssign(v: Vector3fc?)
     operator fun plusAssign(v: Vector4fc?)

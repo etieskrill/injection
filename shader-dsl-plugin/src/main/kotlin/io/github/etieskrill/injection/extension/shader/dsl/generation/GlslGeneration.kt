@@ -21,6 +21,8 @@ import org.jetbrains.kotlin.ir.declarations.IrDeclarationParent
 import org.jetbrains.kotlin.ir.declarations.IrFile
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrVariable
+import org.jetbrains.kotlin.ir.declarations.name
+import org.jetbrains.kotlin.ir.declarations.path
 import org.jetbrains.kotlin.ir.expressions.IrBlock
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.expressions.IrBreak
@@ -483,9 +485,9 @@ private open class GlslTranspiler(
                     }
                 }
 
-                when (propertyOwner) {
-                    "<this>" -> propertyName //direct shader class members, e.g. uniforms
-                    "it" -> when (data.stage) { //implicit lambda parameter //FIXME find and use declared name if not implicit
+                return when {
+                    propertyOwner == "<this>" || propertyOwner.isBlank() -> propertyName //direct shader class members, e.g. uniforms
+                    propertyOwner == "it" -> when (data.stage) { //implicit lambda parameter //FIXME find and use declared name if not implicit
                         VERTEX -> propertyName
                         FRAGMENT -> "${data.vertexDataStructName}.$propertyName"
                         NONE -> error("Implicit receiver called outside of any stage; presumably stage function trying to generate while not in respective stage")

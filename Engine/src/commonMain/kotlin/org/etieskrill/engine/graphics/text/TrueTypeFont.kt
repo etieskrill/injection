@@ -20,7 +20,7 @@ import org.lwjgl.util.freetype.FreeType.*
 private val logger = KotlinLogging.logger {}
 
 //TODO expectify patronum
-private var library: Long? = 0L
+private var library: Long? = null
 
 class TrueTypeFont(
     file: String

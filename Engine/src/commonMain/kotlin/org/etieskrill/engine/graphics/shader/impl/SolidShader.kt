@@ -11,7 +11,7 @@ import org.etieskrill.engine.graphics.shader.Shader
 import org.joml.Vector4f
 
 class SolidShader : ShaderBuilder<SolidShader.InputVertex, SolidShader.Vertex, ColourRenderTarget>(
-    object : Shader(listOf("Solid.glsl"), false) {}
+    object : Shader(listOf("shaders/Solid.glsl"), false) {}
 ) {
     data class InputVertex(val position: vec3, val normalVec: vec3)
     data class Vertex(override val position: vec4, val normal: vec3) : ShaderVertexData

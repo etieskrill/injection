@@ -56,7 +56,6 @@ internal actual class Texture2DInstance(
     }
 
     override fun attach(frameBuffer: FrameBufferInstance, type: FrameBufferAttachmentType) = context.withContext {
-        frameBuffer.bind()
         glFramebufferTexture2D(GL_FRAMEBUFFER, type.gl, glTarget, id, 0)
     }
 

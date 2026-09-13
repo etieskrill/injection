@@ -3,6 +3,7 @@ package org.etieskrill.engine.graphics.camera
 import org.etieskrill.engine.graphics.shader.UniformMappable
 import org.etieskrill.engine.graphics.shader.UniformMapper
 import org.joml.FrustumRayBuilder
+import org.joml.Math.toRadians
 import org.joml.Matrix4f
 import org.joml.Matrix4fc
 import org.joml.Quaternionf
@@ -158,9 +159,9 @@ abstract class Camera : UniformMappable {
         }
 
         (rotation as Quaternionf).rotationYXZ(
-            -(yaw / (PI.toFloat() / 180f)),
-            -(pitch / (PI.toFloat() / 180f)),
-            roll / (PI.toFloat() / 180f) //TODO should roll affect worldUp?
+            toRadians(-yaw),
+            toRadians(-pitch),
+            toRadians(roll) //TODO should roll affect worldUp?
         )
 
         dirty = true
@@ -180,7 +181,7 @@ abstract class Camera : UniformMappable {
         if (!dirty) return
         else dirty = false
 
-        rotation.getEulerAnglesYXZ(eulerAngles as Vector3f).mul(57.29577951308232f); //rad to deg constant
+        rotation.getEulerAnglesYXZ(eulerAngles as Vector3f).mul(57.29577951308232f) //rad to deg constant
 
         updateView()
         updateProjection()
@@ -193,6 +194,7 @@ abstract class Camera : UniformMappable {
         if (!orbit) {
             val target = front.add(position)
             (this.view as Matrix4f).setLookAt(position, target, worldUp)
+            viewPosition.set(position)
         } else {
             front.mul(orbitDistance).negate().add(position)
             (this.view as Matrix4f).setLookAt(front, position, worldUp)

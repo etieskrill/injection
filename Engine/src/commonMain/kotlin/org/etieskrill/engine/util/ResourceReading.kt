@@ -5,6 +5,8 @@ package org.etieskrill.engine.util
  */
 expect fun resourceExists(path: String): Boolean
 
+expect fun resolveResource(path: String): String?
+
 /**
  * Returns all regular files in [path] if it is a directory in resources.
  * Subdirectories are not searched. Links are resolved.

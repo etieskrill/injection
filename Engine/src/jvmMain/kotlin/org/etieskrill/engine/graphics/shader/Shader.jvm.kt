@@ -10,8 +10,10 @@ import org.etieskrill.engine.graphics.gl.GLUtils
 import org.etieskrill.engine.graphics.gl.shader.ShaderCreationException
 import org.etieskrill.engine.graphics.shader.UniformType.*
 import org.etieskrill.engine.graphics.texture.Texture
+import org.etieskrill.engine.graphics.texture.TextureInstance
 import org.etieskrill.engine.util.ResourceReader.getResource
 import org.etieskrill.engine.util.extension
+import org.etieskrill.engine.util.readResource
 import org.joml.Matrix2f
 import org.joml.Matrix3f
 import org.joml.Matrix4f
@@ -34,6 +36,7 @@ import org.lwjgl.opengl.GL40C.glUniform1d
 import org.lwjgl.opengl.GL40C.glUniform1dv
 import org.lwjgl.opengl.GL43C.glGetProgramResourceIndex
 import org.lwjgl.system.MemoryStack
+import kotlin.reflect.KClass
 
 private val logger = KotlinLogging.logger {}
 
@@ -56,7 +59,7 @@ internal actual class ShaderInstance internal constructor(
     private val arrayUniforms = mutableMapOf<String, UniformArrayInstance>()
     private var version: Long = 0L
 
-    private val boundTextures = mutableSetOf<Texture>()
+    private val boundTextures = mutableSetOf<TextureInstance<*>>()
     private val cachedStorageBuffers = mutableMapOf<String, Int>()
 
     private data class UniformInstance(val uniform: Uniform, val location: Int, var version: Long = 0L)
@@ -71,7 +74,7 @@ internal actual class ShaderInstance internal constructor(
                 "glsl" -> ShaderType.COMPOSITE
                 else -> throw ShaderCreationException("Cannot load shader with unknown file extension: $fileName")
             }
-            ShaderFile(fileName, type, getResource(fileName))
+            ShaderFile(fileName, type, readResource(fileName).decodeToString())
         }.toSet()
 
         if (files.size == 1 && !files.all { it.type == ShaderType.COMPOSITE }) {
@@ -91,7 +94,7 @@ internal actual class ShaderInstance internal constructor(
         createShader(files)
 
         if (GLUtils.checkError("OpenGL error during shader creation")) {
-            logger.info { "Successfully created shader" }
+            logger.info { "Successfully created instance of shader ${descriptor::class.name}" }
         }
     }
 
@@ -321,13 +324,13 @@ internal actual class ShaderInstance internal constructor(
         glDeleteShader(fragId)
     }
 
-    fun bind() = context.withContext {
+    fun bind(sync: Boolean = true) = context.withContext {
         if (context.activeShader != this) {
             glUseProgram(programId)
             context.activeShader = this
         }
 
-        syncUniforms()
+        if (sync) syncUniforms()
     }
 
     fun unbind() = context.withContext {
@@ -344,7 +347,8 @@ internal actual class ShaderInstance internal constructor(
 
                 val location = glGetUniformLocation(programId, name)
                 if (location == -1) {
-                    logger.error { "Failed to get uniform $name in shader ${descriptor::class.simpleName}" }
+                    //TODO add flag if origin is ShaderBuilder, and throw if not found then, otherwise use below message
+                    logger.error { "Failed to get uniform $name in shader ${descriptor::class.name} (is it unused?)" }
                     return@forEach
                 }
 
@@ -356,7 +360,7 @@ internal actual class ShaderInstance internal constructor(
 
                 val location = glGetUniformLocation(programId, name)
                 if (location == -1) {
-                    logger.error { "Failed to get array uniform $name in shader ${descriptor::class.simpleName}" }
+                    logger.error { "Failed to get array uniform $name in shader ${descriptor::class.name} (is it unused?)" }
                     return@forEach
                 }
 
@@ -379,17 +383,17 @@ internal actual class ShaderInstance internal constructor(
 
                         TEXTURE_2D, TEXTURE_2D_ARRAY, TEXTURE_2D_SHADOW, TEXTURE_2D_ARRAY_SHADOW, TEXTURE_CUBE_MAP,
                         TEXTURE_CUBE_MAP_SHADOW, TEXTURE_CUBE_MAP_ARRAY, TEXTURE_CUBE_MAP_ARRAY_SHADOW -> {
-                            val texture = value as Texture
+                            val texture = context.getTexture(value as Texture)
 
                             val unit = context.textureBindings.indexOfFirst { it == texture }.takeIf { it != -1 }
                                 ?: context.textureBindings.indexOf(null).takeIf { it != -1 }
-                                ?: context.textureBindings.indexOfFirst { it?.descriptor !in boundTextures }
+                                ?: context.textureBindings.indexOfFirst { it !in boundTextures }
                                     .takeIf { it != -1 }
                                 ?: error("oopsie daisy")
 
                             boundTextures += texture
                             setUniformValue(descriptorUniform.type, uniform.location, unit)
-                            context.getTexture(texture).bind(unit)
+                            texture.bind(unit)
                         }
 
                         STORAGE_BUFFER -> {
@@ -433,7 +437,7 @@ internal actual class ShaderInstance internal constructor(
     }
 
     private fun setUniformValue(type: UniformType, location: Int, value: Any) {
-        bind()
+        bind(false)
         MemoryStack.stackPush().use { stack ->
             when (type) {
                 INT, TEXTURE_2D, TEXTURE_2D_ARRAY, TEXTURE_2D_SHADOW, TEXTURE_2D_ARRAY_SHADOW, TEXTURE_CUBE_MAP,
@@ -457,7 +461,7 @@ internal actual class ShaderInstance internal constructor(
     }
 
     private fun setUniformArrayValue(type: UniformType, location: Int, value: Array<Any>) {
-        bind()
+        bind(false)
         MemoryStack.stackPush().use { stack ->
             when (type) {
                 INT, TEXTURE_2D, TEXTURE_2D_ARRAY, TEXTURE_2D_SHADOW, TEXTURE_2D_ARRAY_SHADOW, TEXTURE_CUBE_MAP,
@@ -548,3 +552,12 @@ internal actual class ShaderInstance internal constructor(
     }
 
 }
+
+private val KClass<*>.name: String
+    get() {
+        val name = toString()
+        if (name[name.length - 2] == '$') { //anonymous class
+            return name.dropLastWhile { it != '$' }.dropLast(1).substringAfterLast(".")
+        }
+        return simpleName ?: TODO("handle local class names")
+    }

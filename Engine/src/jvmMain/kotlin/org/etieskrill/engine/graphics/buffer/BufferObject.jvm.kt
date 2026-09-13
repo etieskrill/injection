@@ -11,7 +11,7 @@ import org.lwjgl.opengl.GL15C.GL_ELEMENT_ARRAY_BUFFER
 import org.lwjgl.opengl.GL43C.GL_SHADER_STORAGE_BUFFER
 
 internal actual fun BufferObject<*>.checkBufferObject() {
-    check(type != BufferType.STORAGE) {
+    check(this is StorageBufferObject || type != BufferType.STORAGE) {
         "Generic BufferObject may only be used for ARRAY and ELEMENT_ARRAY types, use StorageBufferObject for STORAGE type instead"
     }
 }
@@ -34,7 +34,7 @@ internal actual open class BufferObjectInstance<T>(
     init {
         context.withContext {
             descriptor.apply {
-                bind()
+                bind(false)
                 GL15C.glBufferData(type.gl, byteSize.toLong(), toGLUsage(accessFrequency, accessType))
 
                 GLUtils.checkErrorThrowing("Failed to create buffer object of type ${type.name} with size of $byteSize") {

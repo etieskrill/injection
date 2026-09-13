@@ -19,6 +19,8 @@ interface FrameBufferAttachmentInstance : Disposable {
     /**
      * Calls for this attachment instance to attach itself to [FrameBufferInstance] as a [type].
      *
+     * The [frameBuffer] is guaranteed to be bound/active when this method is called.
+     *
      * @param type the binding point the attachment must bind itself to
      */
     fun attach(frameBuffer: FrameBufferInstance, type: FrameBufferAttachmentType)

@@ -23,73 +23,73 @@ fun Main.renderCircle(
     if (colourOverride != null) TODO()
 
     val sdfs = mutableListOf<SDFShader.SDFVertex>()
-    renderCircleSlot(circle, position, size, sdfs)
+//    renderCircleSlot(circle, position, size, sdfs)
 
-    sdfBuffer.setData(sdfs)
+//    sdfBuffer.setData(sdfs)
+//
+//    pipeline.shader.apply {
+//        sdfLayers = sdfBuffer
+//        combined = camera.combined
+//        aspect = camera.aspectRatio
+//    }
 
-    pipeline.shader.apply {
-        sdfLayers = sdfBuffer
-        combined = camera.combined
-        aspect = camera.aspectRatio
-    }
-
-    renderer.render(pipeline)
+//    renderer.render(pipeline)
 }
 
-private fun renderCircleSlot(
-    rune: CircleSlot,
-    position: Vector2fc,
-    size: Float,
-    sdfs: MutableList<SDFShader.SDFVertex>
-) {
-    when (rune) {
-        is PrimaryRune, is ReceptacleRune, is StreamRune -> {
-            val colour = rune.storedVis.maxByOrNull { it.value }?.key?.colour?.let { Vector4f(it) } ?: Vector4f(1f)
-            colour.w *= lerp(0.2f, 1f, (rune.storedVis.maxByOrNull { it.value }?.value ?: 0f) / rune.visCapacity)
-
-            //TODO draw rune
-            // - add rune atlas
-            drawCircle(position, 0.7f * size, 0.005f, colour, sdfs)
-        }
-
-        is Circle -> {
-            val colour = rune.storedVis.maxByOrNull { it.value }?.key?.colour?.let { Vector4f(it) } ?: Vector4f(1f)
-            colour.w *= lerp(0.2f, 1f, (rune.storedVis.maxByOrNull { it.value }?.value ?: 0f) / rune.visCapacity)
-
-            for (i in rune.auxRunes.indices) {
-                drawCircle(position, size + (0.2f * size * i), 0.005f, colour, sdfs)
-            }
-
-            ring@ for (ringIndex in 0..<rune.auxRunes.size) {
-                val runeAngleStep = 360 / max(1, rune.runes.size)
-                for ((runeIndex, runeAngle) in (0..<360 step runeAngleStep).withIndex()) {
-                    val auxRunes = rune.auxRunes[ringIndex][runeIndex]
-                    if (auxRunes.isEmpty()) continue@ring
-
-                    val auxRuneAngleStep = runeAngleStep / max(1, auxRunes.size)
-
-                    for ((auxRuneIndex, auxRuneAngle) in (0..<360 step auxRuneAngleStep).withIndex()) {
-                        val angle = toRadians(runeAngle + auxRuneAngle.toFloat())
-                        val auxPos =
-                            Vector2f(cos(angle), sin(angle)) * (size - 0.075f) + position
-
-                        //TODO draw rune with rotation
-                        drawCircle(auxPos, 0.15f * size, 0.005f, colour, sdfs, true)
-                    }
-
-                    if (rune.runes.isNotEmpty()) {
-                        val angle = toRadians(runeAngle.toFloat())
-                        val primPos = Vector2f(cos(angle), sin(angle)) * size + position //TODO determine ring pos
-                        drawCircle(primPos, 0.175f * size, 0.005f, colour, sdfs, true)
-                        rune.runes[runeIndex]?.let { renderCircleSlot(it, primPos, 0.175f * size, sdfs) }
-                    }
-                }
-            }
-
-            rune.focalRune?.let { renderCircleSlot(it, position, size, sdfs) }
-        }
-    }
-}
+//private fun renderCircleSlot(
+//    rune: CircleSlot,
+//    position: Vector2fc,
+//    size: Float,
+//    sdfs: MutableList<SDFShader.SDFVertex>
+//) {
+//    when (rune) {
+//        is PrimaryRune, is ReceptacleRune, is StreamRune -> {
+//            val colour = rune.storedVis.maxByOrNull { it.value }?.key?.colour?.let { Vector4f(it) } ?: Vector4f(1f)
+//            colour.w *= lerp(0.2f, 1f, (rune.storedVis.maxByOrNull { it.value }?.value ?: 0f) / rune.visCapacity)
+//
+//            //TODO draw rune
+//            // - add rune atlas
+//            drawCircle(position, 0.7f * size, 0.005f, colour, sdfs)
+//        }
+//
+//        is Circle -> {
+//            val colour = rune.storedVis.maxByOrNull { it.value }?.key?.colour?.let { Vector4f(it) } ?: Vector4f(1f)
+//            colour.w *= lerp(0.2f, 1f, (rune.storedVis.maxByOrNull { it.value }?.value ?: 0f) / rune.visCapacity)
+//
+//            for (i in rune.auxRunes.indices) {
+//                drawCircle(position, size + (0.2f * size * i), 0.005f, colour, sdfs)
+//            }
+//
+//            ring@ for (ringIndex in 0..<rune.auxRunes.size) {
+//                val runeAngleStep = 360 / max(1, rune.runes.size)
+//                for ((runeIndex, runeAngle) in (0..<360 step runeAngleStep).withIndex()) {
+//                    val auxRunes = rune.auxRunes[ringIndex][runeIndex]
+//                    if (auxRunes.isEmpty()) continue@ring
+//
+//                    val auxRuneAngleStep = runeAngleStep / max(1, auxRunes.size)
+//
+//                    for ((auxRuneIndex, auxRuneAngle) in (0..<360 step auxRuneAngleStep).withIndex()) {
+//                        val angle = toRadians(runeAngle + auxRuneAngle.toFloat())
+//                        val auxPos =
+//                            Vector2f(cos(angle), sin(angle)) * (size - 0.075f) + position
+//
+//                        //TODO draw rune with rotation
+//                        drawCircle(auxPos, 0.15f * size, 0.005f, colour, sdfs, true)
+//                    }
+//
+//                    if (rune.runes.isNotEmpty()) {
+//                        val angle = toRadians(runeAngle.toFloat())
+//                        val primPos = Vector2f(cos(angle), sin(angle)) * size + position //TODO determine ring pos
+//                        drawCircle(primPos, 0.175f * size, 0.005f, colour, sdfs, true)
+//                        rune.runes[runeIndex]?.let { renderCircleSlot(it, primPos, 0.175f * size, sdfs) }
+//                    }
+//                }
+//            }
+//
+//            rune.focalRune?.let { renderCircleSlot(it, position, size, sdfs) }
+//        }
+//    }
+//}
 
 private fun drawCircle(
     position: Vector2fc,

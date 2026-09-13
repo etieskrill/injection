@@ -20,7 +20,7 @@ actual class ByteBuffer actual constructor(val size: Long) : DslByteBuffer {
 
     actual var readHead: Long = 0L
         set(value) {
-            check(value < writeHead) { "Read head must be in the range 0..writeHead, was $value" }
+            check(value <= writeHead) { "Read head must be in the range 0..writeHead, was $value" }
             field = value
         }
 
@@ -40,6 +40,11 @@ actual class ByteBuffer actual constructor(val size: Long) : DslByteBuffer {
     actual operator fun plusAssign(i: Int?) {
         i?.let { buffer.putInt(it) } ?: buffer.putInt(0)
         writeHead += Int.SIZE_BYTES
+    }
+
+    actual operator fun plusAssign(f: Float?) {
+        f?.let { buffer.putFloat(it) } ?: buffer.putFloat(0.0f)
+        writeHead += Float.SIZE_BYTES
     }
 
     actual operator fun plusAssign(v: Vector2fc?) {

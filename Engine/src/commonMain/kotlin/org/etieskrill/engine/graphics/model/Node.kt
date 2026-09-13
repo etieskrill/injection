@@ -2,6 +2,8 @@ package org.etieskrill.engine.graphics.model
 
 import org.etieskrill.engine.entity.component.Transform
 import org.etieskrill.engine.entity.component.TransformC
+import org.etieskrill.engine.entity.component.applyInternal
+import org.joml.times
 
 data class Node(
     val name: String,

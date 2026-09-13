@@ -2,7 +2,7 @@ package org.etieskrill.engine.entity.service.impl
 
 import io.github.etieskrill.injection.extension.shader.bool
 import io.github.etieskrill.injection.extension.shader.dsl.ColourRenderTarget
-import io.github.etieskrill.injection.extension.shader.dsl.ShaderBuilder
+import io.github.etieskrill.injection.extension.shader.dsl.PureShaderBuilder
 import io.github.etieskrill.injection.extension.shader.dsl.ShaderVertexData
 import io.github.etieskrill.injection.extension.shader.sampler2D
 import io.github.etieskrill.injection.extension.shader.vec2
@@ -10,7 +10,7 @@ import io.github.etieskrill.injection.extension.shader.vec3
 import io.github.etieskrill.injection.extension.shader.vec4
 import org.etieskrill.engine.graphics.shader.Shader
 
-class GaussBlurShader : ShaderBuilder<Any, GaussBlurShader.Vertex, ColourRenderTarget>(
+class GaussBlurShader : PureShaderBuilder<GaussBlurShader.Vertex, ColourRenderTarget>(
     object : Shader(listOf("GaussBlur.glsl"), false) {}
 ) {
     data class Vertex(override val position: vec4, val texCoords: vec2) : ShaderVertexData

@@ -57,6 +57,8 @@ data class PipelineConfig(
 
     val lineWidth: Float = 1f,
     val lineAntiAliasing: Boolean = true,
+
+    val stencilMode: StencilMode = StencilMode.OFF
 )
 
 enum class AlphaMode { OPAQUE, SOURCE_ALPHA }
@@ -66,3 +68,28 @@ enum class PrimitiveType { POINTS, LINES, LINE_STRIP, TRIANGLES, TRIANGLE_STRIP 
 enum class CullingMode { NONE, BACK, FRONT, FRONT_AND_BACK }
 
 enum class FillMode { POINT, LINE, FILL }
+
+enum class StencilMode {
+    /**
+     * Turns stencil operations off.
+     */
+    OFF,
+
+    /**
+     * Adds to the stencil buffer whatever is visible on screen after rendering the [Pipeline].
+     *
+     * That is what it should do.
+     *
+     * What it actually does: sets the stencil buffer wherever the rendered object is visible on screen that is not
+     * occluded by an object in front of it (so far, so good), and ignores any objects rendered in front of this one
+     * that have their stencil mode set to [OFF], meaning that objects rendered previously will occlude the stencil, and
+     * those that come after will be happily ignored, which leads to inconsistent (and avoidable) behaviour.
+     *
+     * TODO conclusion: fix dis shit
+     */
+    SET_FRONT
+
+// TODO this option would _actually_ do nothing with the stencil buffer, but is only applicable if nothing else in
+//  the frame uses the stencil buffer, otherwise non-stencil objects would not interact correctly with stencil stuff
+//    IGNORE
+}

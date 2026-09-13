@@ -13,6 +13,7 @@ import org.etieskrill.engine.graphics.framebuffer.FrameBufferAttachmentInstance
 import org.etieskrill.engine.graphics.framebuffer.FrameBufferInstance
 import org.etieskrill.engine.graphics.framebuffer.RenderBuffer
 import org.etieskrill.engine.graphics.framebuffer.RenderBufferInstance
+import org.etieskrill.engine.graphics.framebuffer.ScreenBuffer
 import org.etieskrill.engine.graphics.shader.Shader
 import org.etieskrill.engine.graphics.shader.ShaderInstance
 import org.etieskrill.engine.graphics.texture.ArrayTexture2D
@@ -20,6 +21,10 @@ import org.etieskrill.engine.graphics.texture.ArrayTexture2DInstance
 import org.etieskrill.engine.graphics.texture.Texture
 import org.etieskrill.engine.graphics.texture.Texture2D
 import org.etieskrill.engine.graphics.texture.Texture2DInstance
+import org.etieskrill.engine.graphics.texture.TextureCubeMap
+import org.etieskrill.engine.graphics.texture.TextureCubeMapArray
+import org.etieskrill.engine.graphics.texture.TextureCubeMapArrayInstance
+import org.etieskrill.engine.graphics.texture.TextureCubeMapInstance
 import org.etieskrill.engine.graphics.texture.TextureInstance
 import kotlin.properties.Delegates.notNull
 
@@ -37,7 +42,8 @@ actual data class GraphicsContext(
     actual var screenBuffer: FrameBufferInstance by notNull(); internal set
     private val frameBuffers = mutableMapOf<FrameBuffer, FrameBufferInstance>()
     internal fun getFrameBuffer(frameBuffer: FrameBuffer) =
-        frameBuffers.getOrPut(frameBuffer) { FrameBufferInstance(frameBuffer, this) }
+        if (frameBuffer is ScreenBuffer) screenBuffer
+        else frameBuffers.getOrPut(frameBuffer) { FrameBufferInstance(frameBuffer, this) }
 
     private val textures = mutableMapOf<Texture, TextureInstance<*>>()
 
@@ -79,12 +85,15 @@ actual data class GraphicsContext(
     internal fun <T> getVertexArray(vertexArray: VertexArrayObject<T>) =
         vertexArrays.getOrPut(vertexArray) { VertexArrayObjectInstance(vertexArray, this) }
 
-    internal var activeVertexArray: VertexArrayObjectInstance<*>? = null
+    internal var activeVertexArray: VertexArrayObjectInstance<*>? = null //TODO add dummy vao (or the proper solution, if there is one)
 
     internal fun getFrameBufferAttachment(frameBufferAttachment: FrameBufferAttachment): FrameBufferAttachmentInstance =
         when (frameBufferAttachment) {
             is RenderBuffer -> getRenderBuffer(frameBufferAttachment)
-            else -> error("Unknown frame buffer attachment type: ${frameBufferAttachment::class.simpleName}")
+            is Texture2D -> getTexture(frameBufferAttachment) as Texture2DInstance
+            is TextureCubeMap -> getTexture(frameBufferAttachment) as TextureCubeMapInstance
+            is TextureCubeMapArray -> getTexture(frameBufferAttachment) as TextureCubeMapArrayInstance
+            else -> error("Dipshit dev forgot to add framebuffer attachment: ${frameBufferAttachment::class.simpleName}")
         }
 
     actual fun <T> withContext(block: () -> T): T {

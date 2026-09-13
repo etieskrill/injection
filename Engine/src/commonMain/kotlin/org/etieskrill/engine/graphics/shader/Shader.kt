@@ -9,11 +9,17 @@ import io.github.etieskrill.injection.extension.shader.Texture2DArray
 import io.github.etieskrill.injection.extension.shader.Texture2DArrayShadow
 import io.github.etieskrill.injection.extension.shader.Texture2DShadow
 import io.github.etieskrill.injection.extension.shader.TextureCubeMap
+import io.github.etieskrill.injection.extension.shader.TextureCubeMapArray
 import io.github.etieskrill.injection.extension.shader.TextureCubeMapArrayShadow
 import io.github.etieskrill.injection.extension.shader.TextureCubeMapShadow
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.etieskrill.engine.common.Disposable
 import org.etieskrill.engine.graphics.GraphicsContext
+import org.etieskrill.engine.graphics.framebuffer.DirectionalShadowMap
+import org.etieskrill.engine.graphics.framebuffer.PointShadowMap
+import org.etieskrill.engine.graphics.framebuffer.PointShadowMapArray
+import org.etieskrill.engine.graphics.texture.ArrayTexture2D
+import org.etieskrill.engine.util.resourceExists
 import org.joml.Matrix2f
 import org.joml.Matrix2fc
 import org.joml.Matrix3f
@@ -41,14 +47,18 @@ abstract class Shader protected constructor(
     internal val uniformArrays = mutableMapOf<String, ArrayUniform>()
     internal var version: Long = 0L
 
+    init {
+        shaderFiles.forEach { require(resourceExists(it)) { "Shader file '$it' does not exist" } }
+    }
+
     override fun setUniform(name: String, value: Any) {
         val uniform = uniforms[name]!! //TODO strict uniforms
-        if (value::class != uniform.type.clazz || value::class != uniform.type.constClass) {
+        if (value::class != uniform.type.clazz && value::class != uniform.type.constClass) {
             logger.warn { "Tried setting uniform ${uniform.name} of type ${uniform.type} to incompatible value of type ${value::class.simpleName}" }
             return
         }
 
-        if (uniform.value == value) return
+//        if (uniform.value == value) return //FIXME is there no equals comparing purely the values instead of object references?
 
         uniform.value = value
         uniform.version++
@@ -56,8 +66,8 @@ abstract class Shader protected constructor(
 
     override fun setTexture(name: String, texture: Texture) {
         val uniform = uniforms[name]!! //TODO strict uniforms
-        if (uniform.value == texture) return
-        if (texture::class != uniform.type.clazz || texture::class != uniform.type.constClass) {
+//        if (uniform.value == texture) return //FIXME store the version of the last set, and compare with new one instead or short circuit
+        if (texture::class != uniform.type.clazz && texture::class != uniform.type.constClass) {
             logger.warn { "Tried setting texture ${uniform.name} of type ${uniform.type} to incompatible value of type ${texture::class.simpleName}" }
             return
         }
@@ -78,7 +88,7 @@ abstract class Shader protected constructor(
 
     override fun setUniformArray(name: String, value: Array<Any>) {
         val uniform = uniformArrays[name]!! //TODO strict uniforms
-        if (value.isEmpty() || value[0]::class != uniform.elementType.clazz || value[0]::class != uniform.elementType.constClass) {
+        if (value.isEmpty() || value[0]::class != uniform.elementType.clazz && value[0]::class != uniform.elementType.constClass) {
             logger.warn { "Tried setting uniform array ${uniform.name} with element type ${uniform.elementType} to incompatible value of type ${value[0]::class.simpleName}" }
             return
         }
@@ -95,7 +105,7 @@ abstract class Shader protected constructor(
             logger.warn { "Tried setting uniform array element at index $index when array only has ${uniform.size} elements" }
             return
         }
-        if (value::class != uniform.elementType.clazz || value::class != uniform.elementType.constClass) {
+        if (value::class != uniform.elementType.clazz && value::class != uniform.elementType.constClass) {
             logger.warn { "Tried setting uniform array element ${uniform.name}[$index] with type ${uniform.elementType} to incompatible value of type ${value::class.simpleName}" }
             return
         }
@@ -152,32 +162,34 @@ internal data class ShaderFile(
 )
 
 enum class UniformType(val glslName: String?, val clazz: KClass<*>, val constClass: KClass<*>? = null) {
+    // @formatter:off
     INT("int", Int::class),
     FLOAT("float", Float::class),
     DOUBLE("double", Double::class),
     BOOL("bool", Boolean::class),
-    VEC2("vec2", Vector2f::class, Vector2fc::class),
+    VEC2("vec2", Vector2f::class, Vector2fc::class), //TODO these really need to check for assignability instead
     VEC2I("vec2i", Vector2i::class, Vector2ic::class),
     VEC3("vec3", Vector3f::class, Vector3fc::class),
     VEC4("vec4", Vector4f::class, Vector4fc::class),
     MAT2("mat2", Matrix2f::class, Matrix2fc::class),
     MAT3("mat3", Matrix3f::class, Matrix3fc::class),
     MAT4("mat4", Matrix4f::class, Matrix4fc::class),
-    TEXTURE_2D("sampler2D", Texture2D::class),
-    TEXTURE_2D_ARRAY("sampler2DArray", Texture2DArray::class),
-    TEXTURE_2D_SHADOW("sampler2DShadow", Texture2DShadow::class),
+    TEXTURE_2D("sampler2D", Texture2D::class, org.etieskrill.engine.graphics.texture.Texture2D::class),
+    TEXTURE_2D_ARRAY("sampler2DArray", Texture2DArray::class, ArrayTexture2D::class),
+    TEXTURE_2D_SHADOW("sampler2DShadow", Texture2DShadow::class, DirectionalShadowMap::class),
     TEXTURE_2D_ARRAY_SHADOW("sampler2DArrayShadow", Texture2DArrayShadow::class),
-    TEXTURE_CUBE_MAP("samplerCube", TextureCubeMap::class),
-    TEXTURE_CUBE_MAP_ARRAY("samplerCubeArray", TextureCubeMap::class),
-    TEXTURE_CUBE_MAP_SHADOW("samplerCubeShadow", TextureCubeMapShadow::class),
-    TEXTURE_CUBE_MAP_ARRAY_SHADOW("samplerCubeArrayShadow", TextureCubeMapArrayShadow::class),
+    TEXTURE_CUBE_MAP("samplerCube", TextureCubeMap::class, org.etieskrill.engine.graphics.texture.TextureCubeMap::class),
+    TEXTURE_CUBE_MAP_ARRAY("samplerCubeArray", TextureCubeMapArray::class, org.etieskrill.engine.graphics.texture.TextureCubeMapArray::class),
+    TEXTURE_CUBE_MAP_SHADOW("samplerCubeShadow", TextureCubeMapShadow::class, PointShadowMap::class),
+    TEXTURE_CUBE_MAP_ARRAY_SHADOW("samplerCubeArrayShadow", TextureCubeMapArrayShadow::class, PointShadowMapArray::class),
     STORAGE_BUFFER(null, StorageBuffer::class),
     STRUCT(null, UniformMappable::class);
+    // @formatter:on
 
     companion object {
         //TODO assignable instead of match?
-        fun from(value: KClass<*>): UniformType? =
-            entries.find { value::class == it.clazz || value::class == it.constClass }
+        fun from(klass: KClass<*>): UniformType? =
+            entries.find { klass == it.clazz || klass == it.constClass }
     }
 }
 

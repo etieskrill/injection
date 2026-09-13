@@ -46,7 +46,7 @@ actual class LoopPacer actual constructor(
     actual val framesElapsed: Long get() = _framesElapsed
 
     private val deltaBuffer = FixedArrayDeque<Duration>(
-        (AVERAGE_FRAMERATE_SPAN_SECONDS / targetDeltaTime.toDouble(DurationUnit.SECONDS)).toInt()
+        (AVERAGE_FRAMERATE_SPAN_SECONDS / targetDeltaTime.toDouble(SECONDS)).toInt()
     )
 
     private lateinit var timeStart: ComparableTimeMark

@@ -1,12 +1,15 @@
-package org.etieskrill.engine.graphics.renderer;
+package org.etieskrill.engine.graphics.renderer
 
 import io.github.etieskrill.injection.extension.shader.dsl.ShaderBuilder
 import org.etieskrill.engine.graphics.GraphicsContext
+import org.etieskrill.engine.graphics.buffer.BufferType
+import org.etieskrill.engine.graphics.gl.GLUtils
 import org.etieskrill.engine.graphics.pipeline.AlphaMode
 import org.etieskrill.engine.graphics.pipeline.CullingMode
 import org.etieskrill.engine.graphics.pipeline.FillMode
 import org.etieskrill.engine.graphics.pipeline.Pipeline
 import org.etieskrill.engine.graphics.pipeline.PrimitiveType
+import org.etieskrill.engine.graphics.pipeline.StencilMode
 import org.etieskrill.engine.graphics.shader.Shader
 import org.etieskrill.engine.util.FixedArrayDeque
 import org.joml.Vector4f
@@ -27,8 +30,6 @@ actual class Renderer actual constructor(
 
         private val dummyVAO by lazy { glGenVertexArrays() }
     }
-
-    var clearColour: Vector4f = Vector4f(CLEAR_COLOUR, CLEAR_COLOUR, CLEAR_COLOUR, 1f)
 
     private var _trianglesDrawn: Long = 0L
     actual val trianglesDrawn: Long get() = _trianglesDrawn
@@ -57,6 +58,13 @@ actual class Renderer actual constructor(
     actual fun render(pipeline: Pipeline<*>) = context.withContext {
         context.getFrameBuffer(pipeline.frameBuffer).bind()
 
+        context.activeVertexArray?.unbind()
+//        context.bufferBindings[BufferType.ARRAY]?.unbind()
+//        context.bufferBindings[BufferType.ELEMENT_ARRAY]?.unbind()
+//        //TODO validate that any textures/renderbuffers in active framebuffer are not bound in shader
+//        context.textureBindings.forEachIndexed { unit, texture -> texture?.unbind(unit) }
+//        context.activeShader?.unbind()
+
         val isIndexed: Boolean
         if (pipeline.vao != null) {
             context.getVertexArray(pipeline.vao).bind()
@@ -84,7 +92,7 @@ actual class Renderer actual constructor(
             PrimitiveType.LINE_STRIP -> GL_LINE_STRIP
             PrimitiveType.TRIANGLES -> GL_TRIANGLES
             PrimitiveType.TRIANGLE_STRIP -> GL_TRIANGLE_STRIP
-        };
+        }
 
         when (pipeline.config.cullingMode) {
             CullingMode.NONE -> glDisable(GL_CULL_FACE)
@@ -127,6 +135,19 @@ actual class Renderer actual constructor(
         }
 
         glEnable(GL_BLEND) //it's fucking crazy that blending is disabled by default
+
+        when (pipeline.config.stencilMode) {
+            StencilMode.OFF -> {
+                glDisable(GL_STENCIL_TEST)
+                glStencilMask(0x00)
+            }
+            StencilMode.SET_FRONT -> {
+                glEnable(GL_STENCIL_TEST)
+                glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE)
+                glStencilFunc(GL_ALWAYS, 0xFF, 0xFF)
+                glStencilMask(0xFF)
+            }
+        }
 
         val vertexCount: Int
 

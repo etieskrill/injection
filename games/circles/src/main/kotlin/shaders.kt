@@ -13,7 +13,7 @@ import org.etieskrill.engine.graphics.shader.Shader
 import org.joml.Vector2f
 
 class SDFShader : PureShaderBuilder<VertexData, ColourRenderTarget>(
-    object : Shader(listOf("SDF.glsl"), false) {}
+    object : Shader(listOf("shaders/SDF.glsl"), false) {}
 ) {
     data class SDFVertex(//TODO const size array fields
         val position: vec2,
@@ -31,17 +31,17 @@ class SDFShader : PureShaderBuilder<VertexData, ColourRenderTarget>(
 
     object SDFVertexAccessor : VertexArrayAccessor<SDFVertex>() { //TODO this... really needs to be automatic
         override fun registerFields() {
-            addField<vec2> { vertex, buffer -> vertex.position.get(buffer) }
-            addField<float> { vertex, buffer -> buffer.putFloat(vertex.rotation) }
-            addField<float> { vertex, buffer -> buffer.putFloat(vertex.size) }
-            addField<float> { vertex, buffer -> buffer.putFloat(vertex.thickness) }
-            addField<float> { vertex, buffer -> buffer.putFloat(vertex.glowStrength) }
-            addField<vec2> { vertex, buffer -> buffer.putFloat(0f).putFloat(0f) } //padding
-            addField<vec4> { vertex, buffer -> vertex.colour.get(buffer) }
-            addField<int> { vertex, buffer -> buffer.putInt(vertex.shapeType) }
-            addField<int> { vertex, buffer -> buffer.putInt(vertex.styleType) }
-            addField<int> { vertex, buffer -> buffer.putInt(vertex.layerType) }
-            addField<float> { vertex, buffer -> buffer.putFloat(vertex.blendStrength) }
+            addField<vec2> { vertex, buffer -> buffer += vertex.position }
+            addField<float> { vertex, buffer -> buffer += vertex.rotation }
+            addField<float> { vertex, buffer -> buffer += vertex.size }
+            addField<float> { vertex, buffer -> buffer += vertex.thickness }
+            addField<float> { vertex, buffer -> buffer += vertex.glowStrength }
+            addField<vec2> { _, buffer -> buffer += 0f; buffer += 0f } //padding
+            addField<vec4> { vertex, buffer -> buffer += vertex.colour }
+            addField<int> { vertex, buffer -> buffer += vertex.shapeType }
+            addField<int> { vertex, buffer -> buffer += vertex.styleType }
+            addField<int> { vertex, buffer -> buffer += vertex.layerType }
+            addField<float> { vertex, buffer -> buffer += vertex.blendStrength }
         }
     }
 

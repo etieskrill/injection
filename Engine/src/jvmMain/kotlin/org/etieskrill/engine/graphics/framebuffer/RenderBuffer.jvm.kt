@@ -38,7 +38,6 @@ internal actual class RenderBufferInstance(
 
     actual override fun attach(frameBuffer: FrameBufferInstance, type: FrameBufferAttachmentType) =
         context.withContext {
-            frameBuffer.bind()
             glFramebufferRenderbuffer(GL_FRAMEBUFFER, type.gl, GL_RENDERBUFFER, id)
         }
 

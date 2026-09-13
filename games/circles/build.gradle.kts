@@ -19,3 +19,7 @@ dependencies {
 application {
     mainClass = "io.github.etieskrill.games.circles.MainKt"
 }
+
+kotlin {
+    compilerOptions.freeCompilerArgs.add("-Xcontext-receivers")
+}

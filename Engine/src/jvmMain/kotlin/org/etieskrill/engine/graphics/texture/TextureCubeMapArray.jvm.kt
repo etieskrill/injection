@@ -45,7 +45,6 @@ internal actual class TextureCubeMapArrayInstance(
     }
 
     override fun attach(frameBuffer: FrameBufferInstance, type: FrameBufferAttachmentType) = context.withContext {
-        frameBuffer.bind()
         glFramebufferTexture(GL_FRAMEBUFFER, type.gl, id, 0)
     }
 

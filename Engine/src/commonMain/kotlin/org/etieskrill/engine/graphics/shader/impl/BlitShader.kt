@@ -14,7 +14,7 @@ import org.joml.Vector2f
 import org.joml.Vector4f
 
 class BlitShader : PureShaderBuilder<BlitShader.Vertex, ColourRenderTarget>(
-    object : Shader(listOf("Blit.glsl")) {}
+    object : Shader(listOf("shaders/Blit.glsl")) {}
 ) {
     data class Vertex(override val position: vec4, val textureCoords: vec2) : ShaderVertexData
 

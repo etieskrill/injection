@@ -47,41 +47,42 @@ fun ModelBuilder.box(a: Vector3f, b: Vector3f, transform: Transform = Transform(
 
     val vertices: List<Vertex> = listOf(
         // top
+        Vertex(Vector3f(a.x, b.y, b.z), normal = Vector3f(0f, 1f, 0f)),
+        Vertex(Vector3f(b.x, b.y, b.z), normal = Vector3f(0f, 1f, 0f)),
+        Vertex(Vector3f(b.x, b.y, a.z), normal = Vector3f(0f, 1f, 0f)),
+        Vertex(Vector3f(a.x, b.y, a.z), normal = Vector3f(0f, 1f, 0f)),
+        // bottom
         Vertex(Vector3f(a.x, a.y, a.z), normal = Vector3f(0f, -1f, 0f)),
         Vertex(Vector3f(b.x, a.y, a.z), normal = Vector3f(0f, -1f, 0f)),
         Vertex(Vector3f(b.x, a.y, b.z), normal = Vector3f(0f, -1f, 0f)),
         Vertex(Vector3f(a.x, a.y, b.z), normal = Vector3f(0f, -1f, 0f)),
-        // bottom
-        Vertex(Vector3f(a.x, b.y, a.z), normal = Vector3f(0f, 1f, 0f)),
-        Vertex(Vector3f(b.x, b.y, a.z), normal = Vector3f(0f, 1f, 0f)),
-        Vertex(Vector3f(b.x, b.y, b.z), normal = Vector3f(0f, 1f, 0f)),
-        Vertex(Vector3f(a.x, b.y, b.z), normal = Vector3f(0f, 1f, 0f)),
-        // back
-        Vertex(Vector3f(a.x, a.y, a.z), normal = Vector3f(0f, 0f, -1f)),
-        Vertex(Vector3f(b.x, a.y, a.z), normal = Vector3f(0f, 0f, -1f)),
-        Vertex(Vector3f(b.x, b.y, a.z), normal = Vector3f(0f, 0f, -1f)),
-        Vertex(Vector3f(a.x, b.y, a.z), normal = Vector3f(0f, 0f, -1f)),
         // front
+        Vertex(Vector3f(a.x, b.y, a.z), normal = Vector3f(0f, 0f, -1f)),
+        Vertex(Vector3f(b.x, b.y, a.z), normal = Vector3f(0f, 0f, -1f)),
+        Vertex(Vector3f(b.x, a.y, a.z), normal = Vector3f(0f, 0f, -1f)),
+        Vertex(Vector3f(a.x, a.y, a.z), normal = Vector3f(0f, 0f, -1f)),
+        // back
         Vertex(Vector3f(a.x, a.y, b.z), normal = Vector3f(0f, 0f, 1f)),
         Vertex(Vector3f(b.x, a.y, b.z), normal = Vector3f(0f, 0f, 1f)),
         Vertex(Vector3f(b.x, b.y, b.z), normal = Vector3f(0f, 0f, 1f)),
         Vertex(Vector3f(a.x, b.y, b.z), normal = Vector3f(0f, 0f, 1f)),
         // left
-        Vertex(Vector3f(a.x, a.y, b.z), normal = Vector3f(-1f, 0f, 0f)),
-        Vertex(Vector3f(a.x, a.y, a.z), normal = Vector3f(-1f, 0f, 0f)),
-        Vertex(Vector3f(a.x, b.y, a.z), normal = Vector3f(-1f, 0f, 0f)),
         Vertex(Vector3f(a.x, b.y, b.z), normal = Vector3f(-1f, 0f, 0f)),
+        Vertex(Vector3f(a.x, b.y, a.z), normal = Vector3f(-1f, 0f, 0f)),
+        Vertex(Vector3f(a.x, a.y, a.z), normal = Vector3f(-1f, 0f, 0f)),
+        Vertex(Vector3f(a.x, a.y, b.z), normal = Vector3f(-1f, 0f, 0f)),
         // right
-        Vertex(Vector3f(b.x, a.y, a.z), normal = Vector3f(1f, 0f, 0f)),
-        Vertex(Vector3f(b.x, a.y, b.z), normal = Vector3f(1f, 0f, 0f)),
+        Vertex(Vector3f(b.x, b.y, a.z), normal = Vector3f(1f, 0f, 0f)),
         Vertex(Vector3f(b.x, b.y, b.z), normal = Vector3f(1f, 0f, 0f)),
-        Vertex(Vector3f(b.x, b.y, a.z), normal = Vector3f(1f, 0f, 0f))
+        Vertex(Vector3f(b.x, a.y, b.z), normal = Vector3f(1f, 0f, 0f)),
+        Vertex(Vector3f(b.x, a.y, a.z), normal = Vector3f(1f, 0f, 0f))
     )
+
     val indices = listOf(
         0, 1, 2, 0, 2, 3, //top
         4, 5, 6, 4, 6, 7, //bottom
-        8, 9, 10, 8, 10, 11, //back
-        12, 13, 14, 12, 14, 15, //front
+        8, 9, 10, 8, 10, 11, //front
+        12, 13, 14, 12, 14, 15, //back
         16, 17, 18, 16, 18, 19, //left
         20, 21, 22, 20, 22, 23  //right
     )
