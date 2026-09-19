@@ -59,6 +59,8 @@ actual data class GraphicsContext(
     //TODO other texture types
     internal val textureBindings = Array<TextureInstance<*>?>(maxTextureUnits) { null }
 
+    internal var activeTexture: Int = 0
+
     private val bufferObjects = mutableMapOf<BufferObject<*>, BufferObjectInstance<*>>()
     internal fun getBufferObject(buffer: BufferObject<*>) =
         bufferObjects.getOrPut(buffer) { BufferObjectInstance(buffer, this) }

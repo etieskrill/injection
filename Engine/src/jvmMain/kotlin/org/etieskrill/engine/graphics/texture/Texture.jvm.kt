@@ -91,8 +91,12 @@ internal actual abstract class TextureInstance<T : Texture>(
     fun bind(unit: Int) = context.withContext {
         check(unit < context.maxTextureUnits) { "Texture unit $unit is not supported" }
 
-        if (context.textureBindings[unit] != this) {
+        if (context.activeTexture != unit) {
             glActiveTexture(GL_TEXTURE0 + unit)
+            context.activeTexture = unit
+        }
+
+        if (context.textureBindings[unit] != this) {
             glBindTexture(glTarget, id)
             context.textureBindings[unit] = this
         }
@@ -101,8 +105,12 @@ internal actual abstract class TextureInstance<T : Texture>(
     }
 
     fun unbind(unit: Int) = context.withContext {
-        if (context.textureBindings[unit] == this) {
+        if (context.activeTexture != unit) {
             glActiveTexture(GL_TEXTURE0 + unit)
+            context.activeTexture = unit
+        }
+
+        if (context.textureBindings[unit] == this) {
             glBindTexture(glTarget, 0)
             context.textureBindings[unit] = null
         }
