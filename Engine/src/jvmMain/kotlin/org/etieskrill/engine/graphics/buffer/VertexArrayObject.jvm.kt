@@ -99,12 +99,12 @@ internal actual data class VertexArrayObjectInstance<T>(
     }
 
     fun bind(sync: Boolean = true) = context.withContext {
-        if (context.activeVertexArray != this) {
-            if (sync) {
-                vertexBuffer.syncBuffer()
-                indexBuffer?.syncBuffer()
-            }
+        if (sync) {
+            vertexBuffer.syncBuffer()
+            indexBuffer?.syncBuffer()
+        }
 
+        if (context.activeVertexArray != this) {
             glBindVertexArray(id)
             context.activeVertexArray = this
         }

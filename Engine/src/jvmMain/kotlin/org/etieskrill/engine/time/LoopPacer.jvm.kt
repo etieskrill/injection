@@ -87,8 +87,8 @@ actual class LoopPacer actual constructor(
     private fun updateAverageFPS(newDelta: Duration) {
         deltaBuffer.add(newDelta)
 
-        _averageFPS = deltaBuffer
-            .map { it.toDouble(DurationUnit.SECONDS) }
+        _averageFPS = 1.0 / deltaBuffer
+            .map { it.toDouble(SECONDS) }
             .average()
     }
 
