@@ -87,8 +87,7 @@ open class WidgetContainer(
     //        return contexts.getOrPut(GraphicsContext.current) { initialiser(GraphicsContext.current) }
     //    }
     //}
-    private val chevronIcon =
-        Texture2D.createFromFile("textures/icons/chevron-down-solid-black.png", TextureType.DIFFUSE)
+    private val chevronIcon = Texture2D.createUITexture("textures/icons/chevron-down-solid-black.png")
     private val titleFont = Font.getDefault((barHeight) - 4)
 
     override fun update(delta: Double) {

@@ -38,6 +38,17 @@ class Texture2D(
             val textureData = loadTexture2DData(file, type) //TODO replace with size-only reader
             return Texture2D(textureData.size, type, file = file, format = textureData.format)
         }
+
+        fun createUITexture(file: String): Texture2D {
+            val textureData = loadTexture2DData(file, TextureType.DIFFUSE) //TODO replace with size-only reader
+            return Texture2D(
+                textureData.size,
+                TextureType.DIFFUSE,
+                textureData.buffer,
+                format = textureData.format,
+                minFilter = TextureMinFilter.LINEAR
+            )
+        }
     }
 
 }

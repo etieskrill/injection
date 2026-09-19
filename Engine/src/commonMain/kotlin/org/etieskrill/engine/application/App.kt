@@ -8,6 +8,7 @@ import kotlinx.coroutines.launch
 import org.etieskrill.engine.common.Disposable
 import org.etieskrill.engine.entity.system.EntitySystem
 import org.etieskrill.engine.graphics.renderer.Renderer
+import org.etieskrill.engine.graphics.text.TextRenderer
 import org.etieskrill.engine.graphics.text.disposeLibrary
 import org.etieskrill.engine.input.Key
 import org.etieskrill.engine.input.KeyInputHandler
@@ -35,6 +36,7 @@ abstract class App(
     protected val pacer = LoopPacer((1.0 / window.refreshRate.toDouble()).seconds)
 
     protected val renderer = Renderer(window.graphicsContext)
+    protected val textRenderer = TextRenderer(window.graphicsContext)
 
     protected val entitySystem = EntitySystem()
 

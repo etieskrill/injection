@@ -36,7 +36,13 @@ enum class Key(
     UP, DOWN, LEFT, RIGHT,
     HOME, END,
     PAGE_UP, PAGE_DOWN,
-    INSERT, DELETE
+    INSERT, DELETE;
+
+    //TODO cleanup
+    fun aliasEquals(other: Key): Boolean = //assume max of two alias indirections for now
+        this == other || this == other.alias || this == other.alias?.alias
+        || alias == other || alias == other.alias || alias == other.alias?.alias
+        || alias?.alias == other || alias?.alias == other.alias || alias?.alias == other.alias?.alias
 }
 
 enum class ModifierKey { SHIFT, CONTROL, ALT, SUPER, CAPSLOCK, NUMLOCK }

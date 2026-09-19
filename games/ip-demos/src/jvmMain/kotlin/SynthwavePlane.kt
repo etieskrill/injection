@@ -36,9 +36,15 @@ import org.etieskrill.engine.graphics.shader.Shader
 import org.etieskrill.engine.graphics.model.model
 import org.etieskrill.engine.graphics.model.plane
 import org.etieskrill.engine.graphics.pipeline.PostPassPipeline
-import org.etieskrill.engine.input.Input
+import org.etieskrill.engine.input.InputTriggerEdge
 import org.etieskrill.engine.input.Key
+import org.etieskrill.engine.input.KeyEvent
+import org.etieskrill.engine.input.KeyEventAction
+import org.etieskrill.engine.input.KeyInputManager
+import org.etieskrill.engine.input.ModifierKey
+import org.etieskrill.engine.input.bindKey
 import org.etieskrill.engine.input.controller.CursorCameraController
+import org.etieskrill.engine.input.inputs
 import org.etieskrill.engine.scene.Node
 import org.etieskrill.engine.scene.Scene
 import org.etieskrill.engine.scene.container.HBox
@@ -47,6 +53,7 @@ import org.etieskrill.engine.scene.container.VBox
 import org.etieskrill.engine.scene.container.WidgetContainer
 import org.etieskrill.engine.scene.element.Checkbox
 import org.etieskrill.engine.scene.element.Dropdown
+import org.etieskrill.engine.scene.element.Image
 import org.etieskrill.engine.scene.element.Label
 import org.etieskrill.engine.scene.element.PlaybackBar
 import org.etieskrill.engine.scene.element.PlaybackBar.State.PAUSED
@@ -56,8 +63,12 @@ import org.etieskrill.engine.scene.plot.HistogramScaleMode
 import org.etieskrill.engine.util.FixedArrayDeque
 import org.etieskrill.engine.util.ResourceReader
 import org.etieskrill.engine.util.average
+import org.etieskrill.engine.util.listResources
 import org.etieskrill.engine.window.Cursor
+import org.etieskrill.engine.window.CursorMode
 import org.etieskrill.engine.window.Window
+import org.etieskrill.engine.window.WindowMode
+import org.etieskrill.engine.window.WindowSize
 import org.joml.Matrix4f
 import org.joml.Vector2f
 import org.joml.Vector3f
@@ -81,8 +92,8 @@ fun main() = SynthwavePlane().run() //TODO replace and test with immediate when 
 class SynthwavePlane : App(
     Window(
         title = "Synthwave Plane",
-        mode = Window.WindowMode.BORDERLESS,
-        size = Window.WindowSize.LARGEST_FIT,
+        mode = WindowMode.BORDERLESS,
+        size = WindowSize.LARGEST_FIT,
         vSync = true
     )
 ) {
@@ -126,42 +137,43 @@ class SynthwavePlane : App(
     init {
         val controller = CursorCameraController(camera)
         window.cursorInputs += controller
-        window.keyInputs += Input.of(
-            Input.bind(Key.CTRL).to { ->
-                if (window.cursor.mode == Cursor.CursorMode.DISABLED) {
-                    window.cursor.mode = Cursor.CursorMode.CAPTURED
+        window.cursor.disable()
+
+        window.keyInputs += inputs(
+            bindKey(Key.CTRL) {
+                if (window.cursor.mode == CursorMode.DISABLED) {
+                    window.cursor.mode = CursorMode.CAPTURED
                     controller.disable()
                 } else {
-                    window.cursor.mode = Cursor.CursorMode.DISABLED
+                    window.cursor.mode = CursorMode.DISABLED
                     controller.enable()
                 }
             },
-            Input.bind(Key.SPACE).to { ->
+            bindKey(Key.SPACE) {
                 if (playbackBar.state == PLAYING) {
                     playbackBar.state = PAUSED
                 } else {
                     playbackBar.state = PLAYING
                 }
             },
-            Input.bind(Key.A).to { ->
+            bindKey(Key.A) {
                 audioSource?.apply {
                     offsetSeconds = max(0f, min(duration.inWholeMilliseconds / 1000f, offsetSeconds - 5f))
                 }
             },
-            Input.bind(Key.D).to { ->
+            bindKey(Key.D) {
                 audioSource?.apply {
                     if (duration.inWholeMilliseconds / 1000f < offsetSeconds + 5f) {
                         playbackBar.state = PlaybackBar.State.STOPPED
-                        return@to
+                        return@bindKey null
                     }
 
                     offsetSeconds = max(0f, min((duration.inWholeMilliseconds / 1000f) - 1f, offsetSeconds + 5f))
                 }
             }
         )
-        window.cursor.disable()
 
-        camera.setPosition(Vector3f(0f, 1f, 0f))
+        camera.position = Vector3f(0f, 1f, 0f)
 
         val renderService = RenderService(window.screenBuffer, renderer, camera, window.size)
         entitySystem.addService(renderService)
@@ -228,7 +240,7 @@ class SynthwavePlane : App(
             drawSeparators = false
         ).apply { size = Vector2f(600f, 200f) }
         window.scene = Scene(
-            Batch(window.screenBuffer, renderer),
+            Batch(window.screenBuffer, renderer, textRenderer),
             Stack(
                 VBox(
                     fpsLabel, //FIXME how in gods name is the fps graph right-side up, and the fft is not??
@@ -388,15 +400,21 @@ fun doFFT(audioSource: AudioSource): List<Float> {
 }
 
 class GridShader : ShaderBuilder<GridShader.InputVertex, GridShader.Vertex, ColourBloomRenderTarget>(
-    object : Shader(listOf("Grid.glsl")) {} //FIXME this is stoopid too
+    object : Shader(listOf("shaders/Grid.glsl")) {} //FIXME this is stoopid too
 ) {
     data class InputVertex(val position: vec3) //FIXME org.etieskrill.engine.graphics.model.Vertex does not work?
     data class Vertex(override val position: vec4, val fragPosition: vec4) : ShaderVertexData
 
+    //TODO uniforms present in code MUST be added regardless of use, actually
     var viewPosition by uniform<vec3>()
     var offset by uniform<vec2>()
     var model by uniform<mat4>() //TODO base shader with "pipeline" uniforms
     var combined by uniform<mat4>()
+
+    init {
+        model = Matrix4f()
+        combined = Matrix4f()
+    }
 
     override fun program() {
         vertex {
@@ -443,7 +461,7 @@ class GridShader : ShaderBuilder<GridShader.InputVertex, GridShader.Vertex, Colo
 }
 
 class SunPostPass : PureShaderBuilder<SunPostPass.Vertex, ColourRenderTarget>(
-    object : Shader(listOf("SunPostPass.glsl"), false) {}
+    object : Shader(listOf("shaders/SunPostPass.glsl"), false) {}
 ) {
     class Vertex(override val position: vec4, val fragPosition: vec2) : ShaderVertexData
 

@@ -10,7 +10,7 @@ import io.github.etieskrill.injection.extension.shader.vec4
 import org.etieskrill.engine.graphics.shader.Shader
 
 class UiBoxShader : PureShaderBuilder<UiBoxShader.VertexData, ColourRenderTarget>(
-    object : Shader(listOf("UiBox.glsl")) {}
+    object : Shader(listOf("shaders/UiBox.glsl")) {}
 ) {
     data class VertexData(
         override val position: vec4,

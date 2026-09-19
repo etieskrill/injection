@@ -7,7 +7,7 @@ import io.github.etieskrill.injection.extension.shader.sampler2D
 import org.etieskrill.engine.graphics.shader.Shader
 
 class DilationOutlineShader : PureShaderBuilder<VertexData, ColourRenderTarget>(
-    object : Shader(listOf("DilationOutline.glsl")) {}
+    object : Shader(listOf("shaders/DilationOutline.glsl")) {}
 ) {
     val vertices by const(arrayOf(vec2(-1, -1), vec2(1, -1), vec2(-1, 1), vec2(1, 1)))
 

@@ -8,7 +8,7 @@ import io.github.etieskrill.injection.extension.shader.vec4
 import org.etieskrill.engine.graphics.shader.Shader
 
 class UiOutlineShader : PureShaderBuilder<VertexData, ColourRenderTarget>(
-    object : Shader(listOf("UiOutline.glsl"), false) {}
+    object : Shader(listOf("shaders/UiOutline.glsl"), false) {}
 ) {
     val vertices by const(arrayOf(vec2(-1, -1), vec2(1, -1), vec2(-1, 1), vec2(1, 1)))
 

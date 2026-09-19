@@ -20,12 +20,12 @@ open class KeyInputManager(
 
     data class TriggerAction(
         val trigger: InputTriggerEdge,
-        val action: (Double) -> Any
+        val action: (Double) -> Any?
     )
 
     fun addBindings(vararg bindings: InputBinding) = bindings.forEach {
         this.bindings[it.key] = TriggerAction(it.trigger, it.action)
-        it.group?.let { addGroups(it) }
+        it.group?.let { group -> addGroups(group) }
     }
 
     fun removeBindings(vararg bindings: InputBinding) = bindings.forEach {
@@ -88,7 +88,7 @@ open class KeyInputManager(
                 ?.let { handleOverrule(it, event) }
                 ?: pressed.add(event)
         } else {
-            pressed -= event
+            pressed.removeAll { it.key == event.key }
         }
 
         //TODO finish implementation of OverruleGroup.Mode#NONE

@@ -5,7 +5,7 @@ import org.etieskrill.engine.graphics.framebuffer.FrameBuffer
 import org.etieskrill.engine.graphics.pipeline.Pipeline
 import org.etieskrill.engine.graphics.pipeline.PostPassPipeline
 import org.etieskrill.engine.graphics.renderer.Renderer
-import org.etieskrill.engine.graphics.renderer.TextRenderer
+import org.etieskrill.engine.graphics.text.TextRenderer
 import org.etieskrill.engine.graphics.shader.impl.BlitShader
 import org.etieskrill.engine.graphics.shader.impl.TextShader
 import org.etieskrill.engine.graphics.shader.impl.UiBoxShader
@@ -64,7 +64,7 @@ class Batch(
      */
     fun renderCenteredBox(position: Vector2fc, size: Vector2fc, colour: Vector4fc) {
         uiBoxPipeline.shader.let {
-            it.position = position
+            it.position = (size / 2f) + position
             it.size = size
             it.colour = colour
             it.combined = combined
@@ -76,7 +76,7 @@ class Batch(
 
     fun renderBox(position: Vector2fc, size: Vector2fc, colour: Vector4fc) {
         uiBoxPipeline.shader.let {
-            it.position = (size / 2f) + position
+            it.position = position
             it.size = size
             it.colour = colour
             it.combined = combined
@@ -119,8 +119,6 @@ class Batch(
         cursorPosition: Vector2f? = null
     ) = textRenderer.render(text, font, position, size, textShader, combined, cursorPosition)
 
-//    val dummyVAO by lazy { GL30C.glGenVertexArrays() } //TODO add to renderer?
-
     fun blit(texture: Texture2D, position: Vector2fc, size: Vector2fc, rotation: Float, colour: Vector4fc? = null) {
         blitPipeline.shader.let {
             it.sprite = texture
@@ -131,8 +129,6 @@ class Batch(
             it.windowSize = Vector2f(frameBuffer.size)
             colour?.let { colour -> it.colour = colour }
         }
-
-//        GL30C.glBindVertexArray(dummyVAO) //TODO add to renderer?
 
         renderer.render(blitPipeline)
     }

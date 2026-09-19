@@ -65,6 +65,10 @@ kotlin {
 //            implementation "org.slf4j:slf4j-reload4j:2.0.17" //FIXME something about the build config is **REALLY** wrong
             api("io.github.oshai:kotlin-logging-jvm:7.0.13")
 
+        }
+
+        commonTest.dependencies {
+            implementation(kotlin("test"))
             //Test framework and libraries
 //            testImplementation(libs.junit.jupiter)
 //            testImplementation(libs.hamcrest)
@@ -73,10 +77,6 @@ kotlin {
         }
     }
 }
-
-//tasks.test {
-//    useJUnitPlatform()
-//}
 
 publishing {
     publications {

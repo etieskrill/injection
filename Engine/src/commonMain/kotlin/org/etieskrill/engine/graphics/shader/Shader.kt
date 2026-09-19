@@ -52,7 +52,8 @@ abstract class Shader protected constructor(
     }
 
     override fun setUniform(name: String, value: Any) {
-        val uniform = uniforms[name]!! //TODO strict uniforms
+        val uniform = uniforms[name]
+            ?: error("Failed to find uniform by name: $name in shader ${this::class.simpleName ?: this::class}") //TODO strict uniforms
         if (value::class != uniform.type.clazz && value::class != uniform.type.constClass) {
             logger.warn { "Tried setting uniform ${uniform.name} of type ${uniform.type} to incompatible value of type ${value::class.simpleName}" }
             return
@@ -93,7 +94,7 @@ abstract class Shader protected constructor(
             return
         }
 
-        if (uniform.value.contentEquals(value)) return
+//        if (uniform.value.contentEquals(value)) return
 
         uniform.value = value
         uniform.version++
@@ -110,7 +111,7 @@ abstract class Shader protected constructor(
             return
         }
 
-        if (uniform.value?.get(index) == value) return
+//        if (uniform.value?.get(index) == value) return
 
         uniform.value?.set(index, value)
         uniform.version++

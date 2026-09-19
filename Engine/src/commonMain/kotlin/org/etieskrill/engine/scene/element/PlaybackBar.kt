@@ -5,6 +5,7 @@ import org.etieskrill.engine.scene.container.HBox
 import org.joml.Vector2f
 import org.joml.Vector4f
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 
 class PlaybackBar(
     var totalDuration: Duration,
@@ -94,7 +95,7 @@ class PlaybackBar(
 
     var time: Duration = Duration.ZERO
         set(value) {
-            progressBar.value = time.inWholeMilliseconds.toFloat() / totalDuration.inWholeMilliseconds
+            progressBar.value = value.inWholeMilliseconds.toFloat() / totalDuration.inWholeMilliseconds
             val seconds = value.inWholeSeconds % 60
             progressLabel.text = "${value.inWholeMinutes}:${if (seconds < 10) 0 else ""}${seconds}"
             field = value

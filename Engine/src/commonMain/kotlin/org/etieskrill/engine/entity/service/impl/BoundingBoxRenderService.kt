@@ -7,6 +7,7 @@ import org.etieskrill.engine.entity.service.Service
 import org.etieskrill.engine.graphics.camera.Camera
 import org.etieskrill.engine.graphics.framebuffer.FrameBuffer
 import org.etieskrill.engine.graphics.model.box
+import org.etieskrill.engine.graphics.model.model
 import org.etieskrill.engine.graphics.pipeline.CullingMode
 import org.etieskrill.engine.graphics.pipeline.FillMode
 import org.etieskrill.engine.graphics.pipeline.Pipeline
@@ -27,7 +28,7 @@ class BoundingBoxRenderService(
 
     private val shader = WireframeShader()
 
-    private val box = box(Vector3f(1f))
+    private val box = model("box") { box(Vector3f(-0.5f), Vector3f(0.5f)) }
     private val boundingBoxTransform = Transform()
 
     private val pipeline = Pipeline(

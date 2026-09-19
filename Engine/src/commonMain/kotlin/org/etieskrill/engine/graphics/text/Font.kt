@@ -17,7 +17,7 @@ interface Font {
         val INVALID_PIXEL_SIZE: Vector2ic = Vector2i(-1)
 
         const val DEFAULT_FONT_SIZE = 24
-        const val DEFAULT_FONT = "fonts/AGENCY.TTF"
+        const val DEFAULT_FONT = "fonts/AGENCYB.TTF"
 
         fun getDefault(pixelHeight: Int = DEFAULT_FONT_SIZE, path: String = DEFAULT_FONT): Font {
             require(path.extension.lowercase() == "ttf") { "Must be TrueType file, but was ${path.extension}" }

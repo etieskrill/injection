@@ -9,24 +9,25 @@ import org.etieskrill.engine.entity.Entity
 import org.etieskrill.engine.entity.component.Drawable
 import org.etieskrill.engine.entity.component.Transform
 import org.etieskrill.engine.entity.service.impl.RenderService
+import org.etieskrill.engine.graphics.buffer.BufferObject
 import org.etieskrill.engine.graphics.buffer.VertexArrayAccessor
 import org.etieskrill.engine.graphics.buffer.VertexArrayObject
 import org.etieskrill.engine.graphics.camera.Camera
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera
 import org.etieskrill.engine.graphics.framebuffer.FrameBuffer
-import org.etieskrill.engine.graphics.gl.shader.impl.colour
 import org.etieskrill.engine.graphics.model.Skybox
 import org.etieskrill.engine.graphics.model.model
 import org.etieskrill.engine.graphics.model.sphere
 import org.etieskrill.engine.graphics.pipeline.Pipeline
 import org.etieskrill.engine.graphics.pipeline.PipelineConfig
 import org.etieskrill.engine.graphics.pipeline.PrimitiveType
-import org.etieskrill.engine.graphics.renderer.GLRenderer
+import org.etieskrill.engine.graphics.renderer.Renderer
 import org.etieskrill.engine.graphics.shader.Shader
 import org.etieskrill.engine.graphics.shader.impl.SingleColourShader
 import org.etieskrill.engine.input.controller.CursorCameraController
 import org.etieskrill.engine.util.FixedArrayDeque
 import org.etieskrill.engine.window.Window
+import org.etieskrill.engine.window.WindowSize
 import org.joml.Vector2ic
 import org.joml.Vector3f
 import org.joml.Vector3fc
@@ -41,12 +42,12 @@ fun main() {
 
 class `CG-A2-Solar-System` : App(
     Window(
-    size = Window.WindowSize.SVGA
+        size = WindowSize.SVGA
     )
 ) {
     init {
         val shader = SingleColourShader()
-        shader.colour = Vector4f(1f, 1f, 0f, 1f)
+        shader.setUniform("colour", Vector4f(1f, 1f, 0f, 1f))
 
         val sphereModel = model("sphere") { sphere(0.1f, 400) }
 
@@ -92,14 +93,14 @@ class `CG-A2-Solar-System` : App(
         }
 
         val camera = PerspectiveCamera(window.size).apply {
-            setOrbit(true)
-            setOrbitDistance(15f)
+            orbit = true
+            orbitDistance = 15f
             setRotation(-30f, 0f, 0f)
         }
 
         entitySystem.addService(PlanetService(window.screenBuffer, renderer, camera, window.size).apply {
             skybox = Skybox("textures/cubemaps/space")
-            setBlur(false)
+            blur = false
         })
 
         window.cursorInputs += CursorCameraController(camera)
@@ -124,17 +125,21 @@ data class Planet(
     var orbitAngle: Float = 0f,
 
     internal val previousPositions: FixedArrayDeque<Vector3fc> = FixedArrayDeque(1000),
-    internal val trailVAO: VertexArrayObject<Vector3fc> = VertexArrayObject(Vector3fcAccessor, numVertexElements = 1000),
+    internal val trailVAO: VertexArrayObject<Vector3fc> = VertexArrayObject(
+        Vector3fcAccessor,
+        BufferObject(Vector3fcAccessor, 1000),
+        null
+    ),
     internal var trailPipeline: Pipeline<TrailShader>? = null
 )
 
 private object Vector3fcAccessor : VertexArrayAccessor<Vector3fc>() {
     override fun registerFields() {
-        addField<Vector3fc> { vec3, buffer -> vec3.get(buffer) }
+        addField<Vector3fc> { vec3, buffer -> buffer += vec3 }
     }
 }
 
-open class PlanetService(screenBuffer: FrameBuffer, renderer: GLRenderer, camera: Camera, windowSize: Vector2ic) :
+open class PlanetService(screenBuffer: FrameBuffer, renderer: Renderer, camera: Camera, windowSize: Vector2ic) :
     RenderService(screenBuffer, renderer, camera, windowSize) {
 
     private val trailShader = TrailShader()
@@ -188,19 +193,20 @@ open class PlanetService(screenBuffer: FrameBuffer, renderer: GLRenderer, camera
         }
 
         trailShader.colour = planet.colour
-        trailShader.combined = camera.combined
+        trailShader.combined = _camera.combined
 
-        renderer.render(planet.trailPipeline)
+        _renderer.render(planet.trailPipeline!!)
 
-        postEffectsFrameBuffer.bind()
-        val shader = getConfiguredShader(targetEntity, drawable)
-        shader.setUniform("colour", planet.colour, false)
-        glLineWidth(1f)
-        if (!drawable.isWireframeEnabled) {
-            renderer.render(transform, drawable.model, shader, camera)
-        } else {
-            renderer.renderWireframe(transform, drawable.model, shader, camera)
-        }
+        val pipeline = Pipeline(
+            drawable.model.rootNode.children.flatMap { it.meshes }[0].vao,
+            PipelineConfig(),
+            getConfiguredShader(targetEntity, drawable).apply {
+                setUniform("colour", planet.colour)
+            },
+            postEffectsFrameBuffer
+        )
+
+        _renderer.render(pipeline)
     }
 
 }

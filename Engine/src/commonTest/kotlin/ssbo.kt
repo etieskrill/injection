@@ -3,6 +3,8 @@ import org.etieskrill.engine.graphics.buffer.VertexArrayAccessor
 import org.joml.Vector2f
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.opengl.GL
+import org.lwjgl.opengl.GL30C
+import org.lwjgl.opengl.GL43C
 import org.lwjgl.opengl.GL46C.*
 import org.lwjgl.opengl.GLCapabilities
 import kotlin.test.Test
@@ -18,12 +20,10 @@ class SSBOTest {
 
     object ColourAccessor : VertexArrayAccessor<Colour>() {
         override fun registerFields() {
-            addField<Vector2f> { vertex, buffer -> vertex.redGreen.get(buffer) }
-            addField<Float> { vertex, buffer -> buffer.putFloat(vertex.blue) }
-            addField<Float> { vertex, buffer -> buffer.putFloat(vertex.alpha) }
+            addField<Vector2f> { vertex, buffer -> buffer += vertex .redGreen }
+            addField<Float> { vertex, buffer -> buffer += vertex.blue }
+            addField<Float> { vertex, buffer -> buffer += vertex.alpha }
         }
-
-        private inline fun <reified T> addField(mapper: FieldMapper<Colour>) = addField(T::class.java, mapper)
     }
 
     @Test
@@ -58,7 +58,8 @@ class SSBOTest {
         assert(glGetError() == GL_NO_ERROR)
         ssbo.setData(listOf(Colour(Vector2f(0f, 0f), 1f, 1f), Colour(Vector2f(1f, 0f), 0f, 1f)))
         assert(glGetError() == GL_NO_ERROR)
-        ssbo.bind(0)
+        val id = ssbo::class.members.single { it.name == "id" }.call(ssbo) as Int
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, id)
         assert(glGetError() == GL_NO_ERROR)
 
         val vertexShader = glCreateShader(GL_VERTEX_SHADER)

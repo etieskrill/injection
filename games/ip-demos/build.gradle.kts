@@ -1,29 +1,41 @@
 plugins {
-    application
-    kotlin("jvm")
+    kotlin("multiplatform")
     id("io.github.etieskrill.injection.shader.dsl")
 }
 
 group = "org.etieskrill.games.ip-demos"
 version = "unspecified"
 
-dependencies {
-    implementation(project(":engine"))
-
-    implementation(libs.kotlin.coroutines)
-
-    implementation(platform("org.lwjgl:lwjgl-bom:${libs.versions.lwjgl.get()}")) //TODO figure out platforms & catalogs
-    implementation(libs.lwjgl.openal)
-    implementation(libs.lwjgl.opengl)
-    implementation(libs.lwjgl.stb)
-
-    //natives not specified as they are brought in by the engine
-
-    implementation("com.github.wendykierp:JTransforms:3.1")
-}
-
 kotlin {
     compilerOptions {
         freeCompilerArgs.add("-Xcontext-receivers")
+    }
+
+    jvm {
+        binaries {
+            executable {
+                mainClass = "io.github.etieskrill.games.ip.demos.synthwave.SynthwavePlaneKt"
+            }
+        }
+        mainRun {
+            mainClass = "io.github.etieskrill.games.ip.demos.synthwave.SynthwavePlaneKt"
+        }
+    }
+
+    sourceSets {
+        jvmMain.dependencies {
+            implementation(project(":engine"))
+
+            implementation(libs.kotlin.coroutines)
+
+            implementation(platform("org.lwjgl:lwjgl-bom:${libs.versions.lwjgl.get()}")) //TODO figure out platforms & catalogs
+            implementation(libs.lwjgl.openal)
+            implementation(libs.lwjgl.opengl)
+            implementation(libs.lwjgl.stb)
+
+            //natives not specified as they are brought in by the engine
+
+            implementation("com.github.wendykierp:JTransforms:3.1")
+        }
     }
 }

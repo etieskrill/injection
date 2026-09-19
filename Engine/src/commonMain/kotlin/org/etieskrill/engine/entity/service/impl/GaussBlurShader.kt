@@ -11,7 +11,7 @@ import io.github.etieskrill.injection.extension.shader.vec4
 import org.etieskrill.engine.graphics.shader.Shader
 
 class GaussBlurShader : PureShaderBuilder<GaussBlurShader.Vertex, ColourRenderTarget>(
-    object : Shader(listOf("GaussBlur.glsl"), false) {}
+    object : Shader(listOf("shaders/GaussBlur.glsl"), false) {}
 ) {
     data class Vertex(override val position: vec4, val texCoords: vec2) : ShaderVertexData
 

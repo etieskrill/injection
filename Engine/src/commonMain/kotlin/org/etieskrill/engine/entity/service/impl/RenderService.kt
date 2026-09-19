@@ -14,6 +14,7 @@ import org.etieskrill.engine.graphics.framebuffer.FrameBufferAttachmentType
 import org.etieskrill.engine.graphics.framebuffer.RenderBuffer
 import org.etieskrill.engine.graphics.framebuffer.RenderBufferType
 import org.etieskrill.engine.graphics.model.Skybox
+import org.etieskrill.engine.graphics.particle.ParticleRenderer
 import org.etieskrill.engine.graphics.pipeline.FillMode
 import org.etieskrill.engine.graphics.pipeline.Pipeline
 import org.etieskrill.engine.graphics.pipeline.PipelineConfig
@@ -37,7 +38,7 @@ import org.joml.Vector2ic
 import org.joml.Vector4ic
 import kotlin.reflect.KClass
 
-class RenderService(
+open class RenderService(
     private val frameBuffer: FrameBuffer,
     internal val renderer: Renderer,
     private val camera: Camera,
@@ -48,8 +49,11 @@ class RenderService(
     var skybox: Skybox? = null
 ) : Service {
 
-    private val shader = StaticShader()
-    private val lightSourceShader = LightSourceShader()
+    protected val _renderer: Renderer = renderer
+    protected val _camera: Camera = camera
+
+    protected val shader = StaticShader()
+    protected val lightSourceShader = LightSourceShader()
 
     private val gaussBlurPostBuffers = GaussBlurPostBuffers(renderer, windowSize)
     val postEffectsFrameBuffer = gaussBlurPostBuffers.frameBuffer
@@ -71,8 +75,14 @@ class RenderService(
         )
     )
 
-    internal val fullScreenPipeline = PostPassPipeline(FullScreenColourShader(), outlineFrameBuffer, opaque = false, depthTest = false)
-    internal val outlinePipeline = PostPassPipeline(DilationOutlineShader(), postEffectsFrameBuffer, opaque = false, depthTest = false)
+    internal val fullScreenPipeline = PostPassPipeline(
+        FullScreenColourShader(), outlineFrameBuffer,
+        opaque = false, depthTest = false, stencilMode = StencilMode.FILTER
+    )
+    internal val outlinePipeline = PostPassPipeline(
+        DilationOutlineShader(), postEffectsFrameBuffer,
+        opaque = false, depthTest = false, stencilMode = StencilMode.FILTER_NOT
+    )
 
     var blur = true
 
@@ -82,9 +92,14 @@ class RenderService(
     // - "inner services"?
     // - service groups?
     // - global render state -> context as entity?
-    @Deprecated("just don't") val boundingBoxRenderService = BoundingBoxRenderService(frameBuffer, renderer, camera)
-    @Deprecated("just don't") val particleRenderService = ParticleRenderService(TODO(), camera)
-    @Deprecated("man") private var lastDelta = 0.0
+    @Deprecated("just don't")
+    val boundingBoxRenderService = BoundingBoxRenderService(frameBuffer, renderer, camera)
+
+    @Deprecated("just don't")
+    val particleRenderService = ParticleRenderService(ParticleRenderer(renderer.context), camera)
+
+    @Deprecated("man")
+    private var lastDelta = 0.0
 
     private data class ShaderParams(
         val uniformBindings: MutableMap<String, Any> = mutableMapOf(),
@@ -182,9 +197,9 @@ class RenderService(
                 )
 
                 pipeline.shader.apply {
-                    setUniform("model", modelTransform.matrix)
-                    setUniform("normalMat", normalMatrix)
-                    setUniform("combined", camera.combined)
+                    if ("model" in uniforms) setUniform("model", modelTransform.matrix)
+                    if ("normalMat" in uniforms) setUniform("normalMat", normalMatrix)
+                    if ("combined" in uniforms) setUniform("combined", camera.combined)
                 }
 
                 renderer.render(pipeline)
@@ -194,7 +209,7 @@ class RenderService(
         lastDelta = delta
     }
 
-    private fun getConfiguredShader(entity: Entity, drawable: Drawable): Shader {
+    protected fun getConfiguredShader(entity: Entity, drawable: Drawable): Shader {
         drawable.shader?.let {
             configureShader(it, shaderParams)
             return it
@@ -221,9 +236,13 @@ class RenderService(
     private fun configureShader(shader: Shader, params: ShaderParams) {
         if (shader in params.configuredShaders) return
 
-        params.uniformBindings.forEach(shader::setUniform)
-        params.uniformArrayBindings.forEach(shader::setUniformArray)
-        params.textureBindings.forEach(shader::setTexture)
+        params.uniformBindings.forEach { (name, value) -> if (name in shader.uniforms) shader.setUniform(name, value) }
+        params.uniformArrayBindings.forEach { (name, value) ->
+            if (name in shader.uniformArrays) shader.setUniformArray(name, value)
+        }
+        params.textureBindings.forEach { (name, texture) ->
+            if (name in shader.uniforms) shader.setTexture(name, texture)
+        }
     }
 
     override fun postProcess(entities: List<Entity>) {

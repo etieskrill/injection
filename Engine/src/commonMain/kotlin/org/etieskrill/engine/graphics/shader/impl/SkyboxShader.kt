@@ -11,7 +11,7 @@ import org.etieskrill.engine.graphics.shader.Shader
 import org.joml.div
 
 class SkyboxShader : PureShaderBuilder<SkyboxShader.Vertex, ColourRenderTarget>(
-    object : Shader(listOf("Skybox.glsl")) {}
+    object : Shader(listOf("shaders/Skybox.glsl")) {}
 ) {
     data class Vertex(override val position: vec4, val texCoord: vec3) : ShaderVertexData
 

@@ -1,14 +1,15 @@
-package org.etieskrill.engine.graphics.renderer
+package org.etieskrill.engine.graphics.text
 
 import org.etieskrill.engine.graphics.GraphicsContext
 import org.etieskrill.engine.graphics.shader.Shader
-import org.etieskrill.engine.graphics.text.Font
 import org.joml.Matrix4fc
 import org.joml.Vector2f
 import org.joml.Vector2fc
 import org.joml.Vector2ic
 
 expect class TextRenderer {
+
+    constructor(context: GraphicsContext)
 
     /**
      * Computes the cursor position relative to the [text]'s position given the integer row and column in

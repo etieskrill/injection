@@ -10,6 +10,8 @@ import org.etieskrill.engine.graphics.gl.GLUtils
 import org.etieskrill.engine.graphics.gl.shader.ShaderCreationException
 import org.etieskrill.engine.graphics.shader.UniformType.*
 import org.etieskrill.engine.graphics.texture.Texture
+import org.etieskrill.engine.graphics.texture.Texture2D
+import org.etieskrill.engine.graphics.texture.Texture2DInstance
 import org.etieskrill.engine.graphics.texture.TextureInstance
 import org.etieskrill.engine.util.ResourceReader.getResource
 import org.etieskrill.engine.util.extension
@@ -34,7 +36,9 @@ import org.lwjgl.opengl.GL31C.GL_INVALID_INDEX
 import org.lwjgl.opengl.GL32C.GL_GEOMETRY_SHADER
 import org.lwjgl.opengl.GL40C.glUniform1d
 import org.lwjgl.opengl.GL40C.glUniform1dv
+import org.lwjgl.opengl.GL43C.GL_PROGRAM
 import org.lwjgl.opengl.GL43C.glGetProgramResourceIndex
+import org.lwjgl.opengl.GL43C.glObjectLabel
 import org.lwjgl.system.MemoryStack
 import kotlin.reflect.KClass
 
@@ -94,7 +98,7 @@ internal actual class ShaderInstance internal constructor(
         createShader(files)
 
         if (GLUtils.checkError("OpenGL error during shader creation")) {
-            logger.info { "Successfully created instance of shader ${descriptor::class.name}" }
+            logger.debug { "Successfully created instance of shader ${descriptor::class.name}" }
         }
     }
 
@@ -102,6 +106,8 @@ internal actual class ShaderInstance internal constructor(
         GLUtils.clearError()
         if (files.size > 1) createProgram(files)
         else createSingleFileProgram(files.single())
+
+        glObjectLabel(GL_PROGRAM, programId, descriptor::class.name)
 
 //        bind()
         //TODO move to front-end
@@ -387,8 +393,7 @@ internal actual class ShaderInstance internal constructor(
 
                             val unit = context.textureBindings.indexOfFirst { it == texture }.takeIf { it != -1 }
                                 ?: context.textureBindings.indexOf(null).takeIf { it != -1 }
-                                ?: context.textureBindings.indexOfFirst { it !in boundTextures }
-                                    .takeIf { it != -1 }
+                                ?: context.textureBindings.indexOfFirst { it !in boundTextures }.takeIf { it != -1 }
                                 ?: error("oopsie daisy")
 
                             boundTextures += texture

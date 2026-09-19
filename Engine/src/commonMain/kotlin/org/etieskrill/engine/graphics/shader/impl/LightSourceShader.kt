@@ -4,4 +4,4 @@ import io.github.etieskrill.injection.extension.shader.reflection.ReflectShader
 import org.etieskrill.engine.graphics.shader.Shader
 
 @ReflectShader
-class LightSourceShader : Shader(listOf("LightSource.vert", "LightSource.frag"), false)
+class LightSourceShader : Shader(listOf("shaders/LightSource.vert", "shaders/LightSource.frag"), false)

@@ -1,4 +1,5 @@
 import org.etieskrill.engine.graphics.model.Model
+import org.etieskrill.engine.graphics.model.loader.loadModel
 import org.etieskrill.engine.window.Window
 import kotlin.test.Test
 import kotlin.test.assertNotNull
@@ -14,7 +15,7 @@ class Window {
 
     @Test
     fun shouldLoadModel() {
-        assertNotNull(Model.ofFile("backpack.obj"))
+        assertNotNull(loadModel("backpack.obj"))
     }
 
 }

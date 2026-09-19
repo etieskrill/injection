@@ -9,16 +9,18 @@ data class KeyEvent(
     fun withoutModifiers(): KeyEvent = KeyEvent(key, action, emptyList())
 
     override fun equals(other: Any?) = other is KeyEvent
-            && key == other.key
+            && key.aliasEquals(other.key)
             && action == other.action
             && key.mod == other.key.mod
-            && (key.mod != null || modifiers != other.modifiers)
+            && (key.mod != null || modifiers == other.modifiers)
 
     override fun hashCode(): Int {
-        var result = key.hashCode()
+        val resolvedKey = key.alias?.alias ?: key.alias ?: key
+
+        var result = resolvedKey.hashCode()
         result = 31 * result + action.hashCode()
 
-        if (key.mod != null) return result
+        if (resolvedKey.mod != null) return result
 
         for (modifier in modifiers) {
             result = 31 * result + modifier.hashCode()

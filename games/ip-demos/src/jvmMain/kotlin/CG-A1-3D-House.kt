@@ -5,10 +5,15 @@ import io.github.etieskrill.injection.extension.shader.mat4
 import io.github.etieskrill.injection.extension.shader.vec3
 import io.github.etieskrill.injection.extension.shader.vec4
 import org.etieskrill.engine.application.App
+import org.etieskrill.engine.buffer.ByteBuffer
 import org.etieskrill.engine.graphics.camera.OrthographicCamera
 import org.etieskrill.engine.graphics.buffer.BufferObject
+import org.etieskrill.engine.graphics.buffer.BufferType
 import org.etieskrill.engine.graphics.buffer.VertexArrayAccessor
 import org.etieskrill.engine.graphics.buffer.VertexArrayObject
+import org.etieskrill.engine.graphics.pipeline.CullingMode
+import org.etieskrill.engine.graphics.pipeline.Pipeline
+import org.etieskrill.engine.graphics.pipeline.PipelineConfig
 import org.etieskrill.engine.graphics.shader.Shader
 import org.etieskrill.engine.input.controller.CursorCameraController
 import org.joml.Matrix4f
@@ -60,8 +65,8 @@ val houseIndices = intArrayOf(
 data class Vertex(val position: Vector3f, val colour: Vector3f)
 object VertexAccessor : VertexArrayAccessor<Vertex>() {
     override fun registerFields() {
-        addField<Vector3f> { vertex, buffer -> vertex.position.get(buffer) }
-        addField<Vector3f> { vertex, buffer -> vertex.colour.get(buffer) }
+        addField<Vector3f> { vertex, buffer -> buffer += vertex.position }
+        addField<Vector3f> { vertex, buffer -> buffer += vertex.colour }
     }
 }
 
@@ -72,23 +77,27 @@ fun main() {
 class `CG-03-A` : App() {
     val houseVAO = VertexArrayObject(
         VertexAccessor,
-        BufferObject(VertexAccessor, houseVertices.size).also {
-            val buffer = BufferUtils.createByteBuffer(houseVertices.size * VertexAccessor.elementByteSize)
-            buffer.asFloatBuffer().put(houseVertices)
-            it.setData(buffer)
+        BufferObject(VertexAccessor, houseVertices.size).also { bufferObject ->
+            val buffer = ByteBuffer(houseVertices.size * VertexAccessor.elementByteSize.toLong())
+            houseVertices.forEach { buffer += it }
+            bufferObject.setData(buffer)
         },
-        indices = houseIndices.toMutableList()
+        BufferObject(
+            VertexArrayObject.IndexArrayAccessor,
+            houseIndices.size,
+            BufferType.ELEMENT_ARRAY
+        ).also { it.setData(houseIndices.asList()) }
     )
 
     val shader = BasicShader()
 
     val camera = OrthographicCamera(window.size)
         .apply {
-            setOrbit(true)
-            setOrbitDistance(200f)
+            orbit = true
+            orbitDistance = 200f
             setRotation(45f, 45f, 0f)
 
-            setFar(500f)
+            far = 500f
         }
 
     init {
@@ -97,7 +106,6 @@ class `CG-03-A` : App() {
     }
 
     override fun loop(delta: Double) {
-        houseVAO.bind()
         shader.transform = Matrix4f(camera.combined) * Matrix4f().scale(100f, -100f, 100f)
 //        shader.transform = Matrix4f()
 //            .lookAt(Vector3f(1f), Vector3f(0f), Vector3f(0f, 1f, 0f))
@@ -106,10 +114,17 @@ class `CG-03-A` : App() {
 //                .5f * window.currentSize.y(), -.5f * window.currentSize.y(),
 //                0.1f, 100f
 //            )
-        shader.start()
 
-//        glDisable(GL_CULL_FACE)
-        glDrawElements(GL_TRIANGLES, houseIndices.size, GL_UNSIGNED_INT, 0)
+        val pipeline = Pipeline(
+            houseVAO,
+            PipelineConfig(
+//                cullingMode = CullingMode.NONE
+            ),
+            shader,
+            window.screenBuffer
+        )
+
+        renderer.render(pipeline)
     }
 }
 

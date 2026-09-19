@@ -147,6 +147,16 @@ actual class Renderer actual constructor(
                 glStencilFunc(GL_ALWAYS, 0xFF, 0xFF)
                 glStencilMask(0xFF)
             }
+            StencilMode.FILTER -> {
+                glEnable(GL_STENCIL_TEST)
+                glStencilFunc(GL_EQUAL, 0xFF, 0xFF)
+                glStencilMask(0x00)
+            }
+            StencilMode.FILTER_NOT -> {
+                glEnable(GL_STENCIL_TEST)
+                glStencilFunc(GL_NOTEQUAL, 0xFF, 0xFF)
+                glStencilMask(0x00)
+            }
         }
 
         val vertexCount: Int

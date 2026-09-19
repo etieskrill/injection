@@ -10,8 +10,10 @@ import java.net.URI
 import java.net.URISyntaxException
 import java.nio.file.FileSystems
 import java.nio.file.Files
+import java.nio.file.Path
 import kotlin.io.path.Path
 import kotlin.io.path.pathString
+import kotlin.io.path.toPath
 
 private val logger = KotlinLogging.logger {}
 
@@ -23,6 +25,7 @@ actual fun resolveResource(path: String): String? =
     ClassLoader.getSystemResource(path)?.let { path }
         ?: ClassLoader.getSystemResource(ENGINE_RESOURCE_PATH + path)?.let { ENGINE_RESOURCE_PATH + path }
 
+//FIXME cannot find folders by name in jar, only in dev build
 actual fun listResources(path: String): List<String> {
     val parentResource = resolveResource(path) ?: throw ResourceLoadException("'$path' does not exist")
 
@@ -36,7 +39,7 @@ actual fun listResources(path: String): List<String> {
     //kinda hacky, dunno how reliable this is
     when (realPath.scheme) {
         "file" -> { //unarchived dev build
-            return listFilePaths(realPath.path)
+            return listFilePaths(realPath.toPath())
                 .map {
                     it.substring(
                         realPath.path.length
@@ -49,7 +52,7 @@ actual fun listResources(path: String): List<String> {
         "jar" -> { //jar-packaged jvm build
             try {
                 FileSystems.newFileSystem(realPath, mutableMapOf<String, Any>()).use {
-                    return listFilePaths(it.getPath(parentResource).pathString)
+                    return listFilePaths(it.getPath(parentResource))
                 }
             } catch (e: IOException) {
                 throw ResourceLoadException("Failed to open jar file system", e)
@@ -60,9 +63,9 @@ actual fun listResources(path: String): List<String> {
     }
 }
 
-private fun listFilePaths(path: String): List<String> {
+private fun listFilePaths(path: Path): List<String> {
     try {
-        Files.walk(Path(path)).use { files ->
+        Files.walk(path).use { files ->
             return files
                 .filter { Files.isRegularFile(it) }
                 .map { it.toString() }

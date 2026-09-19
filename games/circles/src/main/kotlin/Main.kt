@@ -50,42 +50,42 @@ class Main : App(
     )
 ) {
 
-//    val sdfBuffer = StorageBufferObject(100, SDFShader.SDFVertexAccessor)
-//    val sdfColourBuffer = Texture2D(
-//        Vector2i(800),
-//        type = TextureType.DIFFUSE,
-//        format = TextureFormat.RGBA,
-//        minFilter = TextureMinFilter.LINEAR //FIXME should mipmaps be rebuilt for every frame if enabled on a render target / any texture that changes dynamically?
-//    )
-//    val sdfFrameBuffer = FrameBuffer(Vector2i(800), mapOf(COLOUR0 to sdfColourBuffer))
-//    val pipeline = PostPassPipeline(SDFShader(), sdfFrameBuffer)
+    val sdfBuffer = StorageBufferObject(100, SDFShader.SDFVertexAccessor)
+    val sdfColourBuffer = Texture2D(
+        Vector2i(800),
+        type = TextureType.DIFFUSE,
+        format = TextureFormat.RGBA,
+        minFilter = TextureMinFilter.LINEAR //FIXME should mipmaps be rebuilt for every frame if enabled on a render target / any texture that changes dynamically?
+    )
+    val sdfFrameBuffer = FrameBuffer(Vector2i(800), mapOf(COLOUR0 to sdfColourBuffer))
+    val pipeline = PostPassPipeline(SDFShader(), sdfFrameBuffer)
 
-//    val screenPipeline = PostPassPipeline(BlitShader(), window.screenBuffer, opaque = false)
+    val screenPipeline = PostPassPipeline(BlitShader(), window.screenBuffer, opaque = false)
 
-//    val primRuneFire = EmitterRune(
-//        "fire", 10f, mapOf(VisType("fire", Vector4f(1f, 0.5f, 0f, 1f)) to 1f)
-//    ) { pos, dir, placedOn ->
-//        placedOn.getComponent<Heatable>()?.apply {
-//            energy += 100
-//            return@EmitterRune
-//        }
-//
-//        placedOn.getComponent<Environment>()
-//            ?.apply { //FIXME no idea if this is agreeable with env entity/entities
-//                addHeatEnergy(pos, 100f)
-//                return@EmitterRune
-//            }
-//    }
-//    val auxRuneGebo = AuxiliaryRune("gebo")
-//    val auxRuneNauthiz = AuxiliaryRune("nauthiz")
-//    val heatingCircle = Circle(
-//        placedOn = entitySystem.createEntity {}, visCapacity = 100f,
-//        streamUpkeepAbsolute = 1f, streamUpkeepRelative = 0.2f,
-//        focalRune = primRuneFire, runes = listOf(), numRings = 1,
-//        auxRunes = listOf(
-//            listOf(listOf(auxRuneGebo, auxRuneNauthiz, auxRuneGebo, auxRuneNauthiz, auxRuneGebo, auxRuneNauthiz))
-//        )
-//    )
+    val primRuneFire = EmitterRune(
+        "fire", 10f, mapOf(VisType("fire", Vector4f(1f, 0.5f, 0f, 1f)) to 1f)
+    ) { pos, dir, placedOn ->
+        placedOn.getComponent<Heatable>()?.apply {
+            energy += 100
+            return@EmitterRune
+        }
+
+        placedOn.getComponent<Environment>()
+            ?.apply { //FIXME no idea if this is agreeable with env entity/entities
+                addHeatEnergy(pos, 100f)
+                return@EmitterRune
+            }
+    }
+    val auxRuneGebo = AuxiliaryRune("gebo")
+    val auxRuneNauthiz = AuxiliaryRune("nauthiz")
+    val heatingCircle = Circle(
+        placedOn = entitySystem.createEntity {}, visCapacity = 100f,
+        streamUpkeepAbsolute = 1f, streamUpkeepRelative = 0.2f,
+        focalRune = primRuneFire, runes = listOf(), numRings = 1,
+        auxRunes = listOf(
+            listOf(listOf(auxRuneGebo, auxRuneNauthiz, auxRuneGebo, auxRuneNauthiz, auxRuneGebo, auxRuneNauthiz))
+        )
+    )
 
     val camera = PerspectiveCamera(window.size)
         .apply { orbit = true; orbitDistance = 5f; setRotation(-45f, 45f, 0f) }
@@ -94,22 +94,22 @@ class Main : App(
     val shader = SolidShader()
 
     init {
-//        entitySystem.createEntity {
-//            +Transform()
-//            +heatingCircle
-//        }
+        entitySystem.createEntity {
+            +Transform()
+            +heatingCircle
+        }
 
         entitySystem.addServices(
-//            CircleService(object : VisEnvironment {
-//                override fun requestVis(id: Int, type: VisType, position: Vector3fc, strength: Float, max: Float) = Unit
-//                override fun getVis(id: Int, type: VisType) = 5f
-//                override fun update(delta: Float) = Unit
-//            }),
-//            HeatService(object : Environment {
-//                override fun getTemperature(position: Vector3fc) = 10f
-//                override fun addHeatEnergy(position: Vector3fc, energy: Float) = Unit
-//                override fun update(delta: Float) = Unit
-//            }),
+            CircleService(object : VisEnvironment {
+                override fun requestVis(id: Int, type: VisType, position: Vector3fc, strength: Float, max: Float) = Unit
+                override fun getVis(id: Int, type: VisType) = 5f
+                override fun update(delta: Float) = Unit
+            }),
+            HeatService(object : Environment {
+                override fun getTemperature(position: Vector3fc) = 10f
+                override fun addHeatEnergy(position: Vector3fc, energy: Float) = Unit
+                override fun update(delta: Float) = Unit
+            }),
             DeferredRenderService(renderer, window.screenBuffer, camera)
         )
 
@@ -132,32 +132,17 @@ class Main : App(
     }
 
     override fun render() {
-//        val pipeline = Pipeline(
-//            model.model.rootNode.children.flatMap { it.meshes }[0].vao,
-//            PipelineConfig(), model.shader as Shader, window.screenBuffer
-//        )
-//
-//        shader.mesh = Matrix4f()
-//        val modelMatrix = model.model.rootNode.children[0].getGlobalTransform().matrix
-//        shader.model = modelMatrix
-//        shader.normal = modelMatrix.normal(Matrix3f())
-//        shader.combined = camera.combined
-//        shader.viewPosition = camera.viewPosition
-//        shader.colour = Vector4f(0.75f, 0.75f, 0.75f, 1f)
-//
-//        renderer.render(pipeline)
+        sdfFrameBuffer.clear()
+        renderCircle(heatingCircle, Vector2f(0f), 0.5f, renderer)
 
-//        sdfFrameBuffer.clear()
-//        renderCircle(heatingCircle, Vector2f(0f), 0.5f, renderer)
-
-//        screenPipeline.shader.apply {
-//            sprite = sdfColourBuffer
-//            useSpriteColour = true
-//            position = Vector2f(window.size) - Vector2f(200f)
-//            size = Vector2f(200f)
-//            windowSize = Vector2f(window.size)
-//        }
-//        renderer.render(screenPipeline)
+        screenPipeline.shader.apply {
+            sprite = sdfColourBuffer
+            useSpriteColour = true
+            position = Vector2f(window.size) - Vector2f(200f)
+            size = Vector2f(200f)
+            windowSize = Vector2f(window.size)
+        }
+        renderer.render(screenPipeline)
     }
 
 }

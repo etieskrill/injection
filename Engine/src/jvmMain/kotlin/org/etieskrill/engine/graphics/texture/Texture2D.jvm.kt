@@ -27,8 +27,10 @@ internal actual class Texture2DInstance(
         }
 
         bind(0)
-        val texelFormat =
-            if (descriptor.format != TextureFormat.DEPTH_STENCIL) GL_UNSIGNED_BYTE else GL_UNSIGNED_INT_24_8
+        val texelFormat = when (descriptor.format) {
+            TextureFormat.DEPTH_STENCIL -> GL_UNSIGNED_INT_24_8
+            else -> GL_UNSIGNED_BYTE
+        }
 
         val data = when {
             descriptor.buffer != null -> createByteBuffer(descriptor.buffer.size).put(descriptor.buffer).flip()

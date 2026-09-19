@@ -7,11 +7,14 @@ import io.github.etieskrill.injection.extension.shader.vec2
 import io.github.etieskrill.injection.extension.shader.vec4
 import org.etieskrill.engine.scene.Batch
 import org.etieskrill.engine.graphics.camera.OrthographicCamera
+import org.etieskrill.engine.graphics.pipeline.PostPassPipeline
 import org.etieskrill.engine.graphics.shader.Shader
-import org.etieskrill.engine.graphics.texture.Texture.Wrapping
 import org.etieskrill.engine.graphics.texture.Texture2D
+import org.etieskrill.engine.graphics.texture.TextureType
+import org.etieskrill.engine.graphics.texture.TextureWrapping
 import org.etieskrill.engine.input.KeyInputHandler
 import org.etieskrill.engine.input.Key
+import org.etieskrill.engine.input.KeyEventAction
 import org.etieskrill.engine.input.MouseGestureHandler
 import org.etieskrill.engine.scene.Node.Alignment
 import org.etieskrill.engine.scene.Scene
@@ -19,6 +22,7 @@ import org.etieskrill.engine.scene.container.VBox
 import org.etieskrill.engine.scene.element.Button
 import org.etieskrill.engine.scene.element.Label
 import org.etieskrill.engine.window.Cursor
+import org.etieskrill.engine.window.CursorShape
 import org.etieskrill.engine.window.Window
 import org.joml.Vector2d
 import org.joml.Vector2f
@@ -37,25 +41,23 @@ fun main() {
 class App : org.etieskrill.engine.application.App(
     Window(
         resizeable = true,
-        cursor = Cursor(Cursor.CursorShape.RESIZE_ALL),
+        cursor = Cursor(CursorShape.RESIZE_ALL),
         refreshRate = 10000u,
-    transparency = true
+        transparency = true
     )
 ) {
-    var wrapping: TextureWrapping = TextureWrapping.NONE
+    var wrapping: Wrapping = Wrapping.NONE
         set(value) {
             field = value
-            texture.setWrapping(
-                when (value) {
-                    TextureWrapping.NONE -> Wrapping.CLAMP_TO_BORDER
-                    TextureWrapping.CLAMP_TO_EDGE -> Wrapping.CLAMP_TO_EDGE
-                    TextureWrapping.REPEAT -> Wrapping.REPEAT
-                    TextureWrapping.MIRROR -> Wrapping.MIRRORED_REPEAT
-                }
-            )
+            texture.wrapping = when (value) {
+                Wrapping.NONE -> TextureWrapping.CLAMP_TO_BORDER
+                Wrapping.CLAMP_TO_EDGE -> TextureWrapping.CLAMP_TO_EDGE
+                Wrapping.REPEAT -> TextureWrapping.REPEAT
+                Wrapping.MIRROR -> TextureWrapping.MIRRORED_REPEAT
+            }
         }
 
-    val texture: Texture2D = Texture2D.FileBuilder("textures/lena_rgb.png").build()
+    val texture: Texture2D = Texture2D.createFromFile("textures/lena_rgb.png", TextureType.DIFFUSE)
     val shader: TextureWrappingShader = TextureWrappingShader()
     val dummyVAO: Int = glGenVertexArrays()
 
@@ -66,13 +68,18 @@ class App : org.etieskrill.engine.application.App(
     val modeLabel = Label()
 
     init {
-        wrapping = TextureWrapping.NONE
+        wrapping = Wrapping.NONE
 
-        window.keyInputs += KeyInputHandler { type, key, action, modifiers ->
-            if (key == Key.E.input.value && action == 1) nextMode()
-            else if (key == Key.Q.input.value && action == 1) previousMode()
-            else return@KeyInputHandler true
-            false
+        window.keyInputs += KeyInputHandler { event ->
+            if (event.key == Key.E && event.action == KeyEventAction.PRESS) {
+                nextMode()
+                true
+            } else if (event.key == Key.Q && event.action == KeyEventAction.PRESS) {
+                previousMode()
+                true
+            } else {
+                false
+            }
         }
 
         window.cursorInputs += object : MouseGestureHandler() {
@@ -89,7 +96,7 @@ class App : org.etieskrill.engine.application.App(
         }
 
         window.scene = Scene(
-            Batch(window.screenBuffer, renderer),
+            Batch(window.screenBuffer, renderer, textRenderer),
             VBox(
                 fpsLabel,
                 modeLabel,
@@ -122,30 +129,29 @@ class App : org.etieskrill.engine.application.App(
     }
 
     private fun nextMode() {
-        wrapping = TextureWrapping.entries[(wrapping.ordinal + 1) % TextureWrapping.entries.size]
+        wrapping = Wrapping.entries[(wrapping.ordinal + 1) % TextureWrapping.entries.size]
     }
 
     private fun previousMode() {
-        wrapping = TextureWrapping.entries[(wrapping.ordinal - 1)
-            .let { if (it < 0) it + TextureWrapping.entries.size else it } % TextureWrapping.entries.size]
+        wrapping = Wrapping.entries[(wrapping.ordinal - 1)
+            .let { if (it < 0) it + Wrapping.entries.size else it } % Wrapping.entries.size]
     }
 
     override fun loop(delta: Double) {
-        check(dummyVAO != -1)
-        glBindVertexArray(dummyVAO)
-        shader.start()
         shader.targetTexture = texture
         shader.windowSize = window.size
         shader.offset = Vector2f(textureOffset)
         shader.targetTextureSize = textureSize
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)
+
+        val pipeline = PostPassPipeline(shader, window.screenBuffer)
+        renderer.render(pipeline)
 
         fpsLabel.text = "FPS: %.0f".format(pacer.averageFPS)
         modeLabel.text = "Current mode: $wrapping"
     }
 }
 
-enum class TextureWrapping { NONE, CLAMP_TO_EDGE, REPEAT, MIRROR } //none is CLAMP_TO_BORDER - so long as border is black
+enum class Wrapping { NONE, CLAMP_TO_EDGE, REPEAT, MIRROR } //none is CLAMP_TO_BORDER - so long as border is black
 
 class TextureWrappingShader : PureShaderBuilder<TextureWrappingShader.Vertex, ColourRenderTarget>(
     object : Shader(listOf("TextureWrapping.glsl")) {}

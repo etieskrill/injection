@@ -94,7 +94,13 @@ class TrueTypeFont(
         //Currently, if any glyph is wider than it is tall, this will cause everything to break TODO maybe not?
         pixelSize.set(pixelWidth, pixelHeight)
 
-        val textureBuffer = ByteArray(pixelWidth * pixelHeight * face.num_glyphs().toInt())
+        if (128 < face.num_glyphs().toInt()) {
+            logger.warn {
+                "Font contains ${face.num_glyphs()} glyphs. Only ASCII fonts are supported right now, and any glyphs" +
+                        " above index ${Font.NUM_CHARS_ASCII} are ignored"
+            }
+        }
+        val textureBuffer = ByteArray(pixelWidth * pixelHeight * Font.NUM_CHARS_ASCII)
         var bufferHead = 0
 
         val glyphs = mutableMapOf<Char, Glyph>()
@@ -155,7 +161,9 @@ class TrueTypeFont(
             lineHeight,
             minLineHeight,
             pixelSize,
-            face.family_nameString(), face.style_nameString(), texture
+            face.family_nameString(),
+            face.style_nameString(),
+            texture
         )
     }
 

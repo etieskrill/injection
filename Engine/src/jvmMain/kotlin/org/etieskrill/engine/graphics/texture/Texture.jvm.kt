@@ -34,6 +34,10 @@ internal actual abstract class TextureInstance<T : Texture>(
 
     internal abstract val glTarget: Int
 
+    init {
+        GLUtils.clearError()
+    }
+
     protected val id: Int = glGenTextures()
 
     protected abstract fun bufferTextureData()
@@ -55,6 +59,8 @@ internal actual abstract class TextureInstance<T : Texture>(
             }
         )
 
+        GLUtils.checkErrorThrowing("Error while setting texture parameters: $this")
+
         bufferTextureData()
         GLUtils.checkErrorThrowing("Error while buffering texture data: $this")
 
@@ -64,7 +70,7 @@ internal actual abstract class TextureInstance<T : Texture>(
             TextureFormat.GRAY, TextureFormat.DEPTH, TextureFormat.STENCIL, TextureFormat.DEPTH_STENCIL
                 -> intArrayOf(GL_RED, GL_RED, GL_RED, GL_ONE)
 
-            TextureFormat.ALPHA -> intArrayOf(GL_ONE, GL_ONE, GL_ONE, GL_ALPHA, GL_RED)
+            TextureFormat.ALPHA -> intArrayOf(GL_ONE, GL_ONE, GL_ONE, GL_RED)
             TextureFormat.GRAY_ALPHA -> intArrayOf(GL_RED, GL_RED, GL_RED, GL_GREEN)
             TextureFormat.RGB, TextureFormat.SRGB -> intArrayOf(GL_RED, GL_GREEN, GL_BLUE, GL_ONE)
             TextureFormat.RGBA, TextureFormat.SRGBA, TextureFormat.RGBA_HDR
@@ -73,7 +79,7 @@ internal actual abstract class TextureInstance<T : Texture>(
 
         glTexParameteriv(glTarget, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask)
 
-        if (descriptor.minFilter in setOf(TextureMinFilter.NEAREST, TextureMinFilter.LINEAR)
+        if (descriptor.minFilter !in setOf(TextureMinFilter.NEAREST, TextureMinFilter.LINEAR)
             && descriptor.format !in setOf(TextureFormat.DEPTH, TextureFormat.STENCIL, TextureFormat.DEPTH_STENCIL)
         ) {
             glGenerateMipmap(glTarget)

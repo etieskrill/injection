@@ -9,14 +9,16 @@ class PostPassPipeline<S : PureShaderBuilder<*, *>>(
     shader: S,
     frameBuffer: FrameBuffer,
     opaque: Boolean = true,
-    depthTest: Boolean = true
+    depthTest: Boolean = true,
+    stencilMode: StencilMode = StencilMode.OFF
 ) : Pipeline<S>(
     4, PipelineConfig(
         alphaMode = if (opaque) AlphaMode.OPAQUE else AlphaMode.SOURCE_ALPHA,
         primitiveType = PrimitiveType.TRIANGLE_STRIP,
         cullingMode = CullingMode.NONE,
         depthTest = depthTest,
-        writeDepth = false
+        writeDepth = false,
+        stencilMode = stencilMode
     ), shader, frameBuffer
 )
 
@@ -87,7 +89,17 @@ enum class StencilMode {
      *
      * TODO conclusion: fix dis shit
      */
-    SET_FRONT
+    SET_FRONT,
+
+    /**
+     * Masks what is rendered with the stencil buffer (what was rendered with [SET_FRONT]).
+     */
+    FILTER,
+
+    /**
+     * Negatively masks what is rendered with the stencil buffer (what was rendered with [SET_FRONT]).
+     */
+    FILTER_NOT,
 
 // TODO this option would _actually_ do nothing with the stencil buffer, but is only applicable if nothing else in
 //  the frame uses the stencil buffer, otherwise non-stencil objects would not interact correctly with stencil stuff

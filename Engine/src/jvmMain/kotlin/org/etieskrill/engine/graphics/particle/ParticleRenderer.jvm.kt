@@ -1,4 +1,4 @@
-package org.etieskrill.engine.graphics.gl.renderer
+package org.etieskrill.engine.graphics.particle
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.etieskrill.engine.graphics.GraphicsContext
@@ -6,10 +6,6 @@ import org.etieskrill.engine.graphics.buffer.BufferAccessFrequency
 import org.etieskrill.engine.graphics.buffer.BufferObject
 import org.etieskrill.engine.graphics.buffer.VertexArrayObject
 import org.etieskrill.engine.graphics.camera.Camera
-import org.etieskrill.engine.graphics.particle.ParticleEmitter
-import org.etieskrill.engine.graphics.particle.ParticleNode
-import org.etieskrill.engine.graphics.particle.ParticleRenderer
-import org.etieskrill.engine.graphics.particle.ParticleVertexAccessor
 import org.etieskrill.engine.graphics.shader.Shader
 import org.etieskrill.engine.graphics.shader.impl.ParticleShader
 import org.etieskrill.engine.graphics.texture.Texture2D
@@ -22,9 +18,9 @@ import org.lwjgl.opengl.GL11C.*
 
 private val logger = KotlinLogging.logger {}
 
-class GLParticleRenderer(
-    override val context: GraphicsContext
-) : ParticleRenderer {
+actual class ParticleRenderer actual constructor(
+    actual val context: GraphicsContext
+) {
 
     private val vao = VertexArrayObject(
         ParticleVertexAccessor,
@@ -45,7 +41,7 @@ class GLParticleRenderer(
         private val IDENTITY = Matrix4f()
     }
 
-    override fun renderParticles(root: ParticleNode, camera: Camera, shader: Shader?) {
+    actual fun renderParticles(root: ParticleNode, camera: Camera, shader: Shader?) {
         renderNode(Matrix4f(root.transform.matrix), root, camera, shader ?: particleShader)
     }
 

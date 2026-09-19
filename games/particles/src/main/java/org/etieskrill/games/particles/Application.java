@@ -11,7 +11,7 @@ import org.etieskrill.engine.scene.Batch;
 import org.etieskrill.engine.graphics.camera.Camera;
 import org.etieskrill.engine.graphics.camera.OrthographicCamera;
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera;
-import org.etieskrill.engine.graphics.gl.renderer.GLParticleRenderer;
+import org.etieskrill.engine.graphics.renderer.GLParticleRenderer;
 import org.etieskrill.engine.graphics.shader.Shader;
 import org.etieskrill.engine.graphics.model.Model;
 import org.etieskrill.engine.graphics.particle.ParticleEmitter;

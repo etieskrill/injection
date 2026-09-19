@@ -4,7 +4,9 @@ import org.etieskrill.engine.graphics.GraphicsContext
 import org.etieskrill.engine.graphics.camera.Camera
 import org.etieskrill.engine.graphics.shader.Shader
 
-interface ParticleRenderer {
+expect class ParticleRenderer {
+
+    constructor(context: GraphicsContext)
 
     fun renderParticles(root: ParticleNode, camera: Camera, shader: Shader? = null)
 

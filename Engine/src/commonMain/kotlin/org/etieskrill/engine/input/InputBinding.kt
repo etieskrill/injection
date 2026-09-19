@@ -12,5 +12,5 @@ data class InputBinding(
     val key: KeyEvent, //abusing the event for convenience
     val trigger: InputTriggerEdge,
     val group: OverruleGroup? = null,
-    val action: (Double) -> Any
+    val action: (Double) -> Any?
 )

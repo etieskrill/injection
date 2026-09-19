@@ -87,7 +87,7 @@ class Histogram(
 
 //TODO specialisation parameters on construction
 class HistogramShader/*(columns: Int)*/ : PureShaderBuilder<HistogramShader.VertexData, ColourRenderTarget>(
-    object : Shader(listOf("Histogram.glsl"), false) {}
+    object : Shader(listOf("shaders/Histogram.glsl"), false) {}
 ) {
     data class VertexData(override val position: vec4, val worldPosition: vec4) : ShaderVertexData
 

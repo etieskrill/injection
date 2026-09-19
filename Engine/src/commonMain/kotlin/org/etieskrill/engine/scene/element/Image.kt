@@ -1,14 +1,17 @@
 package org.etieskrill.engine.scene.element
 
 import org.etieskrill.engine.graphics.texture.Texture2D
+import org.etieskrill.engine.graphics.texture.TextureMinFilter
 import org.etieskrill.engine.graphics.texture.TextureType
+import org.etieskrill.engine.graphics.texture.loadTexture2DData
 import org.etieskrill.engine.scene.Batch
 import org.etieskrill.engine.scene.Node
+import org.etieskrill.engine.util.readResource
 import org.joml.Vector4f
 
 class Image(texturePath: String) : Node<Image>() {
 
-    private val texture = Texture2D.createFromFile(texturePath, TextureType.DIFFUSE)
+    private val texture = Texture2D.createUITexture(texturePath)
 
     init {
         colour = Vector4f(1f, 1f, 1f, 1f)
