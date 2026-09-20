@@ -300,7 +300,7 @@ class SynthwavePlane : App(
     }
 
     var frameSample = 0
-    var samples = FixedArrayDeque<Int>((window.refreshRate.toInt() / 8).toInt())
+    var samples = FixedArrayDeque<Int>((window.refreshRate.toInt() / 8))
     var averageSample = 0
 
     val fftAverageMagnitudes = MutableList(FFT_BINS.toInt()) { 0f }

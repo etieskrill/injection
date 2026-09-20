@@ -59,11 +59,7 @@ actual class Renderer actual constructor(
         context.getFrameBuffer(pipeline.frameBuffer).bind()
 
         context.activeVertexArray?.unbind()
-//        context.bufferBindings[BufferType.ARRAY]?.unbind()
-//        context.bufferBindings[BufferType.ELEMENT_ARRAY]?.unbind()
-//        //TODO validate that any textures/renderbuffers in active framebuffer are not bound in shader
-//        context.textureBindings.forEachIndexed { unit, texture -> texture?.unbind(unit) }
-//        context.activeShader?.unbind()
+        //TODO validate that any textures/renderbuffers in active framebuffer are not bound in shader
 
         val isIndexed: Boolean
         if (pipeline.vao != null) {
@@ -71,6 +67,7 @@ actual class Renderer actual constructor(
             isIndexed = pipeline.vao.isIndexed
         } else {
             glBindVertexArray(dummyVAO)
+            context.activeVertexArray = null
             isIndexed = false
         }
 
@@ -81,96 +78,27 @@ actual class Renderer actual constructor(
         }
         context.getShader(shader).bind()
 
-        when (pipeline.config.alphaMode) {
-            AlphaMode.OPAQUE -> glBlendFunc(GL_ONE, GL_ZERO)
-            AlphaMode.SOURCE_ALPHA -> glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        }
-
-        val primitiveType = when (pipeline.config.primitiveType) {
-            PrimitiveType.POINTS -> GL_POINTS
-            PrimitiveType.LINES -> GL_LINES
-            PrimitiveType.LINE_STRIP -> GL_LINE_STRIP
-            PrimitiveType.TRIANGLES -> GL_TRIANGLES
-            PrimitiveType.TRIANGLE_STRIP -> GL_TRIANGLE_STRIP
-        }
-
-        when (pipeline.config.cullingMode) {
-            CullingMode.NONE -> glDisable(GL_CULL_FACE)
-            CullingMode.BACK -> {
-                glEnable(GL_CULL_FACE)
-                glCullFace(GL_BACK)
-            }
-            CullingMode.FRONT -> {
-                glEnable(GL_CULL_FACE)
-                glCullFace(GL_FRONT)
-            }
-            CullingMode.FRONT_AND_BACK -> {
-                glEnable(GL_CULL_FACE)
-                glCullFace(GL_FRONT_AND_BACK)
-            }
-        }
-
-        if (pipeline.config.depthTest) {
-            glEnable(GL_DEPTH_TEST)
-        } else {
-            glDisable(GL_DEPTH_TEST)
-        }
-
-        glDepthMask(pipeline.config.writeDepth)
-
-        glPolygonMode(
-            GL_FRONT_AND_BACK, when (pipeline.config.fillMode) {
-                FillMode.FILL -> GL_FILL
-                FillMode.LINE -> GL_LINE
-                FillMode.POINT -> GL_POINT
-        })
-
-        glPointSize(pipeline.config.pointSize)
-
-        glLineWidth(pipeline.config.lineWidth)
-        if (pipeline.config.lineAntiAliasing) {
-            glEnable(GL_LINE_SMOOTH)
-        } else {
-            glDisable(GL_LINE_SMOOTH)
-        }
-
-        glEnable(GL_BLEND) //it's fucking crazy that blending is disabled by default
-
-        when (pipeline.config.stencilMode) {
-            StencilMode.OFF -> {
-                glDisable(GL_STENCIL_TEST)
-                glStencilMask(0x00)
-            }
-            StencilMode.SET_FRONT -> {
-                glEnable(GL_STENCIL_TEST)
-                glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE)
-                glStencilFunc(GL_ALWAYS, 0xFF, 0xFF)
-                glStencilMask(0xFF)
-            }
-            StencilMode.FILTER -> {
-                glEnable(GL_STENCIL_TEST)
-                glStencilFunc(GL_EQUAL, 0xFF, 0xFF)
-                glStencilMask(0x00)
-            }
-            StencilMode.FILTER_NOT -> {
-                glEnable(GL_STENCIL_TEST)
-                glStencilFunc(GL_NOTEQUAL, 0xFF, 0xFF)
-                glStencilMask(0x00)
-            }
-        }
+        context.alphaMode = pipeline.config.alphaMode
+        context.cullingMode = pipeline.config.cullingMode
+        context.depthTest = pipeline.config.depthTest
+        context.depthWrite = pipeline.config.writeDepth
+        context.fillMode = pipeline.config.fillMode
+        context.pointSize = pipeline.config.pointSize
+        context.lineWidth = pipeline.config.lineWidth
+        context.lineAntiAliasing = pipeline.config.lineAntiAliasing
+        context.stencilMode = pipeline.config.stencilMode
 
         val vertexCount: Int
-
         if (isIndexed) {
             vertexCount = pipeline.vao!!.numElements
-            glDrawElements(primitiveType, vertexCount, GL_UNSIGNED_INT, 0L)
+            glDrawElements(pipeline.config.primitiveType.gl, vertexCount, GL_UNSIGNED_INT, 0L)
         } else {
             vertexCount = when {
                 pipeline.vao != null -> pipeline.vao.numElements
                 pipeline.vertexCount != null -> pipeline.vertexCount
                 else -> error("Pipeline without vertex array object must have vertex count set")
             }
-            glDrawArrays(primitiveType, 0, vertexCount)
+            glDrawArrays(pipeline.config.primitiveType.gl, 0, vertexCount)
         }
 
         _renderCalls += 1
@@ -204,4 +132,12 @@ actual class Renderer actual constructor(
         _renderCalls = 0
     }
 
+}
+
+private val PrimitiveType.gl get() = when (this) {
+    PrimitiveType.POINTS -> GL_POINTS
+    PrimitiveType.LINES -> GL_LINES
+    PrimitiveType.LINE_STRIP -> GL_LINE_STRIP
+    PrimitiveType.TRIANGLES -> GL_TRIANGLES
+    PrimitiveType.TRIANGLE_STRIP -> GL_TRIANGLE_STRIP
 }

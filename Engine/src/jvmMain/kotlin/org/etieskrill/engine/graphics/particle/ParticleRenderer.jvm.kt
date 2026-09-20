@@ -6,6 +6,8 @@ import org.etieskrill.engine.graphics.buffer.BufferAccessFrequency
 import org.etieskrill.engine.graphics.buffer.BufferObject
 import org.etieskrill.engine.graphics.buffer.VertexArrayObject
 import org.etieskrill.engine.graphics.camera.Camera
+import org.etieskrill.engine.graphics.pipeline.AlphaMode
+import org.etieskrill.engine.graphics.pipeline.CullingMode
 import org.etieskrill.engine.graphics.shader.Shader
 import org.etieskrill.engine.graphics.shader.impl.ParticleShader
 import org.etieskrill.engine.graphics.texture.Texture2D
@@ -74,13 +76,10 @@ actual class ParticleRenderer actual constructor(
             val vaoInstance = context.getVertexArray(vao)
             vaoInstance.bind()
 
-            glDisable(GL_CULL_FACE)
-            glDepthMask(false)
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+            context.cullingMode = CullingMode.NONE
+            context.depthWrite = false
+            context.alphaMode = AlphaMode.SOURCE_ALPHA
             glDrawArrays(GL_POINTS, 0, emitter.aliveParticles.size)
-            glBlendFunc(GL_ONE, GL_ZERO)
-            glDepthMask(true)
-            glEnable(GL_CULL_FACE)
 
             vaoInstance.unbind()
         }

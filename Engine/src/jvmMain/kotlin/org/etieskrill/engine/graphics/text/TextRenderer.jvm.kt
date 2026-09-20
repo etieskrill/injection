@@ -5,6 +5,8 @@ import org.etieskrill.engine.graphics.buffer.BufferAccessFrequency
 import org.etieskrill.engine.graphics.buffer.BufferObject
 import org.etieskrill.engine.graphics.buffer.VertexArrayObject
 import org.etieskrill.engine.graphics.gl.GLUtils
+import org.etieskrill.engine.graphics.pipeline.AlphaMode
+import org.etieskrill.engine.graphics.pipeline.CullingMode
 import org.etieskrill.engine.graphics.renderer.RenderedGlyph
 import org.etieskrill.engine.graphics.renderer.RenderedGlyphAccessor
 import org.etieskrill.engine.graphics.shader.Shader
@@ -172,11 +174,9 @@ actual class TextRenderer actual constructor(
 //        renderer.render(glyphPipeline)
 
         context.withContext {
-            GL11C.glDisable(GL11C.GL_CULL_FACE)
-            GL11C.glBlendFunc(GL11C.GL_SRC_ALPHA, GL11C.GL_ONE_MINUS_SRC_ALPHA)
+            context.cullingMode = CullingMode.NONE
+            context.alphaMode = AlphaMode.SOURCE_ALPHA
             GL11C.glDrawArrays(GL11C.GL_POINTS, 0, numChars)
-            GL11C.glBlendFunc(GL11C.GL_ONE, GL11C.GL_ZERO)
-            GL11C.glEnable(GL11C.GL_CULL_FACE)
         }
 
         _renderCalls++
