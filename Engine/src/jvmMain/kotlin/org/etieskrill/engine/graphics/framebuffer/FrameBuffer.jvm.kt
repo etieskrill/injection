@@ -4,6 +4,7 @@ import org.etieskrill.engine.common.Disposable
 import org.etieskrill.engine.graphics.GraphicsContext
 import org.etieskrill.engine.graphics.framebuffer.FrameBufferAttachmentType.*
 import org.etieskrill.engine.graphics.gl.GLUtils
+import org.etieskrill.engine.graphics.pipeline.StencilMode
 import org.lwjgl.opengl.GL11C
 import org.lwjgl.opengl.GL20C
 import org.lwjgl.opengl.GL30C
@@ -95,9 +96,9 @@ actual open class FrameBufferInstance internal constructor(
         }
 
         if (version < descriptor.version) {
-            descriptor.clearColour.apply { GL11C.glClearColor(x, y, z, w) }
-            if ((glBufferClearMask and GL11C.GL_DEPTH_BUFFER_BIT) != 0) GL11C.glDepthMask(true)
-            if ((glBufferClearMask and GL11C.GL_STENCIL_BUFFER_BIT) != 0) GL11C.glStencilMask(0xFF) //TODO can stencil buffer be anything other than one byte in size?
+            context.clearColour = descriptor.clearColour
+            if ((glBufferClearMask and GL11C.GL_DEPTH_BUFFER_BIT) != 0) context.depthWrite = true
+            if ((glBufferClearMask and GL11C.GL_STENCIL_BUFFER_BIT) != 0) context.stencilMode = StencilMode.CLEAR
             GL11C.glClear(glBufferClearMask)
 
             version = descriptor.version

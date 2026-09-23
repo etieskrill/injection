@@ -228,7 +228,9 @@ open class RenderService(
             return lightSourceShader
         } else {
             configureShader(shader, shaderParams)
-            drawable.textureScale?.let { shader.setUniform("textureScale", it) }
+            if ("textureScale" in shader.uniforms) {
+                drawable.textureScale?.let { shader.setUniform("textureScale", it) }
+            }
             return shader
         }
     }

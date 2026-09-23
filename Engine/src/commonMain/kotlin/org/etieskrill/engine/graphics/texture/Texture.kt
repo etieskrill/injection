@@ -41,7 +41,7 @@ enum class TextureType {
 
     SHADOW, //shadow maps
 
-    G_POSITION, G_DEPTH, G_COLOUR, G_NORMAL //deferred rendering buffers
+    G_POSITION, G_COLOUR, G_NORMAL, G_ORM, G_DEPTH //deferred rendering buffers
 }
 
 enum class TextureFormat(val numChannels: Int) {

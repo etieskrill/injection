@@ -146,7 +146,7 @@ actual class Window actual constructor(
         }
         //on Windows, will only succeed if entire window is still within screen space after translation
         set(value) {
-            glfwSetWindowSize(id, value.x(), value.y())
+            glfwSetWindowPos(id, value.x(), value.y())
             checkError("If you are not on Wayland, be concerned")
         }
 

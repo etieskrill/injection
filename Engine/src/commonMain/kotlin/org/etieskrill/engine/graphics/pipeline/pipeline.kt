@@ -101,6 +101,11 @@ enum class StencilMode {
      */
     FILTER_NOT,
 
+    /**
+     * Only activates writing to the stencil buffer. Primarily used so framebuffers can clear their stencil attachment.
+     */
+    CLEAR,
+
 // TODO this option would _actually_ do nothing with the stencil buffer, but is only applicable if nothing else in
 //  the frame uses the stencil buffer, otherwise non-stencil objects would not interact correctly with stencil stuff
 //    IGNORE

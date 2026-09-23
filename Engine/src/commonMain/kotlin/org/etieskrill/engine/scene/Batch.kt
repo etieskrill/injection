@@ -16,6 +16,7 @@ import org.joml.Matrix4fc
 import org.joml.Vector2f
 import org.joml.Vector2fc
 import org.joml.Vector2ic
+import org.joml.Vector4f
 import org.joml.Vector4fc
 import org.joml.div
 import org.joml.plus
@@ -119,15 +120,15 @@ class Batch(
         cursorPosition: Vector2f? = null
     ) = textRenderer.render(text, font, position, size, textShader, combined, cursorPosition)
 
-    fun blit(texture: Texture2D, position: Vector2fc, size: Vector2fc, rotation: Float, colour: Vector4fc? = null) {
+    fun blit(texture: Texture2D, position: Vector2fc, size: Vector2fc, rotation: Float, colour: Vector4fc = Vector4f(1f)) {
         blitPipeline.shader.let {
             it.sprite = texture
-            it.useSpriteColour = true
+            it.useSpriteColour = false
             it.position = position
             it.size = size
             it.rotation = rotation
             it.windowSize = Vector2f(frameBuffer.size)
-            colour?.let { colour -> it.colour = colour }
+            it.colour = colour
         }
 
         renderer.render(blitPipeline)

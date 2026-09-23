@@ -20,13 +20,13 @@ const val PI_f = PI.toFloat()
 val Rotation.radians get() = toFloat()
 val Rotation.rad get() = radians
 
-val Rotation.degrees get() = toFloat() * (PI_f / 180)
+val Rotation.degrees get() = toFloat() * (PI_f / 180f)
 val Rotation.deg get() = degrees
 
-val Rotation.turn get() = toFloat() / (2 * PI_f)
+val Rotation.turn get() = toFloat() / (2f * PI_f)
 val Rotation.tr get() = turn
 
-val Rotation.tau get() = 2 * toFloat()
+val Rotation.tau get() = 2f * toFloat()
 
 interface Vec2c : Iterable<Float> {
     val x: Float

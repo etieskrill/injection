@@ -140,6 +140,7 @@ internal actual abstract class TextureInstance<T : Texture>(
 
 }
 
+// @formatter:off
 internal val TextureFormat.gl get() = when (this) {
     TextureFormat.ALPHA -> GL_RED
     TextureFormat.GRAY -> GL_RED
@@ -202,8 +203,9 @@ internal val TextureType.ai get() = when (this) {
     TextureType.ROUGHNESS -> aiTextureType_DIFFUSE_ROUGHNESS
     TextureType.AMBIENT_OCCLUSION -> aiTextureType_AMBIENT_OCCLUSION
 
-    TextureType.SHADOW, TextureType.G_POSITION, TextureType.G_DEPTH, TextureType.G_COLOUR, TextureType.G_NORMAL -> null
+    TextureType.SHADOW, TextureType.G_POSITION, TextureType.G_COLOUR, TextureType.G_NORMAL, TextureType.G_ORM, TextureType.G_DEPTH -> null
 }
+// @formatter:on
 
 internal actual fun loadTexture2DData(file: String, type: TextureType): TextureData {
     val width = createIntBuffer(1)

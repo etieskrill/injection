@@ -158,6 +158,7 @@ open class GlslReceiver {
         m10: Number, m11: Number, m12: Number,
         m20: Number, m21: Number, m22: Number
     ): mat3 = error()
+    fun mat3(m0: vec3, m1: vec3, m2: vec3): mat3 = error()
 
     var vec2.x: Number by swizzle()
     var vec2.y: Number by swizzle()
@@ -208,8 +209,9 @@ open class GlslReceiver {
     operator fun vec3.minus(v: Number): vec3 = error()
     operator fun vec3.minus(v: vec3): vec3 = error()
     operator fun vec3.unaryMinus(): vec3 = error()
-    operator fun vec3.times(v: vec3): vec3 = error()
     operator fun vec3.times(s: Number): vec3 = error()
+    operator fun vec3.times(v: vec3): vec3 = error()
+    operator fun vec3.div(s: Number): vec3 = error()
     operator fun vec3.div(v: vec3): vec3 = error()
     operator fun vec3.rem(s: Number): vec3 = error()
 
@@ -248,7 +250,8 @@ open class GlslReceiver {
     fun max(v1: vec2, v2: vec2): vec2 = error()
     fun max(v1: vec4, v2: vec4): vec4 = error()
 
-    fun pow(v1: vec3, v2: vec3): vec3 = error()
+    fun pow(base: Number, exponent: Number): Number = error()
+    fun pow(baseVector: vec3, exponentVector: vec3): vec3 = error()
     fun exp(s: Number): float = error()
     fun exp(v: vec3): vec3 = error()
 

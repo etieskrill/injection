@@ -1,25 +1,21 @@
 package io.github.etieskrill.games.circles
 
 import org.etieskrill.engine.application.App
-import org.etieskrill.engine.entity.Entity
 import org.etieskrill.engine.entity.component.Drawable
 import org.etieskrill.engine.entity.component.Transform
 import org.etieskrill.engine.entity.service.impl.DeferredRenderService
+import org.etieskrill.engine.graphics.buffer.StorageBufferObject
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera
 import org.etieskrill.engine.graphics.framebuffer.FrameBuffer
-import org.etieskrill.engine.graphics.buffer.StorageBufferObject
 import org.etieskrill.engine.graphics.framebuffer.FrameBufferAttachmentType.COLOUR0
-import org.etieskrill.engine.graphics.shader.Shader
 import org.etieskrill.engine.graphics.model.box
 import org.etieskrill.engine.graphics.model.model
 import org.etieskrill.engine.graphics.model.plane
 import org.etieskrill.engine.graphics.model.sphere
-import org.etieskrill.engine.graphics.pipeline.Pipeline
-import org.etieskrill.engine.graphics.pipeline.PipelineConfig
 import org.etieskrill.engine.graphics.pipeline.PostPassPipeline
+import org.etieskrill.engine.graphics.shader.Shader
 import org.etieskrill.engine.graphics.shader.impl.BlitShader
 import org.etieskrill.engine.graphics.shader.impl.SolidShader
-import org.etieskrill.engine.graphics.texture.Texture
 import org.etieskrill.engine.graphics.texture.Texture2D
 import org.etieskrill.engine.graphics.texture.TextureFormat
 import org.etieskrill.engine.graphics.texture.TextureMinFilter
@@ -28,8 +24,6 @@ import org.etieskrill.engine.input.controller.CursorCameraController
 import org.etieskrill.engine.window.Window
 import org.etieskrill.engine.window.WindowMode
 import org.etieskrill.engine.window.WindowSize
-import org.joml.Matrix3f
-import org.joml.Matrix4f
 import org.joml.Vector2f
 import org.joml.Vector2i
 import org.joml.Vector3f

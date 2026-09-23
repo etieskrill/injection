@@ -28,5 +28,3 @@ dependencyResolutionManagement {
 //        }
 //    }
 }
-
-include("games:shader-generation-test")

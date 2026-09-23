@@ -30,6 +30,8 @@ import org.etieskrill.engine.graphics.texture.TextureCubeMapArray
 import org.etieskrill.engine.graphics.texture.TextureCubeMapArrayInstance
 import org.etieskrill.engine.graphics.texture.TextureCubeMapInstance
 import org.etieskrill.engine.graphics.texture.TextureInstance
+import org.joml.Vector4f
+import org.joml.Vector4fc
 import org.lwjgl.opengl.GL11C.GL_ALWAYS
 import org.lwjgl.opengl.GL11C.GL_BACK
 import org.lwjgl.opengl.GL11C.GL_BLEND
@@ -51,6 +53,7 @@ import org.lwjgl.opengl.GL11C.GL_SRC_ALPHA
 import org.lwjgl.opengl.GL11C.GL_STENCIL_TEST
 import org.lwjgl.opengl.GL11C.GL_ZERO
 import org.lwjgl.opengl.GL11C.glBlendFunc
+import org.lwjgl.opengl.GL11C.glClearColor
 import org.lwjgl.opengl.GL11C.glCullFace
 import org.lwjgl.opengl.GL11C.glDepthMask
 import org.lwjgl.opengl.GL11C.glDisable
@@ -122,11 +125,23 @@ actual data class GraphicsContext(
     internal fun <T> getVertexArray(vertexArray: VertexArrayObject<T>) =
         vertexArrays.getOrPut(vertexArray) { VertexArrayObjectInstance(vertexArray, this) }
 
-    internal var activeVertexArray: VertexArrayObjectInstance<*>? = null //TODO add dummy vao (or the proper solution, if there is one)
+    internal var activeVertexArray: VertexArrayObjectInstance<*>? =
+        null //TODO add dummy vao (or the proper solution, if there is one)
+
+    private var ignoreCache: Boolean = false
+
+    internal var clearColour: Vector4fc = Vector4f(0f)
+        set(value) {
+            if (!ignoreCache &&
+                (field.x() == value.x() && field.y() == value.y() && field.z() == value.z() && field.w() == value.w())
+            ) return
+            glClearColor(value.x(), value.y(), value.z(), value.w())
+            (field as Vector4f).set(value)
+        }
 
     internal var alphaMode: AlphaMode = AlphaMode.OPAQUE
         set(value) {
-            if (field == value) return
+            if (!ignoreCache && field == value) return
             glEnable(GL_BLEND)
             when (value) {
                 AlphaMode.OPAQUE -> glBlendFunc(GL_ONE, GL_ZERO)
@@ -137,17 +152,19 @@ actual data class GraphicsContext(
 
     internal var cullingMode: CullingMode = CullingMode.BACK
         set(value) {
-            if (field == value) return
+            if (!ignoreCache && field == value) return
             when (value) {
                 CullingMode.NONE -> glDisable(GL_CULL_FACE)
                 CullingMode.BACK -> {
                     glEnable(GL_CULL_FACE)
                     glCullFace(GL_BACK)
                 }
+
                 CullingMode.FRONT -> {
                     glEnable(GL_CULL_FACE)
                     glCullFace(GL_FRONT)
                 }
+
                 CullingMode.FRONT_AND_BACK -> {
                     glEnable(GL_CULL_FACE)
                     glCullFace(GL_FRONT_AND_BACK)
@@ -157,7 +174,7 @@ actual data class GraphicsContext(
 
     internal var depthTest: Boolean = true
         set(value) {
-            if (field == value) return
+            if (!ignoreCache && field == value) return
             if (value) {
                 glEnable(GL_DEPTH_TEST)
             } else {
@@ -168,38 +185,39 @@ actual data class GraphicsContext(
 
     internal var depthWrite: Boolean = true
         set(value) {
-            if (field == value) return
+            if (!ignoreCache && field == value) return
             glDepthMask(value)
             field = value
         }
 
     internal var fillMode: FillMode = FillMode.FILL
         set(value) {
-            if (field == value) return
+            if (!ignoreCache && field == value) return
             glPolygonMode(
-            GL_FRONT_AND_BACK, when (value) {
-                FillMode.FILL -> GL_FILL
-                FillMode.LINE -> GL_LINE
-                FillMode.POINT -> GL_POINT
-            })
+                GL_FRONT_AND_BACK, when (value) {
+                    FillMode.FILL -> GL_FILL
+                    FillMode.LINE -> GL_LINE
+                    FillMode.POINT -> GL_POINT
+                }
+            )
             field = value
         }
 
     internal var pointSize: Float = 1f
         set(value) {
-            if (field == value) return
+            if (!ignoreCache && field == value) return
             glPointSize(value)
             field = value
         }
     internal var lineWidth: Float = 1f
         set(value) {
-            if (field == value) return
+            if (!ignoreCache && field == value) return
             glLineWidth(value)
             field = value
         }
     internal var lineAntiAliasing: Boolean = true
         set(value) {
-            if (field == value) return
+            if (!ignoreCache && field == value) return
             if (value) {
                 glEnable(GL_LINE_SMOOTH)
             } else {
@@ -210,33 +228,43 @@ actual data class GraphicsContext(
 
     internal var stencilMode: StencilMode = StencilMode.OFF
         set(value) {
-            if (field == value) return
+            if (!ignoreCache && field == value) return
             when (value) {
                 StencilMode.OFF -> {
                     glDisable(GL_STENCIL_TEST)
                     glStencilMask(0x00)
                 }
+
                 StencilMode.SET_FRONT -> {
                     glEnable(GL_STENCIL_TEST)
                     glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE)
                     glStencilFunc(GL_ALWAYS, 0xFF, 0xFF)
                     glStencilMask(0xFF)
                 }
+
                 StencilMode.FILTER -> {
                     glEnable(GL_STENCIL_TEST)
                     glStencilFunc(GL_EQUAL, 0xFF, 0xFF)
                     glStencilMask(0x00)
                 }
+
                 StencilMode.FILTER_NOT -> {
                     glEnable(GL_STENCIL_TEST)
                     glStencilFunc(GL_NOTEQUAL, 0xFF, 0xFF)
                     glStencilMask(0x00)
+                }
+
+                StencilMode.CLEAR -> {
+                    glDisable(GL_STENCIL_TEST)
+                    glStencilMask(0xFF)
                 }
             }
             field = value
         }
 
     init {
+        ignoreCache = true
+
         alphaMode = AlphaMode.OPAQUE
         cullingMode = CullingMode.BACK
         depthTest = true
@@ -246,6 +274,8 @@ actual data class GraphicsContext(
         lineWidth = 1f
         lineAntiAliasing = true
         stencilMode = StencilMode.OFF
+
+        ignoreCache = false
     }
 
     internal fun getFrameBufferAttachment(frameBufferAttachment: FrameBufferAttachment): FrameBufferAttachmentInstance =

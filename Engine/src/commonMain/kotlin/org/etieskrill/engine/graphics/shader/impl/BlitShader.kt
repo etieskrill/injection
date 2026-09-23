@@ -49,18 +49,12 @@ class BlitShader : PureShaderBuilder<BlitShader.Vertex, ColourRenderTarget>(
             Vertex(vec4(point, 0, 1), max(vec2(0), vertices[vertexID]))
         }
         fragment {
-//            val texel = if (useSpriteColour) {
-//                texture(sprite, it.textureCoords) * colour
-//            } else {
-//                vec4(colour.rgb, texture(sprite, it.textureCoords).a * colour.a)
-//            }
-//            ColourRenderTarget(texel)
-            ColourRenderTarget(
-//                vec4(1, 1, 1, texture(sprite, it.textureCoords).a)
-                vec4(texture(sprite, it.textureCoords).a)
-//                vec4(it.textureCoords, 0, 1)
-
-            )
+            val texel = if (useSpriteColour) {
+                texture(sprite, it.textureCoords) * colour
+            } else {
+                vec4(colour.rgb, texture(sprite, it.textureCoords).a * colour.a)
+            }
+            ColourRenderTarget(texel)
         }
     }
 }

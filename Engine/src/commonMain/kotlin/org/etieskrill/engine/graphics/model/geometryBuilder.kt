@@ -26,23 +26,27 @@ class ModelBuilder(
     internal val counters: GeometryCounters = GeometryCounters()
 )
 
-fun ModelBuilder.plane(a: Vector2f, b: Vector2f, transform: Transform = Transform()) {
+fun ModelBuilder.plane(a: Vector2f, b: Vector2f, transform: Transform? = null, material: Material? = null) {
     val cross = Vector3f(0f, 1f, 0f)
     val vertices: List<Vertex> = listOf(
-        Vertex(Vector3f(a.x, 0f, a.y), normal = cross),
-        Vertex(Vector3f(a.x, 0f, b.y), normal = cross),
-        Vertex(Vector3f(b.x, 0f, b.y), normal = cross),
-        Vertex(Vector3f(b.x, 0f, a.y), normal = cross)
+        Vertex(Vector3f(a.x, 0f, a.y), normal = cross, textureCoords = Vector2f(0f, 0f), tangent = Vector3f(1f, 0f, 0f), biTangent = Vector3f(0f, 0f, 1f)),
+        Vertex(Vector3f(a.x, 0f, b.y), normal = cross, textureCoords = Vector2f(0f, 1f), tangent = Vector3f(1f, 0f, 0f), biTangent = Vector3f(0f, 0f, 1f)),
+        Vertex(Vector3f(b.x, 0f, b.y), normal = cross, textureCoords = Vector2f(1f, 1f), tangent = Vector3f(1f, 0f, 0f), biTangent = Vector3f(0f, 0f, 1f)),
+        Vertex(Vector3f(b.x, 0f, a.y), normal = cross, textureCoords = Vector2f(1f, 0f), tangent = Vector3f(1f, 0f, 0f), biTangent = Vector3f(0f, 0f, 1f))
     )
     val indices = listOf(0, 1, 2, 0, 2, 3)
 
     createModel(
-        "plane-${counters.planes++}", vertices, indices,
-        AABBf(Vector3f(a.x, 0f, a.y), Vector3f(b.x, 0f, b.y)), transform
+        "plane-${counters.planes++}",
+        vertices,
+        indices,
+        AABBf(Vector3f(a.x, 0f, a.y), Vector3f(b.x, 0f, b.y)),
+        transform,
+        material
     )
 }
 
-fun ModelBuilder.box(a: Vector3f, b: Vector3f, transform: Transform = Transform()) {
+fun ModelBuilder.box(a: Vector3f, b: Vector3f, transform: Transform? = null, material: Material? = null) {
     require(a.x <= b.x && a.y <= b.y && a.z <= b.z) { "Coordinates of point b may not be smaller than point a" }
 
     val vertices: List<Vertex> = listOf(
@@ -87,7 +91,7 @@ fun ModelBuilder.box(a: Vector3f, b: Vector3f, transform: Transform = Transform(
         20, 21, 22, 20, 22, 23  //right
     )
 
-    createModel("box-${counters.boxes++}", vertices, indices, AABBf(a, b), transform)
+    createModel("box-${counters.boxes++}", vertices, indices, AABBf(a, b), transform, material)
 }
 
 /**
@@ -95,20 +99,21 @@ fun ModelBuilder.box(a: Vector3f, b: Vector3f, transform: Transform = Transform(
  * never have fewer points than specified.
  */
 //TODO fibonacci sphere
-fun ModelBuilder.sphere(radius: Float, numPoints: Int, transform: Transform = Transform()) {
+fun ModelBuilder.sphere(radius: Float, numPoints: Int, transform: Transform? = null, material: Material? = null) {
     val segments = (0..100000).find { it * it + 1 >= numPoints }
         ?: error(
             "Primitive sphere number of segments would exceed 100000; specify a smaller number of points or " +
                     "call 'primitiveSphere' explicitly"
         )
-    primitiveSphere(radius, segments, transform = transform)
+    primitiveSphere(radius, segments, transform = transform, material = material)
 }
 
 fun ModelBuilder.primitiveSphere(
     radius: Float,
     xSegments: Int,
     ySegments: Int = xSegments,
-    transform: Transform = Transform()
+    transform: Transform? = null,
+    material: Material? = null
 ) {
     require(radius > 0) { "Sphere radius must be positive" }
     require(xSegments >= 3) { "Sphere must have at least 3 horizontal segments" }
@@ -162,7 +167,7 @@ fun ModelBuilder.primitiveSphere(
 
     createModel(
         "sphere-${counters.spheres++}", vertices, indices,
-        AABBf(Vector3f(-radius), Vector3f(radius)), transform
+        AABBf(Vector3f(-radius), Vector3f(radius)), transform, material
     )
 }
 
@@ -171,9 +176,13 @@ private fun ModelBuilder.createModel(
     vertices: List<Vertex>,
     indices: List<Int>,
     boundingBox: AABBf = AABBf(),
-    transform: Transform
+    transform: Transform? = null,
+    material: Material? = null
 ) {
-    val mesh = loadToVAO(vertices, indices, PhongMaterial(isTwoSided = !culling), boundingBox = boundingBox)
+    val transform = transform ?: Transform()
+    val material = material ?: PhongMaterial(isTwoSided = !culling)
+
+    val mesh = loadToVAO(vertices, indices, material, boundingBox = boundingBox)
 
     val node = Node(name, transform, rootNode, meshes = listOf(mesh))
     rootNode.children += node
