@@ -2,9 +2,13 @@ package io.github.etieskrill.injection.extension.shader.dsl.gradle
 
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
+import org.gradle.kotlin.dsl.creating
 import org.gradle.kotlin.dsl.dependencies
 import org.gradle.kotlin.dsl.findByType
 import org.gradle.kotlin.dsl.get
+import org.gradle.kotlin.dsl.provideDelegate
+import org.gradle.kotlin.dsl.registering
+import org.gradle.kotlin.dsl.support.uppercaseFirstChar
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.FilesSubpluginOption
@@ -53,6 +57,11 @@ internal class ShaderDslGradlePlugin : KotlinCompilerPluginSupportPlugin {
 
             sourceSets.commonMain.get().apply {
                 resources.srcDir(GEN_RESOURCE_DIR)
+            }
+
+            //FIXME matching names is probably not robust across platforms, but is there a better/intended way?
+            tasks.matching { it.name.endsWith("ProcessResources") }.configureEach {
+                it.dependsOn("compileKotlin${it.name.removeSuffix("ProcessResources").uppercaseFirstChar()}")
             }
         }
 
