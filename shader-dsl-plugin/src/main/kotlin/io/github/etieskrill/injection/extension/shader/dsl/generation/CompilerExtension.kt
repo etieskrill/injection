@@ -1,5 +1,6 @@
 package io.github.etieskrill.injection.extension.shader.dsl.generation
 
+import io.github.etieskrill.injection.extension.shader.AbstractShader
 import io.github.etieskrill.injection.extension.shader.ShaderStage
 import io.github.etieskrill.injection.extension.shader.ShaderStage.*
 import io.github.etieskrill.injection.extension.shader.dsl.ConstDelegate
@@ -35,11 +36,21 @@ import org.jetbrains.kotlin.ir.declarations.IrFile
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
 import org.jetbrains.kotlin.ir.declarations.IrProperty
+import org.jetbrains.kotlin.ir.declarations.IrValueParameter
+import org.jetbrains.kotlin.ir.declarations.impl.IrClassImpl
+import org.jetbrains.kotlin.ir.declarations.impl.IrConstructorImpl
 import org.jetbrains.kotlin.ir.declarations.impl.IrFunctionImpl
+import org.jetbrains.kotlin.ir.declarations.name
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrConst
 import org.jetbrains.kotlin.ir.expressions.IrExpression
+import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
+import org.jetbrains.kotlin.ir.expressions.impl.IrBlockBodyImpl
+import org.jetbrains.kotlin.ir.expressions.impl.IrBlockImpl
+import org.jetbrains.kotlin.ir.expressions.impl.IrCallImpl
+import org.jetbrains.kotlin.ir.expressions.impl.IrConstImpl
+import org.jetbrains.kotlin.ir.expressions.impl.IrDelegatingConstructorCallImpl
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.symbols.IrClassifierSymbol
 import org.jetbrains.kotlin.ir.symbols.IrTypeParameterSymbol
@@ -53,15 +64,21 @@ import org.jetbrains.kotlin.ir.types.classifierOrFail
 import org.jetbrains.kotlin.ir.types.getClass
 import org.jetbrains.kotlin.ir.types.isArray
 import org.jetbrains.kotlin.ir.types.typeOrFail
+import org.jetbrains.kotlin.ir.util.dump
+import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 import org.jetbrains.kotlin.ir.util.findDeclaration
 import org.jetbrains.kotlin.ir.util.getArgumentsWithIr
 import org.jetbrains.kotlin.ir.util.getNameWithAssert
+import org.jetbrains.kotlin.ir.util.isAnonymousObject
 import org.jetbrains.kotlin.ir.util.isPrimitiveArray
 import org.jetbrains.kotlin.ir.util.isStrictSubtypeOfClass
 import org.jetbrains.kotlin.ir.util.isSubtypeOfClass
 import org.jetbrains.kotlin.ir.util.patchDeclarationParents
+import org.jetbrains.kotlin.ir.util.primaryConstructor
 import org.jetbrains.kotlin.ir.util.properties
 import org.jetbrains.kotlin.ir.util.render
+import org.jetbrains.kotlin.ir.util.statements
+import org.jetbrains.kotlin.ir.util.superClass
 import org.jetbrains.kotlin.ir.util.superTypes
 import org.jetbrains.kotlin.ir.visitors.IrVisitor
 import org.jetbrains.kotlin.name.Name
@@ -190,6 +207,22 @@ internal class IrShaderGenerationExtension(
         files: Map<IrDeclaration, IrFile>,
     ): VisitorData {
         val file = files[shader]!!
+
+        val constructor =
+            ((shader.primaryConstructor!!.body!! as IrBlockBodyImpl).statements[0] as IrDelegatingConstructorCallImpl)
+        val anonymousConstructor =
+            (((constructor.arguments[0]!! as IrBlockImpl).statements[0] as IrClassImpl).primaryConstructor!! as IrConstructorImpl)
+        val argument = (anonymousConstructor.body!!.statements[0] as IrDelegatingConstructorCallImpl).arguments[0]!!
+        val resourceFiles = (argument as IrCallImpl).arguments
+            .map { (it as IrConstImpl).value as String }
+            .map { it.substringAfterLast("/").substringBefore(".") }
+
+        if (resourceFiles.any { it != shader.name.asString().removeSuffix("Shader") }) {
+            messageCollector.compilerError(
+                "Shader class name does not match resource files: must be <ShaderName>Shader.{vert,frag,glsl}",
+                argument, file
+            )
+        }
 
         val constDeclarations = shader.getDelegatedProperties<ConstDelegate<*>, GlslTypeInitialiser>(
             messageCollector,
