@@ -203,7 +203,8 @@ internal val TextureType.ai get() = when (this) {
     TextureType.ROUGHNESS -> aiTextureType_DIFFUSE_ROUGHNESS
     TextureType.AMBIENT_OCCLUSION -> aiTextureType_AMBIENT_OCCLUSION
 
-    TextureType.SHADOW, TextureType.G_POSITION, TextureType.G_COLOUR, TextureType.G_NORMAL, TextureType.G_ORM, TextureType.G_DEPTH -> null
+    TextureType.PBR_ORM, TextureType.SHADOW, TextureType.G_POSITION, TextureType.G_COLOUR, TextureType.G_NORMAL,
+    TextureType.G_ORM, TextureType.G_DEPTH -> null
 }
 // @formatter:on
 
@@ -224,7 +225,7 @@ internal actual fun loadTexture2DData(file: String, type: TextureType): TextureD
         )
     }
 
-    val format = textureFormatFromNumChannelsAndType(numChannels.get(), type)
+    val format = TextureFormat.fromNumChannelsAndType(numChannels.get(), type)
     val buffer = ByteArray(textureData.remaining()) { textureData[it] }
 
     stbi_image_free(textureData)

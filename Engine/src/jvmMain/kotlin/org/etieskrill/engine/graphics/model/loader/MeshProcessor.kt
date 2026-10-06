@@ -38,6 +38,7 @@ internal fun loadMeshes(
 private fun processMesh(aiMesh: AIMesh, materials: List<Material>): Mesh {
     val positions = aiMesh.mVertices()
     val normals = aiMesh.mNormals()
+    //TODO check for multiple tex coord channels
     val texCoords = aiMesh.mTextureCoords(0)
     val tangents = aiMesh.mTangents()
     val biTangents = aiMesh.mBitangents()

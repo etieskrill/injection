@@ -11,14 +11,19 @@ import org.joml.Vector4fc
 import io.github.etieskrill.injection.extension.shader.Texture as DslTexture
 
 abstract class Texture(
-    val type: TextureType,
-    val format: TextureFormat,
+    type: TextureType,
+    format: TextureFormat,
     val minFilter: TextureMinFilter = TRILINEAR,
     val magFilter: TextureMagFilter = LINEAR,
     wrapping: TextureWrapping = TextureWrapping.REPEAT,
     val borderColour: Vector4fc = Vector4f(0f),
     val rowAlignment: TextureRowAlignment = TextureRowAlignment.WORD
 ) : DslTexture {
+
+    var type: TextureType = type; internal set
+
+    var format: TextureFormat = format; internal set
+
     var wrapping: TextureWrapping = wrapping
         set(value) {
             version++
@@ -29,15 +34,17 @@ abstract class Texture(
 }
 
 /**
- * Broadly describes the purpose of a [Texture], and e.g. the exact [TextureFormat] may be derived from this when not
- * explicitly specified. This type itself may be inferred based on texture file name or type.
+ * Broadly describes the intent of a [Texture], and e.g. the exact [TextureFormat] may use this when not explicitly
+ * specified. This type itself may be inferred based on texture file name or type.
  *
- * Primarily used for rendering pipeline validation.
+ * Otherwise primarily used for rendering pipeline validation.
  */
 enum class TextureType {
     UNKNOWN,
 
     DIFFUSE, SPECULAR, SHININESS, HEIGHT, EMISSIVE, NORMAL, METALNESS, ROUGHNESS, AMBIENT_OCCLUSION, //"regular" material textures
+
+    PBR_ORM,
 
     SHADOW, //shadow maps
 
@@ -55,7 +62,28 @@ enum class TextureFormat(val numChannels: Int) {
     SRGBA(4),
     DEPTH(1),
     STENCIL(1),
-    DEPTH_STENCIL(2)
+    DEPTH_STENCIL(2);
+
+    internal companion object {
+        fun fromNumChannels(numChannels: Int): TextureFormat = when (numChannels) {
+            1 -> GRAY
+            2 -> GRAY_ALPHA
+            3 -> SRGB
+            4 -> SRGBA
+            else -> error("Unexpected number of channels: $numChannels")
+        }
+
+        fun fromNumChannelsAndType(
+            numChannels: Int,
+            type: TextureType
+        ): TextureFormat = when (numChannels) {
+            1 -> GRAY
+            2 -> GRAY_ALPHA
+            3 -> if (type == TextureType.DIFFUSE) SRGB else RGB
+            4 -> if (type == TextureType.DIFFUSE) SRGBA else RGBA
+            else -> error("Unexpected number of channels: $numChannels")
+        }
+    }
 }
 
 /**
@@ -79,6 +107,7 @@ enum class TextureFormat(val numChannels: Int) {
  */
 
 enum class TextureMinFilter { NEAREST, LINEAR, NEAREST_NEAREST, BILINEAR, NEAREST_LINEAR, TRILINEAR }
+
 /**
  * The magnification filtering mode dictates how textures are sampled if one texel takes up more than one fragment.
  *
@@ -100,25 +129,6 @@ internal expect abstract class TextureInstance<T : Texture> : Disposable {
     internal var version: Long
 
     override fun dispose()
-}
-
-internal fun textureFormatFromNumChannels(numChannels: Int): TextureFormat = when (numChannels) {
-    1 -> TextureFormat.GRAY
-    2 -> TextureFormat.GRAY_ALPHA
-    3 -> TextureFormat.SRGB
-    4 -> TextureFormat.SRGBA
-    else -> error("Unexpected number of channels: $numChannels")
-}
-
-internal fun textureFormatFromNumChannelsAndType(
-    numChannels: Int,
-    type: TextureType
-): TextureFormat = when (numChannels) {
-    1 -> TextureFormat.GRAY
-    2 -> TextureFormat.GRAY_ALPHA
-    3 -> if (type == TextureType.DIFFUSE) TextureFormat.SRGB else TextureFormat.RGB
-    4 -> if (type == TextureType.DIFFUSE) TextureFormat.SRGBA else TextureFormat.RGBA
-    else -> error("Unexpected number of channels: $numChannels")
 }
 
 internal class TextureData(val size: Vector2ic, val format: TextureFormat, val buffer: ByteArray)

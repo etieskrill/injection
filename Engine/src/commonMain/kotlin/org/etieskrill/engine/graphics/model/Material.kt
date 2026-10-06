@@ -131,20 +131,20 @@ data class PBRMaterial(
     val opacity: Float? = null,
     val emissiveColour: Colour? = null,
     val emissiveStrength: Float? = null,
+    val invertRoughnessTexture: Boolean = false,
 
     val diffuseTexture: Texture2D? = null,
-    val metallicTexture: Texture2D? = null, //TODO orm support
-    val roughnessTexture: Texture2D? = null,
-    val ambientOcclusionTexture: Texture2D? = null,
+    /**
+     * **O**cclusion, **R**oughness, and **M**etalness packed into the R, G, and B channels of a single texture.
+     */
+    val ormTexture: Texture2D? = null,
     val normalTexture: Texture2D? = null,
     val heightTexture: Texture2D? = null,
     val emissiveTexture: Texture2D? = null,
 ) : Material() {
     init {
         require(diffuseTexture == null || diffuseTexture.type == TextureType.DIFFUSE) { "Diffuse texture must have DIFFUSE type" }
-        require(metallicTexture == null || metallicTexture.type == TextureType.METALNESS) { "Metallic texture must have METALNESS type" }
-        require(roughnessTexture == null || roughnessTexture.type == TextureType.ROUGHNESS || roughnessTexture.type == TextureType.SPECULAR) { "Roughness texture must have ROUGHNESS or SPECULAR type" }
-        require(ambientOcclusionTexture == null || ambientOcclusionTexture.type == TextureType.AMBIENT_OCCLUSION) { "Ambient occlusion texture must have AMBIENT_OCCLUSION type" }
+        require(ormTexture == null || ormTexture.type == TextureType.PBR_ORM) { "ORM texture must have PBR_ORM type" }
         require(normalTexture == null || normalTexture.type == TextureType.NORMAL) { "Normal texture must have NORMAL type" }
         require(heightTexture == null || heightTexture.type == TextureType.HEIGHT) { "Height texture must have HEIGHT type" }
         require(emissiveTexture == null || emissiveTexture.type == TextureType.EMISSIVE) { "Emissive texture must have EMISSIVE type" }
@@ -162,13 +162,9 @@ data class PBRMaterial(
 
         map("hasDiffuse", diffuseTexture != null)
         map("diffuse", diffuseTexture)
-        map("hasMetallic", metallicTexture != null)
-        map("metallic", metallicTexture)
+        map("hasORM", ormTexture != null)
+        map("orm", ormTexture)
         map("hasNormal", normalTexture != null)
-        map("hasRoughness", roughnessTexture != null)
-        map("roughness", roughnessTexture)
-        map("hasAmbientOcclusion", ambientOcclusionTexture != null)
-        map("ambientOcclusion", ambientOcclusionTexture)
         map("normal", normalTexture)
         map("hasHeight", heightTexture != null)
         map("height", heightTexture)

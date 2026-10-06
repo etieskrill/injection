@@ -47,7 +47,7 @@ actual fun loadModel(file: String, options: ModelLoaderOptions): Model {
     timer.log { "Loaded embedded textures" }
 
     val materials = mutableListOf<Material>()
-    loadMaterials(aiScene, materials, embeddedTextures, "null")
+    loadMaterials(aiScene, materials, embeddedTextures, file)
     timer.log { "Loaded materials" }
 
     val meshes = mutableListOf<Mesh>()

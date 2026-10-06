@@ -74,6 +74,7 @@ class DeferredRenderService(
     )
 
     private val gBufferShader = GBufferShader()
+    private val gBufferPBRShader = GBufferPBRShader()
 
     private val deferredShader = DeferredShader()
     private val deferredPipeline = PostPassPipeline(deferredShader, screenBuffer)
@@ -104,6 +105,8 @@ class DeferredRenderService(
 
 //        gBufferShader.view = camera.view
         gBufferShader.combined = camera.combined
+//        gBufferPBRShader.view = camera.view
+        gBufferPBRShader.combined = camera.combined
 
         drawable.model.nodes.forEach { node ->
             val nodeTransform = (node.getGlobalTransform() * transform).matrix
@@ -113,8 +116,14 @@ class DeferredRenderService(
                 model = nodeTransform
                 normal = nodeNormalTransform
             }
+            gBufferPBRShader.apply {
+                this.mesh = Matrix4f()
+                model = nodeTransform
+                normal = nodeNormalTransform
+            }
 
             node.meshes.forEach { mesh ->
+                val pipeline: Pipeline<*>
                 when (val material = mesh.material) {
                     is PhongMaterial -> {
                         gBufferShader.apply {
@@ -132,13 +141,26 @@ class DeferredRenderService(
                             }
                             material.specularTexture?.let { specularTexture = it }
                         }
+                        pipeline = Pipeline(mesh.vao, PipelineConfig(), gBufferShader, gBuffer)
                     }
-                    is PBRMaterial -> TODO("PBR deferred rendering")
+
+                    is PBRMaterial -> {
+                        gBufferPBRShader.apply {
+                            textureScale = material.textureScale
+                            hasDiffuseTexture = material.diffuseTexture != null
+                            material.diffuseTexture?.let { diffuseTexture = it }
+                            hasNormalTexture = material.normalTexture != null
+                            material.normalTexture?.let { normalTexture = it }
+                            hasORMTexture = material.ormTexture != null
+                            material.ormTexture?.let { ormTexture = it }
+                        }
+                        pipeline = Pipeline(mesh.vao, PipelineConfig(), gBufferPBRShader, gBuffer)
+                    }
+
                     else -> error("Unsupported material type for deferred shading: ${material::class.simpleName}")
                 }
 
                 //TODO acceleration structure?? maybe it's just... fine? GCs were made for this after all
-                val pipeline = Pipeline(mesh.vao, PipelineConfig(), gBufferShader, gBuffer)
                 renderer.render(pipeline)
             }
         }
@@ -229,6 +251,82 @@ class GBufferShader() : ShaderBuilder<GBufferShader.Vertex, GBufferShader.Vertex
             }
 
             val orm = vec3(1, roughness, 0)
+
+            RenderTargets(vec3(it.worldPosition), colour.rgb, norm, orm)
+        }
+    }
+}
+
+class GBufferPBRShader() :
+    ShaderBuilder<GBufferPBRShader.Vertex, GBufferPBRShader.VertexData, GBufferPBRShader.RenderTargets>(
+        object : Shader(listOf("shaders/GBufferPBR.glsl")) {}
+    ) {
+    data class Vertex(
+        val position: vec3, val normalVec: vec3, val texCoords: vec2, val tangent: vec3, val biTangent: vec3
+    )
+
+    data class VertexData(
+        override val position: vec4, val worldPosition: vec4, val normal: vec3, val texCoords: vec2, val tbn: mat3
+    ) : ShaderVertexData
+
+    data class RenderTargets(val gPosition: vec3, val gColour: vec3, val gNormal: vec3, val gORM: vec3)
+
+    var mesh: mat4 by uniform()
+    var model: mat4 by uniform()
+    var normal: mat3 by uniform()
+
+    //    var view: mat4 by uniform()
+    var combined: mat4 by uniform()
+
+    var textureScale by uniform<float>()
+
+    //    var material: PhongMaterial by uniform()
+    var hasDiffuseTexture by uniform<bool>()
+    var diffuseTexture by uniform<sampler2D>()
+
+    var hasNormalTexture by uniform<bool>()
+    var normalTexture by uniform<sampler2D>()
+
+    var hasORMTexture by uniform<bool>()
+    var ormTexture by uniform<sampler2D>()
+
+    override fun program() {
+        vertex {
+            val worldPosition = model * (mesh * vec4(it.position, 1))
+            val fragPosition = combined * worldPosition
+
+            val normalV = normalize(normal * it.normalVec)
+            val tangentVec = normalize(normal * it.tangent)
+            val biTangentVec = normalize(normal * it.biTangent)
+            val tbn = mat3(tangentVec, biTangentVec, normalV)
+
+            VertexData(fragPosition, worldPosition, it.normalVec, it.texCoords, tbn)
+        }
+        fragment {
+            val colour = if (hasDiffuseTexture) {
+                texture(diffuseTexture, textureScale * it.texCoords)
+            } else {
+                vec4(0.6, 0.6, 0.6, 1)
+            }
+
+            val norm: vec3
+            if (hasNormalTexture) {
+                norm = normalize(
+                    it.tbn *
+                            normalize(
+                                texture(normalTexture, textureScale * it.texCoords).xyz * 2.0 - 1.0
+                            )
+                )
+            } else {
+                norm = it.normal
+            }
+
+            var orm: vec3
+            if (hasORMTexture) {
+                orm = texture(ormTexture, it.texCoords).rgb
+            } else {
+                orm = vec3(1, 0.5, 0)
+            }
 
             RenderTargets(vec3(it.worldPosition), colour.rgb, norm, orm)
         }

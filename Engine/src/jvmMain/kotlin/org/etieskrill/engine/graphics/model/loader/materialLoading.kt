@@ -6,13 +6,14 @@ import org.etieskrill.engine.graphics.model.Material
 import org.etieskrill.engine.graphics.model.PBRMaterial
 import org.etieskrill.engine.graphics.model.PhongMaterial
 import org.etieskrill.engine.graphics.texture.Texture2D
+import org.etieskrill.engine.graphics.texture.TextureFormat
 import org.etieskrill.engine.graphics.texture.TextureType
 import org.etieskrill.engine.graphics.texture.ai
-import org.etieskrill.engine.graphics.texture.textureFormatFromNumChannels
 import org.etieskrill.engine.time.StepTimer
 import org.etieskrill.engine.util.ResourceReader.classpathResourceExists
 import org.etieskrill.engine.util.name
 import org.joml.Vector2i
+import org.joml.Vector2ic
 import org.joml.Vector4f
 import org.joml.Vector4fc
 import org.lwjgl.BufferUtils
@@ -28,11 +29,13 @@ import org.lwjgl.stb.STBImage.stbi_load_from_memory
 private val logger = KotlinLogging.logger("MaterialLoader")
 private val timer = StepTimer(logger)
 
-internal fun loadEmbeddedTextures(scene: AIScene): Map<String, Texture2D> {
-    val embeddedTextures = mutableMapOf<String, Texture2D>()
+internal fun loadEmbeddedTextures(scene: AIScene): Map<String, EmbeddedTexture> {
     val textures = scene.mTextures()
-        ?: if (scene.mNumTextures() == 0) return embeddedTextures
+        ?: if (scene.mNumTextures() == 0) return emptyMap()
         else error("Texture array is not available but number of textures is not zero")
+
+    val embeddedTextures = mutableMapOf<String, EmbeddedTexture>()
+
     for (i in 0..<scene.mNumTextures()) {
         val texture = AITexture.create(textures.get(i))
 
@@ -43,7 +46,9 @@ internal fun loadEmbeddedTextures(scene: AIScene): Map<String, Texture2D> {
         val channels = IntArray(1)
         val imageData = stbi_load_from_memory(texture.pcDataCompressed(), width, height, channels, 0)
         if (imageData == null) {
-            logger.warn { "Failed to decode embedded texture $i: ${stbi_failure_reason()}" }
+            logger.warn {
+                "Failed to decode embedded texture $i (${texture.mFilename().dataString()}): ${stbi_failure_reason()}"
+            }
             continue
         }
 
@@ -52,35 +57,57 @@ internal fun loadEmbeddedTextures(scene: AIScene): Map<String, Texture2D> {
         val filePath = texture.mFilename().dataString()
         val arrayData = ByteArray(imageData.remaining())
         imageData.get(arrayData)
-        val tex = Texture2D(
+        val embeddedTexture = EmbeddedTexture(
             size = Vector2i(width[0], height[0]),
-            type = determineType(filePath),
-            buffer = arrayData,
-            format = textureFormatFromNumChannels(channels[0]),
+            type = guessType(filePath),
+            format = TextureFormat.fromNumChannels(channels[0]),
+            buffer = arrayData
         )
 
-        embeddedTextures["*$i"] = tex
-        embeddedTextures[filePath] = tex
+        embeddedTextures["*$i"] = embeddedTexture
+        embeddedTextures[filePath] = embeddedTexture
 
-        timer.trace { "Loaded embedded texture $i $filePath: $tex" }
+        timer.trace { "Loaded embedded texture $i ($filePath): $embeddedTexture" }
     }
 
     logger.debug { "${embeddedTextures.size / 2} of ${scene.mNumTextures()} embedded textures loaded" }
     return embeddedTextures
 }
 
-private fun determineType(filePath: String): TextureType = when {
-    "diffuse" in filePath.name -> TextureType.DIFFUSE
+private fun guessType(filePath: String): TextureType = when { //TODO add other types or just throw away
+    listOf("color", "diff").any { it in filePath.name } -> TextureType.DIFFUSE
     "specular" in filePath.name -> TextureType.SPECULAR
     "normal" in filePath.name -> TextureType.NORMAL
     "emissive" in filePath.name -> TextureType.EMISSIVE
     else -> TextureType.UNKNOWN
 }
 
+internal data class EmbeddedTexture(
+    val size: Vector2ic,
+    var type: TextureType,
+    var format: TextureFormat,
+    val buffer: ByteArray
+) {
+    private lateinit var texture: Texture2D
+
+    internal fun get(type: TextureType, format: TextureFormat): Texture2D {
+        if (!::texture.isInitialized) {
+            this.type = type
+            this.format = format
+            texture = Texture2D(size = size, type = type, format = format, buffer = buffer)
+        } else {
+            check(texture.type == type) { "Embedded texture was initialised with type ${texture.type} but new type requires $type" }
+            check(texture.format == format) { "Embedded texture was initialised with format ${texture.type} but new format requires $type" }
+        }
+
+        return texture
+    }
+}
+
 internal fun loadMaterials(
     scene: AIScene,
     materials: MutableList<Material>,
-    embeddedTextures: Map<String, Texture2D>,
+    embeddedTextures: Map<String, EmbeddedTexture>,
     modelName: String
 ) {
     timer.start()
@@ -97,7 +124,7 @@ internal fun loadMaterials(
 private fun processMaterial(
     materialIndex: Int,
     aiMaterial: AIMaterial,
-    embeddedTextures: Map<String, Texture2D>,
+    embeddedTextures: Map<String, EmbeddedTexture>,
     modelName: String
 ): Material = when (val model = aiMaterial.getIntProperty(AI_MATKEY_SHADING_MODEL)) {
     aiShadingMode_Flat, aiShadingMode_Gouraud, aiShadingMode_Phong, aiShadingMode_Blinn, aiShadingMode_Toon ->
@@ -113,7 +140,7 @@ private fun processMaterial(
 private fun processPhongMaterial(
     materialIndex: Int,
     aiMaterial: AIMaterial,
-    embeddedTextures: Map<String, Texture2D>,
+    embeddedTextures: Map<String, EmbeddedTexture>,
     modelName: String
 ): PhongMaterial = PhongMaterial(
     name = aiMaterial.getStringProperty(AI_MATKEY_NAME),
@@ -145,7 +172,7 @@ private fun processPhongMaterial(
 private fun processPBRMaterial(
     materialIndex: Int,
     aiMaterial: AIMaterial,
-    embeddedTextures: Map<String, Texture2D>,
+    embeddedTextures: Map<String, EmbeddedTexture>,
     modelName: String
 ): PBRMaterial = PBRMaterial(
     name = aiMaterial.getStringProperty(AI_MATKEY_NAME),
@@ -157,19 +184,7 @@ private fun processPBRMaterial(
     emissiveStrength = aiMaterial.getFloatProperty(AI_MATKEY_EMISSIVE_INTENSITY),
 
     diffuseTexture = aiMaterial.getTexture(TextureType.DIFFUSE, materialIndex, modelName, embeddedTextures),
-    metallicTexture = aiMaterial.getTexture(TextureType.METALNESS, materialIndex, modelName, embeddedTextures),
-    roughnessTexture = aiMaterial.getTexture(
-        TextureType.ROUGHNESS,
-        materialIndex,
-        modelName,
-        embeddedTextures
-    ),
-    ambientOcclusionTexture = aiMaterial.getTexture(
-        TextureType.AMBIENT_OCCLUSION,
-        materialIndex,
-        modelName,
-        embeddedTextures
-    ),
+    ormTexture = aiMaterial.getTexture(TextureType.PBR_ORM, materialIndex, modelName, embeddedTextures),
     normalTexture = aiMaterial.getTexture(TextureType.NORMAL, materialIndex, modelName, embeddedTextures),
     heightTexture = aiMaterial.getTexture(TextureType.HEIGHT, materialIndex, modelName, embeddedTextures),
     emissiveTexture = aiMaterial.getTexture(TextureType.EMISSIVE, materialIndex, modelName, embeddedTextures)
@@ -219,16 +234,35 @@ private fun AIMaterial.getTexture(
     type: TextureType,
     materialIndex: Int,
     modelName: String,
-    embeddedTextures: Map<String, Texture2D>
+    embeddedTextures: Map<String, EmbeddedTexture>
 ): Texture2D? {
     val file = AIString.create()
-    val textureCount = aiGetMaterialTextureCount(this, type.ai!!)
+
+    val texType = when (type) {
+        TextureType.PBR_ORM -> when {
+            aiGetMaterialTextureCount(this, TextureType.AMBIENT_OCCLUSION.ai!!) == 1 ->
+                TextureType.AMBIENT_OCCLUSION.ai!!
+
+            aiGetMaterialTextureCount(this, TextureType.ROUGHNESS.ai!!) == 1 -> TextureType.ROUGHNESS.ai!!
+            aiGetMaterialTextureCount(this, TextureType.METALNESS.ai!!) == 1 -> TextureType.METALNESS.ai!!
+            else -> error("PBR ORM texture expected, but none defined in material $materialIndex for model $modelName")
+        }
+
+        else -> type.ai!!
+    }
+
+    val textureCount = aiGetMaterialTextureCount(this, texType)
     if (1 != textureCount) {
         logger.debug { "Texture of type '$type' is not loaded because material texture count was $textureCount" }
         return null
     }
 
-    if (aiReturn_SUCCESS != aiGetMaterialTexture(this, type.ai!!, 0, file, IntArray(1), null, null, null, null, null)) {
+    @Suppress("USELESS_CAST")
+    if (aiReturn_SUCCESS != aiGetMaterialTexture(
+            this, texType, 0, file,
+            null as? IntArray, null, null, null, null, null
+        )
+    ) {
         logger.debug { "Error while loading material texture: ${aiGetErrorString()}" }
         return null
     }
@@ -239,9 +273,11 @@ private fun AIMaterial.getTexture(
     return when {
         textureFile in embeddedTextures -> {
             logger.trace { "Texture $textureName is loaded from embedded textures" }
-            embeddedTextures[textureFile]!!.apply {
-//                format = AbstractTexture.Format.fromChannelsAndType(type) //FIXME
-//                this.type = type
+            return embeddedTextures[textureFile]!!.let {
+                it.get(
+                    format = TextureFormat.fromNumChannelsAndType(it.format.numChannels, type),
+                    type = type
+                )
             }
         }
 
@@ -257,7 +293,7 @@ private fun AIMaterial.getTexture(
 
         embeddedTextures.any { it.value.type == type } -> {
             logger.debug { "Texture $textureName is loaded as fallback from embedded textures based on texture type" }
-            embeddedTextures.values.single { it.type == type }
+            embeddedTextures.values.single { it.type == type }.let { it.get(type, it.format) }
         }
 
         else -> {

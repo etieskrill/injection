@@ -8,7 +8,9 @@ import org.etieskrill.engine.entity.service.impl.DeferredRenderService
 import org.etieskrill.engine.entity.service.impl.RenderService
 import org.etieskrill.engine.graphics.camera.PerspectiveCamera
 import org.etieskrill.engine.graphics.data.DirectionalLight
+import org.etieskrill.engine.graphics.model.Model
 import org.etieskrill.engine.graphics.model.PhongMaterial
+import org.etieskrill.engine.graphics.model.loader.loadModel
 import org.etieskrill.engine.graphics.model.model
 import org.etieskrill.engine.graphics.model.plane
 import org.etieskrill.engine.graphics.shader.Shader
@@ -36,6 +38,7 @@ object SceneGallery : App(Window(WindowSize.FHD)) {
     }
 
     init {
+        //region Entities
         entitySystem.createEntity {
             +Transform()
             +Drawable(model("plane") {
@@ -59,6 +62,12 @@ object SceneGallery : App(Window(WindowSize.FHD)) {
             })
         }
 
+        entitySystem.createEntity {
+            +Transform(position = Vector3f(10f, 0f, 0f))
+            +Drawable(loadModel("models/dark_spike.glb"))
+        }
+        //endregion
+
         entitySystem.addServices(
             DeferredRenderService(renderer, window.screenBuffer, camera)
         )
@@ -66,7 +75,7 @@ object SceneGallery : App(Window(WindowSize.FHD)) {
         window.cursorInputs += CursorCameraController(camera)
         window.cursor.disable()
 
-        window.keyInputs += KeyCameraController(camera)
+        window.keyInputs += KeyCameraController(camera).apply { speed = 4f }
     }
 
     override fun loop(delta: Double) = Unit

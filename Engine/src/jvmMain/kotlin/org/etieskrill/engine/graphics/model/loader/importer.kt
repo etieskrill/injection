@@ -13,7 +13,7 @@ import kotlin.math.min
 private val fileIO: AIFileIO = AIFileIO.create().apply {
     OpenProc { pFileIO, fileName, openMode ->
         val name = memUTF8(fileName)
-        val buffer = ResourceReader.getRawResource(MODEL_PATH + name)
+        val buffer = ResourceReader.getRawResource(name)
 
         val aiFile = AIFile.create().apply {
             ReadProc { pFile, pBuffer, size, count ->
@@ -57,7 +57,7 @@ internal fun importScene(file: String, options: ModelLoaderOptions): AIScene {
 //                        aiProcess_OptimizeGraph or
                         aiProcess_JoinIdenticalVertices or
 //                        aiProcess_GenNormals or
-//                        aiProcess_RemoveRedundantMaterials or
+                        aiProcess_RemoveRedundantMaterials or
 //                        aiProcess_FindInvalidData or
 //                        aiProcess_GenUVCoords or
 //                        aiProcess_TransformUVCoords or
