@@ -23,8 +23,8 @@ open class KeyCharacterController<T>(
         addBindings(
             bindKey(Key.W, on = InputTriggerEdge.PRESSED) { deltaPosition.add(0f, 0f, 1f) },
             bindKey(Key.S, on = InputTriggerEdge.PRESSED) { deltaPosition.add(0f, 0f, -1f) },
-            bindKey(Key.A, on = InputTriggerEdge.PRESSED) { deltaPosition.add(-1f, 0f, 0f) },
-            bindKey(Key.D, on = InputTriggerEdge.PRESSED) { deltaPosition.add(1f, 0f, 0f) },
+            bindKey(Key.A, on = InputTriggerEdge.PRESSED) { deltaPosition.add(1f, 0f, 0f) },
+            bindKey(Key.D, on = InputTriggerEdge.PRESSED) { deltaPosition.add(-1f, 0f, 0f) },
             bindKey(Key.SPACE, on = InputTriggerEdge.PRESSED) { deltaPosition.add(0f, 1f, 0f) },
             bindKey(Key.SHIFT, on = InputTriggerEdge.PRESSED) { deltaPosition.add(0f, -1f, 0f) }
         )

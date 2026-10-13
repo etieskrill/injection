@@ -6,6 +6,5 @@ import org.joml.times
 class KeyCameraController(
     camera: Camera
 ) : KeyCharacterController<Camera>(camera, { delta, camera, deltaPosition, speed ->
-    deltaPosition.x = -deltaPosition.x
     camera.translate(deltaPosition * delta.toFloat() * speed)
 })

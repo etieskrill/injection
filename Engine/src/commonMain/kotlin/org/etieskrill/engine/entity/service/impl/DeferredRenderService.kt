@@ -32,13 +32,15 @@ import org.etieskrill.engine.graphics.texture.TextureFormat
 import org.etieskrill.engine.graphics.texture.TextureMagFilter
 import org.etieskrill.engine.graphics.texture.TextureMinFilter
 import org.etieskrill.engine.graphics.texture.TextureType
+import org.etieskrill.engine.graphics.texture.TextureWrapping
 import org.joml.Matrix3f
 import org.joml.Matrix4f
 
 class DeferredRenderService(
     private val renderer: Renderer,
-    screenBuffer: FrameBuffer,
-    private val camera: Camera
+    private val screenBuffer: FrameBuffer,
+    private val camera: Camera,
+    private vararg val postProcessingEffects: PureShaderBuilder<*, *>
 ) : Service {
 
     //TODO RGB_HDR
@@ -78,6 +80,19 @@ class DeferredRenderService(
 
     private val deferredShader = DeferredShader()
     private val deferredPipeline = PostPassPipeline(deferredShader, screenBuffer)
+
+    private val screenTexture by lazy {
+        Texture2D(
+            screenBuffer.size, format = TextureFormat.RGB, type = TextureType.DIFFUSE,
+            minFilter = TextureMinFilter.NEAREST, magFilter = TextureMagFilter.NEAREST,
+            wrapping = TextureWrapping.CLAMP_TO_BORDER
+        )
+    }
+    private val postEffectBuffer by lazy {
+        FrameBuffer(
+            screenBuffer.size, mapOf(FrameBufferAttachmentType.COLOUR0 to screenTexture)
+        )
+    }
 
     override fun canProcess(entity: Entity) = entity.hasComponents<Transform, Drawable>()
 
@@ -175,9 +190,28 @@ class DeferredRenderService(
 
         deferredShader.viewPosition = camera.viewPosition
 
-        renderer.render(deferredPipeline)
-    }
+        if (postProcessingEffects.isEmpty()) {
+            renderer.render(PostPassPipeline(deferredShader, screenBuffer))
+            return
+        }
 
+        if (postProcessingEffects.size != 1) {
+            TODO("arbitrary number of post processing effects")
+        }
+
+        postEffectBuffer.clear()
+        renderer.render(PostPassPipeline(deferredShader, postEffectBuffer))
+        postProcessingEffects[0].apply {
+            setUniform("screenTexture", screenTexture)
+
+            setUniform("gPosition", gPosition)
+            setUniform("gColour", gColour)
+            setUniform("gNormal", gNormal)
+            setUniform("gORM", gORM)
+            setUniform("gDepth", gDepth)
+        }
+        renderer.render(PostPassPipeline(postProcessingEffects[0], screenBuffer))
+    }
 
 }
 

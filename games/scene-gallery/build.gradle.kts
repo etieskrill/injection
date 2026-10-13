@@ -1,5 +1,6 @@
 plugins {
     kotlin("multiplatform")
+    id("io.github.etieskrill.injection.shader.dsl")
 }
 
 group = "net.bifreus.games.scene.gallery"
@@ -22,4 +23,6 @@ kotlin {
             implementation(project(":engine"))
         }
     }
+
+    compilerOptions.freeCompilerArgs.add("-Xcontext-receivers")
 }

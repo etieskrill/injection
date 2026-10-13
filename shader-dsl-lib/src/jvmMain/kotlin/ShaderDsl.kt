@@ -254,6 +254,7 @@ open class GlslReceiver {
     fun pow(baseVector: vec3, exponentVector: vec3): vec3 = error()
     fun exp(s: Number): float = error()
     fun exp(v: vec3): vec3 = error()
+    fun log(s: Number): float = error()
 
     fun sin(s: Number): float = error()
 
@@ -283,6 +284,7 @@ open class GlslReceiver {
     fun fract(s: vec3): vec3 = error()
 
     fun mix(a: Number, b: Number, t: Number): float = error()
+    fun mix(a: vec3, b: vec3, t: Number): vec3 = error()
     fun mix(a: vec4, b: vec4, t: Number): vec4 = error()
 
     fun reflect(incident: vec3, normal: vec3): vec3 = error()

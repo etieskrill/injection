@@ -16,7 +16,6 @@ class KeyCharacterTranslationController(
         }
 
         val deltaTranslation = if (fixUpDirection) {
-            deltaPosition.x = -deltaPosition.x
             deltaPosition.rotateY(toRadians(camera.yaw))
         } else {
             camera.relativeTranslation(deltaPosition)

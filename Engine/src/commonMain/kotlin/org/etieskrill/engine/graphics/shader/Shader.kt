@@ -53,13 +53,14 @@ abstract class Shader protected constructor(
 
     override fun setUniform(name: String, value: Any) {
         val uniform = uniforms[name]
-            ?: error("Failed to find uniform by name: $name in shader ${this::class.simpleName ?: this::class}") //TODO strict uniforms
+            ?: if (!strictUniformDetection) return
+            else error("Failed to find uniform by name: $name in shader ${this::class.simpleName ?: this::class}")
         if (value::class != uniform.type.clazz && value::class != uniform.type.constClass) {
             logger.warn { "Tried setting uniform ${uniform.name} of type ${uniform.type} to incompatible value of type ${value::class.simpleName}" }
             return
         }
 
-//        if (uniform.value == value) return //FIXME is there no equals comparing purely the values instead of object references?
+//        if (uniform.value == value) return //FIXME idiot idiot idiot you have to use a proxy/in-place settable object anyway
 
         uniform.value = value
         uniform.version++

@@ -13,6 +13,7 @@ import org.etieskrill.engine.graphics.model.PhongMaterial
 import org.etieskrill.engine.graphics.model.loader.loadModel
 import org.etieskrill.engine.graphics.model.model
 import org.etieskrill.engine.graphics.model.plane
+import org.etieskrill.engine.graphics.pipeline.PostPassPipeline
 import org.etieskrill.engine.graphics.shader.Shader
 import org.etieskrill.engine.graphics.shader.impl.StaticShader
 import org.etieskrill.engine.graphics.texture.Texture2D
@@ -21,12 +22,17 @@ import org.etieskrill.engine.graphics.texture.TextureType
 import org.etieskrill.engine.graphics.texture.TextureWrapping
 import org.etieskrill.engine.input.controller.CursorCameraController
 import org.etieskrill.engine.input.controller.KeyCameraController
+import org.etieskrill.engine.input.controller.KeyCharacterController
 import org.etieskrill.engine.window.Window
 import org.etieskrill.engine.window.WindowSize
 import org.joml.Vector2f
 import org.joml.Vector2i
 import org.joml.Vector3f
+import org.joml.Vector3fc
 import org.joml.div
+import org.joml.plus
+import org.joml.times
+import org.joml.timesAssign
 
 fun main() = SceneGallery.run()
 
@@ -69,15 +75,27 @@ object SceneGallery : App(Window(WindowSize.FHD)) {
         //endregion
 
         entitySystem.addServices(
-            DeferredRenderService(renderer, window.screenBuffer, camera)
+            DeferredRenderService(
+                renderer, window.screenBuffer, camera,
+                DeferredDistanceFogPostShader()
+            )
         )
 
         window.cursorInputs += CursorCameraController(camera)
         window.cursor.disable()
 
-        window.keyInputs += KeyCameraController(camera).apply { speed = 4f }
+        window.keyInputs += KeyCharacterController(camera, { delta, target, deltaPosition, speed ->
+            deltaPosition.set(target.relativeTranslation(deltaPosition))
+            deltaPosition.y = 0f
+            //TODO take up -0 into the NaN normalise bullshit territory too
+            if (!deltaPosition.equals(VEC3_ZERO, 0.00001f)) deltaPosition.normalize()
+            deltaPosition *= speed * delta.toFloat()
+            target.position += deltaPosition
+        }, 3f)
     }
 
     override fun loop(delta: Double) = Unit
 
 }
+
+val VEC3_ZERO: Vector3fc = Vector3f(0f, 0f, 0f)
