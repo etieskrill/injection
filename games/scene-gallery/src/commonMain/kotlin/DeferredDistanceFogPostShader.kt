@@ -29,6 +29,7 @@ class DeferredDistanceFogPostShader : PureShaderBuilder<VertexData, ColourRender
             val screenColour = texture(screenTexture, texCoords).rgb
             val depth = texture(gDepth, texCoords).r
 
+            //FIXME un-hardcode & un-project from depth for true distance
             val linearDepth = 2.0 * ((1.0 / ((depth * ((1.0 / 100.0) - (1.0 / 0.1))) + (1.0 / 0.1))) - 1.0)
             val fogIntensity = min(0.95, max(0.0, (linearDepth - 1.0) / 25.0))
             val fogColour = rgb2vec3("2a3229")
