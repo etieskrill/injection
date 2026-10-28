@@ -1,5 +1,6 @@
 package org.etieskrill.engine.graphics.model.loader
 
+import net.bifreus.kml.AABB
 import org.etieskrill.engine.graphics.buffer.BufferObject
 import org.etieskrill.engine.graphics.buffer.BufferType
 import org.etieskrill.engine.graphics.buffer.VertexArrayObject
@@ -8,14 +9,13 @@ import org.etieskrill.engine.graphics.model.Material
 import org.etieskrill.engine.graphics.model.Mesh
 import org.etieskrill.engine.graphics.model.MeshDrawMode
 import org.etieskrill.engine.graphics.model.Vertex
-import org.joml.primitives.AABBf
 
 fun loadToVAO(
     vertices: List<Vertex>,
     indices: List<Int>,
     material: Material,
     bones: List<Bone>? = null,
-    boundingBox: AABBf = AABBf(),
+    boundingBox: AABB = AABB(),
     drawMode: MeshDrawMode = MeshDrawMode.TRIANGLES
 ): Mesh = Mesh(
     material,

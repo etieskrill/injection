@@ -1,15 +1,15 @@
 package org.etieskrill.engine.graphics.data
 
+import net.bifreus.kml.Vec3
 import org.etieskrill.engine.graphics.shader.UniformMappable
 import org.etieskrill.engine.graphics.shader.UniformMapper
-import org.joml.Vector3f
 
 data class PointLight(
-    val position: Vector3f,
+    val position: Vec3,
 
-    private val ambient: Vector3f,
-    private val diffuse: Vector3f,
-    private val specular: Vector3f,
+    private val ambient: Vec3,
+    private val diffuse: Vec3,
+    private val specular: Vec3,
 
     private val constant: Float,
     private val linear: Float,

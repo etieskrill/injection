@@ -36,12 +36,7 @@ import org.etieskrill.engine.graphics.shader.Shader
 import org.etieskrill.engine.graphics.model.model
 import org.etieskrill.engine.graphics.model.plane
 import org.etieskrill.engine.graphics.pipeline.PostPassPipeline
-import org.etieskrill.engine.input.InputTriggerEdge
 import org.etieskrill.engine.input.Key
-import org.etieskrill.engine.input.KeyEvent
-import org.etieskrill.engine.input.KeyEventAction
-import org.etieskrill.engine.input.KeyInputManager
-import org.etieskrill.engine.input.ModifierKey
 import org.etieskrill.engine.input.bindKey
 import org.etieskrill.engine.input.controller.CursorCameraController
 import org.etieskrill.engine.input.inputs
@@ -53,7 +48,6 @@ import org.etieskrill.engine.scene.container.VBox
 import org.etieskrill.engine.scene.container.WidgetContainer
 import org.etieskrill.engine.scene.element.Checkbox
 import org.etieskrill.engine.scene.element.Dropdown
-import org.etieskrill.engine.scene.element.Image
 import org.etieskrill.engine.scene.element.Label
 import org.etieskrill.engine.scene.element.PlaybackBar
 import org.etieskrill.engine.scene.element.PlaybackBar.State.PAUSED
@@ -63,8 +57,6 @@ import org.etieskrill.engine.scene.plot.HistogramScaleMode
 import org.etieskrill.engine.util.FixedArrayDeque
 import org.etieskrill.engine.util.ResourceReader
 import org.etieskrill.engine.util.average
-import org.etieskrill.engine.util.listResources
-import org.etieskrill.engine.window.Cursor
 import org.etieskrill.engine.window.CursorMode
 import org.etieskrill.engine.window.Window
 import org.etieskrill.engine.window.WindowMode

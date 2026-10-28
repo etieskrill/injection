@@ -1,12 +1,12 @@
 package org.etieskrill.engine.graphics.text
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import net.bifreus.kml.Vec2i
+import net.bifreus.kml.Vec2ic
 import org.etieskrill.engine.common.ResourceLoadException
 import org.etieskrill.engine.util.EngineFontLoader
 import org.etieskrill.engine.util.extension
 import org.etieskrill.engine.util.path
-import org.joml.Vector2i
-import org.joml.Vector2ic
 
 private val logger = KotlinLogging.logger {}
 
@@ -14,7 +14,7 @@ interface Font {
 
     companion object {
         const val NUM_CHARS_ASCII = 128
-        val INVALID_PIXEL_SIZE: Vector2ic = Vector2i(-1)
+        val INVALID_PIXEL_SIZE: Vec2ic = Vec2i(-1)
 
         const val DEFAULT_FONT_SIZE = 24
         const val DEFAULT_FONT = "fonts/AGENCYB.TTF"
@@ -45,7 +45,7 @@ interface Font {
         }
     }
 
-    val pixelSize: Vector2ic
+    val pixelSize: Vec2ic
     val lineHeight: Int
     val minLineHeight: Int
 

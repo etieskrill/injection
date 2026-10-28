@@ -1,5 +1,7 @@
 package org.etieskrill.engine.graphics
 
+import net.bifreus.kml.Vec4
+import net.bifreus.kml.Vec4c
 import org.etieskrill.engine.graphics.buffer.BufferObject
 import org.etieskrill.engine.graphics.buffer.BufferObjectInstance
 import org.etieskrill.engine.graphics.buffer.BufferType
@@ -30,8 +32,6 @@ import org.etieskrill.engine.graphics.texture.TextureCubeMapArray
 import org.etieskrill.engine.graphics.texture.TextureCubeMapArrayInstance
 import org.etieskrill.engine.graphics.texture.TextureCubeMapInstance
 import org.etieskrill.engine.graphics.texture.TextureInstance
-import org.joml.Vector4f
-import org.joml.Vector4fc
 import org.lwjgl.opengl.GL11C.GL_ALWAYS
 import org.lwjgl.opengl.GL11C.GL_BACK
 import org.lwjgl.opengl.GL11C.GL_BLEND
@@ -130,13 +130,11 @@ actual data class GraphicsContext(
 
     private var ignoreCache: Boolean = false
 
-    internal var clearColour: Vector4fc = Vector4f(0f)
+    internal var clearColour: Vec4c = Vec4(0f)
         set(value) {
-            if (!ignoreCache &&
-                (field.x() == value.x() && field.y() == value.y() && field.z() == value.z() && field.w() == value.w())
-            ) return
-            glClearColor(value.x(), value.y(), value.z(), value.w())
-            (field as Vector4f).set(value)
+            if (!ignoreCache && field == value) return
+            glClearColor(value.x, value.y, value.z, value.w)
+            (field as Vec4)(value)
         }
 
     internal var alphaMode: AlphaMode = AlphaMode.OPAQUE

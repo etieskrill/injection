@@ -3,35 +3,32 @@ package org.etieskrill.engine.scene
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import net.bifreus.kml.Vec2
+import net.bifreus.kml.Vec4
 import org.etieskrill.engine.input.KeyEvent
 import org.etieskrill.engine.input.Key
-import org.joml.Vector2f
-import org.joml.Vector4f
-import org.joml.plusAssign
 
 abstract class Node<T : Node<T>> {
 
-    var position = Vector2f(0f)
+    var position = Vec2(0f)
         set(value) {
-            field.set(value)
+            field(value)
         }
-    val absolutePosition: Vector2f
+    val absolutePosition: Vec2
         get() {
-            if (parent == null) return Vector2f(position)
-            val parentPosition = parent!!.absolutePosition
-            parentPosition += position
-            return parentPosition
+            if (parent == null) return Vec2(position)
+            return parent!!.absolutePosition + position
         }
 
-    var size = Vector2f(-1f)
+    var size = Vec2(-1f)
         set(value) {
-            field.set(value)
+            field(value)
             invalidate()
         }
 
-    var formattedSize = Vector2f(size) //TODO protecc or internal
+    var formattedSize = Vec2(size) //TODO protecc or internal
         set(value) {
-            field.set(value)
+            field(value)
         }
 
     var scaleMode = ScaleMode.CONTENT
@@ -51,19 +48,19 @@ abstract class Node<T : Node<T>> {
             field = value
             invalidate()
         }
-    var margin = Vector4f(0f) //Swizzle: top, bottom, left, right
+    var margin = Vec4(0) //Swizzle: top, bottom, left, right
         set(value) {
-            field.set(value)
+            field(value)
         }
 
     var isVisible = true
 
-    var colour = Vector4f(0f)
+    var colour = Vec4(0)
         set(value) {
-            field.set(value)
-            renderedColour.set(value)
+            field(value)
+            renderedColour(value)
         }
-    val renderedColour = Vector4f(0f)
+    val renderedColour = Vec4(0)
 
     var parent: Node<*>? = null
         set(value) {
@@ -122,7 +119,7 @@ abstract class Node<T : Node<T>> {
         when (scaleMode) {
             ScaleMode.FIXED, ScaleMode.CONTENT -> {
                 computedFixedSize = true
-                formattedSize.set(size)
+                formattedSize(size)
             }
 
             ScaleMode.GROW -> computedFixedSize = false
@@ -185,8 +182,8 @@ abstract class Node<T : Node<T>> {
 
     open fun doesHit(posX: Double, posY: Double): Boolean {
         val absPos = absolutePosition
-        return absPos.x() + formattedSize.x() >= posX && posX >= absPos.x() &&
-                absPos.y() + formattedSize.y() >= posY && posY >= absPos.y()
+        return absPos.x + formattedSize.x >= posX && posX >= absPos.x &&
+                absPos.y + formattedSize.y >= posY && posY >= absPos.y
     }
 
     /**

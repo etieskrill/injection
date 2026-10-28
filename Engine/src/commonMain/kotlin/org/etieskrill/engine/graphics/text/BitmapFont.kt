@@ -1,14 +1,14 @@
 package org.etieskrill.engine.graphics.text
 
+import net.bifreus.kml.Vec2ic
 import org.etieskrill.engine.graphics.texture.ArrayTexture2D
-import org.joml.Vector2ic
 
 class BitmapFont(
     private val glyphs: Map<Char, Glyph>,
 
     override val lineHeight: Int,
     override val minLineHeight: Int,
-    override val pixelSize: Vector2ic,
+    override val pixelSize: Vec2ic,
 
     val family: String,
     val style: String,

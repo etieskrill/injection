@@ -1,15 +1,15 @@
 package org.etieskrill.engine.graphics.framebuffer
 
 import io.github.etieskrill.injection.extension.shader.Texture2DArrayShadow
+import net.bifreus.kml.Vec2ic
 import org.etieskrill.engine.graphics.texture.TextureCubeMapArray
 import org.etieskrill.engine.graphics.texture.TextureFormat
 import org.etieskrill.engine.graphics.texture.TextureMinFilter
 import org.etieskrill.engine.graphics.texture.TextureType
 import org.etieskrill.engine.graphics.texture.TextureWrapping
-import org.joml.Vector2ic
 
 class PointShadowMapArray(
-    size: Vector2ic,
+    size: Vec2ic,
     val length: Int
 ) : ShadowMap<TextureCubeMapArray>(
     size,

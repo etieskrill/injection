@@ -1,18 +1,18 @@
 package org.etieskrill.engine.graphics.renderer
 
+import net.bifreus.kml.Vec2
 import org.etieskrill.engine.graphics.buffer.VertexArrayAccessor
-import org.joml.Vector2f
 
 data class RenderedGlyph(
-    val size: Vector2f = Vector2f(),
-    val position: Vector2f = Vector2f(),
+    val size: Vec2 = Vec2(),
+    val position: Vec2 = Vec2(),
     var textureIndex: Int = -1
 )
 
 object RenderedGlyphAccessor : VertexArrayAccessor<RenderedGlyph>() {
     override fun registerFields() {
-        addField<Vector2f> { it, buffer -> buffer += it.size }
-        addField<Vector2f> { it, buffer -> buffer += it.position }
+        addField<Vec2> { it, buffer -> buffer += it.size }
+        addField<Vec2> { it, buffer -> buffer += it.position }
         addField<Int> { it, buffer -> buffer += it.textureIndex }
     }
 }

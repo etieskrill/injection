@@ -26,7 +26,7 @@ internal actual class RenderBufferInstance(
             glRenderbufferStorage(
                 GL_RENDERBUFFER,
                 descriptor.type.gl,
-                descriptor.size.x(), descriptor.size.y()
+                descriptor.size.x, descriptor.size.y
             )
 
             GLUtils.checkErrorThrowing("Error during renderbuffer creation")

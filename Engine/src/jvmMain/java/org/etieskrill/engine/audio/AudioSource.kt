@@ -1,8 +1,8 @@
 package org.etieskrill.engine.audio
 
+import net.bifreus.kml.Vec3
+import net.bifreus.kml.Vec3c
 import org.etieskrill.engine.common.Disposable
-import org.joml.Vector3f
-import org.joml.Vector3fc
 import org.lwjgl.openal.AL10.*
 import org.lwjgl.openal.AL11.AL_SAMPLE_OFFSET
 import org.lwjgl.openal.AL11.AL_SEC_OFFSET
@@ -77,10 +77,10 @@ abstract class AudioSource internal constructor(
 class MonoAudioSource internal constructor(handle: Int, sampleRate: Int, numSamples: Int, buffer: ShortBuffer?) :
     AudioSource(handle, sampleRate, numSamples, buffer) {
 
-    var position: Vector3fc = Vector3f(0f)
+    var position: Vec3c = Vec3(0f)
         set(value) {
             field = value
-            alSource3f(handle, AL_POSITION, value.x(), value.y(), value.z())
+            alSource3f(handle, AL_POSITION, value.x, value.y, value.z)
         }
 
 }

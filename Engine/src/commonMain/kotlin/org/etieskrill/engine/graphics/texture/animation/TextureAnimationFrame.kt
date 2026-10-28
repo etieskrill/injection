@@ -1,8 +1,8 @@
 package org.etieskrill.engine.graphics.texture.animation
 
-import org.joml.primitives.Rectanglei
+import net.bifreus.kml.Recti
 
 data class TextureAnimationFrame(
-    val atlasArea: Rectanglei,
+    val atlasArea: Recti,
     val time: Float
 )

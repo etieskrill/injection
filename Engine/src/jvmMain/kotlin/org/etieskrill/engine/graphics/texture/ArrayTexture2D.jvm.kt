@@ -17,7 +17,7 @@ internal actual class ArrayTexture2DInstance(
     override val glTarget: Int get() = GL_TEXTURE_2D_ARRAY
 
     override fun bufferTextureData() = context.withContext {
-        val bytesExpected = descriptor.run { size.x() * size.y() * format.numChannels * length }
+        val bytesExpected = descriptor.run { size.x * size.y * format.numChannels * length }
 
         check(descriptor.buffer == null || descriptor.buffer.size == bytesExpected) {
             "Array texture data buffer contains ${descriptor.buffer!!.size} bytes when $bytesExpected bytes were expected"
@@ -33,12 +33,12 @@ internal actual class ArrayTexture2DInstance(
 
         glTexImage3D(
             glTarget, 0, descriptor.format.glInternal,
-            descriptor.size.x(), descriptor.size.y(), descriptor.length,
+            descriptor.size.x, descriptor.size.y, descriptor.length,
             0, descriptor.format.gl, GL_UNSIGNED_BYTE, data
         )
 
         logger.debug {
-            "Loaded ${descriptor.size.x()}x${descriptor.size.y()} ${8 * descriptor.format.numChannels}-bit ${
+            "Loaded ${descriptor.size.x}x${descriptor.size.y} ${8 * descriptor.format.numChannels}-bit ${
                 descriptor.type.name.lowercase()
             } array texture containing ${descriptor.length} elements"
         }

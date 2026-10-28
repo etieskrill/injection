@@ -1,6 +1,6 @@
 package org.etieskrill.engine.graphics.text
 
-import org.joml.Vector2fc
+import net.bifreus.kml.Vec2c
 
 /**
  * A glyph represents a single unicode character belonging to a specific font, where the font family, style and size are
@@ -18,9 +18,9 @@ import org.joml.Vector2fc
  */
 // * @param texture   the glyph's texture, if any
 data class Glyph(
-    val size: Vector2fc,
-    val position: Vector2fc,
-    val advance: Vector2fc,
+    val size: Vec2c,
+    val position: Vec2c,
+    val advance: Vec2c,
 
     val textureIndex: Int, //?,
 //    private val texture: Texture2D?,

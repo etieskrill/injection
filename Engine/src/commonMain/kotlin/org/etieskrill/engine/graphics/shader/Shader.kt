@@ -13,6 +13,20 @@ import io.github.etieskrill.injection.extension.shader.TextureCubeMapArray
 import io.github.etieskrill.injection.extension.shader.TextureCubeMapArrayShadow
 import io.github.etieskrill.injection.extension.shader.TextureCubeMapShadow
 import io.github.oshai.kotlinlogging.KotlinLogging
+import net.bifreus.kml.Mat2
+import net.bifreus.kml.Mat2c
+import net.bifreus.kml.Mat3
+import net.bifreus.kml.Mat3c
+import net.bifreus.kml.Mat4
+import net.bifreus.kml.Mat4c
+import net.bifreus.kml.Vec2
+import net.bifreus.kml.Vec2c
+import net.bifreus.kml.Vec2i
+import net.bifreus.kml.Vec2ic
+import net.bifreus.kml.Vec3
+import net.bifreus.kml.Vec3c
+import net.bifreus.kml.Vec4
+import net.bifreus.kml.Vec4c
 import org.etieskrill.engine.common.Disposable
 import org.etieskrill.engine.graphics.GraphicsContext
 import org.etieskrill.engine.graphics.framebuffer.DirectionalShadowMap
@@ -20,20 +34,6 @@ import org.etieskrill.engine.graphics.framebuffer.PointShadowMap
 import org.etieskrill.engine.graphics.framebuffer.PointShadowMapArray
 import org.etieskrill.engine.graphics.texture.ArrayTexture2D
 import org.etieskrill.engine.util.resourceExists
-import org.joml.Matrix2f
-import org.joml.Matrix2fc
-import org.joml.Matrix3f
-import org.joml.Matrix3fc
-import org.joml.Matrix4f
-import org.joml.Matrix4fc
-import org.joml.Vector2f
-import org.joml.Vector2fc
-import org.joml.Vector2i
-import org.joml.Vector2ic
-import org.joml.Vector3f
-import org.joml.Vector3fc
-import org.joml.Vector4f
-import org.joml.Vector4fc
 import kotlin.reflect.KClass
 
 private val logger = KotlinLogging.logger {}
@@ -169,13 +169,13 @@ enum class UniformType(val glslName: String?, val clazz: KClass<*>, val constCla
     FLOAT("float", Float::class),
     DOUBLE("double", Double::class),
     BOOL("bool", Boolean::class),
-    VEC2("vec2", Vector2f::class, Vector2fc::class), //TODO these really need to check for assignability instead
-    VEC2I("vec2i", Vector2i::class, Vector2ic::class),
-    VEC3("vec3", Vector3f::class, Vector3fc::class),
-    VEC4("vec4", Vector4f::class, Vector4fc::class),
-    MAT2("mat2", Matrix2f::class, Matrix2fc::class),
-    MAT3("mat3", Matrix3f::class, Matrix3fc::class),
-    MAT4("mat4", Matrix4f::class, Matrix4fc::class),
+    VEC2("vec2", Vec2::class, Vec2c::class), //TODO these really need to check for assignability instead
+    VEC2I("vec2i", Vec2i::class, Vec2ic::class),
+    VEC3("vec3", Vec3::class, Vec3c::class),
+    VEC4("vec4", Vec4::class, Vec4c::class),
+    MAT2("mat2", Mat2::class, Mat2c::class),
+    MAT3("mat3", Mat3::class, Mat3c::class),
+    MAT4("mat4", Mat4::class, Mat4c::class),
     TEXTURE_2D("sampler2D", Texture2D::class, org.etieskrill.engine.graphics.texture.Texture2D::class),
     TEXTURE_2D_ARRAY("sampler2DArray", Texture2DArray::class, ArrayTexture2D::class),
     TEXTURE_2D_SHADOW("sampler2DShadow", Texture2DShadow::class, DirectionalShadowMap::class),

@@ -17,8 +17,8 @@ kotlin {
     jvm()
 
     sourceSets {
-        jvmMain.dependencies {
-            api("org.joml:joml:1.10.8")
+        commonMain.dependencies {
+            api("net.bifreus.kml:kml:1.0.0")
         }
     }
 }

@@ -1,33 +1,33 @@
 package org.etieskrill.engine.graphics.model
 
+import net.bifreus.kml.Vec2c
+import net.bifreus.kml.Vec3c
+import net.bifreus.kml.Vec4c
+import net.bifreus.kml.Vec4ic
 import org.etieskrill.engine.graphics.buffer.VertexArrayAccessor
-import org.joml.Vector2fc
-import org.joml.Vector3fc
-import org.joml.Vector4fc
-import org.joml.Vector4ic
 import kotlin.math.pow
 import kotlin.math.roundToLong
 
 data class Vertex(
-    val position: Vector3fc,
-    val normal: Vector3fc? = null,
-    val textureCoords: Vector2fc? = null,
-    val tangent: Vector3fc? = null,
-    val biTangent: Vector3fc? = null,
-    val bones: Vector4ic? = null,
-    val boneWeights: Vector4fc? = null,
+    val position: Vec3c,
+    val normal: Vec3c? = null,
+    val textureCoords: Vec2c? = null,
+    val tangent: Vec3c? = null,
+    val biTangent: Vec3c? = null,
+    val bones: Vec4ic? = null,
+    val boneWeights: Vec4c? = null,
 ) {
 
     companion object {
         object Accessor : VertexArrayAccessor<Vertex>() {
             override fun registerFields() {
-                addField<Vector3fc> { it, buffer -> buffer += it.position }
-                addField<Vector3fc> { it, buffer -> buffer += it.normal }
-                addField<Vector2fc> { it, buffer -> buffer += it.textureCoords }
-                addField<Vector3fc> { it, buffer -> buffer += it.tangent }
-                addField<Vector3fc> { it, buffer -> buffer += it.biTangent }
-                addField<Vector4ic> { it, buffer -> buffer += it.bones }
-                addField<Vector4fc> { it, buffer -> buffer += it.boneWeights }
+                addField<Vec3c> { it, buffer -> buffer += it.position }
+                addField<Vec3c> { it, buffer -> buffer += it.normal }
+                addField<Vec2c> { it, buffer -> buffer += it.textureCoords }
+                addField<Vec3c> { it, buffer -> buffer += it.tangent }
+                addField<Vec3c> { it, buffer -> buffer += it.biTangent }
+                addField<Vec4ic> { it, buffer -> buffer += it.bones }
+                addField<Vec4c> { it, buffer -> buffer += it.boneWeights }
             }
         }
     }
@@ -37,9 +37,9 @@ data class Vertex(
             |position=$position, 
             |normal=$normal, 
             |textureCoords=textureCoords, 
-            |bones=(${bones?.x()}, ${bones?.y()}, ${bones?.z()}, ${bones?.w()}), 
-            |boneWeights=(${boneWeights?.x()?.round(3)}, ${boneWeights?.y()?.round(3)}, 
-            |${boneWeights?.z()?.round(3)}, ${boneWeights?.w()?.round(3)})}
+            |bones=(${bones?.x}, ${bones?.y}, ${bones?.z}, ${bones?.w}), 
+            |boneWeights=(${boneWeights?.x?.round(3)}, ${boneWeights?.y?.round(3)}, 
+            |${boneWeights?.z?.round(3)}, ${boneWeights?.w?.round(3)})}
         """.trimMargin()
 
 }

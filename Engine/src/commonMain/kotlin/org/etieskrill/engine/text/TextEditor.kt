@@ -1,8 +1,8 @@
 package org.etieskrill.engine.text
 
+import net.bifreus.kml.Vec2i
+import net.bifreus.kml.Vec2ic
 import org.etieskrill.engine.graphics.text.Font
-import org.joml.Vector2i
-import org.joml.Vector2ic
 import kotlin.math.abs
 
 class TextEditor(font: Font) {
@@ -11,7 +11,7 @@ class TextEditor(font: Font) {
         get() = toString()
         set(value) {
             this.field.set(value)
-            cursor.position.set(0, 0)
+            cursor.position(0, 0)
         }
 
     private val field = TextEditorField()
@@ -19,7 +19,7 @@ class TextEditor(font: Font) {
 
     val selector = Selector()
     var font: Font = font; get() = field; set(value) = TODO()
-    var size: Vector2i? = null
+    var size: Vec2i? = null
 
     fun write(c: Char) {
         when (c) {
@@ -60,11 +60,11 @@ class TextEditor(font: Font) {
         }
 
         if (selector.hasSelection) {
-            if (selector.start.y() == selector.end.y()) {
-                val numSelectedChars = selector.end.x() - selector.start.x()
+            if (selector.start.y == selector.end.y) {
+                val numSelectedChars = selector.end.x - selector.start.x
 
                 //TODO an absolute cursor set method is gonna be necessary at some point anyways
-                val xDistance = cursor.position.x - selector.start.x()
+                val xDistance = cursor.position.x - selector.start.x
                 if (xDistance > 0) {
                     repeat(xDistance) { cursor.left() }
                 } else {
@@ -79,31 +79,31 @@ class TextEditor(font: Font) {
                 return
             }
 
-            for (line in selector.start.y() + 1..selector.end.y() - 1) {
+            for (line in selector.start.y + 1..selector.end.y - 1) {
                 field.text.removeAt(line)
             }
 
             val lineLengths = gridSize
 
-            repeat(lineLengths[selector.start.y()] - selector.start.x()) {
-                field.text[selector.start.y()].removeLast()
+            repeat(lineLengths[selector.start.y] - selector.start.x) {
+                field.text[selector.start.y].removeLast()
             }
-            repeat(selector.end.x() + 1) {
-                field.text[selector.start.y() + 1].removeFirst()
+            repeat(selector.end.x + 1) {
+                field.text[selector.start.y + 1].removeFirst()
             }
-            field.text[selector.start.y()].run {
+            field.text[selector.start.y].run {
                 if (first() == '\n') removeFirst()
             }
-            field.text[selector.start.y()].addAll(field.text[selector.start.y() + 1])
-            field.text.removeAt(selector.start.y() + 1)
+            field.text[selector.start.y].addAll(field.text[selector.start.y + 1])
+            field.text.removeAt(selector.start.y + 1)
 
-            cursor.position.set(selector.start)
+            cursor.position(selector.start)
             selector.move(false, cursor.position)
 
             return
         }
 
-        if (cursor.position.equals(0, 0)) return
+        if (cursor.position == Vec2i.ZERO) return
         if (cursor.position.x == 0 && cursor.position.y != 0) {
             field.text[cursor.position.y - 1].run {
                 removeLast()
@@ -137,7 +137,7 @@ class TextEditor(font: Font) {
     val cursor = Cursor()
 
     inner class Cursor {
-        var position = Vector2i()
+        var position = Vec2i()
 
         fun up(select: Boolean = false) = position.apply {
             x = kotlin.math.min(x, if (field.text.size > y - 1 && y - 1 >= 0) field.text[y - 1].size - 1 else 0)
@@ -222,27 +222,27 @@ class TextEditor(font: Font) {
         private var active = true
 
         //hold procedural start and end-point, not positional, i.e. end may be before start in terms of position
-        private val _start = Vector2i()
-        private val _end = Vector2i()
+        private val _start = Vec2i()
+        private val _end = Vec2i()
 
         //properties return actual positional start and end points (like this because getters on above would be mutually recursive)
-        val start: Vector2ic
+        val start: Vec2ic
             get() = if (
                 _start.y < _end.y
                 || _start.y == _end.y && _start.x <= _end.x
             ) _start else _end
-        val end: Vector2ic
+        val end: Vec2ic
             get() = if (
                 _start.y < _end.y
                 || _start.y == _end.y && _start.x <= _end.x
             ) _end else _start
 
-        fun move(selected: Boolean, position: Vector2ic) {
+        fun move(selected: Boolean, position: Vec2ic) {
             if (!active) return
 
             hasSelection = selected
-            if (!selected) _start.set(position)
-            _end.set(position)
+            if (!selected) _start(position)
+            _end(position)
         }
 
         internal fun ignore(block: () -> Unit) {
@@ -295,7 +295,7 @@ class TextEditor(font: Font) {
 
     //adjusts _gridSize, _wrappedGridSize, checks if cursor and selection have valid state
     private fun update() {
-        var pen = Vector2i()
+        var pen = Vec2i()
     }
 
     fun toEscapedString() = field.toEscapedString()
@@ -304,15 +304,15 @@ class TextEditor(font: Font) {
     private class TextEditorField {
         val text = mutableListOf<MutableList<Char>>()
 
-        fun remove(position: Vector2i) {
+        fun remove(position: Vec2i) {
             text.getOrNull(position.y)
                 ?.takeIf { it.isNotEmpty() }
                 ?.removeAt(position.x - 1)
         }
 
-        operator fun get(position: Vector2i) = Accessor(position)
+        operator fun get(position: Vec2i) = Accessor(position)
 
-        inner class Accessor(val position: Vector2i) {
+        inner class Accessor(val position: Vec2i) {
             val size get() = if (text.size > position.y) text[position.y].size else 0
 
             fun isEmpty() = if (text.size > position.y) text[position.y].isEmpty() else true

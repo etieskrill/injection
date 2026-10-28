@@ -6,8 +6,8 @@ import io.github.etieskrill.injection.extension.shader.dsl.VertexData
 import io.github.etieskrill.injection.extension.shader.mat4
 import io.github.etieskrill.injection.extension.shader.vec3
 import io.github.etieskrill.injection.extension.shader.vec4
+import net.bifreus.kml.Mat4
 import org.etieskrill.engine.graphics.shader.Shader
-import org.joml.Matrix4f
 
 class LineShader : PureShaderBuilder<VertexData, ColourRenderTarget>(
     object : Shader(listOf("Line.glsl")) {}
@@ -20,7 +20,7 @@ class LineShader : PureShaderBuilder<VertexData, ColourRenderTarget>(
     var combined by uniform<mat4>()
 
     init {
-        combined = Matrix4f()
+        combined = Mat4()
     }
 
     override fun program() {

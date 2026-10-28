@@ -1,10 +1,10 @@
 package org.etieskrill.engine.graphics.texture;
 
+import net.bifreus.kml.Vec2i
 import org.etieskrill.engine.common.Disposable
 import org.etieskrill.engine.graphics.GraphicsContext
 import org.etieskrill.engine.graphics.gl.GLUtils
 import org.etieskrill.engine.util.ResourceReader
-import org.joml.Vector2i
 import org.lwjgl.BufferUtils
 import org.lwjgl.BufferUtils.createIntBuffer
 import org.lwjgl.assimp.Assimp.*
@@ -48,7 +48,7 @@ internal actual abstract class TextureInstance<T : Texture>(
         glTexParameteri(glTarget, GL_TEXTURE_MIN_FILTER, descriptor.minFilter.gl)
         glTexParameteri(glTarget, GL_TEXTURE_MAG_FILTER, descriptor.magFilter.gl)
 
-        glTexParameterfv(glTarget, GL_TEXTURE_BORDER_COLOR, descriptor.borderColour[BufferUtils.createFloatBuffer(4)])
+        glTexParameterfv(glTarget, GL_TEXTURE_BORDER_COLOR, FloatArray(4) { descriptor.borderColour[it] })
 
         glPixelStorei(
             GL_UNPACK_ALIGNMENT, when (descriptor.rowAlignment) {
@@ -230,5 +230,5 @@ internal actual fun loadTexture2DData(file: String, type: TextureType): TextureD
 
     stbi_image_free(textureData)
 
-    return TextureData(Vector2i(width.get(), height.get()), format, buffer)
+    return TextureData(Vec2i(width.get(), height.get()), format, buffer)
 }

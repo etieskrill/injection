@@ -1,15 +1,15 @@
 package org.etieskrill.engine.graphics.framebuffer
 
+import net.bifreus.kml.Vec2i
+import net.bifreus.kml.Vec2ic
 import org.etieskrill.engine.graphics.GraphicsContext
-import org.joml.Vector2i
-import org.joml.Vector2ic
 import org.lwjgl.opengl.GL11C.*
 
-internal class ScreenBuffer(size: Vector2ic) : FrameBuffer(size, mapOf()) {
-    override var size: Vector2ic =
+internal class ScreenBuffer(size: Vec2ic) : FrameBuffer(size, mapOf()) {
+    override var size: Vec2ic =
         size //FIXME no clue if this property actually replaces the one in FrameBuffer - update, it does not, perhaps bcs fb is still java?
         set(value) {
-            (field as Vector2i).set(value)
+            (field as Vec2i)(value)
         }
 }
 

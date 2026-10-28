@@ -1,10 +1,10 @@
 package org.etieskrill.engine.window
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import net.bifreus.kml.Vec2
 import org.etieskrill.engine.common.Disposable
 import org.etieskrill.engine.window.CursorMode.entries
 import org.etieskrill.engine.window.CursorShape.ARROW
-import org.joml.Vector2d
 import org.lwjgl.BufferUtils
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.system.MemoryUtil.memASCII
@@ -58,15 +58,15 @@ actual class Cursor actual constructor(shape: CursorShape) : Disposable {
     private val posx = DoubleArray(1)
     private val posy = DoubleArray(1)
 
-    actual var position: Vector2d
+    actual var position: Vec2
         get() {
             check(window != null) { "Cursor is not assigned to window" }
             glfwGetCursorPos(window!!.id, posx, posy)
-            return Vector2d(posx[0], posy[0])
+            return Vec2(posx[0], posy[0])
         }
         set(value) {
             check(window != null) { "Cursor is not assigned to window" }
-            glfwSetCursorPos(window!!.id, value.x, value.y)
+            glfwSetCursorPos(window!!.id, value.x.toDouble(), value.y.toDouble())
         }
 
     companion object {

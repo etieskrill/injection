@@ -91,7 +91,7 @@ actual open class FrameBufferInstance internal constructor(
                 }, id
             )
             GL20C.glDrawBuffers(glColourDrawBuffers)
-            GL11C.glViewport(0, 0, descriptor.size.x(), descriptor.size.y())
+            GL11C.glViewport(0, 0, descriptor.size.x, descriptor.size.y)
             context.activeFramebuffer = this
         }
 

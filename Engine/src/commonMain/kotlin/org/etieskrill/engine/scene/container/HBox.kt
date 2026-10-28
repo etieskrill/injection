@@ -1,6 +1,5 @@
 package org.etieskrill.engine.scene.container
 
-import org.etieskrill.engine.scene.Node
 import org.etieskrill.engine.scene.Node.Alignment.*
 import org.etieskrill.engine.scene.Node.ScaleMode.GROW
 import org.etieskrill.engine.scene.getPreferredNodePosition
@@ -9,7 +8,7 @@ import kotlin.math.max
 
 open class HBox(
     children: List<org.etieskrill.engine.scene.Node<*>>
-) : org.etieskrill.engine.scene.container.Stack(children) {
+) : Stack(children) {
 
     constructor(vararg children: org.etieskrill.engine.scene.Node<*>) : this(children.toList())
     constructor() : this(mutableListOf())

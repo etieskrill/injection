@@ -1,14 +1,14 @@
 package org.etieskrill.engine.graphics.model
 
+import net.bifreus.kml.AABB
 import org.etieskrill.engine.graphics.animation.Animation
-import org.joml.primitives.AABBf
 
 open class Model(
     val name: String,
     val rootNode: Node,
     val animations: List<Animation> = emptyList(),
     val bones: List<Bone> = emptyList(),
-    val boundingBox: AABBf = AABBf()
+    val boundingBox: AABB = AABB()
 ) {
 
     /**

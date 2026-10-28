@@ -21,8 +21,6 @@ import org.jetbrains.kotlin.ir.declarations.IrDeclarationParent
 import org.jetbrains.kotlin.ir.declarations.IrFile
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrVariable
-import org.jetbrains.kotlin.ir.declarations.name
-import org.jetbrains.kotlin.ir.declarations.path
 import org.jetbrains.kotlin.ir.expressions.IrBlock
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
 import org.jetbrains.kotlin.ir.expressions.IrBreak
@@ -56,7 +54,6 @@ import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.isArray
 import org.jetbrains.kotlin.ir.util.dump
-import org.jetbrains.kotlin.ir.util.dumpKotlinLike
 import org.jetbrains.kotlin.ir.util.getAllArgumentsWithIr
 import org.jetbrains.kotlin.ir.util.getArgumentsWithIr
 import org.jetbrains.kotlin.ir.util.render
@@ -503,9 +500,8 @@ private open class GlslTranspiler(
 
                 val arrayName: String = arguments["<this>"]!!.accept(this, data)
                 val arrayIndex: String = (
-                        arguments["index"]
-                            ?: arguments["p0"] //FIXME temporary fix for joml, should be just the first argument, irrelevant of name if definitely operator fun?
-                        )!!.accept(this, data)
+                        arguments["index"] ?: arguments["i"] ?: error(expression.dump())
+                        ).accept(this, data)
 
                 return "$arrayName[$arrayIndex]"
             }
@@ -832,7 +828,7 @@ private open class GlslTranspiler(
     }
 
     private fun stringify(obj: Any) = when (obj) {
-        is vec3 -> "vec3(%.3f, %.3f, %.3f)".format(obj.x(), obj.y(), obj.z())
+        is vec3 -> "vec3(%.3f, %.3f, %.3f)".format(obj.x, obj.y, obj.z)
         else -> TODO("stringify type ${obj::class.simpleName}?")
     }
 
@@ -987,8 +983,9 @@ private class GlslTemporaryVariableTranspiler(
         val accessedProperty = expression.findElement<IrCall>()!!.symbol.owner.name.asString()
             .removePrefix("<set-").removeSuffix(">")
 
-        val rightSide = expression.statements.single { it != temporaryVariable }
-            .findElement<IrCall>(atDepth = 3) { it.glslOperator?.assignmentOperator == operator }!!
+        val rightSide = (expression.statements.single { it != temporaryVariable }
+            .findElement<IrCall>(atDepth = 2) { it.glslOperator?.assignmentOperator == operator }
+            ?: error(expression.dump()))
             .getValueArgument(0)!!
             .accept(generalTranspiler, data)
             .replace("<receiver>", temporaryVariableName)

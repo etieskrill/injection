@@ -1,16 +1,16 @@
 package org.etieskrill.engine.graphics.model.loader
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import net.bifreus.kml.Quat
+import net.bifreus.kml.Vec3
+import net.bifreus.kml.Vec4
+import net.bifreus.kml.Vec4i
 import org.etieskrill.engine.entity.component.Transform
 import org.etieskrill.engine.graphics.animation.Animation
 import org.etieskrill.engine.graphics.animation.AnimationBehaviour
 import org.etieskrill.engine.graphics.animation.BoneAnimation
 import org.etieskrill.engine.graphics.model.Bone
 import org.etieskrill.engine.graphics.util.AssimpUtils
-import org.joml.Quaternionf
-import org.joml.Vector3f
-import org.joml.Vector4f
-import org.joml.Vector4i
 import org.lwjgl.assimp.AIAnimation
 import org.lwjgl.assimp.AIBone
 import org.lwjgl.assimp.AIMesh
@@ -65,15 +65,15 @@ internal fun loadNodeAnimations(
 
             val (positionTimes, positions) = node.mPositionKeys()!!
                 .take(node.mNumPositionKeys())
-                .map { it.mTime() to it.mValue().run { Vector3f(x(), y(), z()) } }
+                .map { it.mTime() to it.mValue().run { Vec3(x(), y(), z()) } }
                 .unzip()
             val (rotationTimes, rotations) = node.mRotationKeys()!!
                 .take(node.mNumRotationKeys())
-                .map { it.mTime() to it.mValue().run { Quaternionf(x(), y(), z(), w()) } }
+                .map { it.mTime() to it.mValue().run { Quat(x(), y(), z(), w()) } }
                 .unzip()
             val (scaleTimes, scalings) = node.mScalingKeys()!!
                 .take(node.mNumScalingKeys())
-                .map { it.mTime() to it.mValue().run { Vector3f(x(), y(), z()) } }
+                .map { it.mTime() to it.mValue().run { Vec3(x(), y(), z()) } }
                 .unzip()
 
             BoneAnimation(
@@ -88,8 +88,8 @@ internal fun loadNodeAnimations(
 }
 
 data class VertexBoneWeights(
-    val bones: Vector4i = Vector4i(-1),
-    val boneWeights: Vector4f = Vector4f(0f)
+    val bones: Vec4i = Vec4i(-1),
+    val boneWeights: Vec4 = Vec4(0f)
 )
 
 internal fun getBones(mesh: AIMesh): Pair<List<Bone>?, List<VertexBoneWeights>?> {
@@ -135,8 +135,8 @@ internal fun loadBoneWeights(
 
             for (slot in 0..<Animation.MAX_BONE_INFLUENCES) {
                 if (weight.bones[slot] == boneId) return@forEach
-                weight.bones.setComponent(slot, boneId)
-                weight.boneWeights.setComponent(slot, it.mWeight())
+                weight.bones[slot] = boneId
+                weight.boneWeights[slot] = it.mWeight()
                 break
             }
         }

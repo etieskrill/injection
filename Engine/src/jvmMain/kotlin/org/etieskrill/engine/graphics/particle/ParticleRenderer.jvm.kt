@@ -1,6 +1,8 @@
 package org.etieskrill.engine.graphics.particle
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import net.bifreus.kml.Mat4
+import net.bifreus.kml.Mat4c
 import org.etieskrill.engine.graphics.GraphicsContext
 import org.etieskrill.engine.graphics.buffer.BufferAccessFrequency
 import org.etieskrill.engine.graphics.buffer.BufferObject
@@ -13,9 +15,6 @@ import org.etieskrill.engine.graphics.shader.impl.ParticleShader
 import org.etieskrill.engine.graphics.texture.Texture2D
 import org.etieskrill.engine.graphics.texture.TextureType
 import org.etieskrill.engine.util.EngineShaderLoader
-import org.joml.Matrix4f
-import org.joml.Matrix4fc
-import org.joml.times
 import org.lwjgl.opengl.GL11C.*
 
 private val logger = KotlinLogging.logger {}
@@ -40,14 +39,14 @@ actual class ParticleRenderer actual constructor(
     companion object {
         const val MAX_PARTICLES = 10_000
 
-        private val IDENTITY = Matrix4f()
+        private val IDENTITY = Mat4()
     }
 
     actual fun renderParticles(root: ParticleNode, camera: Camera, shader: Shader?) {
-        renderNode(Matrix4f(root.transform.matrix), root, camera, shader ?: particleShader)
+        renderNode(Mat4(root.transform.matrix), root, camera, shader ?: particleShader)
     }
 
-    private fun renderNode(transform: Matrix4fc, node: ParticleNode, camera: Camera, shader: Shader) {
+    private fun renderNode(transform: Mat4c, node: ParticleNode, camera: Camera, shader: Shader) {
         node.emitters.forEach { emitter ->
             if (emitter !in invalidEmitters) {
                 if (emitter.maxNumParticles <= MAX_PARTICLES) {
@@ -64,7 +63,7 @@ actual class ParticleRenderer actual constructor(
         }
     }
 
-    private fun renderEmitter(transform: Matrix4fc, emitter: ParticleEmitter, camera: Camera, shader: Shader) {
+    private fun renderEmitter(transform: Mat4c, emitter: ParticleEmitter, camera: Camera, shader: Shader) {
         shader.setUniform("model", if (emitter.particlesMoveWithEmitter) transform else IDENTITY)
         shader.setUniform("camera", camera)
         shader.setUniform("size", emitter.size)

@@ -1,6 +1,7 @@
 package org.etieskrill.engine.graphics.texture
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import net.bifreus.kml.Vec2ic
 import org.etieskrill.engine.graphics.GraphicsContext
 import org.etieskrill.engine.graphics.framebuffer.FrameBufferAttachmentInstance
 import org.etieskrill.engine.graphics.framebuffer.FrameBufferAttachmentType
@@ -9,7 +10,6 @@ import org.etieskrill.engine.graphics.framebuffer.gl
 import org.etieskrill.engine.graphics.texture.TextureCubeMap.Companion.NUM_SIDES
 import org.etieskrill.engine.util.ResourceReader
 import org.etieskrill.engine.util.extension
-import org.joml.Vector2ic
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11C.GL_UNSIGNED_BYTE
 import org.lwjgl.opengl.GL11C.glTexImage2D
@@ -28,7 +28,7 @@ internal actual class TextureCubeMapInstance(
     override val glTarget: Int get() = GL_TEXTURE_CUBE_MAP
 
     override fun bufferTextureData() = context.withContext {
-        val bytesExpectedPerSide = descriptor.run { size.x() * size.y() * format.numChannels }
+        val bytesExpectedPerSide = descriptor.run { size.x * size.y * format.numChannels }
 
         descriptor.buffer?.let { buffers ->
             check(buffers.size == NUM_SIDES) {
@@ -49,7 +49,7 @@ internal actual class TextureCubeMapInstance(
                 for (i in 0..<NUM_SIDES) {
                     glTexImage2D(
                         GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, descriptor.format.glInternal,
-                        descriptor.size.x(), descriptor.size.y(), 0, descriptor.format.gl, GL_UNSIGNED_BYTE,
+                        descriptor.size.x, descriptor.size.y, 0, descriptor.format.gl, GL_UNSIGNED_BYTE,
                         buffer.rewind().put(descriptor.buffer[i]).flip()
                     )
                 }
@@ -62,7 +62,7 @@ internal actual class TextureCubeMapInstance(
                 for (i in 0..<NUM_SIDES) {
                     glTexImage2D(
                         GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, descriptor.format.glInternal,
-                        descriptor.size.x(), descriptor.size.y(), 0, descriptor.format.gl, GL_UNSIGNED_BYTE,
+                        descriptor.size.x, descriptor.size.y, 0, descriptor.format.gl, GL_UNSIGNED_BYTE,
                         buffer.rewind().put(buffers[i]).flip()
                     )
                 }
@@ -70,7 +70,7 @@ internal actual class TextureCubeMapInstance(
         }
 
         logger.debug {
-            "Loaded ${descriptor.size.x()}x${descriptor.size.y()} ${8 * descriptor.format.numChannels}-bit ${
+            "Loaded ${descriptor.size.x}x${descriptor.size.y} ${8 * descriptor.format.numChannels}-bit ${
                 descriptor.format.name.lowercase()
             } cubemap texture"
         }
@@ -88,8 +88,7 @@ internal actual class TextureCubeMapInstance(
 
 }
 
-internal actual fun readCubeMapFiles(file: String, type: TextureType):
-        Triple<Vector2ic, TextureFormat, List<ByteArray>> {
+internal actual fun readCubeMapFiles(file: String, type: TextureType): Triple<Vec2ic, TextureFormat, List<ByteArray>> {
     check(ResourceReader.classpathResourceExists(file)) { "Cubemap directory $file not found" }
 
     val files = ResourceReader.getClasspathItems(file)
@@ -121,7 +120,7 @@ internal actual fun readCubeMapFiles(file: String, type: TextureType):
         }] could not be derived based on file names"
     }
 
-    var size: Vector2ic? = null
+    var size: Vec2ic? = null
     var format: TextureFormat? = null
     val textureData = orderedFiles.map {
         loadTexture2DData(it!!, type).let { data ->

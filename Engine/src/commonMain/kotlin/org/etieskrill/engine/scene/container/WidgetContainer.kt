@@ -1,18 +1,16 @@
 package org.etieskrill.engine.scene.container
 
+import net.bifreus.kml.Vec2
+import net.bifreus.kml.Vec4
+import net.bifreus.kml.deg
 import org.etieskrill.engine.graphics.text.Font
 import org.etieskrill.engine.graphics.texture.Texture2D
-import org.etieskrill.engine.graphics.texture.TextureType
 import org.etieskrill.engine.input.KeyEvent
 import org.etieskrill.engine.input.KeyEventAction
 import org.etieskrill.engine.scene.Batch
 import org.etieskrill.engine.scene.Node
 import org.etieskrill.engine.scene.Node.ScaleMode.*
 import org.etieskrill.engine.scene.getPreferredNodePosition
-import org.joml.Math.toRadians
-import org.joml.Vector2f
-import org.joml.Vector4f
-import org.joml.minusAssign
 
 /**
  * A collapsible node with a draggable widget bar containing a single child.
@@ -22,9 +20,9 @@ open class WidgetContainer(
 ) : Node<WidgetContainer>() {
 
     companion object {
-        private val WIDGET_BAR_COLOUR = Vector4f(128 / 255f, 0f, 0f, 1f) //#800000
+        private val WIDGET_BAR_COLOUR = Vec4(128 / 255f, 0f, 0f, 1f) //#800000
         private const val WIDGET_BAR_HEIGHT = 20
-        private val WIDGET_CHEVRON_COLOUR = Vector4f(1f)
+        private val WIDGET_CHEVRON_COLOUR = Vec4(1f)
         private const val WIDGET_CHEVRON_MARGIN = 2
     }
 
@@ -47,7 +45,7 @@ open class WidgetContainer(
 
     var text: String? = null
 
-    private val actualSize = Vector2f(-1f)
+    private val actualSize = Vec2(-1f)
     private val barHeight = WIDGET_BAR_HEIGHT
     //TODO omg omg with an analysis extension you could validate resource paths at analysis time, or at least at compile time, right?
     // after some researching, this is trivial to do during compilation, but unfortunately, an analysis extension has no
@@ -104,14 +102,14 @@ open class WidgetContainer(
         if (collapsed) {
             when (scaleMode) {
                 FIXED -> {
-                    formattedSize.set(size.x, barHeight.toFloat())
+                    formattedSize(size.x, barHeight.toFloat())
                     computedFixedSize = true
                 }
 
                 CONTENT -> {
                     when {
                         child == null -> {
-                            formattedSize.set(100f, barHeight.toFloat())
+                            formattedSize(100f, barHeight.toFloat())
                             computedFixedSize = true
                         }
 
@@ -120,7 +118,7 @@ open class WidgetContainer(
                         child!!.scaleMode != GROW -> {
                             if (!child!!.computedFixedSize) throw IllegalStateException("Child size was not computed")
 
-                            formattedSize.set(child!!.formattedSize.x, barHeight.toFloat())
+                            formattedSize(child!!.formattedSize.x, barHeight.toFloat())
                             computedFixedSize = true
                         }
                     }
@@ -133,14 +131,14 @@ open class WidgetContainer(
 
         when (scaleMode) {
             FIXED -> {
-                formattedSize.set(size.x, size.y + barHeight)
+                formattedSize(size.x, size.y + barHeight)
                 computedFixedSize = true
             }
 
             CONTENT -> {
                 when {
                     child == null -> {
-                        formattedSize.set(100f, barHeight.toFloat() + 5f)
+                        formattedSize(100f, barHeight.toFloat() + 5f)
                         computedFixedSize = true
                     }
 
@@ -149,7 +147,7 @@ open class WidgetContainer(
                     child!!.scaleMode != GROW -> {
                         if (!child!!.computedFixedSize) throw IllegalStateException("Child size was not computed")
 
-                        formattedSize.set(child!!.formattedSize.x, child!!.formattedSize.y + barHeight)
+                        formattedSize(child!!.formattedSize.x, child!!.formattedSize.y + barHeight)
                         computedFixedSize = true
                     }
                 }
@@ -171,24 +169,24 @@ open class WidgetContainer(
     override fun render(batch: Batch) {
         val position = absolutePosition
 
-        batch.renderBox(position, Vector2f(formattedSize.x, barHeight.toFloat()), WIDGET_BAR_COLOUR)
+        batch.renderBox(position, Vec2(formattedSize.x, barHeight.toFloat()), WIDGET_BAR_COLOUR)
         batch.blit(
             chevronIcon,
-            Vector2f(position).add(WIDGET_CHEVRON_MARGIN.toFloat(), WIDGET_CHEVRON_MARGIN.toFloat()),
-            Vector2f(barHeight - 2f * WIDGET_CHEVRON_MARGIN),
-            if (collapsed) toRadians(90f) else toRadians(-180f),
+            position + WIDGET_CHEVRON_MARGIN,
+            Vec2(barHeight - 2f * WIDGET_CHEVRON_MARGIN),
+            if (collapsed) 90f.deg else (-180f).deg,
             WIDGET_CHEVRON_COLOUR
         )
         text?.takeIf { it.isNotBlank() }?.let {
             //TODO use label with autoscaling font instead of hardcoding - scale bar height too actually
-            batch.renderText(it, titleFont, Vector2f(position).add(barHeight + 2f, -3f))
+            batch.renderText(it, titleFont, position + Vec2(barHeight + 2f, -3f))
         }
 
         if (!collapsed) {
             if (renderedColour.w != 0f) {
                 batch.renderBox(
-                    Vector2f(absolutePosition).apply { y += barHeight.toFloat() },
-                    Vector2f(formattedSize).apply { y -= barHeight.toFloat() },
+                    Vec2(absolutePosition).apply { y += barHeight.toFloat() },
+                    Vec2(formattedSize).apply { y -= barHeight.toFloat() },
                     renderedColour
                 )
             }
@@ -226,7 +224,7 @@ open class WidgetContainer(
             return false
         }
 
-        position -= Vector2f(deltaX.toFloat(), deltaY.toFloat())
+        position -= Vec2(deltaX.toFloat(), deltaY.toFloat())
 
         return true
     }

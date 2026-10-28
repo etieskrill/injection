@@ -33,12 +33,12 @@ internal actual class TextureCubeMapArrayInstance(
 
         glTexImage3D(
             glTarget, 0, descriptor.format.glInternal,
-            descriptor.size.x(), descriptor.size.y(), TextureCubeMap.NUM_SIDES * descriptor.length,
+            descriptor.size.x, descriptor.size.y, TextureCubeMap.NUM_SIDES * descriptor.length,
             0, descriptor.format.gl, GL_UNSIGNED_BYTE, data
         )
 
         logger.debug {
-            "Loaded ${descriptor.size.x()}x${descriptor.size.y()}x${descriptor.length} ${
+            "Loaded ${descriptor.size.x}x${descriptor.size.y}x${descriptor.length} ${
                 descriptor.format.numChannels
             }-bit ${descriptor.format.name.lowercase()} ${descriptor.type.name.lowercase()} cubemap array texture"
         }

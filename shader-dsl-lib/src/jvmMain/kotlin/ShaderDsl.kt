@@ -14,14 +14,13 @@ import io.github.etieskrill.injection.extension.shader.samplerCube
 import io.github.etieskrill.injection.extension.shader.vec2
 import io.github.etieskrill.injection.extension.shader.vec3
 import io.github.etieskrill.injection.extension.shader.vec4
-import org.joml.Vector2f
-import org.joml.Vector2i
-import org.joml.Vector3f
+import net.bifreus.kml.Vec2
+import net.bifreus.kml.Vec2i
+import net.bifreus.kml.Vec3
 import kotlin.properties.ReadOnlyProperty
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
-import kotlin.reflect.javaType
 
 interface ShaderVertexData {
     val position: vec4
@@ -96,11 +95,11 @@ abstract class ShaderBuilder<VA : Any, V : ShaderVertexData, RT : Any>(val shade
      */
 
     //TODO use block with GlslReceiver context in const and remove these
-    protected fun vec2(s: Number): vec2 = Vector2f()
-    protected fun vec2(x: Number, y: Number): vec2 = Vector2f()
-    protected fun ivec2(s: Number): ivec2 = Vector2i()
+    protected fun vec2(s: Number): vec2 = Vec2()
+    protected fun vec2(x: Number, y: Number): vec2 = Vec2()
+    protected fun ivec2(s: Number): ivec2 = Vec2i()
 
-    protected fun vec3(x: Number, y: Number, z: Number): vec3 = Vector3f()
+    protected fun vec3(x: Number, y: Number, z: Number): vec3 = Vec3()
 
 }
 
@@ -132,13 +131,13 @@ open class GlslReceiver {
 
     fun int(s: Number): int = error()
 
-    fun vec2(s: Number): vec2 = Vector2f()
+    fun vec2(s: Number): vec2 = Vec2()
     fun vec2(x: Number, y: Number): vec2 = error()
     fun vec2(v: vec2): vec2 = error()
     fun vec2(v: ivec2): vec2 = error()
     fun vec2(v: vec4): vec2 = error()
 
-    fun ivec2(s: Int): ivec2 = Vector2i()
+    fun ivec2(s: Int): ivec2 = Vec2i()
     fun ivec2(v: vec2): ivec2 = error()
 
     fun vec3(s: Number): vec3 = error()

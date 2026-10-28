@@ -1,5 +1,5 @@
 package org.etieskrill.engine.entity.component
 
-import org.joml.primitives.AABBf
+import net.bifreus.kml.AABB
 
-class WorldSpaceAABB : AABBf()
+class WorldSpaceAABB() : AABB()

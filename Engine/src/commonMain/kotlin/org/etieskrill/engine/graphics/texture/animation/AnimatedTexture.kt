@@ -10,7 +10,6 @@ import org.etieskrill.engine.graphics.texture.loadTexture2DData
 import org.etieskrill.engine.util.extension
 import org.etieskrill.engine.util.pathName
 import org.etieskrill.engine.util.subExtension
-import org.joml.Vector2ic
 
 class AnimatedTexture(
     file: String,
@@ -38,7 +37,7 @@ class AnimatedTexture(
         metadata = loadAnimationMetadata(metaFile, textureData.format)
 
         check(
-            metadata.frameSize.x() * metadata.frameSize.y() * metadata.frames.size
+            metadata.frameSize.x * metadata.frameSize.y * metadata.frames.size
                     != textureData.buffer.size / textureData.format.numChannels
         ) { "Metadat size does not match texture size" }
 
@@ -61,10 +60,10 @@ class AnimatedTexture(
         val pixelChannels = data.format.numChannels
 
         metadata.frames.forEachIndexed { i, frame ->
-            val width = frame.atlasArea.lengthX()
-            val height = frame.atlasArea.lengthY()
+            val width = frame.atlasArea.x
+            val height = frame.atlasArea.y
             for (h in 0 until height) {
-                val sourceIndex = data.size.x() * h + width * i
+                val sourceIndex = data.size.x * h + width * i
                 data.buffer.copyInto(
                     arrayData,
                     arrayHead,

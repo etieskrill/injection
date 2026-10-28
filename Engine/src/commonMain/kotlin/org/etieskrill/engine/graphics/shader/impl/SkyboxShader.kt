@@ -8,7 +8,6 @@ import io.github.etieskrill.injection.extension.shader.samplerCube
 import io.github.etieskrill.injection.extension.shader.vec3
 import io.github.etieskrill.injection.extension.shader.vec4
 import org.etieskrill.engine.graphics.shader.Shader
-import org.joml.div
 
 class SkyboxShader : PureShaderBuilder<SkyboxShader.Vertex, ColourRenderTarget>(
     object : Shader(listOf("shaders/Skybox.glsl")) {}

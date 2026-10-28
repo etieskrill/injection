@@ -5,7 +5,6 @@ import org.etieskrill.engine.input.Key
 import org.etieskrill.engine.input.KeyEventAction
 import org.etieskrill.engine.scene.Node
 import org.etieskrill.engine.scene.container.Container
-import org.joml.timesAssign
 
 typealias SimpleAction = suspend () -> Unit
 
@@ -33,14 +32,14 @@ class Button(
 
     fun enable() {
         enabled = true
-        renderedColour.set(colour)
-        child?.let { renderedColour.set(colour) }
+        renderedColour(colour)
+        child?.let { renderedColour(colour) }
     }
 
     fun disable() {
         enabled = false
-        renderedColour.set(colour) *= 0.75f //thats... pretty cursed
-        child?.let { renderedColour.set(colour) *= 0.75f }
+        renderedColour(colour * 0.75f)
+        child?.let { renderedColour(colour * 0.75f) }
     }
 
 }

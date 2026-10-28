@@ -1,6 +1,8 @@
 package org.etieskrill.engine.graphics.model.loader
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import net.bifreus.kml.AABB
+import net.bifreus.kml.Mat4c
 import org.etieskrill.engine.common.ResourceLoadException
 import org.etieskrill.engine.entity.component.Transform
 import org.etieskrill.engine.graphics.animation.Animation
@@ -11,8 +13,6 @@ import org.etieskrill.engine.graphics.model.Model
 import org.etieskrill.engine.graphics.model.Node
 import org.etieskrill.engine.graphics.util.AssimpUtils
 import org.etieskrill.engine.time.StepTimer
-import org.joml.Matrix4fc
-import org.joml.primitives.AABBf
 import org.lwjgl.assimp.AINode
 import org.lwjgl.assimp.Assimp.*
 
@@ -84,7 +84,7 @@ actual fun loadModel(file: String, options: ModelLoaderOptions): Model {
 private fun processNode(parent: Node?, aiNode: AINode, meshes: List<Mesh>, bones: List<Bone>): Node {
     val nodeName = aiNode.mName().dataString()
 
-    val transformationMatrix: Matrix4fc = AssimpUtils.fromAI(aiNode.mTransformation())
+    val transformationMatrix: Mat4c = AssimpUtils.fromAI(aiNode.mTransformation())
     val transform = Transform(transformationMatrix)
 //        if (aiNode.mParent() == null && builder.getInitialTransform() != null) { //FIXME see Model#Model()
 //            transform = new Transform(builder.getInitialTransform()).compose(transform);
@@ -118,10 +118,10 @@ private fun getNodeMeshes(aiNode: AINode, meshes: List<Mesh>): List<Mesh> {
         .toList()
 }
 
-private fun calculateModelBoundingBox(meshes: List<Mesh>): AABBf {
-    val modelAabb = AABBf(meshes[0].boundingBox)
-    meshes.forEach { modelAabb.union(it.boundingBox) }
-    return modelAabb
+private fun calculateModelBoundingBox(meshes: List<Mesh>): AABB {
+    var modelAABB = AABB(meshes[0].boundingBox)
+    meshes.forEach { modelAABB += it.boundingBox }
+    return modelAABB
 }
 
 //TODO loading animations is probs to be separated from model loading: either

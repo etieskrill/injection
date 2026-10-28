@@ -2,6 +2,9 @@ package org.etieskrill.engine.window;
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
+import net.bifreus.kml.Vec2i
+import net.bifreus.kml.Vec2ic
+import net.bifreus.kml.Vec3
 import org.etieskrill.engine.common.Disposable
 import org.etieskrill.engine.graphics.GraphicsContext
 import org.etieskrill.engine.graphics.framebuffer.FrameBuffer
@@ -18,9 +21,6 @@ import org.etieskrill.engine.scene.Scene
 import org.etieskrill.engine.window.WindowMode.*
 import org.etieskrill.engine.window.WindowSize.DEFAULT
 import org.etieskrill.engine.window.WindowSize.LARGEST_FIT
-import org.joml.Vector2i
-import org.joml.Vector2ic
-import org.joml.Vector3f
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11C.*
@@ -38,11 +38,11 @@ private typealias GLFWId = Long
 private val logger = KotlinLogging.logger {}
 
 actual class Window actual constructor(
-    size: Vector2ic,
+    size: Vec2ic,
     mode: WindowMode,
     title: String,
     refreshRate: UInt?,
-    position: Vector2ic?,
+    position: Vec2ic?,
     cursor: Cursor,
     resizeable: Boolean,
     private val vSync: Boolean,
@@ -51,25 +51,25 @@ actual class Window actual constructor(
     private val transparency: Boolean
 ) : Disposable {
 
-    actual var size: Vector2ic by object : ReadWriteProperty<Window, Vector2ic> {
-        private var field: Vector2ic? = null
+    actual var size: Vec2ic by object : ReadWriteProperty<Window, Vec2ic> {
+        private var field: Vec2ic? = null
 
         override fun getValue(thisRef: Window, property: KProperty<*>) = checkNotNull(field)
 
-        override fun setValue(thisRef: Window, property: KProperty<*>, value: Vector2ic) {
+        override fun setValue(thisRef: Window, property: KProperty<*>, value: Vec2ic) {
             if (field == null) {
                 field = value
                 return
             }
 
             check(resizeable) { "Window is not resizeable" }
-            glfwSetWindowSize(id, value.x(), value.y())
+            glfwSetWindowSize(id, value.x, value.y)
             //TODO resize callbacks (update screenBuffer too!)
-            (field as Vector2i).set(value)
+            (field as Vec2i)(value)
         }
     }
 
-    actual val aspectRatio: Float get() = size.x().toFloat() / size.y().toFloat()
+    actual val aspectRatio: Float get() = size.x.toFloat() / size.y.toFloat()
 
     actual var resizeable: Boolean = resizeable
         set(value) {
@@ -137,23 +137,23 @@ actual class Window actual constructor(
 
     private val xPosBuffer = IntArray(1)
     private val yPosBuffer = IntArray(1)
-    private val posBuffer = Vector2i()
+    private val posBuffer = Vec2i()
 
-    actual var position: Vector2ic
+    actual var position: Vec2ic
         get() {
             glfwGetWindowPos(id, xPosBuffer, yPosBuffer)
             return posBuffer.apply { x = xPosBuffer[0]; y = yPosBuffer[0] }
         }
         //on Windows, will only succeed if entire window is still within screen space after translation
         set(value) {
-            glfwSetWindowPos(id, value.x(), value.y())
+            glfwSetWindowPos(id, value.x, value.y)
             checkError("If you are not on Wayland, be concerned")
         }
 
     @Deprecated("Only for Java interoperability", level = DeprecationLevel.ERROR)
     constructor(
-        size: Vector2ic = DEFAULT, mode: WindowMode = WINDOWED,
-        title: String = "Injection Window", refreshRate: Int? = null, position: Vector2ic? = null,
+        size: Vec2ic = DEFAULT, mode: WindowMode = WINDOWED,
+        title: String = "Injection Window", refreshRate: Int? = null, position: Vec2ic? = null,
         cursor: Cursor = Cursor(), resizeable: Boolean = false, vSync: Boolean = false, samples: Int = 4,
         createHidden: Boolean = false, transparency: Boolean = false, dummy: Boolean = false
     ) : this(
@@ -198,7 +198,7 @@ actual class Window actual constructor(
         logger.info { "Created window with settings: $this" }
     }
 
-    private fun init(size: Vector2ic, refreshRate: UInt?, position: Vector2ic?) {
+    private fun init(size: Vec2ic, refreshRate: UInt?, position: Vec2ic?) {
         if (!glfwInit()) throw IllegalStateException("Unable to initialize glfw library")
 
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, MIN_GL_CONTEXT_MAJOR_VERSION)
@@ -218,7 +218,7 @@ actual class Window actual constructor(
             LARGEST_FIT -> WindowSize.getLargestFit(videoMode.width(), videoMode.height())
                 ?: error("No reasonable resolution could be found")
 
-            DEFAULT -> Vector2i(videoMode.width() / 4, videoMode.height() / 2)
+            DEFAULT -> Vec2i(videoMode.width() / 4, videoMode.height() / 2)
             else -> size
         }
 
@@ -239,7 +239,7 @@ actual class Window actual constructor(
         checkErrorThrowing("Error while setting up window configuration")
 
         id = glfwCreateWindow(
-            this.size.x(), this.size.y(),
+            this.size.x, this.size.y,
             title,
             when (mode) {
                 FULLSCREEN -> monitor
@@ -296,14 +296,14 @@ actual class Window actual constructor(
         if (samples > 0u) glEnable(GL_MULTISAMPLE)
         else glDisable(GL_MULTISAMPLE)
 
-        internalScreenBuffer = ScreenBuffer(Vector2i(this.size))
+        internalScreenBuffer = ScreenBuffer(Vec2i(this.size))
         graphicsContext.screenBuffer = ScreenBufferInstance(internalScreenBuffer, graphicsContext)
         graphicsContext.activeFramebuffer = graphicsContext.screenBuffer
     }
 
     private fun configInput() {
         glfwSetFramebufferSizeCallback(id) { _, width, height ->
-            (size as Vector2i).set(width, height)
+            (size as Vec2i)(width, height)
 
             internalScreenBuffer.size = size
             scene?.let { it.size = size }
@@ -372,7 +372,7 @@ actual class Window actual constructor(
             size = this@Window.size
             update(delta)
 
-            camera.position = Vector3f(this@Window.size, 0f) / 2f
+            camera.position = Vec3(this@Window.size, 0f) / 2f
             camera.viewportSize = this@Window.size
             render()
         }

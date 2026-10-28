@@ -1,7 +1,7 @@
 package org.etieskrill.engine.window
 
+import net.bifreus.kml.Vec2
 import org.etieskrill.engine.common.Disposable
-import org.joml.Vector2d
 
 expect class Cursor : Disposable {
 
@@ -10,7 +10,7 @@ expect class Cursor : Disposable {
     var mode: CursorMode
     var shape: CursorShape
 
-    var position: Vector2d
+    var position: Vec2
 
     fun enable()
     fun disable()

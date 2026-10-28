@@ -1,15 +1,15 @@
 package org.etieskrill.engine.graphics.shader.impl
 
 import io.github.etieskrill.injection.extension.shader.reflection.ReflectShader
+import net.bifreus.kml.Mat4
+import net.bifreus.kml.Vec4
 import org.etieskrill.engine.graphics.shader.Shader
-import org.joml.Matrix4f
-import org.joml.Vector4f
 
 @ReflectShader
 class SingleColourShader : Shader(listOf("shaders/SingleColour.vert", "shaders/SingleColour.frag")) {
     init {
-        addUniform("model", Matrix4f::class)
-        addUniform("combined", Matrix4f::class)
-        addUniform("colour", Vector4f::class)
+        addUniform("model", Mat4::class)
+        addUniform("combined", Mat4::class)
+        addUniform("colour", Vec4::class)
     }
 }

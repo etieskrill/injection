@@ -32,7 +32,6 @@ import org.joml.Vector2ic
 import org.joml.Vector3f
 import org.joml.Vector3fc
 import org.joml.Vector4f
-import org.lwjgl.opengl.GL11C.glLineWidth
 import kotlin.math.cos
 import kotlin.math.sin
 

@@ -1,5 +1,5 @@
 package org.etieskrill.engine.entity.component
 
-import org.joml.Vector3f
+import net.bifreus.kml.Vec3
 
-class Acceleration(force: Vector3f, var factor: Float = 1f) : DirectionalForceComponent(force)
+class Acceleration(force: Vec3, var factor: Float = 1f) : DirectionalForceComponent(force)

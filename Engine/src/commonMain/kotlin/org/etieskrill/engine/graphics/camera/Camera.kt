@@ -1,23 +1,19 @@
 package org.etieskrill.engine.graphics.camera
 
+import net.bifreus.kml.AABBc
+import net.bifreus.kml.Mat4
+import net.bifreus.kml.Mat4c
+import net.bifreus.kml.Quat
+import net.bifreus.kml.Quatc
+import net.bifreus.kml.Ray
+import net.bifreus.kml.Vec2i
+import net.bifreus.kml.Vec2ic
+import net.bifreus.kml.Vec3
+import net.bifreus.kml.Vec3c
+import net.bifreus.kml.Vec4
+import net.bifreus.kml.deg
 import org.etieskrill.engine.graphics.shader.UniformMappable
 import org.etieskrill.engine.graphics.shader.UniformMapper
-import org.joml.FrustumRayBuilder
-import org.joml.Math.toRadians
-import org.joml.Matrix4f
-import org.joml.Matrix4fc
-import org.joml.Quaternionf
-import org.joml.Quaternionfc
-import org.joml.Vector2i
-import org.joml.Vector2ic
-import org.joml.Vector3f
-import org.joml.Vector3fc
-import org.joml.Vector4f
-import org.joml.plusAssign
-import org.joml.primitives.AABBfc
-import org.joml.primitives.Rayf
-import org.joml.timesAssign
-import kotlin.math.PI
 import kotlin.math.max
 import kotlin.math.min
 
@@ -31,14 +27,14 @@ abstract class Camera : UniformMappable {
      *
      * @return the logical camera position
      */
-    var position: Vector3fc = Vector3f()
+    var position: Vec3c = Vec3()
         set(value) {
-            (field as Vector3f).set(value)
+            (field as Vec3)(value)
             dirty = true
         }
-    var rotation: Quaternionfc = Quaternionf()
+    var rotation: Quatc = Quat()
         set(value) {
-            (field as Quaternionf).set(value)
+            (field as Quat)(value)
             dirty = true
         }
     var zoom: Float = 1f
@@ -47,37 +43,37 @@ abstract class Camera : UniformMappable {
             dirty = true
         }
 
-    var viewportSize: Vector2ic = Vector2i()
+    var viewportSize: Vec2ic = Vec2i()
         set(value) {
-            (field as Vector2i).set(value)
+            (field as Vec2i)(value)
             updateViewportSize()
             dirty = true
         }
 
-    val aspectRatio: Float get() = viewportSize.x().toFloat() / viewportSize.y()
+    val aspectRatio: Float get() = viewportSize.x.toFloat() / viewportSize.y
 
-    val direction: Vector3f get() = rotation.transform(Vector3f(0f, 0f, 1f)).normalize()
+    val direction: Vec3 get() = (rotation * Vec3(0f, 0f, 1f)).normalize()
 
-    val view: Matrix4fc = Matrix4f()
+    val view: Mat4c = Mat4()
         get() {
             update()
             return field
         }
-    var projection: Matrix4fc = Matrix4f()
+    var projection: Mat4c = Mat4()
         get() {
             update()
             return field
         }
         protected set(value) {
-            (field as Matrix4f).set(value)
+            (field as Mat4)(value)
             dirty = true
         }
-    val combined: Matrix4fc = Matrix4f()
+    val combined: Mat4c = Mat4()
         get() {
             update()
             return field
         }
-    val invCombined: Matrix4fc = Matrix4f()
+    val invCombined: Mat4c = Mat4()
         get() {
             update()
             return field
@@ -93,21 +89,21 @@ abstract class Camera : UniformMappable {
             field = value
             dirty = true
         }
-    var worldUp: Vector3fc = Vector3f(0f, 1f, 0f)
+    var worldUp: Vec3c = Vec3(0f, 1f, 0f)
         set(value) {
-            (field as Vector3f).set(value)
+            (field as Vec3)(value)
             dirty = true
         }
 
-    val eulerAngles: Vector3fc = Vector3f()
+    val eulerAngles: Vec3c = Vec3()
         get() {
             update()
             return field
         }
 
-    val pitch: Float get() = eulerAngles.x()
-    val yaw: Float get() = eulerAngles.y()
-    val roll: Float get() = eulerAngles.z()
+    val pitch: Float get() = eulerAngles.x
+    val yaw: Float get() = eulerAngles.y
+    val roll: Float get() = eulerAngles.z
 
     protected val clampPitch: Boolean = true
 
@@ -126,15 +122,12 @@ abstract class Camera : UniformMappable {
      * Returns the final view position which the camera renders from. In non-orbit mode, this is identical to the
      * logical [position].
      */
-    val viewPosition: Vector3fc = Vector3f()
-
-    private val rayBuilder = FrustumRayBuilder()
-    private val vector = Vector3f()
+    val viewPosition: Vec3c = Vec3()
 
     protected var dirty: Boolean = true
 
-    protected constructor(viewportSize: Vector2ic) {
-        this.viewportSize = Vector2i(viewportSize)
+    protected constructor(viewportSize: Vec2ic) {
+        this.viewportSize = Vec2i(viewportSize)
         update()
     }
 
@@ -143,12 +136,12 @@ abstract class Camera : UniformMappable {
      *
      * @param translation vector to move by
      */
-    fun translate(translation: Vector3fc) {
-        (position as Vector3f) += relativeTranslation(translation)
+    fun translate(translation: Vec3c) {
+        position += relativeTranslation(translation)
         dirty = true
     }
 
-    fun relativeTranslation(translation: Vector3fc): Vector3f = rotation.transform(translation, Vector3f())
+    fun relativeTranslation(translation: Vec3c): Vec3 = rotation * translation
 
     fun setRotation(pitch: Float, yaw: Float, roll: Float) {
         var pitch = pitch
@@ -158,17 +151,13 @@ abstract class Camera : UniformMappable {
             else if (pitch < -89f) pitch = -89f
         }
 
-        (rotation as Quaternionf).rotationYXZ(
-            toRadians(-yaw),
-            toRadians(-pitch),
-            toRadians(roll) //TODO should roll affect worldUp?
-        )
+        (rotation as Quat).eulerAnglesYXZ = Vec3(-pitch.deg, -yaw.deg, roll.deg)
 
         dirty = true
     }
 
-    fun rotate(rotation: Quaternionfc) {
-        (this.rotation as Quaternionf) *= rotation
+    fun rotate(rotation: Quatc) {
+        this.rotation *= rotation
         dirty = true
     }
 
@@ -181,7 +170,7 @@ abstract class Camera : UniformMappable {
         if (!dirty) return
         else dirty = false
 
-        rotation.getEulerAnglesYXZ(eulerAngles as Vector3f).mul(57.29577951308232f) //rad to deg constant
+        (eulerAngles as Vec3)((rotation.eulerAnglesYXZ * 57.29577951308232f)) //rad to deg constant
 
         updateView()
         updateProjection()
@@ -189,15 +178,15 @@ abstract class Camera : UniformMappable {
     }
 
     protected fun updateView() {
-        val front = rotation.transform((viewPosition as Vector3f).set(0f, 0f, 1f)).normalize()
+        val front = (rotation * (viewPosition as Vec3)(0f, 0f, 1f)).normalize()
 
         if (!orbit) {
-            val target = front.add(position)
-            (this.view as Matrix4f).setLookAt(position, target, worldUp)
-            viewPosition.set(position)
+            val target = front + position
+            (this.view as Mat4).setLookAt(position, target, worldUp)
+            viewPosition(position)
         } else {
-            front.mul(orbitDistance).negate().add(position)
-            (this.view as Matrix4f).setLookAt(front, position, worldUp)
+            val eye = (front * -orbitDistance) + position
+            (this.view as Mat4).setLookAt(eye, position, worldUp)
         }
     }
 
@@ -206,8 +195,8 @@ abstract class Camera : UniformMappable {
     protected abstract fun updateProjection()
 
     private fun updateCombined() {
-        (combined as Matrix4f).set(projection).mul(view)
-        (combined as Matrix4f).invert(invCombined as Matrix4f)
+        (combined as Mat4)(projection * view)
+        (invCombined as Mat4)(combined.inverted)
     }
 
     /**
@@ -218,11 +207,7 @@ abstract class Camera : UniformMappable {
      * @param radius the radius of the sphere
      * @return `true` if the sphere intersects the view frustum partially or fully, `false` otherwise
      */
-    fun frustumTestSphere(center: Vector3fc, radius: Float): Boolean {
-        //TODO FrustumIntersection for more complicated stuff
-//        FrustumIntersection
-        return combined.testSphere(center.x(), center.y(), center.z(), radius)
-    }
+    fun frustumTestSphere(center: Vec3c, radius: Float): Boolean = combined.frustumTestSphere(center, radius)
 
     /**
      * Tests whether the world-space axis-aligned bounding box `aabb` intersects the volume projected by the
@@ -231,8 +216,7 @@ abstract class Camera : UniformMappable {
      * @param aabb the axis-aligned bounding box
      * @return `true` if the aabb intersects the view frustum partially or fully, `false` otherwise
      */
-    fun frustumTestAABB(aabb: AABBfc): Boolean =
-        combined.testAab(aabb.minX(), aabb.minY(), aabb.minZ(), aabb.maxX(), aabb.maxY(), aabb.maxZ())
+    fun frustumTestAABB(aabb: AABBc): Boolean = combined.frustumTestAABB(aabb)
 
     /**
      * Casts a ray in world space from this camera's [position] through the pixel defined by `x` and
@@ -245,21 +229,8 @@ abstract class Camera : UniformMappable {
      * @return world space ray with `origin` and `direction`
      */
     //TODO figure out if this works with ortho too (the docs kinda imply it doesn't)
-    fun castViewportRay(x: Int, y: Int): Rayf {
-        rayBuilder.set(combined)
-
-        val ray = Rayf()
-
-        rayBuilder.origin(vector)
-        ray.oX = vector.x()
-        ray.oY = vector.y()
-        ray.oZ = vector.z()
-        rayBuilder.dir(x.toFloat() / viewportSize.x(), 1f - (y.toFloat() / viewportSize.y()), vector)
-        ray.dX = vector.x()
-        ray.dY = vector.y()
-        ray.dZ = vector.z()
-        return ray
-    }
+    fun castViewportRay(x: Int, y: Int): Ray =
+        Ray(combined, x.toFloat() / viewportSize.x, y.toFloat() / viewportSize.y)
 
     /**
      * Transfers a point in world coordinate space to this [Camera]'s normalized view space.
@@ -270,10 +241,10 @@ abstract class Camera : UniformMappable {
      * @param point point in world space
      * @return point in view space
      */
-    fun worldToView(point: Vector3fc): Vector3f {
-        val homogeneousPoint = combined.transform(Vector4f(point, 1f))
-        homogeneousPoint.div(homogeneousPoint.w)
-        return homogeneousPoint.xyz(Vector3f())
+    fun worldToView(point: Vec3c): Vec3 {
+        var homogeneousPoint = combined * Vec4(point, 1f)
+        homogeneousPoint /= homogeneousPoint.w
+        return homogeneousPoint.xyz
     }
 
     override fun toString(): String {

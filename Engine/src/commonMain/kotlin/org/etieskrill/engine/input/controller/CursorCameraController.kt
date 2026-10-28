@@ -1,8 +1,8 @@
 package org.etieskrill.engine.input.controller
 
+import net.bifreus.kml.Vec2
 import org.etieskrill.engine.graphics.camera.Camera
 import org.etieskrill.engine.input.CursorInputAdapter
-import org.joml.Vector2d
 
 class CursorCameraController(
     private val camera: Camera,
@@ -13,7 +13,7 @@ class CursorCameraController(
     var updateCondition: (() -> Boolean)? = null,
 ) : CursorInputAdapter {
 
-    private val previousPosition = Vector2d()
+    private val previousPosition = Vec2()
     private var firstValueSet = false
 
     private var enabled = true
@@ -22,12 +22,13 @@ class CursorCameraController(
         if (!enabled) return false
 
         if (!firstValueSet) {
-            previousPosition.set(posX, posY)
+            previousPosition(posX, posY)
             firstValueSet = true
         }
 
         if (shouldUpdate()) {
-            previousPosition.sub(posX, posY)
+            previousPosition.x -= posX.toFloat()
+            previousPosition.y -= posY.toFloat()
             camera.rotate(
                 (lookSensitivity * -previousPosition.y).toFloat(),
                 (lookSensitivity * previousPosition.x).toFloat(),
@@ -35,7 +36,7 @@ class CursorCameraController(
             )
         }
 
-        previousPosition.set(posX, posY)
+        previousPosition(posX, posY)
         return true
     }
 

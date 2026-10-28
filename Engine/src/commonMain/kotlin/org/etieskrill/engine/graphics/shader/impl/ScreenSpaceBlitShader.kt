@@ -9,9 +9,9 @@ import io.github.etieskrill.injection.extension.shader.float
 import io.github.etieskrill.injection.extension.shader.sampler2D
 import io.github.etieskrill.injection.extension.shader.vec2
 import io.github.etieskrill.injection.extension.shader.vec4
+import net.bifreus.kml.Vec2
+import net.bifreus.kml.Vec4
 import org.etieskrill.engine.graphics.shader.Shader
-import org.joml.Vector2f
-import org.joml.Vector4f
 
 class ScreenSpaceBlitShader : PureShaderBuilder<ScreenSpaceBlitShader.Vertex, ColourRenderTarget>(
     object : Shader(listOf("ScreenSpaceBlit.glsl")) {}
@@ -33,10 +33,10 @@ class ScreenSpaceBlitShader : PureShaderBuilder<ScreenSpaceBlitShader.Vertex, Co
 
     init {
         useSpriteColour = false
-        ndcPosition = Vector2f(0f)
-        ndcSize = Vector2f(100f)
+        ndcPosition = Vec2(0)
+        ndcSize = Vec2(100)
         rotation = 0f
-        colour = Vector4f(1f)
+        colour = Vec4(1)
     }
 
     override fun program() {

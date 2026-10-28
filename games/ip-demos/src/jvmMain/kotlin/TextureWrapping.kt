@@ -29,9 +29,6 @@ import org.joml.Vector2f
 import org.joml.Vector2i
 import org.joml.plus
 import org.joml.unaryMinus
-import org.lwjgl.opengl.GL11C.GL_TRIANGLE_STRIP
-import org.lwjgl.opengl.GL11C.glDrawArrays
-import org.lwjgl.opengl.GL30C.glBindVertexArray
 import org.lwjgl.opengl.GL30C.glGenVertexArrays
 
 fun main() {

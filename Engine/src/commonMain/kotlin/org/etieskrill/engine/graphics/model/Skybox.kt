@@ -1,10 +1,10 @@
 package org.etieskrill.engine.graphics.model
 
+import net.bifreus.kml.AABB
 import org.etieskrill.engine.graphics.model.loader.ModelLoaderOptions
 import org.etieskrill.engine.graphics.model.loader.loadModel
 import org.etieskrill.engine.graphics.texture.TextureCubeMap
 import org.etieskrill.engine.graphics.texture.TextureType
-import org.joml.primitives.AABBf
 
 class Skybox(
     name: String
@@ -17,12 +17,12 @@ class Skybox(
                 SkyboxMaterial(name, TextureCubeMap.createFromFile(name, TextureType.DIFFUSE)),
                 null,
                 loadModel("cubemap.obj", ModelLoaderOptions()).nodes[0].meshes[0].vao,
-                AABBf(),
+                AABB(),
                 MeshDrawMode.TRIANGLES
             )
         )
     ),
     emptyList(),
     emptyList(),
-    AABBf()
+    AABB()
 )

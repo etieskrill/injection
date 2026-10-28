@@ -8,9 +8,9 @@ import io.github.etieskrill.injection.extension.shader.float
 import io.github.etieskrill.injection.extension.shader.sampler2D
 import io.github.etieskrill.injection.extension.shader.vec2
 import io.github.etieskrill.injection.extension.shader.vec4
+import net.bifreus.kml.Vec2
+import net.bifreus.kml.Vec4
 import org.etieskrill.engine.graphics.shader.Shader
-import org.joml.Vector2f
-import org.joml.Vector4f
 
 //TODO compile constants - e.g. colour blend mode to merge this with above
 class BlitDepthShader : PureShaderBuilder<BlitDepthShader.Vertex, ColourRenderTarget>(
@@ -31,10 +31,10 @@ class BlitDepthShader : PureShaderBuilder<BlitDepthShader.Vertex, ColourRenderTa
     var windowSize by uniform<vec2>() //TODO check if used without being set
 
     init {
-        position = Vector2f(0f)
-        size = Vector2f(100f)
+        position = Vec2(0f)
+        size = Vec2(100f)
         rotation = 0f
-        colour = Vector4f(1f)
+        colour = Vec4(1f)
     }
 
     override fun program() {

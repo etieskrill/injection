@@ -1,18 +1,15 @@
-package org.etieskrill.engine.scene;
+package org.etieskrill.engine.scene
 
 import kotlinx.coroutines.CoroutineScope
+import net.bifreus.kml.Vec2i
+import net.bifreus.kml.Vec2ic
+import net.bifreus.kml.Vec3
 import org.etieskrill.engine.graphics.camera.Camera
 import org.etieskrill.engine.graphics.camera.OrthographicCamera
-import org.etieskrill.engine.graphics.pipeline.Pipeline
-import org.etieskrill.engine.graphics.pipeline.PostPassPipeline
 import org.etieskrill.engine.input.KeyEvent
 import org.etieskrill.engine.input.KeyInputHandler
 import org.etieskrill.engine.input.MouseGestureHandler
 import org.etieskrill.engine.scene.Node.ScaleMode
-import org.joml.Vector2i
-import org.joml.Vector2ic
-import org.joml.Vector3f
-import org.lwjgl.opengl.GL11C.*
 
 open class Scene(
     var batch: Batch,
@@ -41,7 +38,7 @@ open class Scene(
         set(value) {
             field = value
             field.setRotation(0f, 180f, 0f)
-            field.position = Vector3f(camera.viewportSize, 0f) / 2f
+            field.position = Vec3(camera.viewportSize, 0f) / 2f
         }
 
     init {
@@ -49,9 +46,9 @@ open class Scene(
         this.camera = camera
     }
 
-    var size: Vector2ic = Vector2i(0)
+    var size: Vec2ic = Vec2i(0)
         set(value) {
-            (field as Vector2i).set(value)
+            (field as Vec2i)(value)
             root.invalidate()
         }
 
@@ -65,8 +62,8 @@ open class Scene(
 
     open fun update(delta: Double) {
         root.apply {
-            position.set(0f)
-            size.set(this@Scene.size)
+            position(0)
+            size(this@Scene.size)
             scaleMode = ScaleMode.FIXED
             update(delta)
 
@@ -102,7 +99,7 @@ open class Scene(
     override fun invokeDrag(deltaX: Double, deltaY: Double, posX: Double, posY: Double) =
         root.handleDrag(deltaX, deltaY, posX, posY)
 
-    override fun invoke(key: KeyEvent): Boolean = root.handleKey(key)
+    override fun invoke(event: KeyEvent): Boolean = root.handleKey(event)
 
     override fun invokeCharacter(character: Char) = (focusedNode ?: root).handleCharacter(character)
 

@@ -1,6 +1,10 @@
 package org.etieskrill.engine.graphics.model.loader
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import net.bifreus.kml.Vec2i
+import net.bifreus.kml.Vec2ic
+import net.bifreus.kml.Vec4
+import net.bifreus.kml.Vec4c
 import org.etieskrill.engine.config.TEXTURE_PATH
 import org.etieskrill.engine.graphics.model.Material
 import org.etieskrill.engine.graphics.model.PBRMaterial
@@ -12,10 +16,6 @@ import org.etieskrill.engine.graphics.texture.ai
 import org.etieskrill.engine.time.StepTimer
 import org.etieskrill.engine.util.ResourceReader.classpathResourceExists
 import org.etieskrill.engine.util.name
-import org.joml.Vector2i
-import org.joml.Vector2ic
-import org.joml.Vector4f
-import org.joml.Vector4fc
 import org.lwjgl.BufferUtils
 import org.lwjgl.assimp.AIMaterial
 import org.lwjgl.assimp.AIMaterialProperty
@@ -58,7 +58,7 @@ internal fun loadEmbeddedTextures(scene: AIScene): Map<String, EmbeddedTexture> 
         val arrayData = ByteArray(imageData.remaining())
         imageData.get(arrayData)
         val embeddedTexture = EmbeddedTexture(
-            size = Vector2i(width[0], height[0]),
+            size = Vec2i(width[0], height[0]),
             type = guessType(filePath),
             format = TextureFormat.fromNumChannels(channels[0]),
             buffer = arrayData
@@ -83,7 +83,7 @@ private fun guessType(filePath: String): TextureType = when { //TODO add other t
 }
 
 internal data class EmbeddedTexture(
-    val size: Vector2ic,
+    val size: Vec2ic,
     var type: TextureType,
     var format: TextureFormat,
     val buffer: ByteArray
@@ -147,13 +147,13 @@ private fun processPhongMaterial(
     isTwoSided = aiMaterial.getBooleanProperty(AI_MATKEY_TWOSIDED) ?: false,
 
     diffuseColour = aiMaterial.getColourProperty(AI_MATKEY_COLOR_DIFFUSE)
-        ?: Vector4f(1f), //FIXME better way to do defaults?
-    specularColour = aiMaterial.getColourProperty(AI_MATKEY_COLOR_SPECULAR) ?: Vector4f(1f),
-    ambientColour = aiMaterial.getColourProperty(AI_MATKEY_COLOR_AMBIENT) ?: Vector4f(1f),
+        ?: Vec4(1f), //FIXME better way to do defaults?
+    specularColour = aiMaterial.getColourProperty(AI_MATKEY_COLOR_SPECULAR) ?: Vec4(1f),
+    ambientColour = aiMaterial.getColourProperty(AI_MATKEY_COLOR_AMBIENT) ?: Vec4(1f),
     shininess = aiMaterial.getFloatProperty(AI_MATKEY_SHININESS) ?: 256f,
     shininessStrength = aiMaterial.getFloatProperty(AI_MATKEY_SHININESS_STRENGTH) ?: 1f,
     opacity = aiMaterial.getFloatProperty(AI_MATKEY_OPACITY) ?: 1f,
-    emissiveColour = aiMaterial.getColourProperty(AI_MATKEY_COLOR_EMISSIVE) ?: Vector4f(0f),
+    emissiveColour = aiMaterial.getColourProperty(AI_MATKEY_COLOR_EMISSIVE) ?: Vec4(0f),
     emissiveStrength = aiMaterial.getFloatProperty(AI_MATKEY_EMISSIVE_INTENSITY) ?: 0f,
 
     diffuseTexture = aiMaterial.getTexture(TextureType.DIFFUSE, materialIndex, modelName, embeddedTextures),
@@ -178,7 +178,7 @@ private fun processPBRMaterial(
     name = aiMaterial.getStringProperty(AI_MATKEY_NAME),
     isTwoSided = aiMaterial.getBooleanProperty(AI_MATKEY_TWOSIDED) ?: false,
 
-    diffuseColour = aiMaterial.getColourProperty(AI_MATKEY_COLOR_DIFFUSE) ?: Vector4f(1f),
+    diffuseColour = aiMaterial.getColourProperty(AI_MATKEY_COLOR_DIFFUSE) ?: Vec4(1f),
     opacity = aiMaterial.getFloatProperty(AI_MATKEY_OPACITY),
     emissiveColour = aiMaterial.getColourProperty(AI_MATKEY_COLOR_EMISSIVE),
     emissiveStrength = aiMaterial.getFloatProperty(AI_MATKEY_EMISSIVE_INTENSITY),
@@ -199,10 +199,10 @@ private fun AIMaterial.getIntProperty(property: String): Int? =
 private fun AIMaterial.getFloatProperty(property: String): Float? =
     getProperty(property, aiPTI_Float, Float.SIZE_BYTES)?.mData()?.float
 
-private fun AIMaterial.getColourProperty(property: String): Vector4fc? {
+private fun AIMaterial.getColourProperty(property: String): Vec4c? {
     val data = getProperty(property, aiPTI_Float)?.mData() ?: return null
-    return if (data.remaining() == 3 * Float.SIZE_BYTES) Vector4f(data.float, data.float, data.float, 1f)
-    else if (data.remaining() == 4 * Float.SIZE_BYTES) Vector4f(data.float, data.float, data.float, data.float)
+    return if (data.remaining() == 3 * Float.SIZE_BYTES) Vec4(data.float, data.float, data.float, 1f)
+    else if (data.remaining() == 4 * Float.SIZE_BYTES) Vec4(data.float, data.float, data.float, data.float)
     else error("Colour property contained ${data.remaining() / Float.SIZE_BYTES} values where 3/4 are required")
 }
 

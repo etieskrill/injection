@@ -1,21 +1,20 @@
 package org.etieskrill.engine.scene.element
 
+import net.bifreus.kml.Vec2
+import net.bifreus.kml.Vec4
+import net.bifreus.kml.plus
 import org.etieskrill.engine.input.KeyEvent
 import org.etieskrill.engine.input.Key
 import org.etieskrill.engine.input.KeyEventAction
 import org.etieskrill.engine.scene.Batch
 import org.etieskrill.engine.scene.Node
-import org.joml.Vector2f
-import org.joml.Vector3f
-import org.joml.Vector4f
-import org.joml.plus
 
 class Slider(
     var value: Float,
     val minValue: Float,
     val maxValue: Float,
     val stepSize: Float = 0f,
-    val barColour: Vector4f = Vector4f(0f, 1f, 0f, 1f),
+    val barColour: Vec4 = Vec4(0f, 1f, 0f, 1f),
     var action: (t: Float) -> Unit = {}
 ) : Node<Slider>() {
 
@@ -31,8 +30,8 @@ class Slider(
     override fun render(batch: Batch) {
         batch.renderBox(absolutePosition, size, renderedColour)
         batch.renderBox(
-            Vector2f(BAR_MARGIN) + absolutePosition,
-            (Vector2f(-2 * BAR_MARGIN) + size).apply { x *= value / (maxValue - minValue) },
+            Vec2(BAR_MARGIN) + absolutePosition,
+            ((-2 * BAR_MARGIN) + size).apply { x *= value / (maxValue - minValue) },
             barColour
         )
     }

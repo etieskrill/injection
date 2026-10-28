@@ -11,7 +11,6 @@ import org.etieskrill.engine.graphics.buffer.BufferObject
 import org.etieskrill.engine.graphics.buffer.BufferType
 import org.etieskrill.engine.graphics.buffer.VertexArrayAccessor
 import org.etieskrill.engine.graphics.buffer.VertexArrayObject
-import org.etieskrill.engine.graphics.pipeline.CullingMode
 import org.etieskrill.engine.graphics.pipeline.Pipeline
 import org.etieskrill.engine.graphics.pipeline.PipelineConfig
 import org.etieskrill.engine.graphics.shader.Shader
@@ -19,8 +18,6 @@ import org.etieskrill.engine.input.controller.CursorCameraController
 import org.joml.Matrix4f
 import org.joml.Vector3f
 import org.joml.times
-import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.GL11C.*
 
 val houseVertices = floatArrayOf(
     -1f, -1f, 1f, 1f, 1f, 0f, //0

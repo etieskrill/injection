@@ -1,13 +1,13 @@
 package org.etieskrill.engine.graphics.model
 
+import net.bifreus.kml.AABB
 import org.etieskrill.engine.graphics.buffer.VertexArrayObject
-import org.joml.primitives.AABBf
 
 class Mesh(
     var material: Material,
     val bones: List<Bone>?,
     val vao: VertexArrayObject<Vertex>,
-    val boundingBox: AABBf,
+    val boundingBox: AABB,
     val drawMode: MeshDrawMode
 )
 

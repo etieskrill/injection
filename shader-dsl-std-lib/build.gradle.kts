@@ -17,7 +17,7 @@ dependencies {
     implementation("io.github.etieskrill.injection.extension.shader:shader-interface:1.0.0-SNAPSHOT")
     implementation("io.github.etieskrill.injection.extension.shader.dsl:shader-dsl-lib:1.0.0-SNAPSHOT")
 
-    implementation("org.joml:joml:1.10.8")
+    implementation("net.bifreus.kml:kml:1.0.0")
 }
 
 kotlin {

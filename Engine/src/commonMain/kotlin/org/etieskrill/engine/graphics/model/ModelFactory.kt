@@ -1,22 +1,21 @@
 package org.etieskrill.engine.graphics.model
 
+import net.bifreus.kml.Vec2
+import net.bifreus.kml.Vec3
 import org.etieskrill.engine.graphics.model.loader.loadToVAO
-import org.joml.Vector2f
-import org.joml.Vector3f
 
-fun rectangle(position: Vector2f, size: Vector2f): Model {
-    return rectangle(position.x(), position.y(), size.x(), size.y())
-}
+fun rectangle(position: Vec2, size: Vec2) =
+    rectangle(position.x, position.y, size.x, size.y)
 
 fun rectangle(x: Float, y: Float, width: Float, height: Float, material: Material? = null): Model {
     val x = if (width < 0) width else x
     val y = if (height < 0) height else y
 
     val vertices = listOf(
-        Vertex(Vector3f(x, y, 0f), textureCoords = Vector2f(0f)),
-        Vertex(Vector3f(x, y + height, 0f), textureCoords = Vector2f(0f, 1f)),
-        Vertex(Vector3f(x + width, y, 0f), textureCoords = Vector2f(1f, 0f)),
-        Vertex(Vector3f(x + width, y + height, 0f), textureCoords = Vector2f(1f, 1f))
+        Vertex(Vec3(x, y, 0f), textureCoords = Vec2(0f)),
+        Vertex(Vec3(x, y + height, 0f), textureCoords = Vec2(0f, 1f)),
+        Vertex(Vec3(x + width, y, 0f), textureCoords = Vec2(1f, 0f)),
+        Vertex(Vec3(x + width, y + height, 0f), textureCoords = Vec2(1f, 1f))
     )
 
     val indices = listOf(0, 2, 1, 3, 1, 2)
@@ -111,7 +110,7 @@ fun roundedRect(x: Float, y: Float, width: Float, height: Float, rounding: Float
 //    throw new UnsupportedOperationException("Currently under major reconstruction");
 }
 
-fun box(size: Vector3f): Model {
+fun box(size: Vec3): Model {
     TODO()
 //    val transform = Transform(scale = size)
 //    return EngineModelLoader.load("internal-model-factory:box") {
@@ -119,7 +118,7 @@ fun box(size: Vector3f): Model {
 //    }
 }
 
-fun box(size: Vector3f, material: Material): Model {
+fun box(size: Vec3, material: Material): Model {
     TODO()
 //    var transform = new Transform();
 //    transform.setScale(size);
@@ -133,7 +132,7 @@ fun box(size: Vector3f, material: Material): Model {
 //    return new Model(baseBox);
 }
 
-fun quadBox(size: Vector3f) {
+fun quadBox(size: Vec3) {
     TODO()
 //    var transform = new Transform();
 //    transform.setScale(size);

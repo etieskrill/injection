@@ -8,13 +8,13 @@ import io.github.etieskrill.injection.extension.shader.int
 import io.github.etieskrill.injection.extension.shader.mat4
 import io.github.etieskrill.injection.extension.shader.vec2
 import io.github.etieskrill.injection.extension.shader.vec4
+import net.bifreus.kml.Vec2
+import net.bifreus.kml.Vec4
 import org.etieskrill.engine.graphics.pipeline.PostPassPipeline
 import org.etieskrill.engine.graphics.shader.Shader
 import org.etieskrill.engine.scene.Batch
 import org.etieskrill.engine.scene.Node
 import org.etieskrill.engine.util.FixedArrayDeque
-import org.joml.Vector2f
-import org.joml.Vector4f
 
 enum class HistogramScaleMode { FIXED, MAX_VALUE }
 
@@ -22,10 +22,10 @@ class Histogram(
     private val columns: Int,
     private val histogramScaleMode: HistogramScaleMode = HistogramScaleMode.MAX_VALUE,
     private val maxValue: Float = 0f,
-    private val backgroundColour: Vector4f = Vector4f(0f, 0f, 0f, 1f),
+    private val backgroundColour: Vec4 = Vec4(0f, 0f, 0f, 1f),
     private val drawSeparators: Boolean = true,
-    private val separatorColour: Vector4f = Vector4f(0.15f, 0.15f, 0.15f, 1f),
-    private val barColour: Vector4f = Vector4f(0f, 1f, 0f, 1f)
+    private val separatorColour: Vec4 = Vec4(0.15f, 0.15f, 0.15f, 1f),
+    private val barColour: Vec4 = Vec4(0f, 1f, 0f, 1f)
 ) : Node<Histogram>() {
 
     companion object { //TODO replace with specialisation parameters
@@ -75,8 +75,8 @@ class Histogram(
 
             for (column in 0..columns) {
                 batch.renderBox(
-                    Vector2f(position).apply { x += column * columnWidth },
-                    Vector2f(1f, size.y),
+                    Vec2(position).apply { x += column * columnWidth },
+                    Vec2(1f, size.y),
                     separatorColour
                 )
             }

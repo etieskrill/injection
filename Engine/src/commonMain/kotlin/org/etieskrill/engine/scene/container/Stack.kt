@@ -1,13 +1,11 @@
 package org.etieskrill.engine.scene.container
+import net.bifreus.kml.Vec2
 import org.etieskrill.engine.input.KeyEvent
 import org.etieskrill.engine.scene.Batch
 import org.etieskrill.engine.scene.Node
 import org.etieskrill.engine.scene.Node.Alignment.FIXED_POSITION
 import org.etieskrill.engine.scene.Node.ScaleMode.*
 import org.etieskrill.engine.scene.getPreferredNodePosition
-import org.joml.Vector2f
-import org.joml.minus
-import org.joml.plus
 
 /**
  * A node with any number of children, whose layouts are respected independently of each other.
@@ -61,22 +59,22 @@ open class Stack(
      */
     protected open fun computeBoundingBox() {
         if (children.isEmpty()) {
-            formattedSize.set(0f)
+            formattedSize(0)
             return
         }
 
-        val min = Vector2f()
-        val max = Vector2f()
+        val min = Vec2()
+        val max = Vec2()
 
         children.forEachIndexed { i, child ->
             if (i == 0) {
-                min.set(child.position)
-                max.set(child.position + child.size)
+                min(child.position)
+                max(child.position + child.size)
                 return@forEachIndexed
             }
 
-            min.min(child.position)
-            max.max(child.position + child.size)
+            min(min.min(child.position))
+            max(max.max(child.position + child.size))
         }
 
         formattedSize = max - min

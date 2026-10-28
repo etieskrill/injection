@@ -23,6 +23,11 @@ kotlin {
     jvm()
 
     sourceSets {
+        commonMain.dependencies {
+            api("net.bifreus.kml:kml:1.0.0")
+            //api(project("net.bifreus.kml:kml-primitives:1.0.0"))
+        }
+
         jvmMain.dependencies {
             api(libs.kotlin.stdlib)
             implementation(libs.kotlin.coroutines)
@@ -50,10 +55,6 @@ kotlin {
             runtimeOnly("org.lwjgl:lwjgl-meshoptimizer::$lwjglNatives")
 
             api("io.github.etieskrill.injection.extension.shader.dsl:shader-dsl-lib:1.0.0-SNAPSHOT")
-
-            //OpenGL-oriented maths library
-            api(libs.joml)
-            api(libs.joml.primitives)
 
             implementation(libs.jetbrains.annotations)
 

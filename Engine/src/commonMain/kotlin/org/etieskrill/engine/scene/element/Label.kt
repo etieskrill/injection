@@ -32,7 +32,7 @@ open class Label(
 
             CONTENT -> {
                 if (text == null) {
-                    formattedSize.set(0f)
+                    formattedSize(0)
                     computedFixedSize = true
                 }
 
@@ -41,7 +41,7 @@ open class Label(
                 var height = font.minLineHeight
 
                 text?.let { font.getGlyphs(it) }?.forEach { glyph ->
-                    width += glyph.advance.x().toInt()
+                    width += glyph.advance.x.toInt()
                     when (glyph.character) {
                         '\n' -> {
                             height += font.lineHeight
@@ -52,7 +52,7 @@ open class Label(
                     maxWidth = max(maxWidth, width)
                 }
 
-                formattedSize.set(
+                formattedSize(
                     maxWidth.toFloat(),
                     height.toFloat()
                 )  //TODO figure out or compute actual font line height and add toggle here

@@ -2,6 +2,13 @@ package org.etieskrill.engine.graphics.shader
 
 import io.github.etieskrill.injection.extension.shader.ShaderStage
 import io.github.oshai.kotlinlogging.KotlinLogging
+import net.bifreus.kml.Mat2
+import net.bifreus.kml.Mat3
+import net.bifreus.kml.Mat4
+import net.bifreus.kml.Vec2
+import net.bifreus.kml.Vec2i
+import net.bifreus.kml.Vec3
+import net.bifreus.kml.Vec4
 import org.etieskrill.engine.common.Disposable
 import org.etieskrill.engine.graphics.GraphicsContext
 import org.etieskrill.engine.graphics.buffer.StorageBufferObject
@@ -10,26 +17,9 @@ import org.etieskrill.engine.graphics.gl.GLUtils
 import org.etieskrill.engine.graphics.gl.shader.ShaderCreationException
 import org.etieskrill.engine.graphics.shader.UniformType.*
 import org.etieskrill.engine.graphics.texture.Texture
-import org.etieskrill.engine.graphics.texture.Texture2D
-import org.etieskrill.engine.graphics.texture.Texture2DInstance
 import org.etieskrill.engine.graphics.texture.TextureInstance
-import org.etieskrill.engine.util.ResourceReader.getResource
 import org.etieskrill.engine.util.extension
 import org.etieskrill.engine.util.readResource
-import org.joml.Matrix2f
-import org.joml.Matrix3f
-import org.joml.Matrix4f
-import org.joml.Vector2f
-import org.joml.Vector2i
-import org.joml.Vector3f
-import org.joml.Vector4f
-import org.joml.putMatrix2f
-import org.joml.putMatrix3f
-import org.joml.putMatrix4f
-import org.joml.putVector2f
-import org.joml.putVector2i
-import org.joml.putVector3f
-import org.joml.putVector4f
 import org.lwjgl.opengl.GL11C.GL_TRUE
 import org.lwjgl.opengl.GL20C.*
 import org.lwjgl.opengl.GL31C.GL_INVALID_INDEX
@@ -451,14 +441,35 @@ internal actual class ShaderInstance internal constructor(
 
                 FLOAT -> glUniform1f(location, value as Float)
                 DOUBLE -> glUniform1d(location, value as Double)
-                BOOL -> glUniform1i(location, if (value as Boolean) 1 else 0) //FIXME or f?
-                VEC2 -> glUniform2fv(location, (value as Vector2f).get(stack.mallocFloat(2)))
-                VEC2I -> glUniform2iv(location, (value as Vector2i).get(stack.mallocInt(2)))
-                VEC3 -> glUniform3fv(location, (value as Vector3f).get(stack.mallocFloat(3)))
-                VEC4 -> glUniform4fv(location, (value as Vector4f).get(stack.mallocFloat(4)))
-                MAT2 -> glUniformMatrix2fv(location, false, (value as Matrix2f).get(stack.mallocFloat(4)))
-                MAT3 -> glUniformMatrix3fv(location, false, (value as Matrix3f).get(stack.mallocFloat(9)))
-                MAT4 -> glUniformMatrix4fv(location, false, (value as Matrix4f).get(stack.mallocFloat(16)))
+                BOOL -> glUniform1i(location, if (value as Boolean) 1 else 0)
+                VEC2 -> glUniform2fv(location, (value as Vec2).run { stack.mallocFloat(2).put(x).put(y).flip() })
+                VEC2I -> glUniform2iv(location, (value as Vec2i).run { stack.mallocInt(2).put(x).put(y).flip() })
+                VEC3 -> glUniform3fv(location, (value as Vec3).run { stack.mallocFloat(3).put(x).put(y).put(z).flip() })
+                VEC4 -> glUniform4fv(location, (value as Vec4).run {
+                    stack.mallocFloat(4).put(x).put(y).put(z).put(w).flip()
+                })
+
+                MAT2 -> glUniformMatrix2fv(location, false, (value as Mat2).run {
+                    stack.mallocFloat(4).put(m00).put(m01).put(m10).put(m11).flip()
+                })
+
+                MAT3 -> glUniformMatrix3fv(location, false, (value as Mat3).run {
+                    stack.mallocFloat(9)
+                        .put(m00).put(m01).put(m02)
+                        .put(m10).put(m11).put(m12)
+                        .put(m20).put(m21).put(m22)
+                        .flip()
+                })
+
+                MAT4 -> glUniformMatrix4fv(location, false, (value as Mat4).run {
+                    stack.mallocFloat(16)
+                        .put(m00).put(m01).put(m02).put(m03)
+                        .put(m10).put(m11).put(m12).put(m13)
+                        .put(m20).put(m21).put(m22).put(m23)
+                        .put(m30).put(m31).put(m32).put(m33)
+                        .flip()
+                })
+
                 STORAGE_BUFFER -> {}
                 STRUCT -> error("Struct types should have been resolved by here already")
             }
@@ -496,44 +507,58 @@ internal actual class ShaderInstance internal constructor(
 
                 VEC2 -> {
                     val vector2s = stack.mallocFloat(2 * value.size)
-                    value.forEachIndexed { i, vec2 -> vector2s.putVector2f(2 * i, vec2 as Vector2f) }
+                    value.forEach { (it as Vec2).run { vector2s.put(x).put(y) } }
                     glUniform2fv(location, vector2s.rewind())
                 }
 
                 VEC2I -> {
                     val vector2is = stack.mallocInt(2 * value.size)
-                    value.forEachIndexed { i, vec2i -> vector2is.putVector2i(2 * i, vec2i as Vector2i) }
-                    for (o in value) (o as Vector2i)[vector2is].position(vector2is.position() + 2)
+                    value.forEach { (it as Vec2i).run { vector2is.put(x).put(y) } }
                     glUniform2iv(location, vector2is.rewind())
                 }
 
                 VEC3 -> {
                     val vector3s = stack.mallocFloat(3 * value.size)
-                    value.forEachIndexed { i, vec3 -> vector3s.putVector3f(3 * i, vec3 as Vector3f) }
+                    value.forEach { (it as Vec3).run { vector3s.put(x).put(y).put(z) } }
                     glUniform3fv(location, vector3s.rewind())
                 }
 
                 VEC4 -> {
                     val vector4s = stack.mallocFloat(4 * value.size)
-                    value.forEachIndexed { i, vec4 -> vector4s.putVector4f(4 * i, vec4 as Vector4f) }
+                    value.forEach { (it as Vec4).run { vector4s.put(x).put(y).put(z).put(w) } }
                     glUniform4fv(location, vector4s.rewind())
                 }
 
                 MAT2 -> {
                     val mat2s = stack.mallocFloat(4 * value.size)
-                    value.forEachIndexed { i, mat2 -> mat2s.putMatrix2f(4 * i, mat2 as Matrix2f) }
+                    value.forEach { (it as Mat2).run { mat2s.put(m00).put(m01).put(m10).put(m11) } }
                     glUniformMatrix2fv(location, false, mat2s.rewind())
                 }
 
                 MAT3 -> {
                     val mat3s = stack.mallocFloat(9 * value.size)
-                    value.forEachIndexed { i, mat3 -> mat3s.putMatrix3f(9 * i, mat3 as Matrix3f) }
+                    value.forEach {
+                        (it as Mat3).run {
+                            mat3s
+                                .put(m00).put(m01).put(m02)
+                                .put(m10).put(m11).put(m12)
+                                .put(m20).put(m21).put(m22)
+                        }
+                    }
                     glUniformMatrix3fv(location, false, mat3s.rewind())
                 }
 
                 MAT4 -> {
                     val mat4s = stack.mallocFloat(16 * value.size)
-                    value.forEachIndexed { i, mat4 -> mat4s.putMatrix4f(16 * i, mat4 as Matrix4f) }
+                    value.forEach {
+                        (it as Mat4).run {
+                            mat4s
+                                .put(m00).put(m01).put(m02).put(m03)
+                                .put(m10).put(m11).put(m12).put(m13)
+                                .put(m20).put(m21).put(m22).put(m23)
+                                .put(m30).put(m31).put(m32).put(m33)
+                        }
+                    }
                     glUniformMatrix4fv(location, false, mat4s.rewind())
                 }
 

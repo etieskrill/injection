@@ -1,5 +1,13 @@
 package org.etieskrill.engine.scene
 
+import net.bifreus.kml.Mat4
+import net.bifreus.kml.Mat4c
+import net.bifreus.kml.Vec2
+import net.bifreus.kml.Vec2c
+import net.bifreus.kml.Vec2ic
+import net.bifreus.kml.Vec4
+import net.bifreus.kml.Vec4c
+import net.bifreus.kml.div
 import org.etieskrill.engine.graphics.GraphicsContext
 import org.etieskrill.engine.graphics.framebuffer.FrameBuffer
 import org.etieskrill.engine.graphics.pipeline.Pipeline
@@ -11,15 +19,6 @@ import org.etieskrill.engine.graphics.shader.impl.TextShader
 import org.etieskrill.engine.graphics.shader.impl.UiBoxShader
 import org.etieskrill.engine.graphics.text.Font
 import org.etieskrill.engine.graphics.texture.Texture2D
-import org.joml.Matrix4f
-import org.joml.Matrix4fc
-import org.joml.Vector2f
-import org.joml.Vector2fc
-import org.joml.Vector2ic
-import org.joml.Vector4f
-import org.joml.Vector4fc
-import org.joml.div
-import org.joml.plus
 
 //TODO since everything apart from like, chars in Strings is immediate-mode, this should be renamed
 class Batch(
@@ -53,9 +52,9 @@ class Batch(
 
     private val textShader = TextShader()
 
-    var combined: Matrix4fc = Matrix4f()
+    var combined: Mat4c = Mat4()
         set(value) {
-            (field as Matrix4f).set(value)
+            (field as Mat4)(value)
         }
 
     fun render(pipeline: Pipeline<*>) = renderer.render(pipeline)
@@ -63,7 +62,7 @@ class Batch(
     /**
      * @param position *CENTER* point of the box
      */
-    fun renderCenteredBox(position: Vector2fc, size: Vector2fc, colour: Vector4fc) {
+    fun renderCenteredBox(position: Vec2c, size: Vec2c, colour: Vec4c) {
         uiBoxPipeline.shader.let {
             it.position = (size / 2f) + position
             it.size = size
@@ -75,7 +74,7 @@ class Batch(
         renderer.render(uiBoxPipeline)
     }
 
-    fun renderBox(position: Vector2fc, size: Vector2fc, colour: Vector4fc) {
+    fun renderBox(position: Vec2c, size: Vec2c, colour: Vec4c) {
         uiBoxPipeline.shader.let {
             it.position = position
             it.size = size
@@ -87,21 +86,21 @@ class Batch(
         renderer.render(uiBoxPipeline)
     }
 
-    fun getAbsoluteCursorPosition(cursorPosition: Vector2ic, text: String, font: Font, size: Vector2fc) =
+    fun getAbsoluteCursorPosition(cursorPosition: Vec2ic, text: String, font: Font, size: Vec2c) =
         textRenderer.getAbsoluteCursorPosition(cursorPosition, text, font, size)
 
     fun renderBackground(
-        position: Vector2fc,
-        size: Vector2fc,
-        backgroundColour: Vector4fc,
+        position: Vec2c,
+        size: Vec2c,
+        backgroundColour: Vec4c,
         borderThickness: Float,
-        borderColour: Vector4fc
+        borderColour: Vec4c
     ) {
         uiOutlinePipeline.shader.apply {
-            this.position = (position / Vector2f(frameBuffer.size)).mul(2f, -2f).sub(1f, -1f)
-            this.size = (size / Vector2f(frameBuffer.size)).mul(2f, -2f)
+            this.position = (position / frameBuffer.size.toFloat()) * Vec2(2f, -2f) - Vec2(1f, -1f)
+            this.size = (size / frameBuffer.size.toFloat()) * Vec2(2f, -2f)
             this.backgroundColour = backgroundColour
-            this.borderThickness = Vector2f(borderThickness) / Vector2f(frameBuffer.size)
+            this.borderThickness = borderThickness / frameBuffer.size.toFloat()
             this.borderColour = borderColour
         }
 
@@ -115,26 +114,25 @@ class Batch(
     fun renderText(
         text: String,
         font: Font,
-        position: Vector2fc,
-        size: Vector2fc? = null,
-        cursorPosition: Vector2f? = null
+        position: Vec2c,
+        size: Vec2c? = null,
+        cursorPosition: Vec2? = null
     ) = textRenderer.render(text, font, position, size, textShader, combined, cursorPosition)
 
-    fun blit(texture: Texture2D, position: Vector2fc, size: Vector2fc, rotation: Float, colour: Vector4fc = Vector4f(1f)) {
+    fun blit(texture: Texture2D, position: Vec2c, size: Vec2c, rotation: Float, colour: Vec4c = Vec4(1f)) {
         blitPipeline.shader.let {
             it.sprite = texture
             it.useSpriteColour = false
             it.position = position
             it.size = size
             it.rotation = rotation
-            it.windowSize = Vector2f(frameBuffer.size)
+            it.windowSize = frameBuffer.size.toFloat()
             it.colour = colour
         }
 
         renderer.render(blitPipeline)
     }
 
-    fun ndcToScreenSpace(ndc: Vector2f): Vector2f =
-        (ndc / 2f).add(0.5f, 0.5f).mul(frameBuffer.size.x().toFloat(), frameBuffer.size.y().toFloat())
+    fun ndcToScreenSpace(ndc: Vec2): Vec2 = ((ndc / 2f) + Vec2(0.5)) * frameBuffer.size.toFloat()
 
 }

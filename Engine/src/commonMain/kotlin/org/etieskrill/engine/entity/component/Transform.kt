@@ -1,11 +1,9 @@
 package org.etieskrill.engine.entity.component
 
-import org.joml.Matrix4f
-import org.joml.Matrix4fc
-import org.joml.Quaternionf
-import org.joml.Vector3f
-import org.joml.plus
-import org.joml.timesAssign
+import net.bifreus.kml.Mat4
+import net.bifreus.kml.Mat4c
+import net.bifreus.kml.Quat
+import net.bifreus.kml.Vec3
 
 /**
  * An immutable view of a [Transform]. Prefer using this over the mutable version.
@@ -16,9 +14,9 @@ interface TransformC {
         val IDENTITY: TransformC = Transform()
     }
 
-    val position: Vector3f
-    val rotation: Quaternionf
-    val scale: Vector3f
+    val position: Vec3
+    val rotation: Quat
+    val scale: Vec3
 
     val isIdentity: Boolean get() = this == IDENTITY
 
@@ -27,7 +25,7 @@ interface TransformC {
      *
      * @return the transform matrix
      */
-    val matrix: Matrix4fc
+    val matrix: Mat4c
 
     infix fun apply(other: TransformC): Transform = applyInternal(other, Transform())
     operator fun times(other: TransformC) = apply(other)
@@ -39,43 +37,43 @@ interface TransformC {
 }
 
 class Transform(
-    position: Vector3f = Vector3f(),
-    rotation: Quaternionf = Quaternionf(),
-    scale: Vector3f = Vector3f(1f)
+    position: Vec3 = Vec3(),
+    rotation: Quat = Quat(),
+    scale: Vec3 = Vec3(1f)
 ) : TransformC {
 
-    override var position: Vector3f = position
+    override var position: Vec3 = position
         get() {
             isDirty = true //TODO observable primitives
             return field
         }
         set(value) {
             isDirty = true
-            field.set(value)
+            field(value)
         }
 
-    override var rotation: Quaternionf = rotation
+    override var rotation: Quat = rotation
         get() {
             isDirty = true
             return field
         }
         set(value) {
             isDirty = true
-            field.set(value)
+            field(value)
         }
 
-    override var scale: Vector3f = scale
+    override var scale: Vec3 = scale
         get() {
             isDirty = true
             return field
         }
         set(value) {
             isDirty = true
-            field.set(value)
+            field(value)
         }
 
-    internal val internalMatrix = Matrix4f()
-    override val matrix: Matrix4fc
+    internal val internalMatrix = Mat4()
+    override val matrix: Mat4c
         get() {
             updateTransform()
             return internalMatrix
@@ -83,12 +81,12 @@ class Transform(
 
     internal var isDirty = true
 
-    constructor(transform: Matrix4fc) : this(fromMatrix4f(transform))
+    constructor(transform: Mat4c) : this(fromMatrix4f(transform))
 
     constructor(transform: TransformC) : this(
-        Vector3f(transform.position),
-        Quaternionf(transform.rotation),
-        Vector3f(transform.scale)
+        Vec3(transform.position),
+        Quat(transform.rotation),
+        Vec3(transform.scale)
     ) {
         isDirty = (transform as Transform).isDirty
     }
@@ -96,7 +94,7 @@ class Transform(
     /**
      * @return the local up unit vector
      */
-    val up: Vector3f get() = rotation.transform(Vector3f(0f, 1f, 0f))
+    val up: Vec3 get() = rotation * Vec3.UP
 
     fun set(transform: TransformC) {
         position = transform.position
@@ -111,10 +109,10 @@ class Transform(
     override fun lerp(other: TransformC, t: Float): Transform = lerpInternal(other, t, this)
 
     fun identity(): Transform {
-        this.position.set(0f)
-        this.rotation.identity()
-        this.scale.set(1f)
-        this.internalMatrix.identity()
+        this.position(0)
+        this.rotation()
+        this.scale(1)
+        this.internalMatrix()
 
         return this
     }
@@ -123,10 +121,7 @@ class Transform(
         if (!isDirty) return
         else isDirty = false
 
-        this.internalMatrix.identity()
-            .translate(position)
-            .rotate(rotation)
-            .scale(scale)
+        this.internalMatrix() translate position rotate rotation scale scale //what in seven hells have i wrought
     }
 
     override fun toString(): String {
@@ -137,10 +132,9 @@ class Transform(
         if (this === other) return true
         if (other !is Transform) return false
 
-        val epsilon = 0.000001f
-        return position.equals(other.position, epsilon)
-                && rotation.equals(other.rotation, epsilon)
-                && scale.equals(other.scale, epsilon)
+        return position == other.position
+                && rotation == other.rotation
+                && scale == other.scale
     }
 
     override fun hashCode(): Int {
@@ -152,36 +146,36 @@ class Transform(
 
 }
 
-internal fun fromMatrix4f(matrix: Matrix4fc, target: Transform = Transform()): Transform = target.apply {
-    position = matrix.getTranslation(position)
-    rotation = matrix.getUnnormalizedRotation(rotation).takeIf { it.isFinite } ?: Quaternionf()
-    scale = matrix.getScale(scale)
-    internalMatrix.set(matrix)
+internal fun fromMatrix4f(matrix: Mat4c, target: Transform = Transform()): Transform = target.apply {
+    position = matrix.translation
+    rotation = matrix.rotation.takeIf { it.isFinite } ?: Quat()
+    scale = matrix.scaling
+    internalMatrix(matrix)
     isDirty = false
 }
 
 internal fun TransformC.applyInternal(other: TransformC, target: Transform): Transform {
-    val targetMatrix = target.internalMatrix.set(matrix)
+    var targetMatrix = target.internalMatrix(matrix)
     targetMatrix *= other.matrix
     return fromMatrix4f(targetMatrix, target)
 }
 
 internal fun TransformC.composeInternal(other: TransformC, target: Transform): Transform {
-    target.position.set(position)
+    target.position(position)
     target.position += other.position
-    target.rotation.set(rotation)
+    target.rotation(rotation)
     target.rotation *= other.rotation
-    target.scale.set(scale)
+    target.scale(scale)
     target.scale *= other.scale
     return target
 }
 
 internal fun TransformC.lerpInternal(other: TransformC, t: Float, target: Transform): Transform {
-    target.position.set(position)
+    target.position(position)
     target.position.lerp(other.position, t)
-    target.rotation.set(rotation)
+    target.rotation(rotation)
     target.rotation.slerp(other.rotation, t)
-    target.scale.set(scale)
+    target.scale(scale)
     target.scale.lerp(other.scale, t)
     return target
 }

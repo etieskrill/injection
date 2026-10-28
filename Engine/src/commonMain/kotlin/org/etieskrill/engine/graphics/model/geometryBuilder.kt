@@ -1,10 +1,10 @@
 package org.etieskrill.engine.graphics.model
 
+import net.bifreus.kml.AABB
+import net.bifreus.kml.Vec2
+import net.bifreus.kml.Vec3
 import org.etieskrill.engine.entity.component.Transform
 import org.etieskrill.engine.graphics.model.loader.loadToVAO
-import org.joml.Vector2f
-import org.joml.Vector3f
-import org.joml.primitives.AABBf
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -22,17 +22,17 @@ data class GeometryCounters(
 class ModelBuilder(
     var culling: Boolean = true,
     internal val rootNode: Node = Node("root"),
-    internal val boundingBox: AABBf = AABBf(),
+    internal val boundingBox: AABB = AABB(),
     internal val counters: GeometryCounters = GeometryCounters()
 )
 
-fun ModelBuilder.plane(a: Vector2f, b: Vector2f, transform: Transform? = null, material: Material? = null) {
-    val cross = Vector3f(0f, 1f, 0f)
+fun ModelBuilder.plane(a: Vec2, b: Vec2, transform: Transform? = null, material: Material? = null) {
+    val cross = Vec3(0f, 1f, 0f)
     val vertices: List<Vertex> = listOf(
-        Vertex(Vector3f(a.x, 0f, a.y), normal = cross, textureCoords = Vector2f(0f, 0f), tangent = Vector3f(1f, 0f, 0f), biTangent = Vector3f(0f, 0f, 1f)),
-        Vertex(Vector3f(a.x, 0f, b.y), normal = cross, textureCoords = Vector2f(0f, 1f), tangent = Vector3f(1f, 0f, 0f), biTangent = Vector3f(0f, 0f, 1f)),
-        Vertex(Vector3f(b.x, 0f, b.y), normal = cross, textureCoords = Vector2f(1f, 1f), tangent = Vector3f(1f, 0f, 0f), biTangent = Vector3f(0f, 0f, 1f)),
-        Vertex(Vector3f(b.x, 0f, a.y), normal = cross, textureCoords = Vector2f(1f, 0f), tangent = Vector3f(1f, 0f, 0f), biTangent = Vector3f(0f, 0f, 1f))
+        Vertex(Vec3(a.x, 0f, a.y), normal = cross, textureCoords = Vec2(0f, 0f), tangent = Vec3(1f, 0f, 0f), biTangent = Vec3(0f, 0f, 1f)),
+        Vertex(Vec3(a.x, 0f, b.y), normal = cross, textureCoords = Vec2(0f, 1f), tangent = Vec3(1f, 0f, 0f), biTangent = Vec3(0f, 0f, 1f)),
+        Vertex(Vec3(b.x, 0f, b.y), normal = cross, textureCoords = Vec2(1f, 1f), tangent = Vec3(1f, 0f, 0f), biTangent = Vec3(0f, 0f, 1f)),
+        Vertex(Vec3(b.x, 0f, a.y), normal = cross, textureCoords = Vec2(1f, 0f), tangent = Vec3(1f, 0f, 0f), biTangent = Vec3(0f, 0f, 1f))
     )
     val indices = listOf(0, 1, 2, 0, 2, 3)
 
@@ -40,46 +40,46 @@ fun ModelBuilder.plane(a: Vector2f, b: Vector2f, transform: Transform? = null, m
         "plane-${counters.planes++}",
         vertices,
         indices,
-        AABBf(Vector3f(a.x, 0f, a.y), Vector3f(b.x, 0f, b.y)),
+        AABB(Vec3(a.x, 0f, a.y), Vec3(b.x, 0f, b.y)),
         transform,
         material
     )
 }
 
-fun ModelBuilder.box(a: Vector3f, b: Vector3f, transform: Transform? = null, material: Material? = null) {
+fun ModelBuilder.box(a: Vec3, b: Vec3, transform: Transform? = null, material: Material? = null) {
     require(a.x <= b.x && a.y <= b.y && a.z <= b.z) { "Coordinates of point b may not be smaller than point a" }
 
     val vertices: List<Vertex> = listOf(
         // top
-        Vertex(Vector3f(a.x, b.y, b.z), normal = Vector3f(0f, 1f, 0f)),
-        Vertex(Vector3f(b.x, b.y, b.z), normal = Vector3f(0f, 1f, 0f)),
-        Vertex(Vector3f(b.x, b.y, a.z), normal = Vector3f(0f, 1f, 0f)),
-        Vertex(Vector3f(a.x, b.y, a.z), normal = Vector3f(0f, 1f, 0f)),
+        Vertex(Vec3(a.x, b.y, b.z), normal = Vec3(0f, 1f, 0f)),
+        Vertex(Vec3(b.x, b.y, b.z), normal = Vec3(0f, 1f, 0f)),
+        Vertex(Vec3(b.x, b.y, a.z), normal = Vec3(0f, 1f, 0f)),
+        Vertex(Vec3(a.x, b.y, a.z), normal = Vec3(0f, 1f, 0f)),
         // bottom
-        Vertex(Vector3f(a.x, a.y, a.z), normal = Vector3f(0f, -1f, 0f)),
-        Vertex(Vector3f(b.x, a.y, a.z), normal = Vector3f(0f, -1f, 0f)),
-        Vertex(Vector3f(b.x, a.y, b.z), normal = Vector3f(0f, -1f, 0f)),
-        Vertex(Vector3f(a.x, a.y, b.z), normal = Vector3f(0f, -1f, 0f)),
+        Vertex(Vec3(a.x, a.y, a.z), normal = Vec3(0f, -1f, 0f)),
+        Vertex(Vec3(b.x, a.y, a.z), normal = Vec3(0f, -1f, 0f)),
+        Vertex(Vec3(b.x, a.y, b.z), normal = Vec3(0f, -1f, 0f)),
+        Vertex(Vec3(a.x, a.y, b.z), normal = Vec3(0f, -1f, 0f)),
         // front
-        Vertex(Vector3f(a.x, b.y, a.z), normal = Vector3f(0f, 0f, -1f)),
-        Vertex(Vector3f(b.x, b.y, a.z), normal = Vector3f(0f, 0f, -1f)),
-        Vertex(Vector3f(b.x, a.y, a.z), normal = Vector3f(0f, 0f, -1f)),
-        Vertex(Vector3f(a.x, a.y, a.z), normal = Vector3f(0f, 0f, -1f)),
+        Vertex(Vec3(a.x, b.y, a.z), normal = Vec3(0f, 0f, -1f)),
+        Vertex(Vec3(b.x, b.y, a.z), normal = Vec3(0f, 0f, -1f)),
+        Vertex(Vec3(b.x, a.y, a.z), normal = Vec3(0f, 0f, -1f)),
+        Vertex(Vec3(a.x, a.y, a.z), normal = Vec3(0f, 0f, -1f)),
         // back
-        Vertex(Vector3f(a.x, a.y, b.z), normal = Vector3f(0f, 0f, 1f)),
-        Vertex(Vector3f(b.x, a.y, b.z), normal = Vector3f(0f, 0f, 1f)),
-        Vertex(Vector3f(b.x, b.y, b.z), normal = Vector3f(0f, 0f, 1f)),
-        Vertex(Vector3f(a.x, b.y, b.z), normal = Vector3f(0f, 0f, 1f)),
+        Vertex(Vec3(a.x, a.y, b.z), normal = Vec3(0f, 0f, 1f)),
+        Vertex(Vec3(b.x, a.y, b.z), normal = Vec3(0f, 0f, 1f)),
+        Vertex(Vec3(b.x, b.y, b.z), normal = Vec3(0f, 0f, 1f)),
+        Vertex(Vec3(a.x, b.y, b.z), normal = Vec3(0f, 0f, 1f)),
         // left
-        Vertex(Vector3f(a.x, b.y, b.z), normal = Vector3f(-1f, 0f, 0f)),
-        Vertex(Vector3f(a.x, b.y, a.z), normal = Vector3f(-1f, 0f, 0f)),
-        Vertex(Vector3f(a.x, a.y, a.z), normal = Vector3f(-1f, 0f, 0f)),
-        Vertex(Vector3f(a.x, a.y, b.z), normal = Vector3f(-1f, 0f, 0f)),
+        Vertex(Vec3(a.x, b.y, b.z), normal = Vec3(-1f, 0f, 0f)),
+        Vertex(Vec3(a.x, b.y, a.z), normal = Vec3(-1f, 0f, 0f)),
+        Vertex(Vec3(a.x, a.y, a.z), normal = Vec3(-1f, 0f, 0f)),
+        Vertex(Vec3(a.x, a.y, b.z), normal = Vec3(-1f, 0f, 0f)),
         // right
-        Vertex(Vector3f(b.x, b.y, a.z), normal = Vector3f(1f, 0f, 0f)),
-        Vertex(Vector3f(b.x, b.y, b.z), normal = Vector3f(1f, 0f, 0f)),
-        Vertex(Vector3f(b.x, a.y, b.z), normal = Vector3f(1f, 0f, 0f)),
-        Vertex(Vector3f(b.x, a.y, a.z), normal = Vector3f(1f, 0f, 0f))
+        Vertex(Vec3(b.x, b.y, a.z), normal = Vec3(1f, 0f, 0f)),
+        Vertex(Vec3(b.x, b.y, b.z), normal = Vec3(1f, 0f, 0f)),
+        Vertex(Vec3(b.x, a.y, b.z), normal = Vec3(1f, 0f, 0f)),
+        Vertex(Vec3(b.x, a.y, a.z), normal = Vec3(1f, 0f, 0f))
     )
 
     val indices = listOf(
@@ -91,7 +91,7 @@ fun ModelBuilder.box(a: Vector3f, b: Vector3f, transform: Transform? = null, mat
         20, 21, 22, 20, 22, 23  //right
     )
 
-    createModel("box-${counters.boxes++}", vertices, indices, AABBf(a, b), transform, material)
+    createModel("box-${counters.boxes++}", vertices, indices, AABB(a, b), transform, material)
 }
 
 /**
@@ -124,7 +124,7 @@ fun ModelBuilder.primitiveSphere(
 
     //TODO could improve by using vertical triangle strips instead
 
-    vertices += Vertex(Vector3f(0f, radius, 0f), normal = Vector3f(0f, 1f, 0f))
+    vertices += Vertex(Vec3(0f, radius, 0f), normal = Vec3(0f, 1f, 0f))
     for (xSegment in 0..<xSegments) {
         indices += 0
         indices += xSegment + 1
@@ -140,8 +140,8 @@ fun ModelBuilder.primitiveSphere(
             val y = radius * cos(theta)
             val z = radius * sin(theta) * cos(phi)
 
-            val position = Vector3f(x, y, z)
-            vertices += Vertex(position, normal = Vector3f(position).normalize())
+            val position = Vec3(x, y, z)
+            vertices += Vertex(position, normal = Vec3(position).normalize())
 
             if (ySegment == ySegments - 1 && xSegment > xSegments - 3) continue
 
@@ -155,7 +155,7 @@ fun ModelBuilder.primitiveSphere(
         }
     }
 
-    vertices += Vertex(Vector3f(0f, -radius, 0f), normal = Vector3f(0f, -1f, 0f))
+    vertices += Vertex(Vec3(0f, -radius, 0f), normal = Vec3(0f, -1f, 0f))
     for (xSegment in -1..<xSegments - 1) {
         indices += vertices.lastIndex
         indices += vertices.lastIndex - ySegments + xSegment + 1
@@ -167,7 +167,7 @@ fun ModelBuilder.primitiveSphere(
 
     createModel(
         "sphere-${counters.spheres++}", vertices, indices,
-        AABBf(Vector3f(-radius), Vector3f(radius)), transform, material
+        AABB(Vec3(-radius), Vec3(radius)), transform, material
     )
 }
 
@@ -175,7 +175,7 @@ private fun ModelBuilder.createModel(
     name: String,
     vertices: List<Vertex>,
     indices: List<Int>,
-    boundingBox: AABBf = AABBf(),
+    boundingBox: AABB = AABB(),
     transform: Transform? = null,
     material: Material? = null
 ) {
@@ -187,5 +187,5 @@ private fun ModelBuilder.createModel(
     val node = Node(name, transform, rootNode, meshes = listOf(mesh))
     rootNode.children += node
 
-    this.boundingBox.union(boundingBox.transform(transform.matrix))
+    this.boundingBox(this.boundingBox + (transform.matrix * boundingBox))
 }

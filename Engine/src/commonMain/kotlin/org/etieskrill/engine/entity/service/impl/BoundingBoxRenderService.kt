@@ -1,5 +1,7 @@
 package org.etieskrill.engine.entity.service.impl
 
+import net.bifreus.kml.Vec3
+import net.bifreus.kml.Vec4
 import org.etieskrill.engine.entity.Entity
 import org.etieskrill.engine.entity.component.Transform
 import org.etieskrill.engine.entity.component.WorldSpaceAABB
@@ -14,8 +16,6 @@ import org.etieskrill.engine.graphics.pipeline.Pipeline
 import org.etieskrill.engine.graphics.pipeline.PipelineConfig
 import org.etieskrill.engine.graphics.renderer.Renderer
 import org.etieskrill.engine.graphics.shader.impl.WireframeShader
-import org.joml.Vector3f
-import org.joml.Vector4f
 import kotlin.reflect.KClass
 
 class BoundingBoxRenderService(
@@ -28,7 +28,7 @@ class BoundingBoxRenderService(
 
     private val shader = WireframeShader()
 
-    private val box = model("box") { box(Vector3f(-0.5f), Vector3f(0.5f)) }
+    private val box = model("box") { box(Vec3(-0.5f), Vec3(0.5f)) }
     private val boundingBoxTransform = Transform()
 
     private val pipeline = Pipeline(
@@ -47,13 +47,13 @@ class BoundingBoxRenderService(
         if (!renderBoundingBoxes) return
 
         val aabb = targetEntity.getComponent<WorldSpaceAABB>()!!
-        aabb.center(boundingBoxTransform.position)
-        aabb.getSize(boundingBoxTransform.scale)
+        boundingBoxTransform.position = aabb.center
+        boundingBoxTransform.scale = aabb.size
 
         pipeline.shader.apply {
             setUniform("model", boundingBoxTransform)
             setUniform("combined", camera.combined)
-            setUniform("colour", Vector4f(0f, 0f, 0f, 1f))
+            setUniform("colour", Vec4(0f, 0f, 0f, 1f))
         }
 
         renderer.render(pipeline)

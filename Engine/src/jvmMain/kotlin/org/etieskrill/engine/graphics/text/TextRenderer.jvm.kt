@@ -1,5 +1,10 @@
 package org.etieskrill.engine.graphics.text
 
+import net.bifreus.kml.Mat4c
+import net.bifreus.kml.Vec2
+import net.bifreus.kml.Vec2c
+import net.bifreus.kml.Vec2i
+import net.bifreus.kml.Vec2ic
 import org.etieskrill.engine.graphics.GraphicsContext
 import org.etieskrill.engine.graphics.buffer.BufferAccessFrequency
 import org.etieskrill.engine.graphics.buffer.BufferObject
@@ -10,11 +15,6 @@ import org.etieskrill.engine.graphics.pipeline.CullingMode
 import org.etieskrill.engine.graphics.renderer.RenderedGlyph
 import org.etieskrill.engine.graphics.renderer.RenderedGlyphAccessor
 import org.etieskrill.engine.graphics.shader.Shader
-import org.joml.Matrix4fc
-import org.joml.Vector2f
-import org.joml.Vector2fc
-import org.joml.Vector2i
-import org.joml.Vector2ic
 import org.lwjgl.opengl.GL11C
 
 actual class TextRenderer actual constructor(
@@ -40,33 +40,33 @@ actual class TextRenderer actual constructor(
     )
 
     actual fun getAbsoluteCursorPosition(
-        cursorPosition: Vector2ic,
+        cursorPosition: Vec2ic,
         text: String,
         font: Font,
-        size: Vector2fc?
-    ): Vector2f? {
-        if (cursorPosition.equals(0, 0)) return Vector2f(0f)
+        size: Vec2c?
+    ): Vec2? {
+        if (cursorPosition == Vec2i.ZERO) return Vec2(0f)
 
         var numChars = 0
-        val pen = Vector2f(0f)
-        val currentCursorPosition = Vector2i(0)
+        val pen = Vec2(0f)
+        val currentCursorPosition = Vec2i(0)
 
         for (glyph in font.getGlyphs(text)) {
             when (glyph.character) {
                 '\n' -> {
-                    pen.set(0f, pen.y + font.lineHeight)
+                    pen(0f, pen.y + font.lineHeight)
                     currentCursorPosition.x = 0
                     currentCursorPosition.y++
                 }
                 else -> {
-                    if (size != null && (pen.x + glyph.advance.x() > size.x())) { //special chars probably shouldn't get wrapped, right?
-                        pen.set(0f, pen.y + font.lineHeight)
+                    if (size != null && (pen.x + glyph.advance.x > size.x)) { //special chars probably shouldn't get wrapped, right?
+                        pen(0f, pen.y + font.lineHeight)
                         currentCursorPosition.x = 0
                         currentCursorPosition.y++
                     }
 
                     currentCursorPosition.x++
-                    pen.add(glyph.advance)
+                    pen(pen + glyph.advance)
                 }
             }
 
@@ -82,18 +82,18 @@ actual class TextRenderer actual constructor(
     actual fun render(
         chars: String,
         font: Font,
-        position: Vector2fc,
-        size: Vector2fc?,
+        position: Vec2c,
+        size: Vec2c?,
         shader: Shader,
-        combined: Matrix4fc,
-        cursorPosition: Vector2f?
+        combined: Mat4c,
+        cursorPosition: Vec2?
     ) {
         context.checkThread()
 
         GLUtils.clearError()
 
         shader.setUniform("combined", combined)
-        shader.setUniform("glyphTextureSize", Vector2f(font.pixelSize))
+        shader.setUniform("glyphTextureSize", font.pixelSize.toFloat())
 
         when (font) {
             is BitmapFont -> renderBitmap(chars, font, position, size, shader, cursorPosition)
@@ -106,44 +106,42 @@ actual class TextRenderer actual constructor(
     private fun renderBitmap(
         chars: String,
         font: BitmapFont,
-        position: Vector2fc,
-        size: Vector2fc?,
+        position: Vec2c,
+        size: Vec2c?,
         shader: Shader,
-        cursorPosition: Vector2f?
+        cursorPosition: Vec2?
     ) {
         var numRenderableChars = 0
         var renderedGlyphIndex = 0
-        val pen = Vector2f(0f)
-        val penPosition = Vector2f(0f)
+        val pen = Vec2(0f)
+        val penPosition = Vec2(0f)
 
         for (glyph in font.getGlyphs(chars)) {
             when (glyph.character) {
                 '\n' -> {
-                    pen.set(0f, pen.y() + font.lineHeight)
+                    pen(0f, pen.y + font.lineHeight)
                     continue
                 }
                 else -> {
                     //TODO this is only the most primitive of wrapping; maybe add wrap mode enum? callback, even?
-                    if (size != null && (pen.x + glyph.advance.x() > size.x())) { //special chars probably shouldn't get wrapped, right?
-                        pen.set(0f, pen.y + font.lineHeight)
+                    if (size != null && (pen.x + glyph.advance.x > size.x)) { //special chars probably shouldn't get wrapped, right?
+                        pen(0f, pen.y + font.lineHeight)
                     }
                     numRenderableChars++
                 }
             }
 
-            penPosition
-                .set(position).add(pen)
-                .add(glyph.position)
+            penPosition(position + pen + glyph.position)
 
             val renderedGlyph = renderedGlyphs[renderedGlyphIndex++]
-            renderedGlyph.size.set(glyph.size)
-            renderedGlyph.position.set(penPosition)
+            renderedGlyph.size(glyph.size)
+            renderedGlyph.position(penPosition)
             renderedGlyph.textureIndex = glyph.textureIndex
 
-            pen.add(glyph.advance)
+            pen(pen + glyph.advance)
         }
 
-        cursorPosition?.set(pen)
+        cursorPosition?.invoke(pen)
 
         renderBitmapGlyphs(numRenderableChars, renderedGlyphs, font, shader)
     }

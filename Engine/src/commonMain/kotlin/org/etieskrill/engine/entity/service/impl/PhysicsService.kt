@@ -1,5 +1,6 @@
 package org.etieskrill.engine.entity.service.impl
 
+import net.bifreus.kml.Vec3
 import org.etieskrill.engine.entity.Entity
 import org.etieskrill.engine.entity.component.Acceleration
 import org.etieskrill.engine.entity.component.DirectionalForceComponent
@@ -10,13 +11,6 @@ import org.etieskrill.engine.entity.component.StaticCollider
 import org.etieskrill.engine.entity.component.Transform
 import org.etieskrill.engine.entity.component.WorldSpaceAABB
 import org.etieskrill.engine.entity.service.Service
-import org.joml.Vector3f
-import org.joml.minus
-import org.joml.plus
-import org.joml.plusAssign
-import org.joml.primitives.AABBf
-import org.joml.times
-import org.joml.timesAssign
 
 class PhysicsService(
     private val solver: NarrowCollisionSolver
@@ -49,33 +43,35 @@ class PhysicsService(
         onGround: OnGround?,
         delta: Double
     ) {
-        val velocity = transform.position - collider.previousPosition
+        var velocity = transform.position - collider.previousPosition
 
         targetEntity.getComponent<Friction>()?.let {
             val verticalVelocity = velocity.y
-            velocity.timesAssign(1f - (it.coefficient * delta).toFloat())
+            velocity *= 1f - (it.coefficient * delta).toFloat()
             velocity.y = verticalVelocity
         }
 
-        if (lastDelta > 0.0) velocity.timesAssign((delta / lastDelta).toFloat())
+        if (lastDelta > 0.0) {
+            velocity *= (delta / lastDelta).toFloat()
+        }
 
-        val newPosition = velocity + transform.position
+        var newPosition = velocity + transform.position
 
         val correctedAccelDelta = (delta * ((delta + lastDelta) / 2.0)).toFloat()
 
         targetEntity.getComponent<DirectionalForceComponent>()?.let {
-            newPosition.plusAssign(it.force * correctedAccelDelta)
+            newPosition += it.force * correctedAccelDelta
         }
 
         targetEntity.getComponent<Acceleration>()?.let {
             if (onGround?.isOnGround != true) {
                 it.force.y = 0f
             }
-            newPosition.plusAssign(it.force * it.factor * correctedAccelDelta)
+            newPosition += it.force * it.factor * correctedAccelDelta
         }
 
         lastDelta = delta
-        collider.previousPosition.set(transform.position)
+        collider.previousPosition(transform.position)
         transform.position = newPosition
     }
 
@@ -98,7 +94,7 @@ class PhysicsService(
             val otherBoundingBox = entity.getComponent<WorldSpaceAABB>() ?: return@forEach
             val otherTransform = entity.getComponent<Transform>() ?: return@forEach
 
-            if (!boundingBox.intersectsAABB(otherBoundingBox)) return@forEach
+            if (!boundingBox.intersects(otherBoundingBox)) return@forEach
 
             if (dynamicCollider != null) {
                 solver.solveDynamic(
@@ -152,13 +148,13 @@ class PhysicsService(
                     otherEntity: Entity,
                     onGround: OnGround?
                 ) {
-                    val overlap = boundingBox.intersection(otherBoundingBox, AABBf()).getSize(Vector3f())
+                    val overlap = (boundingBox intersect otherBoundingBox).size
 
                     val component = overlap.minComponent()
                     var overlapComponent = overlap[component]
                     if (overlapComponent <= 0) return
 
-                    if (boundingBox.center(Vector3f())[component] < otherBoundingBox.center(Vector3f())[component]) {
+                    if (boundingBox.center[component] < otherBoundingBox.center[component]) {
                         overlapComponent = -overlapComponent
                     }
 
@@ -180,13 +176,13 @@ class PhysicsService(
                 ) {
                     if (collider.isStaticOnly || otherCollider.isStaticOnly) return
 
-                    val overlap = boundingBox.intersection(otherBoundingBox, AABBf()).getSize(Vector3f())
+                    val overlap = (boundingBox intersect otherBoundingBox).size
 
                     val component = overlap.minComponent()
                     var overlapComponent = overlap[component]
                     if (overlapComponent <= 0) return
 
-                    if (boundingBox.center(Vector3f())[component] < otherBoundingBox.center(Vector3f())[component]) {
+                    if (boundingBox.center[component] < otherBoundingBox.center[component]) {
                         overlapComponent = -overlapComponent
                     }
 
@@ -197,8 +193,6 @@ class PhysicsService(
                     collider.previousPosition[component] = transform.position[component]
                     otherCollider.previousPosition[component] = otherTransform.position[component]
                 }
-
-                private operator fun Vector3f.set(component: Int, value: Float) = setComponent(component, value)
             }
         }
 

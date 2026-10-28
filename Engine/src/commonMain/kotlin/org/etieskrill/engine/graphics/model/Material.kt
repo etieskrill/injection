@@ -1,14 +1,14 @@
 package org.etieskrill.engine.graphics.model
 
+import net.bifreus.kml.Vec4
+import net.bifreus.kml.Vec4c
 import org.etieskrill.engine.graphics.shader.UniformMappable
 import org.etieskrill.engine.graphics.shader.UniformMapper
 import org.etieskrill.engine.graphics.texture.Texture2D
 import org.etieskrill.engine.graphics.texture.TextureCubeMap
 import org.etieskrill.engine.graphics.texture.TextureType
-import org.joml.Vector4f
-import org.joml.Vector4fc
 
-private typealias Colour = Vector4fc
+private typealias Colour = Vec4c
 
 // phong:
 // properties:
@@ -57,13 +57,13 @@ data class PhongMaterial(
 
     val textureScale: Float = 1f,
 
-    val diffuseColour: Colour = Vector4f(1f), //FIXME what the hell is AI_MATKEY_BASE_COLOR then?
-    val specularColour: Colour = Vector4f(1f),
-    val ambientColour: Colour = Vector4f(1f),
+    val diffuseColour: Colour = Vec4(1f), //FIXME what the hell is AI_MATKEY_BASE_COLOR then?
+    val specularColour: Colour = Vec4(1f),
+    val ambientColour: Colour = Vec4(1f),
     val shininess: Float = 256f,
     val shininessStrength: Float = 1f,
     val opacity: Float = 1f,
-    val emissiveColour: Colour = Vector4f(0f),
+    val emissiveColour: Colour = Vec4(0f),
     val emissiveStrength: Float = 0f,
 
     val diffuseTexture: Texture2D? = null,
@@ -127,7 +127,7 @@ data class PBRMaterial(
 
     val textureScale: Float = 1f,
 
-    val diffuseColour: Colour = Vector4f(1f),
+    val diffuseColour: Colour = Vec4(1f),
     val opacity: Float? = null,
     val emissiveColour: Colour? = null,
     val emissiveStrength: Float? = null,
@@ -180,7 +180,7 @@ data class SkyboxMaterial(
     /* 2. @Uniform(exclude = true) */ override val name: String? = null,
 
     /* 1. @Uniform */ val skyboxTexture: TextureCubeMap? = null,
-    /* 1. @Uniform */ val diffuseColour: Colour = Vector4f(0.25f),
+    /* 1. @Uniform */ val diffuseColour: Colour = Vec4(0.25f),
     /* 1. @Uniform */ val opacity: Float? = null
 ) : Material() {
     override val isTwoSided: Boolean = false

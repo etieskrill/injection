@@ -1,6 +1,8 @@
 package org.etieskrill.engine.graphics.text
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import net.bifreus.kml.Vec2
+import net.bifreus.kml.Vec2i
 import org.etieskrill.engine.common.Disposable
 import org.etieskrill.engine.common.ResourceLoadException
 import org.etieskrill.engine.graphics.texture.ArrayTexture2D
@@ -10,8 +12,6 @@ import org.etieskrill.engine.graphics.texture.TextureRowAlignment
 import org.etieskrill.engine.graphics.texture.TextureType
 import org.etieskrill.engine.graphics.texture.TextureWrapping
 import org.etieskrill.engine.util.readResource
-import org.joml.Vector2f
-import org.joml.Vector2i
 import org.lwjgl.BufferUtils.createByteBuffer
 import org.lwjgl.BufferUtils.createPointerBuffer
 import org.lwjgl.util.freetype.FT_Face
@@ -38,7 +38,7 @@ class TrueTypeFont(
     val family: String
     val style: String
 
-    override val pixelSize: Vector2i
+    override val pixelSize: Vec2i
 
     //TODO expectify patronum
     init {
@@ -66,7 +66,7 @@ class TrueTypeFont(
         family = face.family_nameString()
         style = face.style_nameString()
 
-        pixelSize = Vector2i(Font.INVALID_PIXEL_SIZE)
+        pixelSize = Vec2i(Font.INVALID_PIXEL_SIZE)
     }
 
     private fun initLibrary() {
@@ -92,7 +92,7 @@ class TrueTypeFont(
         var glyphIndex = 0
 
         //Currently, if any glyph is wider than it is tall, this will cause everything to break TODO maybe not?
-        pixelSize.set(pixelWidth, pixelHeight)
+        pixelSize(pixelWidth, pixelHeight)
 
         if (128 < face.num_glyphs().toInt()) {
             logger.warn {
@@ -119,19 +119,22 @@ class TrueTypeFont(
             val bitmap = ftGlyph.bitmap()
             val adv = ftGlyph.advance()
 
-            val size = Vector2f(bitmap.width().toFloat(), bitmap.rows().toFloat())
-            val position = Vector2f(ftGlyph.bitmap_left().toFloat(), ftGlyph.bitmap_top().toFloat())
-            if (!verticalUp) position.mul(1f, -1f).add(0f, minLineHeight.toFloat())
-            val advance = Vector2f(adv.x().toFloat(), adv.y().toFloat()).mul(1f / 64f)
-            if (!verticalUp) advance.mul(1f, -1f)
+            val size = Vec2(bitmap.width().toFloat(), bitmap.rows().toFloat())
+            var position = Vec2(ftGlyph.bitmap_left().toFloat(), ftGlyph.bitmap_top().toFloat())
+            if (!verticalUp) {
+                position *= Vec2(1f, -1f)
+                position += Vec2(0f, minLineHeight)
+            }
+            val advance = Vec2(adv.x() / 64f, adv.y() / 64f)
+            if (!verticalUp) advance.y = -advance.y
 
-            val buffer = bitmap.buffer((size.x() * size.y()).toInt())
+            val buffer = bitmap.buffer((size.x * size.y).toInt())
             if (buffer != null) { //Pad top and right of buffer to specified pixel size
-                for (j in 0 until size.y().toInt()) {
-                    for (k in 0 until size.x().toInt()) textureBuffer[bufferHead++] = buffer.get()
-                    bufferHead += pixelWidth - size.x().toInt()
+                for (j in 0 until size.y.toInt()) {
+                    for (k in 0 until size.x.toInt()) textureBuffer[bufferHead++] = buffer.get()
+                    bufferHead += pixelWidth - size.x.toInt()
                 }
-                bufferHead += (pixelHeight - size.y().toInt()) * pixelWidth
+                bufferHead += (pixelHeight - size.y.toInt()) * pixelWidth
             } else {
                 logger.trace {
                     "Encountered glyph '${i.toInt().toChar()}' (code: $i) without buffer, proceeding with blank bitmap"
@@ -143,7 +146,7 @@ class TrueTypeFont(
         }
 
         val texture = ArrayTexture2D(
-            Vector2i(pixelWidth, pixelHeight),
+            Vec2i(pixelWidth, pixelHeight),
             Font.NUM_CHARS_ASCII,
             TextureType.DIFFUSE, //TODO raw?
             format = TextureFormat.ALPHA,

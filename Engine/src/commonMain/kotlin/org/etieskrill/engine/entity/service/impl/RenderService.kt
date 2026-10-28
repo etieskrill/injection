@@ -1,5 +1,8 @@
 package org.etieskrill.engine.entity.service.impl
 
+import net.bifreus.kml.Vec2
+import net.bifreus.kml.Vec2ic
+import net.bifreus.kml.Vec4ic
 import org.etieskrill.engine.entity.Entity
 import org.etieskrill.engine.entity.component.DirectionalLightComponent
 import org.etieskrill.engine.entity.component.Drawable
@@ -32,20 +35,16 @@ import org.etieskrill.engine.graphics.texture.Texture2D
 import org.etieskrill.engine.graphics.texture.TextureFormat
 import org.etieskrill.engine.graphics.texture.TextureType
 import org.etieskrill.engine.graphics.texture.TextureWrapping
-import org.joml.Matrix3f
-import org.joml.Vector2f
-import org.joml.Vector2ic
-import org.joml.Vector4ic
 import kotlin.reflect.KClass
 
 open class RenderService(
     private val frameBuffer: FrameBuffer,
     internal val renderer: Renderer,
     private val camera: Camera,
-    internal val windowSize: Vector2ic,
+    internal val windowSize: Vec2ic,
 
     var cullingCamera: Camera = camera,
-    private val customViewport: Vector4ic? = null,
+    private val customViewport: Vec4ic? = null,
     var skybox: Skybox? = null
 ) : Service {
 
@@ -182,7 +181,7 @@ open class RenderService(
 
         drawable.model.nodes.forEach { node ->
             val modelTransform = transform * node.transform
-            val normalMatrix = modelTransform.matrix.normal(Matrix3f())
+            val normalMatrix = modelTransform.matrix.normal
             node.meshes.forEach { mesh ->
                 val shader = getConfiguredShader(targetEntity, drawable)
 
@@ -266,7 +265,7 @@ open class RenderService(
 
 internal expect fun RenderService.drawOutlines()
 
-class GaussBlurPostBuffers(val renderer: Renderer, val windowSize: Vector2ic) {
+class GaussBlurPostBuffers(val renderer: Renderer, val windowSize: Vec2ic) {
 
     companion object {
         private const val GAUSS_BLUR_ITERATIONS = 3
@@ -291,7 +290,7 @@ class GaussBlurPostBuffers(val renderer: Renderer, val windowSize: Vector2ic) {
 
     val hdrShader = HDRShader()
 
-    fun renderToScreen(screenBuffer: FrameBuffer, blur: Boolean, customViewport: Vector4ic?) {
+    fun renderToScreen(screenBuffer: FrameBuffer, blur: Boolean, customViewport: Vec4ic?) {
         var blurBuffer1IsTarget = false
 
         if (blur) {
@@ -301,7 +300,7 @@ class GaussBlurPostBuffers(val renderer: Renderer, val windowSize: Vector2ic) {
             gaussBlurShader.apply {
                 source = bloomBuffer
                 horizontal = true
-                sampleDistance = Vector2f(2f)
+                sampleDistance = Vec2(2f)
             }
 
             renderer.render(blurPipeline1)

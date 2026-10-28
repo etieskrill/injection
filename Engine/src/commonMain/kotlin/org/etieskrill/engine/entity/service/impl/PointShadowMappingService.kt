@@ -10,15 +10,11 @@ import org.etieskrill.engine.graphics.pipeline.Pipeline
 import org.etieskrill.engine.graphics.pipeline.PipelineConfig
 import org.etieskrill.engine.graphics.renderer.Renderer
 import org.etieskrill.engine.graphics.shader.impl.DepthCubeMapArrayShader
-import org.joml.Matrix4f
-import org.joml.Matrix4fc
 
 class PointShadowMappingService(
     private val renderer: Renderer,
     private val shader: DepthCubeMapArrayShader
 ) : Service {
-
-    private val DUMMY_MATRIX: Matrix4fc = Matrix4f()
 
     private val updateFrequency = 2
     private var cycle = 0
@@ -59,7 +55,7 @@ class PointShadowMappingService(
                 entity.getComponent<Animator>()?.let { //TODO animated shader
 //                    shader.boneMatrices = it.transformMatricesArray
                 }
-//                shader.combined = DUMMY_MATRIX
+//                shader.combined = Mat4.IDENTITY
 
                 drawable.model.nodes.forEach { node ->
 //                    shader.model = (transform * node.getGlobalTransform()).matrix

@@ -1,5 +1,10 @@
 package org.etieskrill.engine.scene.element
 
+import net.bifreus.kml.Vec2
+import net.bifreus.kml.Vec2c
+import net.bifreus.kml.Vec2i
+import net.bifreus.kml.Vec2ic
+import net.bifreus.kml.Vec4
 import org.etieskrill.engine.graphics.text.Font
 import org.etieskrill.engine.input.Key
 import org.etieskrill.engine.input.KeyEvent
@@ -9,13 +14,6 @@ import org.etieskrill.engine.scene.Batch
 import org.etieskrill.engine.scene.Node
 import org.etieskrill.engine.text.TextEditor
 import org.etieskrill.engine.time.LoopPacer
-import org.joml.Vector2f
-import org.joml.Vector2fc
-import org.joml.Vector2i
-import org.joml.Vector2ic
-import org.joml.Vector4f
-import org.joml.minus
-import org.joml.plus
 
 class TextField(
     private val pacer: LoopPacer
@@ -27,13 +25,13 @@ class TextField(
     var changeCallback: () -> Unit = {}
 
     init {
-        colour = Vector4f(0.2f, 0.2f, 0.2f, 0.5f)
+        colour = Vec4(0.2f, 0.2f, 0.2f, 0.5f)
     }
 
-    private val highlightColour = Vector4f(0.4f, 0.4f, 1f, 1f)
+    private val highlightColour = Vec4(0.4f, 0.4f, 1f, 1f)
 
     override fun computeFixedSizes() {
-        formattedSize.set(size)
+        formattedSize(size)
     }
 
     override fun render(batch: Batch) {
@@ -42,7 +40,7 @@ class TextField(
             formattedSize,
             colour,
             2f,
-            if (focused) highlightColour else Vector4f(0f)
+            if (focused) highlightColour else Vec4(0f)
         )
 
         if (textEditor.selector.hasSelection)
@@ -64,15 +62,15 @@ class TextField(
 
         if (focused && pacer.timerTimeSeconds % 1 < 0.5) {
             batch.renderBox(
-                (Vector2f(absolutePosition) + absoluteCursorPosition!!).apply { y += 0.2f * font.lineHeight },
-                Vector2f(font.lineHeight / 12f, font.lineHeight.toFloat()),
-                Vector4f(1f)
+                (absolutePosition + absoluteCursorPosition!!).apply { y += 0.2f * font.lineHeight },
+                Vec2(font.lineHeight / 12f, font.lineHeight.toFloat()),
+                Vec4(1f)
             )
         }
     }
 
-    private fun drawSelection(batch: Batch, text: String, lineLengths: List<Int>, start: Vector2ic, end: Vector2ic) {
-        if (start.y() == end.y()) {
+    private fun drawSelection(batch: Batch, text: String, lineLengths: List<Int>, start: Vec2ic, end: Vec2ic) {
+        if (start.y == end.y) {
             val absStartPos = batch.getAbsoluteCursorPosition(start, text, font, formattedSize)!!
             val absEndPos = batch.getAbsoluteCursorPosition(end, text, font, formattedSize)!!
             drawSelectionLine(batch, absStartPos, absEndPos - absStartPos)
@@ -81,23 +79,23 @@ class TextField(
 
         val absStartPos = batch.getAbsoluteCursorPosition(start, text, font, formattedSize)!!
         val absEndPos =
-            batch.getAbsoluteCursorPosition(Vector2i(lineLengths[start.y()], start.y()), text, font, formattedSize)!!
+            batch.getAbsoluteCursorPosition(Vec2i(lineLengths[start.y], start.y), text, font, formattedSize)!!
         drawSelectionLine(batch, absStartPos, absEndPos - absStartPos)
 
-        for (i in start.y() + 1..end.y() - 1) {
-            absStartPos.set(batch.getAbsoluteCursorPosition(Vector2i(0, i), text, font, formattedSize)!!)
-            absEndPos.set(batch.getAbsoluteCursorPosition(Vector2i(lineLengths[i], i), text, font, formattedSize)!!)
+        for (i in start.y + 1..end.y - 1) {
+            absStartPos(batch.getAbsoluteCursorPosition(Vec2i(0, i), text, font, formattedSize)!!)
+            absEndPos(batch.getAbsoluteCursorPosition(Vec2i(lineLengths[i], i), text, font, formattedSize)!!)
             drawSelectionLine(batch, absStartPos, absEndPos - absStartPos)
         }
 
-        absStartPos.set(batch.getAbsoluteCursorPosition(Vector2i(0, end.y()), text, font, formattedSize)!!)
-        absEndPos.set(batch.getAbsoluteCursorPosition(end, text, font, formattedSize)!!)
+        absStartPos(batch.getAbsoluteCursorPosition(Vec2i(0, end.y), text, font, formattedSize)!!)
+        absEndPos(batch.getAbsoluteCursorPosition(end, text, font, formattedSize)!!)
         drawSelectionLine(batch, absStartPos, absEndPos - absStartPos)
     }
 
-    private fun drawSelectionLine(batch: Batch, absStartPos: Vector2fc, absSize: Vector2fc) = batch.renderBox(
-        (Vector2f(absolutePosition) + absStartPos).apply { y += 0.2f * font.lineHeight },
-        Vector2f(absSize).apply { y += font.lineHeight.toFloat() },
+    private fun drawSelectionLine(batch: Batch, absStartPos: Vec2c, absSize: Vec2c) = batch.renderBox(
+        (absolutePosition + absStartPos).apply { y += 0.2f * font.lineHeight },
+        Vec2(absSize).apply { y += font.lineHeight.toFloat() },
         highlightColour
     )
 

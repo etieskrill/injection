@@ -1,11 +1,11 @@
 package org.etieskrill.engine.graphics.texture.animation
 
+import net.bifreus.kml.Vec2ic
 import org.etieskrill.engine.graphics.texture.TextureFormat
-import org.joml.Vector2ic
 
 data class TextureAnimationMetadata(
     val textureFile: String,
-    val frameSize: Vector2ic,
+    val frameSize: Vec2ic,
     val format: TextureFormat,
     val frames: List<TextureAnimationFrame>,
     val duration: Float

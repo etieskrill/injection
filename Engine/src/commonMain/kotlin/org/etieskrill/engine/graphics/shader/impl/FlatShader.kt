@@ -6,8 +6,8 @@ import io.github.etieskrill.injection.extension.shader.dsl.VertexData
 import io.github.etieskrill.injection.extension.shader.mat4
 import io.github.etieskrill.injection.extension.shader.vec3
 import io.github.etieskrill.injection.extension.shader.vec4
+import net.bifreus.kml.Vec4
 import org.etieskrill.engine.graphics.shader.Shader
-import org.joml.Vector4f
 
 class FlatShader : ShaderBuilder<FlatShader.InputVertex, VertexData, ColourRenderTarget>(
     object : Shader(listOf("Flat.glsl")) {}
@@ -20,7 +20,7 @@ class FlatShader : ShaderBuilder<FlatShader.InputVertex, VertexData, ColourRende
     var colour by uniform<vec4>()
 
     init {
-        colour = Vector4f(0.6f, 0.6f, 0.6f, 1f)
+        colour = Vec4(0.6f, 0.6f, 0.6f, 1f)
     }
 
     override fun program() {

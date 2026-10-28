@@ -1,10 +1,10 @@
 package org.etieskrill.engine.graphics.animation;
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import net.bifreus.kml.Mat4c
 import org.etieskrill.engine.entity.component.Transform
 import org.etieskrill.engine.entity.component.TransformC
 import org.etieskrill.engine.graphics.model.Model
-import org.joml.Matrix4fc
 import kotlin.math.max
 
 private val logger = KotlinLogging.logger {}
@@ -36,12 +36,12 @@ class Animator(
 
     val transforms = List<TransformC>(Animation.MAX_BONES) { Transform() }
 
-    private val transformsArray: Array<Matrix4fc?> = arrayOfNulls<Matrix4fc>(Animation.MAX_BONES)
-    val transformMatricesArray: Array<Matrix4fc>
+    private val transformsArray: Array<Mat4c?> = arrayOfNulls(Animation.MAX_BONES)
+    val transformMatricesArray: Array<Mat4c>
         get() {
             transforms.forEachIndexed { i, transform -> transformsArray[i] = transform.matrix }
             @Suppress("UNCHECKED_CAST")
-            return transformsArray as Array<Matrix4fc>
+            return transformsArray as Array<Mat4c>
         }
 
     val animationMixer: AnimationMixer = AnimationMixer()

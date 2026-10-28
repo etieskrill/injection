@@ -1,13 +1,13 @@
 package org.etieskrill.engine.scene.element
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import net.bifreus.kml.Vec4
 import org.etieskrill.engine.graphics.text.Font
 import org.etieskrill.engine.input.KeyEvent
 import org.etieskrill.engine.scene.Batch
 import org.etieskrill.engine.scene.Node
 import org.etieskrill.engine.scene.container.VBox
 import org.etieskrill.engine.scene.container.WidgetContainer
-import org.joml.Vector4f
 
 private val logger = KotlinLogging.logger {}
 
@@ -50,7 +50,7 @@ class Dropdown(
 //        currentOption = options[0]
 //        currentOptionIndex = 0
 
-        container.colour = Vector4f(0.2f)
+        container.colour = Vec4(0.2f)
     }
 
     override fun computeFixedSizes() {

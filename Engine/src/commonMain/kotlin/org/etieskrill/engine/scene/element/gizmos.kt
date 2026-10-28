@@ -1,5 +1,9 @@
 package org.etieskrill.engine.scene.element
 
+import net.bifreus.kml.Quatc
+import net.bifreus.kml.Vec3
+import net.bifreus.kml.Vec3c
+import net.bifreus.kml.Vec4
 import org.etieskrill.engine.graphics.model.loader.loadModel
 import org.etieskrill.engine.graphics.pipeline.CullingMode
 import org.etieskrill.engine.graphics.pipeline.Pipeline
@@ -7,13 +11,9 @@ import org.etieskrill.engine.graphics.pipeline.PipelineConfig
 import org.etieskrill.engine.graphics.shader.Shader
 import org.etieskrill.engine.scene.Batch
 import org.etieskrill.engine.scene.Node
-import org.joml.Quaternionfc
-import org.joml.Vector3f
-import org.joml.Vector3fc
-import org.joml.Vector4f
 
 class TranslateGizmo(
-    translationCallback: (Vector3fc) -> Unit,
+    translationCallback: (Vec3c) -> Unit,
 ) : Node<TranslateGizmo>() {
 
     private val arrowModel = loadModel("arrow.glb")
@@ -39,10 +39,10 @@ class TranslateGizmo(
             )
         }
 
-        pipeline.shader.setUniform("position", Vector3f(0f, 0f, 0f))
+        pipeline.shader.setUniform("position", Vec3(0f, 0f, 0f))
         pipeline.shader.setUniform("model", arrowTransform.matrix)
         pipeline.shader.setUniform("combined", batch.combined)
-        pipeline.shader.setUniform("colour", Vector4f(1f, 0f, 0f, 0.6f))
+        pipeline.shader.setUniform("colour", Vec4(1f, 0f, 0f, 0.6f))
 
         batch.render(pipeline)
     }
@@ -52,5 +52,5 @@ class TranslateGizmo(
 class TranslateGizmoShader : Shader(listOf("TranslateGizmo.glsl"), false)
 
 class RotateGizmo(
-    rotationCallback: (Quaternionfc) -> Unit
+    rotationCallback: (Quatc) -> Unit
 ) : Node<RotateGizmo>()

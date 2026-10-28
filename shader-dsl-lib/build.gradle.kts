@@ -19,9 +19,9 @@ kotlin {
     jvm()
 
     sourceSets {
-        jvmMain.dependencies {
+        commonMain.dependencies {
             implementation("io.github.etieskrill.injection.extension.shader:shader-interface:1.0.0-SNAPSHOT")
-            implementation("org.joml:joml:1.10.8")
+            implementation("net.bifreus.kml:kml:1.0.0")
             runtimeOnly("org.jetbrains.kotlin:kotlin-reflect:2.2.20")
         }
     }

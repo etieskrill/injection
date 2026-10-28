@@ -1,11 +1,10 @@
 package org.etieskrill.engine.scene.element
 
+import net.bifreus.kml.Vec2
+import net.bifreus.kml.Vec4
 import org.etieskrill.engine.graphics.text.Font
 import org.etieskrill.engine.scene.container.HBox
-import org.joml.Vector2f
-import org.joml.Vector4f
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.milliseconds
 
 class PlaybackBar(
     var totalDuration: Duration,
@@ -70,18 +69,18 @@ class PlaybackBar(
     var stopAction: () -> Unit = {}
 
     private val playButton = Button(
-        Image("textures/icons/play-button-black.png").apply { size = Vector2f(32f) }
-    ) { state = State.PLAYING }.apply { size = Vector2f(32f) }
+        Image("textures/icons/play-button-black.png").apply { size = Vec2(32f) }
+    ) { state = State.PLAYING }.apply { size = Vec2(32f) }
     private val pauseButton = Button(
-        Image("textures/icons/pause-button-black.png").apply { size = Vector2f(32f) }
-    ) { state = State.PAUSED }.apply { size = Vector2f(32f) }
+        Image("textures/icons/pause-button-black.png").apply { size = Vec2(32f) }
+    ) { state = State.PAUSED }.apply { size = Vec2(32f) }
     private val stopButton = Button(
-        Image("textures/icons/stop-button-black.png").apply { size = Vector2f(32f) }
-    ) { state = State.STOPPED }.apply { size = Vector2f(32f) }
+        Image("textures/icons/stop-button-black.png").apply { size = Vec2(32f) }
+    ) { state = State.STOPPED }.apply { size = Vec2(32f) }
     private val progressBar = Slider(0f, 0f, 1f).apply {
-        size = Vector2f(500f, 15f)
-        margin = Vector4f(5f)
-        colour = Vector4f(0f, 0f, 0f, 1f)
+        size = Vec2(500f, 15f)
+        margin = Vec4(5f)
+        colour = Vec4(0f, 0f, 0f, 1f)
 
         this.action = {
             time = totalDuration * it.toDouble()
@@ -90,7 +89,7 @@ class PlaybackBar(
     }
     private val progressLabel = Label("0:00").apply {
         scaleMode = ScaleMode.FIXED
-        size = Vector2f(50f, Font.DEFAULT_FONT_SIZE.toFloat())
+        size = Vec2(50f, Font.DEFAULT_FONT_SIZE.toFloat())
     }
 
     var time: Duration = Duration.ZERO

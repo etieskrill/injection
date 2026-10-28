@@ -1,5 +1,7 @@
 package org.etieskrill.engine.scene.element
 
+import net.bifreus.kml.Vec2
+import net.bifreus.kml.Vec4
 import org.etieskrill.engine.graphics.text.Font
 import org.etieskrill.engine.graphics.texture.Texture2D
 import org.etieskrill.engine.graphics.texture.TextureType
@@ -8,8 +10,6 @@ import org.etieskrill.engine.input.KeyEvent
 import org.etieskrill.engine.input.KeyEventAction
 import org.etieskrill.engine.scene.Batch
 import org.etieskrill.engine.scene.Node
-import org.joml.Vector2f
-import org.joml.Vector4f
 
 class Checkbox(
     var ticked: Boolean = false,
@@ -23,8 +23,8 @@ class Checkbox(
     }
 
     init {
-        colour = Vector4f(0.1f)
-        size = Vector2f(Font.DEFAULT_FONT_SIZE.toFloat())
+        colour = Vec4(0.1f)
+        size = Vec2(Font.DEFAULT_FONT_SIZE.toFloat())
         scaleMode = ScaleMode.FIXED
     }
 

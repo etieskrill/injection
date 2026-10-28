@@ -1,15 +1,15 @@
 package org.etieskrill.engine.entity.component
 
+import net.bifreus.kml.Mat4c
 import org.etieskrill.engine.graphics.data.PointLight
 import org.etieskrill.engine.graphics.framebuffer.PointShadowMapArray
-import org.joml.Matrix4fc
 
 @ConsistentCopyVisibility
 data class PointLightComponent private constructor(
     val light: PointLight,
     val shadowMap: PointShadowMapArray?,
     val shadowMapIndex: Int?,
-    val shadowCombinedMatrices: Array<out Matrix4fc>?,
+    val shadowCombinedMatrices: Array<out Mat4c>?,
     val shadowFarPlane: Float?,
 ) {
 
@@ -19,7 +19,7 @@ data class PointLightComponent private constructor(
             light: PointLight,
             shadowMap: PointShadowMapArray,
             shadowMapIndex: Int,
-            shadowCombinedMatrices: Array<out Matrix4fc>,
+            shadowCombinedMatrices: Array<out Mat4c>,
             shadowFarPlane: Float
         ) = PointLightComponent(light, shadowMap, shadowMapIndex, shadowCombinedMatrices, shadowFarPlane)
     }

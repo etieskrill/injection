@@ -1,16 +1,16 @@
 package org.etieskrill.engine.graphics.model.loader
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import net.bifreus.kml.AABB
+import net.bifreus.kml.Vec2
+import net.bifreus.kml.Vec3
+import net.bifreus.kml.Vec4
+import net.bifreus.kml.Vec4i
 import org.etieskrill.engine.graphics.model.Bone
 import org.etieskrill.engine.graphics.model.Material
 import org.etieskrill.engine.graphics.model.Mesh
 import org.etieskrill.engine.graphics.model.MeshDrawMode
 import org.etieskrill.engine.graphics.model.Vertex
-import org.joml.Vector2f
-import org.joml.Vector3f
-import org.joml.Vector4f
-import org.joml.Vector4i
-import org.joml.primitives.AABBf
 import org.lwjgl.assimp.AIMesh
 import org.lwjgl.assimp.AIScene
 import org.lwjgl.assimp.Assimp.*
@@ -47,13 +47,13 @@ private fun processMesh(aiMesh: AIMesh, materials: List<Material>): Mesh {
 
     val vertices = List(aiMesh.mNumVertices()) { i ->
         Vertex(
-            position = positions.get().let { Vector3f(it.x(), it.y(), it.z()) },
-            normal = normals?.get()?.let { Vector3f(it.x(), it.y(), it.z()) },
-            textureCoords = texCoords?.get()?.let { Vector2f(it.x(), it.y()) },
-            tangent = tangents?.get()?.let { Vector3f(it.x(), it.y(), it.z()) },
-            biTangent = biTangents?.get()?.let { Vector3f(it.x(), it.y(), it.z()) },
-            bones = boneWeights?.get(i)?.bones ?: Vector4i(-1),
-            boneWeights = boneWeights?.get(i)?.boneWeights ?: Vector4f(0f)
+            position = positions.get().let { Vec3(it.x(), it.y(), it.z()) },
+            normal = normals?.get()?.let { Vec3(it.x(), it.y(), it.z()) },
+            textureCoords = texCoords?.get()?.let { Vec2(it.x(), it.y()) },
+            tangent = tangents?.get()?.let { Vec3(it.x(), it.y(), it.z()) },
+            biTangent = biTangents?.get()?.let { Vec3(it.x(), it.y(), it.z()) },
+            bones = boneWeights?.get(i)?.bones ?: Vec4i(-1),
+            boneWeights = boneWeights?.get(i)?.boneWeights ?: Vec4(0f)
         )
     }
 
@@ -91,7 +91,11 @@ private fun processMesh(aiMesh: AIMesh, materials: List<Material>): Mesh {
     return mesh
 }
 
-fun calculateBoundingBox(vertices: List<Vertex>) = AABBf().apply { vertices.forEach { union(it.position) } }
+fun calculateBoundingBox(vertices: List<Vertex>): AABB {
+    var boundingBox = AABB()
+    vertices.forEach { boundingBox += it.position }
+    return boundingBox
+}
 
 //fun optimiseMesh(mesh: Mesh, targetIndexCount: Int, maxDeformation: Float) {
 //    mesh.vao.vertexBuffer.buffer //just discard after a few seconds? bro is actually reinventing garbage collection

@@ -1,13 +1,13 @@
 package org.etieskrill.engine.graphics.animation;
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import net.bifreus.kml.Quat
+import net.bifreus.kml.Quatc
+import net.bifreus.kml.Vec3
+import net.bifreus.kml.Vec3c
 import org.etieskrill.engine.entity.component.Transform
 import org.etieskrill.engine.graphics.model.Model
 import org.etieskrill.engine.graphics.model.Node
-import org.joml.Quaternionf
-import org.joml.Quaternionfc
-import org.joml.Vector3f
-import org.joml.Vector3fc
 
 private val logger = KotlinLogging.logger {}
 
@@ -75,25 +75,25 @@ class AnimationProvider(
     private fun interpolateVector(
         currentTicks: Double,
         timings: DoubleArray,
-        vectors: List<Vector3fc>,
-        target: Vector3f
+        vectors: List<Vec3c>,
+        target: Vec3
     ) {
-        target.set(vectors[0])
+        target(vectors[0])
         val index = findTimingIndex(currentTicks, timings) ?: return
         val t = (currentTicks - timings[index]) / (timings[index + 1] - timings[index])
-        vectors[index].lerp(vectors[index + 1], t.toFloat(), target)
+        target(vectors[index].lerp(vectors[index + 1], t.toFloat()))
     }
 
     private fun interpolateQuaternion(
         currentTicks: Double,
         timings: DoubleArray,
-        quaternions: List<Quaternionfc>,
-        target: Quaternionf
+        quaternions: List<Quatc>,
+        target: Quat
     ) {
-        target.set(quaternions[0])
+        target(quaternions[0])
         val index = findTimingIndex(currentTicks, timings) ?: return
         val t = (currentTicks - timings[index]) / (timings[index + 1] - timings[index])
-        quaternions[index].slerp(quaternions[index + 1], t.toFloat(), target)
+        target(quaternions[index].slerp(quaternions[index + 1], t.toFloat()))
     }
 
     private fun findTimingIndex(currentTicks: Double, timings: DoubleArray): Int? {

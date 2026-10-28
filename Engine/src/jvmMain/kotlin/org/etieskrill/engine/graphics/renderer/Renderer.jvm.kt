@@ -2,17 +2,10 @@ package org.etieskrill.engine.graphics.renderer
 
 import io.github.etieskrill.injection.extension.shader.dsl.ShaderBuilder
 import org.etieskrill.engine.graphics.GraphicsContext
-import org.etieskrill.engine.graphics.buffer.BufferType
-import org.etieskrill.engine.graphics.gl.GLUtils
-import org.etieskrill.engine.graphics.pipeline.AlphaMode
-import org.etieskrill.engine.graphics.pipeline.CullingMode
-import org.etieskrill.engine.graphics.pipeline.FillMode
 import org.etieskrill.engine.graphics.pipeline.Pipeline
 import org.etieskrill.engine.graphics.pipeline.PrimitiveType
-import org.etieskrill.engine.graphics.pipeline.StencilMode
 import org.etieskrill.engine.graphics.shader.Shader
 import org.etieskrill.engine.util.FixedArrayDeque
-import org.joml.Vector4f
 import org.lwjgl.opengl.GL33C.*
 import org.lwjgl.opengl.GL45C.glCreateQueries
 import kotlin.time.Duration

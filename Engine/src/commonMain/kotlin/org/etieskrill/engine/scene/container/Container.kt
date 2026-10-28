@@ -2,7 +2,6 @@ package org.etieskrill.engine.scene.container
 
 import org.etieskrill.engine.input.KeyEvent
 import org.etieskrill.engine.scene.Batch
-import org.joml.Vector3f
 
 /**
  * A node with a single child.
@@ -44,7 +43,7 @@ open class Container(child: org.etieskrill.engine.scene.Node<*>? = null) : org.e
                         return
                     }
 
-                    formattedSize.set(child.formattedSize)
+                    formattedSize(child.formattedSize)
                     computedFixedSize = true
                 }
 

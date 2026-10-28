@@ -8,8 +8,8 @@ import io.github.etieskrill.injection.extension.shader.mat3
 import io.github.etieskrill.injection.extension.shader.mat4
 import io.github.etieskrill.injection.extension.shader.vec3
 import io.github.etieskrill.injection.extension.shader.vec4
+import net.bifreus.kml.Vec4
 import org.etieskrill.engine.graphics.shader.Shader
-import org.joml.Vector4f
 
 class OutlineShader : ShaderBuilder<OutlineShader.Vertex, VertexData, ColourRenderTarget>(
     object : Shader(listOf("Outline.glsl")) {}
@@ -24,7 +24,7 @@ class OutlineShader : ShaderBuilder<OutlineShader.Vertex, VertexData, ColourRend
     var outlineFactor by uniform<float>()
 
     init {
-        colour = Vector4f(1f, 0f, 0f, 1f)
+        colour = Vec4(1f, 0f, 0f, 1f)
         outlineFactor = 0.1f
     }
 

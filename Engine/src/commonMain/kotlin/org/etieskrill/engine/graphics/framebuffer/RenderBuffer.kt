@@ -1,11 +1,11 @@
 package org.etieskrill.engine.graphics.framebuffer
 
+import net.bifreus.kml.Vec2ic
 import org.etieskrill.engine.common.Disposable
 import org.etieskrill.engine.graphics.GraphicsContext
-import org.joml.Vector2ic
 
 class RenderBuffer(
-    override val size: Vector2ic,
+    override val size: Vec2ic,
     val type: RenderBufferType
 ) : FrameBufferAttachment
 

@@ -1,11 +1,11 @@
 package org.etieskrill.engine.graphics.text
 
+import net.bifreus.kml.Mat4c
+import net.bifreus.kml.Vec2
+import net.bifreus.kml.Vec2c
+import net.bifreus.kml.Vec2ic
 import org.etieskrill.engine.graphics.GraphicsContext
 import org.etieskrill.engine.graphics.shader.Shader
-import org.joml.Matrix4fc
-import org.joml.Vector2f
-import org.joml.Vector2fc
-import org.joml.Vector2ic
 
 expect class TextRenderer {
 
@@ -22,11 +22,11 @@ expect class TextRenderer {
      * @return the relative position, or `null` if [cursorPosition] is not valid in [text]
      */
     fun getAbsoluteCursorPosition(
-        cursorPosition: Vector2ic,
+        cursorPosition: Vec2ic,
         text: String,
         font: Font,
-        size: Vector2fc? = null
-    ): Vector2f?
+        size: Vec2c? = null
+    ): Vec2?
 
     /**
      * @param cursorPosition will be set to the relative cursor position after rendering the text
@@ -34,11 +34,11 @@ expect class TextRenderer {
     fun render(
         chars: String,
         font: Font,
-        position: Vector2fc,
-        size: Vector2fc? = null,
+        position: Vec2c,
+        size: Vec2c? = null,
         shader: Shader,
-        combined: Matrix4fc,
-        cursorPosition: Vector2f? = null,
+        combined: Mat4c,
+        cursorPosition: Vec2? = null,
     )
 
     /**

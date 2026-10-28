@@ -1,13 +1,13 @@
 package org.etieskrill.engine.graphics.texture
 
+import net.bifreus.kml.Vec2ic
+import net.bifreus.kml.Vec4
+import net.bifreus.kml.Vec4c
 import org.etieskrill.engine.common.Disposable
 import org.etieskrill.engine.graphics.GraphicsContext
 import org.etieskrill.engine.graphics.texture.TextureMagFilter.LINEAR
 import org.etieskrill.engine.graphics.texture.TextureMagFilter.NEAREST
 import org.etieskrill.engine.graphics.texture.TextureMinFilter.*
-import org.joml.Vector2ic
-import org.joml.Vector4f
-import org.joml.Vector4fc
 import io.github.etieskrill.injection.extension.shader.Texture as DslTexture
 
 abstract class Texture(
@@ -16,7 +16,7 @@ abstract class Texture(
     val minFilter: TextureMinFilter = TRILINEAR,
     val magFilter: TextureMagFilter = LINEAR,
     wrapping: TextureWrapping = TextureWrapping.REPEAT,
-    val borderColour: Vector4fc = Vector4f(0f),
+    val borderColour: Vec4c = Vec4(0f),
     val rowAlignment: TextureRowAlignment = TextureRowAlignment.WORD
 ) : DslTexture {
 
@@ -131,6 +131,6 @@ internal expect abstract class TextureInstance<T : Texture> : Disposable {
     override fun dispose()
 }
 
-internal class TextureData(val size: Vector2ic, val format: TextureFormat, val buffer: ByteArray)
+internal class TextureData(val size: Vec2ic, val format: TextureFormat, val buffer: ByteArray)
 
 internal expect fun loadTexture2DData(file: String, type: TextureType): TextureData

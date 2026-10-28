@@ -1,10 +1,10 @@
 package org.etieskrill.engine.buffer
 
-import org.joml.Matrix2fc
-import org.joml.Vector2fc
-import org.joml.Vector3fc
-import org.joml.Vector4fc
-import org.joml.Vector4ic
+import net.bifreus.kml.Mat2c
+import net.bifreus.kml.Vec2c
+import net.bifreus.kml.Vec3c
+import net.bifreus.kml.Vec4c
+import net.bifreus.kml.Vec4ic
 import io.github.etieskrill.injection.extension.shader.ByteBuffer as DslByteBuffer
 
 /**
@@ -47,10 +47,10 @@ expect class ByteBuffer : DslByteBuffer {
 
     operator fun plusAssign(i: Int?)
     operator fun plusAssign(f: Float?)
-    operator fun plusAssign(v: Vector2fc?)
-    operator fun plusAssign(v: Vector3fc?)
-    operator fun plusAssign(v: Vector4fc?)
-    operator fun plusAssign(v: Vector4ic?)
-    operator fun plusAssign(m: Matrix2fc?)
+    operator fun plusAssign(v: Vec2c?)
+    operator fun plusAssign(v: Vec3c?)
+    operator fun plusAssign(v: Vec4c?)
+    operator fun plusAssign(v: Vec4ic?)
+    operator fun plusAssign(m: Mat2c?)
 
 }

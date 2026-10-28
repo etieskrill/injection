@@ -1,5 +1,7 @@
 rootProject.name = "injection"
 
+includeBuild("kml")
+
 includeBuild("shader-interface")
 
 includeBuild("shader-reflection-plugin")

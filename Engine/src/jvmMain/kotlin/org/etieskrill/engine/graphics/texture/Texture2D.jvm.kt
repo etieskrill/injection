@@ -20,7 +20,7 @@ internal actual class Texture2DInstance(
     override val glTarget: Int get() = GL_TEXTURE_2D
 
     override fun bufferTextureData() = context.withContext {
-        val bytesExpected = descriptor.size.x() * descriptor.size.y() * descriptor.format.numChannels
+        val bytesExpected = descriptor.size.x * descriptor.size.y * descriptor.format.numChannels
 
         check(descriptor.buffer == null || descriptor.buffer.size == bytesExpected) {
             "Texture data buffer contains ${descriptor.buffer!!.size} bytes when $bytesExpected bytes were expected"
@@ -36,7 +36,7 @@ internal actual class Texture2DInstance(
             descriptor.buffer != null -> createByteBuffer(descriptor.buffer.size).put(descriptor.buffer).flip()
             descriptor.file != null -> {
                 val textureData = loadTexture2DData(descriptor.file, descriptor.type)
-                val bufferSize = textureData.size.x() * textureData.size.y() * textureData.format.numChannels
+                val bufferSize = textureData.size.x * textureData.size.y * textureData.format.numChannels
                 check(bufferSize == bytesExpected)
                 createByteBuffer(bufferSize).put(textureData.buffer).flip()
             }
@@ -46,12 +46,12 @@ internal actual class Texture2DInstance(
 
         glTexImage2D(
             glTarget, 0, descriptor.format.glInternal,
-            descriptor.size.x(), descriptor.size.y(),
+            descriptor.size.x, descriptor.size.y,
             0, descriptor.format.gl, texelFormat, data
         )
 
         logger.debug {
-            "Loaded ${descriptor.size.x()}x${descriptor.size.y()} ${8 * descriptor.format.numChannels}-bit ${
+            "Loaded ${descriptor.size.x}x${descriptor.size.y} ${8 * descriptor.format.numChannels}-bit ${
                 descriptor.format.name.lowercase()
             } ${descriptor.type.name.lowercase()} texture"
         }

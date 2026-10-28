@@ -1,8 +1,8 @@
 package org.etieskrill.engine.graphics.framebuffer
 
 import io.github.etieskrill.injection.extension.shader.TextureShadow
+import net.bifreus.kml.Vec2ic
 import org.etieskrill.engine.graphics.texture.Texture
-import org.joml.Vector2ic
 
 /**
  * It is possible to use a regular [texture][Texture] (with a `sampler{*D,Cube}}`) as a shadow map, but this
@@ -14,7 +14,7 @@ import org.joml.Vector2ic
  * undefined behaviour according to the specification.
  */
 abstract class ShadowMap<T>(
-    size: Vector2ic,
+    size: Vec2ic,
     val texture: T
 ) : FrameBuffer(size, mapOf(FrameBufferAttachmentType.DEPTH to texture)), TextureShadow
         where T : Texture, T : FrameBufferAttachment

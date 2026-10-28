@@ -1,15 +1,15 @@
 package org.etieskrill.engine.graphics.data
 
+import net.bifreus.kml.Vec3
 import org.etieskrill.engine.graphics.shader.UniformMappable
 import org.etieskrill.engine.graphics.shader.UniformMapper
-import org.joml.Vector3f
 
 data class DirectionalLight(
-    val direction: Vector3f,
+    val direction: Vec3,
 
-    val ambient: Vector3f = Vector3f(1f),
-    val diffuse: Vector3f = Vector3f(1f),
-    val specular: Vector3f = Vector3f(1f),
+    val ambient: Vec3 = Vec3(1f),
+    val diffuse: Vec3 = Vec3(1f),
+    val specular: Vec3 = Vec3(1f),
 ) : UniformMappable {
 
     @Suppress("KotlinConstantConditions")

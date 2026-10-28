@@ -13,6 +13,8 @@ import io.github.etieskrill.injection.extension.shader.sampler2D
 import io.github.etieskrill.injection.extension.shader.vec2
 import io.github.etieskrill.injection.extension.shader.vec3
 import io.github.etieskrill.injection.extension.shader.vec4
+import net.bifreus.kml.Mat3
+import net.bifreus.kml.Mat4
 import org.etieskrill.engine.entity.Entity
 import org.etieskrill.engine.entity.component.Drawable
 import org.etieskrill.engine.entity.component.Transform
@@ -33,8 +35,6 @@ import org.etieskrill.engine.graphics.texture.TextureMagFilter
 import org.etieskrill.engine.graphics.texture.TextureMinFilter
 import org.etieskrill.engine.graphics.texture.TextureType
 import org.etieskrill.engine.graphics.texture.TextureWrapping
-import org.joml.Matrix3f
-import org.joml.Matrix4f
 
 class DeferredRenderService(
     private val renderer: Renderer,
@@ -125,14 +125,14 @@ class DeferredRenderService(
 
         drawable.model.nodes.forEach { node ->
             val nodeTransform = (node.getGlobalTransform() * transform).matrix
-            val nodeNormalTransform = nodeTransform.normal(Matrix3f())
+            val nodeNormalTransform = nodeTransform.normal
             gBufferShader.apply {
-                this.mesh = Matrix4f()
+                this.mesh = Mat4()
                 model = nodeTransform
                 normal = nodeNormalTransform
             }
             gBufferPBRShader.apply {
-                this.mesh = Matrix4f()
+                this.mesh = Mat4()
                 model = nodeTransform
                 normal = nodeNormalTransform
             }

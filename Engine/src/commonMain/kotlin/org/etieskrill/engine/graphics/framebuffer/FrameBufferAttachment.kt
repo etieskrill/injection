@@ -1,11 +1,11 @@
 package org.etieskrill.engine.graphics.framebuffer
 
+import net.bifreus.kml.Vec2ic
 import org.etieskrill.engine.common.Disposable
-import org.joml.Vector2ic
 
 interface FrameBufferAttachment {
 
-    val size: Vector2ic
+    val size: Vec2ic
 
 }
 

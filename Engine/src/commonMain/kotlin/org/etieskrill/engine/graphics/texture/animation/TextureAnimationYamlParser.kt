@@ -1,9 +1,10 @@
 package org.etieskrill.engine.graphics.texture.animation
 
+import net.bifreus.kml.Rect
+import net.bifreus.kml.Recti
+import net.bifreus.kml.Vec2i
 import org.etieskrill.engine.graphics.texture.TextureFormat
 import org.etieskrill.engine.util.readResource
-import org.joml.Vector2i
-import org.joml.primitives.Rectanglei
 import org.yaml.snakeyaml.Yaml
 
 private const val MILLIS_TO_SECONDS = 0.001f
@@ -39,15 +40,15 @@ internal fun loadAnimationMetadata(metaFile: String, format: TextureFormat): Tex
         .filterNot { it.key == "default" }
         .values.map { frame ->
             val parsedFrame = parseFrame(frame, defaultFrame, currentTimeMillis)
-            maxX = maxOf(maxX, parsedFrame.atlasArea.lengthX())
-            maxY = maxOf(maxY, parsedFrame.atlasArea.lengthY())
+            maxX = maxOf(maxX, parsedFrame.atlasArea.x)
+            maxY = maxOf(maxY, parsedFrame.atlasArea.y)
             currentTimeMillis += frame.duration ?: defaultFrame.duration!!
             parsedFrame
         }
 
     return TextureAnimationMetadata(
         yamlMetaData.resources["texture"]!!.file,
-        Vector2i(maxX, maxY),
+        Vec2i(maxX, maxY),
         format,
         frames,
         currentTimeMillis * MILLIS_TO_SECONDS
@@ -64,7 +65,7 @@ private fun parseFrame(
     val x = frame.x ?: defaultFrame.x!!
     val y = frame.y ?: defaultFrame.y!!
     val newFrame = TextureAnimationFrame(
-        Rectanglei(x, y, x + (frame.w ?: defaultFrame.w!!), y + (frame.h ?: defaultFrame.h!!)),
+        Recti(x, y, x + (frame.w ?: defaultFrame.w!!), y + (frame.h ?: defaultFrame.h!!)),
         currentTimeMillis * MILLIS_TO_SECONDS
     )
 
@@ -73,6 +74,6 @@ private fun parseFrame(
 
 private fun parseDefaultFrame(yamlFrame: YamlTextureAnimationFrame, currentTimeMillis: Float) =
     TextureAnimationFrame(
-        Rectanglei(yamlFrame.x!!, yamlFrame.y!!, yamlFrame.x + yamlFrame.w!!, yamlFrame.y + yamlFrame.h!!),
+        Recti(yamlFrame.x!!, yamlFrame.y!!, yamlFrame.x + yamlFrame.w!!, yamlFrame.y + yamlFrame.h!!),
         currentTimeMillis * MILLIS_TO_SECONDS
     )
