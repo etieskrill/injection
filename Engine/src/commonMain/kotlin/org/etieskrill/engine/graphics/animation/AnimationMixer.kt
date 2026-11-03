@@ -22,9 +22,11 @@ data class AnimationLayer(
  */
 class AnimationMixer {
 
+    val weights = Weights()
+
+    private val _weights = mutableListOf<Float>()
     internal val animationLayers = mutableListOf<AnimationLayer>()
     private val transforms = List(Animation.MAX_BONES) { Transform() }
-    private val weights = mutableListOf<Float>()
 
     /**
      * [ADDITIVE][AnimationBlendMode.ADDITIVE] animations have their weights normalised across all additive layers,
@@ -50,17 +52,17 @@ class AnimationMixer {
         //Set base layer
         transforms.forEachIndexed { i, transform -> transform.set(providerTransforms[firstEnabled][i]) }
 
-        normaliseAdditiveWeights(weights)
+        normaliseAdditiveWeights(_weights)
 
-        animationLayers.forEachIndexed { i, layer ->
-            if (!layer.isEnabled || weights[i] <= 0) return@forEachIndexed
-            val providerTransform = providerTransforms[i]
+        animationLayers.forEachIndexed { layerIndex, layer ->
+            if (!layer.isEnabled || _weights[layerIndex] <= 0) return@forEachIndexed
+            val providerTransform = providerTransforms[layerIndex]
 
             when (layer.blendMode) {
                 AnimationBlendMode.ADDITIVE, AnimationBlendMode.OVERRIDING -> {
-                    transforms.forEachIndexed { i, transform ->
-                        if (layer.filter != null && !layer.filter!!(nodes[i])) return@forEachIndexed
-                        transform.lerp(providerTransform[i], weights[i])
+                    transforms.forEachIndexed { transformIndex, transform ->
+                        if (layer.filter != null && !layer.filter!!(nodes[transformIndex])) return@forEachIndexed
+                        transform.lerp(providerTransform[transformIndex], _weights[layerIndex])
                     }
                 }
             }
@@ -82,7 +84,9 @@ class AnimationMixer {
         }
 
         val sum = weights.sum()
-        weights.mapTo(weights) { it / sum }
+        for (i in weights.indices) {
+            weights[i] /= sum
+        }
 
         animationLayers.forEachIndexed { i, layer -> //Re-add enabled overriding layers
             if (layer.isEnabled && layer.blendMode == AnimationBlendMode.OVERRIDING) {
@@ -91,21 +95,11 @@ class AnimationMixer {
         }
     }
 
-//    public void setWeights(List<Float> weights) {
-//        List<AnimationLayer> additiveLayers = getAdditiveLayers();
-//
-//        if (weights.size() != additiveLayers.size())
-//            throw new IllegalArgumentException("Number of weights does not match number of additive animations");
-//
-//        for (int i = 0; i < additiveLayers.size(); i++) {
-//            additiveLayers.get(i).setWeight(weights.get(i));
-//        }
-//    }
-
-//    private List<AnimationLayer> getAdditiveLayers() {
-//        return animationLayers.stream()
-//                .filter(layer -> layer.getBlendMode() == AnimationBlendMode.ADDITIVE)
-//                .toList();
-//    }
+    inner class Weights {
+        operator fun set(index: Int, weight: Float) {
+            val additiveLayers = animationLayers.filter { it.blendMode == AnimationBlendMode.ADDITIVE }
+            additiveLayers[index].weight = weight
+        }
+    }
 
 }

@@ -6,6 +6,7 @@ import org.etieskrill.engine.graphics.model.loader.loadModel
 import org.etieskrill.engine.graphics.texture.TextureCubeMap
 import org.etieskrill.engine.graphics.texture.TextureType
 
+//TODO rewrite to just be a thin wrapper around SkyboxMaterial
 class Skybox(
     name: String
 ) : Model(
@@ -16,7 +17,7 @@ class Skybox(
             Mesh(
                 SkyboxMaterial(name, TextureCubeMap.createFromFile(name, TextureType.DIFFUSE)),
                 null,
-                loadModel("cubemap.obj", ModelLoaderOptions()).nodes[0].meshes[0].vao,
+                loadModel("models/cubemap.obj", ModelLoaderOptions()).nodes[0].meshes[0].vao,
                 AABB(),
                 MeshDrawMode.TRIANGLES
             )

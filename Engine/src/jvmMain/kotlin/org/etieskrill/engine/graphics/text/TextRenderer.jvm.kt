@@ -28,6 +28,8 @@ actual class TextRenderer actual constructor(
     private var _renderCalls: Long = 0L
     actual val renderCalls: Long get() = _renderCalls
 
+    //TODO more statistics
+
     private val renderedGlyphs: List<RenderedGlyph> = MutableList(MAX_BATCH_LENGTH) { RenderedGlyph() }
     private val glyphVAO: VertexArrayObject<RenderedGlyph> = VertexArrayObject(
         RenderedGlyphAccessor,

@@ -1,5 +1,6 @@
 package io.github.etieskrill.injection.extension.shader.reflection
 
+import com.google.devtools.ksp.getDeclaredProperties
 import com.google.devtools.ksp.processing.*
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
@@ -7,14 +8,10 @@ import io.github.etieskrill.injection.extension.shader.AbstractShader
 import java.io.OutputStream
 
 class ShaderReflectorProcessorProvider : SymbolProcessorProvider {
-    override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor =
-        ShaderReflectorProcessor(environment.codeGenerator, environment.logger)
+    override fun create(environment: SymbolProcessorEnvironment) = ShaderReflectorProcessor(environment.codeGenerator)
 }
 
-class ShaderReflectorProcessor(
-    private val generator: CodeGenerator,
-    private val logger: KSPLogger
-) : SymbolProcessor {
+class ShaderReflectorProcessor(private val generator: CodeGenerator) : SymbolProcessor {
     override fun process(resolver: Resolver): List<KSAnnotated> {
         val shaderClasses = resolver.getSymbolsWithAnnotation(ReflectShader::class.qualifiedName!!).toList()
 

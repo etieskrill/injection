@@ -90,6 +90,8 @@ actual data class GraphicsContext(
         when (texture) {
             is Texture2D -> Texture2DInstance(texture, this)
             is ArrayTexture2D -> ArrayTexture2DInstance(texture, this)
+            is TextureCubeMap -> TextureCubeMapInstance(texture, this)
+            is TextureCubeMapArray -> TextureCubeMapArrayInstance(texture, this)
             else -> error("Unknown texture type ${texture::class.simpleName}")
         }
     } as TextureInstance<T>

@@ -226,8 +226,12 @@ internal actual fun loadTexture2DData(file: String, type: TextureType): TextureD
     }
 
     val format = TextureFormat.fromNumChannelsAndType(numChannels.get(), type)
-    val buffer = ByteArray(textureData.remaining()) { textureData[it] }
+    val buffer = ByteArray(textureData.remaining())
+    textureData[buffer]
 
+    textureData.rewind()
+    // oh. ooooh. free below uses the address, which it defines as the thing at the current **position** of the buffer,
+    // not the base pointer of the buffer. meaning, giving it the used buffer will cause it to free memory it does not own
     stbi_image_free(textureData)
 
     return TextureData(Vec2i(width.get(), height.get()), format, buffer)

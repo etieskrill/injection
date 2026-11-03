@@ -34,8 +34,8 @@ class ArrayUniformDelegate<T : Any>(private val size: Int) : ReadWriteProperty<A
 
     override fun setValue(thisRef: AbstractShader, property: KProperty<*>, value: Array<T>) {
         require(size == value.size)
-        if (!initialised) {
-            thisRef.addUniformArray(property.name, size, value::class)
+        if (!initialised && value.isNotEmpty()) {
+            thisRef.addUniformArray(property.name, size, value[0]::class)
             initialised = true
         }
         thisRef.setUniformArray(

@@ -55,7 +55,10 @@ abstract class Shader protected constructor(
         val uniform = uniforms[name]
             ?: if (!strictUniformDetection) return
             else error("Failed to find uniform by name: $name in shader ${this::class.simpleName ?: this::class}")
-        if (value::class != uniform.type.clazz && value::class != uniform.type.constClass) {
+        if (
+            value::class != uniform.type.clazz && value::class != uniform.type.constClass
+            && uniform.type == UniformType.STRUCT && !value::class.hasSupertype<UniformMappable>()
+        ) {
             logger.warn { "Tried setting uniform ${uniform.name} of type ${uniform.type} to incompatible value of type ${value::class.simpleName}" }
             return
         }
@@ -89,8 +92,13 @@ abstract class Shader protected constructor(
     }
 
     override fun setUniformArray(name: String, value: Array<Any>) {
-        val uniform = uniformArrays[name]!! //TODO strict uniforms
-        if (value.isEmpty() || value[0]::class != uniform.elementType.clazz && value[0]::class != uniform.elementType.constClass) {
+        val uniform = uniformArrays[name]
+            ?: if (!strictUniformDetection) return
+            else error("Failed to find uniform array by name: $name in shader ${this::class.simpleName ?: this::class}")
+        if (value.isEmpty()
+            || (value[0]::class != uniform.elementType.clazz && value[0]::class != uniform.elementType.constClass
+                    && uniform.elementType == UniformType.STRUCT && !value[0]::class.hasSupertype<UniformMappable>())
+        ) {
             logger.warn { "Tried setting uniform array ${uniform.name} with element type ${uniform.elementType} to incompatible value of type ${value[0]::class.simpleName}" }
             return
         }
@@ -102,12 +110,17 @@ abstract class Shader protected constructor(
     }
 
     override fun setUniformArray(name: String, index: Int, value: Any) {
-        val uniform = uniformArrays[name]!! //TODO strict uniforms
+        val uniform = uniformArrays[name]
+            ?: if (!strictUniformDetection) return
+            else error("Failed to find uniform array by name: $name in shader ${this::class.simpleName ?: this::class}")
         if (index + 1 > uniform.size) {
             logger.warn { "Tried setting uniform array element at index $index when array only has ${uniform.size} elements" }
             return
         }
-        if (value::class != uniform.elementType.clazz && value::class != uniform.elementType.constClass) {
+        if (
+            value::class != uniform.elementType.clazz && value::class != uniform.elementType.constClass
+            && uniform.elementType == UniformType.STRUCT && !value::class.hasSupertype<UniformMappable>()
+        ) {
             logger.warn { "Tried setting uniform array element ${uniform.name}[$index] with type ${uniform.elementType} to incompatible value of type ${value::class.simpleName}" }
             return
         }
@@ -129,7 +142,9 @@ abstract class Shader protected constructor(
     }
 
     override fun setStorageBuffer(blockName: String, buffer: StorageBuffer<*>) {
-        val uniform = uniforms[blockName]!! //TODO strict uniforms
+        val uniform = uniforms[blockName]
+            ?: if (!strictUniformDetection) return
+            else error("Failed to find storage buffer by name: $blockName in shader ${this::class.simpleName ?: this::class}")
         if (uniform.type != UniformType.STORAGE_BUFFER) {
             logger.warn { "Tried setting storage buffer $blockName when uniform type is ${uniform.type}" }
             return
@@ -190,9 +205,20 @@ enum class UniformType(val glslName: String?, val clazz: KClass<*>, val constCla
 
     companion object {
         //TODO assignable instead of match?
-        fun from(klass: KClass<*>): UniformType? =
-            entries.find { klass == it.clazz || klass == it.constClass }
+        fun from(klass: KClass<*>): UniformType? = when {
+            klass.hasSupertype<UniformMappable>() -> STRUCT
+            else -> entries.find { klass == it.clazz || klass == it.constClass }
+        }
     }
+}
+
+private inline fun <reified T> KClass<*>.hasSupertype() = hasSupertype(T::class)
+private fun KClass<*>.hasSupertype(type: KClass<*>): Boolean {
+    if (this == type) return true
+    return supertypes.any { (it.classifier as? KClass<*>)?.hasSupertype(type) == true }
+}
+
+fun main() {
 }
 
 internal data class Uniform(

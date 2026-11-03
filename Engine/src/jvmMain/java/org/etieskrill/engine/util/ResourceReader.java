@@ -50,7 +50,7 @@ public class ResourceReader {
             byte[] bytes = inputStream.readAllBytes();
             inputStream.close();
             ByteBuffer buffer = BufferUtils.createByteBuffer(bytes.length);
-            return buffer.put(bytes).rewind();
+            return buffer.put(bytes).flip();
         } catch (IOException e) {
             throw new ResourceLoadException(e);
         }

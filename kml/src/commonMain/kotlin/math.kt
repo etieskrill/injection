@@ -3,6 +3,7 @@
 package net.bifreus.kml
 
 import kotlin.math.PI
+import kotlin.math.abs
 import kotlin.math.absoluteValue
 import kotlin.math.asin
 import kotlin.math.atan2
@@ -374,9 +375,40 @@ data class Vec3(override var x: Float, override var y: Float, override var z: Fl
     override infix fun angleTo(v: Vec3c): Float = TODO("Not yet implemented")
     override infix fun distanceTo(v: Vec3c): Float = TODO("Not yet implemented")
 
-    override fun lerp(other: Vec3c, t: Float): Vec3 = TODO("Not yet implemented")
+    override fun lerp(other: Vec3c, t: Float): Vec3 = Vec3(
+        x + t * (other.x - x), y + t * (other.y - y), z + t * (other.z - z)
+    )
 
-    override fun rotate(x: Float?, y: Float?, z: Float?): Vec3 = TODO("Not yet implemented")
+    override fun rotate(x: Float?, y: Float?, z: Float?): Vec3 {
+        if (x != null) {
+            val sin = sin(x)
+            val cos = cos(x)
+            val y = this.y * cos - this.z * sin
+            val z = this.y * sin + this.z * cos
+            this.y = y
+            this.z = z
+        }
+
+        if (y != null) {
+            val sin = sin(y)
+            val cos = cos(y)
+            val x = this.x * cos + this.z * sin
+            val z = -this.x * sin + this.z * cos
+            this.x = x
+            this.z = z
+        }
+
+        if (z != null) {
+            val sin = sin(z)
+            val cos = cos(z)
+            val x = this.x * cos - this.y * sin
+            val y = this.x * sin + this.y * cos
+            this.x = x
+            this.y = y
+        }
+
+        return this
+    }
 
     override fun minComponent() =
         if (x < y) {
@@ -580,8 +612,21 @@ interface Vec4ic : Iterable<Int> {
 data class Vec4i(override var x: Int, override var y: Int, override var z: Int, override var w: Int) : Vec4ic {
     constructor(s: Int) : this(s, s, s, s)
 
-    override fun get(i: Int): Int = TODO("Not yet implemented")
-    override fun set(i: Int, s: Number): Unit = TODO("Not yet implemented")
+    override fun get(i: Int): Int = when (i) {
+        0 -> x
+        1 -> y
+        2 -> z
+        3 -> w
+        else -> error("Number $i is not a valid component for Vec4i")
+    }
+
+    override fun set(i: Int, s: Number): Unit = when (i) {
+        0 -> x = s.toInt()
+        1 -> y = s.toInt()
+        2 -> z = s.toInt()
+        3 -> w = s.toInt()
+        else -> error("Number $i is not a valid component for Vec4i")
+    }
 
     override fun iterator() = TODO("Not yet implemented")
 }
@@ -784,11 +829,17 @@ interface Mat4c {
     infix fun rotate(q: Quatc): Mat4
     infix fun scale(s: Vec3c): Mat4
 
-    operator fun times(v: Vec4): Vec4
+    /**
+     * @return `this` * [v], where [v] is viewed as a position, i.e. as if `v.w` were `1`.
+     */
+    operator fun times(v: Vec3c): Vec3
+    /**
+     * @return `this` * [v], where [v] is viewed as a direction, i.e. as if `v.w` were `0`.
+     */
+    fun timesDirection(v: Vec3c): Vec3
+    operator fun times(v: Vec4c): Vec4
     operator fun times(m: Mat4c): Mat4
     operator fun times(aabb: AABBc): AABB
-
-    fun timesDirection(v: Vec3): Vec3
 
     fun frustumTestSphere(center: Vec3c, radius: Float): Boolean
     fun frustumTestAABB(aabb: AABBc): Boolean
@@ -1024,8 +1075,16 @@ data class Mat4(
         )
     }
 
-    fun setOrtho(left: Float, right: Float, bottom: Float, top: Float, near: Float, far: Float): Unit =
-        TODO("Not yet implemented")
+    fun setOrtho(left: Float, right: Float, bottom: Float, top: Float, near: Float, far: Float) {
+        this()
+
+        m00 = 2f / (right - left)
+        m11 = 2f / (top - bottom)
+        m22 = 2f / (near - far)
+        m30 = (right + left) / (left - right)
+        m31 = (top + bottom) / (bottom - top)
+        m32 = (far + near) / (near + far)
+    }
 
     fun setPerspective(
         verticalFieldOfView: Float,
@@ -1056,7 +1115,19 @@ data class Mat4(
         m23 = -1.0f
     }
 
-    override fun times(v: Vec4): Vec4 = Vec4(
+    override fun times(v: Vec3c): Vec3 = Vec3(
+        v.x * m00 + v.y * m01 + v.z * m02 + m03,
+        v.x * m10 + v.y * m11 + v.z * m12 + m13,
+        v.x * m20 + v.y * m21 + v.z * m22 + m23
+    )
+
+    override fun timesDirection(v: Vec3c): Vec3 = Vec3(
+        v.x * m00 + v.y * m01 + v.z * m02,
+        v.x * m10 + v.y * m11 + v.z * m12,
+        v.x * m20 + v.y * m21 + v.z * m22
+    )
+
+    override fun times(v: Vec4c): Vec4 = Vec4(
         v.x * m00 + v.y * m01 + v.z * m02 + v.w * m03,
         v.x * m10 + v.y * m11 + v.z * m12 + v.w * m13,
         v.x * m20 + v.y * m21 + v.z * m22 + v.w * m23,
@@ -1106,8 +1177,6 @@ data class Mat4(
 
         return AABB(minX, minY, minZ, maxX, maxY, maxZ)
     }
-
-    override fun timesDirection(v: Vec3): Vec3 = TODO("Not yet implemented")
 
     override fun frustumTestSphere(center: Vec3c, radius: Float): Boolean = TODO("Not yet implemented")
     override fun frustumTestAABB(aabb: AABBc): Boolean = TODO("Not yet implemented")
@@ -1255,7 +1324,31 @@ data class Quat(
     constructor() : this(0f, 0f, 0f, 1f)
     constructor(q: Quat) : this(q.x, q.y, q.z, q.w)
 
-    override fun slerp(other: Quatc, t: Float): Quat = TODO("Not yet implemented")
+    override fun slerp(other: Quatc, t: Float): Quat {
+        val cosom = x * other.x + (y * other.y + (z * other.z + (w * other.w)))
+        val absCosom = abs(cosom)
+
+        val scale0: Float
+        var scale1: Float
+        if (1f - absCosom > 1e-6f) {
+            val sinSqr = 1f - absCosom * absCosom
+            val sinom = 1f / sqrt(sinSqr)
+            val omega = atan2(sinSqr * sinom, absCosom)
+            scale0 = sin((1f - t) * omega) * sinom
+            scale1 = sin(t * omega) * sinom
+        } else {
+            scale0 = 1f - t
+            scale1 = t
+        }
+        scale1 = if (cosom >= 0.0) scale1 else -scale1
+
+        return Quat(
+            x = scale0 * x + (scale1 * x),
+            y = scale0 * y + (scale1 * y),
+            z = scale0 * z + (scale1 * z),
+            w = scale0 * w + (scale1 * w)
+        )
+    }
 
     override operator fun times(v: Vec3c): Vec3 {
         val xx = x * x
@@ -1276,20 +1369,27 @@ data class Quat(
         )
     }
 
-    override fun times(q: Quatc): Quat = TODO("Not yet implemented")
+    override fun times(q: Quatc): Quat = Quat(
+        w * q.x + (x * q.w + (y * q.z + (-z * q.y))),
+        w * q.y + (-x * q.z + (y * q.w + (z * q.x))),
+        w * q.z + (x * q.y + (-y * q.x + (z * q.w))),
+        w * q.w + (-x * q.x + (-y * q.y + (-z * q.z)))
+    )
 
-    operator fun invoke() {
+    operator fun invoke(): Quat {
         this.x = 0f
         this.y = 0f
         this.z = 0f
         this.w = 1f
+        return this
     }
 
-    operator fun invoke(other: Quatc) {
+    operator fun invoke(other: Quatc): Quat {
         this.x = other.x
         this.y = other.y
         this.z = other.z
         this.w = other.w
+        return this
     }
 }
 

@@ -16,7 +16,7 @@ import org.etieskrill.engine.graphics.framebuffer.FrameBuffer
 import org.etieskrill.engine.graphics.framebuffer.FrameBufferAttachmentType
 import org.etieskrill.engine.graphics.framebuffer.RenderBuffer
 import org.etieskrill.engine.graphics.framebuffer.RenderBufferType
-import org.etieskrill.engine.graphics.model.Skybox
+import org.etieskrill.engine.graphics.model.SkyboxMaterial
 import org.etieskrill.engine.graphics.particle.ParticleRenderer
 import org.etieskrill.engine.graphics.pipeline.FillMode
 import org.etieskrill.engine.graphics.pipeline.Pipeline
@@ -45,7 +45,7 @@ open class RenderService(
 
     var cullingCamera: Camera = camera,
     private val customViewport: Vec4ic? = null,
-    var skybox: Skybox? = null
+    var skybox: SkyboxMaterial? = null
 ) : Service {
 
     protected val _renderer: Renderer = renderer
@@ -124,8 +124,9 @@ open class RenderService(
         }
 
         skybox?.let {
-            TODO("render skybox")
-//            renderer.render(skybox)
+            skyboxShader.invCombined = camera.invCombined
+            skyboxShader.skybox = it.skyboxTexture!!
+            renderer.render(PostPassPipeline(skyboxShader, frameBuffer))
         }
 
         for (entity in entities) {

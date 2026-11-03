@@ -16,8 +16,8 @@ class SkyboxShader : PureShaderBuilder<SkyboxShader.Vertex, ColourRenderTarget>(
 
     private val vertices by const(arrayOf(vec2(-1, -1), vec2(1, -1), vec2(-1, 1), vec2(1, 1)))
 
-    private var invCombined by uniform<mat4>() //TODO check that uniforms are var
-    private var skybox by uniform<samplerCube>()
+    var invCombined by uniform<mat4>() //TODO check that uniforms are var
+    var skybox by uniform<samplerCube>()
 
     override fun program() {
         vertex {

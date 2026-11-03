@@ -118,6 +118,7 @@ open class KeyInputManager(
         OverruleMode.NONE -> TODO()
     }
 
+    fun isPressed(key: Key) = pressed.any { it.key == key }
     fun isPressed(input: KeyEvent) = input in pressed
     fun isToggled(input: KeyEvent) = input in toggled
 
